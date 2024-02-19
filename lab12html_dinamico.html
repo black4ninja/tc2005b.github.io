@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script type="text/javascript" src="lab5POE.js"></script>
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Lab 12: HTML dinámico</title>
+</head>
+
+<body>
+    <header></header>
+
+    <main>
+
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h3>Lab 12: HTML dinámico</h3>
+            </div>
+
+
+            <div class="section" id="descripcion">
+                <h5>
+                  <i class="small mdi-action-info-outline"></i>
+                  Descripción
+                </h5>
+                <p>En esta actividad instalaremos y exploraremos cómo generar HTML dinámico desde el back-end.</p>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="modalidad">
+                <h5>
+                  <i class="small mdi-social-group"></i>
+                  Modalidad
+                 </h5>
+                <p>
+                    Individual.
+                    <br />
+                </p>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="objetivos">
+                <h5>
+                <i class="small mdi-navigation-check"></i>
+                Objetivos de aprendizaje</h5>
+                <ul class="collection with-header">
+                    <li class="collection-item"><i class="small mdi-image-looks-one"></i>Generar desde el back-end, interfaces dinámicas HTML5 para el cliente por medio de un motor de <code>templates</code> y que incorporen <code>partials</code>.</li>
+                </ul>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="instrucciones">
+                <h5>
+                  <i class="small mdi-action-list"></i>
+                  Instrucciones</h5>
+                <ul class="collection">
+                    <li class="collection-item">Recuerda que para generar una aplicación es necesario inicializar el proyecto con <code>npm init</code>, e instalar <code>express</code> y <code>body-parser</code> con <code>npm install --save [nombre_paquete]</code>. Si es necesario, recuerda configurar el archivo <code>package.json</code> para incluir el script que quieres que se ejecute con <code>npm start</code>.</li>
+                    
+                    <!-- <li class="collection-item">Revisa la presentación <a target="_blank" href="documentos/PHP-MultAppArchitecture.ppt">Multitier
+                        Aplication Architecture php</a>.</li>
+                    <li class="collection-item">Completa los tutoriales de formas php en <a target="_blank" href="http://www.w3schools.com/php/php_forms.asp">http://www.w3schools.com/php/php_forms.asp</a>.
+                        <br>
+                        <span style="text-decoration: underline;"></span></li> -->
+                        
+                    <li class="collection-item">Sigue la demostración del profesor en la sesión de clase.</li>
+
+                    <li class="collection-item">Para devolver como respuesta un archivo html desde express, se requiere el módulo <code>path</code>, puedes incorporarlo con <code>const path = require('path');</code> al inicio de tus archivos de código. <br>
+                        Por convención, los archivos HTML se guardan en un directorio llamado <code>views</code>, en referencia a la capa de la vista de un estilo arquitectónio MVC. Para devolver un archivo HTML, se realiza de la siguiente forma:
+                        <p>
+                            <code><pre>
+router.get('/una-ruta', (request, response, next) => {
+    response.sendFile(path.join(__dirname, '..', 'views', 'el-archivo.html'));
+});
+                            </pre>
+                            </code>
+                        </p>
+                        La función <code>join</code> sirve para armar la ruta, y la ventaja que tiene sobre hacerlo manualmente, es que considera el sistema operativo donde el código resida para que no tengas problemas si estás en MacOS, Linux o Windows.
+                        <br> 
+                        La variable global <code>__dirname</code>, contiene el directorio del sistema de archivos donde se encuentra tu aplicación, y el resto de los argumentos son cada uno de los directorios para llegar al archivo. Observa que después de <code>__dirname</code>, el argumento es <code>'..'</code> debido a que si estás en una carpeta de alguno de tus módulos, subirás un nivel en los directorios para llegar al nivel raíz y de ahí viajar a la carpeta <code>views</code>, para finalmente llegar al archivo <code>el-archivo.html</code>. 
+                    </li>
+
+                    <li class="collection-item">Por defecto, nuestro servidor no puede entregar un CSS como respuesta, entonces es necesario decirle que cuando un documento HTML requiere de un CSS, este archivo se mande de manera estática. Para ello debemos de configurar una carpeta de archivos estáticos, por conveción la llamaremos <code>public</code>, y al folder donde pondremos los archivos css lo llamaremos <code>css</code>. Para poder incluirlos dentro de los HTML lo podemos hacer con el método <code>static</code> de <code>express</code>:
+                        <p>
+                            <code><pre>
+app.use(express.static(path.join(__dirname, 'public')));
+                            </pre>
+                            </code>
+                        </p>
+                    </li>
+                    
+                    <li class="collection-item">Utilizando alguno de tus laboratorios anteriores (o si lo prefieres empieza de 0), elabora una aplicación web con las siguientes características:
+                        <ul>
+                            <li class="collection-item">La aplicación debe poder responder al menos a 5 rutas diferentes, distribuidas en al menos 2 módulos, y mandar una respuesta HTTP 404 cuando la ruta no existe.</li>
+                            <li class="collection-item">En alguna de las rutas, la aplicación debe contener al menos 1 forma que debe enviar datos al servidor por POST. El servidor debe reaccionar ante este envío y guardar los datos en un archivo de texto dentro del mismo servidor.</li>
+                            <!-- <li class="collection-item">Debes de validar los datos del lado del servidor, si hay alguno incorrecto o faltante, la aplicación debe mostrar los mensajes correspondientes en la forma para que el usuario pueda corregirlos. </li>
+                            <li class="collection-item">Si los datos de la forma son correctos la aplicación debe llevar a cabo algún procesamiento de los datos y presentar la información en una página html5.</li>
+                            <li class="collection-item">Utiliza una arquitectura en capas, donde separes claramente la vista del controlador.</li>
+                            <li class="collection-item">La aplicación debe evitar ataques de Cross Site Scripting (XSS). En la sección <a href="#recursos">recursos</a> se encuentran varios enlaces que describen este ataque y muestran cómo prevenirlo desinfectando las entradas del usuario, como por ejemplo con la función <a href="http://php.net/manual/es/function.htmlspecialchars.php">htmlspecialchars</a>. <strong>Asegúrate que tu laboratorio y tu proyecto puedan prevenir los ataques más comunes de este tipo</strong>.</li>
+                            <li class="collection-item">La aplicación debe tener coherencia y cierto nivel de complejidad, es decir, no es aceptable una forma que diga introduce datos de ejemplo, o suma 2 números.</li>
+                            <li class="collection-item">Recuerda que tu aplicación debe ser agradable para el usuario, debe tener un CSS (y posiblemente JavaScript), y que las preguntas deben contestarse en alguna página dentro de tu sitio.</li> -->
+                        </ul>
+                    </li>
+                    <li class="collection-item">Vamos a utilizar <a target="_blanck" href="https://ejs.co/">EJS</a> como motor de <em>templates</em> para generar html de manera dinámica. Este motor lo estaremos usando en los ejemplos, pero eres libre de utilizar alguno diferente en tus laboratorios y proyecto. </li>
+                    <li class="collection-item">Para instalar EJS: <code>npm install --save ejs</code>.
+                    </li>
+                    <li class="collection-item">Para configurar EJS en Express, debemos indicarle a Express que vamos a utilizar como motor para la capa de las vistas EJS, y en seguida indicar por medio de una variable de configuración de Express, la carpeta donde estarán almacenados los archivos html correspondientes a las vistas, por convención, utilizaremos la carpeta <code>views</code>:
+                        <code><pre>
+app.set('view engine', 'ejs');
+app.set('views', 'views');</pre></code>
+                    </li>
+                    <li class="collection-item">
+                        Los archivos EJS (<code>.ejs</code>), son archivos que en su mayoría contienen código HTML, pero que también permiten escribir código JS, utilizando tags con el símbolo <code>%</code> de la siguiente forma: <code><% código de javascript %></code>. <br>
+                        Para desplegar un <code>template</code> de EJS, lo hacemos con el método <code>render</code>, y como argumento ponemos el nombre del archivo <code>.ejs</code> sin poner la extensión del arhivo:
+                        <code><pre>
+router.get('/una-ruta', (request, response, next) => {
+    response.render('vista_ejs');
+});
+                        </pre></code>
+                        Para escribir una variable en la vista, primero debemos de pasarle a la vista un objeto de javascript con los nombres y valores de las variables:
+                        <code><pre>
+router.get('/una-ruta', (request, response, next) => {
+    response.render('vista_ejs', {variable: valor});
+});
+                        </pre></code>
+                        Y finalmente, para imprimir la variable en la vista utilizamos el operador <code>=</code>:
+                        <code><pre>
+<%= nombre_variable %>
+                        </pre></code></li>
+                    <li class="collection-item">
+                        Así como imprimimos variables, también podemos poner código de estructuras de control, por ejemplo:
+                        <code><pre>
+<% if (arreglo.length > 0) { %>
+    &lt;ul&gt;
+        <% for (let elemento of arreglo) { %>
+            &lt;li&gt;<%= elemento.atributo %>&lt;/li&gt;
+        <% } %>
+    &lt;/ul&gt;
+<% } else { %>
+    &lt;h1&gt;El arreglo está vacío&lt;/h1&gt;
+<% } %>   
+                        </pre></code>
+                    </li>
+                    <li class="collection-item">Refactoriza tu aplicación para que mantenga la funcionalidad pero ahora trabaje con un motor de vistas.</li>
+                    <li class="collection-item">Mejora tu aplicación para que en lugar de guardar los datos en un archivo, ahora los despliegue en una de las páginas.</li>
+                    <li class="collection-item">
+                        Como has podido experimentar, mantener las 5 páginas implica estar copiando y pegando pedazos de código HTML, lo cual es un proceso propenso a errores. Los motores de vistas como EJS, permiten reutilizar código sin la necesidad de estar copiando y pegando. Una estrategia para ello, es la utilización de <code>partials</code>, que son pedazos reutilizables de código de una vista. Por convención, dentro de la carpeta <code>views</code>, crearemos una carpeta <code>includes</code> en donde pondremos nuestroas <code>partials</code>. <br>
+                        Para incluir un partial en una vista:
+                        <code><pre>
+        <%- include('includes/head.ejs') %>
+                        </pre></code>Observa el operador <code>-</code>. A diferencia del operador <code>=</code> que te protege de una inyección de código, el operador <code>-</code> no lo hace, pero esto es lo que permite que se inserte el código HTML de nuestro <code>partial</code>.
+                    </li>
+                <li class="collection-item">Refactoriza tu aplicación para hacer un uso efectivo de los partials con aspectos como el código del <code>head</code> de tu aplicación, y quizás de la barra de navegación (si cuentas con una) y del footer.</li>
+            </ul>
+
+            <div class="divider"></div>
+
+            <div class="section" id="preguntas">
+                <h5>
+                    <i class="small mdi-action-question-answer"></i>
+                    Preguntas a responder
+                  </h5>
+                <ul class="collection">
+                    <li class="collection-item">¿Qué otros templating engines existen para node?</li>
+                </ul>
+
+                <div class="section" id="recursos">
+                    <h5> <i class="small mdi-content-link"></i> Recursos</h5>
+                    <ul class="collection">
+                        <li class="collection-item"><a target="_blank" href="https://pugjs.org/">pug</a></li>
+                        <li class="collection-item"><a target="_blank" href="https://handlebarsjs.com/">Handlebars</a></li>
+                        <li class="collection-item"><a target="_blank" href="https://ejs.co/">EJS</a></li>
+                        <li class="collection-item"><a href="https://www.owasp.org/index.php/Cross-site_Scripting_(XSS)" target="_blank">Cross-site Scripting (XSS)</a></li> 
+                    </ul>
+                </div>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="entrega">
+                <h5>
+                  <i class="small mdi-notification-event-available"></i>
+                  Especificaciones de entrega
+                </h5>
+                <p>A través de tu repositorio personal.</p>
+                <div class="divider"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="blue darken-1 page-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h5 class="white-text">Secciones</h5>
+                    <ol class="grey-text text-lighten-3">
+                        <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#entrega">Especificaciones de entrega</a></li>
+                    </ol>
+                </div>
+            </div>
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+        </div>
+    </footer>
+
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+</body>
+
+</html>

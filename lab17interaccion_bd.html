@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script type="text/javascript" src="lab5POE.js"></script>
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Lab 17: Interacción con la base de datos </title>
+</head>
+
+<body>
+    <header></header>
+
+    <main>
+
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+
+                <h3>Lab 17: Interacción con la base de datos </h3>
+            </div>
+        </div>
+
+        <div class="container">
+
+            <div class="section" id="descripcion">
+                <h5>
+                  <i class="small mdi-action-info-outline"></i>
+                  Descripción
+                </h5>
+                <p>En esta actividad comenzaremos con la interacción con una base de datos desde node.</p>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="modalidad">
+                <h5>
+                  <i class="small mdi-social-group"></i>
+                  Modalidad
+                 </h5>
+                <p>
+                    Individual.
+                    <br />
+                </p>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="objetivos">
+                <h5>
+                <i class="small mdi-navigation-check"></i>
+                Objetivos de aprendizaje</h5>
+                <ul class="collection with-header">
+                    <li class="collection-item"><i class="small mdi-image-looks-one"></i>Entender cómo interactúa una aplicación web con una base de datos.</li>
+                    <li class="collection-item"><i class="small mdi-image-looks-two"></i>Desarrollar aplicaciones web que interactúen con bases de datos.</li>
+                </ul>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="instrucciones">
+                <h5>
+                  <i class="small mdi-action-list"></i>
+                  Instrucciones</h5>
+                <ul class="collection">
+                    <li class="collection-item">Para interactuar con una base de datos, debemos crear la base de datos. Para este laboratorio usaremos MySQL, sin embargo, la lógica es muy similar si decides trabajar con cualquier otro motor de bases de datos. Crea tu base de datos y crea algunas tablas y ponles algunos datos, de manera similar a la demostración del profesor.</li>
+                    <li class="collection-item">Para poder interactuar con el manejador de base de datos MySQL, ocuparemos el paquete <code>mysql2</code>.</li>
+                    <li class="collection-item">Para poder conectarnos con la base de datos, utilizaremos el archivo <code>database.js</code>, el cual crearemos dentro de un folder con nuestras librerías de apoyo, típicamente nombrado <code>util</code>. El archivo se encargará de manejar las conexiones con nuestra base de datos:
+                    <code><pre>
+const mysql = require('mysql2');
+
+const pool = mysql.createPool({
+    host: 'localhost',
+    user: 'root',
+    database: 'database_name',
+    password: 'el_password_de_tu_usuario_de_la_bd'
+});
+
+module.exports = pool.promise();
+                    </pre></code>
+                    Asegúrate de cambiar los valores de los atributos del objeto de js para que coincidan con los de tu base de datos. Como podrás observar, se exporta una promesa. Las promesas permiten manejar fácilmente código que se ejecuta de manera asíncrona.
+                </li>
+                <li class="collection-item">Para conectarnos con la base de datos y ejecutar consultas desde nuestra aplicación:
+                    <code><pre>
+const db = require('./util/database');
+
+db.execute('Consulta SQL por ejemplo: SELECT * FROM mi_tabla');
+                    </pre></code>
+                    Ahora, debido a que en <code>database.js</code> devolvimos una promesa, esto nos permite hacer algo después de que ejecutamos la consulta con el método <code>.then()</code>, e incluso manejar los errores con el método <code>.catch()</code>. Por ejemplo, si queremos recuperar los registros de la tabla videojuegos:
+                    <code><pre>
+db.execute('SELECT * FROM videojuegos')
+    .then(([rows, fieldData]) => {
+        console.log(rows);
+    })
+    .catch(err => {
+        console.log(err);
+    });
+                    </pre></code> 
+                    En la varibale <code>rows</code>, tendremos cada uno de de los registros de nuestra consulta.
+                </li>
+                <li class="collection-item">El código de interacción con la base de datos, si seguimos buenas prácticas, lo escribiremos siempre en nuestros modelos. Por lo que normalmente, el método <code>fetchAll()</code> de nuestros modelos quedaría con el siguiente formato:
+                <code><pre>
+static fetchAll() {
+    return db.execute('SELECT * FROM videojuegos');
+}
+                </pre></code>
+                Y el código del controlador (asumiendo que tenemos un template de la vista llamado 'vista.html' que despliega el contenido de un arreglo de js llamado videojuegos):
+                <code><pre>
+exports.getVideojuegos = (request, response, next) => {
+    Videojuegos.fetchAll()
+        .then(([rows, fieldData]) => {
+            response.render('vista', {
+                videojuegos: rows
+            })
+        })
+        .catch(err => console.log(err));
+}
+                </pre></code>
+                </li>
+                <li class="collection-item">
+                    Ahora, para insertar un registro en la base de datos, nuestro código del método <code>save()</code> en los modelos, tendría el siguiente formato:
+                    <code><pre>
+save() {
+    return db.execute('INSERT INTO videojuegos (nombre_columna_1, nombre_columna_2) VALUES (?, ?)',
+        [this.variable_valor_1, this.variable_valor_2]
+    );
+
+}
+                    </pre></code>
+                    Como podrás ver, no se insertan los valores directamente en el string, sino se pone un signo de interrogación, esto es para evitar ataques de inyección de SQL, ya que el método execute, al pasar estos datos en un arreglo como segundo argumento, evita que si se inserta código SQL, éste no se ejecute y simplemente sea interpretado como un string. <br>
+                    El código del controlador quedaría con el siguiente formato:
+                    <code><pre>
+exports.insertarVideojuego = (request, response, next) => {
+    const videojuego = new Videojuego(request.body.nombre, request.body.plataforma);
+    videojuego.save().then(() => {
+        response.redirect('/');
+    }).catch(err => console.log(err));
+};
+                    </pre></code>
+                </li>
+                <li class="collection-item">En ocasiones es necesario recuperar un registro en particular de la base de datos, y muchas veces queremos que esto pueda realizarse desde las rutas. Para indicarle al ruteador de express que un valor en una ruta es una varibale, podemos hacerlo agregando como prefijo el símbolo <code>:</code> seguido del nombre que le queremos dar a la variable:
+                    <code><pre>
+router.get('/videojuegos/:videojuego_id', controllerVideojuegos.getVideojuego);
+                    </pre></code>
+                    Y en el controlador para hacer uso de la variable:
+                    <code><pre>
+export.getVideojuego = (request, response, next) => {
+    const id = request.params.videojuego_id;
+    //Resto del código del controlador...
+}
+                    </pre></code>
+                </li>  
+                <li class="collection-item">Continúa mejorando tus laboratorios anteriores o tu proyecto agregándoles interacción con la base de datos. Asegúrate de al menos realizar una consulta que devuelva varios registros, una consulta que devuelva 1 sólo registro, una inserción, y una edición de un registro de la base de datos. Recuerda que siempre tienes también la opción de crear una nueva aplicación.</li>  
+                    
+                        
+                </ul>
+                <div class="divider"> </div>
+            </div>
+
+            <div class="section" id="preguntas">
+                <h5>
+                    <i class="small mdi-action-question-answer"></i>
+                    Preguntas a responder
+                  </h5>
+                <ul class="collection">
+                    <li class="collection-item">¿Qué ventajas tiene escribir el código SQL únicamente en la capa del modelo?
+                    </li>
+                    <li class="collection-item">¿Qué es SQL injection y cómo se puede prevenir?
+                    </li>
+                </ul>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="recursos">
+                <h5>
+                    <i class="small mdi-action-question-answer"></i>
+                    Recursos
+                  </h5>
+                <ul class="collection">
+                    <li class="collection-item">
+                        <a target="_blank" href="https://www.npmjs.com/package/mysql2">mysql2</a>
+                    </li>
+                    <li class="collection-item">
+                        <a target="_blank" href="https://www.andreafortuna.org/2016/05/16/sql-injection-in-a-nutshell/">SQL Injection in a Nutshell</a>
+                    </li>
+                    <li class="collection-item">
+                        <a target="_blank" href="https://medium.com/visually-explained/sql-injection-attacks-visually-explained-c71b5f9e1af2">SQL Injection Attacks, Visually Explained</a>
+                    </li>
+                    <li class="collection-item">
+                        <a target="_blank" href="https://www.youtube.com/watch?v=pypTYPaU7mM">OWASP Appsec Tutorial Series - Episode 2: SQL Injection</a>
+                    </li>
+                    <li class="collection-item">
+                        <a target="_blank" href="https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html">SQL Injection Prevention Cheat Sheet</a>
+                    </li>
+                    <li class="collection-item">
+                        <a target="_blank" href="https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05-Testing_for_SQL_Injection">Testing for SQL Injection (OTG-INPVAL-005)</a>
+                    </li>
+                    <li class="collection-item">
+                        <a target="_blank" href="https://medium.com/codeep-io/common-security-issues-in-web-applications-part-1-af339360c646">Common Security Issues in Web Applications. Part 1</a>
+                    </li> 
+                </ul>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="entrega">
+                <h5>
+                  <i class="small mdi-notification-event-available"></i>
+                  Especificaciones de entrega
+                </h5>
+                <p>A través de tu repositorio personal (Bitbucket o GitHub).</p>
+                <div class="divider"></div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="blue darken-1 page-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h5 class="white-text">Secciones</h5>
+                    <ol class="grey-text text-lighten-3">
+                        <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#recursos">Recursos</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#entrega">Especificaciones de entrega</a></li>
+                    </ol>
+                </div>
+            </div>
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+        </div>
+    </footer>
+
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+</body>
+
+</html>

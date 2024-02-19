@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Laboratorio 17: Creación de Constraints Para Instrumentar Integridad Referencial en SQL Server</title>
+</head>
+
+<body>
+    <main>
+    <div class="navbar-fixed">
+        <nav>
+            <div class="blue darken-1 nav-wrapper">
+                <a href="../index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B Construcción de software y toma de decisiones</acronym></a>
+            </div>
+        </nav>
+    </div>
+
+    <div class="container">
+        <div class="section">
+            <h3>Laboratorio 17: Creación de Constraints Para Instrumentar Integridad Referencial en SQL Server</h3>
+        </div>
+    </div>
+
+    <div class="container">
+
+            <div class="section" id="modalidad">
+                <h5>
+                    <i class="small mdi-social-group"></i>Modalidad
+                </h5>
+                <ul class="collection">
+                    <li class="collection-item">
+                        Individual.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section" id="objetivos">
+                <h5>
+                    <i class="small mdi-navigation-check"></i>Objetivos de aprendizaje
+                </h5>
+                <ul class="collection">
+                    <li class="collection-item">
+                        En esta práctica aprenderás como instrumentar integridad genérica y/o coherencia en la información de tu base de datos por medio de constrains o restricciones, definir llaves de todo tipo, en un DBMS: SQLServer. Además de utilizar algunos comandos de DML para actualizar el contenido de la base de datos.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section" id="instrucciones">
+                <h5>
+                    <i class="small mdi-action-list"></i>
+                    Instrucciones
+                </h5>
+                <ul class="collection">
+                    <li class="collection-item">
+                        Haz un reporte de la práctica con todas las preguntas que se te hagan. Adicionalmente se evaluará que en tu base de
+                        datos se hayan realizado las actividades de la práctica correctamente.
+                    </li>
+                    <li class="collection-item">
+                        Abre una sesión en <strong>“SQL Server Management Studio”</strong>, encontrarás tus datos de autentificación en el siguiente archivo:
+                        <a href='../documentos/CuentasServidorEM17.docx'><p  style="text-align:center;"><img src='../imagenes/cuentasServer.png' height='150'></p></a>
+
+                    </li>
+                    <li class="collection-item">
+                        <i class="material-icons">pageview</i>
+                        A continuación se presentan los esquemas de las tablas que creaste en la práctica anterior
+                        y que serán con las que trabajaremos en esta práctica:
+                    </li>
+                    <li class="collection-item">
+                        <strong>
+                            Materiales (Clave, Descripción, Costo)
+                            <br>
+                            Proveedores (RFC, RazonSocial)
+                            <br>
+                            Proyectos (Numero, Denominacion)
+                            <br>
+                            Entregan (Clave, RFC, Numero, Fecha, Cantidad)
+                        </strong>
+                    </li>
+                    <li class="collection-item">
+                        <i class="material-icons">view_module</i>
+                        <strong>
+                            Ejercicio 1
+                        </strong>
+                        <br>
+                        Crea un archivo llamado <strong>crearBd.sql</strong>
+                        <p>
+                        Elimina las tablas que creaste la práctica pasada para crearlas a través de un SCRIPT
+                        común para todos los integrantes del salón, y que todos cuenten con una estructura
+                        idéntica de la base de datos.
+                        </p>
+                        <strong>
+                            Código para eliminar tus tablas:
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;drop TABLE entregan
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;drop TABLE materiales
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;drop TABLE proyectos
+                            <br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;drop TABLE Proveedores
+                        </strong>
+
+                        <br><br>
+                        Crea nuevamente las tablas con el código que se te da a continuación:
+                        <br>
+                        <strong>Nota:</strong> de manera adicional, se especifica en el campo que se
+                        propondrá como llave, la instrucción NOT NULL, esto con el objetivo de que
+                        ese campo siempre sea requerido. Además de identificar que este código
+                        se ejecute si la tabla existe, ya que en caso contrario mostrará error.
+
+                        <br><br>
+                        <p>IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Materiales') </p>
+
+                        <br><br>
+                        DROP TABLE Materiales
+
+                        <br><br>
+                        CREATE TABLE Materiales
+                        <br>(
+                            <br>&nbsp;&nbsp;Clave numeric(5) not null,
+                            <br>&nbsp;&nbsp;Descripcion varchar(50),
+                            <br>&nbsp;&nbsp;Costo numeric (8,2)
+                        <br>)
+
+                        <br><br>
+                        <strong>Haz lo mismo para cada tabla.</strong>
+
+                        <br>
+                        <p>IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Proveedores') </p>
+
+                        CREATE TABLE Proveedores
+                        <br>(
+                            <br>&nbsp;&nbsp;RFC char(13) not null,
+                            <br>&nbsp;&nbsp;RazonSocial varchar(50)
+                        <br>)
+
+                        <br>
+
+                        <p>IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Proyectos') </p>
+                        CREATE TABLE Proyectos
+                        <br>(
+                            <br>&nbsp;&nbsp;Numero numeric(5) not null,
+                            <br>&nbsp;&nbsp;Denominacion varchar(50)
+                        <br>)
+
+                        <br>
+                        <p>IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Entregan') </p>
+                        CREATE TABLE Entregan
+                        <br>(
+                            <br>&nbsp;&nbsp;Clave numeric(5) not null,
+                            <br>&nbsp;&nbsp;RFC char(13) not null,
+                            <br>&nbsp;&nbsp;Numero numeric(5) not null,
+                            <br>&nbsp;&nbsp;Fecha DateTime not null,
+                            <br>&nbsp;&nbsp;Cantidad numeric (8,2)
+                        <br>)
+
+                        <br><br>
+                        Ahora carga de datos cada una de las tablas.
+                        <br>
+                        <strong>
+                            Nota: Recuerda modificar el comando con tus parámetros para cargar tus tablas en tu base de datos.
+                        </strong>
+
+                        <br><br>
+                        BULK INSERT rcortese.rcortese.[Materiales]
+                            <br>&nbsp;&nbsp;FROM 'e:\wwroot\rcortese\materiales.csv'
+                            <br>&nbsp;&nbsp;WITH
+                            <br>&nbsp;&nbsp;(
+                                <br>&nbsp;&nbsp;&nbsp;&nbsp;CODEPAGE = 'ACP',
+                                <br>&nbsp;&nbsp;&nbsp;&nbsp;FIELDTERMINATOR = ',',
+                                <br>&nbsp;&nbsp;&nbsp;&nbsp;ROWTERMINATOR = '
+'
+                            <br>&nbsp;&nbsp;)
+
+                        <br><br>
+                        BULK INSERT rcortese.rcortese.[Proyectos]
+                            <br>&nbsp;&nbsp;FROM 'e:\wwroot\rcortese\Proyectos.csv'
+                            <br>&nbsp;&nbsp;WITH
+                            <br>&nbsp;&nbsp;(
+                                <br>&nbsp;&nbsp;&nbsp;&nbsp;CODEPAGE = 'ACP',
+                                <br>&nbsp;&nbsp;&nbsp;&nbsp;FIELDTERMINATOR = ',',
+                                <br>&nbsp;&nbsp;&nbsp;&nbsp;ROWTERMINATOR = '
+'
+                            <br>&nbsp;&nbsp;)
+
+                        <br><br>
+                        BULK INSERT rcortese.rcortese.[Proveedores]
+                            <br>&nbsp;&nbsp;FROM 'e:\wwroot\rcortese\Proveedores.csv'
+                            <br>&nbsp;&nbsp;WITH
+                            <br>&nbsp;&nbsp;(
+                                <br>&nbsp;&nbsp;&nbsp;&nbsp;CODEPAGE = 'ACP',
+                                <br>&nbsp;&nbsp;&nbsp;&nbsp;FIELDTERMINATOR = ',',
+                                <br>&nbsp;&nbsp;&nbsp;&nbsp;ROWTERMINATOR = '
+'
+                            <br>&nbsp;&nbsp;)
+
+                        <br><br>
+                        <strong>SET DATEFORMAT dmy -- especificar formato de la fecha</strong>
+
+                        <br><br>
+                        BULK INSERT rcortese.rcortese.[Entregan]
+                            <br>&nbsp;&nbsp;FROM 'e:\wwroot\rcortese\Entregan.csv'
+                            <br>&nbsp;&nbsp;WITH
+                            <br>&nbsp;&nbsp;(
+                                <br>&nbsp;&nbsp;&nbsp;&nbsp;CODEPAGE = 'ACP',
+                                <br>&nbsp;&nbsp;&nbsp;&nbsp;FIELDTERMINATOR = ',',
+                                <br>&nbsp;&nbsp;&nbsp;&nbsp;ROWTERMINATOR = '
+'
+                            <br>&nbsp;&nbsp;)
+
+                        <br><br>
+                        Ejecuta el script, revisa que se hayan creado y cargado las tablas satisfactoriamente.
+                    </li>
+                    <li class="collection-item">
+                        <i class="material-icons">view_module</i>
+                        <strong>
+                            Ejercicio 2
+                        </strong>
+
+                        <br><br>
+                        Agrega un nuevo registro a la tabla de materiales:
+                        <br>
+                        &nbsp;&nbsp;INSERT INTO  Materiales values(1000, 'xxx', 1000)
+
+                        <br><br>
+                        Revisa el contenido de la tabla materiales y determina si existe alguna inconsistencia en el contenido de la tabla. ¿Cuál es? ¿A qué se debe?
+                        <br>
+                        Elimina el registro que acabas de agregar:
+                        <br>
+                        &nbsp;&nbsp;Delete  from Materiales where Clave = 1000 and Costo = 1000
+
+                        <br><br>
+                        A continuación definiremos a la Clave como llave primaria de la tabla de materiales, esto mediante la creación de un constraint.
+                        <br>
+                        &nbsp;&nbsp;ALTER TABLE Materiales add constraint llaveMateriales PRIMARY KEY (Clave)
+
+                        <br><br>
+                        Agrega nuevamente el registro a la tabla de materiales:
+                        <br>
+                        &nbsp;&nbsp;INSERT INTO  Materiales values(1000, 'xxx', 1000)
+
+                        <br><br>
+                        <strong>¿Qué ocurrió?</strong>
+                        <br>
+                        Verifica si la tabla de materiales tiene definido algún constraint (restricción):
+                        <br>
+                        &nbsp;&nbsp;sp_helpconstraint materiales
+
+                        <br><br>
+                        <strong>¿Qué información muestra esta consulta?</strong>
+                        <br>
+                        Asegúrate de crear <strong>constraints</strong> análogos para definir las <strong>llaves primarias</strong> de las tablas proveedores, y proyectos.
+
+                        <br><br>
+                        <strong>¿Qué sentencias utilizaste para definir las llaves primarias?</strong>
+                        <br>
+                        Define el <strong>constraint</strong> correspondiente a la <strong>llave primaria</strong> para la tabla <strong>entregan</strong>, considerando que en este caso, la llave primaria está integrada por <strong>varias columnas.</strong>
+
+                        <br><br>
+                        <strong>¿Qué sentencias utilizaste para definir este constrait?</strong>
+                        <br>
+                        En caso de cometer algún error en la definición de los constraints, debes <strong>eliminar</strong> el constraint anterior y luego redefinirlo.
+                        <br>
+                        &nbsp;&nbsp;ALTER TABLE tableName drop constraint ConstraintName
+
+
+                    </li>
+                    <li class="collection-item">
+                        <i class="material-icons">view_module</i>
+                        <strong>
+                            Ejercicio 3
+                        </strong>
+
+                        <br><br>
+                        Revisa y analiza el contenido de las tablas materiales, proveedores y proyectos, utilizando la sentencia:
+                        <br>
+                        &nbsp;&nbsp;<strong>SELECT * from nombre de la tabla ;</strong>
+
+                        <br><br>
+                        Intenta insertar en la tabla entregan  el siguiente registro:
+                        <br>
+                        &nbsp;&nbsp;INSERT INTO entregan values (0, 'xxx', 0, '1-jan-02', 0) ;
+
+                        <br><br>
+                        <strong>
+                            ¿Qué particularidad observas en los valores para clave, rfc y numero?
+                            <br>
+                            ¿Cómo responde el sistema a la inserción de este registro?
+                        </strong>
+
+                        <br><br>
+                        Como no deseamos insertar un registro inconsistente, anulemos el efecto con:
+                        <br>
+                        &nbsp;&nbsp;Delete from Entregan where Clave = 0
+
+                        <br><br>
+                        Ahora agreguemos el siguiente constraint:
+                        <br>
+                        &nbsp;&nbsp;ALTER TABLE entregan add constraint cfentreganclave
+                        <br>
+                        &nbsp;&nbsp;foreign key (clave) references materiales(clave);
+
+                        <br><br>
+                        Intenta nuevamente la inserción del registro inconsistente.
+                        <br>
+                        ¿Qué significa el mensaje que emite el sistema?
+                        <br>
+                        ¿Qué significado tiene la sentencia anterior?
+
+                        <br><br>
+                        Para asegurar que no se presenten <strong>inconsistencias</strong> con relación a las otras <strong>llaves foráneas</strong>, agrega los constraints correspondientes a <strong>rfc</strong> y <strong>número</strong>.
+                        <br>
+                        Revisa los <strong>constraints</strong> de cada tabla. Para visualizar los constraints que hemos creado, se utiliza la siguiente sentencia:
+                        <br>
+                        &nbsp;&nbsp;<strong>sp_helpconstraint tableName</strong>
+                        <br>
+                        ¿Qué significan las columnas de esas consultas?
+
+                    </li>
+                    <li class="collection-item">
+                        <i class="material-icons">view_module</i>
+                        <strong>
+                            Ejercicio 4 "Definiendo restricciones a valores en campos"
+                        </strong>
+
+                        <br><br>
+                        Efectúa la siguiente sentencia INSERT:
+                        <br>
+                        &nbsp;&nbsp;INSERT INTO entregan values (1000, 'AAAA800101', 5000, GETDATE(), 0);
+                        <br>
+                        Lista el registro que acabas de crear.
+                        <br>
+                        <strong>¿Qué uso se le está dando a GETDATE()?</strong>
+                        <br>
+                        <strong>¿Tiene sentido el valor del campo de cantidad?</strong>
+
+                        <br><br>
+                        Elimina el registro que acabas de insertar (puedes caracterizarlo como el que tiene cantidad cero).
+                        <br>
+                        Para no permitir una cantidad igual a 0 utilizamos el siguiente constraint:
+                        <br>
+                        &nbsp;&nbsp;ALTER TABLE entregan add constraint cantidad check (cantidad > 0) ;
+
+                        <br><br>
+                        Intenta insertar un registro con cantidad igual o menor que 0.
+                        <br>
+                        <strong>¿Cómo responde el sistema?</strong>
+                        <br>
+                        <strong>¿Qué significa el mensaje? </strong>
+
+                        <br><br>
+                        Nuevamente revisa los constraints de cada tabla y revisa las diferencias que existen entre cada uno de ellos.
+
+                        <br><br>
+                        Como parte del <strong>reporte, explica el concepto de integridad referencial</strong>, en caso de que no cuentes con una idea clara de este concepto se te recomienda buscar su <strong>definición</strong> en diferentes fuentes <strong>(Libros, Biblioteca Digital u otras)</strong>. Es necesario que cites la(s) fuente(s) que consultaste.
+
+                    </li>
+                </ul>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section" id="entrega">
+                <h5>
+                    <i class="small mdi-notification-event-available"></i>
+                    Especificaciones de entrega
+                </h5>
+                <ul class="collection">
+                    <li class="collection-item">
+                        A través de bitbucket o github como (*.sql y reporte.txt), se revisará que las 4 tablas estén cargadas en el servidor con la definición de llaves.
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="blue darken-1 page-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h5 class="white-text">Secciones</h5>
+                    <ol class="grey-text text-lighten-3">
+                        <li><a class="grey-text text-lighten-3" href="#modalidad"> Modalidad</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#objetivos"> Objetivos</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#instrucciones"> Instrucciones</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#entrega"> Especificaciones de entrega</a></li>
+                    </ol>
+                </div>
+            </div>
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+        </div>
+    </footer>
+
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+</body>
+</html>

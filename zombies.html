@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Examen de segundo parcial: PETZ</title>
+</head>
+
+<body>
+    <header></header>
+
+    <main>
+
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo"><acronym title="TC2005B Construcción de software y toma de decisiones">TC2005B Construcción de software y toma de decisiones</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+
+            <div class="section">
+                <h3>Examen de segundo parcial: Personas por la Ética en el Trato de los Zombis (PETZ)</h3>
+            </div>
+
+            <div class="section" id="etica">
+                <h5><i class="small mdi-action-stars"></i>Código de ética</h5>
+                <em>"Apegándome al Código de Ética de los Estudiantes del Tecnológico de Monterrey, me comprometo a que mi actuación en esta actividad de evaluación esté regida por la honestidad académica. En congruencia con el mismo, realizaré esta actividad de forma <strong>honesta y personal</strong>, para reflejar a través de ella mis conocimientos y competencias."</em>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="descripcion">
+                <h5><i class="small mdi-action-info-outline"></i>Información</h5>
+
+                <img class="responsive-img" src="imagenes/petz.jpg">
+
+                <!--
+                <p><a target="_blank" href="https://youtu.be/xzooVSOzfM8">Welcome to Jurassic Park</a>.</p>
+                <div class="video-container">
+                    <iframe width="560" height="315" src="https://www.youtube.com/embed/xzooVSOzfM8" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+                -->
+
+                <p>El virus DAWBD te convierte en zombie y te acabas de contagiar. Una persona contagiada se convierte en Zombi DAWBD en <strong>170 minutos</strong>, más vale tener el siguiente sistema listo para las 12:55pm para asegurarte que te traten considerando que alguna vez fuiste humano.</p>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="modalidad">
+                <h5>
+                  <i class="small mdi-social-group"></i>
+                  Modalidad
+                 </h5>
+                <p>
+                    Individual.
+                    <br />
+                </p>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="objetivos">
+                <h5>
+                <i class="small mdi-navigation-check"></i>
+                Competencias a observar</h5>
+                <ul class="collection with-header">
+                    <li class="collection-item">3. Implementa sistemas de bases de datos que satisfacen requisitos de información y permiten la escalabilidad del sistema</li>
+                    <li class="collection-item">5. Desarrolla aplicaciones web con interacción asíncrona con el servidor y que consumen servicios web</li>
+                </ul>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="instrucciones">
+                <h5><i class="small mdi-action-list"></i>Instrucciones</h5>
+                <ul class="collection">
+                    <li class="collection-item">
+                        <strong>Para observar el nivel mínimo de desarrollo de competencias esperado hasta este punto:</strong>
+                        <p>La organización denominada Personas por la Ética en el Trato de los Zombis (PETZ) requiere un sistema accesible desde Internet con una base de datos centralizada para llevar un registro de zombis. Con este registro, PETZ podrá darle seguimiento a los zombis para asegurarse que reciban un trato adecuado considerando que alguna vez fueron humanos.</p>
+
+                        <p>La aplicación debe permitir 2 tipos de registro:</p>
+                        <ul>
+                            <li>1. Nuevos zombis con su nombre completo.</li>
+                            <li>2. El estado actual del zombi (infección, desorientación, violencia, desmayo, transformación), con su fecha y hora de registro del nuevo estado, de tal forma que sea posible tener el histórico de todos los estados por los que ha pasado un zombi. El usuario <strong>no</strong> debe ingresar la fecha y hora, la aplicación debe hacerlo de manera automática.</li>
+                        </ul>
+
+                        <p>Además, el sitio debe tener una sección para mostrar las siguientes consultas:</p>
+                        <ul>
+                            <li>1. Todos los registros de zombis con todas las actualizaciones de cada uno.</li>
+                            <li>2. La cantidad total de zombis registrados, y la cantidad de zombis en cada estado.</li>
+                            <li>3. Todos los registros de actualización de estado de zombis del más reciente al más antiguo por la fecha de su registro. </li>
+                            <li>4. Los registros de zombis con el estado elegido por el usuario y la cantidad de ellos.</li>
+                        </ul>
+                        <p>Debido a la política de <em>transparencia y participación ciudadana</em>, la aplicación debe permitir a cualquier persona hacer los registros y las consultas.</p>
+                        <p>Para tu fortuna, <em>Ellie</em> (única persona inmune al virus DAWDB) implementó la interfaz del usuario, pero no le fue posible implementar el <em>back-end</em> por no haber realizado los laboratorios del segundo parcial. Su código está disponible en: <a href="https://bitbucket.org/ejuarez/the_last_of_us" target="_blank">https://bitbucket.org/ejuarez/the_last_of_us</a>).</p>
+                        <p><strong>Nota 1:</strong> Recuerda que puedes manejar el guardado de las fechas y horas directamente con el motor de la base de datos, es decir, no necesitas un datepicker para manejar las fechas, ni generar la fecha desde php. </p>
+                        <p><strong>Nota 2:</strong> El examen es abierto, puedes consultar cualquier referencia (excepto comunicarte con tus compañeros).</p>
+                    </li>
+                    <li class="collection-item">
+                        <strong>Para obtener los grados más altos esperados en el desarrollo de competencias:</strong>
+                        <p>Idealmente, la aplicación debe ser una RIA (Rich Internet Application), es decir, las interacciones con el servidor deben ser asíncronas.</p>
+                        <p>Idealmente las interacciones con la base de datos deben ser por medio de procedimientos almacenados.</p>
+                    </li>
+                </ul>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="entrega">
+                <h5>
+                  <i class="small mdi-notification-event-available"></i>
+                  Entregables por mensaje directo de slack a edjuarezp
+                </h5>
+                <p>1. URL de la aplicación funcionando en la web.</p>
+                <p>2. Enlace al repositorio de git. El repositorio debe incluir el <strong>script de la base de datos</strong> y todos los archivos de código.</p>
+            </div>
+            <div class="divider"></div>
+
+
+            <div class="section" id="evaluacion">
+                <h5>
+                  <i class="material-icons">assessment</i>
+                  Evaluación
+                </h5>
+                <table class="highlight">
+                    <thead>
+                        <tr>
+                            <th>Competencia</th>
+                            <th>Nivel “Don't keep calm ... Run!” (Practicante)</th>
+                            <th>Nivel “Let me eat your br-a-a-a-a-a-a-i-n-s” (Ing. Junior)</th>
+                            <th>Nivel “Get that screwdriver out of my head!” (Ing. Senior)</th>
+                            <th>Nivel “Zombies, they love you for what is on the inside” (Arquitecto)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>3. Implementa sistemas de bases de datos que satisfacen requisitos de información y permiten la escalabilidad del sistema</th>
+                            <td>No hay evidencia de implementación de sistemas de bases de datos</td>
+                            <td>Diseña un modelo de datos que atiende de manera parcial las necesidades de información de un sistema de cómputo.</td>
+                            <td>Diseña un modelo de datos que atiende las necesidades de información de un sistema de cómputo considerando los posibles cambios que se presenten en el futuro. Es evidente el uso adecuado de consultas para la extracción de datos.</td>
+                            <td>Diseña un modelo de datos que atiende las necesidades de información de un sistema de cómputo considerando los posibles cambios que se presenten en el futuro. Es evidente el uso adecuado de consultas para la extracción de datos. Hay técnicas de automatización para creación de estructuras de bases de datos, cargas masivas de datos y <strong>procedimientos almacenados</strong>.</td>
+                        </tr>
+                        <tr>
+                            <th>5. Desarrolla aplicaciones web con interacción asíncrona con el servidor y que consumen servicios web</th>
+                            <td>No hay evidencia del desarrollo de una aplicación con comunicación entre un cliente y un servidor</td>
+                            <td>Desarrolla aplicaciones web sencillas con un uso adecuado de las peticiones HTTP, manejo correcto de sesiones, estilo arquitectónico MVC e interacción con una base de datos con operaciones para crear, modificar y borrar datos, así como consultas complejas y un nivel básico de seguridad.</td>
+                            <td>Desarrolla aplicaciones web enriquecidas con un uso adecuado de las peticiones HTTP, manejo correcto de sesiones, estilo arquitectónico MVC e interacción con una base de datos con operaciones para crear, modificar y borrar datos, así como consultas complejas, un nivel básico de seguridad e <strong>interacción asíncrona</strong> para las características usadas más frecuentemente.</td>
+                            <td><em>Se evalúa hasta el periodo final.</em></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="divider"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="blue darken-1 page-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h5 class="white-text">Secciones</h5>
+                    <ol class="grey-text text-lighten-3">
+                        <li><a class="grey-text text-lighten-3" href="#descripcion">Código de ética</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#descripcion">Información</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#objetivos">Competencias a evaluar</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#entrega">Entregables</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#evaluacion">Evaluación</a></li>
+                    </ol>
+                </div>
+            </div>
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+        </div>
+    </footer>
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+
+</body>
+
+</html>

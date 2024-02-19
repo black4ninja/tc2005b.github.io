@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Ejercicio 3: Construcción de un MER completo.</title>
+    <style>
+    </style>
+</head>
+
+<body>
+    <main>
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo">TC2005B Construcción de software y toma de decisiones</a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h3>Ejercicio 3: Construcción de un MER completo</h3>
+            </div>
+            <div class="section" id="modalidad">
+                 <h5>
+                  <i class="small mdi-social-group"></i>
+                  Modalidad
+                 </h5>
+                 <p>
+                  Equipo.<br />
+                 </p>
+             </div>
+
+                 <div class="divider"></div>
+             <div class="section" id="objetivos">
+                <h5>
+                <i class="small mdi-navigation-check"></i>
+                Objetivos de aprendizaje</h5>
+                <ul class="collection with-header">
+                          <li class="collection-item">Aplicar los conocimientos adquiridos acerca de la creación y diseño de los modelos Entidad-Relación.</li>
+                </ul>
+            </div>
+
+            <div class="section" id="instrucciones">
+                 <h5>
+                  <i class="small mdi-action-list"></i>
+                  Instrucciones</h5>
+                  <ul class="collection">
+                    <li class="collection-item">Analiza las tres situaciones que se describen y desarrolla el modelo
+                    Entidad-Relación que represente los requerimientos de datos, sólo para una de las tres situaciones,
+                    la que en equipo, decidan desarrollar.
+
+
+                <p> Además identifica posibles restricciones de integridad adicionales y documéntalas
+                en la forma en que se muestra en la lectura sobre restricciones adicionales de integridad.</p>
+                <p> En virtud de tratarse de modelos con cierto nivel de complejidad,
+                para evitar la saturación de los diagramas, mantén por separado un Diccionario
+                de datos en el que detallarás los atributos de las entidades y asociaciones.</p>
+
+                <p> Incluye en el diccionario la información que se muestra en el siguiente ejemplo:</p>
+                <p><strong>Entidad: Clientes</strong></p>
+
+            <table class="striped">
+                <thead>
+                    <th data-field="atributo">Nombre del atributo</th>
+                    <th data-field="descripcion">Descripción</th>
+                    <th data-field="tipo_dato">Tipo de dato</th>
+                    <th data-field="ejemplo">Ejemplo(s) de valore(s)</th>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>RFC </td>
+                        <td>Registro federal de contribuyentes
+                            <p> </td>
+                        <td>Caracteres (13)
+                            <p> </td>
+                        <td>ROME890409CU8
+                            <p> MARM9001032V3
+                            <p> </td>
+                    </tr>
+                    <tr>
+                        <td>RazonSocial
+                            <p> </td>
+                        <td>Razón social utilizada en facturación
+                            <p> </td>
+                        <td>Caracteres(100)
+                            <p> </td>
+                        <td>Embotelladora del centro S.A. de C.V
+                            <p> </td>
+                    </tr>
+                    <tr>
+                        <td>ClienteDesde
+                            <p> </td>
+                        <td>Arial de 10 puntos normal
+                            <p> </td>
+                        <td>Fecha
+                            <p> </td>
+                        <td>1/01/1998
+                            <p> </td>
+                    </tr>
+                    <tr>
+                        <td>DireccionEntrega
+                            <p> </td>
+                        <td>Dirección en la que se entrega la mercancía al cliente
+                            <p> </td>
+                        <td>Caracteres(150)
+                            <p> </td>
+                        <td>Blvd. Bernardo Quintana 1350,
+                            <p> Col. Arboledas, Querétaro, Qro.
+                            <p> </td>
+                    </tr>
+                    <tr>
+                        <td>DireccionFiscal
+                            <p> </td>
+                        <td>Dirección fiscal del cliente
+                            <p> </td>
+                        <td>Caracteres(150)
+                            <p> </td>
+                        <td>Pino Suárez 314, Col. Centro,
+                            <p> Querétaro, Qro.
+                            <p> </td>
+                    </tr>
+                </tbody>
+            </table>
+                </li>
+                <li class="collection-item">
+                    <p><strong>Situación 1: Visualizando las empresas de manufactura discreta</strong></p>
+
+                <p>En una empresa de manufactura discreta, los productos son distinguibles
+                como unidades producidas: un televisor, un refrigerador, un automóvil, un teléfono celular, una bicicleta.</p>
+                <p> Los productos se diseñan en términos de los sub ensambles que los integran, los cuales en muchos casos son a su vez productos.</p>
+                <p> Ejemplo:</p>
+                <p> - Un automóvil contiene un motor, y el motor por sí mismo es un producto comercializable.</p>
+                <p> Un producto, además de estar formado de otros productos, puede incluir materiales y refacciones,
+                de los cuales no se tienen necesariamente un control individual (número de serie),
+                pero sí se establece claramente de qué se trata, y que cantidad se requiere.</p>
+                <p> Ejemplos:</p>
+                <p>-     Para fabricar un automóvil se requieren 500 tornillos de acero de &frac14; de pulgada.</p>
+                <p>-     Para fabricar un motor eléctrico, se requieren 200 metros de alambre de cobre de 3 milímetros de diámetro..</p>
+                <p> -     La fabricación de un refrigerador requiere 12 litros de esmalte.</p>
+                <p> En general estos materiales y refacciones no son fabricados por la empresa, sino comprados a proveedores externos. En la medida en que las empresas minimizan la cantidad almacenada de estas refacciones y materiales reducen sus costos de almacenaje y la inversión en inventarios, por lo que buscan establecer contratos abiertos con los proveedores que garanticen surtirles &ldquo;justo a tiempo&rdquo; para contar con los materiales y refacciones al iniciar la producción que los requiere.
+                </p>
+                <p> De cualquier modo, es necesario establecer para algunos de estos materiales y refacciones una cantidad mínima a almacenar o punto de reorden que significa que al consumirse más allá de esta cantidad debe enviarse inmediatamente un pedido al proveedor.
+                </p>
+                <p> Dependiendo de la estructura de las empresas, los programas de producción se determinan con base en:
+                </p>
+                <p>
+                -     Las proyecciones de ventas
+                </p>
+                <p>-     Los pedidos de los clientes</p>
+
+                <p>
+                -    Una combinación de ambos
+                </p>
+                <p> Tanto las proyecciones de ventas como los pedidos  se integran de una o varias partidas, cada una de las cuales se refiere a un producto comercializable. En consecuencia, los programas de producción se integran asimismo de una o varias partidas de productos comercializables, de las cuales, con base en la integración del producto planteada en el diseño, a su vez derivan varias partidas de subensambles, incluyendo materiales y refacciones.
+                </p>
+                <p> Habitualmente, las plantas se dividen en líneas de producción, y para establecer un programa de producción, es necesario considerar la capacidad de las líneas para producir un cierto número de unidades de un subensamble por unidad de tiempo, a fin de canalizar las partidas a producir a las líneas adecuadas, de acuerdo a su capacidad. De hecho, el problema más complejo que afrontan las empresas de manufactura discreta es la planeación de la producción en términos de los requerimientos a cubrir y la capacidad de producción de las líneas.
+                </p>
+                <p> El costo de un producto comercializable puede determinarse sumando los costos de las materias primas que intervienen en su construcción, más el costo de proceso de cada uno de los subensambles que se requieren para construirlo y por último agregando el costo del producto comercializable en sí.
+                </p>
+                <p> En cuanto al control de calidad, tanto para cada uno de los materiales como para cada uno de los subensambles, se definen una serie de pruebas o mediciones en las que se establece un límite inferior, un límite superior y una frecuencia de muestreo. En general las frecuencias de muestreo de las pruebas pueden variar dependiendo de la línea de producción en que se manufactura el subensamble particular.
+                </p>
+
+                </li>
+                <li class="collection-item">
+                <p><strong> Situación 2: Visualizando las empresas de manufactura con proceso continuo</strong></p>
+                <p> En las una empresa de manufactura con proceso continuo, en lugar de unidades producidas, la producción se define en términos de volumen o peso producido, si bien en algunas ocasiones se manejan unidades de empaque como cajas, barriles o pacas, que de cualquier modo siempre están asociadas a un peso o volumen.
+                <p/>
+                <p> Ejemplos de este tipo de empresas son las industrias de extracción, las de producción de alimentos, las de fibras textiles, las de productos químicos y las de refinación y obtención de derivados del petróleo.
+                <p/>
+                <p> En este tipo de industrias la composición de los productos se define en términos de cantidades y proporciones de determinadas materias primas, y en ocasiones, como en el caso de las industrias de extracción, prácticamente se limitan a una materia prima, de modo que, a diferencia de la manufactura discreta, lo importante no son las partes que integran al producto, sino los subprocesos o etapas por las que el producto pasa.
+                <p/>
+                <p> En muchos casos al final de cada de cada subproceso se obtienen derivados o subproductos que son a su vez comercializables.
+                <p/>
+                <p> De particular interés para este tipo de empresas es el control de las variables de proceso y de las características físicas y químicas de los subproductos de cada etapa y del producto final. Para cada etapa se define un conjunto de variables a controlar y un conjunto de características a medir, mediante diversas pruebas. Para cada una de estas variables y características se establecen límites de tolerancia y una frecuencia de muestreo, ya sea en términos de tiempo transcurrido o de volumen producido.
+                <p/>
+                <p> Cuando se detecta una falla en las variables o características se debe decidir qué producción está afectada por la falla y &ldquo;degradarla&rdquo;, es decir, considerara de menor calidad o incluso considerarla desperdicio dependiendo de la magnitud del problema.
+                <p/>
+                </li>
+                <li class="collection-item">
+                <p><strong>Situación 3: Visualizando empresas de servicios</strong></p>
+                <p> Algunas empresas no tienen como fin generar productos para su venta en el mercado. Como ejemplos de ellas tenemos:
+                <p/>
+                <p>
+                - Un hotel
+                <p/>
+                <p>
+                - Una línea aérea
+                </p>
+                <p>
+                - Una compañía telefónica
+                </p>
+                <p>
+                - Un restaurante
+                </p>
+                <p>
+                - Una compañía de seguros
+                </p>
+                <p>
+                - Una agencia de viajes
+                </p>
+                <p> Estas empresas venden servicios, algo menos tangible que los productos, que relacionan a la empresa con sus clientes de manera temporal.
+                </p>
+                <p> Algunas empresas ofrecen diversos servicios mientras otras se circunscriben a unos cuantos. Cuando se presta un servicio a un cliente, éste le es facturado de acuerdo a la tarifa vigente para el servicio. Para ser prácticos, si un cliente va a recibir varios servicios, se permite que cada servicio prestado le sea registrado sin su cobro inmediato, y al momento de hacer un corte, los servicios registrados hasta el momento le sean facturados. Un caso típico de este tratamiento a los servicios es el de un hotel, en el que al corte de la habitación se cargan al cliente, además del cargo por cada pernocta, los consumos y llamadas telefónicas realizados.
+                </p>
+                <p> Algunas otras compañías facturan los servicios prestados al cliente en forma periódica, como las compañías telefónicas o las de seguros. En el primer caso, se establece un esquema de medición del servicio prestado y se factura al término del período; en el segundo caso, se preestablece el costo del servicio en términos de una póliza con una cobertura temporal (típicamente anual), y esta puede ser liquidada en una sola exhibición o en pagos periódicos. Para la empresa de servicios es importante programar el cobro de los servicios, presentarlos al cliente y asegurarse de que sean cubiertos.
+                </p>
+                <p> El cobro de los servicios puede hacerse en diversas formas: en efectivo, con cargo a una tarjeta de crédito, con cheque, y en algunos casos, con cargo a una cuenta bancaria del cliente. Para los casos en que la empresa ofrece el cobro a crédito, es importante mantener el saldo del cliente así como el registro de todos sus pagos para emitir estados de cuenta y tener elementos para cualquier aclaración.
+                </p>
+                <p> Al obtener un modelo de datos para empresas de servicios, puede optarse por buscar los elementos en común y crear un modelo configurable para diversas empresas, o bien centrarse en un tipo de empresa particular.
+                </p>
+
+                </li>
+                <li class="collection-item">
+                    <p><strong>Traducir el MER a MR</strong></p>
+
+                <p> Aplica las reglas de traslado de MER a MR y define que tablas son necesarias para conformar la BD que de soporte al diseño que propusieron.
+                </p>
+                <p> Utiliza la notación descrita en la lectura de &quot;reglas de traslado&quot; para representar las tablas definidas.</p>
+                </li></ul>
+
+                 <div class="section" id="entrega">
+                <h5>
+                  <i class="small mdi-notification-event-available"></i>
+                  Especificaciones de entrega
+                </h5>
+                 <p>A través de Bitbucket o GitHub</p>
+                 <p>Sólo un integrante deberá subir el archivo con indicar las matriculas y nombres de los integrantes del equipo.</p>
+              <div class="divider"></div>
+             </div>
+
+        </div>
+        </main>
+          <footer class="blue darken-1 page-footer">
+            <div class="container">
+               <div class="row">
+                   <div class="col">
+                       <h5 class="white-text">Secciones</h5>
+                <ol class="grey-text text-lighten-3">
+                  <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+                    <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
+                    <li><a class="grey-text text-lighten-3" href="#recursos">Recursos</a></li>
+                    <li><a class="grey-text text-lighten-3" href="#entrega">Especificaciones de entrega</a></li>
+                </ol>
+                       </div>
+                </div>
+                <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+            </div>
+          <div class="footer-copyright">
+            <div class="container">
+            © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+          </div>
+      </footer>
+
+
+      <!--Import jQuery before materialize.js-->
+      <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+      <script type="text/javascript" src="js/materialize.min.js"></script>
+</body>
+
+</html>
