@@ -1,0 +1,417 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Laboratorio 15: Conociendo el Ambiente de SQL Server</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+.Code { font-family:"Courier New", Courier, monospace; font-size:12px; color:#003366; background-color:#FFFFCC}
+.Estilo1 {font-family: Arial, Helvetica, sans-serif}
+.Estilo4 {font-family: Arial, Helvetica, sans-serif; color: #000000; }
+.Estilo3 {font-family: Arial, Helvetica, sans-serif; font-size: 9px; }
+body {
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+.Estilo5 {font-size: 14px}
+.Estilo6 {font-family: Arial, Helvetica, sans-serif; font-size: 14px; }
+.style1 {
+	text-decoration: underline;
+}
+-->
+</style>
+</head>
+
+<body>
+<table width="98%" border="0">
+  <tr>
+    <td><div align="right"><img src="../imagenes/actividades.jpg" width="600" height="50"></div></td>
+  </tr>
+  <tr>
+    <td style="height: 23px"><p align="left" class="Estilo4"><strong>Laboratorio 15: Conociendo el Ambiente de SQL Server</strong></p>
+    </td></tr>
+  <tr>
+    <td class="Estilo1 Estilo5"><p class="Estilo6"><strong><img src="../imagenes/objetivos.jpg" width="600" height="50"></strong></p>
+      <p class="Estilo6"> En esta pr&aacute;ctica extenderemos la biblioteca de 
+		rutinas nos facilitar&aacute;n el desarrollo de aplicaciones  cliente-servidor. Algunas de las funciones est&aacute;n propuestas para que  t&uacute; las mejores y en otros casos, s&oacute;lo se te proporcionan algunos  elementos para que las desarrolles.<br>
+        <br>
+Durante el laboratorio se realizaran algunas preguntas, crea un archivo llamado <strong>reporte.txt</strong> para que lo anexes a la entrega al final.</p>
+      <p class="Estilo6"><img src="../imagenes/instrucciones.jpg" width="600" height="50"></p>
+      <p class="Estilo6"><strong> </strong><br>
+        <font color="#3366ff"
+ face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> 
+ </b></font>Crea un proyecto <b>Windows Forms Application </b> en C#. 
+		Con la siguiente apariencia, se espera que el nombre de los controles 
+		utilice las convenciones descritas en la sesi�n de clase. 
+<div align="center"><img src="lab11/lab11A.jpg" width="864" height="397"><br> </div>
+	<br>
+        <font color="#3366ff"
+ face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> 
+ </b></font>Al proyecto actual, agrega la clase <a href="lab11/Util.cs">&nbsp;<strong>util.cs</strong></a> 
+	que desarrollaste en el laboratorio pasado. En caso de que no lo encuentres, 
+	en la liga anterior se encuentra su implementaci�n.<br>
+	<br>
+	<br>
+	<div align="center"> <img src="lab11/lab11b.jpg" width="681" height="460"><br> </div>
+	<br>
+	<br>
+&nbsp;<div align="center">
+		<br> </div>
+	<br>
+En esta clase agregaremos nuevos m�todos los cuales podr�n ser accesibles desde 
+	cualquier forma de la aplicaci�n, o incluso utilizados en otros proyectos 
+	(reutilizaci�n de c�digo).<br>
+	<br>
+	<strong>Importante</strong> :Antes de comenzar a agregar el c�digo, dentro 
+	de la clase que acabas de incluir en el proyecto, debes modificar el nombre 
+	del <strong>namespace</strong> al nombre que asign� autom�ticamente la 
+	herramienta.<br>
+<br>
+<font color="#000000"><img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font><b>Complementando nuestra biblioteca.</b><br>
+<br>
+	<font color="#3366ff" face="Courier New, Courier, monospace"><b><br>
+	<img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>
+	Introduce al final de la clase <strong>util.cs</strong> los siguientes 
+	m�todos, se recomienda que los metas a mano y de este forma ir entendiendo 
+	el c�mo est�n implementados internamente para poder posteriormente contestar 
+	las preguntas:<br>
+<pre class="Code">
+/**
+--------------------------------------------------------------------------------------------------------
+Esta funci�n permite ejecutar estatutos DML (insert, update y delete).                                                                 
+                                                                                                            
+@param  DML   Sentencia DML que se va a ejecutar en la base de datos                                  
+@return  Verdadero si se ejecut� sin problemas, falso en caso contrario                               
+--------------------------------------------------------------------------------------------------------
+        
+**/
+
+   public static bool execute(String DML)
+   {
+      SqlCommand command = new SqlCommand(DML, connection);
+
+       try
+       {
+           connection.Open();
+           command.ExecuteNonQuery();
+           connection.Close();
+           return true;
+       }
+       catch (SqlException ex)
+       {
+          String err;
+            err = "Error de base de datos al ejecutar el comando" 
+                + Environment.NewLine + ex.Message;
+            msgError(err);
+            return false;
+       }
+       catch(Exception ex)
+       {
+            String err;
+            err = "Error al ejecutar el comando" 
+                + Environment.NewLine + ex.Message;
+            msgError(err);
+            return false;  
+       }
+       finally
+       {
+           try
+           {
+               connection.Close();
+           }
+           catch { }
+       }
+   }
+
+
+/**
+ * ---------------------------------------------------------------------------------------------------------'
+     Llena el DataGrid pasado como par�metro con los datos que se recuperan del query pasado como           '
+     par�metro.                                                                                             '
+                                                                                                            '
+     @param  grid   El DataGrid que se va a llenar con los datos del query                                  '
+     @param  query  El query que se quiere ejecutar en la base de datos.                                    '
+   --------------------------------------------------------------------------------------------------------'
+   
+ * */
+  
+   public static void fillGrid (DataGridView grid, String query)
+   {
+     DataTable table;
+     table = getData(query);
+
+     if (table !=null)
+         grid.DataSource = table;
+    }
+    
+    
+</pre>
+<p><b>&iquest;Describe a detalle qu� hace cada m�todo?, tu descripci�n de 
+incluir lo 
+que ocurre en los escenarios de excepci�n. <br>
+      <br>
+  </b><br>
+  <img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> <font color="#3366ff" face="Courier New, Courier, monospace"><b> &nbsp;</b></font>Prueba 
+que estos 2 m�todos funcionan correctamente, recuerda que en el evento de load 
+de la forma debes abrir la conexi�n de la misma manera en que lo hiciste el 
+laboratorio pasado. Por ejemplo podr�as mostrar TODOS los datos de la tabla de 
+entregan y en un bot�n evaluar que al menos puedes dar de alta un registro. <br>
+	</p>
+	<font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>
+	Nuevamente al final de la clase introduce el siguiente procedimiento, el 
+	cu�l mostrar� el primer registro de una consulta autom�ticamente en los 
+	controles de una forma. <br>
+	<pre class="Code">
+    /**
+   ---------------------------------------------------------------------------------------------------------
+     Llena la forma pasada como par�metro utilizando el query pasado como par�metro. Dentro de la forma     
+     deben haber controles que tengan los mismos nombres que las columnas que se encuentran en el query.    
+     Por ejemplo, si el query es 'SELECT nombre FROM usuarios' debe haber un control llamado 'nombre' entre 
+     los controles de la forma                                                                              
+                                                                                                            
+   @param  form   La forma que se quiere llenar con los datos                                                
+   @param  query  El query que se quiere ejecutar en la base de datos.                                      
+   ---------------------------------------------------------------------------------------------------------
+ **/
+
+   public static void showData(Form form, String query)
+   {
+     DataTable table;
+     table = getData(query);
+         
+     if (table!=null)
+     {
+         foreach (Control ctrl in form.Controls)
+         {
+            // Si existe un campo asociado al nombre del control
+            
+            if(table.Columns.Contains(ctrl.Name)) 
+            {
+                if (ctrl is TextBox || ctrl is MaskedTextBox)
+                   ctrl.Text = table.Rows[0][ctrl.Name].ToString();
+                else if (ctrl is ComboBox || ctrl is ListBox)
+                       ((ComboBox)ctrl).SelectedValue = table.Rows[0][ctrl.Name].ToString();
+                else if (ctrl is DateTimePicker)
+                   ((DateTimePicker)ctrl).Value = (DateTime)(table.Rows[0][ctrl.Name]);
+                else
+                   try
+                   {
+                      ctrl.Text = table.Rows[0][ctrl.Name].ToString();    
+                   }
+                    catch (Exception ex)
+                   {
+                       String err;
+                       err = "Error al ejecutar <showdata>" 
+                       + Environment.NewLine + ex.Message;
+                       msgError(err);
+                   }
+            }
+         }
+     } 
+   }
+</pre>
+<b>&iquest;Qu&eacute; significa form.Controls?<br>
+&nbsp;<br>
+&iquest;De qu&eacute; manera se consigue que el valor de determinada columna
+      en la sentencia SQL se asigne al control que le corresponde en la
+      forma?<br>
+	<br>
+	�Qu� modificaciones o extensiones realizar�as al m�todo para que puede 
+	utilizar otros controles (componentes GUI)?<br>
+</b><br>
+<font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>
+	Por analog�a al m�todo showData&nbsp; 
+			(debes de analizarlo muy bien) define el m�todo <strong>clear()</strong> que recibe una forma como par&aacute;metro
+  y limpia su contenido, con las siguientes consideraciones:
+            <blockquote>
+<img src="../imagenes/ball.gif" alt="" height="8" width="8"> Si el control es TextBox, deber&aacute; asignar una cadena vac&iacute;a
+              a la propiedad Text.<br>
+  
+<img src="../imagenes/ball.gif" alt="" height="8" width="8"> Si el control es ListBox o ComboBox, deber&aacute; hacer la propiedad selectedValue =
+              -1 (esto indica que no se ha seleccionado de la lista)<br>
+  
+<img src="../imagenes/ball.gif" alt="" height="8" width="8"> Si el control es CheckBox, deber&aacute; asignar false a la propiedad Checked (esto muestra el CheckBox sin seleccionar).<br>
+... etc.<br>
+<br>
+Recuerda definir los comentarios que lo describan al igual que los otros 
+m�todos.<br>
+            </blockquote>
+            <p>
+    <font color="#000000"><img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font><b>Probando la biblioteca</b><br>
+    <br>
+              Utilizaremos la Form1 que por <b>default </b>aparece en el proyecto para
+              probar las Sub's (procedimientos)&nbsp; y funciones de nuestra biblioteca. <br>
+    <br>
+              Crea una forma como la que se muestra en la imagen:</p>
+            <div align="center">
+				<img src="lab11/lab11A.jpg" width="864" height="397"><br> </div> 
+            <p>
+                <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>
+			Recuerda que para que funcione el m&eacute;todo <b>showData</b> debes de asignar <strong>un 
+              nombre igual al nombre de las columnas</strong> que est&aacute;s mostrando en los controles que 
+              muestran informaci&oacute;n. (excepto el DataViewGrid). </p>
+            <p>
+                <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>
+			Prueba el funcionamiento de los m�todos <b>fillList y fillGrid </b>,
+              llam&aacute;ndolas desde el evento <b>Load </b>de la forma.
+              Con sus respectivos par&aacute;metros, <u>es importante que hayas comprendido
+                que hace cada rutina para que puedas saber que hacer con ellas en esta secci&oacute;n,
+                si no es as&iacute; regresa a la secci&oacute;n anterior del 
+				laboratorio pasado</u>. No 
+			olvides abrir la conexi�n a la base de datos.<br>
+                <br>
+                <b>
+                <font color="#3366ff" face="Courier New, Courier, monospace"><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </font> </b>
+			Cambia la propiedad <strong>SelectionMode</strong> del <strong>DataGridView</strong> a 
+			<strong>FullRowSelect</strong> para que al seleccionar una celda, se 
+			selecciones el rengl�n completo, posteriormente agregaremos la funcionalidad de que al hacer
+			<strong>click</strong> sobre un rengl&oacute;n se muestre ese valor en 
+      los dem&aacute;s controles de la forma . Para ello utilizaremos el evento
+			<strong>RowEnter</strong> del <strong>DataGridView,</strong> 
+			recuerda que el encabezado del m�todo se genera desde las 
+			propiedades del control:</p>
+            <pre class="Code">
+            
+      private void gridEntregas_RowEnter(object sender, DataGridViewCellEventArgs e)
+        {
+
+            int mClave,mNumero;
+            String mRfc;
+            DateTime mFecha;
+
+            // obtenemos datos desde el grid 
+
+            mClave = Int32.Parse(gridEntregas.Rows[e.RowIndex].Cells[0].Value.ToString());
+            mRfc = gridEntregas.Rows[e.RowIndex].Cells[1].Value.ToString();
+            mNumero = Int32.Parse(gridEntregas.Rows[e.RowIndex].Cells[2].Value.ToString());
+            mFecha = (DateTime)gridEntregas.Rows[e.RowIndex].Cells[3].Value;
+
+            String sqlActiveRow;
+            sqlActiveRow = "SELECT * FROM Entregan WHERE clave = " +
+                           mClave + " AND rfc = '" +
+                           mRfc + "' AND numero = " +
+                           mNumero + " AND fecha = " + 
+                           "'" + mFecha.ToString("yyyy/MM/dd") + "'";
+            
+            Util.showData(this,sqlActiveRow);
+
+        }
+           </pre>
+            <p> <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>Incluye los botones 
+			<strong>Agregar</strong>, <strong>Eliminar</strong> y <strong>
+			Modificar</strong>. Mediante la utilizaci&oacute;n de sentencias DML y la 
+			utilizaci�n del 
+              m&eacute;todo <b>execute </b>y codificaremos el bot�n de agregar, 
+			por analog�a implementa los 2 restantes.</p>
+            <pre class="Code">
+       
+       private void btnAgregar_Click(object sender, EventArgs e)
+        {
+            String dml;
+            
+            // Recuperamos los valores a insertar
+
+            int mClave;
+            String mRfc;
+            int mNumero;
+            String mFecha;
+            double mCantidad;
+
+            mClave = Int32.Parse(Clave.SelectedValue.ToString());
+            mRfc = RFC.SelectedValue.ToString();
+            mNumero = Int32.Parse(Numero.SelectedValue.ToString());
+            mFecha = Fecha.Value.ToString("d/M/yyyy HH:mm:ss"); // Especificamos el formato US
+            mCantidad = Double.Parse(Cantidad.Text);
+
+            dml = "set dateformat dmy ";
+            dml += "insert into entregan values ("+ mClave +"," 
+                                                 + "'" + mRfc + "',"
+                                                 + mNumero + ","
+                                                 + "'" + mFecha + "',"
+                                                 + mCantidad + ")";
+            
+            
+            // Ejecutamos la sentencia y actualizamos el grid
+            if (Util.execute(dml))
+            {
+                MessageBox.Show("El registro se ha agregado correctamente!!!");
+                Util.fillGrid(gridEntregas, "SELECT * FROM Entregan");
+               // Util.clear(this); 
+
+            }           
+        }
+
+            </pre>
+            <p> <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>Una consideraci&oacute;n sumamente importante es que el manejo de fechas var&iacute;a dependiendo de cada manejador de bases de datos. Las sentencias que modifican la base de datos deben de realizarse de acuerdo al manejador y al formato de fecha utilizado. En el caso de SQL Server el formato de fecha generalmente aceptado es 'yyyy/mm/dd' (las comillas deben agregarse, yyyy es el a&ntilde;o, mm el mes y dd el d&iacute;a, todos en n&uacute;meros). Generalmente aceptado ya que es posible cambiar el formato utilizando la funci&oacute;n setDateFormat en SQL Server, esta pr&aacute;ctica no es recomendable en aplicaciones porque no sabemos qu&eacute; formato utiliza el manejador y no sabemos si alg&uacute;n otro programador usa otro formato. Debido a esto, es recomendable mandar la fecha de la siguiente manera (donde 
+			mFecha es una variable tipo Date):</p>
+            <pre class="Code">Fecha.Value.ToString("d/M/yyyy HH:mm:ss");</pre>
+            <p>Si se utiliza Access se debe utilizar un formato de fecha diferente #dd/mm/yyyy# y adem&aacute;s, el orden de los d&iacute;as var&iacute;a con el lenguaje de Access. </p>
+            <p> <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>
+			Antes de considerar tu laboratorio como terminado es importante que 
+			consideres las restricciones que hasta el momento tienen los m�todos
+			<strong>showData()</strong> y para <strong>clear()</strong> ya que
+			<span class="style1">solamente se modifican los controles que est&eacute;n directamente dentro de la forma</span>, <strong>NO</strong> se modifican los controles que sean parte de otra agrupaci&oacute;n (es decir, si tienes un frame o un group box no se van a borrar los elementos dentro de &eacute;l. </p>
+	<p> <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>Puedes modificar el m&eacute;todo 
+	<strong>clear()</strong> para que reciba un Control como par�metro en vez de 
+	una forma (que a su vez es un control) y de esta manera el m&eacute;todo se vuelve un poco m&aacute;s gen&eacute;rico. 
+	Para ello puedes incluir el siguiente c&oacute;digo para volver a invocar el m&eacute;todo con cada control que tenga hijos:</p>
+            <pre class="Code">    if (ctrl.HasChildren)
+        clear(ctrl)
+            </pre>
+            <p> 
+			___________________________________________________________________________________________________</p>
+	<p> 
+			Como parte del laboratorio, se pide que en el reporte se incluya una 
+			investigaci�n y/o definici�n, no muy extensa, para conocer las 
+			siguientes herramientas disponibles para Windows Forms y que te 
+			pueden ser de ayuda en la realizaci�n de tu proyecto.</p>
+	<p> 
+			Contesta las siguientes preguntas para cada uno: <strong>�Qu� uso 
+			tiene? �Qu� operaciones permite? �Qu� usos o en donde los puedes 
+			utilizar en tu proyecto?</strong></p>
+	<p> 
+			A modo de ejemplo, describiremos uno de los elementos que ya has 
+			usado. </p>
+	<p> 
+			El <strong>DataGridView</strong> es un control que es usado para el 
+			despliegue de los valores de un conjunto de datos en una tabla. Cada 
+			columna representa un campo, mientras que cada fila representa un 
+			registro. El DataGridView soporta vinculaci�n con controles de tipo 
+			SqlDataSoruce, capacidad de ordenamiento, actualizaci�n, 
+			eliminaci�n, paginado, selecci�n, construcci�n din�mica por medio de 
+			c�digo. Generalmente, vas a utilizar un DataGridView para mostrar 
+			informaci�n por ejemplo: Listas los miembros de un equipo, Los 
+			productos actuales en el inventario, entre otros. </p>
+	<ul>
+		<li>DateTimerPicker</li>
+		<li>FolderBrowserDialog</li>
+		<li>GroupBox</li>
+		<li>HelpProvider</li>
+		<li>ListBox</li>
+		<li>ListView</li>
+		<li>MaskedTextBox</li>
+		<li>OpenFileDialog</li>
+		<li>Panel</li>
+		<li>ProgressBar</li>
+		<li>SplitContainer</li>
+		<li>TrackBar</li>
+		<li>TreeView</li>
+	</ul>
+            <p class="Estilo6"><img src="../imagenes/especificaciones.jpg" width="600" height="50"></p>
+      <p class="Estilo6"><strong>La calificaci&oacute;n de esta actividad     es de 
+		car�cter individual.<br>
+          <br>
+Env&iacute;a el laboratorio por este medio , archivo lab11 +  matricula.zip.</strong></p>
+	</td>
+  </tr>
+  </table>
+
+<map name="Map"><area shape="rect" coords="5,6,103,123" href="../../semana7/lab11/proveedores.csv">
+<area shape="rect" coords="130,7,229,123" href="../../semana7/lab11/proyectos.csv">
+<area shape="rect" coords="255,7,352,122" href="../../semana7/lab11/entregan.csv">
+<area shape="rect" coords="373,5,474,122" href="../../semana7/lab11/materiales.csv">
+</map></body>
+</html>

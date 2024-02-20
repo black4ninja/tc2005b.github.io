@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--<meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">-->
+    <script type="text/javascript" src="lab5POE.js"></script>
+
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+
+    <title>Lab 7: Manejo de ramas</title>
+</head>
+
+<body>
+    <header></header>
+
+    <main>
+
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h3>Lab 7: Manejo de ramas</h3>
+            </div>
+
+            <div class="section" id="descripcion">
+                <h5>
+                  <i class="small mdi-action-info-outline"></i>
+                  Descripción
+                </h5>
+                <p>En esta actividad exploraremos el uso de ramas para controlar e integrar diferentes versiones de código. </p>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="modalidad">
+                <h5>
+                  <i class="small mdi-social-group"></i>
+                  Modalidad
+                 </h5>
+                <p>
+                    Colaborativa
+                    <br />
+                </p>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="objetivos">
+                <h5>
+                <i class="small mdi-navigation-check"></i>
+                Objetivos de aprendizaje</h5>
+                <p>
+                    <i class="small mdi-image-looks-one"></i>Conocer, explorar y aplicar frameworks de estilos para aplicaciones web.
+                </p>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="instrucciones">
+                <h5>
+                  <i class="small mdi-action-list"></i>
+                  Instrucciones</h5>
+
+                <ul class="collection">
+                    <li class="collection-item">
+                        <p><i class="small mdi-image-looks-one"></i>
+                            Presta mucha atención a la demostración del profesor en la sesión de clase. Es importante que preguntes conforme te van surgiendo dudas.
+                        </p>
+                    </li>
+                    <li class="collection-item">
+                        <p><i class="small mdi-image-looks-two"></i>
+                            En equipo, creen un repositorio para su proyecto en BitBucket, GitHub o GitLab.
+                        </p>
+                    </li>
+                    <li class="collection-item">
+                        <p><i class="small mdi-image-looks-3"></i>
+                            Una persona del equipo, deberá clonar el repositorio de manera local, y a partir de la rama <code>main</code> o <code>master</code>, deberá crear la rama <code>develop</code>, agregar un archivo <code>index.html</code> y sincronizar la rama <code>develop</code> local, con la rama <code>develop</code> remota.
+                        </p>
+                        <p>A partir de este momento, éste será su espacio de trabajo en su proyecto (a.k.a. Single Repository of Truth). Únicamente el código que se encuentre integrado en las ramas <code>main o master</code> y <code>develop</code>, formará oficialmente parte de su proyecto y se considerará como evidencia para evaluación.</p>
+                    </li>
+                    <li class="collection-item">
+                        <p><i class="small mdi-image-looks-4"></i>
+                            Una persona por equipo debe compartir el <strong>enlace</strong> del repositorio de equipo junto con los <strong>nombres y matrículas</strong> de todos sus miembros en el canal de slack <strong>#tc2005b_proyectos</strong>, para que se pueda revisar y retroalimentar su trabajo.</p>
+                            <p><strong>Realizar esta acción es indispensable para tener calificación en los avances de proyecto. No realizarla implica 0 en TODAS las actividades que se entregan por medio del repositorio de equipo.</strong></p> 
+                    </li>
+                    <li class="collection-item">
+                        <p><i class="small mdi-image-looks-5"></i>Algunos puntos importantes a considerar:</p>
+                        <ul>
+                            <p>-Las ramas <code>main o master</code> y <code>develop</code> son de integración, nunca se escribe código directamente en ellas.</p>
+                            <p>-Todo el código debe escribirse en ramas personales, derivadas siempre de la versión más reciente de <code>develop</code>.</p>
+                            <p>-Idealmente, en cada sesión de trabajo debe crearse una <strong>nueva</strong> rama personal nombrada <code>nombre/feature</code>. Durante la sesión debe terminarse el trabajo y el código debe quedar estable para que al final de la sesión, la rama personal se integre a la rama <code>develop</code>.</p>
+                            <p>-Idealmente, en cada sesión de trabajo deben realizarse varios commits, cada uno, con una unidad pequeña, lógica y completa de trabajo.</p>
+                            <p>-Entre más tiempo pase entre una integración y otra, mayor es la probabilidad de conflictos, y más riesgoso es arreglarlos, por lo que es importante integrar el trabajo frecuentemente para reducir esta posibilidad.</p>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <div class="divider"> </div>
+
+            <div class="section" id="preguntas">
+                <h5>
+                    <i class="small mdi-action-question-answer"></i>
+                    Preguntas a responder
+                  </h5>
+                <ul class="collection">
+                    <li class="collection-item"> </li>
+                </ul>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="recursos">
+                <h5>
+                <i class="small mdi-content-link"></i>
+                  Recursos</h5>
+                <tr>
+                    <td>
+                        <ul class="collection">
+                            <li class="collection-item"><a  href="https://docs.google.com/presentation/d/1b9MTAOGbKB931l1d7VxxIC9BXx1_YQAdKXhUfKJ9yUE/edit?usp=sharing" target="_blank">Presentación de la sesión de clase </a></li>
+                            <li class="collection-item"><a  href="http://nvie.com/posts/a-successful-git-branching-model/" target="_blank">A successful branching model (Driessen) </a></li>
+                            <li class="collection-item"><a href="https://www.freecodecamp.org/news/writing-good-commit-messages-a-practical-guide/" target="_blank">Writing good commit messages</a></li>
+                            <li class="collection-item"><a href="https://learngitbranching.js.org" target="_blank">Learn Git Branching</a></li>
+                            <li class="collection-item"><a href="https://www.freecodecamp.org/news/git-the-laymans-guide-to-understanding-the-core-concepts/" target="_blank">The Beginner's Guide to Understanding Core Version Control Concepts </a></li>
+                            <li class="collection-item"><a href="https://medium.com/better-programming/how-to-remove-committed-files-from-git-version-control-b6533b8f9044" target="_blank">How To Remove Committed Files From Git Version Control</a></li>
+                        </ul>
+                    </td>
+                </tr>
+            </div>
+            <div class="divider"></div>
+
+
+            <div class="section" id="entrega">
+                <h5>
+                  <i class="small mdi-notification-event-available"></i>
+                  Especificaciones de entrega
+                </h5>
+                <p>En el canal de slack <strong>#tc2005b_proyectos</strong></p>
+                <div class="divider"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="blue darken-1 page-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h5 class="white-text">Secciones</h5>
+                    <ol class="grey-text text-lighten-3">
+                        <li><a class="grey-text text-lighten-3" href="#descripcion">Descripci&oacute;n</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#recursos">Recursos</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#entrega">Especificaciones de entrega</a></li>
+                    </ol>
+                </div>
+            </div>
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro. 
+            </div>
+        </div>
+    </footer>
+
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+</body>
+
+</html>

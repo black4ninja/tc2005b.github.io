@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Inner y Outer Joins SQL</title>
+</head>
+
+<body>
+    <main>
+
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="../index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B Construcción de software y toma de decisiones</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h3>SQL 2 - Otra alternativa para hacer los JOINS entre tablas.</h3>
+            </div>
+        </div>
+
+        <div class="container" style="text-align: justify;">
+              <p><strong><i class="material-icons dp48">label</i> Introducci&oacute;n </strong></p>
+            <p></p>
+            <p>Las vinculaciones entre tablas tambi&eacute;n pueden se realizan mediante la cl&aacute;usula 
+            <strong>INNER</strong> que combina registros de dos tablas siempre que haya concordancia de valores en un campo com&uacute;n. Su sintaxis es:
+            <br> 
+            <br> 
+            <span class=codigo> 
+              SELECT campos FROM tb1 INNER JOIN tb2 ON
+              <br> 
+              tb1.campo1 comp tb2.campo2
+            </span> 
+            <br> 
+            <br> 
+            <b><i class="material-icons dp48">label_outline</i> </b> En donde:
+            </p>
+
+            <table class="striped"> 
+              <tr> 
+                <td>tb1, tb2</td><td>Son los nombres de las tablas desde las que se combinan los registros.</td>    
+              </tr> 
+              <tr> 
+                <td>campo1, campo2</td><td>Son los nombres de los campos que se combinan. Si los campos no son num&eacute;ricos, los campos deben ser del mismo tipo de dato, pero no tienen que tener el mismo nombre.</td>  
+              </tr> 
+              <tr> 
+                <td>comp</td><td>Es cualquier operador de comparaci&oacute;n relacional: =, &lt;,&lt;&gt;, &lt;=, =&gt;, &oacute; &gt;.</td>  
+              </tr>
+            </table> 
+
+            <br> 
+
+            Se puede utilizar una operaci&oacute;n <strong>INNER JOIN</strong> en cualquier cl&aacute;usula <strong>FROM</strong>. Esto crea una combinaci&oacute;n por equivalencia, conocida tambi&eacute;n como uni&oacute;n interna. Las combinaciones equivalentes son las m&aacute;s comunes; &eacute;stas combinan los registros de dos tablas siempre que haya concordancia de valores en un campo com&uacute;n a ambas tablas. Se puede utilizar <strong>INNER JOIN</strong> con las tablas Departamentos y Empleados para seleccionar todos los empleados de cada departamento. Por el contrario, para seleccionar todos los departamentos (incluso si alguno de ellos no tiene ning&uacute;n empleado asignado) se emplea <strong>LEFT JOIN</strong> o todos los empleados (incluso si alguno no est&aacute; asignado a ning&uacute;n departamento), en este caso <strong>RIGHT JOIN</strong>.
+            
+            <br> 
+            <br> 
+            Si se intenta combinar campos que contengan datos Memo u Objeto OLE, se produce un error. Se pueden combinar dos campos num&eacute;ricos cualesquiera, incluso si son de diferente tipo de dato.<br> 
+            <br>
+            <b><i class="material-icons dp48">label_outline</i> </b> El ejemplo siguiente muestra c&oacute;mo podr&iacute;a combinar las tablas Categor&iacute;as y Productos bas&aacute;ndose en el campo IDCategoria:
+            
+            <br> 
+            <br>
+            
+            <strong>Ejemplo 1:</strong><br>
+            
+            <br> 
+            
+            <span class=codigo> 
+              SELECT NombreCategoria, NombreProducto
+              <br> 
+              FROM Categorias INNER JOIN Productos
+              <br> 
+              ON Categorias.IDCategoria = Productos.IDCategoria
+            </span> 
+            <br> 
+            <br> 
+            En el ejemplo anterior, IDCategoria es el campo combinado, pero no est&aacute; incluido en la salida de la consulta ya que no est&aacute; incluido en la instrucci&oacute;n SELECT. Para incluir el campo combinado, incluir el nombre del campo en la instrucci&oacute;n SELECT, en este caso, Categorias.IDCategoria.
+            <br> 
+            <br> 
+                        <b><i class="material-icons dp48">label_outline</i> </b> Tambi&eacute;n se pueden enlazar varias cl&aacute;usulas ON en una instrucci&oacute;n JOIN, utilizando la sintaxis siguiente:
+            <br> 
+                        <br>
+                        <strong>Ejemplo 2:<br>
+                        </strong> 
+            <br> 
+            <span class=codigo> 
+                SELECT campos FROM tabla1 INNER JOIN tabla2
+                <br> 
+                ON (tb1.campo1 comp tb2.campo1 AND ON tb1.campo2 comp tb2.campo2)
+                <br> 
+                OR ON (tb1.campo3 comp tb2.campo3)
+            </span> 
+            <br> 
+            <br> 
+                        <br>
+                        <b><i class="material-icons dp48">label_outline</i> </b>Adem&aacute;s se puede anidar instrucciones JOIN utilizando la siguiente sintaxis:
+            <br> 
+                        <br>
+                        <strong>Ejemplo 3:<br>
+                        </strong> 
+            <br> 
+            <span class=codigo> 
+                SELECT campos FROM tb1 INNER JOIN (tb2 INNER JOIN [( ]tb3
+                <br> 
+                [INNER JOIN [( ]tablax [INNER JOIN ...)] 
+                <br> 
+                ON tb3.campo3 comp tbx.campox)]
+                <br> 
+                ON tb2.campo2 comp tb3.campo3)
+                <br> 
+                ON tb1.campo1 comp tb2.campo2
+            </span> 
+            <br> 
+            <br> 
+            Un <strong>LEFT JOIN </strong>o un <strong>RIGHT JOIN</strong> puede anidarse dentro de un 
+                        <strong>INNER JOIN</strong>, pero un <strong>INNER JOIN</strong> no puede anidarse dentro de un 
+                        <strong>LEFT JOIN</strong> o un <strong>RIGHT JOIN</strong>.
+            <br> 
+            <br> 
+                        <strong>Ejemplo 4:</strong><br> 
+            <br> 
+            <span class=codigo> 
+            SELECT DISTINCT
+            Sum(PrecioUnitario * Cantidad) AS Sales, 
+                (Nombre + ' ' + Apellido) AS Name
+            <br> 
+            FROM Empleados
+            <br>
+            INNER JOIN<strong>(</strong>
+            <br> 
+                Pedidos
+            <br> 
+            INNER JOIN
+                DetallesPedidos 
+                ON
+            <br> 
+                Pedidos.IdPedido = DetallesPedidos.IdPedido<strong>)</strong>
+            <br> 
+                ON
+            <br> 
+                Empleados.IdEmpleado = Pedidos.IdEmpleado
+            <br> 
+            GROUP BY
+            <br> 
+                Nombre + ' ' + Apellido 
+            <br> 
+            </span> 
+            <br> 
+            (Crea dos combinaciones equivalentes: una entre las tablas Detalles de pedidos y Pedidos, y la otra entre las tablas Pedidos y Empleados. Esto es necesario ya que la tabla Empleados no contiene datos de ventas y la tabla Detalles de pedidos no contiene datos de los empleados. La consulta produce una lista de empleados y sus ventas totales.)
+            <br> 
+            <br> 
+            Si empleamos la cl&aacute;usula INNER en la consulta se seleccionar&aacute;n s&oacute;lo aquellos registros de la tabla de la que hayamos escrito a la izquierda de INNER JOIN que contengan al menos un registro de la tabla que hayamos escrito a la derecha. Para solucionar esto tenemos dos cl&aacute;usulas que sustituyen a la palabra clave INNER, estas cl&aacute;usulas son LEFT y RIGHT. LEFT toma todos los registros de la tabla de la izquierda aunque no tengan ning&uacute;n registro en la tabla de la izquierda. RIGHT realiza la misma operaci&oacute;n pero al contrario, toma todos los registros de la tabla de la derecha aunque no tenga ning&uacute;n registro en la tabla de la izquierda.
+            <br> 
+            <br> 
+            La sintaxis expuesta anteriormente pertenece a ACCESS, en donde todas las sentencias con la sintaxis funcionan correctamente. Los manuales de SQL-SERVER dicen que esta sintaxis es incorrecta y que hay que a&ntilde;adir la palabra reservada OUTER: LEFT OUTER JOIN y RIGHT OUTER JOIN. En la pr&aacute;ctica funciona correctamente de una u otra forma.
+            <br> 
+            <br> 
+                        <strong><i class="material-icons dp48">label</i>  </strong>No obstante, los 
+                        <strong>INNER JOIN en ORACLE</strong> no es capaz de interpretarlos, pero existe una sintaxis en formato ANSI para los INNER JOIN que funcionan en todos los sistemas. Tomando como referencia la siguiente sentencia:
+            <br> 
+            <br> 
+            <span class=codigo> 
+            SELECT
+            <br> 
+                Facturas.*, 
+            <br> 
+                Albaranes.* 
+            <br> 
+            FROM
+            <br> 
+                Facturas
+            <br> 
+            INNER JOIN
+            <br> 
+                Albaranes
+            <br> 
+            ON
+            <br> 
+                Facturas.IdAlbaran = Albaranes.IdAlbaran
+            <br> 
+            WHERE
+            <br> 
+                Facturas.IdCliente = 325
+            <br> 
+            <br> 
+                        <b><i class="material-icons dp48">label_outline</i> </b> 
+            </span> 
+            La transformaci&oacute;n de esta sentencia a formato ANSI ser&iacute;a la siguiente:
+            <br> 
+            <br> 
+            <span class=codigo> 
+            SELECT
+            <br> 
+                Facturas.*, 
+            <br> 
+                Albaranes.*
+            <br> 
+            FROM
+            <br> 
+                Facturas, Albaranes 
+            <br> 
+            WHERE
+            <br> 
+                Facturas.IdAlbaran = Albaranes.IdAlbaran
+            <br> 
+                AND
+            <br> 
+                Facturas.IdCliente = 325
+            </span> 
+            <br> 
+            <br> 
+            Como se puede observar los cambios realizados han sido los siguientes:
+                        <ol> 
+               <li>Todas las tablas que intervienen en la consulta se especifican en la cl&aacute;usula FROM.
+               <li>Las condiciones que vinculan a las tablas se especifican en la cl&aacute;usula WHERE y se vinculan mediante el operador l&oacute;gico AND.
+            </ol> 
+            <br> 
+                        <b> 
+            <span class=codigo> 
+                        <i class="material-icons dp48">label_outline</i>  
+            </span> 
+                        </b>Referente a los <strong>OUTER JOIN,</strong> no funcionan en ORACLE y adem&aacute;s conozco una sintaxis que funcione en los tres sistemas. La sintaxis en ORACLE es igual a la sentencia anterior pero a&ntilde;adiendo los caracteres (+) detr&aacute;s del nombre de la tabla en la que deseamos aceptar valores nulos, esto equivale a un LEFT JOIN:
+            <br> 
+            <br> 
+            <span class=codigo> 
+            SELECT
+            <br> 
+                Facturas.*, 
+            <br> 
+                Albaranes.* 
+            <br> 
+            FROM
+            <br> 
+                Facturas, Albaranes 
+            <br> 
+            WHERE
+            <br> 
+                Facturas.IdAlbaran = Albaranes.IdAlbaran (+)
+            <br> 
+                AND
+            <br> 
+                Facturas.IdCliente = 325
+            </span> 
+            <br> 
+            <br> 
+            Y esto a un RIGHT JOIN:
+            <br> 
+            <br> 
+            <span class=codigo> 
+            SELECT
+            <br> 
+                Facturas.*, 
+            <br> 
+                Albaranes.* 
+            <br> 
+            FROM
+            <br> 
+                Facturas, Albaranes 
+            <br> 
+            WHERE
+            <br> 
+                Facturas.IdAlbaran (+) = Albaranes.IdAlbaran
+            <br> 
+                AND
+            <br> 
+                Facturas.IdCliente = 325
+            </span> 
+            <br> 
+            <br> 
+            En <strong>SQL-SERVER</strong> se puede utilizar una sintaxis parecida, en este caso no se utiliza los caracteres (+) sino los caracteres =* para el<strong> LEFT JOIN</strong> y *= para el 
+                        <strong>RIGHT JOIN</strong>.
+            <br> 
+                      <br><br>
+            <div class="auto-style1"><img class="responsive-img" alt="" height="878" src="../imagenes/lec5_sql.png" width="919"><br></div>
+            <br> 
+            <b><strong><i class="material-icons dp48">label</i>  </strong>
+                        <span class="style2">Consultas de Autocombinaci&oacute;n</span></b> 
+            <br> 
+            <br> 
+            La autocombinaci&oacute;n se utiliza para unir una tabla consigo misma, comparando valores de dos columnas con el mismo tipo de datos. La sintaxis en la siguiente:
+            <br> 
+            <br> 
+            <span class=codigo> 
+            SELECT
+            <br> 
+                alias1.columna, alias2.columna, ... 
+            <br> 
+            FROM
+            <br> 
+                tabla1 as alias1, tabla2 as alias2
+            <br> 
+            WHERE
+            <br> 
+                alias1.columna = alias2.columna
+            <br> 
+            AND
+            <br> 
+                otras condiciones
+            <br> 
+            <br> 
+            </span> 
+            Por ejemplo, para visualizar el n&uacute;mero, nombre y puesto de cada empleado, junto con el n&uacute;mero, nombre y puesto del supervisor de cada uno de ellos se utilizar&iacute;a la siguiente sentencia:
+            <br> 
+            <br> 
+            <span class=codigo> 
+            SELECT
+            <br> 
+                t.num_emp, t.nombre, t.puesto, t.num_sup,s.nombre, s.puesto
+            <br> 
+            FROM
+            <br> 
+                empleados AS t, empleados AS s
+            <br> 
+            WHERE
+            <br> 
+                t.num_sup = s.num_emp
+            </span> 
+            <br> 
+            <br> 
+            <b>
+                         
+            <span class=codigo> 
+                        <i class="material-icons dp48">label_outline</i>  
+            </span> 
+                        Consultas de Combinaciones no Comunes</b> 
+            <br> 
+            <br> 
+            La mayor&iacute;a de las combinaciones est&aacute;n basadas en la igualdad de valores de las columnas que son el criterio de la combinaci&oacute;n. Las no comunes se basan en otros operadores de combinaci&oacute;n, tales como NOT, BETWEEN, <>, etc.
+            <br> 
+            <br> 
+            Por ejemplo, para listar el grado salarial, nombre, salario y puesto de cada empleado ordenando el resultado por grado y salario habr&iacute;a que ejecutar la siguiente sentencia:
+            <br> 
+            <br> 
+            <span class=codigo> 
+            SELECT
+            <br> 
+                grados.grado,empleados.nombre, empleados.salario, empleados.puesto
+            <br> 
+            FROM
+            <br> 
+                empleados, grados
+            <br> 
+            WHERE
+            <br> 
+                empleados.salario BETWEEN grados.salarioinferior And grados.salariosuperior
+            <br> 
+            ORDER BY
+            <br> 
+                grados.grado, empleados.salario
+            </span> 
+            <br> 
+            <br> 
+            Para listar el salario medio dentro de cada grado salarial habr&iacute;a que lanzar esta otra sentencia:
+            <br> 
+            <br> 
+            <span class=codigo> 
+            SELECT
+            <br> 
+                grados.grado, AVG(empleados.salario)
+            <br> 
+            FROM
+            <br> 
+                empleados, grados
+            <br> 
+            WHERE
+            <br> 
+                empleados.salario BETWEEN grados.salarioinferior And grados.salariosuperior
+            <br> 
+            GROUP BY
+            <br> 
+                grados.grado
+            </span> 
+            <br> 
+            <br> 
+            <b>
+                         
+            <span class=codigo> 
+                        <i class="material-icons dp48">label_outline</i>  
+            </span> 
+                        CROSS JOIN (SQL-SERVER)</b> 
+            <br> 
+            <br> 
+            Se utiliza en SQL-SERVER para realizar consultas de uni&oacute;n. Supongamos que tenemos una tabla con todos los autores y otra con todos los libros. Si dese&aacute;ramos obtener un listado combinar ambas tablas de tal forma que cada autor apareciera junto a cada t&iacute;tulo, utilizar&iacute;amos la siguiente sintaxis:
+            <br><br> 
+            
+            <span class=codigo> 
+              SELECT
+              <br> 
+                  Autores.Nombre, Libros.Titulo
+              <b>
+              FROM
+              </b>
+              <br> 
+                  Autores CROSS JOIN Libros
+            </span> 
+
+            <br> 
+            <br> 
+            <b>
+                         
+            <span class=codigo> 
+                        <i class="material-icons dp48">label_outline</i>  
+            </span> 
+            SELF JOIN</b> 
+            
+            <br> 
+            <br> 
+            
+            SELF JOIN es una t&eacute;cnica empleada para conseguir el producto cartesiano de una tabla consigo misma. Su utilizaci&oacute;n no es muy frecuente, pero pongamos alg&uacute;n ejemplo de su utilizaci&oacute;n.
+            
+            <br> 
+            
+            Supongamos la siguiente tabla (El campo autor es num&eacute;rico, aunque para ilustrar el ejemplo utilice el nombre):
+            
+            <br> 
+            <br> 
+            
+            <table class="striped"> 
+              <tr> 
+                <td colspan=2 align=center><b>Autores</b></td> 
+              </tr> 
+              <tr> 
+                <td>C&oacute;digo (C&oacute;digo del libro)</td><td>Autor (Nombre del Autor)</td> 
+              </tr> 
+              <tr> 
+                <td>B0012</td><td>1. Francisco L&oacute;pez</td>   
+              </tr> 
+              <tr> 
+                <td>B0012</td><td>2. Javier Alonso</td> 
+              </tr> 
+              <tr> 
+                <td>B0012</td><td>3. Marta Rebolledo</td>   
+              </tr> 
+              <tr> 
+                <td>C0014</td><td>1. Francisco L&oacute;pez</td>   
+              </tr> 
+              <tr> 
+                <td>C0014</td><td>2. Javier Alonso</td> 
+              </tr> 
+              <tr> 
+                <td>D0120</td><td>2. Javier Alonso</td> 
+              </tr> 
+              <tr> 
+                <td>D0120</td><td>3. Marta Rebolledo</td>   
+              </tr>
+            </table> 
+            
+            <br> 
+            
+            Queremos obtener, para cada libro, parejas de autores:
+            
+            <br> 
+            <br> 
+            
+            <span class=codigo> 
+              SELECT
+              <br> 
+                  A.Codigo, A.Autor, B.Autor
+              <br> 
+              FROM
+              <br> 
+                  Autores A, Autores B 
+              <br> 
+              WHERE
+              <br> 
+                  A.Codigo = B.Codigo
+            </span> 
+            
+            <br> 
+            <br> 
+            
+            El resultado es el siguiente:
+            
+            <br> 
+            <br> 
+            
+            <table class="striped"> 
+              <tr> 
+                <td>C&oacute;digo</td><td>Autor</td><td>Autor</td>     
+              </tr> 
+              <tr> 
+                <td>B0012</td><td>1. Francisco L&oacute;pez</td><td>1. Francisco L&oacute;pez</td> 
+              </tr> 
+              <tr> 
+                <td>B0012</td><td>1. Francisco L&oacute;pez</td><td>2. Javier Alonso</td> 
+              </tr> 
+              <tr> 
+                <td>B0012</td><td>1. Francisco L&oacute;pez</td><td>3. Marta Rebolledo</td> 
+              </tr> 
+              <tr> 
+                <td>B0012</td><td>2. Javier Alonso</td> <td>2. Javier Alonso</td> 
+              </tr> 
+              <tr> 
+                <td>B0012</td><td>2. Javier Alonso  </td>   <td>1. Francisco L&oacute;pez</td> 
+              </tr> 
+              <tr> 
+                <td>B0012</td><td>2. Javier Alonso</td> <td>3. Marta Rebolledo</td> 
+              </tr> 
+              <tr> 
+                <td>B0012   </td><td>3. Marta Rebolledo </td><td>3. Marta Rebolledo</td> 
+              </tr> 
+              <tr> 
+                <td>B0012</td><td>3. Marta Rebolledo</td>   <td>2. Javier Alonso</td>   
+              </tr> 
+              <tr> 
+                <td>B0012</td><td>3. Marta Rebolledo</td>   <td>1. Francisco L&oacute;pez</td> 
+              </tr> 
+              <tr> 
+                <td>C0014   </td><td>1. Francisco L&oacute;pez</td><td>1. Francisco L&oacute;pez</td> 
+              </tr> 
+              <tr> 
+                <td>C0014</td><td>1. Francisco L&oacute;pez    </td>   <td>2. Javier Alonso</td> 
+              </tr> 
+              <tr> 
+                <td>C0014   </td><td>2. Javier Alonso</td><td>2. Javier Alonso</td> 
+              </tr> 
+              <tr> 
+                <td>C0014   </td><td>2. Javier Alonso</td><td>1. Francisco L&oacute;pez</td>   
+              </tr> 
+              <tr> 
+                <td>D0120</td><td>2. Javier Alonso</td> <td>2. Javier Alonso</td>   
+              </tr> 
+              <tr> 
+                <td>D0120</td><td>2. Javier Alonso</td> <td>3. Marta Rebolledo</td> 
+              </tr> 
+              <tr> 
+                <td>D0120</td><td>3. Marta Rebolledo</td>   <td>3. Marta Rebolledo</td> 
+              </tr> 
+              <tr> 
+                <td>D0120</td><td>3. Marta Rebolledo</td>   <td>2. Javier Alonso</td>   
+              </tr>
+            </table> 
+            
+            <br> 
+            
+            Como podemos observar, las parejas de autores se repiten en cada uno de los libros, podemos omitir estas repeticiones de la siguiente forma
+            
+            <br> 
+            <br> 
+            
+            <span class=codigo> 
+              SELECT
+              <br> 
+                  A.Codigo, A.Autor, B.Autor
+              <br> 
+              FROM
+              <br> 
+                  Autores A, Autores B
+              <br> 
+              WHERE
+              <br> 
+                  A.Codigo = B.Codigo AND A.Autor < B.Autor
+              <br> 
+            </span> 
+            
+            <br> 
+            
+            El resultado ahora es el siguiente:
+            
+            <br> 
+            <br> 
+            
+            <table class="striped"> 
+              <tr> 
+                <td><b>C&oacute;digo</b></td><td><b>Autor</b></td><td><b>Autor</b></td>        
+              </tr> 
+              <tr> 
+                <td>B0012</td><td>1. Francisco L&oacute;pez</td>   <td>2. Javier Alonso</td>   
+              </tr> 
+              <tr> 
+                <td>B0012</td><td>1. Francisco L&oacute;pez    </td>   <td>3. Marta Rebolledo</td> 
+              </tr> 
+              <tr> 
+                <td>C0014</td>  <td>1. Francisco L&oacute;pez</td><td>2. Javier Alonso</td>        
+              </tr> 
+              <tr> 
+                <td>D0120</td><td>2. Javier Alonso</td> <td>3. Marta Rebolledo</td> 
+              </tr>
+            </table> 
+            
+            <br> 
+            
+            Ahora tenemos un conjunto de resultados en formato Autor - CoAutor.
+            
+            <br> 
+            <br> 
+            
+            Si en la tabla de empleados quisi&eacute;ramos extraer todas las posibles parejas que podemos realizar, utilizar&iacute;amos la siguiente sentencia:
+            
+            <br> 
+            <br> 
+            
+            <span class=codigo> 
+              SELECT
+              <br> 
+                  Hombres.Nombre, Mujeres.Nombre
+              <br> 
+              FROM
+              <br> 
+                  Empleados Hombre, Empleados Mujeres
+              <br> 
+              WHERE
+              <br> 
+                  Hombre.Sexo = 'Hombre' AND
+              <br> 
+                  Mujeres.Sexo = 'Mujer' AND
+              <br>
+                  Hombres.Id <>Mujeres.Id
+            </span> 
+            
+            <br> 
+            <br> 
+            Para concluir supongamos la tabla siguiente:
+            <br> 
+            <br> 
+            
+            <table class="striped"> 
+              <tr> 
+                <td colspan=3 align=center><b>Empleados</b></td> 
+              </tr> 
+              <tr> 
+                <td>Id</td><td>Nombre</td>  <td>SuJefe</td> 
+              </tr> 
+              <tr> 
+                <td>1</td><td>Marcos</td>   <td>6</td>  
+              </tr> 
+              <tr> 
+                <td>2</td><td>Lucas</td><td>1</td>  
+              </tr> 
+              <tr> 
+                <td>3</td><td>Ana</td>  <td>2</td>  
+              </tr> 
+              <tr> 
+                <td>4</td><td>Eva</td>  <td>1</td>  
+              </tr> 
+              <tr> 
+                <td>5</td><td>Juan</td> <td>6</td>  
+              </tr> 
+              <tr> 
+                <td>6<td>Antonio</td>   <td> </td>  
+              </tr></table> 
+            <br> 
+            Queremos obtener un conjunto de resultados con el nombre del empleado y el nombre de su jefe:
+            <br> 
+            <br> 
+            <span class=codigo> 
+            SELECT
+            <br> 
+                Emple.Nombre, Jefes.Nombre
+            <br> 
+            FROM
+            <br> 
+                Empleados Emple, Empleados Jefe
+            <br> 
+            WHERE
+            <br> 
+
+        </div>
+
+    </main>
+</body>
+
+</html>
