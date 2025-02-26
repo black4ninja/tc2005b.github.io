@@ -1,0 +1,209 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Laboratorio 18</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+.Code { font-family:"Courier New", Courier, monospace; font-size:12px; color:#003366; background-color:#FFFFCC}
+.Estilo1 {font-family: Arial, Helvetica, sans-serif}
+.Estilo4 {font-family: Arial, Helvetica, sans-serif; color: #000000; }
+.Estilo3 {font-family: Arial, Helvetica, sans-serif; font-size: 9px; }
+body {
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+.Estilo5 {font-size: 14px}
+.Estilo6 {font-family: Arial, Helvetica, sans-serif; font-size: 14px; }
+-->
+</style>
+</head>
+
+<body>
+<table width="98%" border="0">
+  <tr>
+    <td><div align="right"><img src="../imagenes/actividades.jpg" width="600" height="50"></div></td>
+  </tr>
+  <tr>
+    <td><p align="left" class="Estilo4"><strong>Laboratorio 18: Uso de c&oacute;digo de barras<strong> </strong><br>
+</strong><strong><br>
+</strong></p>    </td></tr>
+  <tr>
+    <td class="Estilo1 Estilo5"><p class="Estilo6"><strong><img src="../imagenes/objetivos.jpg" width="600" height="50"></strong></p>
+      <p class="Estilo6"><br>
+El uso del c&oacute;digo de barras como dispositivo de entrada es cada vez  m&aacute;s frecuente en virtud de que reduce de manera importante tanto el  tiempo de captura como las posibilidades de error.<br>
+<br>
+Para poder utilizar esta tecnolog&iacute;a, es necesario que los elementos  a reconocer tengan impresos los c&oacute;digos, los cuales deben cumplir  determinados est&aacute;ndares que hacen posible el reconocimiento.<br>
+<br>
+Los lectores pueden ser programados para recibir diferentes codificaciones  y a trav&eacute;s de alguna interfaz, env&iacute;an el resultado a la computadora.  Ser&iacute;a muy complicado poner grandes cantidades de informaci&oacute;n  codificada en barras, por lo que el uso m&aacute;s frecuente consiste en  establecer un n&uacute;mero que se utiliza como llave o elemento de b&uacute;squeda  para realizar consultas a una base de datos en la que se mantiene informaci&oacute;n  relacionada con el n&uacute;mero que se codifica.<br>
+<br>
+      <img src="../imagenes/instrucciones.jpg" width="600" height="50"></p>
+      <p class="Estilo6"><strong> </strong></p>
+      <blockquote><font color="#000000"><img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font>&nbsp;<b>Objetivos</b><br>
+          <br>
+        En esta pr&aacute;ctica utilizaremos el lector de c&oacute;digo de barras
+        para reconocer un alumno y recuperar datos relacionados con dicho alumno de la base de datos.<br>
+  <br>
+        Para su realizaci&oacute;n, se han simplificado algunos elementos:
+  <blockquote><img src="../imagenes/ball.gif" alt="" height="8" width="8"> Se asume que se utilizar&aacute; el c&oacute;digo de barras <b>estandarizado </b>que utilizan la mayor parte de los proveedores de bienes
+    de consumo para vender a las grandes cadenas de minoristas, por lo que no
+    entraremos en detalles sobre la <b>programaci&oacute;n </b>del lector de
+    c&oacute;digo de barras.<br>
+    <br>
+    <img src="../imagenes/ball.gif" alt="" height="8" width="8"> Utilizaremos una lectora de c&oacute;digo de barras con interfaz <b>por
+      puerto serie</b> y nos apoyaremos en una clase  de Visual Basic
+    que permite manipular el puerto serie sin entrar en muchos <b>detalles t&eacute;cnicos</b>.<br>
+    <br>
+    <img src="../imagenes/ball.gif" alt="" height="8" width="8"> Configuraremos el control para el puerto serie con los<b> par&aacute;metros
+      de la configuraci&oacute;n de f&aacute;brica </b>del lector de c&oacute;digo
+    de barras.</blockquote>
+  <p><font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>Crea un nuevo proyecto de Visual Basic del tipo <b>Windows Application </b>,
+    y agrega el modUtil a tu proyecto.</p>
+  <p>Primero vamos a crear una aplicaci&oacute;n que nos permita leer de un puerto serial y mostrar lo que fue 
+	leído en un MessageBox. Al crear la forma agrega un control <strong>SerialPort</strong> que se encuentra en la pesta&ntilde;a Components.</p>
+  <p>&nbsp;</p>
+  <div align="center"><img src="../imagenes/lab19-img1.png"></div>
+  <p>C&aacute;mbiale el nombre a <strong>spPort</strong> y agrega el siguiente c&oacute;digo a la forma:</p>
+  <pre class="Code">
+    Private Sub Form1_Disposed(ByVal sender As Object, ByVal e As System.EventArgs) _
+    Handles Me.Disposed
+        spPort.Close()
+    End Sub
+	
+    Private Sub Form1_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) _
+    Handles MyBase.Load
+        spPort.Open()
+    End Sub
+	
+    Private Sub spPort_DataReceived(ByVal sender As Object, ByVal e As System.IO.Ports.SerialDataReceivedEventArgs) _
+    Handles spPort.DataReceived
+        MsgBox(spPort.ReadLine())
+    End Sub
+</pre>
+  <p>F&iacute;jate que este c&oacute;digo maneja tres eventos. Al iniciar la aplicaci&oacute;n abrimos el puerto del lector de c&oacute;digo de barras. Al terminar la aplicaci&oacute;n lo estamos cerrando y cuando recibimos datos con el lector de c&oacute;digo de barras mostramos lo que fue leído en un MessageBox. </p>
+  <p><font color="#000000"><img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font>&nbsp;<b>1er refinamiento</b></p>
+  <p><font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>Agrega un <b>TextBox </b>en el que se mostrar&aacute; el c&oacute;digo
+    le&iacute;do. </p>
+  <p>El lector de c&oacute;digo de barras debe de estar esperando datos todo el tiempo, para que en el momento en que se lean datos dispare el evento DataReceived. Esta manera de manejar el lector tiene como ventaja que el tiempo de respuesta del lector va a ser muy peque&ntilde;o, pero tiene como desventaja que la aplicaci&oacute;n no va a responder porque se va a bloquear al intentar leer el c&oacute;digo de barras. </p>
+  <p>Para solucionar este problema Microsoft decidi&oacute; que en Visual Studio 2005 el lector de c&oacute;digo de barras se manejara como un Thread aparte, con lo que tenemos la ventaja del corto tiempo de respuesta del lector y tenemos la ventaja de una aplicaci&oacute;n responsiva. </p>
+  <p>No es objetivo del curso entender Threads, por lo que el siguiente c&oacute;digo podr&iacute;a no tener mucho sentido, lo que est&aacute; haciendo el c&oacute;digo es invocando un Helper, que es una clase que se encarga de modificar datos u objetos de un Thread desde otro Thread. Todo esto es necesario porque si todos los Threads pudieran acceder a los controles podr&iacute;amos tener problemas de integridad (dos Threads actualizando un campo de texto al mismo tiempo). </p>
+  <p>Cambia la funci&oacute;n DataReceived que ten&iacute;amos por la siguiente:</p>
+  <pre class="Code">
+    Private Sub spPort_DataReceived(ByVal sender As Object, ByVal e As System.IO.Ports.SerialDataReceivedEventArgs) _
+    Handles spPort.DataReceived
+        Dim leido As String = spPort.ReadLine()
+        leido = leido.Remove(leido.Length - 1)
+		
+        If txtCodigoLeido.InvokeRequired Then
+            Dim d As New SetTextCallback(AddressOf setMatricula)
+            Me.Invoke(d, New Object() {leido})
+        Else
+            txtCodigoLeido.Text = leido
+        End If
+
+    End Sub
+</pre>
+  <p>Este m&eacute;todo necesita una funci&oacute;n delegada llamada SetTextCallback y necesita una funci&oacute;n (que es la que se va a ejecutar) llamada setMatricula. Puedes cambiar el nombre de las funciones a cualquier otro nombre que tenga m&aacute;s sentido para tu aplicaci&oacute;n. A continuaci&oacute;n vamos a agregar estas dos funciones:</p>
+  <pre class="Code">
+    Delegate Sub SetTextCallback(ByVal [text] As String)
+    </pre>
+		<pre class="Code">
+    Private Sub setMatricula(ByVal text As String)
+        'Agrega el código necesario para asignar el código leído en la caja de texto 
+    End Sub
+</pre>
+  <p>La funci&oacute;n setMatricula va a recibir como texto lo que haya leído el lector de c&oacute;digo de barras y debe ponerlo en la caja de texto que agregamos. </p>
+  <p><font color="#000000"><img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font>&nbsp;<b>2do refinamiento</b><br>
+      <br>
+      <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>Crea en tu esquema de usuario de SQLServer la tabla<b> alumnos </b> que incluya los siguientes columnas: </p>
+  <ul>
+    <li>Matr&iacute;cula</li>
+    <li>Nombre</li>
+    <li>Carrera</li>
+  </ul>
+  <p><font color="#3366ff" face="Courier New, Courier, monospace"><b><br>
+          <img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>Agrega a tu forma dos cajas de texto (una para cada campo faltante) y complementa
+    el c&oacute;digo para que al leer el c&oacute;digo de barras, tanto con la
+    lectora como con el teclado, se <b>recuperen </b>los datos del producto de
+    la tabla y se muestren en las cajas de texto correspondientes. <i>(Puedes
+      usar la rutina  showData)</i>.<br>
+                    <br>
+                    <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>Prueba el programa <b>agregando </b>a la tabla algunos alumnos.<strong> &iexcl;Puedes usar tu credencial para probar el funcionamiento de tu aplicaci&oacute;n! </strong><br>
+                    <br>
+                    <font color="#000000"><img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font>&nbsp;<b>3er refinamiento</b><br>
+                    <br>
+    Agrega a tu aplicaci&oacute;n un <b>reporte </b>(CrystalReport) para imprimir <b>"etiquetas" </b>para los productos con su c&oacute;digo de
+    barras asociado. <br>
+                  <br>
+    Utiliza para este efecto la siguiente fuente:<br>
+  </p>
+  <div align="center"><a href="../recursos/3de9.ttf"><img src="../imagenes/lab19-1.jpg" alt="" width="53" height="61"> </a><br>
+  </div>
+  <p><br>
+      <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>Para instalarla, baja el archivo al <b>disco local</b> y 
+	cópiala a la carpeta: <br>
+      <br>
+    C:\Windows\Fonts\</p>
+  <p> El nombre con que Windows reconoce esta fuente es: <em>C39HrP36DmTt</em> Esta fuente permite imprimir cadenas en c&oacute;digo <b>3 de 9</b>, las
+    cuales para ser reconocidas por los lectores deben iniciar y terminar con
+    un <b>asterisco</b>, es decir, la cadena impresa debe ser de la forma:</p>
+  <p> <b>*c&oacute;digo a mostrar*</b></p>
+  <p><font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>Se recomienda usar un tama&ntilde;o de al menos <b>24 puntos</b> para legibilidad de los d&iacute;gitos visibles y asegurar el <b>reconocimiento </b>de la lectora.</p>
+  <p>Prueba la siguiente consulta:</p>
+  <pre class="Code">SELECT ('*' + matricula + '*') AS matricula, nombre, carrera FROM alumnos</pre>
+  <p><strong>&iquest;Qu&eacute; te devuelve? </strong>Comprueba que los productos en el reporte son reconocidos por tu aplicaci&oacute;n
+    de lectura de c&oacute;digo de barras. <b></b></p>
+  <p><font color="#000000"><img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font>&nbsp;<b>Mejorando el reporte</b></p>
+  <p>Cuando aparece la pantalla del reporte vamos a tener algo similar a la siguiente pantalla. Este reporte es adecuado en algunos casos, pero es muy poco vistoso. Para hacerlo un poco mejor hay varias cosas que podemos hacer. </p>
+      </blockquote>
+      <ul>
+        <li>Podemos seleccionar cualquiera de las cajas y cambiarlas de lugar</li>
+        <li>Podemos seleccionar cualquiera de las cajas y cambiar algunas propiedades  como el tipo de letra, si es negrita, si est&aacute; subrayada, si est&aacute; tachada, 
+		etc. mediante la propiedad Font (las propiedades se encuentran a la derecha, al igual que en la vista de dise&ntilde;o en VB.Net) </li>
+        <li>En las cajas que se encuentran en la secci&oacute;n de detalles (las que representan campos de la base de datos) hay varias opciones &uacute;tiles al reportar. DecimalPlaces nos permite indicar cu&aacute;ntos n&uacute;meros decimales deben imprimirse en el reporte, DateOrder nos permite reportar en diferentes formatos de fecha (dd/MM/yyyy, MM/dd/yyyy, etc.), DateFirstSeparator y DateSecondSeparator nos permiten cambiar el separador de fechas (23-09-85 o 23/09/85 o 23-09/85), ThousandsSeparator permite separar n&uacute;meros grandes con alg&uacute;n s&iacute;mbolo, etc.</li>
+      </ul>
+      <blockquote>
+        <p><img src="../imagenes/lab19-img2.png"> </p>
+        <p>Podemos agregar nuevos campos especiales haciendo click derecho sobre alguna parte del reporte y seleccionando la opci&oacute;n Insert. Entre las cosas que vale la pena mencionar</p>
+      </blockquote>
+      <ul>
+        <li>Campos Especiales: Se puede agregar la fecha, la hora, el autor, el n&uacute;mero de hoja, etc.</li>
+        <li>Objeto de Texto: Para poner un campo en donde se pueda escribir</li>
+        <li>Line y Box: Insertar l&iacute;neas y cajas. Son &uacute;tiles cuando queremos agrupar o separar informaci&oacute;n. </li>
+        <li>Chart: Insertar gr&aacute;ficas</li>
+        <li>Picture: Insertar im&aacute;genes </li>
+      </ul>
+      <blockquote>
+        <div align="center"> <img src="../imagenes/lab19-img3.png"> </div>
+        <p>Otra cosa importante es que al crear por primera vez el reporte no tiene ni encabezado ni final. Para activar estas secciones podemos hacer click derecho sobre el encabezado y seleccionar <strong>Don't Suppress </strong></p>
+        <div align="center"> <img src="../imagenes/lab19-img5.png"> </div>
+        <p>Experimenta qu&eacute; otros cambios puedes hacer hasta que el reporte quede a tu gusto. El siguiente es un layout sugerido para los reportes. </p>
+        <div align="center"> <img src="../imagenes/lab19-img4.png"> </div>
+        <p>As&iacute; es como se ve una vez que ya est&aacute; reportado: </p>
+        <div align="center"> <img src="../imagenes/lab19-img6.png"></div>
+        <p></p>
+      </blockquote>
+      <p class="Estilo6"><img src="../imagenes/especificaciones.jpg" width="600" height="50"></p>
+      <p class="Estilo6"><strong>La calificaci&oacute;n de esta actividad     es de 
+		carácter individual.<br>
+          <br>
+Env&iacute;a el laboratorio por este medio , archivo lab18 +  matricula.zip.</strong></p>
+	</td>
+  </tr>
+  <tr>
+    <td><p align="center" class="Estilo1 Estilo4 Estilo5">&nbsp;</p>      </td>
+  </tr>
+</table>
+
+<map name="Map"><area shape="rect" coords="5,6,103,123" href="../../semana7/lab11/proveedores.csv">
+<area shape="rect" coords="130,7,229,123" href="../../semana7/lab11/proyectos.csv">
+<area shape="rect" coords="255,7,352,122" href="../../semana7/lab11/entregan.csv">
+<area shape="rect" coords="373,5,474,122" href="../../semana7/lab11/materiales.csv">
+</map></body>
+</html>

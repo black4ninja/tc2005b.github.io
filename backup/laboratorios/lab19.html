@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Laboratorio 19</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+.Code { font-family:"Courier New", Courier, monospace; font-size:12px; color:#003366; background-color:#FFFFCC}
+.Estilo1 {font-family: Arial, Helvetica, sans-serif}
+.Estilo4 {font-family: Arial, Helvetica, sans-serif; color: #000000; }
+.Estilo3 {font-family: Arial, Helvetica, sans-serif; font-size: 9px; }
+body {
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+.Estilo5 {font-size: 14px}
+.Estilo6 {font-family: Arial, Helvetica, sans-serif; font-size: 14px; }
+-->
+</style>
+</head>
+
+<body>
+<table width="98%" border="0">
+  <tr>
+    <td><div align="right"><img src="../imagenes/actividades.jpg" width="600" height="50"></div></td>
+  </tr>
+  <tr>
+    <td><p align="left" class="Estilo4"><strong>Laboratorio 16: Mejorando la GUI <br>
+</strong><strong><br>
+</strong></p>    </td></tr>
+  <tr>
+    <td class="Estilo1 Estilo5"><p class="Estilo6"><strong><img src="../imagenes/objetivos.jpg" width="600" height="50"></strong></p>
+      <p> La teor&iacute;a detrás de construir aplicaciones enfocadas a la  usabilidad nos dicen, entre otras cosas, 
+	  que las aplicaciones cuyo diseño toma en cuenta la fisiolog&iacute;a y sicolog&iacute;a del usuario,
+	  favorecen la eficiencia, disminuyen el tiempo de aprendizaje y mejoran la experiencia del usuario en general. 
+	  Estos objetivos se alcanzan mediante diferentes estrategias, como pueden ser  las reglas de oro o el uso de controles m&aacute;s 
+	  avanzados que proporcionen  informaci&oacute;n sobre el sistema o que permitan al usuario realizar tareas  de maneras m&aacute;s eficientes.
+	  </p><p>Para  poder realizar una aplicaci&oacute;n que sea amigable se deben tomar en cuenta  varias consideraciones, entre las m&aacute;s 
+		importantes est&aacute;n las siguientes: </p>
+      <ul>
+        <li>&iquest;Qui&eacute;nes van a ser los usuarios? </li>
+        <li>&iquest;Qu&eacute; tecnolog&iacute;as saben utilizar? </li>
+        <li>&iquest;Qu&eacute; pueden aprender?</li>
+        <li>&iquest;Qu&eacute; quieren (o necesitan) hacer los usuarios?</li>
+        <li>&iquest;Cu&aacute;l es el contexto en que trabaja el usuario?</li>
+        <li>&iquest;Qu&eacute; debe hacer la m&aacute;quina y qu&eacute; debe hacer el usuario?</li>
+      </ul>
+      <p>Y  una vez que hayamos respondido a estas preguntas necesitamos saber qu&eacute;  podemos hacer nosotros para brindarle una mejor experiencia al usuario. </p>
+      <p>En esta pr&aacute;ctica conoceremos algunas de las herramientas que  proporciona Visual Basic .Net para poder hacer las aplicaciones m&aacute;s  amigables. Recuerda que es muy importante analizar el problema que se  tiene para poder saber qu&eacute; herramientas utilizar. Recuerda que el  objetivo de este laboratorio no es crear una aplicaci&oacute;n funcional, sino  &uacute;nicamente utilizar las herramientas que nos permiten tener una  interfaz de usuario m&aacute;s amigable y m&aacute;s f&aacute;cil de utilizar.<br>
+        <br>
+        <img src="../imagenes/instrucciones.jpg" width="600" height="50"></p>
+      <p class="Estilo6"><strong> </strong><font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>Crea un nuevo proyecto de Visual Basic del tipo <b>Windows Application</b>.</p>
+      <p>Ahora vamos a agregar los controles. Primero agrega un ToolStrip, un TabControl, un ErrorProvider, un StatusStrip, un ProgressBar, un ToolTip, un OpenFileDialog y un SaveFileDialog. Cuando terminemos la aplicaci&oacute;n debe verse similar a la siguiente. </p>
+      <div align="center"><img src="../imagenes/lab20-img1.png"></div>
+      <p><font color="#000000"><img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font>&nbsp;<b>ToolStrip</b></p>
+      <p>Un <strong>ToolStrip</strong> nos sirve para mostrar opciones que el usuario deba accesar frecuentemente a un men&uacute; en la parte superior de manera que pueda acceder a ellas m&aacute;s r&aacute;pidamente.</p>
+      <p>Despu&eacute;s de agregar el ToolStrip aparecer&aacute; hasta arriba una barra en la que puedes agregar botones. Agrega cuatro botones como se ve en la siguiente im&aacute;gen:</p>
+      <div align="center"> <img src="../imagenes/lab20-tbarImg1.png"> </div>
+      <p>Puedes seleccionar los botones que aparecen sobre el ToolStrip y cambiar sus propiedades a la derecha, los primeros tres botones nos van a servir para crear un nuevo archivo, para abrir un archivo y para guardar un archivo existente. Modifica la propiedad <strong>Image</strong> para que muestren &iacute;conos representativos. En el cuarto &iacute;cono modifica la propiedad <strong>DisplayStyle</strong> a <strong>Text</strong> y cambia la propiedad text a Bold (si prefieres tambi&eacute;n puedes utilizar una 
+		imagen representativa para esta acci&oacute;n). </p>
+      <div align="center"> <img src="../imagenes/lab20-tbarImg2.png"> </div>
+      <p>M&aacute;s adelante vamos a codificar, por el momento pasa al paso siguiente.</p>
+      <p><font color="#000000"><img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font>&nbsp;<b>TabControl</b> </p>
+      <p>Ahora vamos a modificar el <strong>TabControl</strong>, como puedes observar, este control permite cambiar entre pesta&ntilde;as que tienen diferentes controles, esta es una manera sencilla y efectiva de cumplir con la regla de oro que indica que no podemos utilizar varios controles para no saturar la memoria del usuario. </p>
+      <p>Vamos a modfiicar las opciones de nuestros tabs para que sean un poco m&aacute;s amigables, selecciona la opci&oacute;n <strong>TabPages </strong>dentro de las propiedades del control. </p>
+      <div align="center"> <img src="../imagenes/lab20-tabImg1.png"> </div>
+      <p>Aparecer&aacute; una pantalla en donde podemos cambiar las propiedades de cada uno de los tabs, por el momento la &uacute;nica propiedad que nos interesa cambiar es la de <strong>Text</strong>, cambia el Text del primer tab a Nombre y el segundo a Texto. </p>
+      <div align="center"> <img src="../imagenes/lab20-tabImg2.png"> </div>
+      <p>En la vista de dise&ntilde;o selecciona el primer tab y agrega dos labels que digan &quot;Precio&quot; y &quot;Edad&quot;. Ahora agrega un <strong>MaskedTextBox</strong> y un <strong>TextBox</strong> junto a ellos, cambia la propiedad <strong>Mask del MaskedTextBox</strong> a &quot;$99999.00&quot;, despu&eacute;s agrega un <strong>Button</strong> en la parte inferior y cambia la propiedad <strong>Text a &quot;Proceso Largo&quot;.</strong> Selecciona el segundo tab y agrega un <strong>Label</strong> que diga &quot;Texto con Formato&quot; y abajo un <strong>RichTextBox.</strong> Despu&eacute;s continuaremos agregando funcionalidad a estos controles, por el momento pasa al siguiente control.</p>
+      <p><font color="#000000"><img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font>&nbsp;<b>StatusStrip</b></p>
+      <p>El <strong>StatusStrip</strong> funciona de manera muy similar al ToolBar. Este control nos sirve para mostrar informaci&oacute;n al usuario en todo momento. Este tipo de barras se utilizan en Office para indicarte el estado actual de las teclas de bloqueo (Caps Lock, Scroll Lock y Num Lock), en tu aplicaci&oacute;n podr&iacute;as utilizar un StatusStrip para mostrar el estado actual de la base de datos.</p>
+      <p>Agrega un par de <strong>StatusLabel</strong> al StatusStrip, a la primera ponle de texto &quot;Reloj&quot; y a la segunda CAPS. </p>
+      <div align="center"> <img src="../imagenes/lab20-statusImg1.png"> </div>
+      <p>Dentro de las propiedades de cada <strong>StatusLabel</strong> hay una propiedad llamada <strong>BorderSides</strong>. Para poder mostrar el estado actual de la tecla Caps Lock vamos a utilizar diferentes tipos de bordes (cuando est&eacute; presionada vamos a dar el efecto de que est&aacute; presionado el StatusLabel). Cambia <strong>BorderSides a All</strong> para el <strong>StatusLabel Caps.</strong></p>
+      <div align="center"> <img src="../imagenes/lab20-statusImg2.png"> </div>
+      <p><font color="#000000"><img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font>&nbsp;<b>Funcionalidad</b></p>
+      <p>Ahora, para poder agregar m&aacute;s facilidad de uso vamos a codificar las dem&aacute;s herramientas que agregamos al proyecto. Cuando terminemos la aplicaci&oacute;n debe ser capaz de realizar las siguientes tareas:</p>
+      <ul>
+        <li>Permitir que el usuario &uacute;nicamente introduzca cantidades 
+		monetarias v&aacute;lidas </li>
+        <li>Mostrar retroalimentaci&oacute;n sobre errores al introducir la edad (que la edad no sea num&eacute;rica)</li>
+        <li>Mostrar retroalimentaci&oacute;n sobre el estado de un proceso largo</li>
+        <li>Abrir y Cerrar Archivos mediante di&aacute;logos</li>
+        <li>Agregar texto con formato</li>
+        <li>Mostrar la hora y retroalimentaci&oacute;n sobre el estado de la tecla Caps Lock</li>
+      </ul>
+      <p>Agrega un <strong>Timer </strong>a la aplicaci&oacute;n para que constantemente est&eacute; revisando el estado de Caps Lock y est&eacute; poniendo la hora m&aacute;s reciente. Modifica las propiedades <strong>Enabled a true</strong> e <strong>Interval a 100</strong>. Despu&eacute;s pon el siguiente c&oacute;digo:</p>
+      <pre class="Code">
+    Private Sub Timer1_Tick(ByVal sender As System.Object, ByVal e As System.EventArgs) _
+    Handles Timer1.Tick
+        ToolStripStatusLabel1.Text = Now
+        ToolStripStatusLabel2.Text = "CAPS"
+        If My.Computer.Keyboard.CapsLock Then
+            ToolStripStatusLabel2.BorderStyle = Border3DStyle.Raised
+        Else
+            ToolStripStatusLabel2.BorderStyle = Border3DStyle.Sunken
+        End If
+    End Sub
+      </pre>
+      <p> Ahora vamos a agregar la funcionalidad del ToolStrip, para lograr esto debes hacer doble click sobre los botones correspondientes en la barra de herramientas e introducir el siguiente c&oacute;digo. F&iacute;jate que en el segundo y tercero se utiliza el OpenFileDialog y SaveFileDialog que agregamos para mostrar una pantalla en que nos pregunta en qu&eacute; lugar queremos guardar el archivo mediante el m&eacute;todo ShowDialog que regresa un DialogResult y despu&eacute;s obtiene el nombre de archivo que se seleccion&oacute; mediante la propiedad FileName. </p>
+      <pre class="Code">
+
+    Private Sub ToolStripButton4_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) _
+    Handles ToolStripButton4.Click
+        If RichTextBox1.SelectionFont.Bold Then
+            RichTextBox1.SelectionFont = New Font("Microsoft Sans Serif", 8, FontStyle.Regular)
+        Else
+            RichTextBox1.SelectionFont = New Font("Microsoft Sans Serif", 8, FontStyle.Bold)
+        End If
+    End Sub
+
+    Private Sub ToolStripButton3_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) _
+    Handles ToolStripButton3.Click
+        If OpenFileDialog1.ShowDialog() = Windows.Forms.DialogResult.OK Then
+            RichTextBox1.SaveFile(OpenFileDialog1.FileName, RichTextBoxStreamType.RichNoOleObjs)
+        End If
+    End Sub
+
+
+    Private Sub ToolStripButton2_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) _
+    Handles ToolStripButton2.Click
+        If OpenFileDialog1.ShowDialog() = Windows.Forms.DialogResult.OK Then
+            RichTextBox1.LoadFile(OpenFileDialog1.FileName, _
+               RichTextBoxStreamType.RichText)
+        End If
+    End Sub
+
+    Private Sub ToolStripButton1_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) _
+    Handles ToolStripButton1.Click
+        RichTextBox1.Text = ""
+    End Sub  </pre>
+      <p> Despu&eacute;s vamos a agregar la funcionalidad de detectar errores a la caja de texto de la edad. Haz doble click sobre la caja de texto y despu&eacute;s de la lista de m&eacute;todos selecciona el m&eacute;todo Validating o copia el siguiente c&oacute;digo: </p>
+      <pre class="Code">
+    Private Sub TextBox1_Validating(ByVal sender As Object, ByVal e As System.ComponentModel.CancelEventArgs) _
+    Handles TextBox1.Validating
+        If Not IsNumeric(TextBox1.Text) Then
+            ErrorProvider1.SetError(TextBox1, "La edad debe ser un valor num&eacute;rico.")
+        Else
+            ErrorProvider1.SetError(TextBox1, "")
+        End If
+    End Sub </pre>
+      <p> Por &uacute;ltimo vamos a crear un bot&oacute;n que pierda tiempo contando y que muestre el progreso de esta p&eacute;rdida de tiempo mediante un progress bar (en tu aplicaci&oacute;n podr&iacute;as utilizarlo para abrir archivos muy grandes, para guardar una gran cantidad de registros en una base de datos, para cargar la base de datos al principio de la aplicaci&oacute;n en caso de que no la encuentre, etc.) </p>
+      <pre class="Code">
+    Private Sub Button1_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) _
+    Handles Button1.Click
+        Dim i As Integer
+
+        ProgressBar1.Minimum = 0
+        ProgressBar1.Value = 0
+        ProgressBar1.Maximum = 65535
+        For i = 1 To 65535
+            ProgressBar1.Value += 1
+        Next
+    End Sub
+</pre>
+      <p>Contesta las siguientes preguntas en un archivo de texto llamado lab21.txt: </p>
+      <p><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> &iquest;Para 
+		qué sirve la propiedad My.Computer.Keyboard.CapsLock? &iquest;Qu&eacute; otras propiedades se encuentran dentro de My.Computer.Keyboard? </p>
+      <p><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14">&iquest;Qu&eacute; hace la funci&oacute;n ToolStripButton4_Click? </p>
+      <p><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14">&iquest;C&oacute;mo podemos mostrar un di&aacute;logo para guardar o abrir archivos? </p>
+      <p><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14">&iquest;C&oacute;mo funciona el m&eacute;todo setError de un ErrorProvider (qu&eacute; recibe, qu&eacute; hace con esos par&aacute;metros)? &iquest;En qu&eacute; m&eacute;todo debe verificarse si hay errores y en caso de que sea as&iacute; mostrarse un error?</p>
+      <p><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14">&iquest;C&oacute;mo funciona un Progress Bar? </p>
+      <p class="Estilo6"><img src="../imagenes/especificaciones.jpg" width="600" height="50"></p>
+      <p class="Estilo6"><strong>La calificaci&oacute;n de esta actividad     es de 
+		carácter individual.<br>
+          <br>
+Env&iacute;a el laboratorio por este medio , archivo lab19 +  matricula.zip.</strong></p>
+      <p class="Estilo6">&nbsp;</p>    </td>
+  </tr>
+  <tr>
+    <td><p align="center" class="Estilo1 Estilo4 Estilo5">&nbsp;</p>      </td>
+  </tr>
+</table>
+
+<map name="Map"><area shape="rect" coords="5,6,103,123" href="../../semana7/lab11/proveedores.csv">
+<area shape="rect" coords="130,7,229,123" href="../../semana7/lab11/proyectos.csv">
+<area shape="rect" coords="255,7,352,122" href="../../semana7/lab11/entregan.csv">
+<area shape="rect" coords="373,5,474,122" href="../../semana7/lab11/materiales.csv">
+</map></body>
+</html>

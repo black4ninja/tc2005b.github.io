@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+  <head>
+    <!--Import materialize.css-->
+      <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+
+      <!--Let browser know website is optimized for mobile-->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Lab 26: Servicios web</title>
+  </head>
+
+  <body>
+    <header></header>
+
+    <main>
+
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo">TC2005B</a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h3>Lab 26: Servicios web</h3>
+            </div>
+
+             <div class="section" id="descripcion">
+                 <h5>Descripción</h5>
+                 <p >En esta actividad exploraremos algunos APIs de aplicaciones web, con el objetivo de que aprendas a integrar funcionalidad en tus propias aplicaciones.</p>
+                 <div class="divider"></div>
+             </div>
+
+             <div class="section" id="objetivos">
+                 <h5>Objetivos de aprendizaje</h5>
+                 <p>
+                    <i class="small mdi-image-looks-one"></i>Entender qué son los servicios web y su evolución.<br />
+                 </p>
+                 <div class="divider"></div>
+             </div>
+
+             <div class="section" id="instrucciones">
+                 <h5>Instrucciones</h5>
+                 <ul class="collection">
+                    <li class="collection-item">
+                        <p><i class="small mdi-image-looks-one"></i>Revisa junto con tu profesor, la <a href="https://docs.google.com/presentation/d/177NpbWXSFpHePxPvshN6L8gSbMNYXCOlrEPBw4jNcQI/edit?usp=sharing" target="_blank">presentación de Servicios Web</a>.</p>
+                        <p><i class="small mdi-image-looks-two"></i>En parejas deberán resolver la siguiente implementación:</p>
+                    </li>
+                    <li class="collection-item">
+                        <p>Problema: Batalla Naval</p>
+                        <p>Objetivo: Este es un RESTful Webservice el cual provee el backend para jugar el famoso batalla naval a través de HTTP.</p>
+                        <p>Reglas:</p>
+                        <ul>
+                            <li>Mapa: Cada jugador tiene un mama dedicado. El mapa tiene un tamaño de 10x10 cuadrantes.</li>
+                            <hr>
+                            <li>Estados: Deberán existir al menos los estados: {SETEANDO,JUGANDO,FINALIZADO}</li>
+                            <hr>
+                            <li>Como colocar los barcos:</li>
+                            <ul>
+                                <li>Los barcos son construidos de celdas conectadas en línea recta solamente.</li>
+                                <li>Los barcos no se deben tocar el uno al otro.</li>
+                                <li>Cada jugador puede colocar 10 barcos.</li>
+                                <li>1 Portaaviones (5 celdas)</li>
+                                <li>2 Cruceros (4 celdas)</li>
+                                <li>3 Destructores (3 celdas)</li>
+                                <li>4 submarinos (2 celdas)</li>
+                            </ul>
+                            <hr>
+                            <li>Estado del juego:</li>
+                            <li>Se debe lanzar una moneda (no literalmente) para saber que jugador inicia el juego.</li>
+                            <li>Cuando un jugador golpea a la nave, se marca como golpeada y puede continuar el ataque.</li>
+                            <li>Cuando un jugador no golpee a la nave, es el turno del oponente.</li>
+                            <hr>
+                            <li>Fin del juego: El juego termina cuando un jugador pierde todas sus naves.</li>
+                            <hr>
+                            <li>Documentación del API:</li>
+                            <li>Nota: Es importante que una petición que no se pueda hacer según el estado del juego regrese su error correspondiente.</li>
+                            <li><strong>GET /dice</strong> - Esta es la moneda que decide quien inicia el juego.</li>
+                            <li><strong>GET /player/:playerNumber</strong> - Devuelve un resumen del jugador introducido {1,2}.</li>
+                            <li><strong>GET /game/create</strong> - Elimina el juego actual y crea un nuevo juego desde 0.</li>
+                            <li><strong>POST /game/create/:player</strong> - Solo se puede ejecutar al inicio de un nuevo juego y recibe las posiciones de los barcos del jugador.</li>
+                            <li><strong>GET /game/status</strong> - Devuelve el estatus actual del juego.</li>
+                            <li><strong>POST /game/turn</strong> - Recibe la coordenada de disparo del siguiente jugador, si el juego ha terminado no se debe permitir ninguna acción.</li>
+
+
+                        </ul>
+                    </li>
+                     
+                 </ul>
+             </div>
+
+             <div class="divider"></div>
+
+             <div class="section" id="preguntas">
+                 <h5>Preguntas</h5>
+                 <ul class="collection">
+                    <li class="collection-item">
+                    
+                     </li>
+                 </ul>
+             </div>
+             <div class="section" id="recursos">
+                <h5> <i class="small mdi-content-link"></i> Recursos</h5>
+                    <ul class="collection">
+                        <a href="https://github.com/abhishekbanthia/Public-APIs?utm_source=SitePoint&utm_medium=email&utm_campaign=Versioning" class="collection-item" target="_blank">Public APIs</a>
+                        <a href="https://medium.com/swlh/my-top-5-apis-for-new-developers-5191031da102" class="collection-item" target="_blank">My Top 5 APIs For New Developers</a>
+                        <a href="https://www.freecodecamp.org/news/what-is-an-api-and-how-to-test-it/" class="collection-item" target="_blank">What is an API and how to test it</a> 
+                    </ul>
+              </div>
+
+
+
+                 <div class="divider"></div>
+
+                 <div class="section" id="entrega">
+                    <h5> <i class="small mdi-notification-event-available"></i>Especificaciones de entrega</h5>
+                    <p>A través de tu repositorio personal (Bitbucket o GitHub).</p>
+                  <div class="divider"></div>
+                 </div>
+
+
+
+        </div>
+
+      </main>
+
+      <footer class="blue darken-1 page-footer">
+            <div class="container">
+               <div class="row">
+                   <div class="col">
+                       <h5 class="white-text">Secciones</h5>
+                <ol class="grey-text text-lighten-3">
+                  <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+                    <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
+                </ol>
+                       </div>
+                </div>
+                <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+            </div>
+
+
+
+
+
+          <div class="footer-copyright"> 
+            <div class="container">
+            © 2021 Escuela de Tecnologías de Información y Electrónica - ITESM Campus Querétaro.
+            </div>
+          </div>
+      </footer>
+
+
+      <!--Import jQuery before materialize.js-->
+      <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+      <script type="text/javascript" src="js/materialize.min.js"></script>
+  </body>
+</html>

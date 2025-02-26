@@ -35,8 +35,7 @@
 
             <div class="section" id="descripcion">
                 <h5>
-                  <i class="small mdi-action-info-outline"></i>
-                  Descripción
+                    <i class="small mdi-action-info-outline"></i>Descripción
                 </h5>
                 <p>En esta actividad exploraremos el estilo arquitectónico Modelo-Vista-Controlador y lo implementaremos con node+express.</p>
                 <div class="divider"></div>
@@ -44,9 +43,8 @@
 
             <div class="section" id="modalidad">
                 <h5>
-                  <i class="small mdi-social-group"></i>
-                  Modalidad
-                 </h5>
+                    <i class="small mdi-social-group"></i>Modalidad
+                </h5>
                 <p>
                     Individual.
                     <br />
@@ -68,12 +66,16 @@
 
             <div class="section" id="instrucciones">
                 <h5>
-                  <i class="small mdi-action-list"></i>
-                  Instrucciones</h5>
+                    <i class="small mdi-action-list"></i>Instrucciones</h5>
                 <ul class="collection">
                     <li class="collection-item">Atiende a la explicación del profesor del <a href="https://docs.google.com/presentation/d/1ap7zdACiT7ouGfzzh9dEcrQd6AsoaAgRinjZUXSWHvk/edit?usp=sharing">tema MVC</a> y pregunta tus dudas. </li>
                     <li class="collection-item">Recuerda que para generar una aplicación es necesario inicializar el proyecto con <code>npm init</code>, e instalar <code>express</code>, <code>body-parser</code> y un template engine como EJS con <code>npm install --save [nombre_paquete]</code>. Si es necesario, recuerda configurar el archivo <code>package.json</code> para incluir el script que quieres que se ejecute con <code>npm start</code>.</li>
-                    <li class="collection-item">Por convención, nuestros controladores los pondremos en una carpeta <code>controllers</code>. Comenzaremos a mover la lógica que antes habíamos puesto en las vistas, hacia una variable que exportaremos del controlador. Utilizaremos de ejemplo el controlador <code>a_controller.js</code>:
+                    <li class="collection-item">
+                        A continuación, haremos una implementación a partir del diseño que se presenta en el siguiente diagrama de secuencia:
+                        <div class="center-align">
+                            <img class="responsive-img" alt="Diagrama de secuencia de una interacción con un estilo arquitectónico MVC" src="uml/mvc_secuencia.png">
+                        </div>
+                        Por convención, nuestros controladores los pondremos en una carpeta <code>controllers</code>. Comenzaremos a mover la lógica que antes habíamos puesto en las vistas, hacia una variable que exportaremos del controlador. Utilizaremos de ejemplo el controlador <code>a_controller.js</code>:
                     <code><pre>
 exports.action = (request, response, next) => {
     response.render('view_file', { 
@@ -86,11 +88,11 @@ exports.action = (request, response, next) => {
                         <code><pre>
 const aController = require('../controllers/a_controller');
 
-router.get('/add-product', aController.action);</pre></code>                        
+router.get('/add', aController.action);</pre></code>                        
                     </li>
                     <li class="collection-item">Para implementar la capa del modelo, por convención, utilizaremos una carpeta <code>models</code>. Ahí pondremos cada uno de los archivos de nuestro modelo. Es común tener un archivo de modelo por tabla de la base de datos. Un archivo de modelo, típicamente tiene la siguiente estructura: 
                     <code><pre>
-module.exports = class Game {
+module.exports = class Modelo {
 
     //Constructor de la clase. Sirve para crear un nuevo objeto, y en él se definen las propiedades del modelo
     constructor(my_value) {
@@ -111,16 +113,16 @@ module.exports = class Game {
                     </pre></code>
                     <p>Para usar el modelo en el controlador:</p>
                     <code><pre>
-const Game = require('../models/game');
+const Modelo = require('../models/modelo');
 
 //Para crear un objeto de nuestro modelo
-const game = new Game('Zelda');
-game.save();
+const objeto = new Modelo('Valor de la instancia');
+objeto.save();
 
 //Para recuperar la lista de objetos del modelo
-const games = Game.fetchAll();
+const objetos = Modelo.fetchAll();
                     </pre></code>
-                    <p>Por el momento, podemos utilizar un arreglo para almacenar la información, entonces en al archivo del modelo podemos crear un arreglo <code>const games = []</code>, llenar en método <code>save()</code> con <code>games.push(this);</code> y <code>fetchAll()</code> con <code>return games;</code></p>
+                    <p>Por el momento, podemos utilizar un arreglo para almacenar la información, entonces en al archivo del modelo podemos crear un arreglo <code>const objetos = []</code>, llenar en método <code>save()</code> con <code>objetos.push(this);</code> y <code>fetchAll()</code> con <code>return objetos;</code></p>
                     </li>
                     <li class="collection-item">Refactoriza alguno de tus laboratorios anteriores o el avance de tu proyecto utilizando un estilo arquitectónico MVC. Otra opción es que crees una nueva aplicación utilizando este patrón.</li> 
                     <li class="collection-item">Agrega una nueva funcionalidad que toque todos los puntos clave de la arquitectura.</li>                                       
@@ -130,9 +132,8 @@ const games = Game.fetchAll();
 
             <div class="section" id="preguntas">
                 <h5>
-                    <i class="small mdi-action-question-answer"></i>
-                    Preguntas a responder
-                  </h5>
+                    <i class="small mdi-action-question-answer"></i>Preguntas a responder
+                </h5>
                 <ul class="collection">
                     <li class="collection-item">¿Qué beneficios encuentras en el estilo MVC?</li>
                     <li class="collection-item">¿Encuentras alguna desventaja en el estilo arquitectónico MVC?</li>
@@ -141,6 +142,7 @@ const games = Game.fetchAll();
                 <div class="section" id="recursos">
                     <h5> <i class="small mdi-content-link"></i> Recursos</h5>
                     <ul class="collection">
+                        <li class="collection-item"><a target="_blank" href="documentos/EjerciciosDiagramaSecuencia.docx">Ejercicio: Diagramas de secuencia</a></li>
                         <li class="collection-item"><a target="_blank" href="https://www.freecodecamp.org/news/model-view-architecture/">How Model-View-Controller Architecture Works</a></li>
                         <li class="collection-item"><a target="_blank" href="https://developer.mozilla.org/en-US/docs/Glossary/MVC">MVC</a></li>
                     </ul>
@@ -150,8 +152,8 @@ const games = Game.fetchAll();
 
             <div class="section" id="entrega">
                 <h5>
-                  <i class="small mdi-notification-event-available"></i>
-                  Especificaciones de entrega
+                    <i class="small mdi-notification-event-available"></i>
+                    Especificaciones de entrega
                 </h5>
                 <p>A través de tu repositorio personal.</p>
                 <div class="divider"></div>
@@ -179,7 +181,7 @@ const games = Game.fetchAll();
         </div>
         <div class="footer-copyright">
             <div class="container">
-                © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+                © 2021-2023 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
             </div>
         </div>
     </footer>

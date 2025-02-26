@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Examen de segundo parcial: Welcome to Jurassic Park</title>
+</head>
+
+<body>
+    <header></header>
+
+    <main>
+
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo"><acronym title="TC2005B Construcción de software y toma de decisiones">TC2005B Construcción de software y toma de decisiones</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+
+            <div class="section">
+                <h3>Examen de segundo parcial: Welcome to Jurassic Park</h3>
+            </div>
+
+            <div class="section" id="etica">
+                <h5><i class="small mdi-action-stars"></i>Código de ética</h5>
+                <em>"Apegándome al Código de Ética de los Estudiantes del Tecnológico de Monterrey, me comprometo a que mi actuación en esta actividad de evaluación esté regida por la honestidad académica. En congruencia con el mismo, realizaré esta actividad de forma <strong>honesta y personal</strong>, para reflejar a través de ella mis conocimientos y competencias."</em>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="descripcion">
+                <h5><i class="small mdi-action-info-outline"></i>Información</h5>
+
+                <img class="responsive-img" src="https://cdn.europosters.eu/image/750webp/57759.webp">
+
+                <p><a target="_blank" href="https://youtu.be/xzooVSOzfM8">Welcome to Jurassic Park</a>.</p>
+                <div class="video-container">
+                    <iframe width="560" height="315" src="https://www.youtube.com/embed/xzooVSOzfM8" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+                <p>El barco sale de la isla a las 12:55pm. Cuentas con <strong>170 minutos</strong>.</p>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="modalidad">
+                <h5>
+                  <i class="small mdi-social-group"></i>
+                  Modalidad
+                 </h5>
+                <p>
+                    Individual.
+                    <br />
+                </p>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="objetivos">
+                <h5>
+                <i class="small mdi-navigation-check"></i>
+                Competencias a observar</h5>
+                <ul class="collection with-header">
+                    <li class="collection-item">2. Implementa sistemas de bases de datos que satisfacen requisitos de información y permiten la escalabilidad del sistema</li>
+                    <li class="collection-item">4. Desarrolla aplicaciones web con interacción asíncrona con el servidor y que consumen servicios web</li>
+                </ul>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="instrucciones">
+                <h5><i class="small mdi-action-list"></i>Instrucciones</h5>
+                <ul class="collection">
+                    <li class="collection-item">
+                        <strong>Para observar el nivel mínimo de desarrollo de competencias esperado hasta este punto:</strong>
+                        <p>Monitorear la seguridad del Parque Jurásico (aka Jurassic Park) debe ser una tarea 24/7 y debe poder realizarse no sólo desde el War Room, sino desde cualquier lugar del mundo. Tu misión como <em>“System Velociraptor”</em> y tu actitud <em><a target="_blank" href="https://www.youtube.com/watch?v=dFUlAQZB9Ng">“It’s a UNIX System, I know this”</a></em> consiste en elaborar una aplicación web para monitorear la excelente ;) ;) seguridad del parque.</p>
+                        <div class="video-container">
+                            <iframe width="560" height="315" src="https://www.youtube.com/embed/dFUlAQZB9Ng" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <p>La aplicación debe permitir a cualquier persona <strong>registrar un incidente de seguridad</strong>. El incidente debe contener la hora y fecha del incidente, el lugar del incidente y el tipo de incidente. El lugar y el tipo de incidente deben estar en tablas independientes en la base de datos. Así, si el parque se expande, las formas del sitio no tendrán que reprogramarse.</p>
+                        <p>Los lugares del incidente inicialmente deben ser: Centro turístico, Laboratorios, Restaurante, Centro operativo, Triceratops, Dilofosaurios, Velociraptors, TRex, Planicie de los herbívoros.</p>
+                        <p>Los tipos de incidente inicialmente deben ser: Falla eléctrica, Fuga de herbívoro, Fuga de Velociraptors, Fuga de TRex, Robo de ADN, Auto descompuesto, Visitantes en zona no autorizada.</p>
+                        <p>Debido a la nueva política de la empresa <em>"Comunicación abierta y honesta dentro y fuera de nuestra empresa”</em>, la aplicación debe permitir a cualquier persona consultar los registros de incidentes del más reciente al más antiguo.</p>
+                        <!--p>Para tu fortuna, <em>Dennis Nedry</em> (el programador de JP) ha iniciado con la aplicación, sin embargo la dejó incompleta, pero puedes utilizar su avance (disponible en:
+                        <a href="https://ide.c9.io/ejuarezp/jurassicpark" target="_blank">https://ide.c9.io/ejuarezp/jurassicpark</a>) y demostrar lo competentes que son alumnos de ISC del Tec en Querétaro.</p-->
+                        <p><strong>Nota 1:</strong> Recuerda que puedes manejar el guardado de las fechas y horas directamente con el motor de la base de datos, es decir, no necesitas un datepicker para manejar las fechas, ni generar la fecha desde php. </p>
+                        <p><strong>Nota 2:</strong> El examen es abierto, puedes consultar cualquier referencia (excepto comunicarte con tus compañeros).</p>
+                    </li>
+                    <li class="collection-item">
+                        <strong>Para obtener los grados más altos esperados en el desarrollo de competencias:</strong>
+                        <p>Idealmente, la aplicación debe ser una RIA (Rich Internet Application), es decir, las interacciones con el servidor deben ser asíncronas.</p>
+                        <p>Idealmente las interacciones con la base de datos deben ser por medio de procedimientos almacenados.</p>
+                    </li>
+                </ul>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="entrega">
+                <h5>
+                  <i class="small mdi-notification-event-available"></i>
+                  Entregables por mensaje directo de slack a edjuarezp
+                </h5>
+                <p>1. URL de la aplicación funcionando </p>
+                <p>2. Enlace al repositorio con el código. Dentro del código debe estar el script de creación de la base de datos, y el script con los procedimientos almacenados. </p>
+                <p>3. En la página principal del repositorio se debe indicar dónde están los scripts de creación de la base de datos y de los procedimientos almacenados, así como los archivos de código donde se invocan los procedimientos almacenados.
+                </p>
+            </div>
+            <div class="divider"></div>
+
+
+            <div class="section" id="evaluacion">
+                <h5>
+                  <i class="material-icons">assessment</i>
+                  Evaluación
+                </h5>
+                <table class="highlight">
+                    <thead>
+                        <tr>
+                            <th>Competencia</th>
+                            <th>Nivel “Welcome to Jurassic Park” (Practicante)</th>
+                            <th>Nivel “It’s a dinosaur” (Ing. Junior)</th>
+                            <th>Nivel “We are going to make a fortune with this place” (Ing. Senior)</th>
+                            <th>Nivel “It’s a UNIX System, I know this” (Arquitecto)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>2. Implementa sistemas de bases de datos que satisfacen requisitos de información y permiten la escalabilidad del sistema</th>
+                            <td>No hay evidencia de implementación de sistemas de bases de datos</td>
+                            <td>Diseña un modelo de datos que atiende de manera parcial las necesidades de información de un sistema de cómputo.</td>
+                            <td>Diseña un modelo de datos que atiende las necesidades de información de un sistema de cómputo considerando los posibles cambios que se presenten en el futuro. Es evidente el uso adecuado de consultas para la extracción de datos.</td>
+                            <td>Diseña un modelo de datos que atiende las necesidades de información de un sistema de cómputo considerando los posibles cambios que se presenten en el futuro. Es evidente el uso adecuado de consultas para la extracción de datos. Hay técnicas de automatización para creación de estructuras de bases de datos, cargas masivas de datos y <strong>procedimientos almacenados</strong>.</td>
+                        </tr>
+                        <tr>
+                            <th>4. Desarrolla aplicaciones web con interacción asíncrona con el servidor y que consumen servicios web</th>
+                            <td>No hay evidencia del desarrollo de una aplicación con comunicación entre un cliente y un servidor</td>
+                            <td>Desarrolla aplicaciones web sencillas con un uso adecuado de las peticiones HTTP, manejo correcto de sesiones, estilo arquitectónico MVC e interacción con una base de datos con operaciones para crear, modificar y borrar datos, así como consultas complejas y un nivel básico de seguridad.</td>
+                            <td>Desarrolla aplicaciones web enriquecidas con un uso adecuado de las peticiones HTTP, manejo correcto de sesiones, estilo arquitectónico MVC e interacción con una base de datos con operaciones para crear, modificar y borrar datos, así como consultas complejas, un nivel básico de seguridad e <strong>interacción asíncrona</strong> para las características usadas más frecuentemente.</td>
+                            <td><em>Se evalúa hasta el periodo final.</em></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="divider"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="blue darken-1 page-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h5 class="white-text">Secciones</h5>
+                    <ol class="grey-text text-lighten-3">
+                        <li><a class="grey-text text-lighten-3" href="#descripcion">Código de ética</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#descripcion">Información</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#objetivos">Competencias a evaluar</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#entrega">Entregables</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#evaluacion">Evaluación</a></li>
+                    </ol>
+                </div>
+            </div>
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+        </div>
+    </footer>
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+
+</body>
+
+</html>

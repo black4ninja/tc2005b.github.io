@@ -76,7 +76,11 @@
                 <ul class="collection">
                     <li class="collection-item">Revisa junto con tu profesor la presentación <a target="_blank" href="https://docs.google.com/presentation/d/1hEc8nvsEXjizjd2ZJJot8Xw_-Co84kP1P4FT2jCcVPE/edit?usp=sharing">Introducción a AJAX</a>.
                     </li>
-                    <li class="collection-item">Primero, debemos preparar al servidor para que en lugar de enviar una página HTML completa, envíe únicamente una parte de la página, texto, o datos. El ejemplo que realizaremos será con datos estructurados en formato JSON, que es lo ideal para que nuestro servidor pueda atender distintos tipos de clientes. Para poder manipular fácilmente las peticiones que llegan en formato JSON, es necesario registrar el middleware para manejar JSON que incluye <code>bodyParser</code>: 
+                    <li class="collection-item">
+                        <div class="center-align">
+                            <img class="responsive-img" alt="Diagrama de secuencia de una interacción asíncrona con AJAX" src="uml/ajax.png">
+                        </div>
+                        Primero, debemos preparar al servidor para que en lugar de enviar una página HTML completa, envíe únicamente una parte de la página, texto, o datos. El ejemplo que realizaremos será con datos estructurados en formato JSON, que es lo ideal para que nuestro servidor pueda atender distintos tipos de clientes. Para poder manipular fácilmente las peticiones que llegan en formato JSON, es necesario registrar el middleware para manejar JSON que incluye <code>bodyParser</code>: 
                         <code><pre>
 app.use(bodyParser.json());
                         </pre></code>

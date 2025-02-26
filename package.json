@@ -1,0 +1,14 @@
+{
+  "name": "calendario",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "vitest --globals"
+  },
+  "author": "Eduardo Juarez",
+  "license": "ISC",
+  "dependencies": {
+    "vitest": "^0.34.1"
+  }
+}

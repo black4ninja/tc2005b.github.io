@@ -1,0 +1,12 @@
+@startuml
+|Profesores|
+start
+:Preparan documento de seguimiento individual;
+:Preparan dashboard de seguimiento grupal;
+:Inician ejecución de UF;
+repeat
+    |Alumno|
+repeatwhile()
+:Reporta resultados en eLumen;
+stop
+@enduml

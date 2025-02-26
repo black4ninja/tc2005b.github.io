@@ -1,0 +1,663 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Laboratorio 13 - Explotación de la información</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+.Code { font-family:"Courier New", Courier, monospace; font-size:12px; color:#003366; background-color:#FFFFCC}
+.Estilo1 {font-family: Arial, Helvetica, sans-serif}
+.Estilo4 {font-family: Arial, Helvetica, sans-serif; color: #000000; }
+.Estilo3 {font-family: Arial, Helvetica, sans-serif; font-size: 9px; }
+body {
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+.Estilo5 {font-size: 14px}
+.Estilo6 {font-family: Arial, Helvetica, sans-serif; font-size: 14px; }
+.style1 {
+	border-width: 0px;
+}
+.style2 {
+	text-align: center;
+}
+.style3 {
+	font-size: 12px;
+	color: #000000;
+	background-color: #FFFFCC;
+}
+.style4 {
+	font-family: "Courier New", Courier, monospace;
+	font-size: 12px;
+	color: #000000;
+	background-color: #FFFFCC;
+	font-weight: bold;
+}
+.style5 {
+	font-size: 12px;
+	color: #000000;
+	background-color: #FFFFCC;
+	font-weight: bold;
+}
+.style6 {
+	font-size: 12px;
+	color: #003366;
+	background-color: #FFFFCC;
+}
+.style7 {
+	font-size: medium;
+	color: #000000;
+	background-color: #FFFFCC;
+	font-weight: bold;
+}
+.style8 {
+	font-family: "Courier New", Courier, monospace;
+	font-size: 12px;
+	color: #000000;
+	background-color: #FFFFCC;
+}
+.style9 {
+	font-size: 12px;
+	background-color: #FFFFCC;
+}
+.style10 {
+	color: #000000;
+}
+.style11 {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	color: #000000;
+	background-color: #FFFFCC;
+}
+.style12 {
+	text-decoration: underline;
+}
+-->
+</style>
+</head>
+
+<body>
+<table width="98%" border="0">
+  <tr>
+    <td><div align="right"><img src="../imagenes/actividades.jpg" width="600" height="50"></div></td>
+  </tr>
+  <tr>
+    <td><p align="left" class="Estilo4"><strong>Laboratorio 13: Explotaci&oacute;n de Informaci&oacute;n   (visualizando la informaci&oacute;n con diferentes vistas)<br>
+</strong><strong><br>
+</strong></p>
+    </td></tr>
+  <tr>
+    <td class="Estilo1 Estilo5"><p class="Estilo6"><strong><img src="../imagenes/objetivos.jpg" width="600" height="50"></strong></p>
+      <p class="Estilo6">En esta pr&aacute;ctica desarrollaremos una forma para <b>visualizar </b>consultas 
+desde un <b>grid</b>, un <b>gr&aacute;fico</b> y un <b>reporte</b>. Cabe mencionar
+que trabajaremos con la base de datos de artesanias.mdb. Recuerda que tienes que copiar la base de datos al directorio Debug de tu aplicaci&oacute;n para poder hacer la referencia relativa.<br>
+<br>
+</p>
+      <div class="style2"><a href="lab13/artesania.mdb">
+		<img
+ src="lab13/lab17-1.jpg" alt="" width="93" height="54" class="style1"></a></div>
+ <div>
+ <p>
+Para evitar problemas durante la elaboración en clase del siguiente laboratorio, es indispensable que cuentes con el siguiente material:</p>
+	 <ul>
+		 <li>&nbsp;SAP Crystal Reports, developer version for Microsoft Visual Studio, y lo puedes encontrar en : 
+		 <a href="http://www.sap.com/solution/sme/software/analytics/crystal-visual-studio/index.html">sap.com
+		 </a> </li>
+	 </ul>
+	 Ahora bien, al ser una herramienta sólida para la generación de reportes de producción, SAP Crystal Reports convierte casi cualquier fuente de datos en información útil e interactiva a la cual se puede acceder en línea o sin conexión, desde aplicaciones, portales y dispositivos móviles. Y al ser una solución empresarial, tiene su versión de paga, versión de prueba y de desarrollo.
+	 <br>Y para acceder a la versión de desarrollo es necesario registrarse en el portal.
+	<br>Después del registro es necesario descargar la versión compatible con Visual Studio.
+	<br>
+	       <img src="lab13/CrystalReports.png" height="200" width="650" >
+ 	<br>
+ </div>
+      <p class="Estilo6"><br>
+      <img src="../imagenes/instrucciones.jpg" width="600" height="50"></p>
+      <blockquote>
+		  <font color="#3366ff"
+ face="Courier New, Courier, monospace"><b>
+		  <img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b>
+		  </font><b>Modelos</b><br>La porci&oacute;n del modelo de datos al que se refiere la aplicaci&oacute;n 
+        de la pr&aacute;ctica es la siguiente:<br><b></b><br>
+		  <div align="center">
+			  <img src="lab13/lab17-2.jpg" alt=""
+ width="414" height="61"> <br></div>
+		  <br><font color="#3366ff"
+ face="Courier New, Courier, monospace"><b>
+		  <img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b>
+		  </font><b>Tablas correspondientes al modelo.</b><br>Las tablas que corresponden al modelo son las siguientes:
+  		<blockquote>
+			<b>Clientes</b> (<u><b>CodigoCliente</b></u>,RazonSocial,Direccion,CodigoPais)<br>
+			<b>Articulos</b> (<u><b>Codigo</b></u>,Descripcion,Precio)<br><b>Ventas 
+			</b>(<u><b>CodigoArticulo,CodigoCliente,Fecha</b></u>,Cantidad)<br>
+		  </blockquote>
+		  <b><br></b>
+		  <font color="#3366ff"
+ face="Courier New, Courier, monospace"><b>
+		  <img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b>
+		  </font><b>El DFD para esta transacci&oacute;n (el cliente genera 
+    una consulta) es el siguiente:</b><br>
+		  <div align="center">
+			  <img src="lab13/lab17-3.jpg" alt=""
+ width="510" height="315"> <br></div>
+		  <br><font color="#3366ff"
+ face="Courier New, Courier, monospace"><b>
+		  <img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b>
+		  </font><b>El diagrama de estructura de la soluci&oacute;n se plantea 
+    a continuaci&oacute;n:</b><br><br>
+		  <div align="center">
+			  <img src="../imagenes/lab17-img0.png"><br></div>
+		  <br>Recuerda que cada modulo genérico debe de ser etiquetado:
+  		<blockquote>
+			F: Forma<br>S: Subrutina<br>R: Reporte<br>Y: Funci&oacute;n<br><br>
+		  </blockquote>
+		  <p><font color="#000000">
+		  <img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font><b>Dise&ntilde;o de la interfaz</b><br>
+		  <br><font color="#3366ff"
+ face="Courier New, Courier, monospace"><b>
+		  <img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b>
+		  </font>Crea un proyecto <b>Windows Application</b>; agrega al proyecto 
+    la clase <strong>UtilAccess.cs</strong> que se anexa a continuaci&oacute;n. Esta clase es casi igual a 
+	la&nbsp; que hemos hecho hasta ahora, pero con funciones espec&iacute;ficas para Access. 
+	Se recomienda que analices que cuáles son los cambios respecto. </p>
+		  <div align="center">
+			  <a href="lab13/UtilAccess.cs">
+			  <img src="lab13/lab17-modUtil.png" width="77" height="91" class="style1"></a><a href="../recursos/modUtil.vb">
+			  </a></div>
+		  <p>Ahora descarga el siguiente <strong>.dll</strong> para poder agregar gr&aacute;ficas a tu proyecto:</p>
+		  <div align="center">
+			  <a href="../recursos/ZedGraph.dll">
+			  <img src="../imagenes/lab17-ZedGraph.png"> </a></div>
+		  <p>El componente que vamos a agregar es un componente open source creado por la gente de 
+		  <a href="http://zedgraph.org/wiki/index.php?title=Main_Page">ZedGraph.org</a> 
+	que nos permite graficar en C#.Net, sin embargo en la versiones posteriores 
+	de Visual Studio 2008&nbsp; ya se cuenta con un control que permite 
+	graficar, pero no con las características que ofrece este control. ZedGraph es un control que utiliza la licencia GPL por lo que no puedes agregarlo a tu proyecto sin dar cr&eacute;dito a su creador y no puedes vender el componente. 
+		  </p>
+		  <p>Ahora agrega ZedGraph a tu proyecto siguiendo los siguientes pasos:</p>
+		  <p>Primero selecciona el men&uacute; Project y selecciona <strong>Add Reference...</strong>
+		  </p>
+		  <p><img src="../imagenes/lab17-img1.png"></p>
+		  <p>En la pantalla que aparece selecciona la pesta&ntilde;a <strong>Browse</strong> y ah&iacute; busca el dll que acabas de bajar y 
+	selecciónalo.</p>
+		  <p><img src="../imagenes/lab17-img2.png"></p>
+		  <p>Con esto se agrega la referencia pero todav&iacute;a debemos agregar el control a nuestra lista de controles, para esto selecciona la lista de controles y haz click derecho sobre el toolbox (en la imagen de arriba se ve el click derecho sobre la pesta&ntilde;a de All Windows Forms) y selecciona 
+		  <strong>Choose Items...</strong> </p>
+		  <p><img src="../imagenes/lab17-img3.png"></p>
+		  <p>Presiona el bot&oacute;n browse y busca el dll que bajaste y selecciónalo. Con esto agregar&aacute;s a la lista de controles un control llamado 
+		  <strong>ZedGraphControl</strong> a la pesta&ntilde;a que estaba seleccionada en el toolbox cuando hiciste click derecho sobre &eacute;l. 
+		  </p>
+		  <p><img src="../imagenes/lab17-img4.png"></p>
+		  <p>Crea la forma <b>ConsultaVentas</b> y agrega los siguientes controles:<br>
+		  </p>
+		  <table cellpadding="2" cellspacing="2" border="1"
+ width="100%" align="center">
+			  <tbody>
+				  <tr>
+					  <td valign="top" bgcolor="#330099" align="center"><b>
+					  <font
+ color="#ffffff">Control (Nombre)</font><br></b></td>
+					  <td valign="top" bgcolor="#330099" align="center"><b>
+					  <font
+ color="#ffffff">Propiedades a modificar</font><br></b></td>
+				  </tr>
+				  <tr>
+					  <td valign="top">DateTimePicker (dtpDesde) </td>
+					  <td valign="top">Value: 1/1/1990</td>
+				  </tr>
+				  <tr>
+					  <td valign="top">DateTimePicker (dtpHasta)<br></td>
+					  <td valign="top">
+					  <p>Ninguna<br></p>
+					  </td>
+				  </tr>
+				  <tr>
+					  <td valign="top">CheckBox (checkCliente)<br></td>
+					  <td valign="top">Checked: True</td>
+				  </tr>
+				  <tr>
+					  <td valign="top">ComboBox (cmbClientes)<br></td>
+					  <td valign="top">Ninguna</td>
+				  </tr>
+				  <tr>
+					  <td valign="top">CheckBox (checkArticulo) </td>
+					  <td valign="top">Checked: True </td>
+				  </tr>
+				  <tr>
+					  <td valign="top">ComboBox (cmbArticulos)<br></td>
+					  <td valign="top">Ninguna</td>
+				  </tr>
+				  <tr>
+					  <td valign="top">DataGridView (gridVentas)<br></td>
+					  <td valign="top">Ninguna</td>
+				  </tr>
+				  <tr>
+					  <td valign="top">ZedGraphControl <br>( zedGraph )<br></td>
+					  <td valign="top">Ninguna (las vamos a modificar con c&oacute;digo) 
+					  </td>
+				  </tr>
+				  <tr>
+					  <td valign="top">Button <br>( btnConsultar)<br></td>
+					  <td valign="top">Text:&amp;Consultar<br></td>
+				  </tr>
+				  <tr>
+					  <td valign="top">Button <br>( btnReportar )<br></td>
+					  <td valign="top">Text:&amp;Reportar<br></td>
+				  </tr>
+			  </tbody>
+		  </table>
+		  <p><br><b><font color="#993399">Nota:</font> </b>Agrega una etiqueta 
+    a cada control que lo necesite, la distribuci&oacute;n de los mismos queda 
+    a tu consideraci&oacute;n, se recomienda que el control del gr&aacute;fico 
+    sea relativamente grande para que tenga una buena visualizaci&oacute;n.<br>
+		  <br><font color="#3366ff"
+ face="Courier New, Courier, monospace"><b>
+		  <img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b>
+		  </font><b>Distribuci&oacute;n Sugerida:</b><br><br>
+		  <img src="lab13/img8.jpg"></p>
+		  <p><b></b><font color="#000000">
+		  <img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font><b>&nbsp;Primer refinamiento</b><br>
+		  <br><font color="#3366ff"
+ face="Courier New, Courier, monospace"><b>
+		  <img
+ src="../imagenes/vi_rombo.gif"
+ alt="" width="14" height="14"> </b></font>Agrega a<b> UtilAccess </b>los siguientes m&eacute;todos, 
+	recuerda que es recomendable que los introduzcas para un mejor análisis<b>:</b>
+		  <pre class= "Code">  
+  // La conexión que va a utilizar para comunicarse con la base de datos
+        static OleDbConnection connection;
+
+        /*   
+       ----------------------------------------------------------------------------------------------------
+         Crea una conexión con la BD de Access, solo es necesario conocer la ruta del archivo
+         donde se encuentra la BD.
+                                                                                                             
+         @param catalogo  El nombre del archivo donde se almacena la BD
+         --------------------------------------------------------------------------------------------------
+        */
+
+        public static void createConnection(String catalogo)
+        {
+            connection = new OleDbConnection();
+
+            // Obtenemos el string con el wizard data\new datasource de .net
+            String strConexion = @"Provider=Microsoft.Jet.OLEDB.4.0;"+
+                                 "User ID=Admin;" + 
+                                 "Data Source=" + catalogo;
+
+            connection.ConnectionString = strConexion;
+
+            try
+            {
+                if(connection.State == ConnectionState.Closed)
+                   connection.Open();
+            }
+            catch (OleDbException ex)
+            {
+                msgError("No se puede abrir la conexion <createConection>" + Environment.NewLine +
+                                "Error: " + ex.Message);  
+            }
+
+        }
+        
+  
+/**
+    '---------------------------------------------------------------------------------------------------------'
+    '  Grafica los puntos que se obtienen de ejecutar el query pasado como parámetro. El query debe tener la  '
+	'  forma "SELECT ejeX, ejeY FROM..." donde ejeX puede ser cualquier tipo que sea convertible a String y   '
+	'  ejeY tiene que ser numérico.                                                                           '
+    '                                                                                                         '
+    '  @param  zgc    El ZedGraphControl que se va a utilizar para graficar                                   '
+    '  @param  query  El query que se quiere ejecutar en la base de datos. El query debe tener la forma       '
+    '                 SELECT $, INTEGER FROM Tabla [...]                                                      ' 
+    '                 en donde $ es un dato de cualquier tipo que se pueda convertir a String.                '
+    '---------------------------------------------------------------------------------------------------------'
+    */
+
+    public static void graphData(ZedGraphControl zgc, String query)
+    {
+        ZedGraph.PointPairList list = new PointPairList();
+
+        Color [] colores = {Color.AliceBlue, Color.AntiqueWhite, Color.Aqua,
+                            Color.Aquamarine, Color.Azure, Color.Beige,
+                            Color.Bisque, Color.BlanchedAlmond, Color.Blue,
+                            Color.BlueViolet, Color.BurlyWood, Color.Chartreuse,
+                            Color.Coral, Color.Cornsilk, Color.Crimson,
+                            Color.Cyan, Color.Firebrick, Color.FloralWhite,
+                            Color.ForestGreen, Color.Gainsboro, Color.Gold,
+                            Color.Green, Color.Honeydew, Color.IndianRed,
+                            Color.Lavender, Color.LemonChiffon, Color.LightBlue,
+                            Color.LightGreen, Color.LightCoral};
+
+        
+        DataTable dt;
+        ZedGraph.GraphPane graph;
+        zgc.GraphPane.CurveList.Clear();
+        graph = zgc.GraphPane;
+
+        graph.Chart.Fill = new Fill(Color.White, Color.FromArgb(220, 255, 220), 45.0F);
+        graph.Fill = new Fill(Color.White, Color.FromArgb(220, 220, 255), 45.0F);
+
+        dt = getData(query);
+
+         if(dt !=null) 
+         {
+            graph.Title.Text = dt.TableName;
+            graph.XAxis.Title.Text = dt.Columns[0].ColumnName;
+            graph.YAxis.Title.Text = dt.Columns[1].ColumnName;
+
+         
+            String  [] nombres = new String[dt.Rows.Count];
+
+            // Obtenemos los encabezados de las columnas
+
+            for (int i = 0; i < dt.Rows.Count; i++)
+                nombres[i] = dt.Rows[i].ItemArray[0].ToString();
+
+            // Configuramos la gráfica
+
+            graph.XAxis.MajorTic.IsBetweenLabels = true;
+            graph.XAxis.Type = AxisType.Text;
+            graph.XAxis.Scale.TextLabels = nombres;
+            graph.XAxis.Scale.FontSpec.Size = 10.0F;
+            graph.XAxis.Scale.FontSpec.Angle = 90;
+
+           
+             // Llenamos la grafica
+
+            for (int i = 0; i< dt.Rows.Count; i++)
+            {
+                double x = i + 1;
+                double y = Double.Parse(dt.Rows[i].ItemArray[1].ToString());
+                double z = i / 4.0;
+
+                list.Add(x, y, z);
+            }
+
+             BarItem bar= graph.AddBar("", list, Color.Blue);
+             bar.Bar.Fill = new Fill(colores);
+             bar.Bar.Fill.Type = FillType.GradientByZ;
+
+             bar.Bar.Fill.RangeMin = 0;
+             bar.Bar.Fill.RangeMax = 4;
+
+             zgc.AxisChange();
+         }
+
+           zgc.Refresh();
+ }
+
+ /*
+   
+ '---------------------------------------------------------------------------------------------------------'
+ '  Cambia el formato del objeto pasado como parámetro a un formato que entiende SQL Server                '
+ '                                                                                                         '
+ '  @param  param  El objeto que se quiere convertir a formato de SQL Server                               '
+ '  @return  Un String que representa al objeto con un formato comprensible por SQL Server                 '
+ '---------------------------------------------------------------------------------------------------------'
+  */
+
+    public static String accessFormat(Object param)
+    {
+        // En caso de ser un alfanumerico
+
+        if (param is String)
+        {
+            String sParam;
+            sParam = param.ToString();
+            return ("'" + sParam.Replace("'", "\'") + "'");
+        }
+        else if (param is DateTime)
+        {
+            return "#" + ((DateTime)param).ToString("dd/MM/yyyy") + "#";
+        }
+        else if (param == null)
+        {
+            return "null";
+        }
+        else
+            try
+            {
+                return param.ToString();
+            }
+            catch (Exception ex)
+            {
+                String err;
+                err = "Error al ejecutar <accessFormat>"
+                + Environment.NewLine + ex.Message;
+                msgError(err);
+                return "null";
+            }
+    
+    }      
+  
+</pre>
+		  <font color="#3366ff"
+ face="Courier New, Courier, monospace"><b><font color="#993399">Nota:</font> 
+		Recuerda cambiar el NameSpace de la clase en caso de ser necesario.<br>
+		  <br><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14">
+		  </b></font><b>En el evento Load de la forma, agrega lo siguiente:</b><br>
+		  <br>
+		  <pre><span class="Code">UtilAccess.createConnection("artesania.mdb");
+           UtilAccess.fillList(cmbClientes, "SELECT CodigoCliente, RazonSocial FROM Clientes");
+           UtilAccess.fillList(cmbArticulos, "SELECT Codigo, Descripcion FROM Articulos");
+           
+           String query = "SELECT descripcion AS Articulo, SUM(cantidad) AS Cantidades " +
+		                "FROM ventas v, articulos a " +
+							                "WHERE a.codigo = v.codigoArticulo " +
+							                "GROUP BY descripcion";
+                           UtilAccess.fillGrid(gridVentas,query);
+           UtilAccess.graphData(zedGraph, query);
+  </pre>
+		  <p><font color="#3366ff"
+ face="Courier New, Courier, monospace"><b>
+		  <img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b>
+		  </font><font color="#3366ff"
+ face="Courier New, Courier, monospace"><b></b></font></span>
+		  <span class="style5">Dentro de la clase (de la forma actual) agrega el siguiente método privado:</p>
+		  </span><span class="Code">
+		  <pre class="Code">    
+  
+          // Método para armar el query dinámicamente 
+
+        private String getQuery()
+        {
+            String query;
+
+            query = "SELECT descripcion AS Articulo, SUM(cantidad) AS Cantidades " +
+                   "FROM ventas, articulos " +
+                   "WHERE articulos.codigo = ventas.codigoArticulo AND ";
+
+            if (checkCliente.Checked)
+                query += "ventas.codigoCliente = " + cmbClientes.SelectedValue + " AND ";
+
+            if (checkArticulo.Checked)
+                query += "ventas.codigoArticulo = " + cmbArticulos.SelectedValue + " AND ";
+
+
+            query += "ventas.fecha BETWEEN " + UtilAccess.accessFormat(dtpDesde.Value) +
+                     " AND " + UtilAccess.accessFormat(dtpHasta.Value) +
+                     " GROUP BY descripcion";
+
+            return query;
+        }
+
+	</pre>
+		  <p><font color="#3366ff"
+ face="Courier New, Courier, monospace"><b>
+		  <img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b>
+		  </font></span><span class="style3">Analiza la funci&oacute;n getQuery(). &iquest;Qu&eacute; campos se est&aacute;n consultando? &iquest;Cu&aacute;les son los nombres de columna? &iquest;Qu&eacute; va a devolver el query? F&iacute;jate que estamos utilizando la funci&oacute;n accessFormat(). &iquest;Para qu&eacute; sirve esta funci&oacute;n? &iquest;Por qu&eacute; es mejor usarla que cambiar el formato cada vez (piensa en qu&eacute; tendr&iacute;as que hacer para cambiar el manejador de la base de datos, por ejemplo, a Access 2010, del que no conoces la sintaxis en que recibe la fecha)? 
+		  </p>
+		  </span><span class="Code">
+		  <p><font color="#3366ff"
+ face="Courier New, Courier, monospace"><b>
+		  <img
+ src="../imagenes/vi_rombo.gif"
+ alt="" width="14" height="14"> </b></font></span><span class="style4">&nbsp;</span><span class="style3">Agrega el el siguiente código en cada uno 
+	de los eventos adecuados:</span><span class="style6"><br></p>
+		  </span><span class="Code">
+		  <pre class="Code">    
+  
+    private void checkCliente_CheckedChanged(object sender, EventArgs e)
+        {
+            cmbClientes.Enabled = checkCliente.Checked;
+        }
+
+   private void checkArticulo_CheckedChanged(object sender, EventArgs e)
+        {
+            cmbArticulos.Enabled = checkArticulo.Checked;
+        }
+
+   private void btnConsultar_Click(object sender, EventArgs e)
+        {
+          String query = getQuery();
+          UtilAccess.graphData(zedGraph, query);
+          UtilAccess.fillGrid(gridVentas, query);
+        }
+        
+</pre>
+		  <font color="#3366ff"
+ face="Courier New, Courier, monospace"><b>
+		  <img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b>
+		  </font></span><span class="style3"><b>Analiza qu&eacute; consulta se est&aacute; graficando!!!</b>
+		  <blockquote>
+			  &nbsp;F&iacute;jate que el ZedGraphControl cuenta con una gran cantidad de funcionalidad. Por ejemplo, puedes seleccionar un pedazo de la gr&aacute;fica con el mouse para hacer un zoom en esa parte, tambi&eacute;n puedes guardar una imagen de la gr&aacute;fica o imprimirla haciendo click derecho sobre la gr&aacute;fica y seleccionando la opci&oacute;n del men&uacute;. 
+		  </blockquote>
+		  </span><span class="Code">
+		  <p><font color="#000000">
+		  <img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font></span><span class="style7">Creando reportes 
+		  </span><span class="Code"><br><br>
+		  <font color="#3366ff"
+ face="Courier New, Courier, monospace"><b>
+		  <img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b>
+		  </font></span><span class="style3">Para poder crear reportes de una base de datos se necesita crear un DataSet que sea capaz de guardar la informaci&oacute;n que queremos mostrar en el reporte. El reporte va a utilizar este DataSet como una interfaz que le permita saber qu&eacute; campos mostrar y de qu&eacute; tipos. Para poder mostrar un reporte, por lo tanto, lo primero que debemos hacer es agregar un DataSet con la opci&oacute;n Project -&gt; Add New Item, ah&iacute; selecciona un DataSet y 
+	nómbralo dsVentas. <span class="style12"><strong>En caso de no tener el 
+	componente debes instalar la versión adecuada de crystal reports y 
+	asegurarte de hacer los cambios que demandará dicha versión.</strong></span>
+		  </p>
+		  </span><span class="Code">
+		  <p><img src="../imagenes/lab17-img6.png"> </p>
+		  </span><span class="style8">
+		  <p>Una vez que se haya creado el <strong>DataSet</strong> selecciónalo. Va a estar en blanco por lo que hay que hacer click derecho para 
+		  <strong>agregar un DataTable</strong> y despu&eacute;s hacer click derecho sobre el DataTable para 
+		  <strong>agregar las columnas que sean necesarias</strong>. En este caso s&oacute;lo tendremos dos columnas Articulo y Cantidades (porque son las que obtenemos en nuestra consulta). Agrega columnas hasta que tu DataTable sea como el de la imagen:</span><span class="Code">
+		  </p>
+		  <p><img src="../imagenes/lab17-img7.png"> </p>
+		  <p><img src="../imagenes/lab17-img8.png"> </p>
+		  </span><span class="style3">
+		  <p>Ahora que ya tenemos el DataTable que vamos a utilizar debemos agregar un Crystal Report para poder crear el reporte. En el men&uacute; Project selecciona la opci&oacute;n New Item... y ah&iacute; selecciona un Crystal Report al que llamar&aacute;s rptVentas 
+		  </p>
+		  </span><span class="Code">
+		  <p><img src="../imagenes/lab17-img9.png"> </p>
+		  </span><span class="style9">
+		  <p class="style10">Aparecer&aacute; el asistente para la creaci&oacute;n de reportes, como este reporte es muy sencillo vamos a dejar todas las pantallas casi iguales que como aparecen, pero para reportes m&aacute;s complicados podemos utilizar muchas de las opciones que nos presenta.</p>
+		  </span><span class="Code">
+		  <p><img src="../imagenes/lab17-img10.png"> </p>
+		  </span><span class="style3">
+		  <p>Cuando aparezca la siguiente pantalla asegúrate de seleccionar el 
+		  <strong>DataSet</strong> que creamos como la base para el reporte. El 
+		  <strong>DataSet</strong> se encuentra en la carpeta ADO.NET <strong>DataSets</strong> y lo agregas con las flechas que se encuentran a la mitad del asistente. 
+		  </p>
+		  </span><span class="Code">
+		  <p><img src="../imagenes/lab17-img11.png"> </p>
+		  </span><span class="style9">
+		  <p class="style10">Despu&eacute;s aparecer&aacute; una pantalla en donde nos solicitan las columnas que queremos mostrar, selecciona las dos columnas y 
+	agrégalas al reporte y despu&eacute;s presiona Finish ya que despu&eacute;s de esta pantalla viene informaci&oacute;n que no nos sirve para este reporte tan sencillo.</p>
+		  </span><span class="Code">
+		  <p><img src="../imagenes/lab17-img12.png"></p>
+		  </span><span class="style11">
+		  <p>Despu&eacute;s de agregar el reporte aparecer&aacute; <strong>rptVentas</strong> en el explorador de soluciones. Si hacemos click aparecer&aacute; un reporte con varias secciones. En esta vista del reporte podemos agregar l&iacute;neas, cambiar las posiciones de lo que muestra el reporte y mejorar el formato bastante. El formato de reportes as&iacute; como los reportes que incluyan agrupamiento y funciones m&aacute;s avanzadas los vamos a ver en uno de los pr&oacute;ximos laboratorios. 
+		  </p>
+		  <p>Ya que tenemos el reporte necesitamos una forma en la que se muestre el reporte. Agrega una nueva forma llamada Visor que incluya un objeto llamado 
+		  <strong>CrystalReportViewer</strong>. Este control se encuentra en la barra de herramientas bajo la etiqueta Crystal Reports.</p>
+		  </span><span class="Code">
+		  <p><img src="../imagenes/lab17-img13.png"></p>
+		  </span><span class="style3">
+		  <p>Al agregarlo a la forma, esta se convertir&aacute; en un visor para reportes en el que se le presentan varias opciones al usuario como guardar el reporte en varios formatos o imprimirlo. Ahora crea un nuevo m&eacute;todo en la secci&oacute;n de Declaraciones de la clase Visor.
+  		<br></p>
+		  </span><span class="Code">
+		  <pre class="Code">    
+        public void prepareReport(String query)
+        {
+          rptVentas report = new rptVentas();
+          report.SetDataSource(UtilAccess.getData(query));
+          reportViewer.ReportSource = report;
+        }
+</pre>
+		  <p><font color="#3366ff"
+ face="Courier New, Courier, monospace"><b>
+		  <img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b>
+		  </font></span><span class="style11">Para activar el reporte desde el bot&oacute;n 
+		  <strong>btnReportar</strong> de la forma ConsultaVentas, con el criterio seleccionado, 
+    agrega el siguiente c&oacute;digo al evento <b>Click </b>de dicho bot&oacute;n:</p>
+		  </span><span class="Code">
+		  <pre class="Code">     private void btnReportar_Click(object sender, EventArgs e)
+        {
+          String query = getQuery();
+          Visor visor = new Visor();
+          visor.prepareReport(query);
+          visor.Show();
+        }
+  </pre>
+		  </span><span class="style3">
+		  <p><img src="../imagenes/ball.gif" alt="" width="9" height="9"></span><span class="Code"><span class="style3"> Prueba la ejecuci&oacute;n del reporte, cambiando el criterio de selecci&oacute;n 
+    para observar el impacto de los cambios en el <b>n&uacute;mero </b>de registros 
+    que aparecen en el reporte.<br>
+		  <div class="style10" style="padding-left:5em">
+				Si al ejecutar tu aplicación tienes problemas, debes realizar los siguientes pasos:
+				<div class="style10" style="padding-left:5em">
+					Dentro de tu proyecto se encuentra el archivo App.config <br>Abre dicho archivo y posteriormente modifica la sección &#8220;startup&#8221; de la siguiente manera:<br>
+					<br><span class="Code">
+					<pre class="Code">  &lt;startup useLegacyV2RuntimeActivationPolicy=&quot;true&quot;&gt; 
+	&lt;supportedRuntime version=&quot;v4.0&quot; sku=&quot;.NETFramework,Version=v4.0&quot;/&gt; 
+  &lt;/startup&gt; 
+	  </pre>
+					</span></div>
+				
+				<p class="style10"></p>
+				Agrega a tu reporte lo siguiente:<br>
+				<li>Ventajas y características de Crystal Reports</li>
+				<li>¿Para qué sirve App.Config?</li>
+				<li>¿Qué función tiene App.Config?</li>
+		  </div>
+		  <br><img src="../imagenes/ball.gif" alt="" width="9" height="9"> Realiza las 
+		  <b>validaciones </b>pertinentes para que la aplicaci&oacute;n 
+    no termine su ejecuci&oacute;n por alg&uacute;n error no considerado, por ejemplo, el m&eacute;todo de graficar falla cuando el query tiene menos columnas de las esperadas o cuando tiene tipos de datos diferentes a num&eacute;ricos en la segunda columna. 
+		  </p>
+      </blockquote>
+      </span></span><span class="style9">
+      <p class="style10">Tu aplicaci&oacute;n debe ser similar a esta:<br>
+      </p>
+	</span><span class="Code">
+	<p>&nbsp;</p>
+	<p class="style2"><img src="lab13/imgFinal.jpg"></p>
+	<p class="style10">Describe que cambios son necesarios en la aplicación para: </p>
+	<ul class="style10">
+		<li>Soportar y poder filtrar clientes por código de país</li>
+		<li>Soportar y poder filtrar artículos por rango de precio</li>
+	</ul>
+	<p class="style10">Realiza las modificaciones pertinentes para que tu aplicación maneje dichos cambios. 
+	Comprueba el correcto funcionamiento de tu aplicación.</p>
+  </p>
+      <p class="Estilo6"><img src="../imagenes/especificaciones.jpg" width="600" height="50"></p>
+      <p class="Estilo6"><strong>La calificaci&oacute;n de esta actividad     es de 
+		carácter individual.<br>
+          <br>
+Env&iacute;a el laboratorio por este medio , archivo lab13 +  matricula.zip.</strong></p>
+      <p class="Estilo6">&nbsp;</p>    </td>
+  </tr>
+  <tr>
+    <td><p align="center" class="Estilo1 Estilo4 Estilo5">&nbsp;</p>      </td>
+  </tr>
+</table>
+
+<map name="Map"><area shape="rect" coords="5,6,103,123" href="../../semana7/lab11/proveedores.csv">
+<area shape="rect" coords="130,7,229,123" href="../../semana7/lab11/proyectos.csv">
+<area shape="rect" coords="255,7,352,122" href="../../semana7/lab11/entregan.csv">
+<area shape="rect" coords="373,5,474,122" href="../../semana7/lab11/materiales.csv">
+</map></body>
+</html>

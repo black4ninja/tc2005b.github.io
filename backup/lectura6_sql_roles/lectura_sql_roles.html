@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Consultas en SQL Usando Roles y Consultas</title>
+</head>
+
+<body>
+    <main>
+        
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B Construcción de software y toma de decisiones</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h3>Consultas en SQL Usando Roles y Consultas</h3>
+            </div>
+        </div>
+
+        <div class="container">
+            
+            <div>
+                <h5><i class="material-icons">library_books</i> Consultas con roles.</h5>
+                <p align="justify">
+                    En ocasiones se presenta la necesidad de hacer consultas que involucran a una
+                    misma tabla más de una vez, ya sea para comparar entre sí subconjuntos de tuplas 
+                    de la tabla o bien para que ésta juegue más de un papel en la consulta.
+                </p>
+                <p align="justify">
+                    Tomaremos como primer ejemplo el siguiente modelo Entidad - Relación.
+                </p>
+                <div align="center"><img class="responsive-img" alt="" src="Dibujo1.jpg"></div>
+            </div>
+            
+            <div>
+                <p align="justify">
+                    De acuerdo al procedimiento de <strong>traslado</strong> del modelo Entidad-Relación, las tablas derivadas del ejemplo serían 
+                    <br>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;viajes(idviaje, idorigen, iddestino, fecha)
+                    <br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ciudades(idciudad, nombreciudad)
+                    <br>
+                    <br>
+                    <strong>Nota:</strong> idorigen e iddestino son valores que pertenecen al dominio de idciudad, heredados para instrumentar las asociaciones Parten y Llegan, jugando los dos roles necesarios en la tabla que representa a la entidad viajes.
+                    <br>
+                    <br>
+                    Al plantear la consulta "identificador del viaje, nombre de la ciudad de origen, nombre de la ciudad de destino y fecha" utilizando SQL, se presenta la siguiente dificultad: ciudades debe aparecer más de una vez en la cláusula FROM, con la consecuente ambigüedad. 
+                </p>
+            </div>
+            
+            <div>
+                <p align="justify">
+                    <strong> ¿Cómo resolver esto?</strong>
+                    <br>
+                    
+                    De manera dinámica, es posible utilizar alias para denotar los roles que la tabla ciudades juega:
+                    <br>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;SELECT idviaje, origen.nombre, destino.nombre, fecha
+                    <br>
+                    &nbsp;&nbsp;&nbsp;FROM viajes, ciudades origen, ciudades destino
+                    <br>
+                    &nbsp;&nbsp;&nbsp;WHERE viajes.idorigen = origen.idciudad AND 
+                    <br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;viajes.iddestino = destino.idciudad
+                    <br>
+                    <br>
+                    Adicionalmente, es posible hacer definiciones alternativas permanentes de las tablas usando la sentencia:
+                    <br>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;CREATE SYNONYM sinónimo FOR nombretabla
+                    <br>
+                    <br>
+                    Un sinónimo no es una copia de la tabla sino un nombre alternativo para ser utilizado en consultas. En nuestro caso sería de utilidad crear los sinónimos:
+                    <br>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;CREATE SYNONYM origen FOR ciudades
+                    <br>
+                    &nbsp;&nbsp;&nbsp;CREATE SYNONYM destino FOR ciudades
+                    <br>
+                    <br>
+                    y posteriormente podríamos plantear la consulta anterior sencillamente como:
+                    <br>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;SELECT idviaje, origen.nombre, destino.nombre, fecha
+                    <br>
+                    &nbsp;&nbsp;&nbsp;FROM viajes, origen, destino
+                    <br>
+                    &nbsp;&nbsp;&nbsp;WHERE viajes.idorigen = origen.idciudad AND 
+                    <br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;viajes.iddestino = destino.idciudad
+                                   <br>
+                    <br>
+                    <strong>Nota:</strong> en este caso no utilizamos alias sino el sinónimo en sustitución de la tabla ciudades.
+                </p>
+            </div>
+            
+            <div>
+                <p align="justify">
+                    <br>
+                    Consideremos ahora el ejemplo: 
+                    <br>
+                    <br>
+                    <div align="center"><img class="responsive-img" alt="" src="Dibujo2.jpg"></div>
+                    <br>
+                    En este caso la tabla que instrumenta el modelo es:
+                    <br>
+                    <br>
+                    empleados(idempleado, nombre, idjefe)
+                    <br>
+                    <br>
+				    En la que la asociación <strong>Reportan</strong> se instrumenta a través de la inclusión de idjefe en la tabla, que proviene precisamente del dominio de <strong>idempleado</strong>.
+                    <br>
+                    <br>
+				    Para plantear la&nbsp; consulta &quot;Nombre del empleado, nombre del jefe&quot; en SQL nos enfrentamos a un problema similar al anterior, sólo que en esta ocasión sólo hay una tabla. La solución a este requerimiento utilizando<strong> alias </strong>es:
+                    <br>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;SELECT e.nombre empleado, j.nombre jefe<br>
+                    &nbsp;&nbsp;&nbsp;FROM empleados e, empleados j<br>
+                    &nbsp;&nbsp;&nbsp;WHERE e.idjefe=j.idempleado<br>
+                    <br>
+				    En este caso se usan los alias de tabla <strong>e</strong> para <strong>empleados</strong> y <strong>j</strong> para <strong>jefes</strong>. Obsérvese que se incluyen los <strong>alias</strong> de <strong>columna</strong> empleado y jefe para que en los encabezados de las columnas de los resultados aparezcan estas leyendas sobre los nombres de los empleados y los jefes respectivamente.
+                    <br>
+                    <br>
+                    Si definiésemos el sinónimo:
+                    <br>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;CREATE SYNONYM jefes FOR empleados
+                    <br>
+                    <br>
+                    Podríamos expresar la consulta anterior como:<br>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;SELECT empleados.nombre empleado,jefes.nombre jefe<br>
+                    &nbsp;&nbsp;&nbsp;FROM empleados,jefes<br>
+                    &nbsp;&nbsp;&nbsp;WHERE empleados.idjefe=jefes.idempleado<br>
+                    <br>
+                    <br>
+                    Supongamos que tenemos ahora las tablas:<br>
+                    <br>
+                    <strong>ventasdiarias(<u>idproducto, fecha</u>, cantidad)<br>
+				    productos(<u>idproducto</u>, descripción, precio)</strong>
+                    <br>
+                    <br>
+				    y que queremos obtener la diferencia entre las ventas de cada producto entre los días 1/09/2000 y 2/09/2000, necesitamos renombrar en la consulta a la tabla <strong>ventasdiarias</strong> a fin de poder referirnos a ella más de una vez:
+                    <br>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;SELECT p.idproducto,p.descripcion,vprimero.cantidad-vsegundo.cantidad diferencia<br>
+				    &nbsp;&nbsp;&nbsp;FROM productos p,ventasdiarias vprimero,ventasdiarias vsegundo <br>
+				    &nbsp;&nbsp;&nbsp;WHERE p.idproducto=vprimero.idproducto AND<br>
+				    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; p.idproducto=vsegundo.idproducto AND<br>
+				    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; vprimero.fecha = '1-SEP-00' AND<br>
+				    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; vsegundo.fecha = '2-SEP-00'<br>
+                    <br>
+                </p>
+            </div>
+            
+            <div>
+                <p align="justify">
+                    <h5>Subconsultas</h5>
+                    <br>
+                    En algunas ocasiones requerimos utilizar el resultado de una consulta como criterio de selección.
+                    <br>
+                    Un primer uso es el de descubrir tuplas no asociadas. Considera los esquemas:
+                    <br>
+                    <br>
+                    ventasdiarias(idproducto, fecha, cantidad)
+                    <br>
+                    productos(idproducto, descripción, precio)
+                    <br>
+                    <br>
+                    <strong>¿Cómo encontrar qué productos no se han vendido?</strong>
+                    <br>
+                    <br>
+                    Una posibilidad es utilizar el operador diferencia:
+                    <br><br>
+                    &nbsp;&nbsp;&nbsp;(SELECT idproducto FROM productos)
+                    <br>
+                    &nbsp;&nbsp;&nbsp;minus
+                    <br>
+                    &nbsp;&nbsp;&nbsp;(SELECT idproducto FROM ventasdiarias)
+                    <br>
+                    <br>
+                    Una segunda forma de plantear este problema es mediante una relación de pertenencia, esto es podemos replantear el problema como:
+                    <br>
+                    <br>
+                    "Encontrar todos los productos que no pertenecen al conjunto de los productos vendidos"
+                    <br>
+                    <br>
+                    Esto puede plantearse utilizando una subconsulta como criterio de búsqueda:
+                    <br>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;SELECT idproducto FROM productos
+                    <br>
+                    &nbsp;&nbsp;&nbsp;WHERE idproducto NOT IN (SELECT idproducto FROM ventasdiarias)
+                    <br>
+                    <br>
+                    El operador IN establece una relación de pertenencia de conjuntos y desde luego NOT IN puede entenderse como "no pertenencia". 
+                    <br>
+                    Otra forma de plantear esta consulta es enfocándola como
+                    <br>
+                    "Encontrar los productos para los que no existen ventas"
+                    <br>
+                    que se expresa utilizando una subconsulta basada en el operador EXISTS.
+                    <br>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;SELECT idproducto FROM productos p
+                    <br>
+                    &nbsp;&nbsp;&nbsp;WHERE NOT EXISTS 
+                    <br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(SELECT * FROM ventasdiarias v WHERE v.idproducto = p.idproducto)
+                    <br>
+                    <br>
+                    Observa que en este caso es necesario utilizar alias para evitar la ambigüedad en la columna idproducto de la subconsulta.
+                    <br>
+                    <br>
+                    Las subconsultas también pueden ser utilizadas, con ciertas reglas en lugar de una expresión. 
+                    <br>
+                    <br>
+                    Por ejemplo para obtener el identificador y la descripción de los productos de los que se han vendido más de 1,000,000 pesos, puede plantearse la siguiente consulta que incluye una subconsulta para calcular el importe vendido de cada producto:
+                    <br>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;SELECT idproducto,descripcion FROM productos p
+                    &nbsp;&nbsp;&nbsp;WHERE 100000 &lt;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(SELECT sum(v.cantidad*p.precio) 
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FROM ventasdiarias v 
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WHERE v.idproducto=p.idproducto)
+                    <br>
+                    <br>
+                    Observa que en este caso también utilizamos un alias y el precio utilizado en la subconsulta proviene de la tupla analizada de la consulta principal. 
+                    <br>
+                    <br>
+                    Por otra parte,  el resultado de la subconsulta se usa para comparar con una constante, como cualquier otra expresión, pero en este caso la constante debe ponerse primero, por lo que para restringir los productos con ventas mayores a 100000, escribimos "que 100000 sea menor al importe total".
+                    <br>
+                    <br>
+                    La sintaxis general para utilizar subconsultas en una consulta principal es:
+                    <br>
+                    <br>
+                    &nbsp;&nbsp;&nbsp;SELECT columnas
+                    &nbsp;&nbsp;&nbsp;FROM tablas
+                    &nbsp;&nbsp;&nbsp;WHERE condicionsubconsulta
+                    <br>
+                    <br>
+                    <br>
+                    en donde las alternativas para la condición de subconsulta son:
+                    <br>
+                    condicionsubconsulta :
+                    <br>
+                    expresión  [NOT] IN (SELECT columnas FROM tablas WHERE condiciones)  
+                    <br>
+                    |
+                    <br>
+                    expresión {&gt; | &lt; | = | != | &lt;&gt; | &gt;= | &lt;= } [{ANY | SOME | ALL }] 
+                    <br>
+                    (SELECT columnas FROM tablas WHERE condiciones) 
+                    <br>
+                    |
+                    <br>
+                    [NOT] EXISTS 
+                    <br>
+                    (SELECT * FROM tablas WHERE condiciones) 
+                    <br>
+                    <br>
+                    Donde el texto en azul indica los elementos que realmente aparecen en las sentencias y los símbolos tienen el siguiente significado:
+                    <br>
+                    <br>
+                    []     : elemento opcional
+                    {}     : lista de alternativas
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="blue darken-1 page-footer">
+        <div class="container">
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+        </div>
+    </footer>
+
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="js/materialize.min.js"></script>                                                          
+</body>
+</html>

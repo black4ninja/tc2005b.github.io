@@ -73,7 +73,11 @@
                   <i class="small mdi-action-list"></i>
                   Instrucciones</h5>
                 <ul class="collection">
-                    <li class="collection-item">Para interactuar con una base de datos, debemos crear la base de datos. Para este laboratorio usaremos MySQL, sin embargo, la lógica es muy similar si decides trabajar con cualquier otro motor de bases de datos. Crea tu base de datos y crea algunas tablas y ponles algunos datos, de manera similar a la demostración del profesor.</li>
+                    <li class="collection-item">
+                        Para interactuar con una base de datos, debemos crear la base de datos. 
+                        Para este laboratorio usaremos MySQL, sin embargo, la lógica es muy similar si decides trabajar con cualquier otro motor de bases de datos. 
+                        Crea tu base de datos, crea algunas tablas y ponles algunos datos, de manera similar a la demostración del profesor.
+                    </li>
                     <li class="collection-item">Para poder interactuar con el manejador de base de datos MySQL, ocuparemos el paquete <code>mysql2</code>.</li>
                     <li class="collection-item">Para poder conectarnos con la base de datos, utilizaremos el archivo <code>database.js</code>, el cual crearemos dentro de un folder con nuestras librerías de apoyo, típicamente nombrado <code>util</code>. El archivo se encargará de manejar las conexiones con nuestra base de datos:
                     <code><pre>
@@ -89,6 +93,12 @@ const pool = mysql.createPool({
 module.exports = pool.promise();
                     </pre></code>
                     Asegúrate de cambiar los valores de los atributos del objeto de js para que coincidan con los de tu base de datos. Como podrás observar, se exporta una promesa. Las promesas permiten manejar fácilmente código que se ejecuta de manera asíncrona.
+                </li>
+                <li class="collection-item">
+                    A continuación, haremos una implementación a partir del diseño que se presenta en el siguiente diagrama de secuencia:
+                    <div class="center-align">
+                        <img class="responsive-img" alt="Diagrama de secuencia de una interacción con un estilo arquitectónico MVC" src="uml/mvc_bd_secuencia.png">
+                    </div>
                 </li>
                 <li class="collection-item">Para conectarnos con la base de datos y ejecutar consultas desde nuestra aplicación:
                     <code><pre>
@@ -208,6 +218,15 @@ export.getVideojuego = (request, response, next) => {
                     <li class="collection-item">
                         <a target="_blank" href="https://medium.com/codeep-io/common-security-issues-in-web-applications-part-1-af339360c646">Common Security Issues in Web Applications. Part 1</a>
                     </li> 
+                    <li class="collection-item">
+                        <a target="_blank" href="https://www.freecodecamp.org/news/the-javascript-promises-handbook/">How JavaScript Promises Work – Handbook for Beginners</a>
+                    </li> 
+                    <li class="collection-item">
+                        <a target="_blank" href="https://www.freecodecamp.org/news/crud-operations-explained/">CRUD Operations – What is CRUD?</a>
+                    </li>
+                    <li class="collection-item">
+                        <a target="_blank" href="https://www.npmjs.com/package/uuid">uuid: Módulo para crear id's únicos</a>
+                    </li> 
                 </ul>
                 <div class="divider"></div>
             </div>
@@ -245,7 +264,7 @@ export.getVideojuego = (request, response, next) => {
         </div>
         <div class="footer-copyright">
             <div class="container">
-                © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+                © 2021-2025Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
             </div>
         </div>
     </footer>

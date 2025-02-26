@@ -1,0 +1,65 @@
+@startuml mvc_bd_secuencia
+header MVC con BD
+autonumber
+hide footbox
+
+actor navegador
+boundary routes
+boundary "vista add.ejs" as vista_add
+boundary "vista list.ejs" as vista_list
+control controlador 
+entity un_modelo 
+entity Modelo
+database mysql
+
+activate navegador
+navegador -> routes: GET /add
+deactivate navegador
+activate routes
+routes -> controlador: get_add(request, response)
+deactivate routes
+activate controlador
+controlador -> vista_add: response.render('add.ejs')
+deactivate controlador
+activate vista_add
+vista_add -> navegador: HTML
+deactivate vista_add
+activate navegador
+navegador -> routes: POST /add
+deactivate navegador
+activate routes
+routes -> controlador: post_add(request, response)
+deactivate routes
+activate controlador
+controlador -> un_modelo **: new Modelo(request.body.valor)
+activate un_modelo
+controlador ->> un_modelo: save()
+un_modelo ->> mysql: execute("INSERT INTO Modelo(?)", this.valor)
+activate mysql
+mysql -->> un_modelo: Query OK
+deactivate mysql
+un_modelo -->> controlador: promesa
+deactivate un_modelo
+controlador -> routes: response.redirect('/')
+deactivate controlador
+activate routes
+routes -> controlador: get(request, response)
+deactivate routes
+activate controlador
+controlador ->> Modelo: fetchAll()
+activate Modelo
+Modelo ->> mysql: execute("SELECT * FROM Modelo")
+activate mysql
+mysql -->> Modelo: rows 
+deactivate mysql
+Modelo -->> controlador: rows
+deactivate Modelo
+controlador -> vista_list: response.render('list.ejs', rows)
+deactivate controlador
+activate vista_list
+vista_list -> navegador: HTML
+deactivate vista_list
+activate navegador
+deactivate navegador
+
+@enduml

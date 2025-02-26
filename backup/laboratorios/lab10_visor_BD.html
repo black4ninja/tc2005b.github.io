@@ -1,0 +1,410 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Laboratorio 10</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+.Code { font-family:"Courier New", Courier, monospace; font-size:12px; color:#003366; background-color:#FFFFCC}
+.Estilo1 {font-family: Arial, Helvetica, sans-serif}
+.Estilo4 {font-family: Arial, Helvetica, sans-serif; color: #000000; }
+.Estilo3 {font-family: Arial, Helvetica, sans-serif; font-size: 9px; }
+body {
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+.Estilo5 {font-size: 14px}
+.Estilo6 {font-family: Arial, Helvetica, sans-serif; font-size: 14px; }
+.style1 {
+	background-color: #FFFFCC;
+}
+.style2 {
+	color: #0033CC;
+}
+.style3 {
+	color: #000080;
+}
+.style4 {
+	font-family: "Courier New", Courier, monospace;
+	font-size: 12px;
+	color: #000080;
+	background-color: #FFFFCC;
+}
+.style5 {
+	text-align: center;
+}
+-->
+</style>
+</head>
+
+<body>
+<table width="98%" border="0">
+  <tr>
+    <td><div align="right"><img src="../imagenes/actividades.jpg" width="600" height="50"></div></td>
+  </tr>
+  <tr>
+    <td><p align="left" class="Estilo4"><strong>Laboratorio 10: Aplicaci&oacute;n cliente- servidor  "Visor de BD"<br>
+</strong><strong><br>
+</strong></p>
+    </td></tr>
+  <tr>
+    <td class="Estilo1 Estilo5"><p class="Estilo6"><strong><img src="../imagenes/objetivos.jpg" width="600" height="50"></strong></p>
+      <p class="Estilo6"> En esta pr&aacute;ctica desarrollaremos una interfaz en 
+		C#.Net, que  nos permita realizar consultas <strong>SQL</strong> 
+		mediante la utilización de una caja de texto y recupere la información 
+		de una base de datos que se encuentra almacenada en un servidor SQL 
+		Server.<br>
+        <br>
+        <br>
+      <img src="../imagenes/instrucciones.jpg" width="600" height="50"></p>
+      <p class="Estilo6"><strong> </strong> A modo de referencia, incluimos los esquemas de   las tablas que creaste en la pr&aacute;ctica anterior y que ser&aacute;n con  las que trabajaremos en esta pr&aacute;ctica: </p>
+      <blockquote><strong>Materiales(<u>Clave</u>,Descripci&oacute;n,Costo,PorcentajeImpuesto)</strong><br>
+          <strong>Proveedores(<u>RFC</u>,RazonSocial)</strong><br>
+          <strong>Proyectos(<u>Numero</u>,Denominacion)</strong><br>
+          <strong>Entregan(<u>Clave,RFC,Numero,Fecha</u>,Cantidad)</strong></blockquote>
+      <blockquote>
+        <p><font color="#000000"><img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font>&nbsp;<b>Construcci&oacute;n del int&eacute;rprete
+                           SQL</b><br>
+                           <br>
+Crearemos un peque&ntilde;o <b>int&eacute;rprete de SQL</b>, por medio de
+                refinamientos sucesivos.<br>
+                <br>
+                <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> 
+				</b></font>Nuestra interfaz será desarrollada en C#.Net. A diferencia de las pr&aacute;cticas anteriores ahora nos conectaremos a una base de datos que se encuentra en SQL Server, lo que representa 
+		que ahora crearemos un librería para poder posteriormente reutilizar 
+		este código en otros proyectos. <br>
+                <br>
+                <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> 
+				</b></font>&nbsp;Crea un nuevo proyecto del tipo <b>Windows Application </b>. <br>
+</p>
+        <p><font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> 
+		</b></font><b>1er Refinamiento.</b><br>
+            <br>
+            <img src="../imagenes/ball.gif" alt="" height="8" width="8"> En la forma<b> Form1 </b>del proyecto, realiza los siguientes cambios:<br>
+            <br>
+          En las propiedades de la forma, cambia:<br>
+        </p>
+        <blockquote><b>(Name) : Interprete<br>
+          Text: Int&eacute;rprete de SQL<br>
+        </b></blockquote>
+        <img src="../imagenes/ball.gif" alt="" height="8" width="8"> Agrega un DataGridView a la forma y cambia las siguientes propiedades <i><b><br>
+        </b></i><br>
+        <blockquote><b>(Name): gridResultados </b><br>
+            <b>EditMode: EditProgramatically </b></blockquote>
+        <img src="../imagenes/ball.gif" alt="" height="8" width="8"> Agrega un TextBox. Cambia sus propiedades a:
+        <blockquote><b>(Name): txtSentencia</b><br>
+            <b>Multiline: True</b><br>
+        </blockquote>
+        <img src="../imagenes/ball.gif" alt="" height="8" width="8"> Agrega un CommandButton
+        <blockquote><b>(Name): btnConsultar</b><br>
+            <b>Text: Consultar</b><br>
+        </blockquote>
+        <font color="#3366ff"
+ face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font><b>2do Refinamiento:</b><br>
+        <br>
+En la secci&oacute;n general de la clase (en la parte de hasta arriba) agrega 
+		las siguiente librería al proyecto:
+<pre class="Code">
+<span class="style3">using System.Data.SqlClient;</span>
+</pre>
+<p>&nbsp;</p>
+<p>Agrega una clase al proyecto al que llamarás <strong>Util.cs</strong> y 
+agrega el siguiente c&oacute;digo . Se recomienda que lo introduzcas por tu 
+cuenta, ya que al hacerlo podrás entender internamente cómo estará implementado 
+cada método los cuales serán constantemente utilizados en otros proyectos.</p>
+		<pre class="style1"><span class="style3">// Agregar estas librerias
+
+using System.Data;
+using System.Data.SqlClient;
+using System.Windows.Forms;
+
+
+namespace Lab10_VisorBD
+</span>{<span class="style3">
+    class Util
+    {
+       // La conexión que va a utilizar para comunicarse con la base de datos
+        static SqlConnection connection; 
+
+     /*   
+    ----------------------------------------------------------------------------------------------------
+      Crea una conexión con el servidor pasado como parámetro utilizando el nombre de usuario y password     
+      pasados como parámetro y se conecta al catálogo pasado como parámetro.                                 
+                                                                                                             
+      @param servidor  El servidor al que se va a conectar                                                   
+      @param catalogo  El catalogo al que se va a conectar                                                   
+      @param user      El nombre de usuario con el que te conectas                                           
+      @param pass      El password del usuario                                                               
+    ----------------------------------------------------------------------------------------------------
+     */
+
+        public static void createConnection(String servidor,String catalogo,String user,String pass)
+        {
+         connection =  new SqlConnection();
+        
+         // Obtenemos el string con el wizard data\new datasource de .net
+
+         String strConexion = @&quot;Data Source=&quot; + servidor +
+                                  &quot;;Initial Catalog=&quot; + catalogo +
+                                  &quot;;Persist Security Info=True;User ID=&quot; + user +
+                                  &quot;;Password=&quot; + pass;
+
+        connection.ConnectionString = strConexion;
+        }
+
+
+        /*
+   --------------------------------------------------------------------------------------------------------
+    Muestra en pantalla una ventana de dialogo con el ícono de critico con el mensaje pasado como parámetro
+                                                                                                             
+    @param  msg  Mensaje a mostrar en la pantalla.                                                
+   --------------------------------------------------------------------------------------------------------
+
+       */
+
+        public static void msgError(String msg)
+        {
+            MessageBox.Show(msg, &quot;Error de ejecucución&quot;, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+
+   
+  /**
+    ------------------------------------------------------------------------------------------------------
+      Esta función utiliza la conexión abierta para realizar el query pasado como parámetro y regresa un  
+      DataTable con los datos leídos                                                                      
+                                                                                                          
+      @param  query  El query que se va a ejecutar en la base de datos                                    
+      @return  Un DataTable con los datos leídos de la base de datos al ejecutar el query                 
+    ------------------------------------------------------------------------------------------------------
+   **/
+   
+    public static DataTable getData(String query)
+    {
+        SqlCommand command = new SqlCommand();
+        SqlDataAdapter adapter = new SqlDataAdapter();
+        DataTable table = new DataTable();
+
+        try
+        {
+            connection.Open();
+            command.Connection = connection;
+            command.CommandText = query;
+            adapter.SelectCommand = command;
+            adapter.Fill(table);
+            connection.Close();
+
+            if (table.Rows.Count > 0)
+                return table;
+            else
+                return null;        
+        }
+        catch (SqlException ex)
+        {
+            msgError(&quot;No se puede ralizar el query &lt;getData&gt;&quot; + Environment.NewLine +
+                             &quot;Error: &quot; + ex.Message);
+            table = null;
+            return table;
+        }
+        finally
+        {
+            connection.Close(); 
+        }
+    }
+
+/*
+ '---------------------------------------------------------------------------------------------------------
+      Llena el ComboBox pasado como parámetro con los datos que se recuperan del query pasado como parámetro.
+      El ComboBox se va a llenar mediante su ValueMember y su DisplayMember con la primera y segunda columna 
+      regresadas del query respectivamente.                                                                  
+                                                                                                            
+      @param  lst    El ComboBox que se va a llenar con los datos del query                                 
+      @param  query  El query que se quiere ejecutar en la base de datos. El query debe tener la forma      
+                     SELECT INTEGER, $ FROM Tabla [...]                                                      
+                     en donde $ es un dato de cualquier tipo.                                               
+    --------------------------------------------------------------------------------------------------------
+  */  
+
+    public static void fillList(ComboBox lst, String query)
+    {
+        try
+        {
+            DataTable table;
+            table = getData(query);
+            lst.DataSource = null;
+            lst.Items.Clear();
+            lst.DataSource = table;
+
+            if (table.Columns.Count == 2)
+            {
+                lst.ValueMember = table.Columns[0].ToString();
+                lst.DisplayMember = table.Columns[1].ToString();
+            }
+            else
+            {
+                lst.DisplayMember = table.Columns[0].ToString();
+            }
+        }
+        catch (Exception ex)
+        {
+            msgError(&quot;No se puede llenar el control - fillList &lt;comboBox&gt;&quot; + Environment.NewLine +
+                             &quot;Error: &quot; + ex.Message);
+        }
+
+    
+    }
+
+/*
+    --------------------------------------------------------------------------------------------------------
+      Llena el ListBox pasado como parámetro con los datos que se recuperan del query pasado como parámetro. 
+      El ListBox se va a llenar mediante su ValueMember y su DisplayMember con la primera y segunda columna  
+      regresadas del query respectivamente.                                                                  
+                                                                                                             
+      @param  lst    El ListBox que se va a llenar con los datos del query                                   
+      @param  query  El query que se quiere ejecutar en la base de datos. El query debe tener la forma       
+                     SELECT INTEGER, $ FROM Tabla [...]                                                       
+                     en donde $ es un dato de cualquier tipo.                                                
+    --------------------------------------------------------------------------------------------------------
+
+ * */
+
+   public static void fillList(ListBox lst, String query)
+    {
+        try
+        {
+            DataTable table;
+            table = getData(query);
+            lst.DataSource = null;
+            lst.Items.Clear();
+            lst.DataSource = table;
+
+            if (table.Columns.Count == 2)
+            {
+                lst.ValueMember = table.Columns[0].ToString();
+                lst.DisplayMember = table.Columns[1].ToString();
+            }
+            else
+            {
+                lst.DisplayMember = table.Columns[0].ToString();
+            }
+        }
+        catch (Exception ex)
+        {
+            msgError(&quot;No se puede llenar el control - fillList &lt;listBox&gt;&quot; + Environment.NewLine +
+                             &quot;Error: &quot; + ex.Message);
+        }
+
+    }</span><span class="style2">
+   </span></pre>
+		<pre>
+</pre>
+<p>&nbsp;<img src="../imagenes/ball.gif" alt="" height="8" width="8"> A fin de que la aplicaci&oacute;n se conecte con el servidor,
+  en el evento Load de la forma estableceremos la conexi&oacute;n con los siguientes
+  par&aacute;metros:</p>
+<pre class="style4">Util.createConnection(@"siqueiros.qro.itesm.mx\siqueiros", "tu-catalogo", "tu-usuario", "tu-password");</pre>
+		  Si tienes problemas con SQLServer puedes consultar: <br><br>
+		  <a href="http://blog.sqlauthority.com/2009/05/21/sql-server-fix-error-provider-named-pipes-provider-error-40-could-not-open-a-connection-to-sql-server-microsoft-sql-server-error/">
+		  SQLServer Habilitar Servicio </a><br><br>
+<img src="../imagenes/ball.gif" alt="" height="8" width="8"> Ejecuta la 
+		aplicación y revisa que no marqué ningún error, en caso contrario 
+		realiza las correcciones necesarias.<br>
+&nbsp;<br>
+             <br>
+<br>
+<img src="../imagenes/ball.gif" alt="" height="8" width="8"> Para&nbsp; el evento Click del bot&oacute;n btnConsultar, a&ntilde;ade el
+c&oacute;digo:
+		<pre class="style1"> <span class="style3">  String query;
+   query = txtSentencia.Text;
+   gridResultados.DataSource = Util.getData(query);
+   </span></pre>
+<p>Con lo que getData recuperar&aacute; los datos de la base de datos y llenar&aacute; el grid con los resultados. <br>
+    <br>
+  La aplicaci&oacute;n que creamos es un sencillo int&eacute;rprete de <b>SQL </b>desde 
+una aplicación de escritorio.
+  Para utilizarlo, escribe en la caja de texto la sentencia <b>SELECT </b>que
+  desees ejecutar.<br>
+    <br>
+  En principio, el int&eacute;rprete no est&aacute; protegido <u><b>contra
+    errores</b></u>, por lo que si escribes una sentencia inv&aacute;lida, incurrir&aacute;
+  en un error de <u><b>tiempo de ejecuci&oacute;n</b></u> y terminar&aacute;
+  la aplicaci&oacute;n.<br>
+    <br>
+    <img src="../imagenes/ball.gif" alt="" height="8" width="8"> Prueba el int&eacute;rprete para varias consultas, es necesario que definas
+  al menos 5 consultas y las anexes a tu reporte, es requisitos que describas
+  o redactes la consulta y posteriormente anexes el c&oacute;digo SQL. <i><b>Las
+    consultas deben de ser sensatas, es decir que tengan sentido y un grado de
+    dificultad que rete tu intelecto</b></i>. Las consultas que plantees deben
+  de utilizar<u> funciones agregadas</u>. Agregar esta información en un archivo
+  de texto.<br>
+    <br>
+    <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font><b>3er Refinamiento:</b><br>
+    <br>
+  Para manejar los errores, modifica el evento click del bot&oacute;n, del siguiente
+  modo: </p>
+<pre class="Code">
+ <span class="style3">String query;
+ try
+     {
+        query = txtSentencia.Text;
+        gridResultados.DataSource = Util.getData(query);
+     }
+    catch (Exception ex)
+    {
+               Util.msgError(&quot;Error: &quot; + ex.Message);
+    }</span>
+</pre>
+<p> F&iacute;jate en el Try - Catch. Ah&iacute; podemos ver c&oacute;mo utilizar el c&oacute;digo de error y el mensaje de error para mostrar informaci&oacute;n un poco m&aacute;s espec&iacute;fica sobre qu&eacute; error sucedi&oacute;. 
+<p>Prueba nuevamente el int&eacute;rprete y observa su comportamiento ante diferentes
+  errores en las sentencias: </p>
+<ul>
+  <li>Tablas no existentes</li>
+	<li>Columnas no existentes</li>
+	<li>Columnas ambiguas</li>
+	<li>Errores de sintaxis</li>
+</ul>
+		<p>Intenta validar los errores más comunes (que no se pueda conectar a 
+		la base de datos, que una tabla no exista) . </p>
+		<p>&nbsp;</p>
+		<p>Anexa al reporte tus observaciones.<br>
+		<b><font color="#993399"><br>
+		</font></b>
+		<font color="#3366ff"
+ face="Courier New, Courier, monospace"><b>
+		<img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b>
+		</font><b>4to Refinamiento</b><br>
+		<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1)&nbsp; Agrega y codifica un botón para limpiar 
+		la caja de texto y el grid de tu aplicación.</p>
+		<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2) &nbsp;Agrega un comboBox y un listBox y 
+		posteriormente en el evento load, agrega el código necesario para que el 
+		comboBox muestre los materiales existentes y el listBox muestre los 
+		proveedores.</p>
+		<p>&nbsp;&nbsp;&nbsp;&nbsp; 3) Modifica las propiedades del grid, para que no 
+		se encuentre en modo de edición, es decir, que solo muestre el resultado 
+		de la consulta.&nbsp;</p>
+		<p>&nbsp;</p>
+		<p>Al final tu aplicación debe tener una apariencia como la siguiente:</p>
+		<p class="style5">
+		<img src="../imagenes/lab10_img1.jpg" width="587" height="435"></p>
+		<p>&nbsp;</p>
+      </blockquote>
+      <p class="Estilo6"><img src="../imagenes/especificaciones.jpg" width="600" height="50"></p>
+      <p class="Estilo6"><strong>La calificaci&oacute;n de esta actividad     es de 
+		carácter individual.<br>
+          <br>
+Env&iacute;a el laboratorio por este medio , archivo lab10 +  matricula.zip.</strong></p>
+      <p class="Estilo6">&nbsp;</p>    </td>
+  </tr>
+  <tr>
+    <td><p align="center" class="Estilo1 Estilo4 Estilo5">&nbsp;</p>      </td>
+  </tr>
+</table>
+
+<map name="Map"><area shape="rect" coords="5,6,103,123" href="../../semana7/lab11/proveedores.csv">
+<area shape="rect" coords="130,7,229,123" href="../../semana7/lab11/proyectos.csv">
+<area shape="rect" coords="255,7,352,122" href="../../semana7/lab11/entregan.csv">
+<area shape="rect" coords="373,5,474,122" href="../../semana7/lab11/materiales.csv">
+</map></body>
+</html>
