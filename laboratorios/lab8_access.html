@@ -9,7 +9,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
     <meta content="text/html; charset=UTF-8" http-equiv="content-type">
-    <title>Lab 9: Bases de Datos de Escritorio (MS Access)</title>
+    
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="Lab%209_%20Bases%20de%20Datos%20de%20Escritorio%20%28MS%20Access%29_files/materialize.min.css"
+
+      media="screen,projection">
+    <link href="Lab%209_%20Bases%20de%20Datos%20de%20Escritorio%20%28MS%20Access%29_files/icon.css"
+
+      rel="stylesheet">
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lab 9: DBMS de escritorio</title>
 
 </head>
 
@@ -17,340 +28,234 @@
   <main>
     <div class="navbar-fixed">
       <nav>
-        <div class="blue darken-1 nav-wrapper">
-          <a href="../index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B Construcción de software y toma de decisiones</acronym></a>
-        </div>
+        <div class="blue darken-1 nav-wrapper"> <a href="https://black4ninja.github.io/tc2005b.github.io/index.html"
+
+            class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B
+              Construcción de software y toma de decisiones</acronym></a> </div>
       </nav>
     </div>
-
     <div class="container">
       <div class="section">
-        <h3>Laboratorio 9: Bases de Datos de Escritorio (MS Access)</h3>
+        <h3>Laboratorio 9: DBMS  de escritorio</h3>
       </div>
-
       <div class="section" id="modalidad">
-         <h5>
-          <i class="small mdi-social-group"></i>
-          Modalidad
-         </h5>
-         <p>
-          Individual.<br />
-         </p>
-         <div class="divider"></div>
-       </div>
-
-      <div class="section" id="objetivos">
-        <h5> <i class="small mdi-navigation-check"></i>Objetivos de aprendizaje</h5>
-        <ul class="collection with-header">
-                  <li class="collection-item">Usar un DBMS (Database Management System) de escritorio, Microsoft Access,
-                  para presentar algunas de las actividades necesarias para administrar bases de datos.
-                  </li>
-                  <p><strong>Nota:</strong> Las imágenes de este laboratorio fueron hechas usando Microsoft Access 2007</p>
-        </u>
-      </div>
-
-      <div class="section" id="instrucciones">
-         <h5>
-          <i class="small mdi-action-list"></i>
-          Instrucciones</h5>
-          <ul class="collection">
-            <li class="collection-item">
-
-        <p><strong>Crear una base de datos</strong></p>
-
-        <p>La primera actividad en el proceso es crear una base de datos. En esta actividad se establece
-        el lugar o espacio en el que físicamente será alojada una base de datos.
-        En el caso de MS Access, el procedimiento es muy sencillo: </p>
-
-        <ol>
-          <li>Iniciar el programa de Microsoft Access.</li>
-          <li>Selecciona crear una base de datos en blanco.</li>
-          <li>Selecciona la ruta (path) en que será creada la base de datos.</li>
-          <li>Deberás usar la extensión <strong>.mdb</strong> solo para Access 2003, para la versión 2007 puedes usar la extensión <strong>.accdb</strong></li>
-          <li>Indica el nombre para la base de datos (te recomiendo usar tu matrícula) con la extensión .mdb
-        </ol>
-      </p>
-
-      <p><strong>Crear tablas</strong></p>
-        <p>Una definición operativa simple de base de datos relacional es "colección de tablas interrelacionadas".
-        De aquí que una de las tareas básicas en la administración de bases de datos consista en crear y modificar tablas.</p>
-        <p>En el fólder de tablas de la base de datos que acabas de crear,
-        utiliza el botón Nuevo y la opción Vista Diseño para crear las siguientes tablas, seleccionando como llave la columna subrayada.</p>
-        <p>En la versión 2007 una tabla será creada por default, simplemente en View cambia a Design View y te pedirá el nombre de la tabla para salvarla.</p>
-        <p><strong>Nota:</strong> Para seleccionar una columna como llave, una vez que hayas definido su nombre y tipo, posiciónate
-        sobre ella y has click sobre "Clave Principal", este es un ícono en forma de llave de la barra de herramientas.
-        En la versión 2007 por default ya viene incluida una clave principal, la cual tiene el ícono de una llave en su lado derecho.</p>
-
-      <br>
-      <p><strong>Tabla: Materiales</strong></p>
-
-        <table>
-          <tr>
-            <th>Columna</th>
-            <th>Tipo</th>
-          </tr>
-          <tr>
-            <td><u>Clave</u></td>
-            <td>Numérico (entero largo)
-          </tr>
-          <tr>
-            <td>Descripción</td>
-            <td>Texto (100 caracteres)</td>
-          </tr>
-          <tr>
-            <td>Precio</td>
-            <td>Numérico (simple)</td>
-          </tr>
-        </table>
-
-        <br>
-
-
-      <p><strong>Tabla: Proyectos</strong></p>
-        <table>
-          <tr>
-            <th>Columna</th>
-            <th>Tipo</th>
-          </tr>
-          <tr>
-            <td><u>Número</u></td>
-            <td>Numérico (entero largo)</td>
-          </tr>
-          <tr>
-            <td>Denominación</td>
-            <td>Texto (100 caracteres)</td>
-          </tr>
-        </table>
-      </p>
-
-      <br>
-
-      <p><strong>Tabla: Proveedores</strong></p>
-        <table>
-          <tr>
-            <th>Columna</th>
-            <th>Tipo</th>
-          </tr>
-          <tr>
-            <td><u>RFC</u></td>
-            <td>Texto (15 caracteres)</td>
-          </tr>
-          <tr>
-            <td>RazonSocial</td>
-            <td>Texto (100 caracteres)</td>
-          </tr>
-        </table>
-      </p>
-
-      <br>
-
-      <p><strong>Tabla: Entregan</strong></p>
-      <br>
-        <table>
-          <tr>
-            <th>Columna</th>
-            <th>Tipo</th>
-          </tr>
-          <tr>
-            <td><u>Clave</u></td>
-            <td>Numérico (entero largo)</td>
-          </tr>
-          <tr>
-            <td><u>RFC</u></td>
-            <td>Texto (15 caracteres)</td>
-          </tr>
-          <tr>
-            <td><u>Número</u></td>
-            <td>Numérico (entero largo)</td>
-          </tr>
-          <tr>
-            <td><u>Fecha</u></td>
-            <td>Fecha/Hora</td>
-          </tr>
-          <tr>
-            <td>Cantidad</td>
-            <td>Numérico (entero largo)</td>
-          </tr>
-        </table>
-
-      <p>
-        <strong>Importante:</strong> Ten cuidado con el campo Fecha, ya que es neceario definirlo con
-        formato de fecha corta, ya que los datos de origen tienen definido ese formato de fecha.
-      </p>
-
-      <p>
-        <strong>Tip:</strong> Para definir una llave de varias columnas, selecciona cada columna en el área
-        gris situada a la izquierda del nombre de la columna, oprimiendo la tecla Shift.
-        Cuando todas las columnas estén seleecionadas, oprimir el ícono de la llave.
-      </p>
-      <br>
-
-       <p><strong>Establecer las relaciones entre tablas.</strong></p>
-      <p>Es muy conveniente que las relaciones entre tablas se establezcan desde un principio.
-      este caso, la tabla Entregan tiene relaciones con las otras tres tablas que definimos.
-      En la opción Herramientas --> Relaciones, se definen estas relaciones.
-      </p>
-
-      <br>
-
-      <p><strong>Agregar todas las tablas a la definición de relaciones.</strong></p>
-
-      <p>
-        Para definir la relación entre Materiales y Entregan, selecciona la columna Clave de Materiales
-        y arrastra el cursos hasta la columna Clave de Entregan. Es muy importante que sea en este órden.
-        Marca el Check Box de Exigir Integridad Referenciada, concepto que revisaremos posteriormente.
-      </p>
-
-      <p>
-        Por analogía, define las relaciones con Proyectos y Proveedores con Entregan.
-      </p>
-
-      <br>
-
-      <p><strong>Carga de datos.</strong></p>
-
-      <p>Otra actividad frecuente en la administración de bases de datos consiste en cargar datos a las tablas,
-      provenientes de otros sistemas o sencillamente de archivos que se han creado para este efecto.
-      </p>
-      <p>
-        Los datos que vas a incorporar en cada tabla se encuentran en los siguientes archivos, descárgalos en tu computadora.
-      </p>
-         <a download href="../csv/proveedores.csv" ><img src="../imagenes/proveedores.png" height="125" border="0" ></a>
-         <a href="../csv/proyectos.csv" download><img src="../imagenes/proyectos.png" height="125" border="0" ></a>
-         <a href="../csv/entregan.csv" download><img src="../imagenes/entregan.png" height="125" border="0" ></a>
-         <a href="../csv/materiales.csv" download><img src="../imagenes/materiales.png" height="125" border="0" ></a>
-
-        <p><strong>Nota:</strong> Chrome abre los documentos en lugar de descargarlos, utiliza otro buscador
-        o guarda los archivos con click derecho ---> Descargar archivo enlazado.</p>
-
-       <p>
-        Los archivos csv son archivos de texto que tienen renglones en los que cada renglón corresponde
-        a un registro o renglón de la tabla y en cada uno de estos renglones, los valores correspondientes
-        a cada columa están separados por comas en estos archivos.
-      </p>
-
-
-      <p><strong>Cargar datos de archivos .csv</strong></p>
-      <br>
-
-      <p></p><strong>Versión (2003) Archivo --> Obtener datos externos --> Importar</strong></p>
-        <p> Selecicona en tipo de archivo Text Files</p>
-        <p>Un wizard te irá proponiendo opciones para cargar el archivo correspondiente. Estas son las respuestas a cada paso:</p>
-
-        <ol>
-          <li>
-            Selecciona la opción "Delimitado", ya que las columnas están separadas por coma.
-          </li>
-          <li>
-            Ahora te pregunta por el tipo de delimitador, para estos archivos es "coma". Asegúrate de que no esté seleccionada la opción "Primera fila contiene nombres de campos", esto porque los archivos solo contienen datos. La opción de cualificador de texto debe estar en "Ninguno".
-          </li>
-          <li>
-            Selecciona la opción de almacenar los datos de una tabla existente: selecciona la tabla con el mismo nombre que el csv correspondiente.
-          </li>
-          <li>
-          Terminar la importación.
-          </li>
-        </ol>
-
-        <p><strong>Importante:</strong> Cuando estés en el paso 3 de la tabla Entregan, has click sobre el botón de "Avanzado..."
-        Ahí asegúrate de que en la opción "Orden de la fecha" esté seleccionada la opción "DMA" y "/" como delimitador,
-        que es el formato en el que aparece la fecha en el archivo entregan.csv
-      </p>
-
-      <br>
-
-      <p><strong>(Versión 2007) Primero selecciona cualquier tabla -> External Data -> Text File</strong></p>
-        <br>
-        <ol>
-          <li>Escoge de qué archivo y de dónde se va a importar.</li><br>
-          <li>Elige la segunda opción: "Append a copy of the records to an existing table" y elige la tabla a donde vas a mandar los datos.</li><br>
-          <li>Escoge la opción de delimitado y en la siguiente pantalla la de coma. En la misma pantalla cuando estés
-          importando los datos de la tabla Entregan.csv aprieta el botón para opciones avanzadas y asegúrate de que la
-          parte de la fecha se vea como en la siguiente imagen.</li><br>
-          <li><img src="../imagenes/lab6-9.png" height="98" width="347"></li>
-        </ol>
-      <br>
-        <p>Verifica el contenido de cada tabla después de la importación.</p>
-
-      <p><strong>Definición de consultas.</strong></p>
-         <p>
-         A fin de proporcionar a cada usuario o grupo de usuarios la información de su interés, una de las tareas del diseñador o administrador de bases de datos es definir consultas que muestran conjuntos de datos que incluyen columnas específicas, renglones específicos que pueden provenir de una tabla o de varias tablas interrelacionadas.
+        <h5> <i class="small mdi-social-group"></i> Modalidad </h5>
+        <p> Individual.<br>
         </p>
-        <p>
-         En el folder de Consultas, utilizando el botón Nuevo y la opción Vista Diseño, es posible definir consultas. Para esto, se agrega a la consulta la tabla o tablas involucradas, se seleccionan las columnas que se desea incluir en la consulta y se agregan los criterios que debe cumplir el valor de las columnas a restringir para que el renglón sea incluido.
-         </p>
-         <img src="../imagenes/lab6-10.png" width="734" height="116">
-      </p>
-
-      <p>Para las columnas con <strong>tipos de datos numéricos</strong> pueden utilizarse criterios como los que se ejemplifican a continuación:</p>
-
-        1000 Significa que el valor de la columna debe ser igual a 1000.<br>
-        &gt;  1000 Significa que el valor de la columna debe ser mayor que 1000.<br>
-        &lt;  1000 Significa que el valor de la columna debe ser mayor que 1000.<br>
-        Entre 10 y 100 Significa que el valor de la columna debe ser &lt;=10 y &lt;=100.<br>
-        <br>
-        <strong>Pregunta para pensar: (No es parte de la entrega)</strong>
-        <p>Si estuvieras haciendo una búsqueda en un rango de fecha, como buscarías todo los datos del año 2000?</p>
-
-
-        <p> Para las columnas con tipo de datos de texto, se utilizan criterios como los que se ejemplifican a continuación:</p>
-        <p><strong>"ABC"</strong> Significa que el valor de la columna debe ser igual a "ABC".</p>
-        <p><strong>&gt;"A"</strong> Significa que el valor de la columna debe ser  mayor que "A" en el orden alfabético.</p>
-        <p><strong>Como "*ABC*"</strong> Significa que el valor de la columna debe contener el patrón "ABC". Los asteriscos
-        son "comodines", es decir "ABC*" significa que inicia con "ABC", "*ABC" significa que termina con "ABC" y "*ABC*"
-        significa que tiene ABC en cualquier parte del valor de la columna.</p>
-
-        <p>Define las siguientes consultas y guárdalas con el nombre que se indica:</p>
-        <p><strong>Consulta Tuberías</strong></p>
-        <p>Clave, descripción y precio unitario de los materiales cuya descripción contenga el patrón "Tub".</p>
-        <p><strong>Consulta Caros</strong></p>
-        <p>Clave, descripción y precio unitario de los materiales cuyo precio es mayor que 300 pesos.</p>
-        <p><strong>Consulta Proveedores Ladrillos</strong></p>
-
-        <p>Aquí tendrás que agregar las tablas: materiales, entregan y proveedores. En la parte de abajo seleccionar
-        las columnas que quieras que aparezcan así como sus condiciones.</p>
-        <p>Clave del material y razón social de los proveedores que entregan productos cuya descripción contiene el patrón "Ladrillos"</p>
-        <p><strong>Consulta Pinturas98</strong></p>
-        <p>Aquí tendrás que agregar todas las tablas. En la parte de abajo seleccionar las columnas que quieras que aparezcan así como sus condiciones.</p>
-        Descripción del material, razón social del proveedor, denominación del proyecto, fecha y cantidad de las entregas de pinturas realizadas durante 1998.</p>
-
-
-        <div class="section" id="entrega">
-                <h5>
-                  <i class="small mdi-notification-event-available"></i>
-                  Especificaciones de entrega
-                </h5>
-                 <p>A través de Bitbucket o GitHub con el nombre    <em>matricula</em>.mdb para archivo de Access 2003 o <em>matricula</em>.accdb para archivo de Access 2007.</p>               
+        <div class="divider"></div>
+      </div>
+      <div class="section" id="objetivos">
+        <h5> <i class="small mdi-navigation-check"></i>Objetivos de
+          aprendizaje</h5>
+        <ul class="collection with-header">
+          <li class="collection-item">Usar el DBMS (Database Management
+            System) MariaDB, para presentar algunas de las actividades
+            necesarias para administrar bases de datos. </li>
+          <p><strong></strong><br>
+          </p>
+        </ul>
+      </div>
+      <div class="section" id="instrucciones">
+        <h5> <i class="small mdi-action-list"></i> Instrucciones</h5>
+        <ul class="collection">
+          <li class="collection-item">
+            <p><strong>Crear una base de datos</strong></p>
+            <p>La primera actividad en el proceso es crear una base de datos.
+              En esta actividad se establece el lugar o espacio en el que
+              físicamente será alojada una base de datos. En el caso de MariaDB,
+              el procedimiento es muy sencillo: </p>
+            <ol>
+              <li>Iniciar IDE DBeaver.</li>
+              <li>Crear la conexión con el usuario root y contraseña que
+                usaste en la instalación de MariaDB.</li>
+              <li>Crear la Base de Datos lab09db</li>
+              <li>Crear el usuario user_lab09db<strong></strong></li>
+              <li>Asignar los permisos necesarios al usuario </li>
+              <li>Realizar la conexión a la base de datos lab09db con el
+                usuario user_lab09db</li>
+            </ol>
+            <p><strong>Crear tablas</strong></p>
+            <p>Una definición operativa simple de base de datos relacional es
+              "colección de tablas interrelacionadas". De aquí que una de las
+              tareas básicas en la administración de bases de datos consista
+              en crear y modificar tablas.</p>
+            Crear las tablas "materiales", "proyectos", "proveedores" y
+            "entregan" siguiendo la definición siguiente:<br>
+            <p><strong>Tabla: materiales</strong></p>
+            <table>
+              <tbody>
+                <tr>
+                  <th>Columna</th>
+                  <th>Tipo</th>
+                </tr>
+                <tr>
+                  <td><u>Clave</u></td>
+                  <td>Numérico (entero largo) </td>
+                </tr>
+                <tr>
+                  <td>Descripción</td>
+                  <td>Texto (100 caracteres)</td>
+                </tr>
+                <tr>
+                  <td>Precio</td>
+                  <td>Numérico (simple)</td>
+                </tr>
+              </tbody>
+            </table>
+            <br>
+            <p><strong>Tabla: proyectos</strong></p>
+            <table>
+              <tbody>
+                <tr>
+                  <th>Columna</th>
+                  <th>Tipo</th>
+                </tr>
+                <tr>
+                  <td><u>Número</u></td>
+                  <td>Numérico (entero largo)</td>
+                </tr>
+                <tr>
+                  <td>Denominación</td>
+                  <td>Texto (100 caracteres)</td>
+                </tr>
+              </tbody>
+            </table>
+            <br>
+            <p><strong>Tabla: proveedores</strong></p>
+            <table>
+              <tbody>
+                <tr>
+                  <th>Columna</th>
+                  <th>Tipo</th>
+                </tr>
+                <tr>
+                  <td><u>RFC</u></td>
+                  <td>Texto (15 caracteres)</td>
+                </tr>
+                <tr>
+                  <td>RazonSocial</td>
+                  <td>Texto (100 caracteres)</td>
+                </tr>
+              </tbody>
+            </table>
+            <br>
+            <p><strong>Tabla: entregan</strong></p>
+            <br>
+            <table>
+              <tbody>
+                <tr>
+                  <th>Columna</th>
+                  <th>Tipo</th>
+                </tr>
+                <tr>
+                  <td><u>Clave</u></td>
+                  <td>Numérico (entero largo)</td>
+                </tr>
+                <tr>
+                  <td><u>RFC</u></td>
+                  <td>Texto (15 caracteres)</td>
+                </tr>
+                <tr>
+                  <td><u>Número</u></td>
+                  <td>Numérico (entero largo)</td>
+                </tr>
+                <tr>
+                  <td><u>Fecha</u></td>
+                  <td>Fecha/Hora</td>
+                </tr>
+                <tr>
+                  <td>Cantidad</td>
+                  <td>Numérico (entero largo)</td>
+                </tr>
+              </tbody>
+            </table>
+          </li>
+          <li class="collection-item">Para la tabla "entregan" asegurate de
+            definir la llave primaria y las llaves foraneas<br>
+            <br>
+            <p><strong>Carga de datos.</strong></p>
+            <p>Otra actividad frecuente en la administración de bases de datos
+              consiste en cargar datos a las tablas, provenientes de otros
+              sistemas o sencillamente de archivos que se han creado para este
+              efecto. </p>
+            <p> Carga los datos de las tablas siguiendo las instrucciones del
+              profesor.</p>
+            <p> Los archivos csv son archivos de texto que tienen renglones en
+              los que cada renglón corresponde a un registro o renglón de la
+              tabla y en cada uno de estos renglones, los valores
+              correspondientes a cada columa están separados por comas en
+              estos archivos. </p>
+            <p><strong>Cargar datos de archivos .csv que te entrega tu profesor<br>
+              </strong></p>
+            <p></p>
+            <p>Un wizard te irá proponiendo opciones para cargar el archivo
+              correspondiente. Estas son las respuestas a cada paso:</p>
+            <br>
+            <p>Define las siguientes consultas y guárdalas con el nombre que
+              se indica:</p>
+            <p><strong>Consulta Tuberías</strong></p>
+            <p>Clave, descripción y precio unitario de los materiales cuya
+              descripción contenga el patrón "Tub".</p>
+            <p><strong>Consulta Caros</strong></p>
+            <p>Clave, descripción y precio unitario de los materiales cuyo
+              precio es mayor que 300 pesos.</p>
+            <p><strong>Consulta Proveedores Ladrillos</strong></p>
+            <p>Aquí tendrás que agregar las tablas: materiales, entregan y
+              proveedores. En la parte de abajo seleccionar las columnas que
+              quieras que aparezcan así como sus condiciones.</p>
+            <p>Clave del material y razón social de los proveedores que
+              entregan productos cuya descripción contiene el patrón
+              "Ladrillos"</p>
+            <p><strong>Consulta Pinturas98</strong></p>
+            <p>Aquí tendrás que agregar todas las tablas. En la parte de abajo
+              seleccionar las columnas que quieras que aparezcan así como sus
+              condiciones.</p>
+            Descripción del material, razón social del proveedor, denominación
+            del proyecto, fecha y cantidad de las entregas de pinturas
+            realizadas durante 1998.
+            <p></p>
+            <div class="section" id="entrega">
+              <h5> <i class="small mdi-notification-event-available"></i>
+                Especificaciones de entrega </h5>
+              <p>A través de Bitbucket o GitHub con el nombre <em>matricula</em>.mdb
+                para archivo de Access 2003 o <em>matricula</em>.accdb para
+                archivo de Access 2007.</p>
               <div class="divider"></div>
-             </div>
-
-    </div>
+            </div>
+          </li>
+        </ul>
+      </div>
     </div>
   </main>
-    <footer class="blue darken-1 page-footer">
-            <div class="container">
-               <div class="row">
-                   <div class="col">
-                       <h5 class="white-text">Secciones</h5>
-                <ol class="grey-text text-lighten-3">
-                  <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
-                  <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
-                  <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
-                  <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
-                    <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
-                    <li><a class="grey-text text-lighten-3" href="#recursos">Recursos</a></li>
-                    <li><a class="grey-text text-lighten-3" href="#entrega">Especificaciones de entrega</a></li>
-                </ol>
-                       </div>
-                </div>
-                <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
-            </div>
-          <div class="footer-copyright">
-            <div class="container">
-            © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
-            </div>
-          </div>
-      </footer>
+  <footer class="blue darken-1 page-footer">
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <h5 class="white-text">Secciones</h5>
+          <ol class="grey-text text-lighten-3">
+            <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
+            <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
+            <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
+            <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+            <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
+            <li><a class="grey-text text-lighten-3" href="#recursos">Recursos</a></li>
+            <li><a class="grey-text text-lighten-3" href="#entrega">Especificaciones
+                de entrega</a></li>
+          </ol>
+        </div>
+      </div>
+      <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/"
+
+          target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+    </div>
+    <div class="footer-copyright">
+      <div class="container"> © 2021 Escuela de Ingeniería y Ciencias -
+        Tecnológico de Monterrey en Querétaro </div>
+    </div>
+  </footer>
+  <!--Import jQuery before materialize.js-->
+  <script type="text/javascript" src="Lab%209_%20Bases%20de%20Datos%20de%20Escritorio%20%28MS%20Access%29_files/jquery-2.1.1.min.js"></script>
+  <script type="text/javascript" src="Lab%209_%20Bases%20de%20Datos%20de%20Escritorio%20%28MS%20Access%29_files/materialize.min.js"></script>
 
 
       <!--Import jQuery before materialize.js-->
