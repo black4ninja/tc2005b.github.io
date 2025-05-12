@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="es-mx">
-<head>
+  <head>
     <!--Import materialize.css-->
-    <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+      <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
 
-    <!--Let browser know website is optimized for mobile-->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+      <!--Let browser know website is optimized for mobile-->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 
     <meta content="text/html; charset=UTF-8" http-equiv="content-type">
-    <title>Lab 26: Servicios web</title>
-</head>
+    <title>Lab 27: Servicios web</title>
+  </head>
 
-<body>
+  <body>
     <header></header>
 
     <main>
@@ -26,127 +26,273 @@
 
         <div class="container">
             <div class="section">
-                <h3>Lab 26: Servicios web</h3>
+                <h3>Lab 27: Servicios web</h3>
             </div>
 
-            <div class="section" id="descripcion">
-                <h5>Descripción</h5>
-                <p >En esta actividad exploraremos algunos APIs de aplicaciones web, con el objetivo de que aprendas a integrar funcionalidad desarrollada por terceros en tus propias aplicaciones.</p>
-                <div class="divider"></div>
-            </div>
+             <div class="section" id="descripcion">
+                 <h5>Descripción</h5>
+                 <p >En esta actividad exploraremos algunos APIs de aplicaciones web, con el objetivo de que aprendas a integrar funcionalidad en tus propias aplicaciones.</p>
+                 <div class="divider"></div>
+             </div>
 
-            <div class="section" id="objetivos">
-                <h5>Objetivos de aprendizaje</h5>
-                <p>
+             <div class="section" id="objetivos">
+                 <h5>Objetivos de aprendizaje</h5>
+                 <p>
                     <i class="small mdi-image-looks-one"></i>Entender qué son los servicios web y su evolución.<br />
-                    <i class="small mdi-image-looks-two"></i>Explorar APIs para aplicaciones web e integrar su funcionalidad en tus aplicaciones.
-                </p>
-                <div class="divider"></div>
-            </div>
+                 </p>
+                 <div class="divider"></div>
+             </div>
 
-            <div class="section" id="instrucciones">
-                <h5>Instrucciones</h5>
-                <ul class="collection">
+             <div class="section" id="instrucciones">
+                 <h5>Instrucciones</h5>
+                 <ul class="collection">
                     <li class="collection-item">
                         <p><i class="small mdi-image-looks-one"></i>Revisa junto con tu profesor, la <a href="https://docs.google.com/presentation/d/177NpbWXSFpHePxPvshN6L8gSbMNYXCOlrEPBw4jNcQI/edit?usp=sharing" target="_blank">presentación de Servicios Web</a>.</p>
-                        <p><i class="small mdi-image-looks-two"></i>Revisa los siguientes enlaces a sitios de desarrolladores de APIs de algunas aplicaciones web:</p>
-                    </li>
-                    <li class="collection-item">
-                        <ul>
-                            <li><i class="mdi-content-send"></i> <a href="https://developers.google.com/maps/?hl=es" target="_blank">Google maps</a></li>
-                            <li><i class="mdi-content-send"></i> <a href="https://developers.google.com/google-apps/calendar/" target="_blank">Google calendar</a></li>
-                            <li><i class="mdi-content-send"></i> <a href="https://developers.facebook.com/" target="_blank">Facebook</a></li>
-                            <li><i class="mdi-content-send"></i> <a href="https://airtable.com/developers/" target="_blank">Airtable</a></li>
-                            <li><i class="mdi-content-send"></i> <a href="https://developer.riotgames.com/" target="_blank">Riot Games</a></li>
-                            <li><i class="mdi-content-send"></i> <a href="https://dev.twitter.com/" target="_blank">Twitter</a></li>
-                            <li><i class="mdi-content-send"></i> <a href="https://developers.soundcloud.com/" target="_blank">Soundcloud</a></li>
-                            <li><i class="mdi-content-send"></i> <a href="https://developer.vimeo.com/" target="_blank">Vimeo</a></li>
-                            <li><i class="mdi-content-send"></i> <a href="https://instagram.com/developer/" target="_blank">Instagram</a></li>
-                            <li><i class="mdi-content-send"></i> <a href="https://developer.linkedin.com/" target="_blank">Linkedin</a></li>
-                            <li><i class="mdi-content-send"></i> <a href="https://www.dropbox.com/developers/core" target="_blank">Dropbox</a></li>
-                            <li><i class="mdi-content-send"></i> <a href="https://developer.paypal.com/" target="_blank">Paypal</a></li>
-                        </ul>
-                    </li>
-                    <li class="collection-item">
-                        <p><i class="small mdi-image-looks-3"></i>Selecciona uno de los APIs. </p>
-                    </li>
-                    <li class="collection-item">
-                        <p><i class="small mdi-image-looks-4"></i>Consume el API dentro de una de tus aplicaciones web.</p>
-                    </li>
-                    <li class="collection-item">
-                        <p><i class="small mdi-image-looks-5"></i>Responde a las preguntas dentro de tu aplicación.</p>
-                    </li>
-                </ul>
-            </div>
+                        <p><i class="small mdi-image-looks-two"></i>Resuelve la siguiente implementación:</p>
+                    </li> 
+                 </ul>
+             </div>
 
-            <div class="divider"></div>
+             <div class="section" id="batalla">
+                <div class="container">
+                    <div class="section">      
+                      <div class="card">
+                        <div class="card-content">
+                          <h4>Descripción General</h4>
+                          <p>Desarrollarás un servicio web RESTful que funcionará como backend para el juego Batalla Naval. Este servicio permitirá a dos jugadores colocar sus barcos y realizar ataques por turnos a través de peticiones HTTP.</p>
+                        </div>
+                      </div>
+                      
+                      <div class="card">
+                        <div class="card-content">
+                          <h4>Reglas del Juego</h4>
+                          
+                          <h5>Tablero de Juego</h5>
+                          <ul class="collection">
+                            <li class="collection-item">Cada jugador tiene su propio tablero/mapa de 10×10 cuadrantes</li>
+                            <li class="collection-item">Las coordenadas se manejan como (x,y) donde ambas van de 0 a 9</li>
+                          </ul>
+                          
+                          <h5>Estados del Juego</h5>
+                          <p>El juego puede estar en uno de estos estados:</p>
+                          <ul class="collection">
+                            <li class="collection-item"><strong>SETEANDO</strong>: Fase inicial donde los jugadores colocan sus barcos</li>
+                            <li class="collection-item"><strong>JUGANDO</strong>: Fase donde los jugadores realizan ataques por turnos</li>
+                            <li class="collection-item"><strong>FINALIZADO</strong>: El juego ha terminado porque un jugador perdió todas sus naves</li>
+                          </ul>
+                          
+                          <h5>Flota de Barcos</h5>
+                          <p>Cada jugador debe colocar exactamente 10 barcos distribuidos así:</p>
+                          <ul class="collection">
+                            <li class="collection-item">1 Portaaviones (ocupa 5 celdas consecutivas)</li>
+                            <li class="collection-item">2 Cruceros (cada uno ocupa 4 celdas consecutivas)</li>
+                            <li class="collection-item">3 Destructores (cada uno ocupa 3 celdas consecutivas)</li>
+                            <li class="collection-item">4 Submarinos (cada uno ocupa 2 celdas consecutivas)</li>
+                          </ul>
+                          
+                          <h5>Reglas para Colocar Barcos</h5>
+                          <ul class="collection">
+                            <li class="collection-item">Los barcos deben formarse en línea recta (horizontal o vertical), con celdas conectadas</li>
+                            <li class="collection-item">Ningún barco puede tocar a otro barco (ni siquiera en diagonal)</li>
+                            <li class="collection-item">Todos los barcos deben estar dentro del tablero 10×10</li>
+                          </ul>
+                          
+                          <h5>Mecánica de Juego</h5>
+                          <ol class="collection">
+                            <li class="collection-item">Se lanza una "moneda virtual" para determinar qué jugador inicia</li>
+                            <li class="collection-item">Los jugadores se alternan para atacar, siguiendo estas reglas:
+                              <ul>
+                                <li>Si un jugador ataca y acierta (golpea un barco enemigo), ese jugador puede atacar nuevamente</li>
+                                <li>Si un jugador ataca y falla (no golpea ningún barco), el turno pasa al oponente</li>
+                              </ul>
+                            </li>
+                            <li class="collection-item">El juego termina cuando un jugador pierde todos sus barcos</li>
+                          </ol>
+                        </div>
+                      </div>
+                      
+                      <div class="card">
+                        <div class="card-content">
+                          <h4>API RESTful a Implementar</h4>
+                          
+                          <h5>Endpoints Requeridos</h5>
+                          
+                          <div class="section">
+                            <h6 class="blue-text">Gestión del Juego</h6>
+                            <ul class="collection">
+                              <li class="collection-item">
+                                <strong>GET /game/create</strong>
+                                <p>Crea un nuevo juego, eliminando cualquier juego en progreso</p>
+                                <p>Cambia el estado a SETEANDO</p>
+                                <p>Respuesta: Confirmación de creación exitosa</p>
+                              </li>
+                              <li class="collection-item">
+                                <strong>GET /game/status</strong>
+                                <p>Devuelve información sobre el estado actual del juego</p>
+                                <p>Incluye: estado del juego, turno actual, resumen de golpes y barcos restantes</p>
+                                <p>Respuesta: Objeto JSON con la información del estado</p>
+                              </li>
+                            </ul>
+                          </div>
+                          
+                          <div class="section">
+                            <h6 class="blue-text">Fase Inicial</h6>
+                            <ul class="collection">
+                              <li class="collection-item">
+                                <strong>GET /dice</strong>
+                                <p>Determina aleatoriamente qué jugador inicia el juego</p>
+                                <p>Solo válido en estado SETEANDO</p>
+                                <p>Respuesta: Número del jugador que inicia (1 o 2)</p>
+                              </li>
+                              <li class="collection-item">
+                                <strong>POST /game/create/:player</strong>
+                                <p>Recibe y configura las posiciones de los barcos del jugador especificado</p>
+                                <p>Parámetro: player (1 o 2)</p>
+                                <p>Cuerpo: JSON con las posiciones de los 10 barcos del jugador</p>
+                                <p>Solo válido en estado SETEANDO</p>
+                                <p>Cuando ambos jugadores hayan colocado sus barcos, cambia el estado a JUGANDO</p>
+                                <p>Respuesta: Confirmación de que las posiciones fueron aceptadas</p>
+                              </li>
+                            </ul>
+                          </div>
+                          
+                          <div class="section">
+                            <h6 class="blue-text">Fase de Juego</h6>
+                            <ul class="collection">
+                              <li class="collection-item">
+                                <strong>POST /game/turn</strong>
+                                <p>Recibe la coordenada de ataque del jugador actual</p>
+                                <p>Solo válido en estado JUGANDO</p>
+                                <p>Cuerpo: JSON con coordenadas {x: número, y: número}</p>
+                                <p>Valida que sea el turno correcto del jugador</p>
+                                <p>Registra el resultado del ataque (golpe o fallo)</p>
+                                <p>Actualiza el turno según resultado</p>
+                                <p>Si todos los barcos de un jugador son destruidos, cambia estado a FINALIZADO</p>
+                                <p>Respuesta: Resultado del ataque (golpe/fallo) y actualización del turno</p>
+                              </li>
+                            </ul>
+                          </div>
+                          
+                          <div class="section">
+                            <h6 class="blue-text">Información de Jugador</h6>
+                            <ul class="collection">
+                              <li class="collection-item">
+                                <strong>GET /player/:playerNumber</strong>
+                                <p>Devuelve información resumida del jugador especificado</p>
+                                <p>Parámetro: playerNumber (1 o 2)</p>
+                                <p>Respuesta: JSON con información como barcos restantes, disparos realizados, etc.</p>
+                              </li>
+                            </ul>
+                          </div>
+                          
+                          <h5>Requerimientos Adicionales</h5>
+                          <ul class="collection">
+                            <li class="collection-item">Cada endpoint debe validar el estado actual del juego</li>
+                            <li class="collection-item">Si una petición no es válida para el estado actual, debe devolver un error apropiado</li>
+                            <li class="collection-item">Toda respuesta debe incluir códigos HTTP adecuados (200 para éxito, 400 para errores de cliente, etc.)</li>
+                            <li class="collection-item">Las estructuras de datos para las peticiones y respuestas deben ser consistentes</li>
+                          </ul>
+                        </div>
+                      </div>
+                      
+                      <div class="card">
+                        <div class="card-content">
+                          <h4>Formato Sugerido para Envío de Datos</h4>
+                          
+                          <h5>Ejemplo para colocar barcos (POST /game/create/:player)</h5>
+                          <pre><code class="language-json">{
+                    "ships": [
+                      {
+                        "type": "carrier",
+                        "positions": [[0,0], [0,1], [0,2], [0,3], [0,4]]
+                      },
+                      {
+                        "type": "cruiser",
+                        "positions": [[2,0], [2,1], [2,2], [2,3]]
+                      },
+                      // Resto de barcos...
+                    ]
+                  }</code></pre>
+                          
+                          <h5>Ejemplo para realizar un ataque (POST /game/turn)</h5>
+                          <pre><code class="language-json">{
+                    "player": 1,
+                    "attack": {
+                      "x": 5,
+                      "y": 7
+                    }
+                  }</code></pre>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+             </div>
 
-            <div class="section" id="preguntas">
-                <h5>Preguntas</h5>
-                <ul class="collection">
+             <div class="divider"></div>
+
+             <div class="section" id="preguntas">
+                 <h5>Notas adicionales</h5>
+                 <ul class="collection">
                     <li class="collection-item">
-                        <p><i class="small mdi-image-looks-one"></i>¿Qué ventajas y desventajas tiene la integración de tus aplicaciones web con servicios web desarrollados por terceros? </p>
-                    </li>
-                </ul>
-            </div>
-            <div class="section" id="recursos">
+                        No es necesario que sigas tal cual el formato sugerido JSON para el envío de solicitudes, la actividad es libre y solo se calificará que la mecánica de juego funcione correctamente independientemente de como funcione internamente siempre y cuando siga los principios de los servicios web.
+                     </li>
+                 </ul>
+             </div>
+             <div class="section" id="recursos">
                 <h5> <i class="small mdi-content-link"></i> Recursos</h5>
                     <ul class="collection">
                         <a href="https://github.com/abhishekbanthia/Public-APIs?utm_source=SitePoint&utm_medium=email&utm_campaign=Versioning" class="collection-item" target="_blank">Public APIs</a>
                         <a href="https://medium.com/swlh/my-top-5-apis-for-new-developers-5191031da102" class="collection-item" target="_blank">My Top 5 APIs For New Developers</a>
-                        <a href="https://resend.com/" class="collection-item" target="_blank">Resend: email for developers</a>
-
-                        <a href="https://www.freecodecamp.org/news/what-is-an-api-and-how-to-test-it/" class="collection-item" target="_blank">What is an API and how to test it</a>
-                        <a href="https://www.freecodecamp.org/news/build-consume-and-document-a-rest-api" class="collection-item" target="_blank">The REST API Handbook – How to Build, Test, Consume, and Document REST APIs</a> 
-                        <a href="https://www.freecodecamp.org/news/rest-api-design-best-practices-build-a-rest-api/" class="collection-item" target="_blank">REST API Design Best Practices Handbook – How to Build a REST API with JavaScript, Node.js, and Express.js</a> 
-                        <a href="https://www.freecodecamp.org/news/rest-vs-graphql-apis/" class="collection-item" target="_blank">Different Types of APIs – SOAP vs REST vs GraphQL</a> 
-                        <a href="https://stripe.com/es-mx" class="collection-item" target="_blank">Infraestructura de pagos para Internet</a> 
-                        <a href="https://expressjs.com/en/resources/middleware/cors.html" class="collection-item" target="_blank">Cross-origin resource sharing</a> 
+                        <a href="https://www.freecodecamp.org/news/what-is-an-api-and-how-to-test-it/" class="collection-item" target="_blank">What is an API and how to test it</a> 
                     </ul>
-            </div>
+              </div>
 
 
 
-            <div class="divider"></div>
+                 <div class="divider"></div>
 
-            <div class="section" id="entrega">
-                <h5> <i class="small mdi-notification-event-available"></i>Especificaciones de entrega</h5>
-                <p>A través de tu repositorio personal (Bitbucket o GitHub).</p>
-                <div class="divider"></div>
-            </div>
+                 <div class="section" id="entrega">
+                    <h5> <i class="small mdi-notification-event-available"></i>Especificaciones de entrega</h5>
+                    <p>A través de tu repositorio personal (Bitbucket o GitHub).</p>
+                  <div class="divider"></div>
+                 </div>
 
 
 
         </div>
 
-    </main>
+      </main>
 
-    <footer class="blue darken-1 page-footer">
+      <footer class="blue darken-1 page-footer">
             <div class="container">
-                <div class="row">
-                    <div class="col">
-                        <h5 class="white-text">Secciones</h5>
-                        <ol class="grey-text text-lighten-3">
-                            <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
-                            <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
-                            <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
-                            <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
-                        </ol>
-                    </div>
+               <div class="row">
+                   <div class="col">
+                       <h5 class="white-text">Secciones</h5>
+                <ol class="grey-text text-lighten-3">
+                  <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+                    <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
+                </ol>
+                       </div>
                 </div>
                 <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
             </div>
 
-            <div class="footer-copyright"> 
-                <div class="container">
-                © 2021-2025 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro.
+
+
+
+
+          <div class="footer-copyright"> 
+            <div class="container">
+            © 2021 Escuela de Tecnologías de Información y Electrónica - ITESM Campus Querétaro.
             </div>
-        </div>
-    </footer>
+          </div>
+      </footer>
 
 
-    <!--Import jQuery before materialize.js-->
-    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
-    <script type="text/javascript" src="js/materialize.min.js"></script>
-</body>
+      <!--Import jQuery before materialize.js-->
+      <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+      <script type="text/javascript" src="js/materialize.min.js"></script>
+  </body>
 </html>
