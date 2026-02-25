@@ -71,10 +71,11 @@
                   Instrucciones</h5>
                 <ul class="collection">
                     <li class="collection-item">Verifica que ya cuentes con <code>npm</code> ejecutando el comando <code>npm -V</code>. En caso negativo, instala npm y node.</li>
-                    <li class="collection-item">Haz que tu trabajo sea un proyecto de npm ejecutando <code>npm init</code> desde tu carpeta de trabajo, y sigue las indicaciones del comando. <br> Observa y analiza el contenido del archivo <code>package.json</code></li>
-                    <li class="collection-item">Si deseas instalar nuevos paquetes, utiliza <code>npm install <em>[nombre_paquete]</em></code>. Puedes probar con <code>npm install --save-dev nodemon</code>, un paquete que sirve para que automáticamente se reinicie el servidor cada vez que haces un cambio en un archivo. <br> El argumento <code>--save-dev</code> sirve para que sólo se instale el paquete mientras te encuentras en el entorno de desarrollo. Observa nuevamente el archivo <code>package.json</code>, y notarás que algunas líneas ahora incluyen <code>nodemon</code>, particularmente <code>"start": "nodemon app.js"</code>. Si no existe, modifica la sección <code>scripts</code> para incluirla. Ahora podrás iniciar el servidor con <code>npm start</code>, que iniciará nodemon.</li>
-                    <li class="collection-item">Instala Express desde tu carpeta de trabajo con <code>npm install --save express</code>. <br>
-                    Observa que utilizamos <code>--save</code> para que el paquete esté disponible tanto en desarrollo como en producción.</li>
+                    <li class="collection-item">Haz que tu trabajo sea un proyecto de npm ejecutando <code>npm init</code> desde tu carpeta de trabajo, y sigue las indicaciones del comando. <br> Observa y analiza el contenido del archivo <code>package.json</code>.<br> Podrás iniciar el servidor con <code>npm start</code>.</li>
+                    <li class="collection-item">Si deseas instalar nuevos paquetes, utiliza <code>npm install <em>[nombre_paquete]</em></code>. </li>
+                    <li class="collection-item">Instala Express desde tu carpeta de trabajo con <code>npm install express</code>. <br></li>
+                    <li class="collection-item">Observa nuevamente el archivo <code>package.json</code> e identifica que cambió.</li>
+                    <li class="collection-item">Para que automáticamente se reinicie el servidor cada vez que haces un cambio en un archivo, agrega al <code>package.json</code> el script <code>"dev": "node --watch app.js"</code>, y ejecuta tus proyectos con <code>npm run dev</code></li>
 
                     <!-- <li class="collection-item">Revisa la presentación <a target="_blank" href="documentos/PHP-MultAppArchitecture.ppt">Multitier
                         Aplication Architecture php</a>.</li>
