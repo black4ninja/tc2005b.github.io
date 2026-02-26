@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Casos de estudio 2: Farmacéutica y liga de fútbol</title>
+</head>
+
+<body>
+    <header></header>
+
+    <main>
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B Construcción de software y toma de decisiones</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h3>Casos de estudio 2: Farmacéutica y liga de fútbol</h3>
+            </div>
+        </div>
+
+        <div class="container">
+
+            <div class="section" id="descripcion">
+                <h5>
+                  <i class="small mdi-action-info-outline"></i>
+                  Descripción
+                </h5>
+                <p>En esta actividad diseñarás el modelo entidad relación para los casos presentados.</p>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="modalidad">
+                <h5>
+                  <i class="small mdi-social-group"></i>
+                  Modalidad
+                 </h5>
+                <p>
+                    Colaborativa, con su equipo del proyecto.
+                    <br />
+                </p>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="objetivos">
+                <h5>
+                <i class="small mdi-navigation-check"></i>
+                Objetivos de aprendizaje</h5>
+                <ul class="collection with-header">
+                    <li class="collection-item">Aplicar los conocimientos adquiridos acerca de la creación y diseño de los modelos Entidad-Relación.</li>
+                </ul>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="instrucciones">
+                <h5>
+                  <i class="small mdi-action-list"></i>
+                  Instrucciones</h5>
+                <ul class="collection">
+                    <li class="collection-item">
+                        Diseña un modelo de entidad-relación para los dos casos siguientes:
+                    </li>
+                    <li class="collection-item">
+                        <h5><strong>Caso 1: Farmacéutica</strong></h5>
+
+                        <p>En el caso que se expone, el entrevistador es un consultor y el entrevistado es el gerente de producción de una compañía de productos farmacéuticos.</p>
+                    
+                        <strong>¿Manejan una gran diversidad de productos?</strong>
+                        
+                        <p>Efectivamente, nuestro catálogo es amplio de manera que clasificamos los productos en líneas como son los vitamínicos, antibióticos o antihistamínicos. Cada uno de los fármacos que fabricamos tiene un nombre comercial y un principio activo (componente principal). De un mismo fármaco se manejan diversas presentaciones como suspensión o cápsulas. </p>
+                        
+                        <strong>¿Utilizan códigos de productos?</strong>
+                        
+                        <p>Sí, de hecho cada presentación tiene un código de producto distinto, el cual imprimimos en las cajas para que los supermercados y farmacias puedan utilizar sus lectores de código de barras para almacenarlos y venderlos.</p>
+                        
+                        <strong>¿Cómo identifican la producción?</strong>
+                        
+                        <p>La producción se maneja en lotes, los cuales tienen una fecha de fabricación y en consecuencia una fecha de caducidad. Los números de lote son de cuatro cifras y cuando se llega al 9999, se reinicia la numeración. Un lote está compuesto sólo de un producto en específico. Si bien buscamos que el número de unidades producidas en cada lote sea el estándar para la presentación, en ocasiones hay algunas mermas por procesos defectuosos y se tiene un número diferente de unidades producidas en cada lote.
+                        </p>
+                        
+                        <strong>¿Cómo se distribuyen los lotes en el almacén?</strong>
+                        
+                        <p>Nuestro almacén cuenta con 10 estantes, y cada lote tiene asignado un número de estante el cual se asigna dinámicamente en función de la disponibilidad de los mismos. Sin embargo si el lote es muy grande, es posible que esté almacenado en más de un estante.</p>
+                        
+                    </li>
+            
+                    <li class="collection-item">
+                        
+                        <h5><strong>Caso 2: Liga de fútbol</strong></h5>
+                        
+                        <p>Dado el uso, cada vez más común de los dispositivos móviles entre la población joven, la liga de fútbol profesional de México, ha decidido crear un portal desde el cual cada aficionado pueda consultar información de su equipo favorito, así como de los demás equipos que participan en la liga, además de poder consultar el rol de juegos jornada a jornada, así como los resultados de cada una de ellas.
+                        </p>
+                        
+                        <p>Se desea guardar en primer lugar los datos de los jugadores. De cada jugador se quiere guardar el nombre, fecha de nacimiento y posición en la que juega (portero, defensa, centrocampista...). Cada jugador tiene un código de jugador que lo identifica de manera única.</p>
+                        
+                        <p>De cada uno de los equipos de la liga es necesario registrar el nombre del equipo, nombre del estadio en el que juega, el aforo que tiene, el año de fundación del equipo y la ciudad de la que es el equipo. Cada equipo también tiene un código que lo identifica de manera única. Un instante dado, un jugador solo puede pertenecer a un único equipo.
+                        </p>
+                        
+                        <p>De cada partido que los equipos de la liga juegan hay que registrar la fecha en la que se juega el partido, los goles que ha metido el equipo de casa y los goles que ha metido el equipo visitante. Cada partido tendrá un código numérico para identificar el partido.
+                        </p>
+                        
+                        <p>También se quiere llevar un recuento de los goles que hay en cada partido. Se quiere almacenar el minuto en el que se marcó el gol y la descripción del gol. Un partido tiene varios goles y un jugador puede meter varios goles en un partido.
+                        </p>
+                        
+                        <p>Por último se quieren almacenar, en la base de datos, los datos de los presidentes de los equipos de fútbol (nombre, apellidos, fecha de nacimiento, equipo del que es presidente y año en el que fue elegido presidente). Un equipo de fútbol tan sólo puede tener un presidente, y una persona sólo puede ser presidente de un equipo de la liga.
+                        </p>
+                        
+                    </li>
+                   
+                </ul>
+            </div>
+            <div class="divider">
+            </div>
+
+            <div class="section" id="recursos">
+                <h5>
+                <i class="small mdi-content-link"></i>
+                  Recursos</h5>
+                <ul class="collection">
+                    <li class="collection-item"></li>
+                </ul>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="entrega">
+                <h5>
+                  <i class="small mdi-notification-event-available"></i>
+                  Especificaciones de entrega
+                </h5>
+                <p>La entrega se realizará por medio de su repositorio de equipo en bitbucket o github con fecha límite el día lunes.</p>
+                <div class="divider"></div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="blue darken-1 page-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h5 class="white-text">Secciones</h5>
+                    <ol class="grey-text text-lighten-3">
+                        <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#recursos">Recursos</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#entrega">Especificaciones de entrega</a></li>
+                    </ol>
+                </div>
+            </div>
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+        </div>
+    </footer>
+
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="../js/materialize.min.js"></script>
+</body>
+
+</html>

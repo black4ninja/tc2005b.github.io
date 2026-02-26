@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Lab 4: Fundamentos de JS</title>
+    <script type="text/javascript" src="fundamentos.js"></script>
+
+</head>
+
+<body>
+    <script type="text/javascript">
+        alert("Al final del laboratorio debes de poder hacer esto sin ningún problema LoL ");
+    </script>
+
+    <header>
+
+    </header>
+
+    <main>
+
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h3>Laboratorio 4: Fundamentos de JavaScript</h3>
+            </div>
+
+            <div class="section" id="descripcion">
+                <h5>
+                  <i class="small mdi-action-info-outline"></i>
+                  Descripción
+                </h5>
+                <p>En esta actividad se hará una introducción a JavaScript. </p>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="modalidad">
+                <h5>
+                  <i class="small mdi-social-group"></i>
+                  Modalidad
+                 </h5>
+                <p>
+                    Individual.
+                    <br />
+                </p>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="objetivos">
+                <h5>
+                <i class="small mdi-navigation-check"></i>
+                Objetivos de aprendizaje</h5>
+                <ul class="collection with-header">
+                    <li class="collection-item">Conocer el propósito y las características principales de JavaScript</li>
+                    <li class="collection-item">Conocer las reglas básicas de sintaxis de JavaScript</li>
+                    <li class="collection-item">Elaborar programas básicos con JavaScript</li>
+                </ul>
+            </div>
+            <div class="divider"></div>
+
+            <div class="section" id="instrucciones">
+                <h5>
+                  <i class="small mdi-action-list"></i>
+                  Instrucciones</h5>
+                <ul class="collection">
+                    <li class="collection-item">Revisa la presentación <a target="_blank" href="../documentos/IntroJavaScript.pptx">Fundamentos de JavaScript</a></li>
+                    <li class="collection-item">
+                        <p>Escribe, prueba y corrige scripts de JavaScript para los siguientes problemas:</p>
+                        <ul>
+                            <li><strong>Funciones:</strong> Cuando se requiera escribir funciones, incluye un conjunto adecuado de casos de prueba.</li>
+                            <li><strong>Pruebas automatizadas:</strong> Utiliza <code>console.assert()</code> para automatizar las pruebas.</li>
+                            <li><strong>Resultados visibles:</strong> Permite al usuario ver los resultados en el documento HTML usando <code>document.write()</code>, modificando el DOM, o mostrando resultados en la consola.</li>
+                        </ul>
+
+                        <div class="card blue-grey darken-1" style="margin: 20px 0;">
+                            <div class="card-content white-text">
+                                <span class="card-title"><i class="small material-icons">info</i> ¿Qué es console.assert()?</span>
+                                <p><code>console.assert()</code> es una función de depuración que verifica si una condición es verdadera. Si la condición es <strong>falsa</strong>, imprime un mensaje de error en la consola del navegador. Si es <strong>verdadera</strong>, no hace nada.</p>
+
+                                <p><strong>Sintaxis:</strong></p>
+                                <pre style="background-color: #263238; padding: 10px; border-radius: 4px; overflow-x: auto;"><code>console.assert(condición, mensaje);</code></pre>
+
+                                <p><strong>Ejemplo de uso para pruebas:</strong></p>
+                                <pre style="background-color: #263238; padding: 10px; border-radius: 4px; overflow-x: auto;"><code>// Probar una función suma
+function suma(a, b) {
+    return a + b;
+}
+
+console.assert(suma(2, 3) === 5, "Error: suma(2,3) debería ser 5");
+console.assert(suma(-1, 1) === 0, "Error: suma(-1,1) debería ser 0");
+console.assert(suma(0, 0) === 0, "Error: suma(0,0) debería ser 0");
+
+// Si todas las condiciones son verdaderas, no verás nada en la consola
+// Si alguna es falsa, verás el mensaje de error correspondiente</code></pre>
+
+                                <p><strong>Consejo:</strong> Abre la consola del navegador (F12 o Ctrl+Shift+I) para ver los resultados de las pruebas.</p>
+                            </div>
+                        </div>
+                        <ol>
+                            <li>
+                                <strong>Ejercicio 1: Tabla de cuadrados y cubos</strong>
+                                <br><span style="font-style: italic;">Entrada:</span> Un número pedido con <code>prompt</code> (por ejemplo: 5).
+                                <br><span style="font-style: italic;">Salida:</span> Una tabla con los números del 1 al número dado con sus cuadrados y cubos. Utiliza <code>document.write</code> para producir la salida.
+                                <br><span style="font-style: italic;">Ejemplo:</span> Si el usuario ingresa 3, la salida debe mostrar una tabla con columnas: Número | Cuadrado | Cubo, con los valores 1-3.
+                            </li>
+                            <li>
+                                <strong>Ejercicio 2: Quiz de suma con tiempo</strong>
+                                <br><span style="font-style: italic;">Entrada:</span> Usando un <code>prompt</code> se pide el resultado de la suma de 2 números generados de manera aleatoria.
+                                <br><span style="font-style: italic;">Salida:</span> La página debe indicar si el resultado fue correcto o incorrecto, y el tiempo que tardó el usuario en responder (en segundos).
+                                <br><span style="font-style: italic;">Sugerencia:</span> Usa <code>Date.now()</code> para medir el tiempo al inicio y al final.
+                            </li>
+                            <li>
+                                <strong>Ejercicio 3: Contador de números</strong>
+                                <br><span style="font-style: italic;">Función:</span> <code>contador</code>
+                                <br><span style="font-style: italic;">Parámetros:</span> Un arreglo de números.
+                                <br><span style="font-style: italic;">Regresa:</span> Un objeto con tres propiedades: <code>negativos</code>, <code>ceros</code>, y <code>positivos</code>.
+                                <br><span style="font-style: italic;">Ejemplo:</span> <code>contador([1, -2, 0, 5, -3, 0, 7])</code> debe regresar <code>{negativos: 2, ceros: 2, positivos: 3}</code>
+                            </li>
+                            <li>
+                                <strong>Ejercicio 4: Promedios de matriz</strong>
+                                <br><span style="font-style: italic;">Función:</span> <code>promedios</code>
+                                <br><span style="font-style: italic;">Parámetros:</span> Un arreglo de arreglos de números (matriz).
+                                <br><span style="font-style: italic;">Regresa:</span> Un arreglo con los promedios de cada uno de los renglones de la matriz.
+                                <br><span style="font-style: italic;">Ejemplo:</span> <code>promedios([[10, 20, 30], [5, 15, 25]])</code> debe regresar <code>[20, 15]</code>
+                            </li>
+                            <li>
+                                <strong>Ejercicio 5: Número inverso</strong>
+                                <br><span style="font-style: italic;">Función:</span> <code>inverso</code>
+                                <br><span style="font-style: italic;">Parámetros:</span> Un número.
+                                <br><span style="font-style: italic;">Regresa:</span> El número con sus dígitos en orden inverso.
+                                <br><span style="font-style: italic;">Ejemplo:</span> <code>inverso(12345)</code> debe regresar <code>54321</code>, <code>inverso(1000)</code> debe regresar <code>1</code>
+                            </li>
+                            <li>
+                                <strong>Ejercicio 6: Problema personalizado con Programación Orientada a Objetos</strong>
+                                <br>Crea una solución para un problema de tu elección. El problema debe estar descrito en un documento HTML, y la solución implementada en JavaScript usando Programación Orientada a Objetos.
+                                <br><span style="font-style: italic;">Requisitos:</span>
+                                <ul>
+                                    <li>Crear al menos una clase/objeto con constructor</li>
+                                    <li>El objeto debe tener al menos 2 métodos además del constructor</li>
+                                    <li>Mostrar los resultados en el documento HTML</li>
+                                </ul>
+                                <br><span style="font-style: italic;">Ideas de problemas:</span> Sistema de gestión de tareas, calculadora de propinas, conversor de unidades, juego simple (piedra-papel-tijera), registro de gastos personales, etc.
+                            </li>
+                        </ol>
+                </ul>
+            </div>
+
+            <div class="divider"> </div>
+
+            <div class="section" id="preguntas">
+                <h5>
+                    <i class="small mdi-action-question-answer"></i>
+                    Preguntas a responder
+                  </h5>
+                <ul class="collection">
+                    <li class="collection-item">¿Qué diferencias y semejanzas hay entre Java y JavaScript?</li>
+                    <li class="collection-item"><span style="text-decoration: underline;"></span>¿Qué métodos tiene el objeto Date? (Menciona al menos 5*) </li>
+                    <li class="collection-item">¿Qué métodos tienen los arreglos? (Menciona al menos 5*)</li>
+                    <li class="collection-item">¿Cómo se declara una variable con alcance local dentro de una función? </li>
+                    <li class="collection-item">¿Qué implicaciones tiene utilizar variables globales dentro de funciones?</li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <div class="section" id="recursos">
+                    <h5>
+                <i class="small mdi-content-link"></i>
+                  Recursos</h5>
+                    <tr>
+                        <td>
+                            <ul class="collection">
+                                <li class="collection-item"><a href="https://www.freecodecamp.org/news/the-complete-javascript-handbook-f26b2c71719c/" target="_blank">The JavaScript Beginner's Handbook (2020 Edition)</a>
+                                </li>
+                                <li class="collection-item"><a href="https://www.freecodecamp.org/news/learn-these-javascript-fundamentals-and-become-a-better-developer-2a031a0dc9cf/" target="_blank">Learn these JavaScript fundamentals and become a better developer</a>
+                                </li>
+                                <li class="collection-item"><a href="https://medium.com/free-code-camp/var-vs-let-vs-const-in-javascript-2954ae48c037" target="_blank">When to use var vs let vs const in JavaScript</a>
+                                </li>
+                                <li class="collection-item"><a href="https://blog.bitsrc.io/double-quotes-vs-single-quotes-vs-backticks-in-javascript-3cab5aaea55" target="_blank">“Double Quotes” vs ‘Single Quotes’ vs `Backticks` in JavaScript</a>
+                                </li>
+                                <li class="collection-item"><a href="https://www.freecodecamp.org/news/javascript-string-handbook/" target="_blank">The JavaScript String Handbook – How to Work with Strings in JS</a>
+                                </li>
+                                <li class="collection-item"><a href="https://developer.mozilla.org/en-US/docs/Learn/JavaScript" target="_blank">JavaScript — Dynamic client-side scripting</a>
+                                </li>
+                                <li class="collection-item"><a href="https://medium.com/better-programming/how-javascript-works-1706b9b66c4d" target="_blank">How JavaScript Works</a>
+                                </li>
+                                <li class="collection-item"><a href="https://codeburst.io/javascript-data-types-explained-347555cd2d4d" target="_blank">JavaScript Data Types Explained</a>
+                                </li>
+                                <li class="collection-item"><a href="https://codeburst.io/javascript-showdown-vs-7be792be15b5" target="_blank">JavaScript Showdown: == vs ===</a></li>
+                                <li class="collection-item"><a href="https://codeburst.io/javascript-why-does-3-true-4-and-7-other-tricky-equations-9dd13cb2a92a" target="_blank">JavaScript: Why does 3 + true = 4? (and 7 other tricky equations)</a>
+                                </li>
+                                <li class="collection-item"><a href="https://www.freecodecamp.org/news/lets-clear-up-the-confusion-around-the-slice-splice-split-methods-in-javascript-8ba3266c29ae/" target="_blank">Let’s clear up the confusion around the slice( ), splice( ), & split( ) methods in JavaScript</a>
+                                </li>
+                                <li class="collection-item">
+                                    <a href="https://www.freecodecamp.org/news/the-complete-javascript-handbook-f26b2c71719c/" target="_blank">The Complete JavaScript Handbook</a>
+                                </li>
+                                <li class="collection-item">
+                                    <a href="https://www.freecodecamp.org/news/explaining-the-best-javascript-meme-i-have-ever-seen/" target="_blank">The Best JavaScript Meme I've Ever Seen, Explained in detail</a>
+                                </li>
+                                <li class="collection-item">
+                                    <a href="https://blog.usejournal.com/little-known-features-of-javascript-901665291387" target="_blank">Little known features of JavaScript</a>
+                                </li>
+                            </ul>
+                        </td>
+                    </tr>
+                </div>
+                <div class="divider"></div>
+
+                <div class="section" id="entrega">
+                    <h5>
+                  <i class="small mdi-notification-event-available"></i>
+                  Especificaciones de entrega
+                </h5>
+                    <p>A través de tu repositorio personal</p>
+                    <div class="divider"></div>
+                </div>
+
+
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="blue darken-1 page-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h5 class="white-text">Secciones</h5>
+                    <ol class="grey-text text-lighten-3">
+                        <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#recursos">Recursos</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#entrega">Especificaciones de entrega</a></li>
+                    </ol>
+                </div>
+            </div>
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2026 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+        </div>
+    </footer>
+
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="../js/materialize.min.js"></script>
+</body>
+
+</html>

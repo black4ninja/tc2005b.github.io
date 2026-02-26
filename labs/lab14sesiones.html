@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script type="text/javascript" src="lab5POE.js"></script>
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Lab 14: Manejo de sesiones y cookies</title>
+</head>
+
+<body>
+    <header></header>
+
+    <main>
+
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h3>Lab 14: Manejo de sesiones y cookies</h3>
+            </div>
+
+
+            <div class="section" id="descripcion">
+                <h5>
+                  <i class="small mdi-action-info-outline"></i>
+                  Descripción
+                </h5>
+                <p>En esta actividad exploraremos el manejo de sesiones y cookies con node+express.</p>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="modalidad">
+                <h5>
+                  <i class="small mdi-social-group"></i>
+                  Modalidad
+                 </h5>
+                <p>
+                    Individual.
+                    <br />
+                </p>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="objetivos">
+                <h5>
+                <i class="small mdi-navigation-check"></i>
+                Objetivos de aprendizaje</h5>
+                <ul class="collection with-header">
+                    <li class="collection-item"><i class="small mdi-image-looks-one"></i>Entender la manera en que funcionan las sesiones.</li>
+                    <li class="collection-item"><i class="small mdi-image-looks-two"></i>Entender la manera en que funcionan las cookies.</li>
+                    <li class="collection-item"><i class="small mdi-image-looks-3"></i>Implementar aplicaciones web que mantengan los datos a través de diferentes peticiones.</li>
+                </ul>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="instrucciones">
+                <h5>
+                  <i class="small mdi-action-list"></i>
+                  Instrucciones</h5>
+                <ul class="collection">
+                    <li class="collection-item">Atiende a la explicación del profesor del <a target="_blank" href="https://docs.google.com/presentation/d/1cwqnbuAjRjemiQLoctHAqobvApkE7CVEKN0PtUmxVl8/edit?usp=sharing">tema sesiones y cookies</a> y pregunta tus dudas. </li>
+                    <li class="collection-item">Recuerda que para generar una aplicación es necesario inicializar el proyecto con <code>npm init</code>, e instalar <code>express</code>, <code>body-parser</code> y un template engine como EJS con <code>npm install --save [nombre_paquete]</code>. Si es necesario, recuerda configurar el archivo <code>package.json</code> para incluir el script que quieres que se ejecute con <code>npm start</code>.</li>
+                    <li class="collection-item">Las cookies viajan en el header de la respuesta, por lo que para definir una cookie, lo podemos hacer en la capa del controlador por medio del método <code>setHeader('Set-Cookie')</code> de la respuesta HTTP:
+                        <code><pre>
+exports.accion = (request, response, next) => {
+    response.setHeader('Set-Cookie', 'nombre_cookie', 'valor_cookie');
+}
+                        </pre></code>
+                        A partir de que definimos una cookie, el navegador mandará en el header de la petición, todas las cookies que corresponden al sitio. Para acceder a las cookies en el controlador, lo podemos hacer por medio del header 'Cookie' de la petición:
+                        <code><pre>
+exports.accion = (request, response, next) => {
+    request.get('Cookie');
+}
+                        </pre></code>
+                        <p>Para acceder a un valor de una cookie en particular, puedes hacer manipulando el string, por ejemplo con <code>request.get('Cookie').split(';')[1].trim().split('=')[1];</code> o bien, con instalando algún módulo como <code>cookie-parser</code>.</p>
+                    </li>
+                    <li class="collection-item">Además del valor, puedes agregarle más propiedades a la cookie como fecha de expiración, segundos de vida, el dominio al que quieres que se envíe, o la propiedad <code>Secure</code>, que sólo enviará la cookie si viaja por HTTPS. <br>
+                    Es importante tener cuidado con el uso de las cookies, ya que los usuarios pueden editarlas desde el navegador. Para que la cookie no pueda ser leída por el código js del navegador, se le puede agregar la propiedad <code>HttpOnly</code>. Esto protege de ataques XSS.
+                    <code><pre>
+exports.accion = (request, response, next) => {
+    response.setHeader('Set-Cookie', 'nombre_cookie=valor_cookie; HttpOnly');
+}
+                    </pre></code>
+                    </li>
+                    <li class="collection-item">Para manejar sesiones de manera muy práctica, instalaremos el paquete <code>express-session</code>.</li>
+                    <li class="collection-item">Para preparar el entorno para trabajar con sesiones, agregamos como middleware el manejo de sesiones:
+                    <code><pre>
+const session = require('express-session');
+
+app.use(session({
+    secret: 'mi string secreto que debe ser un string aleatorio muy largo, no como éste', 
+    resave: false, //La sesión no se guardará en cada petición, sino sólo se guardará si algo cambió 
+    saveUninitialized: false, //Asegura que no se guarde una sesión para una petición que no lo necesita
+}));</pre></code>
+                    </li>
+                    <li class="collection-item">Para utilizar las variables de sesión en un controlador:
+<code><pre>
+exports.action = (request, response, next) {
+    request.session.nombre_variable = valor;
+};
+</pre></code>
+                    Si revisas la consola desde el navegador, podrás observar una cookie con tu variable de sesión y con el valor encriptado. 
+                    </li>
+                    <li class="collection-item">Para eliminar una sesión, lo cual es principalmente útil cuando un usuario sale de la aplicación, puedes hacerlo de la siguiente forma:
+                        <code><pre>
+exports.logout = (request, response, next) => {
+    request.session.destroy(() => {
+        response.redirect('/'); //Este código se ejecuta cuando la sesión se elimina.
+    });
+};
+                        </pre></code>
+                    </li>                    
+                    <li class="collection-item">Mejora alguno de tus laboratorios anteriores o avanza en tu proyecto haciendo un uso pertinente de sesiones y cookies. Otra opción es que crees una nueva aplicación para que explores la aplicación de estos conceptos.</li> 
+                    <li class="collection-item">En ocasiones, como por ejemplo para mandar mensajes de error al usuario, deseamos utilizar variables de sesión que tengan un tiempo de vida de sólo 1 petición. Estas variables se llaman <code>flash</code>. Si deseas utilizarlas, el paquete <code>connect-flash</code> lo hace sencillo.</li>                                        
+                </ul>
+
+            <div class="divider"></div>
+
+            <div class="section" id="preguntas">
+                <h5>
+                    <i class="small mdi-action-question-answer"></i>
+                    Preguntas a responder
+                  </h5>
+                <ul class="collection">
+                    <li class="collection-item">¿Qué beneficios encuentras en el estilo MVC?</li>
+                    <li class="collection-item">¿Encuentras alguna desventaja en el estilo arquitectónico MVC?</li>
+                </ul>
+
+                <div class="section" id="recursos">
+                    <h5> <i class="small mdi-content-link"></i> Recursos</h5>
+                    <ul class="collection">
+                        <li class="collection-item"><a target="_blank" href="https://en.wikipedia.org/wiki/HTTP_cookie">HTTP cookie</a></li>
+                        <li class="collection-item"><a target="_blank" href="https://www.npmjs.com/package/cookie-parser">cookie-parser</a></li>
+                        <li class="collection-item"><a target="_blank" href="https://medium.com/@ethantcollins98/setting-and-using-cookies-with-a-node-js-express-server-49479673d043">Setting and Using Cookies with a Node.js / Express Server</a></li>
+                        <li class="collection-item"><a target="_blank" href="https://www.geeksforgeeks.org/http-cookies-in-node-js/">HTTP Cookies in Node.js</a></li>
+                        <li class="collection-item"><a target="_blank" href="https://owasp.org/www-community/attacks/xss/">XSS</a></li>
+                        <li class="collection-item"><a target="_blank" href="https://www.npmjs.com/package/express-session">express-session</a></li>
+                        <li class="collection-item"><a target="_blank" href="https://www.npmjs.com/package/connect-flash">connect-flash</a></li>
+                    </ul>
+                </div>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="entrega">
+                <h5>
+                  <i class="small mdi-notification-event-available"></i>
+                  Especificaciones de entrega
+                </h5>
+                <p>A través de tu repositorio personal.</p>
+                <div class="divider"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="blue darken-1 page-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h5 class="white-text">Secciones</h5>
+                    <ol class="grey-text text-lighten-3">
+                        <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#entrega">Especificaciones de entrega</a></li>
+                    </ol>
+                </div>
+            </div>
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2026 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+        </div>
+    </footer>
+
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="../js/materialize.min.js"></script>
+</body>
+
+</html>

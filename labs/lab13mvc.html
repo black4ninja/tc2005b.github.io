@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script type="text/javascript" src="lab5POE.js"></script>
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Lab 13: MVC</title>
+</head>
+
+<body>
+    <header></header>
+
+    <main>
+
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h3>Lab 13: MVC</h3>
+            </div>
+
+
+            <div class="section" id="descripcion">
+                <h5>
+                    <i class="small mdi-action-info-outline"></i>Descripción
+                </h5>
+                <p>En esta actividad exploraremos el estilo arquitectónico Modelo-Vista-Controlador y lo implementaremos con node+express.</p>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="modalidad">
+                <h5>
+                    <i class="small mdi-social-group"></i>Modalidad
+                </h5>
+                <p>
+                    Individual.
+                    <br />
+                </p>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="objetivos">
+                <h5>
+                <i class="small mdi-navigation-check"></i>
+                Objetivos de aprendizaje</h5>
+                <ul class="collection with-header">
+                    <li class="collection-item"><i class="small mdi-image-looks-one"></i>Entender el estilo arquitectónico Modelo-Vista-Controlador.</li>
+                    <li class="collection-item"><i class="small mdi-image-looks-two"></i>Diseñar aplicaciones con un estilo arquitectónico Modelo-Vista-Controlador.</li>
+                    <li class="collection-item"><i class="small mdi-image-looks-3"></i>Implementar aplicaciones con un estilo arquitectónico Modelo-Vista-Controlador.</li>
+                </ul>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="instrucciones">
+                <h5>
+                    <i class="small mdi-action-list"></i>Instrucciones</h5>
+                <ul class="collection">
+                    <li class="collection-item">Atiende a la explicación del profesor del <a href="https://docs.google.com/presentation/d/1ap7zdACiT7ouGfzzh9dEcrQd6AsoaAgRinjZUXSWHvk/edit?usp=sharing">tema MVC</a> y pregunta tus dudas. </li>
+                    <li class="collection-item">Recuerda que para generar una aplicación es necesario inicializar el proyecto con <code>npm init</code>, e instalar <code>express</code>, <code>body-parser</code> y un template engine como EJS con <code>npm install --save [nombre_paquete]</code>. Si es necesario, recuerda configurar el archivo <code>package.json</code> para incluir el script que quieres que se ejecute con <code>npm start</code>.</li>
+                    <li class="collection-item">
+                        A continuación, haremos una implementación a partir del diseño que se presenta en el siguiente diagrama de secuencia:
+                        <div class="center-align">
+                            <img class="responsive-img" alt="Diagrama de secuencia de una interacción con un estilo arquitectónico MVC" src="uml/mvc_secuencia.png">
+                        </div>
+                        Por convención, nuestros controladores los pondremos en una carpeta <code>controllers</code>. Comenzaremos a mover la lógica que antes habíamos puesto en las vistas, hacia una variable que exportaremos del controlador. Utilizaremos de ejemplo el controlador <code>a_controller.js</code>:
+                    <code><pre>
+exports.action = (request, response, next) => {
+    response.render('view_file', { 
+        atribute_1: 'Data 1', 
+        atribute_2: 'Data 2'
+    });
+};</pre></code>
+                    </li>
+                    <li class="collection-item">El archivo con la ruta quedará más ligero, ya que únicamente tendrán nuestra ruta y la referencia hacia el controlador que utilizarán, quedando de la siguiente forma:
+                        <code><pre>
+const aController = require('../controllers/a_controller');
+
+router.get('/add', aController.action);</pre></code>                        
+                    </li>
+                    <li class="collection-item">Para implementar la capa del modelo, por convención, utilizaremos una carpeta <code>models</code>. Ahí pondremos cada uno de los archivos de nuestro modelo. Es común tener un archivo de modelo por tabla de la base de datos. Un archivo de modelo, típicamente tiene la siguiente estructura: 
+                    <code><pre>
+module.exports = class Modelo {
+
+    //Constructor de la clase. Sirve para crear un nuevo objeto, y en él se definen las propiedades del modelo
+    constructor(my_value) {
+        this.attribute_1 = my_value;
+    }
+
+    //Este método servirá para guardar de manera persistente el nuevo objeto. 
+    save() {
+        
+    }
+
+    //Este método servirá para devolver los objetos del almacenamiento persistente.
+    static fetchAll() {
+        
+    }
+
+}
+                    </pre></code>
+                    <p>Para usar el modelo en el controlador:</p>
+                    <code><pre>
+const Modelo = require('../models/modelo');
+
+//Para crear un objeto de nuestro modelo
+const objeto = new Modelo('Valor de la instancia');
+objeto.save();
+
+//Para recuperar la lista de objetos del modelo
+const objetos = Modelo.fetchAll();
+                    </pre></code>
+                    <p>Por el momento, podemos utilizar un arreglo para almacenar la información, entonces en al archivo del modelo podemos crear un arreglo <code>const objetos = []</code>, llenar en método <code>save()</code> con <code>objetos.push(this);</code> y <code>fetchAll()</code> con <code>return objetos;</code></p>
+                    </li>
+                    <li class="collection-item">Refactoriza alguno de tus laboratorios anteriores o el avance de tu proyecto utilizando un estilo arquitectónico MVC. Otra opción es que crees una nueva aplicación utilizando este patrón.</li> 
+                    <li class="collection-item">Agrega una nueva funcionalidad que toque todos los puntos clave de la arquitectura.</li>                                       
+                    </ul>
+
+            <div class="divider"></div>
+
+            <div class="section" id="preguntas">
+                <h5>
+                    <i class="small mdi-action-question-answer"></i>Preguntas a responder
+                </h5>
+                <ul class="collection">
+                    <li class="collection-item">¿Qué beneficios encuentras en el estilo MVC?</li>
+                    <li class="collection-item">¿Encuentras alguna desventaja en el estilo arquitectónico MVC?</li>
+                </ul>
+
+                <div class="section" id="recursos">
+                    <h5> <i class="small mdi-content-link"></i> Recursos</h5>
+                    <ul class="collection">
+                        <li class="collection-item"><a target="_blank" href="documentos/EjerciciosDiagramaSecuencia.docx">Ejercicio: Diagramas de secuencia</a></li>
+                        <li class="collection-item"><a target="_blank" href="https://www.freecodecamp.org/news/model-view-architecture/">How Model-View-Controller Architecture Works</a></li>
+                        <li class="collection-item"><a target="_blank" href="https://developer.mozilla.org/en-US/docs/Glossary/MVC">MVC</a></li>
+                        <li class="collection-item"><a target="_blank" href="https://levelup.gitconnected.com/the-20-essential-principles-of-software-development-lod-soc-solid-and-beyond-7a39a98b685d">The 20 Essential Principles of Software Development: LoD, SoC, SOLID, and Beyond.</a></li>
+                        <li class="collection-item"><a target="_blank" href="https://blog.stackademic.com/understanding-the-solid-principles-85c625cc27fc">Understanding the SOLID Principles</a></li>
+                    </ul>
+                </div>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="entrega">
+                <h5>
+                    <i class="small mdi-notification-event-available"></i>
+                    Especificaciones de entrega
+                </h5>
+                <p>A través de tu repositorio personal.</p>
+                <div class="divider"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="blue darken-1 page-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h5 class="white-text">Secciones</h5>
+                    <ol class="grey-text text-lighten-3">
+                        <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#entrega">Especificaciones de entrega</a></li>
+                    </ol>
+                </div>
+            </div>
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2026 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+        </div>
+    </footer>
+
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="../js/materialize.min.js"></script>
+</body>
+
+</html>

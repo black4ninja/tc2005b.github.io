@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Ejercicio: SQL con Funciones Agregadas</title>
+</head>
+
+<body>
+    <main>
+    <div class="navbar-fixed">
+        <nav>
+            <div class="blue darken-1 nav-wrapper">
+                <a href="index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B Construcción de software y toma de decisiones</acronym></a>
+            </div>
+        </nav>
+    </div>
+
+    <div class="container">
+        <div class="section">
+            <h3>Ejercicio: SQL con Funciones Agregadas</h3>
+        </div>
+    </div>
+
+    <div class="container">
+
+            <div class="section" id="modalidad">
+                <h5>
+                    <i class="small mdi-social-group"></i>Modalidad
+                </h5>
+                <ul class="collection">
+                    <li class="collection-item">
+                        Colaborativa.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section" id="objetivos">
+                <h5>
+                    <i class="small mdi-navigation-check"></i>Objetivos de aprendizaje
+                </h5>
+                <ul class="collection">
+                    <li class="collection-item">Aplicar lo aprendido en la lectura de funciones agregadas.</li>
+                </ul>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section" id="instrucciones">
+                <h5>
+                    <i class="small mdi-action-list"></i>
+                    Instrucciones
+                </h5>
+                <ul class="collection">
+                    <li class="collection-item">
+                        Plantea las siguientes consultas en SQL, agregando los alias de columna necesarios para que resulten legibles.
+                    </li>
+                    <li class="collection-item">
+                        <i class="material-icons">subject</i>
+                        Usando el esquema:
+                    </li>
+                    <li class="collection-item">
+                        <b>
+                            Película (título, año, duración, encolor, presupuesto, nomestudio, idproductor)
+                            <br>
+                            Elenco (título, año, nombre, sueldo)
+                            <br>
+                            Actor (nombre, dirección, telefono, fechanacimiento, sexo)
+                            <br>
+                            Productor (idproductor, nombre, dirección, teléfono)
+                            <br>
+                            Estudio (nomestudio, dirección)
+                        </b>
+                    </li>
+                    <li class="collection-item">
+                        <i class="material-icons">play_arrow</i>
+                        El ingreso total recibido por cada actor, sin importar en cuantas películas haya participado.
+                    </li>
+                    <li class="collection-item">
+                        <i class="material-icons">play_arrow</i>
+                        El monto total destinado a películas por cada Estudio Cinematográfico, durante la década de los 80's.
+                    </li>
+                    <li class="collection-item">
+                        <i class="material-icons">play_arrow</i>
+                        Nombre y sueldo promedio de los actores (sólo hombres) que reciben en promedio un pago superior a 5 millones de dolares por película.
+                    </li>
+                    <li class="collection-item">
+                        <i class="material-icons">play_arrow</i>
+                        Título y año de producción de las películas con menor presupuesto. (Por ejemplo, la película de Titanic se ha producido en varias veces
+                        entre la lista de películas estaría la producción de Titanic y el año que fue filmada con menor presupuesto).
+                    </li>
+                    <li class="collection-item">
+                        <i class="material-icons">play_arrow</i>
+                        Mostrar el sueldo de la actriz mejor pagada.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section" id="entrega">
+                <h5>
+                    <i class="small mdi-notification-event-available"></i>
+                    Especificaciones de entrega
+                </h5>
+                <ul class="collection">
+                    <li class="collection-item">
+                      <p>A través de tu repositorio personal (Bitbucket o GitHub).</p>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="blue darken-1 page-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h5 class="white-text">Secciones</h5>
+                    <ol class="grey-text text-lighten-3">
+                        <li><a class="grey-text text-lighten-3" href="#modalidad"> Modalidad</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#objetivos"> Objetivos</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#instrucciones"> Instrucciones</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#entrega"> Especificaciones de entrega</a></li>
+                    </ol>
+                </div>
+            </div>
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+        </div>
+    </footer>
+
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="../js/materialize.min.js"></script>
+</body>
+</html>

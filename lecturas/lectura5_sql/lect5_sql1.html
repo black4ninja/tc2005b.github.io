@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html charset=UTF-8" http-equiv="content-type">
+    <title>SQL y Algebra Relacional </title>
+</head>
+
+<body>
+    <main>
+
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="../index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B Construcción de software y toma de decisiones</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h3>SQL y álgebra Relacional</h3>
+            </div>
+
+            
+            <i class="material-icons dp48">label</i><b>SQL (Structured Query Language)</b>
+            <br>
+            <br>
+                Es el lenguaje utilizado por todos los DBMS para realizar las diferentes actividades relacionadas con la definici&oacute;n y utilizaci&oacute;n de bases de datos. Las operaciones de consulta a la base de datos están íntimamente ligadas con la obtenci&oacute;n de relaciones a partir de otras relaciones aplicando el álgebra relacional. 
+            
+            <br>
+            <br>
+            <i class="material-icons dp48">label_outline</i>
+            <b>La sintaxis básica de una sentencia de consulta SQL es la siguiente:</b>
+            <br>
+            <br>
+            <b>SELECT columnas</b><br>
+              <b>FROM tablas </b><br>
+              <b>WHERE condici&oacute;n</b><br>
+                en d&oacute;nde distinguimos tres cláusulas: la cláusula <b>SELECT</b>, la cláusula <b>FROM </b>y la cláusula <b>WHERE.</b><br>
+            <br>
+                Todas las consultas que pueden plantearse con álgebra relacional, pueden expresarse con una sentencia de consulta de SQL. En esta lectura se ilustra la equivalencia entre la notaci&oacute;n del álgebra relacional y la de SQL, por medio de ejemplos basados en un esquema de referencia. Cabe se&ntilde;alar que si bien s&oacute;lo algunos ejemplos muestran la composici&oacute;n de operadores, todas las composiciones son válidas, y su instrumentaci&oacute;n en SQL es viable considerando esencialmente que:<br>
+            <br>
+            
+            <b>
+                <i class="material-icons dp48">label_outline</i></b>
+                La lista de columnas de la cláusula <b>SELECT </b>es la lista de la proyecci&oacute;n final (más externa).<br>
+            <b>
+                <i class="material-icons dp48">label_outline</i></b>
+                La lista de tablas de la cláusula <b>FROM </b>incluye a todas las tablas participantes.<br>
+            <b>
+                <i class="material-icons dp48">label_outline</i></b>
+                Las condiciones se expresan en la cláusula <b>WHERE</b>, combinándolas con <b>AND </b>(o con <b>OR </b>seg&uacute;n el significado específico).<br>
+                     
+            <i class="material-icons dp48">label</i>
+            <b>Esquema de referencia</b><br>
+            <br>
+            <b>Materiales(<u>Clave</u>,Descripcion,Precio)</b><br>
+              <b>Proveedores(<u>RFC</u>,RazonSocial)</b><br>
+              <b>Proyectos(<u>Numero</u>,Denominacion)</b><br>
+              <b>Entregan(<u>Clave,RFC,Numero,Fecha</u>,Cantidad)</b><br>
+              <p><b>Convenio:</b> para evitar las letras griegas originales del álgebra relacional, en esta lectura se utiliza la siguiente notaci&oacute;n:<br>
+                <br>
+                <b>SL</b>{condici&oacute;n} : selecci&oacute;n con el criterio condici&oacute;n.<br>
+                <b>PR</b>{lista de columnas}: proyecci&oacute;n de lista de columnas.<br>
+                <b>JN</b>: reuni&oacute;n natural (natural join).<br>
+                <b>JN</b>{condici&oacute;n}: reuni&oacute;n con el criterio condici&oacute;n (teta join).<br>
+                <b>UN</b>: uni&oacute;n.<br>
+                <b>IN</b>: intersecci&oacute;n.<br>
+                <b>-</b> : diferencia<br>
+                <b>X</b>: producto cartesiano.<br>
+                <br>
+                <b>A continuaci&oacute;n se presenta la equivalencia entre los operadores y SQL. </b><br>
+                  <br>
+                  <b>Consulta de una relaci&oacute;n cualquiera.</b><br>
+                  <b>Algebra relacional.</b><br> materiales<br>
+                <br>
+                <b>SQL</b><br> select * from materiales<br>
+                <br>
+                <br>
+                <b>Selecci&oacute;n</b><br>
+                <b>Algebra relacional.</b><br> SL{clave=1000}(materiales)<br>
+                <br>
+                <b>SQL</b><br> select * from materiales<br> where clave=1000<br>
+                </p>
+                <p>              
+                <b>Proyecci&oacute;n<br> Algebra relacional.</b><br> PR{clave,rfc,fecha} (entregan)<br>
+                <br>
+                <b>SQL</b><br> select clave,rfc,fecha from entregan<br>
+                <br>
+                <br>
+                <b>Reuni&oacute;n natural<br> Algebra relacional.</b><br> entregan JN proveedores<br>
+                <br>
+                <b>SQL</b><br> select * from entregan,proveedores<br> where entregan.rfc=proveedores.rfc<br>
+                  <br>
+                  <br>
+                  <b>Reuni&oacute;n con criterio específico<br>
+                    Algebra relacional.<br>
+                    </b>entregan JN{entregan.numero &lt;= proyectos.numero} proyectos<br>
+                    <br>
+                    <b>SQL</b><br> select * from entregan,proyectos<br> where entregan.numero&lt;=proyectos.numero<br>
+                      <br>
+                      <br>
+                      <b>Uni&oacute;n (se ilustra junto con selecci&oacute;n)<br>
+                      Algebra relacional.</b><br> SL{clave=1000}(entregan) UN SL{clave=2000}(entregan)<br>
+                <br>
+                <b>SQL</b><br> (select * from entregan where clave=1000)<br> union<br> (select * from entregan where clave=2000)<br>
+                  <br>
+                  <br>
+                  <b>Intersecci&oacute;n (se ilustra junto con selecci&oacute;n y proyecci&oacute;n)<br>
+                    Algebra relacional.</b><br> PR{clave}(SL{numero=5001}(entregan)) IN PR{clave}(SL{numero=5018}(entregan))<br>
+                <br>
+                <b>SQL</b><br> (select clave from entregan where numero=5001)<br> intersect<br> (select clave from entregan where numero=5018)</p>
+              
+            <p><br>
+                <br>
+                Cabe mencionar que este m&eacute;todo solo se puede ejecutar en ORACLE, ya que en SQL Server y en Access no esta definido. sin embargo  podríamos realizar la misma consulta con el uso de <b>subconsultas </b>que veremos mas adelante..<br>
+            </p>
+            
+              <p><b>Diferencia (se ilustra con selecci&oacute;n )<br>
+                  Algebra relacional.</b><br> entregan - SL{clave=1000}(entregan)<br>
+                <br>
+                <b>SQL</b><br> (select * from entregan)<br> minus<br> (select * from entregan where clave=1000)<br>
+                </p>
+              
+            <p> Al igual que el caso anterior este m&eacute;todo solo se puede ejecutar en ORACLE, ya que en SQL y en Access no esta definido. y tambi&eacute;n  podríamos realizar la misma consulta con el uso de subconsultas.<br>
+              </p>
+            
+              <p><br>
+                <b>Producto cartesiano<br> Algebra relacional.</b><br> entregan X materiales<br>
+                <br>
+                <b>SQL</b><br> select * from entregan,materiales<br>
+                <b>    </b></p>
+            
+            <p><br>
+              En muchos casos no requerimos conocer el <b>detalle </b>de todas las de tuplas de una relaci&oacute;n, sino un <b>resumen </b>que nos presente la informaci&oacute;n en forma agregada. <br>
+              <br>
+              Como ejemplo, pensemos en el esquema siguiente, que representa<br>
+              <br>
+              <b>ventas(<u>folio</u>,nocliente,codproducto,fecha,cantidad,precioventa)</b><br>
+              <br>
+            <b>
+            <i class="material-icons dp48">label_outline</i>
+              </b>La siguiente es una representaci&oacute;n tabular del esquema:<br>
+            </p>
+            <p class="style1">
+            <img class="responsive-img" alt="" src="Dibujo1.jpg" width="525" height="208"></p>
+            <p>Si estamos interesados por conocer la cantidad vendida de cada producto, sin importar la fecha, el resultado sería el siguiente:</p>
+            
+                <img class="responsive-img" alt="" src="Dibujo2.jpg" width="304" height="122">
+                <p>
+                    <br> 
+                    en donde se presenta cada uno de los tres productos distintos, con la suma de las cantidades vendidas de cada producto.<br>
+                    <br>
+                    Si deseamos conocer la cantidad vendida de cada producto cada día, tendríamos lo siguiente:<br>
+                    <br>
+                </p>
+            
+                <p class="style1">
+                    <img class="responsive-img" alt="" src="Dibujo4.jpg" width="423" height="181">
+                </p>
+              
+            <p>
+                <b>
+                    <i class="material-icons dp48">label_outline</i>
+                </b>
+                En este caso, el producto 888777 tiene <b>dos</b> ventas el 1/1/2000 que acumulamos en este día, el producto 999666 tiene una <b>sola </b>venta cada día y el 555444 <b>s&oacute;lo </b>aparece en la fecha 2/1/2000.<br>
+                <br>
+                <b>
+                    <i class="material-icons dp48">label_outline</i>  
+                </b>
+                <b>
+                    Para hacer este tipo de agrupaciones, en SQL se utiliza la sintaxis general:
+                </b>
+                <br>
+                <br>
+            </p>
+            
+              <b>SELECT columnas que agrupan, funciones agregadas</b><br>
+                <b>FROM tablas</b><br>
+                <b>[WHERE condiciones]</b><br>
+                <b>[GROUP BY columnas que agrupan]</b><br>
+                <b>[HAVING condiciones sobre funciones agregadas]</b><br>
+                
+                  
+            <p><br>
+              Donde las cláusulas entre corchetes son <b>opcionales</b>. N&oacute;tese que en la cláusula <b>GROUP BY</b> deben aparecer todas las columnas que en la cláusula <b>SELECT (no necesariamente en el mismo orden)</b> que no sean funciones agregadas, ya que cuando se presentan agregados no es posible al mismo tiempo presentar datos detallados. La cláusula <b>HAVING </b>es similar a la cláusula <b>WHERE, </b>pero en ella se pueden utilizar <b>condiciones </b>que aplican a las <b>funciones agregadas</b>, lo cual no es posible hacerlo en la cláusula <b>WHERE. </b>Si se omite la cláusula 
+              <b>GROUP BY</b>, la lista de columnas que agrupan debe ser vacía y las funciones agregadas se calculan para toda la relaci&oacute;n.<br>
+              <br>
+                     
+            <i class="material-icons dp48">label</i>
+                <b>Las funciones agregadas son:<br>
+                     </b><br>
+               </p>
+            
+                    <b>SUM(expresi&oacute;n) Suma de la expresi&oacute;n.</b><br>
+                      <b>AVG(expresi&oacute;n) Promedio de la expresi&oacute;n</b><br>
+                      <b>MIN(expresi&oacute;n) Mínimo de la expresi&oacute;n</b><br>
+                      <b>MAX(expresi&oacute;n) Máximo de la expresi&oacute;n</b><br>
+                      <b>COUNT(*) N&uacute;mero de tuplas (renglones)</b><br>
+                      <b>COUNT(expresi&oacute;n) n&uacute;mero de renglones en los que la expresi&oacute;n es no nula.</b><br>
+                      <b>STD(expresi&oacute;n) Desviaci&oacute;n estándar de la expresi&oacute;n</b><br>
+                    
+                  
+            <p>Las expresiones pueden ser columnas, constantes o expresiones aritm&eacute;ticas en las que participen columnas y/o constantes.<br>
+              <br>
+              Aplicando esto a nuestro esquema anterior, la cantidad por producto que obtuvimos se expresa como:            
+              </p>
+            
+              <b>SELECT codproducto,SUM(cantidad)
+                </b><br>
+                <b>FROM ventas</b><br>
+                <b>GROUP BY codproducto</b><br>
+              
+              
+            <p>y la cantidad por día de cada producto se expresa como:</p>
+            
+              <b>SELECT codproducto, fecha, SUM(cantidad)</b><br>
+                <b>FROM ventas</b><br>
+                <b>GROUP BY codproducto,fecha</b>
+              
+            <p><br>
+                Como un ejemplo más completo, si deseamos conocer por cada cliente cada día cuál es la cantidad total vendida, el importe (precio por cantidad) de las ventas, el promedio de la cantidad vendida, el mínimo y máximo de los precios de venta pero restringido a aquellos clientes cuyo importe de ventas por día sea mayor a 200, la expresi&oacute;n <b>SQL </b>sería:</p>
+            
+              <b>SELECT nocliente,fecha,SUM(cantidad),</b><br>
+                <b> SUM(precioventa*cantidad),AVG(cantidad),</b><br>
+                <b>
+                  MIN(precioventa),MAX(precioventa)</b><br>
+                <b>FROM ventas</b><br>
+                <b>GROUP BY nocliente,fecha</b><br>
+                <b>HAVING SUM(precioventa*cantidad) &gt;
+                  200</b><br>
+              
+              
+            <p><br>
+            Si nos interesaran estas funciones agregadas para toda la tabla ventas, omitiríamos sencillamente las cláusulas <b>GROUP BY</b> y <b>HAVING</b>, quedando &uacute;nicamente:</p>
+            
+              <b>SELECT SUM(cantidad),SUM(precioventa*cantidad),AVG(cantidad), MIN(precioventa),MAX(precioventa)</b><br>
+                <b>FROM ventas</b><br>
+
+        </div>
+
+    </main>
+    
+     <footer class="blue darken-1 page-footer">
+        <div class="container">
+           
+    
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                &copy; 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+        </div>
+    </footer>
+
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="../js/materialize.min.js"></script>
+</body>
+
+</html>

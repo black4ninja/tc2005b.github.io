@@ -1,0 +1,155 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <!--Import materialize.css-->
+  <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <!--Let browser know website is optimized for mobile-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+  <title>Ejercicio: Normalización</title>
+</head>
+
+<body>
+  <main>
+    <div class="navbar-fixed">
+        <nav>
+            <div class="blue darken-1 nav-wrapper">
+                <a href="index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B Construcción de software y toma de decisiones</acronym></a>
+            </div>
+        </nav>
+    </div>
+
+    <div class="container">
+        <div class="section">
+            <h3>Ejercicio: Normalización</h3>
+        </div>
+    </div>
+
+    <div class="container">
+
+            <div class="section" id="modalidad">
+                <h5>
+                    <i class="small mdi-social-group"></i>Modalidad
+                </h5>
+                <ul class="collection">
+                    <li class="collection-item">
+                        Colaborativa.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section" id="objetivos">
+                <h5>
+                    <i class="small mdi-navigation-check"></i>Objetivos de aprendizaje
+                </h5>
+                <ul class="collection">
+                    <li class="collection-item">Aplicar la tercera forma normal.</li>
+                </ul>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section" id="instrucciones">
+                <h5>
+                    <i class="small mdi-action-list"></i>
+                    Instrucciones
+                </h5>
+                <ul class="collection">
+                    <li class="collection-item">
+                      <p>En cada ejercicio, partiendo de la tabla arbitraria  que se proporciona, genera un conjunto de relaciones <strong>normalizadas </strong>en  las que debe quedar indicada expl&iacute;citamente la <strong>llave, </strong>justificando  la <strong>forma </strong>en que derivas las nuevas relaciones .<br>
+                        <br>
+                      Los nombres de las columnas son muy expl&iacute;citos para guiarte en el  descubrimiento de <strong>dependencias funcionales</strong>; si para el manejo de las  relaciones decides abreviarlos, plantea un <strong>"diccionario" </strong>de equivalencias.<br>
+                      <br>
+                      Es necesario <strong>normalizarla </strong>s&oacute;lo hasta la <strong>tercera forma normal</strong>,  sin embargo es necesario que se realice la traduccion paso a paso.<br>
+                      <br>                       
+                    </li>
+                    <li class="collection-item">
+                      La siguiente relaci&oacute;n es utilizada por el departamento de <strong>cobros </strong>de una empresa que ofrece el servicio de <strong>telecable, </strong>En  ella se tiene una representaci&oacute;n de los pagos de servicios mensuales  de sus contratantes:<br>
+                      <br>
+                      <strong>Servicios</strong>(cliente, domicilio y estado , a&ntilde;o, rentabasica  1, servicios adicionales 1, rentabasica 2, servicios adicionales 2, rentabasica  3, servicios adicionales 3, .... rentabasica 12, servicios adicionales 12)<br>
+                      <br>
+                        </p>
+                    </li>
+                    <li class="collection-item">
+                      <p>
+                        Una empresa de manufactura controla su <strong>producci&oacute;n </strong>mediante  la siguiente tabla:<br>
+                       <br>
+                       <strong>Producci&oacute;n </strong>(C&oacute;digo de parte, Descripci&oacute;n  de parte, Fecha, <br>
+                       No. de operador, nombre del operador y cantidad producida en L&iacute;nea  1 Turno 1, <br>
+                       No. de operador, nombre del operador y cantidad producida en L&iacute;nea  1 Turno 2, <br>
+                       No. de operador, nombre del operador y cantidad producida en L&iacute;nea  1 Turno 3, <br>
+                       No. de operador, nombre del operador y cantidad producida en L&iacute;nea  2 Turno 1, <br>
+                       No. de operador, nombre del operador y cantidad producida en L&iacute;nea  2 Turno 2, <br>
+                       No. de operador, nombre del operador y cantidad producida en L&iacute;nea  2 Turno 3, <br>
+                       No. de operador, nombre del operador y cantidad producida en L&iacute;nea  3 Turno 1, <br>
+                       No. de operador, nombre del operador y cantidad producida en L&iacute;nea  3 Turno 2, <br>
+                       No. de operador, nombre del operador y cantidad producida en L&iacute;nea  3 Turno 3)<br>
+                       
+                         </p>
+                    </li>
+                    <li class="collection-item">
+                      <p > Una empresa de telefon&iacute;a maneja la <strong>facturaci&oacute;n </strong>de sus  servicios con la siguiente tabla:<br>
+                        <br>
+                        <strong>Facturaci&oacute;n </strong>(Nombre del cliente y&nbsp; Direcci&oacute;n  , Fecha y&nbsp; Hora, Duraci&oacute;n, <br>
+                        N&uacute;mero de tel&eacute;fono de origen, Entidad federativa de origen,  Ciudad de origen, <br>
+                        N&uacute;mero de tel&eacute;fono de destino, Entidad federativa de destino,  Ciudad de destino, <br>
+                        Tarifa por minuto entre ciudad de origen y ciudad de destino,<br>
+                        Fecha de inicio del per&iacute;odo de facturaci&oacute;n,<br>
+                        Fecha final del per&iacute;odo de facturaci&oacute;n)<br>
+                        <br>
+                        
+                          </p>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section" id="entrega">
+                <h5>
+                    <i class="small mdi-notification-event-available"></i>
+                    Especificaciones de entrega
+                </h5>
+                <ul class="collection">
+                    <li class="collection-item">
+                      <p>A través de tu repositorio (Bitbucket o GitHub).</p>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+</main>
+
+<footer class="blue darken-1 page-footer">
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h5 class="white-text">Secciones</h5>
+                <ol class="grey-text text-lighten-3">
+                    <li><a class="grey-text text-lighten-3" href="#modalidad"> Modalidad</a></li>
+                    <li><a class="grey-text text-lighten-3" href="#objetivos"> Objetivos</a></li>
+                    <li><a class="grey-text text-lighten-3" href="#instrucciones"> Instrucciones</a></li>
+                    <li><a class="grey-text text-lighten-3" href="#entrega"> Especificaciones de entrega</a></li>
+                </ol>
+            </div>
+        </div>
+        <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+    </div>
+    <div class="footer-copyright">
+        <div class="container">
+            © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+        </div>
+    </div>
+</footer>
+  <!--Import jQuery before materialize.js-->
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script type="text/javascript" src="../js/materialize.min.js"></script>
+
+</body>
+</html>

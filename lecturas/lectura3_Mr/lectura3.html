@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Lectura 3: Reglas de traslado del Modelo Entidad Relacion a Tablas</title>
+
+</head>
+<body>
+	<header></header>
+    <main>
+        
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="../index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B Construcción de software y toma de decisiones</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h3>Reglas de Traslado del Modelo Entidad Relación a Tablas</h3>
+            </div>
+        
+            <div class="section" id="descripcion">
+                <h5>
+                  <i class="small mdi-action-info-outline"></i>
+                  Introducción
+                </h5>
+                 <p>Para instrumentar un Modelo Entidad-Relación en una base de datos relacional, es necesario traducir el modelo a tablas MR 
+                 (Modelo Relacional). Para definir las tablas, utilizaremos la notación:</p>
+ 		
+            <strong>nombretabla(nombrecolumna1, nombrecolumna2, nombrecolumna3, ... , nombrecolumnaN)</strong>
+
+			<p>Para especificar una tabla, las columnas subrayadas constituyen la <strong>llave</strong> de la tabla, es decir una columna o 
+			conjunto de columnas tales que conocido su valor se determina unívocamente el renglón de la tabla del que se trata, es decir, 
+			los valores de la columna o combinación de valores de las columnas subrayadas son <strong>únicos</strong> en la tabla.
+			<br></p>               
+             </div>
+
+                                                          
+
+
+		<h5>Procedimiento de transferencia</h5>
+
+ 		<ul>
+	 		<li> Por <strong>cada entidad</strong> se defina una <strong>tabla</strong> nombrada igual que la entidad, 
+	 		cuyas columnas corresponden uno a uno (y se llaman igual) a los atributos de la entidad. El identificador 
+	 		de la entidad corresponde a la llave primaria de la tabla. IMPORTANTE: Si no existe un identificador 
+	 		obtenido del análisis, en este punto se debe optar por crear una llave primaria "artificial" 
+	 		(un número o código creado) que garantice la unicidad de identificación de las tuplas.</li>
+
+            <br>
+            
+            <li> Por cada <strong>asociación</strong> del MER con <strong>cardinalidad N:N</strong> se define una 
+            <strong>tabla</strong> cuyas columnas corresponden a los identificadores de las entidades que intervienen 
+            en la asosiación, más los atributos de la asosiación misma. La llave primaria de la tabla creda corresponde 
+            a la concatenación de las llaves primarias de las tablas de las entidades participantes en las asosiación 
+            (en algunos casos, por cuestiones de eficiencia puede convenir agregar una llave primaria "artificial", 
+            sin dejar de asegurar la unicidad de la llave formada por la concatenación de las llaves de las entidades participantes)</li>
+
+            <br>
+            
+ 		    <li>Por cada <strong>asociación </strong>del MER con <strong>cardinalidad 1:N</strong> se hace lo siguiente: sea A la 
+ 		    entidad conectada con cardinalidad 1 y B la entidad conectada con cardinalidad N dadas las tablas de A y B obtenidas 
+ 		    en el paso 1, deberá agregarse a la tabla de B, la llave primaria de la tabla de A.</li>
+ 		
+            <br>
+            
+ 		    <li> Por cada <strong>asociación</strong> del MER con <strong>cardinalidad 1:1</strong> se hace lo siguiente: 
+ 		    Sólo hay que agregar la llave primaria de una tabla participante a la otra <strong>(no importa el orden).</strong></li>
+        </ul>
+ 		
+ 		<h5> Aplicar el procedimiento en un modelo abstracto (sin asociarlo con un caso particular)</h5>
+ 		
+ 		<p>Considera el siguiente MER:</p>
+
+            <img src="Dibujo1.jpg" alt="" width="351" height="217">
+
+ 	
+ 			<p> Su traducción al MR, siguiendo los pasos, sería:</p>
+ 			<p><strong>A(<u>a1</u>, a2, a3) B(<u>b1</u>, b2) C(<u>c1</u>, c2, c3, c4)</strong></p>
+ 			<p><strong>Nota:</strong> se han subrayado a1, b1 y c1 para denotar que son la llave primaria de la tabla, 
+ 			por representar el identificador de la entidad.</p>
+ 			
+ 			<br>
+     		<p>Se agrega la tabla: </p>
+            <p><strong>X(<u>a1,c1</u>,x1,x2)</strong></p>
+            <p>Para representar la asociación X, ya que tiene cardinalidad N:N. Nótese que se incorporan los identificadores de las 
+            entidades A y B y que la concatenación de ambas, constituye la llave de la tabla X; además se incluyen como columnas de la 
+            tabla, los atributos propios de la asociación </p>
+            
+            <br>
+            <p> Se modifica la tabla B, agregando la llave de la tabla A, para representar la asociación Y con cardinalidad 1:N:</p>
+            <p><strong>B(<u>b1</u>,b2,a1)</strong></p>
+            <p><strong>Nota:</strong> a1 <strong>no</strong> forma parte de la llave primaria de B y que la asociación Y 
+            <strong>no </strong>implica la creación de una nueva tabla en el modelo.</p> 
+			
+			<br>
+            <p>El MR resultante es el siguiente:</p>
+            <p>
+            <strong> A(<u>a1</u>,a2,a3)<br>
+				B(<u>b1</u>,b2,a1)<br>
+				C(<u>c1</u>,c2,c3,c4)<br>
+				X(<u>a1,c1</u>,x1,x2)</strong>
+			</p>
+            <br>
+            <h5> Reglas para manejar los elementos adicionales del MER</h5>
+           
+            <p><strong>Relaciones ISA</strong></p>
+            
+			<p>Las relaciones ISA son 1:1. Como caso particular, de las relaciones 1:N, las tablas que representan a las entidades 
+			generalizadores, heredan sus identificadores a las tablas que representan entidades especializadoras. 
+			La llave primaria de la entidad generalizadora y las especializadora(s) es la misma. 
+			Para el MER abstracto que se ilustra a continuación:</p>
+           
+            <img src="Dibujo2.jpg" alt="" width="382" height="240"><br>
+            
+            <p>Los esquemas del MR correspondiente son:</p>
+            <p><strong>
+                G&nbsp;&nbsp;&nbsp;(<u>g1</u>, g2, g3)<br>
+                Ea (<u>g1</u>, a1, a2)<br>
+                Eb (<u>g1</u>, b1)
+            </strong></p>
+        </p>
+        
+            <p><strong>Entidades fuertes y débiles</strong></p>
+            <p>Como casos particulares de relaciones 1:N, las entidades fuertes heredan su identificador a las entidades débiles. La llave 
+				primaria de la tabla que representa una entidad débil incluye tanto la columna que corresponde a la llave primaria de la 
+				entidad fuerte como una columna que distinga a las diferentes tuplas de la entidad débil relacionadas con una misma tupla de 
+				la entidad fuerte.</p>
+            <br>
+            <p> Para el MER abstracto que se muestra:</p>
+            <img src="Dibujo3.jpg" alt="" width="184" height="235">
+            <p>Los esquemas del MR correspondientes son:</p>
+            
+            <p><strong>F (<u>f1</u>, f2)</strong></p>
+			<p><strong>D (<u>f1, d1</u>, d2)</strong></p>
+            
+            <p><strong>Roles</strong></p>
+            <p>Cuando usamos roles para manejar relaciones reflexivas (de una entidad consigo misma) o 
+            múltiples relaciones entre una pareja de entidades, la herencia de identificadores a las 
+            tablas correspondientes se hace con el algoritmo general antes presentado, 
+            con la diferencia de que los roles se utilizan para nombrar las columnas de 
+            identificadores heredados que juegan diferentes papeles.</p>
+			<p>Para el MER abstracto que se ilustra:</p>
+            
+            <img src="Dibujo4.jpg" alt="" width="260" height="209">
+            
+            <p>Los esquemas del MR correspondientes son:</p>
+            <p><strong>E(<u>e1</u>, e2)</strong></p>
+            <p><strong>R(<u>e1, RolDeEe1</u>, r1, r2)</strong></p>
+			<p><strong>Nota:</strong> en este caso el algoritmo general nos llevaría a una tabla con dos 
+			columnas llamadas e1, lo cual es inválido; el rol nos ayuda a definir un nombre distinto para 
+			la columna que indica que R asocia dos elementos de E.</p> 
+        </div>
+	</main>
+	
+      
+      <footer class="blue darken-1 page-footer">
+            <div class="container">
+               <div class="row">
+                   <div class="col">
+                       <h5 class="white-text">Secciones</h5>
+                <ol class="grey-text text-lighten-3">
+                  <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+                    <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
+                    <li><a class="grey-text text-lighten-3" href="#recursos">Recursos</a></li>
+                    <li><a class="grey-text text-lighten-3" href="#entrega">Especificaciones de entrega</a></li>
+                </ol>
+                       </div>
+                </div>
+                <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+            </div>
+          <div class="footer-copyright">
+            <div class="container">
+            © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+          </div>
+      </footer>
+        
+        
+      <!--Import jQuery before materialize.js-->
+      <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+      <script type="text/javascript" src="../js/materialize.min.js"></script>
+</body>
+</html>

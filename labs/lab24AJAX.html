@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script type="text/javascript" src="lab5POE.js"></script>
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Lab 24: AJAX</title>
+</head>
+
+<body>
+    <header></header>
+
+    <main>
+
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+
+                <h3>Lab 24: AJAX</h3>
+            </div>
+        </div>
+
+        <div class="container">
+
+            <div class="section" id="descripcion">
+                <h5>
+                  <i class="small mdi-action-info-outline"></i>
+                  Descripción
+                </h5>
+                <p>En esta actividad haremos una introducción a las tecnologías AJAX.
+                </p>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="modalidad">
+                <h5>
+                  <i class="small mdi-social-group"></i>
+                  Modalidad
+                 </h5>
+                <p>
+                    Individual.
+                    <br />
+                </p>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="objetivos">
+                <h5>
+                <i class="small mdi-navigation-check"></i>
+                Objetivos de aprendizaje</h5>
+                <ul class="collection with-header">
+                    <li class="collection-item"><i class="small mdi-image-looks-one"></i>Comprender qué es AJAX y su mecánica básica de operación</li>
+                    <li class="collection-item"><i class="small mdi-image-looks-two"></i>Desarrollar aplicaciones que incorporen tecnologías AJAX</li>
+                </ul>
+                <div class="divider"></div>
+            </div>
+
+            <div class="section" id="instrucciones">
+                <h5>
+                  <i class="small mdi-action-list"></i>
+                  Instrucciones</h5>
+                <ul class="collection">
+                    <li class="collection-item">Revisa junto con tu profesor la presentación <a target="_blank" href="https://docs.google.com/presentation/d/1hEc8nvsEXjizjd2ZJJot8Xw_-Co84kP1P4FT2jCcVPE/edit?usp=sharing">Introducción a AJAX</a>.
+                    </li>
+                    <li class="collection-item">
+                        <div class="center-align">
+                            <img class="responsive-img" alt="Diagrama de secuencia de una interacción asíncrona con AJAX" src="uml/ajax.png">
+                        </div>
+                        Primero, debemos preparar al servidor para que en lugar de enviar una página HTML completa, envíe únicamente una parte de la página, texto, o datos. El ejemplo que realizaremos será con datos estructurados en formato JSON, que es lo ideal para que nuestro servidor pueda atender distintos tipos de clientes. Para poder manipular fácilmente las peticiones que llegan en formato JSON, es necesario registrar el middleware para manejar JSON que incluye <code>bodyParser</code>: 
+                        <code><pre>
+app.use(bodyParser.json());
+                        </pre></code>
+                        Y para enviar las respuestas en formato JSON, en nuestro controlador tenemos que cambiar la respuesta por:<br>
+                        <code><pre>
+response.status(200).json({message: "Respuesta asíncrona"});
+                        </pre></code>
+                    </li>
+                    <li class="collection-item">Para poder hacer una petición asíncrona desde el javascript de nuestro cliente, debemos identificar el evento que detonará la petición asíncrona. En el caso de los botones, debemos asegurarnos que NO sean del tipo submit, y también debemos de eliminar los tags <code>form</code> para evitar que se dispare una petición asíncrona. <br>
+                    Un ejemplo de código js asíncrono en nuestro cliente, es el siguiente:
+                    <code><pre>
+const accion_asincrona = () => {
+    const mensaje = document.getElementById('mensaje').value;
+    //El token de protección CSRF
+    const csrf = document.getElementById('_csrf').value;
+
+    //función que manda la petición asíncrona
+    fetch('/ruta/asincrona', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'csrf-token': csrf
+        }
+        body: JSON.stringify(data)
+    }).then(result => {
+        return result.json(); //Regresa otra promesa
+    }).then(data => {
+        //Modificamos el DOM de nuestra página de acuerdo a los datos de la segunda promesa
+        //...
+    }).catch(err => {
+        console.log(err);
+    });
+};
+
+document.getElementById('mi_boton').click = accion_asincrona;
+                    </pre></code>    
+
+                    </li>
+                    <li class="collection-item">Para alguno de tus laboratorios anteriores o tu proyecto (o si lo prefieres empieza con una nueva aplicación), integra al menos 1 componentes AJAX. Recuerda que el componente debe comunicarse con el servidor y debe actualizar alguna parte del sitio de manera asíncrona.
+                        <ul class="collection">
+                            <li class="collection-item">Indica en alguna parte del sitio cuáles fueron los componentes AJAX que utilizaste.
+                            </li>
+                            <li class="collection-item">Utiliza una arquitectura MVC.</li>
+                            <li class="collection-item">El componente debe tener coherencia y cierto nivel de complejidad.
+                            </li>
+                            <li class="collection-item">Recuerda que tu aplicación debe ser agradable para el usuario, y que las preguntas deben contestarse en alguna página dentro de tu sitio.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+
+            <div class="section" id="preguntas">
+                <h5>
+                    <i class="small mdi-action-question-answer"></i>
+                    Preguntas a responder
+                  </h5>
+                <ul class="collection">
+                    <li class="collection-item">¿Qué importancia tiene AJAX en el desarrollo de RIA's (Rich Internet Applications?</li>
+                    <li class="collection-item">¿Qué implicaciones de seguridad tiene AJAX? ¿Dónde se deben hacer las validaciones de seguridad, del lado del cliente o del lado del servidor?</li>
+                    <li class="collection-item">¿Qué es JSON?</li>
+                </ul>
+                <div class="divider"></div>
+            </div>
+
+
+            <div class="section" id="recursos">
+                <h5> <i class="small mdi-content-link"></i> Recursos</h5>
+                <ul class="collection">
+                    <li class="collection-item"><a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/Guide/AJAX/Getting_Started">What's AJAX</a></li>
+                    <li class="collection-item"><a target="_blank" href="https://developers.google.com/web/updates/2015/03/introduction-to-fetch">Introduction to fetch()</a></li>
+                    <li class="collection-item"><a href="https://javascript.info/fetch" target="_blank">Using Fetch</a></li>
+                    <li class="collection-item"><a href="https://desarrolloweb.com/articulos/fetch-post-ajax-javascript.html" target="_blank">Enviar datos por POST por Ajax con Fetch API</a></li>
+                    <li class="collection-item"><a target="_blank" href="https://blog.bitsrc.io/understanding-asynchronous-javascript-the-event-loop-74cd408419ff">Understanding Asynchronous JavaScript</a></li>
+                    <li class="collection-item"><a target="_blank" href="https://automationstepbystep.com/2020/05/04/a-story-of-json/">A Story of JSON</a></li>
+                    <li class="collection-item"><a target="_blank" href="https://www.json.org">JSON</a></li>
+                </ul>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section" id="entrega">
+                <h5>
+                  <i class="small mdi-notification-event-available"></i>
+                  Especificaciones de entrega
+                </h5>
+                <p>A través de tu repositorio personal (Bitbucket o GitHub).</p>
+                <div class="divider"></div>
+            </div>
+
+
+
+        </div>
+    </main>
+
+    <footer class="blue darken-1 page-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <h5 class="white-text">Secciones</h5>
+                    <ol class="grey-text text-lighten-3">
+                        <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
+                        <li><a class="grey-text text-lighten-3" href="#entrega">Especificaciones de entrega</a></li>
+                    </ol>
+                </div>
+            </div>
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2026 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+        </div>
+    </footer>
+
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="../js/materialize.min.js"></script>
+</body>
+
+</html>
