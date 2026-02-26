@@ -77,32 +77,84 @@
                   <i class="small mdi-action-list"></i>
                   Instrucciones</h5>
                 <ul class="collection">
-                    <li class="collection-item">Revisa la presentación <a target="_blank" href="documentos/IntroJavaScript.pptx">Fundamentos
-                    de JavaScript</a></li>
-                    <li class="collection-item">Escribe, prueba y corrige scripts de JavaScript para los siguientes problemas. Cuando se requiera escribir funciones, es necesario incluir un script para probar la función con un conjunto adecuado de casos de prueba. Para automatizar las pruebas, puedes utilizar <code>console.assert()</code> . Además, es importante permitir al usuario ver los resultados de las funciones en un documento HTML.
+                    <li class="collection-item">Revisa la presentación <a target="_blank" href="../documentos/IntroJavaScript.pptx">Fundamentos de JavaScript</a></li>
+                    <li class="collection-item">
+                        <p>Escribe, prueba y corrige scripts de JavaScript para los siguientes problemas:</p>
+                        <ul>
+                            <li><strong>Funciones:</strong> Cuando se requiera escribir funciones, incluye un conjunto adecuado de casos de prueba.</li>
+                            <li><strong>Pruebas automatizadas:</strong> Utiliza <code>console.assert()</code> para automatizar las pruebas.</li>
+                            <li><strong>Resultados visibles:</strong> Permite al usuario ver los resultados en el documento HTML usando <code>document.write()</code>, modificando el DOM, o mostrando resultados en la consola.</li>
+                        </ul>
+
+                        <div class="card blue-grey darken-1" style="margin: 20px 0;">
+                            <div class="card-content white-text">
+                                <span class="card-title"><i class="small material-icons">info</i> ¿Qué es console.assert()?</span>
+                                <p><code>console.assert()</code> es una función de depuración que verifica si una condición es verdadera. Si la condición es <strong>falsa</strong>, imprime un mensaje de error en la consola del navegador. Si es <strong>verdadera</strong>, no hace nada.</p>
+
+                                <p><strong>Sintaxis:</strong></p>
+                                <pre style="background-color: #263238; padding: 10px; border-radius: 4px; overflow-x: auto;"><code>console.assert(condición, mensaje);</code></pre>
+
+                                <p><strong>Ejemplo de uso para pruebas:</strong></p>
+                                <pre style="background-color: #263238; padding: 10px; border-radius: 4px; overflow-x: auto;"><code>// Probar una función suma
+function suma(a, b) {
+    return a + b;
+}
+
+console.assert(suma(2, 3) === 5, "Error: suma(2,3) debería ser 5");
+console.assert(suma(-1, 1) === 0, "Error: suma(-1,1) debería ser 0");
+console.assert(suma(0, 0) === 0, "Error: suma(0,0) debería ser 0");
+
+// Si todas las condiciones son verdaderas, no verás nada en la consola
+// Si alguna es falsa, verás el mensaje de error correspondiente</code></pre>
+
+                                <p><strong>Consejo:</strong> Abre la consola del navegador (F12 o Ctrl+Shift+I) para ver los resultados de las pruebas.</p>
+                            </div>
+                        </div>
                         <ol>
                             <li>
-                                1:
-                                <br><span style="font-style: italic;">Entrada</span>: un número pedido con un <code>prompt</code>. <span style="font-style: italic;">Salida</span>: Una tabla con los números del 1 al número dado con sus cuadrados y cubos. Utiliza <code>document.write</code> para producir la salida
-                                <br> </li>
-                            <li>
-                                2:
-                                <br><span style="font-style: italic;">Entrada</span>: Usando un <code>prompt</code> se pide el resultado de la suma de 2 números generados de manera aleatoria. <span style="font-style: italic;">Salida</span>: La página debe indicar si el resultado fue correcto o incorrecto, y el tiempo que tardó el usuario en escribir la respuesta.
+                                <strong>Ejercicio 1: Tabla de cuadrados y cubos</strong>
+                                <br><span style="font-style: italic;">Entrada:</span> Un número pedido con <code>prompt</code> (por ejemplo: 5).
+                                <br><span style="font-style: italic;">Salida:</span> Una tabla con los números del 1 al número dado con sus cuadrados y cubos. Utiliza <code>document.write</code> para producir la salida.
+                                <br><span style="font-style: italic;">Ejemplo:</span> Si el usuario ingresa 3, la salida debe mostrar una tabla con columnas: Número | Cuadrado | Cubo, con los valores 1-3.
                             </li>
                             <li>
-                                3:
-                                <br><span style="font-style: italic;">Función</span>: contador<code></code>.
-                                <span style="font-style: italic;">Parámetros</span>: Un arreglo de números. <span style="font-style: italic;">Regresa</span>: La cantidad de números negativos en el arreglo, la cantidad de 0's, y la cantidad de valores mayores a 0 en el arreglo.</li>
+                                <strong>Ejercicio 2: Quiz de suma con tiempo</strong>
+                                <br><span style="font-style: italic;">Entrada:</span> Usando un <code>prompt</code> se pide el resultado de la suma de 2 números generados de manera aleatoria.
+                                <br><span style="font-style: italic;">Salida:</span> La página debe indicar si el resultado fue correcto o incorrecto, y el tiempo que tardó el usuario en responder (en segundos).
+                                <br><span style="font-style: italic;">Sugerencia:</span> Usa <code>Date.now()</code> para medir el tiempo al inicio y al final.
+                            </li>
                             <li>
-                                4:
-                                <br><span style="font-style: italic;">Función</span>: promedios. <span style="font-style: italic;">Parámetros</span>: Un arreglo de arreglos de números. <span style="font-style: italic;">Regresa</span>: Un arreglo con los promedios de cada uno de los renglones de la matriz.</li>
+                                <strong>Ejercicio 3: Contador de números</strong>
+                                <br><span style="font-style: italic;">Función:</span> <code>contador</code>
+                                <br><span style="font-style: italic;">Parámetros:</span> Un arreglo de números.
+                                <br><span style="font-style: italic;">Regresa:</span> Un objeto con tres propiedades: <code>negativos</code>, <code>ceros</code>, y <code>positivos</code>.
+                                <br><span style="font-style: italic;">Ejemplo:</span> <code>contador([1, -2, 0, 5, -3, 0, 7])</code> debe regresar <code>{negativos: 2, ceros: 2, positivos: 3}</code>
+                            </li>
                             <li>
-                                5:
-                                <br><span style="font-style: italic;">Función</span>: inverso.
-                                <span style="font-style: italic;">Parámetros</span>: Un número. <span style="font-style: italic;">Regresa</span>: El número con sus dígitos en orden inverso.</li>
+                                <strong>Ejercicio 4: Promedios de matriz</strong>
+                                <br><span style="font-style: italic;">Función:</span> <code>promedios</code>
+                                <br><span style="font-style: italic;">Parámetros:</span> Un arreglo de arreglos de números (matriz).
+                                <br><span style="font-style: italic;">Regresa:</span> Un arreglo con los promedios de cada uno de los renglones de la matriz.
+                                <br><span style="font-style: italic;">Ejemplo:</span> <code>promedios([[10, 20, 30], [5, 15, 25]])</code> debe regresar <code>[20, 15]</code>
+                            </li>
                             <li>
-                                6:
-                                <br>Crea una solución para un problema de tu elección (puede ser algo relacionado con tus intereses, alguna problemática que hayas identificado en algún ámbito, un problema de programación que hayas resuelto en otro lenguaje, un problema de la ACM, entre otros). El problema debe estar descrito en un documento HTML, y la solución implementada en JavaScript, utilizando al menos la creación de un objeto, el objeto además de su constructor deben tener al menos 2 métodos. Muestra los resultados en el documento HTML.</li>
+                                <strong>Ejercicio 5: Número inverso</strong>
+                                <br><span style="font-style: italic;">Función:</span> <code>inverso</code>
+                                <br><span style="font-style: italic;">Parámetros:</span> Un número.
+                                <br><span style="font-style: italic;">Regresa:</span> El número con sus dígitos en orden inverso.
+                                <br><span style="font-style: italic;">Ejemplo:</span> <code>inverso(12345)</code> debe regresar <code>54321</code>, <code>inverso(1000)</code> debe regresar <code>1</code>
+                            </li>
+                            <li>
+                                <strong>Ejercicio 6: Problema personalizado con Programación Orientada a Objetos</strong>
+                                <br>Crea una solución para un problema de tu elección. El problema debe estar descrito en un documento HTML, y la solución implementada en JavaScript usando Programación Orientada a Objetos.
+                                <br><span style="font-style: italic;">Requisitos:</span>
+                                <ul>
+                                    <li>Crear al menos una clase/objeto con constructor</li>
+                                    <li>El objeto debe tener al menos 2 métodos además del constructor</li>
+                                    <li>Mostrar los resultados en el documento HTML</li>
+                                </ul>
+                                <br><span style="font-style: italic;">Ideas de problemas:</span> Sistema de gestión de tareas, calculadora de propinas, conversor de unidades, juego simple (piedra-papel-tijera), registro de gastos personales, etc.
+                            </li>
                         </ol>
                 </ul>
             </div>
