@@ -1,0 +1,788 @@
+/* ============================================
+   Calendario TC2005B - Modern Course Calendar
+   Created by Denisse Maldonado
+   ============================================ */
+
+/* --- CSS Custom Properties --- */
+:root {
+  /* Activity type colors */
+  --color-lab: #2563eb;
+  --color-lectura: #7c3aed;
+  --color-ejercicio: #059669;
+  --color-proyecto: #d97706;
+  --color-evaluacion: #dc2626;
+  --color-break: #94a3b8;
+  --color-asueto: #f59e0b;
+  --color-trabajo: #8b5cf6;
+  --color-discusion: #0891b2;
+  --color-info: #6366f1;
+
+  /* Light variants for backgrounds */
+  --color-lab-light: #dbeafe;
+  --color-lectura-light: #ede9fe;
+  --color-ejercicio-light: #d1fae5;
+  --color-proyecto-light: #fef3c7;
+  --color-evaluacion-light: #fee2e2;
+  --color-break-light: #f1f5f9;
+  --color-asueto-light: #fef9c3;
+  --color-trabajo-light: #ede9fe;
+  --color-discusion-light: #cffafe;
+  --color-info-light: #e0e7ff;
+
+  /* Neutral palette */
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-header: #0f172a;
+  --bg-pre-session: #faf5ff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border-color: #e2e8f0;
+  --border-radius: 12px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  /* Top bar height for scroll offset */
+  --topbar-height: 120px;
+}
+
+/* --- Reset & Base --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--topbar-height);
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-lab);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+ul, ol { list-style: none; }
+
+/* --- Top Bar --- */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-header);
+  color: #fff;
+  padding: var(--space-md) var(--space-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.top-bar .brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+
+.top-bar .brand:hover {
+  color: #93c5fd;
+  text-decoration: none;
+}
+
+.top-bar .subtitle {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.top-bar .back-link {
+  color: #94a3b8;
+  font-size: 0.8125rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  text-decoration: none;
+}
+
+.top-bar .back-link:hover {
+  color: #fff;
+  text-decoration: none;
+}
+
+/* --- Sticky Controls (filter + week nav) --- */
+.sticky-controls {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border-color);
+  padding: var(--space-sm) var(--space-xl);
+}
+
+/* --- Filter Bar --- */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-sm);
+}
+
+.filter-bar .filter-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: var(--space-xs);
+}
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1.5px solid var(--pill-color, var(--border-color));
+  background: transparent;
+  color: var(--pill-color, var(--text-secondary));
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.filter-pill:hover {
+  background: color-mix(in srgb, var(--pill-color) 10%, transparent);
+}
+
+.filter-pill.active {
+  background: var(--pill-color);
+  color: #fff;
+}
+
+.filter-pill .material-icons {
+  font-size: 14px;
+}
+
+.btn-expand-all {
+  margin-left: auto;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.btn-expand-all:hover {
+  background: var(--bg-header);
+  color: #fff;
+  border-color: var(--bg-header);
+}
+
+/* --- Week Navigation --- */
+.week-nav {
+  display: flex;
+  gap: var(--space-xs);
+  overflow-x: auto;
+  padding: var(--space-sm) 0 var(--space-xs);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.week-nav::-webkit-scrollbar { display: none; }
+
+.week-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.week-pill:hover {
+  border-color: var(--color-lab);
+  color: var(--color-lab);
+  text-decoration: none;
+}
+
+.week-pill.active {
+  background: var(--color-lab);
+  border-color: var(--color-lab);
+  color: #fff;
+}
+
+.week-pill.current {
+  position: relative;
+  border-color: var(--color-evaluacion);
+  font-weight: 700;
+}
+
+.week-pill.current::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-evaluacion);
+  border: 2px solid var(--bg-page);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.7; }
+}
+
+.week-pill.special {
+  background: var(--color-asueto-light);
+  border-color: var(--color-asueto);
+  color: var(--color-asueto);
+}
+
+/* --- Main Content Area --- */
+.calendar-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space-xl) var(--space-2xl);
+}
+
+/* --- Week Card --- */
+.week-card {
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  margin-bottom: var(--space-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.3s;
+  scroll-margin-top: var(--topbar-height);
+}
+
+.week-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.week-card.expanded {
+  box-shadow: var(--shadow-lg);
+}
+
+.week-card.special-week {
+  border-color: var(--color-asueto);
+  border-width: 2px;
+}
+
+/* Current week highlight */
+.week-card.current-week {
+  border-color: var(--color-lab);
+  border-width: 2px;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12), var(--shadow-md);
+}
+
+.week-card.current-week .week-number {
+  background: var(--color-evaluacion);
+  animation: pulse-number 2.5s ease-in-out infinite;
+}
+
+@keyframes pulse-number {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+}
+
+.week-card.current-week .week-info h2::after {
+  content: ' — Semana actual';
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-evaluacion);
+  margin-left: 8px;
+}
+
+/* --- Week Header (clickable) --- */
+.week-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  padding: var(--space-md) var(--space-lg);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.week-header:hover {
+  background: #f8fafc;
+}
+
+.week-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--color-lab);
+  color: #fff;
+  font-size: 1.125rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.special-week .week-number {
+  background: var(--color-asueto);
+  width: auto;
+  padding: 0 var(--space-md);
+  font-size: 0.8125rem;
+}
+
+.week-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.week-info h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.week-dates {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.week-summary {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.summary-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  background: var(--chip-bg, #f1f5f9);
+  color: var(--chip-color, var(--text-secondary));
+}
+
+.week-header .chevron {
+  color: var(--text-muted);
+  transition: transform 0.3s ease;
+  font-size: 24px;
+}
+
+.week-card.expanded .week-header .chevron {
+  transform: rotate(180deg);
+}
+
+/* --- Week Content (collapsible) --- */
+.week-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s ease;
+}
+
+.week-card.expanded .week-content {
+  grid-template-rows: 1fr;
+}
+
+.week-content-inner {
+  overflow: hidden;
+}
+
+/* --- Day Grid --- */
+.day-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border-color);
+  border-top: 1px solid var(--border-color);
+}
+
+.day-column {
+  background: var(--bg-card);
+  padding: var(--space-md);
+  min-width: 0;
+}
+
+.day-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: var(--space-sm);
+  border-bottom: 2px solid var(--color-lab);
+  margin-bottom: var(--space-sm);
+}
+
+.day-note {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-bottom: var(--space-sm);
+  padding: 4px 8px;
+  background: #f0f9ff;
+  border-radius: 6px;
+}
+
+/* --- Pre-session Block --- */
+.pre-session {
+  background: var(--bg-pre-session);
+  border: 1px solid #e9d5ff;
+  border-radius: 8px;
+  padding: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.pre-session-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-lectura);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.pre-session .activity {
+  border-left: none;
+  padding-left: 0;
+}
+
+/* --- Activity Item --- */
+.activity {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: 6px 0;
+  border-left: 3px solid var(--activity-color, var(--border-color));
+  padding-left: var(--space-sm);
+  margin-bottom: 4px;
+  transition: opacity 0.3s, transform 0.3s;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.activity.filtered-out {
+  opacity: 0.12;
+}
+
+.activity .material-icons {
+  font-size: 16px;
+  color: var(--activity-color, var(--text-muted));
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.activity-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-body a {
+  color: var(--activity-color, var(--color-lab));
+  font-weight: 500;
+}
+
+.activity-body a:hover {
+  text-decoration: underline;
+}
+
+.time-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* --- Activity type colors --- */
+.activity[data-type="lab"] { --activity-color: var(--color-lab); }
+.activity[data-type="lectura"] { --activity-color: var(--color-lectura); }
+.activity[data-type="ejercicio"] { --activity-color: var(--color-ejercicio); }
+.activity[data-type="proyecto"] { --activity-color: var(--color-proyecto); }
+.activity[data-type="evaluacion"] { --activity-color: var(--color-evaluacion); }
+.activity[data-type="break"] { --activity-color: var(--color-break); border-left-color: transparent; }
+.activity[data-type="asueto"] { --activity-color: var(--color-asueto); }
+.activity[data-type="trabajo"] { --activity-color: var(--color-trabajo); }
+.activity[data-type="discusion"] { --activity-color: var(--color-discusion); }
+.activity[data-type="info"] { --activity-color: var(--color-info); }
+
+/* Break separator */
+.activity[data-type="break"] {
+  border-top: 1px dashed var(--border-color);
+  border-bottom: 1px dashed var(--border-color);
+  padding: 4px var(--space-sm);
+  margin: 4px 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+/* --- Special Week (Semana Tec, etc.) --- */
+.special-content {
+  padding: var(--space-lg) var(--space-xl);
+  text-align: center;
+  background: linear-gradient(135deg, var(--color-asueto-light), #fff8e1);
+}
+
+.special-content .material-icons {
+  font-size: 48px;
+  color: var(--color-asueto);
+  margin-bottom: var(--space-sm);
+}
+
+.special-content p {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.special-content strong {
+  color: var(--color-evaluacion);
+}
+
+/* --- Footer --- */
+.site-footer {
+  background: var(--bg-header);
+  color: #cbd5e1;
+  padding: var(--space-2xl) var(--space-xl) var(--space-md);
+  margin-top: var(--space-2xl);
+}
+
+.footer-content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.footer-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: var(--space-md);
+}
+
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.footer-links a {
+  color: #94a3b8;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover {
+  color: #fff;
+  text-decoration: none;
+}
+
+.footer-copyright {
+  margin-top: var(--space-xl);
+  padding-top: var(--space-md);
+  border-top: 1px solid #1e293b;
+  font-size: 0.75rem;
+  color: #64748b;
+  text-align: center;
+}
+
+/* --- Responsive: Tablet --- */
+@media (max-width: 1024px) {
+  .day-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .top-bar {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .top-bar .subtitle {
+    display: none;
+  }
+
+  .sticky-controls {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .calendar-content {
+    padding: var(--space-md);
+  }
+
+  .week-summary {
+    display: none;
+  }
+}
+
+/* --- Responsive: Mobile --- */
+@media (max-width: 768px) {
+  :root {
+    --topbar-height: 100px;
+  }
+
+  .day-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .day-column {
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .day-column:last-child {
+    border-bottom: none;
+  }
+
+  .top-bar {
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  .top-bar .brand {
+    font-size: 1.125rem;
+  }
+
+  .filter-bar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: var(--space-sm);
+  }
+
+  .filter-bar::-webkit-scrollbar { display: none; }
+
+  .week-header {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .week-number {
+    width: 36px;
+    height: 36px;
+    font-size: 0.875rem;
+  }
+
+  .calendar-content {
+    padding: var(--space-sm);
+  }
+
+  .week-card {
+    border-radius: 8px;
+  }
+}
+
+/* --- Entrevistas Button (in top bar) --- */
+.entrevistas-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 6px 14px;
+  background: rgba(59,130,246,0.25);
+  border: 1px solid rgba(96,165,250,0.4);
+  border-radius: 8px;
+  color: #93c5fd;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.entrevistas-btn:hover {
+  background: rgba(59,130,246,0.4);
+  color: #fff;
+  text-decoration: none;
+}
+
+.entrevistas-btn .material-icons {
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .entrevistas-btn span { display: none; }
+  .entrevistas-btn { padding: 6px 8px; }
+}
+
+/* --- Print --- */
+@media print {
+  .top-bar, .sticky-controls, .btn-expand-all, .chevron, .entrevistas-btn {
+    display: none !important;
+  }
+
+  .week-card {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+    margin-bottom: 1rem;
+  }
+
+  .week-content {
+    grid-template-rows: 1fr !important;
+  }
+
+  .day-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  body {
+    font-size: 11px;
+  }
+}

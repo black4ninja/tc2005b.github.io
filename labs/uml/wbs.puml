@@ -1,0 +1,53 @@
+@startwbs
+!theme cerulean
+*[#LightSteelBlue] TC2005B Construcción de software y toma de decisiones
+**[#SkyBlue] Preparación
+***< Mejoras
+****< Revisar mejoras
+**** Implementar mejoras
+*** Socio Formador
+**** Sensibilización
+****< Convenio
+****< Carta solicitud
+**** Definición de proyecto
+**** Agendar sesiones
+*** Calendario
+****< Actualizar fechas
+****< Actualizar horarios de asesoría
+****< Agregar nuevos enlaces
+**** Preparar cartas de confidencialidad
+**** Preparar Slack y actualizar Lab 0
+**** Invitar proyectos previos
+***< Canvas
+***< Evaluación
+****< Revisar plantilla
+**** Crear copias de alumnos
+**** Crear Dashboard
+***< Crear proyecto de becarios
+**[#PHYSICAL] Ejecución
+***< Sesiones
+****< 1er periodo
+**** 2do periodo
+***< Asesorías
+****< 1er periodo
+**** 2do periodo
+***< Evaluaciones
+****< 1er periodo
+**** 2do periodo
+***< Coordinar becarios
+*** Socios formadores
+**** Compartir cartas de confidencialidad
+*** Confirmar sesiones con invitados
+**** Seguridad
+****< Videojuegos
+*** Presentación Final 
+****< Recinto
+**** Agenda 
+**[#IndianRed] Cierre 
+*** Revisiones
+***< Subir calificaciones 
+***< ExpoIngenierías
+*** Comida socios e invitados
+
+center footer WBS V1.5 19/jul/24 Agregar ExpoIngenierías \n WBS V1.4 11/ene/24 Eliminar 2 talleres de invitados \n V1.3 8/ago/23 Agregar invitación de proyectos anteriores \n V1.2 6/jul/23 Agregar cartas de confidencialidad \n V1.1 28/jun/23 Revisión mayor 
+@endwbs

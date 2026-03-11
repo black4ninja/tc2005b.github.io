@@ -1,0 +1,484 @@
+/* ============================================
+   Avance de Proyecto - Modern Milestone Pages
+   Created by Denisse Maldonado
+   ============================================ */
+
+/* Reuse same design tokens as calendario.css */
+:root {
+  --color-lab: #2563eb;
+  --color-lectura: #7c3aed;
+  --color-proyecto: #d97706;
+  --color-evaluacion: #dc2626;
+  --color-ejercicio: #059669;
+
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-header: #0f172a;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border-color: #e2e8f0;
+  --border-radius: 12px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  background: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-lab);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+a:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+ul, ol { list-style: none; }
+
+/* --- Top Bar --- */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-header);
+  color: #fff;
+  padding: var(--space-md) var(--space-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.top-bar .brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+.top-bar .brand:hover { color: #93c5fd; text-decoration: none; }
+
+.top-bar .subtitle {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.top-bar .back-link {
+  margin-left: auto;
+  color: #94a3b8;
+  font-size: 0.8125rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  text-decoration: none;
+}
+.top-bar .back-link:hover { color: #fff; text-decoration: none; }
+
+/* --- Progress Stepper --- */
+.stepper-container {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  padding: var(--space-md) var(--space-xl);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.stepper-container::-webkit-scrollbar { display: none; }
+
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-width: max-content;
+  margin: 0 auto;
+  max-width: 900px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  text-decoration: none;
+  color: var(--text-muted);
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+.step:hover { text-decoration: none; color: var(--color-lab); }
+
+.step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.step-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  max-width: 80px;
+  text-align: center;
+  line-height: 1.2;
+  margin-left: 6px;
+  margin-right: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.step-connector {
+  width: 40px;
+  height: 2px;
+  background: var(--border-color);
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+/* Active step */
+.step.active .step-circle {
+  background: var(--color-proyecto);
+  border-color: var(--color-proyecto);
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.15);
+}
+.step.active .step-label {
+  color: var(--color-proyecto);
+  font-weight: 700;
+}
+
+/* Completed steps (before active) */
+.step.completed .step-circle {
+  background: var(--color-ejercicio);
+  border-color: var(--color-ejercicio);
+  color: #fff;
+}
+.step.completed .step-label {
+  color: var(--text-secondary);
+}
+.step-connector.completed {
+  background: var(--color-ejercicio);
+}
+
+/* Future steps */
+.step.future .step-circle {
+  background: var(--bg-page);
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+
+/* --- Main Content --- */
+.avance-content {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-xl) var(--space-2xl);
+}
+
+/* --- Page Header --- */
+.avance-header {
+  margin-bottom: var(--space-2xl);
+}
+
+.avance-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-proyecto);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-sm);
+}
+
+.avance-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: var(--space-md);
+}
+
+.avance-description {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+/* --- Info Badges (modalidad, tag, etc.) --- */
+.info-badges {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-top: var(--space-md);
+}
+
+.info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #f1f5f9;
+  color: var(--text-secondary);
+}
+.info-badge .material-icons { font-size: 14px; }
+
+.info-badge.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+.info-badge.tag-badge {
+  background: #dbeafe;
+  color: #1e40af;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+}
+
+/* --- Section Cards --- */
+.section-card {
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  padding: var(--space-lg) var(--space-xl);
+  margin-bottom: var(--space-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.section-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  margin-bottom: var(--space-sm);
+  color: #fff;
+  font-size: 18px;
+}
+
+.section-card.objetivos .section-icon { background: var(--color-ejercicio); }
+.section-card.instrucciones .section-icon { background: var(--color-lab); }
+.section-card.entrega .section-icon { background: var(--color-evaluacion); }
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+}
+
+/* --- Objectives List --- */
+.objectives-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.objective-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+}
+
+.objective-item .material-icons {
+  color: var(--color-ejercicio);
+  font-size: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* --- Instruction Items --- */
+.instruction-item {
+  border-left: 3px solid var(--color-lab);
+  padding: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-md);
+  background: #fafbfd;
+  border-radius: 0 8px 8px 0;
+}
+
+.instruction-item:last-child { margin-bottom: 0; }
+
+.instruction-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.instruction-content {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  text-align: justify;
+}
+
+.instruction-content a {
+  font-weight: 500;
+}
+
+.instruction-items {
+  margin-top: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.instruction-items li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.instruction-items li::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-lab);
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+
+/* Instruction without title (plain text) */
+.instruction-plain {
+  padding: var(--space-sm) 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  border-left: none;
+  background: none;
+}
+
+/* --- Entrega Section --- */
+.entrega-content {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.entrega-extras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-color);
+}
+
+.entrega-extra {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.entrega-extra .material-icons { font-size: 18px; }
+
+.entrega-extra.video {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+.entrega-extra.coeval {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.entrega-extra.coeval a { color: #991b1b; font-weight: 600; }
+
+/* --- Footer --- */
+.site-footer {
+  background: var(--bg-header);
+  color: #cbd5e1;
+  padding: var(--space-xl) var(--space-xl) var(--space-md);
+  margin-top: var(--space-2xl);
+}
+
+.footer-content {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.footer-copyright {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid #1e293b;
+  font-size: 0.75rem;
+  color: #64748b;
+  text-align: center;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .top-bar {
+    padding: var(--space-sm) var(--space-md);
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+  .top-bar .brand { font-size: 1.125rem; }
+  .top-bar .subtitle { display: none; }
+
+  .stepper-container { padding: var(--space-sm) var(--space-md); }
+  .step-label { display: none; }
+  .step-connector { width: 24px; }
+
+  .avance-content { padding: var(--space-md); }
+  .avance-title { font-size: 1.5rem; }
+
+  .section-card { padding: var(--space-md); }
+  .instruction-item { padding: var(--space-sm) var(--space-md); }
+}
+
+/* --- Print --- */
+@media print {
+  .top-bar, .stepper-container, .back-link { display: none !important; }
+  .avance-content { max-width: 100%; padding: 0; }
+  .section-card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+  body { font-size: 12px; }
+}
