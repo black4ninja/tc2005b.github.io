@@ -4,6 +4,7 @@ const AVANCE = {
   titulo: "Creación de la Base de Datos",
   descripcion: "",
   modalidad: "Colaborativa",
+  fechaEntrega: "Viernes 24 de abril, 2026",
   objetivos: [
     "Aplicar tus conocimientos sobre bases de datos y desarrollo web."
   ],

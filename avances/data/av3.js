@@ -4,6 +4,7 @@ const AVANCE = {
   titulo: "Análisis y diseño de la solución",
   descripcion: "En este avance de proyecto comenzarán con el diseño de la base de datos y de la aplicación web. Identificarás los requisitos funcionales, los requisitos no funcionales, y los requisitos de información; así como el diseño de la interacción y primera versión de la interfaz.",
   modalidad: "Colaborativa",
+  fechaEntrega: "Viernes 17 de abril, 2026",
   objetivos: [
     "Desarrollar tus habilidades de trabajo colaborativo",
     "Desarrollar tu capacidad de administración del tiempo",

@@ -271,6 +271,12 @@ ul, ol { list-style: none; }
   font-family: 'Courier New', monospace;
   font-weight: 600;
 }
+.info-badge.date {
+  background: rgba(239,68,68,0.15);
+  border-color: rgba(239,68,68,0.3);
+  color: #dc2626;
+  font-weight: 600;
+}
 
 /* --- Section Cards --- */
 .section-card {

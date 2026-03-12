@@ -4,6 +4,7 @@ const AVANCE = {
   titulo: "Versión Beta del Sistema",
   descripcion: "",
   modalidad: "Colaborativa",
+  fechaEntrega: "Viernes 29 de mayo, 2026",
   objetivos: [],
   instrucciones: [
     {

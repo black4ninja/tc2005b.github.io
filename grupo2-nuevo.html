@@ -150,10 +150,11 @@
             }
 
             const timeBadge = act.duracion ? '<span class="time-badge">' + escapeHtml(act.duracion) + '</span>' : '';
+            const entregaBadge = act.fechaEntrega ? '<span class="entrega-badge"><i class="material-icons" style="font-size:12px">event</i> Entrega: ' + escapeHtml(act.fechaEntrega) + '</span>' : '';
 
             return '<div class="activity" data-type="' + act.tipo + '">' +
                 '<i class="material-icons">' + icon + '</i>' +
-                '<div class="activity-body">' + body + '</div>' +
+                '<div class="activity-body">' + body + entregaBadge + '</div>' +
                 timeBadge +
                 '</div>';
         }
@@ -285,7 +286,8 @@
             let navHtml = '';
             CALENDARIO.semanas.forEach(function (sem, i) {
                 const isSpecial = sem.tipo === 'especial';
-                const label = sem.titulo ? sem.titulo : ('Sem ' + sem.numero);
+                const isMobile = window.innerWidth <= 768;
+                const label = sem.titulo ? sem.titulo : (isMobile ? 'S' + sem.numero : 'Sem ' + sem.numero);
                 const cls = isSpecial ? 'week-pill special' : 'week-pill';
                 navHtml += '<a href="#' + weekId(i) + '" class="' + cls + '" data-index="' + i + '">' + escapeHtml(label) + '</a>';
             });

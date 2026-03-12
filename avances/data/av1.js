@@ -4,6 +4,7 @@ const AVANCE = {
   titulo: "Propuesta de proyecto",
   descripcion: "En este avance de proyecto formarán su equipo de trabajo, firmarán cartas de confidencialidad, crearán una identidad para ustedes como despacho y realizarán la propuesta formal de su proyecto.",
   modalidad: "Colaborativa",
+  fechaEntrega: "Viernes 27 de marzo, 2026",
   objetivos: [
     "Formalizar el equipo de trabajo y establecer las bases para desarrollar el proyecto de la Unidad de Formación"
   ],

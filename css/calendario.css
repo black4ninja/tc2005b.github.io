@@ -555,6 +555,21 @@ ul, ol { list-style: none; }
   margin-top: 2px;
 }
 
+.entrega-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  margin-top: 4px;
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* --- Activity type colors --- */
 .activity[data-type="lab"] { --activity-color: var(--color-lab); }
 .activity[data-type="lectura"] { --activity-color: var(--color-lectura); }

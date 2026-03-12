@@ -4,6 +4,7 @@ const AVANCE = {
   titulo: "Prueba de concepto",
   descripcion: "",
   modalidad: "Colaborativa",
+  fechaEntrega: "Viernes 1 de mayo, 2026",
   objetivos: [],
   instrucciones: [
     {

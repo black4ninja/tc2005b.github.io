@@ -120,6 +120,9 @@
         if (AVANCE.modalidad) {
             html += '<span class="info-badge"><i class="material-icons">group</i> ' + AVANCE.modalidad + '</span>';
         }
+        if (AVANCE.fechaEntrega) {
+            html += '<span class="info-badge date"><i class="material-icons">event</i> Entrega: ' + AVANCE.fechaEntrega + '</span>';
+        }
         if (AVANCE.entrega && AVANCE.entrega.tag) {
             html += '<span class="info-badge tag-badge"><i class="material-icons">sell</i> ' + AVANCE.entrega.tag + '</span>';
         }
