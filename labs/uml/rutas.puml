@@ -1,0 +1,24 @@
+@startuml rutas_formas
+header Rutas y formas
+autonumber
+hide footbox
+
+actor navegador
+control app.js 
+
+activate navegador
+navegador -> app.js: GET /
+deactivate navegador
+activate app.js
+app.js -> navegador: HTML
+deactivate app.js
+activate navegador
+navegador -> app.js: POST /
+deactivate navegador
+activate app.js
+app.js -> navegador: HTML
+deactivate app.js
+activate navegador
+deactivate navegador
+
+@enduml

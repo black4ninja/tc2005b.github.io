@@ -1,0 +1,43 @@
+@startuml ajax
+header AJAX
+autonumber
+hide footbox
+
+actor navegador
+boundary routes
+control controlador 
+entity modelo 
+database base_de_datos 
+
+activate navegador
+navegador -> navegador: evento()
+navegador ->> routes: fetch()
+activate routes
+routes -> controlador: accion()
+deactivate routes
+activate controlador
+controlador ->> modelo: manipular()
+activate modelo
+modelo ->> base_de_datos: execute(sql)
+activate base_de_datos
+base_de_datos -->> modelo: consulta
+deactivate base_de_datos
+modelo -->> controlador: promesa
+deactivate modelo
+
+alt promesa_exitosa
+
+    controlador -->> navegador: json
+    navegador -> navegador: procesar(json)
+
+else excepción
+
+    controlador -->> navegador: status(500)
+    deactivate controlador
+    navegador -> navegador: manejar_error()
+
+end
+
+deactivate navegador
+
+@enduml
