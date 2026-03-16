@@ -6,6 +6,7 @@ dist/
 packages/web/dist/
 packages/docusaurus/build/
 packages/docusaurus/.docusaurus/
+packages/api/dist/
 
 # TypeScript
 *.tsbuildinfo

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - TC2005B</title>
+    <style>
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+        table { border-collapse: collapse !important; }
+        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
+
+        @media screen and (max-width: 600px) {
+            .container { width: 100% !important; max-width: 100% !important; }
+            .padding { padding: 10px 5% 15px 5% !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0 !important; padding: 0 !important; background-color: #f4f4f4;">
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+        <td align="center" style="padding: 40px 10px 40px 10px;">
+
+            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+
+                <!-- Header -->
+                <tr>
+                    <td align="center" style="background-color: #2563eb; padding: 40px 20px; border-radius: 10px 10px 0 0;">
+                        <h1 style="color: #ffffff; font-family: Arial, sans-serif; font-size: 28px; font-weight: bold; margin: 0;">
+                            TC2005B
+                        </h1>
+                        <p style="color: #bfdbfe; font-family: Arial, sans-serif; font-size: 14px; margin: 10px 0 0 0;">
+                            Construcción de Software y Toma de Decisiones
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Contenido -->
+                <tr>
+                    <td style="padding: 40px 30px 20px 30px;">
+                        <h2 style="color: #1a1a1a; font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; margin: 0 0 20px 0; text-align: center;">
+                            Iniciar Sesión
+                        </h2>
+
+                        <p style="color: #333333; font-family: Arial, sans-serif; font-size: 16px; line-height: 24px; margin: 0 0 20px 0;">
+                            Hola {{NOMBRE_USUARIO}},
+                        </p>
+
+                        <p style="color: #555555; font-family: Arial, sans-serif; font-size: 15px; line-height: 24px; margin: 0 0 20px 0;">
+                            Recibimos una solicitud para iniciar sesión en tu cuenta. Usa el siguiente enlace para acceder:
+                        </p>
+
+                        <!-- Botón principal -->
+                        <div style="text-align: center; margin: 0 0 30px 0;">
+                            <a href="{{URL_MAGIC_LINK}}" style="background-color: #2563eb; color: #ffffff; display: inline-block; font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; line-height: 50px; text-align: center; text-decoration: none; width: 250px; border-radius: 25px;">
+                                Iniciar Sesión
+                            </a>
+                        </div>
+
+                        <!-- Advertencia de seguridad -->
+                        <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 5px; padding: 20px; margin: 0 0 30px 0;">
+                            <p style="margin: 0 0 10px 0; color: #333333; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold;">
+                                Aviso de Seguridad:
+                            </p>
+                            <ul style="margin: 0; padding-left: 20px; color: #555555; font-family: Arial, sans-serif; font-size: 14px; line-height: 22px;">
+                                <li>Este enlace expirará en <strong>{{TIEMPO_EXPIRACION}}</strong></li>
+                                <li>Si no solicitaste este enlace, ignora este correo</li>
+                                <li>Nunca compartas este enlace con nadie</li>
+                            </ul>
+                        </div>
+
+                        <!-- URL alternativa -->
+                        <p style="color: #666666; font-family: Arial, sans-serif; font-size: 13px; line-height: 20px; margin: 0 0 10px 0;">
+                            Si el botón no funciona, copia y pega este enlace en tu navegador:
+                        </p>
+                        <p style="word-break: break-all; background: #f1f1f1; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; color: #555555; margin: 0 0 30px 0;">
+                            {{URL_MAGIC_LINK}}
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background-color: #1e293b; padding: 30px; border-radius: 0 0 10px 10px;">
+                        <p style="color: #94a3b8; font-family: Arial, sans-serif; font-size: 13px; margin: 0; text-align: center;">
+                            {{NOMBRE_CURSO}} - Construcción de Software y Toma de Decisiones
+                        </p>
+                        <p style="color: #64748b; font-family: Arial, sans-serif; font-size: 12px; margin: 10px 0 0 0; text-align: center;">
+                            © {{AÑO}} TC2005B. Este es un correo automatizado, por favor no respondas a este mensaje.
+                        </p>
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>
