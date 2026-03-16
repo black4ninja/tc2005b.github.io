@@ -1,0 +1,48 @@
+.dayColumn {
+  background: var(--bg-card);
+  padding: var(--space-md);
+  min-width: 0;
+}
+
+.dayName {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: var(--space-sm);
+  border-bottom: 2px solid var(--color-lab);
+  margin-bottom: var(--space-sm);
+}
+
+.dayNote {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-bottom: var(--space-sm);
+  padding: 4px 8px;
+  background: #f0f9ff;
+  border-radius: 6px;
+}
+
+.preSession {
+  background: var(--bg-pre-session);
+  border: 1px solid #e9d5ff;
+  border-radius: 8px;
+  padding: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.preSessionLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-lectura);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+}

@@ -1,0 +1,41 @@
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+.name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+.role {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.menuContent {
+  display: flex;
+  flex-direction: column;
+}
+.menuItem {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+.menuItem:hover {
+  background: var(--bg-page);
+}
+.divider {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 4px 0;
+}

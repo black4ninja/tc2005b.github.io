@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>BD vs DBMS </title>
+</head>
+
+<body>
+    <header></header>
+    <main>
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B Construcción de software y toma de decisiones</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h3>Definici&oacute;n de base de datos y manejador de&nbsp; DBMS</h3>
+            </div>
+        </div>
+
+        <div class="container">
+       
+       
+        <p>
+            <br>
+            <font color="#000000"><img height="13" width="13" alt=""
+ src="imagenes/TgC_boton30.gif"> </font><strong>Justificaci&oacute;n y contexto de  bases de datos </strong></p>
+        <p>Para empezar, necesitar&iacute;amos entender cu&aacute;l es la diferencia entre utilizar bases de datos y no utilizarlas. De hecho esto nos conducir&aacute; a saber qu&eacute; es una base de datos.
+            <br>
+            <br> Desde el inicio del uso de las computadoras hasta la d&eacute;cada que inicia en 1960, los datos estaban supeditados a los programas de aplicaci&oacute;n, esto es, se conceb&iacute;a un programa junto con los archivos de datos que este programa requer&iacute;a para operar, los archivos se dise&ntilde;aban de acuerdo a las necesidades del programa y en general era ese programa el que recuperaba o actualizaba informaci&oacute;n de esos archivos.
+            <br>
+            <br> En esta visi&oacute;n resultaba muy f&aacute;cil que los mismos datos o hechos de la empresa estuvieran representados en muchos archivos distintos, y del mismo modo no resultaba dif&iacute;cil que se presentaran valores distintos en un mismo momento en las m&uacute;ltiples ocurrencias de los archivos, provocando en no pocas ocasiones que cuando un interesado en un dato lo preguntaba a sus subordinados que a su vez utilizaban programas distintos con archivos distintos, obten&iacute;a respuestas distintas y los sistemas o a&uacute;n las computadoras perd&iacute;an credibilidad ante los interesados en la informaci&oacute;n.
+            <br>
+            <br> Todo esto que parece un relato del pasado, es asombrosamente actual: en muchas empresas no son ahora archivos de datos supeditados a programas pero s&iacute; son documentos de procesadores de texto, hojas de c&aacute;lculo y hasta las peligrosamente llamadas bases de datos de escritorio, los que invitan a las m&uacute;ltiples ocurrencias de los hechos y datos de la empresa, generalmente debido al sentido de propiedad de la informaci&oacute;n de un individuo o grupo.
+            <br>
+            <br> El enfoque de bases de datos surge en la d&eacute;cada iniciada en 1960, ha evolucionado notablemente hasta nuestros d&iacute;as, y es contrario a lo que acabamos de describir. En este enfoque se busca dise&ntilde;ar los datos de una empresa para describirla en su totalidad. De hecho el nivel de totalidad que en realidad se instrumente determinar&aacute; tanto la calidad de la base de datos como su complejidad y exigencia de recursos. A diferencia del enfoque anterior, las porciones de informaci&oacute;n que determinados usuarios, grupos de usuarios o aplicaciones requieren acceder o actualizar se definen como subconjuntos de la informaci&oacute;n contenida en la base de datos.
+            <br>
+            <br>
+            <font color="#000000"><img height="13" width="13" alt=""
+ src="imagenes/TgC_boton30.gif"> </font>&nbsp;<b>&iquest;Qu&eacute; es entonces una base de datos?</b>
+            <br>
+            <br> Podemos empezar por pensar en una base de datos como una colecci&oacute;n de archivos interrelacionados, pero debemos tener cuidado con no caer en el enfoque de los archivos supeditados a programas o a individuos. Para esto es necesario que la base de datos sea cuidadosamente dise&ntilde;ada para que los archivos interrelacionados que la integran contengan la menor repetici&oacute;n posible de datos y hechos, y al mismo tiempo abarquen las necesidades de la empresa.
+            <br>
+            <br> Los archivos que integran una base de datos tienen ciertas restricciones: son archivos en los que aparecen m&uacute;ltiples ocurrencias de un mismo tipo de registro. Como ejemplos, en una base de datos podr&iacute;amos tener:
+            <br>
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14"> <span class="style1">U</span></b></font>n archivo que represente a los alumnos puede tener registros constituidos por la matr&iacute;cula, el nombre, la direcci&oacute;n, y el tel&eacute;fono de manera que cada registro represente a un alumno.
+            <br>
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14"> <span class="style1">U</span></b></font>n archivo que represente a los cursos, cuyos registros tengan un n&uacute;mero de curso, la clave de la materia, el semestre, el sal&oacute;n, el nombre del profesor y un n&uacute;mero de grupo.
+            <br>
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14"> <span class="style1">U</span></b></font>n archivo que represente la inscripci&oacute;n de un alumno a un curso, en el que cada registro tenga la matr&iacute;cula del alumno y el n&uacute;mero de curso.
+            <br>
+            <br> Desde el punto de vista de la forma de almacenar los archivos, la definici&oacute;n anterior no nos proporciona una diferencia substancial entre una base de datos y un sistema de archivos en el que podr&iacute;amos simplemente contar con uno o mas directorios y ah&iacute; almacenar nuestra colecci&oacute;n de archivos interrelacionados. La diferencia la hace el uso de un sistema administrador de bases de datos.
+            <br>
+            <br>
+            <br>
+            <font color="#000000"><img height="13" width="13" alt=""
+ src="imagenes/TgC_boton30.gif"> </font>&nbsp;<b>&iquest;En qu&eacute; casos es conveniente usar bases 
+de datos?</b>
+            <br>
+            <br> De lo que hemos presentado hasta el momento, es visible que en todas las situaciones en las que la informaci&oacute;n que se maneja presenta varios archivos interrelacionados, y sobre todo es requerida por varios usuarios o aplicaciones, conviene dise&ntilde;ar e instrumentar una base de datos.
+            <br>
+            <br> Como ejemplo de este tipo de requerimientos de informaci&oacute;n podemos considerar una base de datos para cualquier empresa de manufactura,&nbsp; incluyendo informaci&oacute;n de ventas, compras, almacenes, producci&oacute;n, calidad, mantenimiento y&nbsp; finanzas.
+            <br>
+            <br> Otro factor decisivo es el volumen de datos: aunque se tratara de muy pocos archivos, si el n&uacute;mero de registros es muy grande. Como ejemplos podemos considerar un padr&oacute;n electoral o el directorio telef&oacute;nico de una ciudad. En estos casos,&nbsp; el uso de bases de datos y DBMS es lo m&aacute;s conveniente.</p>
+        <p>&nbsp;</p>
+        <p><font color="#000000"><img height="13" width="13" alt=""
+ src="imagenes/TgC_boton30.gif">                           </font>&nbsp;<b>Sistemas de gesti&oacute;n de base de datos </b>
+            <br>
+            <br> Un sistema de gesti&oacute;n de base de datos (DBMS database management system) consiste en una colecci&oacute;n de datos interrelacionados y un conjunto de programas para acceder a esos datos. La colecci&oacute;n de datos, normalmente denominada base de datos, contiene informaci&oacute;n acerca de una empresa determinada. El objetivo primordial de un DBMS es proporcionar un entorno que sea a la vez conveniente y eficiente para ser utilizado al extraer y almacenar informaci&oacute;n de la base de datos.
+            <br>
+            <br> Los sistemas de bases de datos est&aacute;n dise&ntilde;ados para gestionar grandes bloques de informaci&oacute;n. La gesti&oacute;n de datos implica tanto la definici&oacute;n de estructuras para el almacenamiento de informaci&oacute;n como la provisi&oacute;n de mecanismos para la gesti&oacute;n de la informaci&oacute;n. Adem&aacute;s, los sistemas de bases de datos deben mantener la seguridad de la informaci&oacute;n almacenada, pese a ca&iacute;das del sistema o intentos de accesos no autorizados. Si los datos van a ser compartidos por varios usuarios, el sistema debe evitar posibles resultados an&oacute;malos.
+            <br>
+            <br> La importancia de la informaci&oacute;n en la mayor&iacute;a de las organizaciones, y por tanto el valor de la base de datos, ha llevado al desarrollo de una gran cantidad de conceptos y t&eacute;cnicas para la gesti&oacute;n eficiente de los datos. En este cap&iacute;tulo presentamos una breve introducci&oacute;n a los principios de los sistemas de bases de datos.
+            <br>
+            <br>
+            <br>
+            <font color="#000000"><img height="13" width="13" alt=""
+ src="imagenes/TgC_boton30.gif">                       </font>&nbsp;<b>Objetivos de los sistemas de base de datos</b>
+            <br>
+            <br> Consid&eacute;rese parte de una empresa bancaria de ahorros que guarda la informaci&oacute;n sobre todos los clientes y cuentas de ahorro en archivos de&nbsp; sistemas permanentes en el banco. Adem&aacute;s, el sistema tiene diversos programas de aplicaci&oacute;n que permiten al usuario manejar los archivos, incluyendo:
+            <br>
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14">
+             </b></font>Un programa para hacer cargos o abonos a una cuenta.
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14">
+             </b></font>Un programa para a&ntilde;adir una nueva cuenta.
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14">
+             </b></font>Un programa para obtener el saldo de una cuenta.
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14">
+             </b></font>Un programa para generar estados mensuales.
+            <br> &nbsp;
+            <br> Estos programas de aplicaci&oacute;n los han escrito programadores de sistemas en respuesta a las necesidades de la organizaci&oacute;n bancaria.
+            <br> &nbsp;
+            <br> Seg&uacute;n surge la necesidad, se a&ntilde;aden nuevos programas de aplicaci&oacute;n al sistema. Por ejemplo, sup&oacute;ngase que una nueva ley del Gobierno permite al banco de ahorros ofrecer cuentas de cheques. Como resultado, se crean nuevos archivos permanentes que contienen informaci&oacute;n acerca de todas la cuentas de cheques que mantiene el banco, y puede que sea necesario escribir nuevos programas de aplicaci&oacute;n. As&iacute;, seg&uacute;n pasa el tiempo, se a&ntilde;aden m&aacute;s archivos y programas de aplicaci&oacute;n al sistema.
+            <br>
+            <br> El t&iacute;pico sistema de procesamiento de archivos descrito arriba est&aacute; apoyado por un sistema operativo convencional. Los registros permanentes se almacenan en varios archivos, y se escribe un n&uacute;mero de diferentes programas de aplicaci&oacute;n para extraer registros de y a&ntilde;adir registros a archivos apropiados. Este sistema tiene un n&uacute;mero de desventajas importante.
+            <br>
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14">
+             </b></font><b>Redundancia e inconsistencia de los datos.</b> Puesto que los archivos y los programas de aplicaci&oacute;n son creados por distintos programas durante un per&iacute;odo largo de tiempo, es probable que los archivos tengan diferentes formatos y los programas pueden estar duplicados en varios sitios (archivos). Por ejemplo, la direcci&oacute;n y el n&uacute;mero de tel&eacute;fono de un cliente determinado pueden aparecer en un archivo que consta de registros de cuentas de ahorros y en un archivo que consta de registros de cuentas de cheques. Esta redundancia aumenta los costos de almacenamiento y acceso. Adem&aacute;s, puede llevar a inconsistencia de los datos, esto es, las diversas copias de los mismos datos no concuerdan entre s&iacute;. Por ejemplo, una direcci&oacute;n cambiada de un cliente puede estar reflejada en los registros de cuentas de ahorros pero en ning&uacute;n sitio m&aacute;s del sistema. Resultados de inconsistencia de los datos.
+            <br>
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14">
+             </b></font><b>Dificultad para tener acceso a los datos.</b> Sup&oacute;ngase que uno de los gerentes del banco necesita averiguar los nombres de todos los clientes que viven dentro del c&oacute;digo postal de la ciudad 78733. El gerente pide al departamento de procesamiento de datos que genere la lista correspondiente.
+            <br>
+            <br> &nbsp;Puesto que esta solicitud no fue prevista cuando se dise&ntilde;&oacute; el sistema original, no hay ning&uacute;n programa de aplicaci&oacute;n a mano que la satisfaga. Existe, sin embargo, un programa de aplicaci&oacute;n para generar la lista de todos los clientes. El gerente tiene ahora dos elecciones: O bien coger la lista de clientes y extraer la informaci&oacute;n necesaria manualmente, o pedir al departamento de procesamiento de datos que ponga a un programador de sistemas a escribir el programa de aplicaci&oacute;n necesario. Obviamente, ninguna de las dos alternativas es satisfactoria.
+            <br>
+            <br> &nbsp;Sup&oacute;ngase que se escribe un programa semejante y que, varios d&iacute;as despu&eacute;s, el mismo gerente necesita arreglar esa lista para incluir s&oacute;lo aquellos clientes con un saldo de 10000 d&oacute;lares o m&aacute;s. Como se esperaba, no existe un programa que genere esa lista. De nuevo, el gerente tiene las dos opciones anteriores, ninguna de las cuales es satisfactoria.
+            <br>
+            <br> Lo que se trata de probar aqu&iacute; es que esos entornos convencionales de procesamiento de archivos no permiten recuperar los datos necesarios de una forma conveniente y eficiente. Deben desarrollarse sistemas de recuperaci&oacute;n de datos para uso general.
+            <br>
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14">
+             </b></font><b>Aislamiento de los datos.</b> Puesto que los datos est&aacute;n repartidos en varios archivos, y &eacute;stos pueden tener diferentes formatos, es dif&iacute;cil escribir nuevos programas de aplicaci&oacute;n para obtener los datos apropiados.
+            <br>
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14">
+             </b></font><b>Anomal&iacute;as del acceso concurrente.</b> Para mejorar el funcionamiento global del sistema y obtener un tiempo de respuesta m&aacute;s r&aacute;pido, muchos sistemas permiten que m&uacute;ltiples usuarios actualicen los datos simult&aacute;neamente. En un entorno as&iacute;, la interacci&oacute;n de actualizaciones concurrentes puede dar por resultado datos in- consistentes. Consid&eacute;rese una cuenta bancaria A, con 500 d&oacute;lares. Si dos clientes retiran fondos (digamos 50 y 100 d&oacute;lares, respectivamente) de la cuenta A casi al mismo tiempo, el resultado de las ejecuciones concurrentes puede dejar la cuenta en un estado in- correcto (o inconsistente). En particular, la cuenta puede contener 450 o 400 d&oacute;lares, en vez de 350 d&oacute;lares. Para prevenir esta posibilidad, debe mantenerse alguna forma de supervisi&oacute;n en el sistema. Puesto que se puede acceder a los datos por medio de diversos programas de aplicaci&oacute;n diferentes que no han sido previamente coordinados, esta supervisi&oacute;n es muy dif&iacute;cil de proporcionar.
+            <br>
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14">
+             </b></font><b>Problemas de seguridad.</b> No todos los usuarios del sistema de base de datos deben poder acceder a todos los datos. Por ejemplo, en un sistema bancario, el personal de las n&oacute;minas s&oacute;lo necesita ver la parte de la base de datos que tiene informaci&oacute;n acerca de los distintos empleados del banco. No necesitan acceder a informaci&oacute;n sobre las cuentas de los clientes. Puesto que los programas de aplicaci&oacute;n se a&ntilde;aden al sistema de una forma precisa, es dif&iacute;cil implantar tales restricciones de seguridad.
+            <br>
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14">
+             </b></font><b>Problemas de integridad.</b> Los valores de datos almacenados en la base de datos deben satisfacer ciertos tipos de restricciones de consistencia. Por ejemplo, el saldo de una cuenta bancaria nunca debe caer por debajo de una cantidad prescrita (digamos, 25 d&oacute;lares).
+            <br>
+            <br> Estas restricciones se hacen cumplir en el sistema a&ntilde;adiendo c&oacute;digos apropiados en los diversos programas de aplicaci&oacute;n. Sin embargo, cuando se a&ntilde;aden restricciones nuevas, es dif&iacute;cil cambiar los programas para hacerlos cumplir. El problema se complica a&uacute;n m&aacute;s cuando las restricciones implican varios elementos de informaci&oacute;n de distintos archivos.
+            <br>
+            <br> Estas dificultades, entre otras, han fomentado el desarrollo de sistemas de gesti&oacute;n de bases de datos. En lo que sigue, veremos los conceptos y algoritmos que se han desarrollado para sistemas de bases de datos para resolver los problemas anteriormente mencionados.
+            <br>
+            <br>
+            <br>
+            <font color="#000000"><img height="14" width="14" alt=""
+ src="imagenes/vi_rombo.gif">                         </font>&nbsp;<b>Administrador de base de datos</b> <b>(DBMS)</b>
+            <br>
+            <br> Generalmente, las bases de datos requieren una gran cantidad de espacio de almacenamiento. Las bases de datos de las empresas com&uacute;nmente se miden en t&eacute;rminos de gigabytes o, para las bases de datos m&aacute;s grandes, terabytes de datos. Un gigabyte es 1024 megabytes (un bill&oacute;n de bytes), y un terabyte es un poco m&aacute;s de un mill&oacute;n de megabytes (m&aacute;s de un trill&oacute;n de bytes). Puesto que la memoria principal de los computadores no puede almacenar esta informaci&oacute;n, se almacena en discos. Los datos se transfieren entre el almacenamiento en disco y la memoria principal seg&uacute;n se necesiten. Ya que el movimiento de los datos y del disco es lento comparado con la velocidad de la unidad central de procesamiento, es imperativo que el sistema de la base de datos estructure los datos de forma que minimice la necesidad de mover los datos entre el disco y la memoria principal.
+            <br>
+            <br> El objetivo de un sistema de bases de datos es simplificar y facilitar el acceso a los datos. Las vistas de alto nivel ayudan a lograrlo. No se deber&iacute;a cargar innecesariamente a los usuarios del sistema con los detalles f&iacute;sicos de la implementaci&oacute;n del sistema. Sin embargo, un factor importante para la satisfacci&oacute;n o insatisfacci&oacute;n del usuario con un sistema de bases de datos es su funcionamiento. Si el tiempo de respuesta para una solicitud es demasiado largo, el valor del sistema se reduce. El funcionamiento de un sistema depende de la eficiencia de las estructuras de datos usadas para representar los datos en la base de datos y de la capacidad de eficiencia de operar sobre esas estructuras de datos que el sistema tiene.
+            <br>
+            <br> Como es el caso de muchos otros aspectos de sistemas inform&aacute;ticos, se debe llegar a un compromiso no s&oacute;lo entre espacio y tiempo sino tambi&eacute;n entre la eficiencia de un tipo de operaci&oacute;n y la de otro. Un gestor de base de datos es un m&oacute;dulo de programa que proporciona el interfaz entre los datos de bajo nivel almacenados en la base de datos y los programas de aplicaci&oacute;n y consultas hechos al sistema. El gestor de base de datos es responsable de las siguientes tareas: . Interacci&oacute;n con el gestor de archivos. Los datos sin procesar se almacenan en el disco usando el sistema de archivos que normalmente es proporcionado por un sistema operativo convencional.
+            <br>
+            <br> El administrador o gestor de base de datos traduce las distintas sentencias DML a comandos del sistema de archivos de bajo nivel. As&iacute;, el gestor de base de datos es responsable del verdadero almacenamiento, recuperaci&oacute;n y actualizaci&oacute;n de los datos en la base de datos.
+            <br>
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14">
+             </b></font><b>Implantaci&oacute;n de la integridad.</b> Los valores de los datos que se almacenan en la base de datos deben satisfacer ciertos tipos de restricciones de consistencia. Por ejemplo, el n&uacute;mero de horas que un empleado puede trabajar en una semana no puede exceder un l&iacute;mite espec&iacute;fico (digamos 80 horas). El administrador de la base de datos debe especificar expl&iacute;citamente estas restricciones (ver Secci&oacute;n 1.9). El gestor de la base de datos entonces puede determinar si las actualizaciones a la base de datos dan como resultado la violaci&oacute;n de la restricci&oacute;n; si as&iacute; es, se debe tomar la acci&oacute;n apropiada.
+            <br>
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14">
+             </b></font><b>Implantaci&oacute;n de la seguridad.</b> Como se discuti&oacute; anteriormente, no todos los usuarios de la base de datos necesitas tener acceso a todo su contenido. Es trabajo del gestor de la base de datos hacer que se cumplan estos requisitos de seguridad.
+            <br>
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14">
+             </b></font><b>Copia de seguridad y recuperaci&oacute;n.</b> Un sistema inform&aacute;tico, como cualquier otro dispositivo mec&aacute;nico o el&eacute;ctrico, est&aacute; sujeto a fallos. Las causas de los fallos incluyen rotura de disco, problemas del suministro de energ&iacute;a y errores software. En cada uno de estos casos, se pierde la informaci&oacute;n referente a la base de datos. Es responsabilidad del gestor de la base de datos detectar tales fallos y restaurar la base de datos al estado que exist&iacute;a antes de ocurrir el fallo. Esto se lleva a cabo normalmente a trav&eacute;s de la iniciaci&oacute;n de varios procedimientos de copias de seguridad y recuperaci&oacute;n.
+            <br>
+            <br>
+            <font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="imagenes/vi_rombo.gif"
+ alt="" width="14" height="14">
+             </b></font><b>Control de concurrencia.</b> Cuando varios usuarios actualizan la base de datos concurrentemente, es posible que no se conserve la consistencia de los datos. Controlar la interacci&oacute;n entre los usuarios concurrentes es otra responsabilidad del gestor de la base de datos.</p>
+        <p>
+            <b>Referencia : </b>
+            <br>
+            <font color="#993399"><b>Korth Henry, Silverschatz<br>
+                Fundamentos de bases de datos, Capitulo 1.</b></font></p>
+        <p>
+            <br>
+        </p>
+        </blockquote>
+
+        </div>
+    </main>
+</body>
+
+</html>

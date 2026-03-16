@@ -1,0 +1,237 @@
+/* ============================================
+   CodeReviewsPage - CSS Module
+   Team work policy page styling
+   ============================================ */
+
+/* --- Main Content --- */
+.pageContent {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-xl) var(--space-2xl);
+}
+
+/* --- Page Header --- */
+.pageHeader {
+  margin-bottom: var(--space-2xl);
+}
+
+.pageLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-info);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-sm);
+}
+
+.pageTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+/* --- Section Cards --- */
+.sectionCard {
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  padding: var(--space-lg) var(--space-xl);
+  margin-bottom: var(--space-md);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s;
+}
+
+.sectionCard:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* --- Section Icons --- */
+.sectionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  margin-bottom: var(--space-sm);
+  color: #fff;
+  font-size: 18px;
+}
+
+.descripcionIcon {
+  background: var(--color-info);
+}
+
+.modalidadIcon {
+  background: var(--color-lectura);
+}
+
+.objetivosIcon {
+  background: var(--color-ejercicio);
+}
+
+.instruccionesIcon {
+  background: var(--color-lab);
+}
+
+.recursosIcon {
+  background: var(--color-proyecto);
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+}
+
+/* --- Section Body --- */
+.sectionBody {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.sectionBody p {
+  margin-bottom: var(--space-md);
+}
+
+.sectionBody p:last-child {
+  margin-bottom: 0;
+}
+
+/* --- Objectives List --- */
+.objectivesList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.objectiveItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+}
+
+.objectiveItem :global(.material-icons) {
+  color: var(--color-ejercicio);
+  font-size: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* --- Policy List --- */
+.policyList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.policyItem {
+  border-left: 3px solid var(--color-lab);
+  padding: var(--space-md) var(--space-lg);
+  background: #fafbfd;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.policyItem p {
+  margin-bottom: var(--space-md);
+}
+
+.policyItem p:last-child {
+  margin-bottom: 0;
+}
+
+.policyItem code {
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-family: 'Courier New', Consolas, monospace;
+  color: var(--color-lab);
+}
+
+.policyItem strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* --- Recursos List --- */
+.recursosList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recursoItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 8px;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.recursoItem:hover {
+  background: #fef3c7;
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+.recursoItem :global(.material-icons) {
+  color: var(--color-proyecto);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .pageContent {
+    padding: var(--space-md);
+  }
+
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+
+  .sectionCard {
+    padding: var(--space-md);
+  }
+
+  .policyItem {
+    padding: var(--space-sm) var(--space-md);
+  }
+}
+
+/* --- Print --- */
+@media print {
+  .pageContent {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .sectionCard {
+    box-shadow: none;
+    border: 1px solid #ccc;
+    break-inside: avoid;
+  }
+}

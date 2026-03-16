@@ -1,0 +1,139 @@
+.home {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Hero */
+.hero {
+  text-align: center;
+  padding: var(--space-2xl) 0;
+}
+
+.heroTitle {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  margin: 0 0 var(--space-sm);
+}
+
+.heroSubtitle {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-xs);
+}
+
+.heroMeta {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Cards */
+.cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-2xl);
+}
+
+.card {
+  display: block;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--space-xl);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-xs);
+}
+
+.cardDescription {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-md);
+}
+
+.cardAction {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-lab);
+}
+
+/* Section title */
+.sectionTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-md);
+}
+
+/* Quick links & footer links */
+.quickLinks,
+.footerLinks {
+  margin-bottom: var(--space-2xl);
+}
+
+.linksGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-md);
+}
+
+.linkCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--space-lg);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.linkCard:hover {
+  box-shadow: var(--shadow-md);
+  text-decoration: none;
+}
+
+.linkTitle {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.linkDesc {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 640px) {
+  .heroTitle {
+    font-size: 2rem;
+  }
+
+  .heroSubtitle {
+    font-size: 1rem;
+  }
+
+  .linksGrid {
+    grid-template-columns: 1fr;
+  }
+}

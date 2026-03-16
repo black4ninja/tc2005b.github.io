@@ -1,0 +1,64 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Laboratorio 18</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+.Code { font-family:"Courier New", Courier, monospace; font-size:12px; color:#003366; background-color:#FFFFCC}
+.Estilo1 {font-family: Arial, Helvetica, sans-serif}
+.Estilo4 {font-family: Arial, Helvetica, sans-serif; color: #000000; }
+.Estilo3 {font-family: Arial, Helvetica, sans-serif; font-size: 9px; }
+body {
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+.Estilo5 {font-size: 14px}
+.Estilo6 {font-family: Arial, Helvetica, sans-serif; font-size: 14px; }
+-->
+</style>
+</head>
+
+<body>
+<table width="98%" border="0">
+  <tr>
+    <td><div align="right"><img src="../imagenes/actividades.jpg" width="600" height="50"></div></td>
+  </tr>
+  <tr>
+    <td><p align="left" class="Estilo4"><strong>Laboratorio 18: Uso de c&oacute;digo de barras<strong> </strong><br>
+</strong><strong><br>
+</strong></p>    </td></tr>
+  <tr>
+    <td class="Estilo1 Estilo5"><p class="Estilo6"><strong><img src="../imagenes/objetivos.jpg" width="600" height="50"></strong></p>
+      <p class="Estilo6"><br>
+El uso del c&oacute;digo de barras como dispositivo de entrada es cada vez  m&aacute;s frecuente en virtud de que reduce de manera importante tanto el  tiempo de captura como las posibilidades de error.<br>
+<br>
+Para poder utilizar esta tecnolog&iacute;a, es necesario que los elementos  a reconocer tengan impresos los c&oacute;digos, los cuales deben cumplir  determinados est&aacute;ndares que hacen posible el reconocimiento.<br>
+<br>
+Los lectores pueden ser programados para recibir diferentes codificaciones  y a trav&eacute;s de alguna interfaz, env&iacute;an el resultado a la computadora.  Ser&iacute;a muy complicado poner grandes cantidades de informaci&oacute;n  codificada en barras, por lo que el uso m&aacute;s frecuente consiste en  establecer un n&uacute;mero que se utiliza como llave o elemento de b&uacute;squeda  para realizar consultas a una base de datos en la que se mantiene informaci&oacute;n  relacionada con el n&uacute;mero que se codifica.<br>
+<br>
+      <img src="../imagenes/instrucciones.jpg" width="600" height="50"></p>
+      <p class="Estilo6"><strong> </strong></p>
+      <blockquote><font color="#000000"><img height="13" width="13"
+ alt="" src="../imagenes/TgC_boton30.gif"> </font>&nbsp;<b>Objetivos</b><br>
+          <br>
+        En esta pr&aacute;ctica utilizaremos el lector de c&oacute;digo de barras
+        para reconocer un alumno y recuperar datos relacionados con dicho alumno de la base de datos.<br>
+  <br>
+        Para su realizaci&oacute;n, se han simplificado algunos elementos:
+  <blockquote><img src="../imagenes/ball.gif" alt="" height="8" width="8"> Se asume que se utilizar&aacute; el c&oacute;digo de barras <b>estandarizado </b>que utilizan la mayor parte de los proveedores de bienes
+    de consumo para vender a las grandes cadenas de minoristas, por lo que no
+    entraremos en detalles sobre la <b>programaci&oacute;n </b>del lector de
+    c&oacute;digo de barras.<br>
+    <br>
+    <img src="../imagenes/ball.gif" alt="" height="8" width="8"> Utilizaremos una lectora de c&oacute;digo de barras con interfaz <b>por
+      puerto serie</b> y nos apoyaremos en una clase  de Visual Basic
+    que permite manipular el puerto serie sin entrar en muchos <b>detalles t&eacute;cnicos</b>.<br>
+    <br>
+    <img src="../imagenes/ball.gif" alt="" height="8" width="8"> Configuraremos el control para el puerto serie con los<b> par&aacute;metros
+      de la configuraci&oacute;n de f&aacute;brica </b>del lector de c&oacute;digo
+    de barras.</blockquote>
+  <p><font color="#3366ff" face="Courier New, Courier, monospace"><b><img src="../imagenes/vi_rombo.gif" alt="" height="14" width="14"> </b></font>Crea un nuevo proyecto de Visual Basic del tipo <b>Windows Application </b>,
+    y agrega el modUtil a tu proyecto.</p>
+  <p>Primero vamos a crear una aplicaci&oacute;n que nos permita leer de un puerto serial y mostrar lo que fue 

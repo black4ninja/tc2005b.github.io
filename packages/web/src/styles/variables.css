@@ -1,0 +1,66 @@
+:root {
+  /* Activity type colors */
+  --color-lab: #2563eb;
+  --color-lectura: #7c3aed;
+  --color-ejercicio: #059669;
+  --color-proyecto: #d97706;
+  --color-evaluacion: #dc2626;
+  --color-break: #94a3b8;
+  --color-asueto: #f59e0b;
+  --color-trabajo: #8b5cf6;
+  --color-discusion: #0891b2;
+  --color-info: #6366f1;
+
+  /* Light variants for backgrounds */
+  --color-lab-light: #dbeafe;
+  --color-lectura-light: #ede9fe;
+  --color-ejercicio-light: #d1fae5;
+  --color-proyecto-light: #fef3c7;
+  --color-evaluacion-light: #fee2e2;
+  --color-break-light: #f1f5f9;
+  --color-asueto-light: #fef9c3;
+  --color-trabajo-light: #ede9fe;
+  --color-discusion-light: #cffafe;
+  --color-info-light: #e0e7ff;
+
+  /* Neutral palette */
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-header: #0f172a;
+  --bg-pre-session: #faf5ff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border-color: #e2e8f0;
+  --border-radius: 12px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  /* Navbar height for sticky offsets */
+  --navbar-height: 64px;
+  /* Total sticky area (navbar + filters/week nav) for scroll offset */
+  --topbar-height: 120px;
+
+  /* Dashboard tokens */
+  --sidebar-width: 270px;
+  --sidebar-width-collapsed: 70px;
+  --dashboard-header-height: 64px;
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e2e8f0;
+  --sidebar-active-bg: #e8f0fe;
+  --sidebar-active-color: #2563eb;
+  --dash-primary: #5d87ff;
+  --dash-success: #13deb9;
+  --dash-warning: #ffae1f;
+  --dash-danger: #fa896b;
+  --dash-info: #539bff;
+}

@@ -1,14 +1,17 @@
 {
-  "name": "calendario",
-  "version": "1.0.0",
-  "description": "",
-  "main": "app.js",
+  "name": "tc2005b-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/web",
+    "packages/docusaurus"
+  ],
   "scripts": {
+    "dev": "concurrently -n web,docs -c cyan,magenta \"yarn workspace @tc2005b/web dev\" \"yarn workspace @tc2005b/docs start --port 3001\"",
+    "build": "yarn workspace @tc2005b/web build && node scripts/merge-builds.mjs",
     "test": "vitest --globals"
   },
-  "author": "Eduardo Juarez",
-  "license": "ISC",
-  "dependencies": {
-    "vitest": "^0.34.1"
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "vitest": "^3.1.0"
   }
 }

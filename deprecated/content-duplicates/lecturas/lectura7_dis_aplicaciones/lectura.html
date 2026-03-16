@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+	<head>
+	    <!--Import materialize.css-->
+	      <link type="text/css" rel="stylesheet" href="../css/materialize.min.css"  media="screen,projection"/>
+	      <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	      <script type="text/javascript" src="/../lab5POE.js"></script>
+	      <!--Let browser know website is optimized for mobile-->
+	      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>  
+	      <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+	  <title>Diseño de aplicaciones</title>
+	</head>
+  <body>
+      <main>
+        
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B</acronym></a>
+                </div>
+            </nav>
+        </div>
+        
+        <div class="container">
+            <div class="section">
+                <h3>Lectura: Diseño de aplicaciones</h3>
+            </div>
+            
+            
+            
+            <div class="section" id="introduccion">
+                <h5>Introducción</h5>
+                 <p>De la misma manera en que es necesario transferir el <strong>MER</strong>, que 
+					es fundamentalmente un <u>modelo de análisis</u>, al <strong>MR</strong> para 
+					hacer posible el diseño de una base de datos, para poder crear una 
+					solución que responda a lo analizado en el <strong>MFD</strong>, debe crearse 
+					un <u>modelo de diseño</u>. Las herramientas que utilizaremos para 
+					el modelo de diseño son el<strong>Diagrama de Estructura (DE)</strong>
+					y los diagramas o <strong>tablas de Entrada 
+					Proceso Salida (EPS)</strong>
+				</p>               
+                <div class="divider"></div>
+            </div>
+            
+            <div class="section" id="modulo">
+                <h5>Módulo</h5>
+                 <p>Para hacer posible tratar con la complejidad de las aplicaciones, <strong>dividimos</strong>
+					éstas en módulos. Los módulos, dependiendo del lenguaje o 
+					herramienta en la que se construya, corresponderán con:
+				</p> 
+				<ul>
+					
+
+					    
+					<li> <i class="material-icons">play_arrow</i>Funciones</li>
+					<li> <i class="material-icons">play_arrow</i>Procedimientos o Subrutinas</li>
+					<li> <i class="material-icons">play_arrow</i>Formas</li>
+					<li> <i class="material-icons">play_arrow</i>Reportes</li>
+					<li> <i class="material-icons">play_arrow</i>Métodos de una clase</li>
+				</ul>
+				<br>
+				<p>
+					En el nivel que presentaremos en el <strong>DE</strong>, podemos utilizar una 
+					etiqueta caracterástica para indicar en qué tipo de módulo estamos 
+					representando: <strong>F para formas, R para reportes, S para subrutinas, 
+					Y para funciones, M para método</strong>
+				</p>
+					
+                <div class="divider"></div>
+            </div>
+                
+            <div class="section" id="diagrama">
+                <h5>Diagrama de estructura</h5>
+                 <p>
+                 	El diagrama de estructura se utiliza para <strong>proponer</strong> los 
+					módulos que integrarán la solución, y la forma en la que un módulo 
+					cualquiera <strong>invoca</strong> a otros módulos.
+				</p>
+				<p>
+					En el <strong>DE</strong>, cada módulo en la estructura se representa con un 
+					rectángulo, con el nombre del mádulo en su interior, y para indicar 
+					que un módulo invoca a otro en su ejecución, el módulo que invoca se 
+					dibuja arriba, el módulo invocado se dibuja abajo y se traza una 
+					línea entre ambos. Opcionalmente, la línea puede ser una flecha 
+					indicando el sentido de la invocación. Un ejemplo simple de esto 
+					para una aplicación que calcula una amortización (secuencia de pagos 
+					para liquidar un préstamo con un determinado interés), sería el 
+					siguiente:
+				</p>
+				<br>
+				
+					<div align="center">
+						<img src="Dibujo1.jpg" alt="" width="408" height="180"> <br>
+					</div>
+				<br>
+				<p>
+					Esta aplicación consta de <strong>cuatro</strong> módulos: el módulo principal 
+					representa globalmente a la aplicación; el trabajo de la aplicación 
+					se divide en los tres módulos que se muestran, los cuales son 
+					invocados por el módulo principal.
+				</p>
+				<p>
+					La estructura de la solución es creada por el diseñador de la 
+					aplicación, esto es, a diferencia del análisis en la que la<u><strong> 
+					actitud del analista debe ser receptiva y objetiva</strong></u>, 
+					el diseñador<u><strong> es creativo</strong></u>, dentro del marco de 
+					cumplir con los requerimientos de negocio. Dado que la estructura es 
+					entonces una creación, se requieren algunos criterios para determinar 
+					si una estructura es mejor que otra. 
+				</p>
+				
+				<p>A continuación presentamos diferentes formas de la estructura: </p>
+				
+				<ul>
+					<li><i class="material-icons">play_arrow</i>
+						Deben evitarse <strong>estructuras secuenciales</strong> como la que se 
+						ilustra (se dice que estas estructuras son burocráticas, pues 
+						suceden muchos pasos antes de realizar las acciones concretas):
+					
+						<br>
+						<div align="center">
+							<img src="Dibujo2.jpg" alt="" width="196" height="167">
+						</div>
+						<br>
+					</li>
+					
+					<li><i class="material-icons">play_arrow</i>
+							Se deben evitar <strong>estructuras complejas</strong> .Las estructuras en 
+							las que un módulo tiene que invocar a muchos módulos y que cada 
+							módulo es invocado por muchos módulos <strong>tampoco son deseables</strong>: 
+							con una estructura de este tipo es muy difícil de modificar un 
+							módulo porque es necesario analizar el efecto de la modificación 
+							en todos los invocadores. <u>Una excepción</u> a esta regla es 
+							la de los módulos de muy bajo nivel llamados <i><strong>funciones 
+							básicas</strong></i>. Una función básica es un módulo con un objetivo 
+							muy acotado y utilizable en muchos lugares de la aplicación 
+							(ejemplos: una función matemática, un módulo para presentar 
+							listas de valores, un módulo para seleccionar un archivo del 
+							directorio); en el caso de estos módulos en normal y deseable 
+							que sean invocados por diversos módulos.
+						<br>
+						<div align="center">
+							<img src="Dibujo3.jpg" alt="" width="304" height="141">
+						</div>
+						<br>
+					</li>
+					
+					<li><i class="material-icons">play_arrow</i>
+						Es deseable, una estructura en la que en general se distingan 
+						niveles y la comunicación entre módulos sea la indispensable es 
+						la más deseable; este tipo de estructuras presenta una forma <strong>jerárquica</strong>:
+					
+						<br>
+						<div align="center">
+							<img src="Dibujo4.jpg" alt="" width="458" height="118"> <br>
+						</div>
+						<br>
+					</li>
+				</ul>
+				
+				<p>
+					Además de considerar la forma de la estructura, un convenio útil 
+					es utilizar una marca&nbsp; (un sombreado, o un asterisco en el 
+					nombre) cuando un módulo <strong>es invocado en más de un lugar de la 
+					estructura</strong>, para evitar cruzar líneas en el diagrama, 
+					consiguiendo una mayor claridad.
+				</p>
+				
+						
+				
+                <div class="divider"></div>
+            </div> 
+            
+              
+            <div class="section" id="eps">
+                <h5>Entrada Proceso Salida</h5>
+                 <p>La herramienta de modelado que utilizaremos para detallar cada uno 
+					de los módulos presentes en la estructura es el diagrama (o tabla) 
+					<u>Entrada Proceso Salida</u> <strong>(EPS)</strong>. Esta herramienta nos 
+					permite exponer de manera clara el objetivo de un módulo en términos 
+					de tres secciones: en la primera se manifiestan las entradas que 
+					recibe, en la segunda el proceso que efectúa para transformar esas 
+					entradas y en la tercera las salidas que produce.
+				</p>
+				<p>
+					Existen diversas notaciones para este tipo de diagramas o tablas, 
+					que varían esencialmente en <strong>la parte de proceso</strong>: algunos 
+					autores utilizan diferentes clases de flujo gramas en esta sección, 
+					otros algún lenguaje estructurado. Optaremos por definir un convenio 
+					de lenguaje estructurado. En cuanto al contenido de las secciones, 
+					se define a continuación:	
+				</p>
+				
+				<ul>
+					<li><i class="material-icons">play_arrow</i>
+					<strong>Entradas:</strong>
+					<p>En la sección de entradas pueden aparecer uno o varios elementos de las siguientes categorías:</p>
+	              	<ul>
+						<li>Parámetros de entrada</li>
+						<li>Criterios de selección de datos a transformar o consultar</li>
+						<li>Objetos de la aplicación en determinadas condiciones iniciales</li>
+						<li>Evento disparador de una acción</li>
+					</ul>
+				</li>
+					<li><i class="material-icons">play_arrow</i>	<strong>Procesos:</strong>
+					<p>En la sección de procesos utilizaremos las siguientes construcciones posibles:</p>
+					<blockquote>
+				<p>	Mientras condición<br>
+				&nbsp;&nbsp; operaciones<br>
+				Fin Mientras</p>
+				</blockquote>
+				<blockquote>
+				<p>	Repite<br>
+				&nbsp; &nbsp;operaciones<br>
+				Hasta condición<br>
+					<br>
+				Si condición&nbsp; entonces<br>
+				&nbsp; &nbsp;operaciones<br>
+				En otro caso<br>
+				&nbsp; &nbsp;operaciones<br>
+				Fin si<br></p>
+					<br>
+				<p>Las operaciones pueden ser:<br>
+				variable = expresión<br>
+				Llama módulo<br>
+				{descripción informal de la operación}<br>
+				Objeto.Propiedad=expresión<br>
+				Objeto.Método</p>
+				</blockquote>
+				
+				<p>Como podemos ver, en esta sección es donde definimos el pseudo_algoritmo de nuestro modulo.</p></li>
+				
+				<li><i class="material-icons">play_arrow</i>
+					<strong>Salidas:</strong>
+					<p>
+						En correspondencia con la sección de entradas, en la sección de 
+						salidas pueden aparecer uno o varios elementos de las siguientes 
+						categorías:
+					</p>
+	              	<ul>
+						<li>Parámetros de salida</li>
+						<li>Resultados de consulta o datos transformados</li>
+						<li>Objetos de la aplicación modificados</li>
+						<li>Mensaje o manifestación de atención al evento</li>
+					</ul>
+					<p>	
+						No se pretende crear un lenguaje formal para llenar las 
+						especificaciones de proceso: las condiciones, expresiones y 
+						operaciones pueden hacerse en forma textual. Lo que debe 
+						establecerse de manera precisa es <strong>el cómo obtener de las entradas 
+						indicadas las salidas requeridas</strong>, ya que esto será la 
+						documentación para pasar a la fase de construcción de la aplicación, 
+						fase en la que los recursos y tiempo no deberán distraerse para 
+						regresar a investigar detalles que pudieran haber quedado demasiado 
+						vagos en la especificación del diseño.
+					</p>
+					<p>
+						Para aquellos módulos que representan formas o reportes, además del 
+						EPS es necesario diseñar la apariencia y distribución en un esquema, 
+						dibujo, o haciendo uso de la herramienta de desarrollo 
+						correspondiente.
+					</p>
+					
+				</li>
+
+			</ul>
+            <div class="divider"></div>
+          </div>
+                
+        </div> 
+</main>
+      
+      <footer class="blue darken-1 page-footer">
+            <div class="container">
+               <div class="row">
+                   <div class="col">
+                       <h5 class="white-text">Secciones</h5>
+                <ol class="grey-text text-lighten-3">
+                  <li><a class="grey-text text-lighten-3" href="#introduccion">Introducción</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#modulo">Módulo</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#diagrama">Diagrama de Estructura</a></li>
+                  <li><a class="grey-text text-lighten-3" href="#eps">Entrada Proceso Salida</a></li>
+
+                </ol>
+                       </div>
+                </div>
+                <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+            </div>
+          <div class="footer-copyright">
+            <div class="container">
+            © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+          </div>
+      </footer>
+        
+        
+      <!--Import jQuery before materialize.js-->
+      <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+      <script type="text/javascript" src="../js/materialize.min.js"></script>
+  </body>
+</html>

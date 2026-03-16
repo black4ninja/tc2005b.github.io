@@ -4,38 +4,57 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Static course website for **TC2005B - Construcción de Software y Toma de Decisiones** at Tecnológico de Monterrey, Campus Querétaro. Hosted via GitHub Pages.
-
-## Commands
-
-- **Run tests:** `npm test` (uses Vitest with `--globals` flag)
-- **Serve locally:** Open `index.html` in a browser or use any static file server (e.g., `npx serve .`)
+Course website for **TC2005B - Construcción de Software y Toma de Decisiones** at Tecnológico de Monterrey, Campus Querétaro. Hosted via GitHub Pages.
 
 ## Architecture
 
-- **Static HTML site** — no build step, no static site generator. Pages are plain `.html` files.
-- **UI Framework:** Materialize CSS (`css/materialize.min.css`, `js/materialize.min.js`) with Google Material Icons.
-- **Custom styles:** `css/daw.css`
-- **Language:** Spanish (es-mx). All page content, labels, and calendar entries are in Spanish.
+**Monorepo** with npm workspaces containing two packages:
 
-### Key Pages
+- `packages/web/` — React 19 + Vite 6 + TypeScript SPA (main site: calendar, labs, avances, policies)
+- `packages/docusaurus/` — Docusaurus 3.9.2 documentation site (served under `/docs/`)
 
-- `index.html` — Landing page with group selection links
-- `grupo1.html`, `grupo2.html` — Class schedule/calendar per group (table-based calendars)
-- `code_reviews.html` — Team work policies
+Legacy static HTML content (ejercicios, laboratorios, lecturas, documentos) lives in `static-legacy/` and is copied to the build output.
 
-### Content Directories
+## Commands
 
-- `labs/` — Web development labs (HTML, CSS, JS, Node, Express, MVC, sessions, auth, AJAX, REST, deployment)
-- `laboratorios/` — Database labs (SQL, stored procedures, transactions, optimization)
-- `ejercicios/` — Database exercises (ER models, relational algebra, SQL, normalization)
-- `lecturas/` — Reading materials on databases, SQL, usability, application design
-- `avances/` — Project milestone/deliverable descriptions
-- `documentos/` — Course documents, presentations (.pptx), and supplementary files
-- `archived/` — Deprecated content from prior semesters
+- **Dev servers:** `npm run dev` — starts Vite (port 5173) and Docusaurus (port 3001) concurrently
+- **Build:** `npm run build` — builds web + docs + merges into `dist/`
+- **Preview:** `npm run preview` — serves the built `dist/` directory
+- **Run tests:** `npm test` (uses Vitest with `--globals` flag)
+- **Type check:** `cd packages/web && npx tsc --noEmit`
 
-### Conventions
+## Key Directories
 
-- All HTML pages use the same Materialize boilerplate: navbar, main container, footer with important links.
-- Calendar pages (`grupo*.html`) use `<table class="calendario">` with weekly rows.
-- Links to labs/exercises use relative paths from the root.
+### `packages/web/src/`
+- `components/` — React components organized by feature (layout, home, calendar, labs, avances, policies)
+- `data/` — Migrated data files as typed ES modules (labs, avances, calendario)
+- `types/` — TypeScript interfaces (Lab, Avance, Calendario, Actividad, etc.)
+- `hooks/` — Custom hooks (useCalendarFilter, useWeekNavigation)
+- `styles/` — CSS variables and global styles
+
+### Routing (React Router 7)
+| Route | Component |
+|-------|-----------|
+| `/` | HomePage |
+| `/calendario/:grupoId` | CalendarPage |
+| `/labs/:labId` | LabPage |
+| `/avances/:avanceId` | AvancePage |
+| `/politicas` | CodeReviewsPage |
+
+### Data Sources
+- `data-source/labs/` — Original JS lab data files (34 files, source of truth)
+- `data-source/avances/` — Original JS avance data files (6 files)
+- `data-source/calendario/` — Original JS calendario data file
+- Migrated to TypeScript via `scripts/migrate-data.mjs`
+
+### Legacy Content
+- `static-legacy/` — ejercicios, laboratorios, lecturas, documentos, imagenes (copied to build)
+- `deprecated/` — All legacy HTML pages, viewers, assets, and content duplicates (not used at runtime)
+
+## Conventions
+
+- **Language:** Spanish (es-mx). All content, labels, and calendar entries are in Spanish.
+- **Styling:** CSS Modules with design tokens in `variables.css`. No Tailwind.
+- **Fonts:** Inter (Google Fonts) + Material Icons.
+- **Data pattern:** Each lab/avance is a separate TS file with typed `export default`. Barrel exports use dynamic imports for code splitting.
+- **Links:** Internal links use React Router paths (`/labs/lab1`, `/avances/av1`). External links use full URLs.

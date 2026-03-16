@@ -1,0 +1,28 @@
+.wrapper {
+  position: relative;
+  display: inline-flex;
+}
+.trigger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+.trigger:hover { background: var(--bg-page); }
+.menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  min-width: 200px;
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  z-index: 100;
+}
+.right { right: 0; }
+.left { left: 0; }
