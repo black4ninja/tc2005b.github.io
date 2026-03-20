@@ -1,5 +1,7 @@
+import { useNavigate } from 'react-router';
 import Avatar from '../../atoms/Avatar/Avatar';
 import DropdownMenu from '../DropdownMenu/DropdownMenu';
+import { useAuth } from '../../../../context/AuthContext';
 import styles from './ProfileMenu.module.css';
 
 interface ProfileMenuProps {
@@ -9,6 +11,14 @@ interface ProfileMenuProps {
 }
 
 export default function ProfileMenu({ name, role, avatar }: ProfileMenuProps) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await logout();
+    navigate('/login', { replace: true });
+  }
+
   return (
     <DropdownMenu
       trigger={
@@ -25,7 +35,7 @@ export default function ProfileMenu({ name, role, avatar }: ProfileMenuProps) {
         <a className={styles.menuItem} href="#">Mi Perfil</a>
         <a className={styles.menuItem} href="#">Configuración</a>
         <hr className={styles.divider} />
-        <a className={styles.menuItem} href="/">Cerrar Sesión</a>
+        <button className={styles.menuItem} onClick={handleLogout}>Cerrar Sesión</button>
       </div>
     </DropdownMenu>
   );

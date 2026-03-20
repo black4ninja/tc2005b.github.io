@@ -5,11 +5,13 @@ interface DashButtonProps {
   variant?: 'primary' | 'outline' | 'text';
   onClick?: () => void;
   className?: string;
+  disabled?: boolean;
+  type?: 'button' | 'submit' | 'reset';
 }
 
-export default function DashButton({ children, variant = 'primary', onClick, className = '' }: DashButtonProps) {
+export default function DashButton({ children, variant = 'primary', onClick, className = '', disabled, type = 'button' }: DashButtonProps) {
   return (
-    <button className={`${styles.btn} ${styles[variant]} ${className}`} onClick={onClick}>
+    <button type={type} className={`${styles.btn} ${styles[variant]} ${className}`} onClick={onClick} disabled={disabled}>
       {children}
     </button>
   );

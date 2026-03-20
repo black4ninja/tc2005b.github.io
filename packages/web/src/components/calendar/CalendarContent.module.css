@@ -1,0 +1,76 @@
+.stickyControls {
+  position: sticky;
+  z-index: 90;
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border-color);
+  padding: var(--space-sm) var(--space-xl);
+}
+
+.calendarContent {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space-xl) var(--space-2xl);
+}
+
+@media (max-width: 1024px) {
+  .stickyControls {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .calendarContent {
+    padding: var(--space-md);
+  }
+}
+
+.saveStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 4px var(--space-sm);
+  font-size: 0.8125rem;
+}
+
+.savingText {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.saveError {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.addWeekBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-md);
+  margin-top: var(--space-sm);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.addWeekBtn:hover {
+  border-color: var(--color-lab);
+  color: var(--color-lab);
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.addWeekBtn .material-icons {
+  font-size: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .calendarContent {
+    padding: var(--space-sm);
+  }
+}

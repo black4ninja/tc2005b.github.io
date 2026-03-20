@@ -1,7 +1,8 @@
-import { Outlet } from 'react-router';
+import { Outlet, Navigate } from 'react-router';
 import Sidebar from '../../organisms/Sidebar/Sidebar';
 import DashboardHeader from '../../organisms/DashboardHeader/DashboardHeader';
 import { useSidebarCollapse } from '../../../../hooks/useSidebarCollapse';
+import { useAuth } from '../../../../context/AuthContext';
 import styles from './DashboardLayout.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
 
@@ -10,7 +11,16 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ role }: DashboardLayoutProps) {
+  const { isLoading, isAuthenticated } = useAuth();
   const { collapsed, mobileOpen, toggle, closeMobile } = useSidebarCollapse();
+
+  if (isLoading) {
+    return <div className={styles.loading}>Cargando...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <div className={styles.layout}>

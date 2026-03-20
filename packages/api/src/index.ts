@@ -2,6 +2,7 @@ import app, { finalize } from './app.js';
 import { config } from './config/index.js';
 import { initializeParseServer } from './config/parse.js';
 import Parse from 'parse/node';
+import './models/index.js';
 
 async function main() {
   const parseServer = await initializeParseServer();

@@ -1,9 +1,11 @@
-import { Link } from 'react-router';
+import { useState, useEffect } from 'react';
+import { Link, useMatch } from 'react-router';
 import NavItem from '../../molecules/NavItem/NavItem';
 import Icon from '../../atoms/Icon/Icon';
-import { getSidebarItems } from './sidebarConfig';
+import { getSidebarItems, getGrupoDetailItems } from './sidebarConfig';
 import styles from './Sidebar.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
+import { useAuth } from '../../../../context/AuthContext';
 
 interface SidebarProps {
   role: DashboardRole;
@@ -13,7 +15,29 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: SidebarProps) {
-  const items = getSidebarItems(role);
+  const grupoMatch = useMatch('/admin/grupos/:id/*');
+  const isGrupoDetail = !!grupoMatch;
+  const grupoId = grupoMatch?.params.id;
+  const { sessionToken, user } = useAuth();
+  const [grupoName, setGrupoName] = useState('');
+
+  useEffect(() => {
+    if (!grupoId || !sessionToken) return;
+    fetch('/api/admin/grupos', {
+      headers: { 'x-session-token': sessionToken },
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((json) => {
+        const grupos = json?.grupos ?? [];
+        const found = grupos.find((g: { id: string }) => g.id === grupoId);
+        if (found?.name) setGrupoName(found.name);
+      })
+      .catch(() => {});
+  }, [grupoId, sessionToken]);
+
+  const items = isGrupoDetail
+    ? getGrupoDetailItems(grupoId!)
+    : getSidebarItems(role, role === 'alumno' ? user?.grupo : undefined);
 
   return (
     <>
@@ -21,12 +45,26 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       <aside
         className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''} ${mobileOpen ? styles.mobileOpen : ''}`}
       >
-        <div className={styles.logo}>
-          <Link to={role === 'admin' ? '/admin' : '/alumno'} className={styles.logoLink}>
-            <Icon name="school" size="lg" />
-            {!collapsed && <span className={styles.logoText}>TC2005B</span>}
-          </Link>
-        </div>
+        {isGrupoDetail ? (
+          <div className={styles.backHeader}>
+            <Link to="/admin/grupos" className={styles.backButton} onClick={onCloseMobile}>
+              <Icon name="arrow_back" size="sm" />
+              {!collapsed && <span>Volver a Grupos</span>}
+            </Link>
+            {!collapsed && (
+              <span className={styles.grupoLabel}>
+                {grupoName ? `Grupo: ${grupoName}` : `Grupo: ${grupoId}`}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className={styles.logo}>
+            <Link to={role === 'admin' ? '/admin' : '/alumno'} className={styles.logoLink}>
+              <Icon name="school" size="lg" />
+              {!collapsed && <span className={styles.logoText}>TC2005B</span>}
+            </Link>
+          </div>
+        )}
         <nav className={styles.nav}>
           {items.map(item => (
             <NavItem

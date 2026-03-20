@@ -1,6 +1,7 @@
 import Icon from '../../atoms/Icon/Icon';
 import ProfileMenu from '../../molecules/ProfileMenu/ProfileMenu';
 import NotificationBell from '../../molecules/NotificationBell/NotificationBell';
+import { useAuth } from '../../../../context/AuthContext';
 import styles from './DashboardHeader.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
 
@@ -11,7 +12,8 @@ interface DashboardHeaderProps {
 }
 
 export default function DashboardHeader({ role, collapsed, onToggleSidebar }: DashboardHeaderProps) {
-  const profileName = role === 'admin' ? 'Prof. García' : 'Carlos López';
+  const { user } = useAuth();
+  const profileName = user?.email || '';
   const profileRole = role === 'admin' ? 'Administrador' : 'Alumno';
 
   return (

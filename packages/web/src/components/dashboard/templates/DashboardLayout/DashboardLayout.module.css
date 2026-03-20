@@ -10,6 +10,16 @@
   transition: margin-left 0.3s ease;
 }
 
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
 @media (max-width: 768px) {
   .content {
     margin-left: 0 !important;

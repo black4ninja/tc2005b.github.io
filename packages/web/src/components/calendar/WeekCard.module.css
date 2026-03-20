@@ -45,6 +45,34 @@
   margin-left: 8px;
 }
 
+.weekDragHandle {
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  color: var(--text-secondary);
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+  touch-action: none;
+}
+
+.weekDragHandle:active {
+  cursor: grabbing;
+}
+
+.weekCard:hover .weekDragHandle {
+  opacity: 0.7;
+}
+
+.weekDragHandle:hover {
+  opacity: 1 !important;
+  color: var(--text-primary);
+}
+
+.weekDragHandle .material-icons {
+  font-size: 20px;
+}
+
 /* Week Header */
 .weekHeader {
   display: flex;
@@ -120,6 +148,34 @@
   color: var(--chip-color, var(--text-secondary));
 }
 
+.weekDeleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.weekCard:hover .weekDeleteBtn {
+  opacity: 0.7;
+}
+
+.weekDeleteBtn:hover {
+  opacity: 1 !important;
+  color: var(--color-evaluacion);
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.weekDeleteBtn .material-icons {
+  font-size: 20px;
+}
+
 .chevron {
   color: var(--text-muted);
   transition: transform 0.3s ease;
@@ -183,6 +239,16 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
+  /* Tablet: day-summary pairs in 2-col layout */
+  .dayGrid > :nth-child(1) { order: 1; }
+  .dayGrid > :nth-child(2) { order: 2; }
+  .dayGrid > :nth-child(5) { order: 3; }
+  .dayGrid > :nth-child(6) { order: 4; }
+  .dayGrid > :nth-child(3) { order: 5; }
+  .dayGrid > :nth-child(4) { order: 6; }
+  .dayGrid > :nth-child(7) { order: 7; }
+  .dayGrid > :nth-child(8) { order: 8; }
+
   .weekSummary {
     display: none;
   }
@@ -193,6 +259,16 @@
   .dayGrid {
     grid-template-columns: 1fr;
   }
+
+  /* Mobile: each day immediately followed by its summary */
+  .dayGrid > :nth-child(1) { order: 1; }
+  .dayGrid > :nth-child(5) { order: 2; }
+  .dayGrid > :nth-child(2) { order: 3; }
+  .dayGrid > :nth-child(6) { order: 4; }
+  .dayGrid > :nth-child(3) { order: 5; }
+  .dayGrid > :nth-child(7) { order: 6; }
+  .dayGrid > :nth-child(4) { order: 7; }
+  .dayGrid > :nth-child(8) { order: 8; }
 
   .weekHeader {
     padding: var(--space-sm) var(--space-md);

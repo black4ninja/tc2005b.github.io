@@ -1,0 +1,68 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.field select,
+.field input,
+.field textarea {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.field select:focus,
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--color-lab);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.checkboxField {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.checkboxField label {
+  order: 2;
+  font-weight: 400;
+}
+
+.checkboxField input[type="checkbox"] {
+  order: 1;
+  width: 16px;
+  height: 16px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-color);
+}

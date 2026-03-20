@@ -15,6 +15,12 @@
   margin-bottom: var(--space-sm);
 }
 
+.dayDate {
+  margin-left: 4px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
 .dayNote {
   font-size: 0.75rem;
   color: var(--text-secondary);
@@ -45,4 +51,44 @@
 .activityList {
   display: flex;
   flex-direction: column;
+}
+
+.dropTarget {
+  background: rgba(59, 130, 246, 0.06);
+  border-radius: 8px;
+}
+
+.emptyDropZone {
+  min-height: 40px;
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.addActivityBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding: 6px;
+  margin-top: var(--space-sm);
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.addActivityBtn:hover {
+  border-color: var(--color-lab);
+  color: var(--color-lab);
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.addActivityBtn .material-icons {
+  font-size: 1rem;
 }

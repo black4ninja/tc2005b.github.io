@@ -1,34 +1,3 @@
 .calendarPage {
   width: 100%;
 }
-
-.stickyControls {
-  position: sticky;
-  top: var(--navbar-height);
-  z-index: 90;
-  background: var(--bg-page);
-  border-bottom: 1px solid var(--border-color);
-  padding: var(--space-sm) var(--space-xl);
-}
-
-.calendarContent {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: var(--space-lg) var(--space-xl) var(--space-2xl);
-}
-
-@media (max-width: 1024px) {
-  .stickyControls {
-    padding: var(--space-sm) var(--space-md);
-  }
-
-  .calendarContent {
-    padding: var(--space-md);
-  }
-}
-
-@media (max-width: 768px) {
-  .calendarContent {
-    padding: var(--space-sm);
-  }
-}

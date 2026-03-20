@@ -1,0 +1,104 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fileInput {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--sidebar-bg);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.preview {
+  padding: 12px 16px;
+  background: var(--sidebar-bg);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resultSummary {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+}
+
+.resultSuccess {
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+.resultSkipped {
+  color: #e65100;
+  font-weight: 500;
+}
+
+.skippedList {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.skippedList li {
+  margin-bottom: 4px;
+}
+
+.credentialsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.credentialsTable th,
+.credentialsTable td {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.credentialsTable th {
+  font-weight: 600;
+  background: var(--sidebar-bg);
+}
+
+.copyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--sidebar-bg);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: background 0.2s;
+}
+
+.copyBtn:hover {
+  background: var(--border-color);
+}
+
+.error {
+  padding: 12px 16px;
+  background: #fdecea;
+  color: var(--dash-danger);
+  border-radius: 8px;
+  font-size: 14px;
+}

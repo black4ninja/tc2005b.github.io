@@ -12,6 +12,7 @@ const ICON_MAP: Record<ActividadTipo, string> = {
   trabajo: 'work',
   discusion: 'forum',
   info: 'info_outline',
+  actividad: 'assignment',
 };
 
 interface ActivityItemProps {

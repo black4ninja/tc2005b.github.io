@@ -10,6 +10,7 @@
   --color-trabajo: #8b5cf6;
   --color-discusion: #0891b2;
   --color-info: #6366f1;
+  --color-actividad: #e11d48;
 
   /* Light variants for backgrounds */
   --color-lab-light: #dbeafe;
@@ -22,6 +23,7 @@
   --color-trabajo-light: #ede9fe;
   --color-discusion-light: #cffafe;
   --color-info-light: #e0e7ff;
+  --color-actividad-light: #ffe4e6;
 
   /* Neutral palette */
   --bg-page: #f8fafc;

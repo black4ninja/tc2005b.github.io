@@ -24,11 +24,17 @@
 }
 .menuItem {
   display: block;
+  width: 100%;
   padding: 8px 12px;
+  border: none;
   border-radius: 6px;
+  background: none;
   color: var(--text-primary);
   text-decoration: none;
+  font-family: inherit;
   font-size: 14px;
+  text-align: left;
+  cursor: pointer;
   transition: background 0.2s;
 }
 .menuItem:hover {

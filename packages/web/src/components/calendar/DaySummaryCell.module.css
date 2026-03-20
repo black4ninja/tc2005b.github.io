@@ -1,0 +1,22 @@
+.summaryCell {
+  background: var(--bg-page, #f8fafc);
+  padding: 6px 12px;
+  border-top: 1px dashed var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.6875rem;
+  color: var(--text-secondary);
+  min-height: 28px;
+}
+
+.summaryCell .icon {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.emptySummary {
+  background: var(--bg-page, #f8fafc);
+  min-height: 28px;
+  border-top: 1px dashed var(--border-color);
+}

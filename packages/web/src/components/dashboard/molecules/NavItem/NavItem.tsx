@@ -16,6 +16,7 @@ export default function NavItem({ icon, label, path, badge, collapsed, onClick }
   return (
     <NavLink
       to={path}
+      end
       className={({ isActive }) =>
         `${styles.navItem} ${isActive ? styles.active : ''} ${collapsed ? styles.collapsed : ''}`
       }

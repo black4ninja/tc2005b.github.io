@@ -2,24 +2,32 @@ import type { SidebarItem, DashboardRole } from '../../../../types/dashboard';
 
 const adminItems: SidebarItem[] = [
   { label: 'Dashboard', icon: 'dashboard', path: '/admin' },
-  { label: 'Alumnos', icon: 'people', path: '/admin/alumnos' },
-  { label: 'Laboratorios', icon: 'science', path: '/admin/laboratorios' },
-  { label: 'Avances', icon: 'trending_up', path: '/admin/avances' },
-  { label: 'Calificaciones', icon: 'grading', path: '/admin/calificaciones' },
-  { label: 'Estadísticas', icon: 'bar_chart', path: '/admin/estadisticas' },
-  { label: 'Asistencia', icon: 'fact_check', path: '/admin/asistencia' },
+  { label: 'Grupos', icon: 'groups', path: '/admin/grupos' },
+  { label: 'Calendario', icon: 'calendar_month', path: '/admin/calendario' },
+  { label: 'Competencias', icon: 'emoji_events', path: '/admin/competencias' },
+  { label: 'Actividades', icon: 'assignment', path: '/admin/actividades' },
 ];
 
-const alumnoItems: SidebarItem[] = [
+const alumnoBaseItems: SidebarItem[] = [
   { label: 'Dashboard', icon: 'dashboard', path: '/alumno' },
-  { label: 'Mis Labs', icon: 'science', path: '/alumno/labs' },
-  { label: 'Mis Avances', icon: 'trending_up', path: '/alumno/avances' },
-  { label: 'Calificaciones', icon: 'grading', path: '/alumno/calificaciones' },
-  { label: 'Calendario', icon: 'calendar_today', path: '/alumno/calendario' },
-  { label: 'Materiales', icon: 'folder', path: '/alumno/materiales' },
-  { label: 'Políticas', icon: 'policy', path: '/alumno/politicas' },
 ];
 
-export function getSidebarItems(role: DashboardRole): SidebarItem[] {
-  return role === 'admin' ? adminItems : alumnoItems;
+export function getSidebarItems(role: DashboardRole, grupoId?: string): SidebarItem[] {
+  if (role === 'admin') return adminItems;
+  if (grupoId) {
+    return [
+      ...alumnoBaseItems,
+      { label: 'Malla de Evaluación', icon: 'grid_view', path: `/alumno/grupos/${grupoId}/malla` },
+    ];
+  }
+  return alumnoBaseItems;
+}
+
+export function getGrupoDetailItems(grupoId: string): SidebarItem[] {
+  return [
+    { label: 'Alumnos', icon: 'people', path: `/admin/grupos/${grupoId}` },
+    { label: 'Actividades Evaluación', icon: 'assignment', path: `/admin/grupos/${grupoId}/actividades-evaluacion` },
+    { label: 'Plan de Evaluación', icon: 'checklist', path: `/admin/grupos/${grupoId}/plan-evaluacion` },
+    { label: 'Equipos', icon: 'group_work', path: `/admin/grupos/${grupoId}/equipos` },
+  ];
 }

@@ -20,8 +20,8 @@ export default function Navbar() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <span className="material-icons">calendar_month</span>
-          Agendar Entrevistas
+          <span className="material-icons">event_available</span>
+          <span>Agendar Entrevistas</span>
         </a>
       </div>
     </nav>

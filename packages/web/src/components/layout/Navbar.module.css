@@ -43,16 +43,17 @@
   gap: 6px;
   padding: 8px 16px;
   border-radius: 8px;
-  background: #22c55e;
-  color: #fff;
+  background: rgba(59,130,246,0.25);
+  border: 1px solid rgba(96,165,250,0.4);
+  color: #93c5fd;
   font-size: 0.8125rem;
   font-weight: 600;
   text-decoration: none;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s;
 }
 
 .agendaBtn:hover {
-  background: #16a34a;
+  background: rgba(59,130,246,0.4);
   color: #fff;
   text-decoration: none;
 }
@@ -77,5 +78,13 @@
 
   .navLinks {
     gap: var(--space-sm);
+  }
+
+  .agendaBtn span:not(.material-icons) {
+    display: none;
+  }
+
+  .agendaBtn {
+    padding: 6px 8px;
   }
 }

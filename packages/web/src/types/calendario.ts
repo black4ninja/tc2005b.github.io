@@ -1,7 +1,7 @@
 export type ActividadTipo =
   | 'lab' | 'lectura' | 'ejercicio' | 'proyecto'
   | 'evaluacion' | 'break' | 'asueto' | 'trabajo'
-  | 'discusion' | 'info';
+  | 'discusion' | 'info' | 'actividad';
 
 export interface EnlaceExtra {
   texto: string;
@@ -9,6 +9,7 @@ export interface EnlaceExtra {
 }
 
 export interface Actividad {
+  id?: string;
   tipo: ActividadTipo;
   titulo?: string;
   descripcion?: string;
@@ -26,6 +27,7 @@ export interface Dia {
 }
 
 export interface SemanaNormal {
+  id?: string;
   numero: number;
   fechaInicio: string;
   fechaFin: string;
@@ -39,6 +41,7 @@ export interface SemanaNormal {
 }
 
 export interface SemanaEspecial {
+  id?: string;
   numero: number | string;
   fechaInicio: string;
   fechaFin: string;
@@ -60,6 +63,7 @@ export interface CalendarioEnlaces {
 }
 
 export interface Calendario {
+  grupoId?: string;
   curso: string;
   nombreCurso: string;
   grupo: string;

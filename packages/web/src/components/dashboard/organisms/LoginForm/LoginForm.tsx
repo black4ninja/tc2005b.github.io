@@ -1,21 +1,68 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import styles from './LoginForm.module.css';
 import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Icon from '../../atoms/Icon/Icon';
+import { useAuth } from '../../../../context/AuthContext';
+
+type FormState = 'idle' | 'sending' | 'error';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [state, setState] = useState<FormState>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const { login, isAuthenticated, isLoading, user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user) {
+      navigate(user.userType === 'admin' ? '/admin' : '/alumno', { replace: true });
+    }
+  }, [isLoading, isAuthenticated, user, navigate]);
+
+  async function handleLogin() {
+    if (!email.trim() || !password) return;
+
+    setState('sending');
+    setErrorMsg('');
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setState('error');
+        setErrorMsg(data.message || 'Credenciales inválidas');
+        return;
+      }
+
+      login(data.sessionToken, data.user);
+
+      const userType = data.user.userType;
+      navigate(userType === 'admin' ? '/admin' : '/alumno', { replace: true });
+    } catch {
+      setState('error');
+      setErrorMsg('Error de conexión. Intenta de nuevo.');
+    }
+  }
 
   return (
     <div className={styles.form}>
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>
-          <Icon name="mail" size="sm" />
-          Magic Link
+          <Icon name="login" size="sm" />
+          Iniciar sesión
         </h3>
         <p className={styles.sectionDesc}>
-          Ingresa tu correo institucional y te enviaremos un enlace de acceso.
+          Ingresa tu correo institucional y contraseña para acceder.
         </p>
         <TextInput
           label="Correo electrónico"
@@ -24,30 +71,26 @@ export default function LoginForm() {
           icon="email"
           value={email}
           onChange={setEmail}
+          disabled={state === 'sending'}
         />
-        <DashButton variant="primary" className={styles.fullWidth}>
-          <Icon name="send" size="sm" />
-          Enviar enlace de acceso
-        </DashButton>
-      </div>
-
-      <div className={styles.divider}>
-        <span className={styles.dividerLine} />
-        <span className={styles.dividerText}>o</span>
-        <span className={styles.dividerLine} />
-      </div>
-
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>
-          <Icon name="business" size="sm" />
-          Microsoft
-        </h3>
-        <p className={styles.sectionDesc}>
-          Usa tu cuenta institucional de Microsoft para iniciar sesión.
-        </p>
-        <DashButton variant="outline" className={styles.fullWidth}>
+        <TextInput
+          label="Contraseña"
+          type="password"
+          placeholder="••••••••"
+          icon="lock"
+          value={password}
+          onChange={setPassword}
+          disabled={state === 'sending'}
+        />
+        {errorMsg && <p className={styles.errorText}>{errorMsg}</p>}
+        <DashButton
+          variant="primary"
+          className={styles.fullWidth}
+          onClick={handleLogin}
+          disabled={state === 'sending'}
+        >
           <Icon name="login" size="sm" />
-          Iniciar sesión con Microsoft
+          {state === 'sending' ? 'Iniciando sesión...' : 'Iniciar sesión'}
         </DashButton>
       </div>
     </div>
