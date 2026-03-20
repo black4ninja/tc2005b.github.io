@@ -9,7 +9,6 @@ interface UserSeedData {
   email: string;
   name: string;
   userType: 'admin' | 'alumno';
-  grupo?: string;
 }
 
 const SEED_USERS: UserSeedData[] = [
@@ -52,7 +51,6 @@ export async function runUserSeed(dryRun: boolean): Promise<void> {
       if (!dryRun) {
         existing.setName(data.name);
         existing.setUserType(data.userType);
-        if (data.grupo !== undefined) existing.setGrupo(data.grupo);
         existing.setPasswordHash(passwordHash);
         await existing.save(null, { useMasterKey: true });
       }
@@ -64,7 +62,6 @@ export async function runUserSeed(dryRun: boolean): Promise<void> {
         user.setEmail(data.email);
         user.setName(data.name);
         user.setUserType(data.userType);
-        if (data.grupo) user.setGrupo(data.grupo);
         user.set('attributes', {});
         user.setPasswordHash(passwordHash);
         await user.save(null, { useMasterKey: true });

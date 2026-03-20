@@ -1,5 +1,6 @@
 import { Policy, type PolicyConditions } from '../models/index.js';
 import { BaseModel } from '../models/BaseModel.js';
+import { getGruposDeAlumno } from './grupo-alumno.service.js';
 
 export interface AccessResult {
   allowed: boolean;
@@ -28,13 +29,18 @@ class AbacService {
 
     let allowResult: AccessResult | null = null;
 
+    // Obtener grupos del usuario una vez antes del loop
+    let grupoIds: string[] = [];
+    if (user.get('userType') === 'alumno' && (user as any).id) {
+      const grupos = await getGruposDeAlumno((user as any).id);
+      grupoIds = grupos.map(g => g.id);
+    }
+
     for (const policy of policies) {
       const conditions = policy.getConditions();
-      const grupoRaw = user.get('grupo') as any;
-      const grupoId = grupoRaw?.id ?? grupoRaw ?? '';
       const userAttrs: Record<string, unknown> = {
         userType: user.get('userType'),
-        grupo: grupoId,
+        grupo: grupoIds,
         ...(user.get('attributes') as Record<string, unknown> ?? {}),
       };
 
@@ -92,7 +98,14 @@ class AbacService {
     if (conditions.userAttributes) {
       for (const [key, expected] of Object.entries(conditions.userAttributes)) {
         const actual = userAttrs[key];
-        if (Array.isArray(expected)) {
+        if (Array.isArray(actual)) {
+          // actual is array (e.g. user grupos), expected is what the policy requires
+          if (Array.isArray(expected)) {
+            if (!expected.some(e => (actual as string[]).includes(e as string))) return false;
+          } else {
+            if (!(actual as string[]).includes(expected as string)) return false;
+          }
+        } else if (Array.isArray(expected)) {
           if (!expected.includes(actual as string)) return false;
         } else {
           if (actual !== expected) return false;

@@ -5,6 +5,7 @@ export interface SidebarItem {
   icon: string;
   path: string;
   badge?: number;
+  disabled?: boolean;
 }
 
 export interface StatCardData {

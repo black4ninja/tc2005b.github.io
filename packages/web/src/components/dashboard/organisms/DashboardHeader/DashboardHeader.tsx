@@ -1,6 +1,5 @@
 import Icon from '../../atoms/Icon/Icon';
 import ProfileMenu from '../../molecules/ProfileMenu/ProfileMenu';
-import NotificationBell from '../../molecules/NotificationBell/NotificationBell';
 import { useAuth } from '../../../../context/AuthContext';
 import styles from './DashboardHeader.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
@@ -27,7 +26,6 @@ export default function DashboardHeader({ role, collapsed, onToggleSidebar }: Da
         </button>
       </div>
       <div className={styles.right}>
-        <NotificationBell count={role === 'admin' ? 5 : 2} />
         <ProfileMenu name={profileName} role={profileRole} />
       </div>
     </header>

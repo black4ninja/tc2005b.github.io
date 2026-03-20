@@ -5,22 +5,29 @@ import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
+import {
+  getAlumnosDeGrupo,
+  findGrupoAlumnoLink,
+  createGrupoAlumnoLink,
+} from '../services/grupo-alumno.service.js';
 
 export async function listAlumnos(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
 
   try {
-    const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
-    const query = new Parse.Query<AppUser>('AppUser');
-    query.equalTo('exists' as any, true as any);
-    query.equalTo('userType' as any, 'alumno' as any);
-    query.equalTo('grupo' as any, grupoPointer as any);
-    query.descending('createdAt');
-    const alumnos = await query.find({ useMasterKey: true });
+    const alumnos = await getAlumnosDeGrupo(grupoId);
 
     res.json({
       status: 'ok',
-      alumnos: alumnos.map((a) => a.toSafeJSON()),
+      alumnos: alumnos.map((item) => ({
+        ...item.alumno.toSafeJSON(),
+        repositorioIndividual: item.repositorioIndividual,
+        experiencia: item.experiencia,
+        expectativas: item.expectativas,
+        compromiso: item.compromiso,
+        situacionesEspeciales: item.situacionesEspeciales,
+        perfilCompleto: item.perfilCompleto,
+      })),
     });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'Error al obtener alumnos' });
@@ -37,28 +44,52 @@ export async function createAlumno(req: Request, res: Response): Promise<void> {
   }
 
   try {
+    const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Buscar usuario existente por email
     const existQuery = BaseModel.queryActive<AppUser>('AppUser');
-    existQuery.equalTo('email', email.toLowerCase().trim());
+    existQuery.equalTo('email', normalizedEmail);
     const existing = await existQuery.first({ useMasterKey: true });
+
     if (existing) {
-      res.status(409).json({ status: 'error', message: 'Ya existe un usuario con ese correo' });
+      // Verificar si ya tiene link con este grupo
+      const existingLink = await findGrupoAlumnoLink(existing.id, grupoId);
+      if (existingLink && existingLink.get('exists') && existingLink.get('active')) {
+        res.status(409).json({ status: 'error', message: 'El alumno ya pertenece a este grupo' });
+        return;
+      }
+
+      // Reactivar link soft-deleted o crear nuevo
+      if (existingLink) {
+        existingLink.set('active', true);
+        existingLink.set('exists', true);
+        await existingLink.save(null, { useMasterKey: true });
+      } else {
+        await createGrupoAlumnoLink(existing, grupoPointer);
+      }
+
+      res.status(201).json({
+        status: 'ok',
+        alumno: existing.toSafeJSON(),
+      });
       return;
     }
 
+    // Usuario nuevo
     const generatedPassword = crypto.randomBytes(6).toString('base64url').slice(0, 8);
     const hash = await bcrypt.hash(generatedPassword, 10);
 
-    const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
     const alumno = new AppUser().initDefaults();
     alumno.setName(name.trim());
-    alumno.setEmail(email.toLowerCase().trim());
+    alumno.setEmail(normalizedEmail);
     alumno.setMatricula(matricula.trim());
     alumno.setUserType('alumno');
-    alumno.setGrupo(grupoPointer);
     alumno.setPasswordHash(hash);
     alumno.setAttributes({});
 
     await alumno.save(null, { useMasterKey: true });
+    await createGrupoAlumnoLink(alumno, grupoPointer);
 
     res.status(201).json({
       status: 'ok',
@@ -95,19 +126,25 @@ export async function updateAlumno(req: Request, res: Response): Promise<void> {
 }
 
 export async function archiveAlumno(req: Request, res: Response): Promise<void> {
-  const { alumnoId } = req.params;
+  const { alumnoId, grupoId } = req.params;
 
   try {
-    const query = new Parse.Query<AppUser>('AppUser');
-    query.equalTo('exists' as any, true as any);
-    const alumno = await query.get(alumnoId, { useMasterKey: true });
-
-    if (alumno.get('active')) {
-      alumno.deactivate();
-    } else {
-      alumno.activate();
+    const link = await findGrupoAlumnoLink(alumnoId, grupoId);
+    if (!link || !link.get('exists')) {
+      res.status(404).json({ status: 'error', message: 'Alumno no encontrado en este grupo' });
+      return;
     }
-    await alumno.save(null, { useMasterKey: true });
+
+    if (link.get('active')) {
+      link.deactivate();
+    } else {
+      link.activate();
+    }
+    await link.save(null, { useMasterKey: true });
+
+    // Fetch alumno for response
+    const alumnoQuery = new Parse.Query<AppUser>('AppUser');
+    const alumno = await alumnoQuery.get(alumnoId, { useMasterKey: true });
 
     res.json({ status: 'ok', alumno: alumno.toSafeJSON() });
   } catch (error: any) {
@@ -120,17 +157,19 @@ export async function archiveAlumno(req: Request, res: Response): Promise<void> 
 }
 
 export async function deleteAlumno(req: Request, res: Response): Promise<void> {
-  const { alumnoId } = req.params;
+  const { alumnoId, grupoId } = req.params;
 
   try {
-    const query = new Parse.Query<AppUser>('AppUser');
-    query.equalTo('exists' as any, true as any);
-    const alumno = await query.get(alumnoId, { useMasterKey: true });
+    const link = await findGrupoAlumnoLink(alumnoId, grupoId);
+    if (!link || !link.get('exists')) {
+      res.status(404).json({ status: 'error', message: 'Alumno no encontrado en este grupo' });
+      return;
+    }
 
-    alumno.softDelete();
-    await alumno.save(null, { useMasterKey: true });
+    link.softDelete();
+    await link.save(null, { useMasterKey: true });
 
-    res.json({ status: 'ok', message: 'Alumno eliminado' });
+    res.json({ status: 'ok', message: 'Alumno eliminado del grupo' });
   } catch (error: any) {
     if (error?.code === Parse.Error.OBJECT_NOT_FOUND) {
       res.status(404).json({ status: 'error', message: 'Alumno no encontrado' });
@@ -172,6 +211,7 @@ export async function importAlumnosCSV(req: Request, res: Response): Promise<voi
 
     const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
     const imported: number[] = [];
+    const linked: { email: string; name: string }[] = [];
     const skipped: { email: string; reason: string }[] = [];
     const credentials: { email: string; name: string; password: string }[] = [];
 
@@ -189,11 +229,29 @@ export async function importAlumnosCSV(req: Request, res: Response): Promise<voi
       const existQuery = BaseModel.queryActive<AppUser>('AppUser');
       existQuery.equalTo('email', email);
       const existing = await existQuery.first({ useMasterKey: true });
+
       if (existing) {
-        skipped.push({ email, reason: 'Ya existe un usuario con ese correo' });
+        // Verificar si ya tiene link con este grupo
+        const existingLink = await findGrupoAlumnoLink(existing.id, grupoId);
+        if (existingLink && existingLink.get('exists') && existingLink.get('active')) {
+          skipped.push({ email, reason: 'El alumno ya pertenece a este grupo' });
+          continue;
+        }
+
+        // Reactivar o crear link
+        if (existingLink) {
+          existingLink.set('active', true);
+          existingLink.set('exists', true);
+          await existingLink.save(null, { useMasterKey: true });
+        } else {
+          await createGrupoAlumnoLink(existing, grupoPointer);
+        }
+        imported.push(i);
+        linked.push({ email, name: alumnoName });
         continue;
       }
 
+      // Usuario nuevo
       const password = crypto.randomBytes(6).toString('base64url').slice(0, 8);
       const hash = await bcrypt.hash(password, 10);
 
@@ -202,11 +260,11 @@ export async function importAlumnosCSV(req: Request, res: Response): Promise<voi
       alumno.setEmail(email);
       alumno.setMatricula(matricula || '');
       alumno.setUserType('alumno');
-      alumno.setGrupo(grupoPointer);
       alumno.setPasswordHash(hash);
       alumno.setAttributes({});
 
       await alumno.save(null, { useMasterKey: true });
+      await createGrupoAlumnoLink(alumno, grupoPointer);
       imported.push(i);
       credentials.push({ email, name: alumnoName, password });
     }
@@ -214,6 +272,7 @@ export async function importAlumnosCSV(req: Request, res: Response): Promise<voi
     res.json({
       status: 'ok',
       imported: imported.length,
+      linked,
       skipped,
       credentials,
     });

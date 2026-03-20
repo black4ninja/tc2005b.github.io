@@ -7,8 +7,10 @@ interface AppUserData {
   name: string;
   userType: string;
   grupo: string;
+  grupos: { id: string; name: string }[];
   attributes: Record<string, unknown>;
   lastLogin?: string;
+  perfilCompleto?: boolean;
 }
 
 interface AuthContextType {
@@ -19,6 +21,7 @@ interface AuthContextType {
   login: (sessionToken: string, user: AppUserData) => void;
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
+  updateUser: (patch: Partial<AppUserData>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -54,6 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(TOKEN_KEY);
     setSessionToken(null);
     setUser(null);
+  }, []);
+
+  const updateUser = useCallback((patch: Partial<AppUserData>) => {
+    setUser((prev) => prev ? { ...prev, ...patch } : prev);
   }, []);
 
   const fetchMe = useCallback(async () => {
@@ -104,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         fetchMe,
+        updateUser,
       }}
     >
       {children}

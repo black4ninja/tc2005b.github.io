@@ -82,6 +82,67 @@
   background: var(--sidebar-bg);
 }
 
+.repoCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 220px;
+}
+
+.repoLink {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dash-primary);
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.repoLink:hover {
+  text-decoration: underline;
+}
+
+.emptyField {
+  color: var(--text-secondary);
+}
+
+.profileTooltipWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.profileTooltip {
+  display: none;
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 8px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 16px;
+  min-width: 280px;
+  max-width: 360px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.profileTooltip div {
+  margin-bottom: 6px;
+}
+
+.profileTooltip div:last-child {
+  margin-bottom: 0;
+}
+
+.profileTooltipWrap:hover .profileTooltip {
+  display: block;
+}
+
 .toast {
   position: fixed;
   bottom: 24px;
@@ -99,6 +160,29 @@
 @keyframes toastIn {
   from { opacity: 0; transform: translateX(-50%) translateY(8px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.gradeBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.gradeRed {
+  background: #fdecea;
+  color: #c62828;
+}
+
+.gradeOrange {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.gradeGreen {
+  background: #e8f5e9;
+  color: #2e7d32;
 }
 
 .error {

@@ -15,11 +15,20 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: SidebarProps) {
-  const grupoMatch = useMatch('/admin/grupos/:id/*');
+  const grupoMatchExact = useMatch('/admin/grupos/:id');
+  const grupoMatchSub = useMatch('/admin/grupos/:id/*');
+  const grupoMatch = grupoMatchExact || grupoMatchSub;
   const isGrupoDetail = !!grupoMatch;
   const grupoId = grupoMatch?.params.id;
   const { sessionToken, user } = useAuth();
   const [grupoName, setGrupoName] = useState('');
+  const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
+
+  useEffect(() => {
+    if (role === 'alumno' && user?.grupos?.length) {
+      setSelectedGrupoId(user.grupos[0].id);
+    }
+  }, [role, user?.grupos]);
 
   useEffect(() => {
     if (!grupoId || !sessionToken) return;
@@ -37,7 +46,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
 
   const items = isGrupoDetail
     ? getGrupoDetailItems(grupoId!)
-    : getSidebarItems(role, role === 'alumno' ? user?.grupo : undefined);
+    : getSidebarItems(role, role === 'alumno' ? selectedGrupoId : undefined, user?.perfilCompleto);
 
   return (
     <>
@@ -65,6 +74,20 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             </Link>
           </div>
         )}
+        {role === 'alumno' && user?.grupos && user.grupos.length > 1 && !collapsed && (
+          <div className={styles.grupoSelector}>
+            <label className={styles.grupoSelectorLabel}>Grupo</label>
+            <select
+              className={styles.grupoSelect}
+              value={selectedGrupoId}
+              onChange={(e) => setSelectedGrupoId(e.target.value)}
+            >
+              {user.grupos.map((g) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <nav className={styles.nav}>
           {items.map(item => (
             <NavItem
@@ -73,6 +96,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
               label={item.label}
               path={item.path}
               badge={item.badge}
+              disabled={item.disabled}
               collapsed={collapsed}
               onClick={onCloseMobile}
             />

@@ -4,6 +4,7 @@ import { CompetenciaAlumno } from '../models/CompetenciaAlumno.js';
 import { Competencia } from '../models/Competencia.js';
 import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
+import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
 
 export async function crearCompetenciasAlumno(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
@@ -24,14 +25,8 @@ export async function crearCompetenciasAlumno(req: Request, res: Response): Prom
       return;
     }
 
-    // Fetch alumnos activos del grupo
-    const alumnoQuery = new Parse.Query<AppUser>('AppUser');
-    alumnoQuery.equalTo('exists' as any, true as any);
-    alumnoQuery.equalTo('active' as any, true as any);
-    alumnoQuery.equalTo('userType' as any, 'alumno' as any);
-    alumnoQuery.equalTo('grupo' as any, grupoPointer as any);
-    alumnoQuery.limit(1000);
-    const alumnos = await alumnoQuery.find({ useMasterKey: true });
+    // Fetch alumnos activos del grupo vía GrupoAlumno
+    const alumnos = await getAlumnosDeGrupo(grupoId);
 
     if (alumnos.length === 0) {
       res.status(404).json({ status: 'error', message: 'No hay alumnos activos en el grupo' });
@@ -42,7 +37,8 @@ export async function crearCompetenciasAlumno(req: Request, res: Response): Prom
     let skipped = 0;
     const toSave: CompetenciaAlumno[] = [];
 
-    for (const alumno of alumnos) {
+    for (const item of alumnos) {
+      const alumno = item.alumno;
       const countQuery = new Parse.Query<CompetenciaAlumno>('CompetenciaAlumno');
       countQuery.equalTo('exists' as any, true as any);
       countQuery.equalTo('alumno' as any, alumno as any);
@@ -84,18 +80,14 @@ export async function getCompetenciasStatus(req: Request, res: Response): Promis
   try {
     const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
 
-    const alumnoQuery = new Parse.Query<AppUser>('AppUser');
-    alumnoQuery.equalTo('exists' as any, true as any);
-    alumnoQuery.equalTo('active' as any, true as any);
-    alumnoQuery.equalTo('userType' as any, 'alumno' as any);
-    alumnoQuery.equalTo('grupo' as any, grupoPointer as any);
-    alumnoQuery.limit(1000);
-    const alumnos = await alumnoQuery.find({ useMasterKey: true });
+    // Fetch alumnos activos del grupo vía GrupoAlumno
+    const alumnos = await getAlumnosDeGrupo(grupoId);
 
     let alumnosConCompetencias = 0;
     let alumnosSinCompetencias = 0;
 
-    for (const alumno of alumnos) {
+    for (const item of alumnos) {
+      const alumno = item.alumno;
       const countQuery = new Parse.Query<CompetenciaAlumno>('CompetenciaAlumno');
       countQuery.equalTo('exists' as any, true as any);
       countQuery.equalTo('alumno' as any, alumno as any);
@@ -165,8 +157,8 @@ export async function updateCompetenciaAlumno(req: Request, res: Response): Prom
 
     const { valorPeriodo1, valorPeriodo2, retroPeriodo1, retroPeriodo2 } = req.body;
 
-    if (typeof valorPeriodo1 === 'string') registro.setValorPeriodo1(valorPeriodo1);
-    if (typeof valorPeriodo2 === 'string') registro.setValorPeriodo2(valorPeriodo2);
+    if (valorPeriodo1 !== undefined) registro.set('valorPeriodo1', Number(valorPeriodo1) || 0);
+    if (valorPeriodo2 !== undefined) registro.set('valorPeriodo2', Number(valorPeriodo2) || 0);
     if (typeof retroPeriodo1 === 'string') registro.setRetroPeriodo1(retroPeriodo1);
     if (typeof retroPeriodo2 === 'string') registro.setRetroPeriodo2(retroPeriodo2);
 

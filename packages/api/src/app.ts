@@ -18,6 +18,9 @@ import competenciasAlumnoRoutes from './routes/competencias-alumno.routes.js';
 import equiposRoutes from './routes/equipos.routes.js';
 import avancesEquipoRoutes from './routes/avances-equipo.routes.js';
 import calificacionesRoutes from './routes/calificaciones.routes.js';
+import alumnoMallaRoutes from './routes/alumno-malla.routes.js';
+import entrevistaRoutes from './routes/entrevista.routes.js';
+import evaluacionesEntrevistaRoutes from './routes/evaluaciones-entrevista.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 
 const app = express();
@@ -43,6 +46,9 @@ app.use('/api', planEvaluacionRoutes);
 app.use('/api', equiposRoutes);
 app.use('/api', avancesEquipoRoutes);
 app.use('/api', calificacionesRoutes);
+app.use('/api', alumnoMallaRoutes);
+app.use('/api', entrevistaRoutes);
+app.use('/api', evaluacionesEntrevistaRoutes);
 
 export function finalize() {
   app.use(errorHandler);

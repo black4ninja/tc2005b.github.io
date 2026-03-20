@@ -19,6 +19,8 @@ import PlanEvaluacionPage from './components/dashboard/pages/PlanEvaluacionPage/
 import MallaEvaluacionPage from './components/dashboard/pages/MallaEvaluacionPage/MallaEvaluacionPage';
 import EquiposPage from './components/dashboard/pages/EquiposPage/EquiposPage';
 import AvancesEquipoPage from './components/dashboard/pages/AvancesEquipoPage/AvancesEquipoPage';
+import EntrevistasPage from './components/dashboard/pages/EntrevistasPage/EntrevistasPage';
+import EvaluacionEntrevistaPage from './components/dashboard/pages/EvaluacionEntrevistaPage/EvaluacionEntrevistaPage';
 
 export default function App() {
   return (
@@ -47,6 +49,8 @@ export default function App() {
         <Route path="admin/grupos/:id/plan-evaluacion" element={<PlanEvaluacionPage />} />
         <Route path="admin/grupos/:id/equipos" element={<EquiposPage />} />
         <Route path="admin/grupos/:id/equipos/:equipoId/avances" element={<AvancesEquipoPage />} />
+        <Route path="admin/grupos/:id/entrevistas" element={<EntrevistasPage />} />
+        <Route path="admin/grupos/:id/entrevistas/:entrevistaId/evaluacion" element={<EvaluacionEntrevistaPage />} />
         <Route path="admin/calendario" element={<AdminCalendarioPage />} />
         <Route path="admin/competencias" element={<CompetenciasPage />} />
         <Route path="admin/actividades" element={<ActividadesPage />} />

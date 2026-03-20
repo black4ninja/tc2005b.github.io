@@ -1,6 +1,5 @@
 import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
-import { Grupo } from './Grupo.js';
 
 export class AppUser extends BaseModel {
   constructor(attributes?: Parse.Attributes) {
@@ -29,19 +28,6 @@ export class AppUser extends BaseModel {
 
   setUserType(userType: 'alumno' | 'admin'): void {
     this.set('userType', userType);
-  }
-
-  getGrupo(): Grupo | undefined {
-    return this.get('grupo');
-  }
-
-  setGrupo(grupo: Grupo): void {
-    this.set('grupo', grupo);
-  }
-
-  getGrupoId(): string {
-    const g = this.get('grupo');
-    return g?.id ?? '';
   }
 
   getMatricula(): string {
@@ -84,13 +70,15 @@ export class AppUser extends BaseModel {
     return this.getUserType() === 'alumno';
   }
 
-  toSafeJSON(): Record<string, unknown> {
+  toSafeJSON(extras?: { grupos?: { id: string; name: string }[] }): Record<string, unknown> {
+    const grupos = extras?.grupos ?? [];
     return {
       id: this.id,
       email: this.getEmail(),
       name: this.getName(),
       userType: this.getUserType(),
-      grupo: this.getGrupoId(),
+      grupo: grupos[0]?.id ?? '',
+      grupos,
       matricula: this.getMatricula(),
       attributes: this.getAttributes(),
       lastLogin: this.getLastLogin(),

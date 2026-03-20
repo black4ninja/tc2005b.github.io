@@ -4,6 +4,7 @@ import { ActividadEvaluacionGrupo } from '../models/ActividadEvaluacionGrupo.js'
 import { ActividadEvaluacionAlumno } from '../models/ActividadEvaluacionAlumno.js';
 import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
+import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
 
 export async function crearMallasEvaluacion(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
@@ -24,14 +25,8 @@ export async function crearMallasEvaluacion(req: Request, res: Response): Promis
       return;
     }
 
-    // Fetch alumnos activos del grupo
-    const alumnoQuery = new Parse.Query<AppUser>('AppUser');
-    alumnoQuery.equalTo('exists' as any, true as any);
-    alumnoQuery.equalTo('active' as any, true as any);
-    alumnoQuery.equalTo('userType' as any, 'alumno' as any);
-    alumnoQuery.equalTo('grupo' as any, grupoPointer as any);
-    alumnoQuery.limit(1000);
-    const alumnos = await alumnoQuery.find({ useMasterKey: true });
+    // Fetch alumnos activos del grupo vía GrupoAlumno
+    const alumnos = await getAlumnosDeGrupo(grupoId);
 
     if (alumnos.length === 0) {
       res.status(404).json({ status: 'error', message: 'No hay alumnos activos en el grupo' });
@@ -43,7 +38,8 @@ export async function crearMallasEvaluacion(req: Request, res: Response): Promis
     let skipped = 0;
     const toSave: ActividadEvaluacionAlumno[] = [];
 
-    for (const alumno of alumnos) {
+    for (const item of alumnos) {
+      const alumno = item.alumno;
       const countQuery = new Parse.Query<ActividadEvaluacionAlumno>('ActividadEvaluacionAlumno');
       countQuery.equalTo('exists' as any, true as any);
       countQuery.equalTo('alumno' as any, alumno as any);
@@ -82,19 +78,14 @@ export async function getMallasStatus(req: Request, res: Response): Promise<void
   try {
     const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
 
-    // Fetch alumnos activos del grupo
-    const alumnoQuery = new Parse.Query<AppUser>('AppUser');
-    alumnoQuery.equalTo('exists' as any, true as any);
-    alumnoQuery.equalTo('active' as any, true as any);
-    alumnoQuery.equalTo('userType' as any, 'alumno' as any);
-    alumnoQuery.equalTo('grupo' as any, grupoPointer as any);
-    alumnoQuery.limit(1000);
-    const alumnos = await alumnoQuery.find({ useMasterKey: true });
+    // Fetch alumnos activos del grupo vía GrupoAlumno
+    const alumnos = await getAlumnosDeGrupo(grupoId);
 
     let alumnosConMalla = 0;
     let alumnosSinMalla = 0;
 
-    for (const alumno of alumnos) {
+    for (const item of alumnos) {
+      const alumno = item.alumno;
       const countQuery = new Parse.Query<ActividadEvaluacionAlumno>('ActividadEvaluacionAlumno');
       countQuery.equalTo('exists' as any, true as any);
       countQuery.equalTo('alumno' as any, alumno as any);

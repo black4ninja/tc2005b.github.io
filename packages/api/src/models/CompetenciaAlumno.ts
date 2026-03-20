@@ -57,6 +57,13 @@ export class CompetenciaAlumno extends BaseModel {
     this.set('retroPeriodo2', val);
   }
 
+  getEvidencias(): string[] {
+    return this.get('evidencias') ?? [];
+  }
+  setEvidencias(evidencias: string[]): void {
+    this.set('evidencias', evidencias);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     const comp = this.getCompetencia();
     return {
@@ -78,6 +85,7 @@ export class CompetenciaAlumno extends BaseModel {
       valorPeriodo2: this.getValorPeriodo2(),
       retroPeriodo1: this.getRetroPeriodo1(),
       retroPeriodo2: this.getRetroPeriodo2(),
+      evidencias: this.getEvidencias(),
       grupoId: this.getGrupo()?.id,
       alumnoId: this.getAlumno()?.id,
       competenciaId: comp?.id,

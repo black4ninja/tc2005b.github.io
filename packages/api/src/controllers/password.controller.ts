@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { authService } from '../services/auth.service.js';
+import { getGruposDeAlumno } from '../services/grupo-alumno.service.js';
 
 export async function loginWithPassword(req: Request, res: Response): Promise<void> {
   try {
@@ -15,10 +16,16 @@ export async function loginWithPassword(req: Request, res: Response): Promise<vo
       ipAddress: req.ip ?? 'unknown',
     });
 
+    let extras: { grupos: { id: string; name: string }[] } = { grupos: [] };
+    if (user.isAlumno()) {
+      const grupos = await getGruposDeAlumno(user.id);
+      extras = { grupos: grupos.map((g) => ({ id: g.id, name: g.get('name') ?? '' })) };
+    }
+
     res.json({
       status: 'ok',
       sessionToken: session.getToken(),
-      user: user.toSafeJSON(),
+      user: user.toSafeJSON(extras),
     });
   } catch {
     res.status(401).json({ status: 'error', message: 'Credenciales inválidas' });

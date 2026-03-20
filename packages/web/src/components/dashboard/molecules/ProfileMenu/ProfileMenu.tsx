@@ -32,9 +32,6 @@ export default function ProfileMenu({ name, role, avatar }: ProfileMenuProps) {
       }
     >
       <div className={styles.menuContent}>
-        <a className={styles.menuItem} href="#">Mi Perfil</a>
-        <a className={styles.menuItem} href="#">Configuración</a>
-        <hr className={styles.divider} />
         <button className={styles.menuItem} onClick={handleLogout}>Cerrar Sesión</button>
       </div>
     </DropdownMenu>

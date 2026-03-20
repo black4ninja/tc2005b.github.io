@@ -15,3 +15,6 @@ export { PlanEvaluacion } from './PlanEvaluacion.js';
 export type { PeriodoConfig } from './PlanEvaluacion.js';
 export { ActividadEvaluacionAlumno } from './ActividadEvaluacionAlumno.js';
 export { Equipo } from './Equipo.js';
+export { GrupoAlumno } from './GrupoAlumno.js';
+export { Entrevista } from './Entrevista.js';
+export { EvaluacionEntrevista } from './EvaluacionEntrevista.js';

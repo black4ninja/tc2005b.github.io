@@ -12,15 +12,18 @@ const alumnoBaseItems: SidebarItem[] = [
   { label: 'Dashboard', icon: 'dashboard', path: '/alumno' },
 ];
 
-export function getSidebarItems(role: DashboardRole, grupoId?: string): SidebarItem[] {
+export function getSidebarItems(role: DashboardRole, selectedGrupoId?: string, perfilCompleto?: boolean): SidebarItem[] {
   if (role === 'admin') return adminItems;
-  if (grupoId) {
-    return [
-      ...alumnoBaseItems,
-      { label: 'Malla de Evaluación', icon: 'grid_view', path: `/alumno/grupos/${grupoId}/malla` },
-    ];
+  const items = [...alumnoBaseItems];
+  if (selectedGrupoId) {
+    items.push({
+      label: 'Malla',
+      icon: 'grid_view',
+      path: `/alumno/grupos/${selectedGrupoId}/malla`,
+      disabled: !perfilCompleto,
+    });
   }
-  return alumnoBaseItems;
+  return items;
 }
 
 export function getGrupoDetailItems(grupoId: string): SidebarItem[] {
@@ -29,5 +32,6 @@ export function getGrupoDetailItems(grupoId: string): SidebarItem[] {
     { label: 'Actividades Evaluación', icon: 'assignment', path: `/admin/grupos/${grupoId}/actividades-evaluacion` },
     { label: 'Plan de Evaluación', icon: 'checklist', path: `/admin/grupos/${grupoId}/plan-evaluacion` },
     { label: 'Equipos', icon: 'group_work', path: `/admin/grupos/${grupoId}/equipos` },
+    { label: 'Entrevistas', icon: 'record_voice_over', path: `/admin/grupos/${grupoId}/entrevistas` },
   ];
 }

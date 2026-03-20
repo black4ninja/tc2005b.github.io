@@ -5,6 +5,7 @@ import { ActividadEvaluacionAlumno } from '../models/ActividadEvaluacionAlumno.j
 import { CompetenciaAlumno } from '../models/CompetenciaAlumno.js';
 import { Grupo } from '../models/Grupo.js';
 import { AppUser } from '../models/AppUser.js';
+import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
 
 function parseValorCompetencia(valor: string): number {
   if (!valor) return 0;
@@ -96,15 +97,12 @@ export async function getCalificacionesGrupo(req: Request, res: Response) {
       compByAlumno.get(alumnoId)!.push(rec);
     }
 
-    // 4. Fetch active alumnos
-    const alumnoQuery = new Parse.Query(AppUser);
-    alumnoQuery.equalTo('grupo', grupo);
-    alumnoQuery.equalTo('active', true);
-    alumnoQuery.limit(10000);
-    const alumnos = await alumnoQuery.find({ useMasterKey: true });
+    // 4. Fetch active alumnos vía GrupoAlumno
+    const alumnos = await getAlumnosDeGrupo(grupoId);
 
     // 5. Compute scores
-    const calificaciones = alumnos.map((alumno) => {
+    const calificaciones = alumnos.map((item) => {
+      const alumno = item.alumno;
       const alumnoId = alumno.id;
       const alumnoActs = actByAlumno.get(alumnoId) ?? [];
       const alumnoComps = compByAlumno.get(alumnoId) ?? [];

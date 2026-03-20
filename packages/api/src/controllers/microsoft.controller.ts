@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { microsoftService } from '../services/microsoft.service.js';
 import { authService } from '../services/auth.service.js';
+import { getGruposDeAlumno } from '../services/grupo-alumno.service.js';
 
 export async function loginWithMicrosoft(req: Request, res: Response) {
   try {
@@ -21,16 +22,16 @@ export async function loginWithMicrosoft(req: Request, res: Response) {
       ipAddress,
     });
 
+    let extras: { grupos: { id: string; name: string }[] } = { grupos: [] };
+    if (user.isAlumno()) {
+      const grupos = await getGruposDeAlumno(user.id);
+      extras = { grupos: grupos.map((g) => ({ id: g.id, name: g.get('name') ?? '' })) };
+    }
+
     res.json({
       status: 'success',
       sessionToken: session.getToken(),
-      user: {
-        id: user.id,
-        email: user.getEmail(),
-        name: user.getName(),
-        userType: user.getUserType(),
-        grupo: user.getGrupo(),
-      },
+      user: user.toSafeJSON(extras),
     });
   } catch (error) {
     console.error('[MicrosoftController] loginWithMicrosoft error:', error);

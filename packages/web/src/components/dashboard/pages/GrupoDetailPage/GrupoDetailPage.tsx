@@ -16,6 +16,12 @@ interface AlumnoData {
   email: string;
   matricula: string;
   active: boolean;
+  repositorioIndividual: string;
+  experiencia: string;
+  expectativas: string;
+  compromiso: string;
+  situacionesEspeciales: string;
+  perfilCompleto: boolean;
 }
 
 interface GrupoInfo {
@@ -315,6 +321,12 @@ export default function GrupoDetailPage() {
     }
   }
 
+  function gradeBadge(val: number | null | undefined) {
+    if (val == null) return '—';
+    const cls = val < 50 ? styles.gradeRed : val < 70 ? styles.gradeOrange : styles.gradeGreen;
+    return <span className={`${styles.gradeBadge} ${cls}`}>{val.toFixed(1)}%</span>;
+  }
+
   const columnHelper = createColumnHelper<AlumnoData>();
 
   const gradeColumns = periodos.map((p, i) =>
@@ -323,8 +335,7 @@ export default function GrupoDetailPage() {
       header: p.nombre,
       cell: ({ row }) => {
         const cal = calificacionesMap.get(row.original.id);
-        const val = cal?.periodos[i];
-        return val != null ? `${val.toFixed(1)}%` : '—';
+        return gradeBadge(cal?.periodos[i]);
       },
     })
   );
@@ -335,7 +346,7 @@ export default function GrupoDetailPage() {
         header: 'Calif. Final',
         cell: ({ row }) => {
           const cal = calificacionesMap.get(row.original.id);
-          return cal != null ? `${cal.final.toFixed(1)}%` : '—';
+          return gradeBadge(cal?.final ?? null);
         },
       })]
     : [];
@@ -361,7 +372,59 @@ export default function GrupoDetailPage() {
         </span>
       ),
     }),
+    columnHelper.accessor('repositorioIndividual', {
+      header: 'Repositorio',
+      cell: (info) => {
+        const url = info.getValue();
+        if (!url) return <span className={styles.emptyField}>—</span>;
+        return (
+          <span className={styles.repoCell}>
+            <a href={url} target="_blank" rel="noopener noreferrer" className={styles.repoLink} title={url}>
+              {url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 30)}
+              {url.replace(/^https?:\/\/(www\.)?/, '').length > 30 ? '…' : ''}
+            </a>
+            <button
+              className={styles.copyIcon}
+              title="Copiar URL"
+              onClick={() => {
+                navigator.clipboard.writeText(url);
+                setToast('URL copiada');
+                setTimeout(() => setToast(''), 2000);
+              }}
+            >
+              <span className="material-icons" style={{ fontSize: 16 }}>content_copy</span>
+            </button>
+          </span>
+        );
+      },
+    }),
     columnHelper.accessor('matricula', { header: 'Matrícula' }),
+    columnHelper.display({
+      id: 'perfil',
+      header: 'Perfil',
+      cell: ({ row }) => {
+        const a = row.original;
+        const hasProfile = a.experiencia || a.expectativas || a.compromiso || a.situacionesEspeciales;
+        return (
+          <div className={styles.profileTooltipWrap}>
+            <span
+              className="material-icons"
+              style={{ fontSize: 20, color: hasProfile ? 'var(--dash-primary)' : 'var(--text-secondary)', cursor: 'default' }}
+            >
+              {hasProfile ? 'info' : 'info_outline'}
+            </span>
+            {hasProfile && (
+              <div className={styles.profileTooltip}>
+                {a.experiencia && <div><strong>Experiencia:</strong> {a.experiencia}</div>}
+                {a.expectativas && <div><strong>Expectativas:</strong> {a.expectativas}</div>}
+                {a.compromiso && <div><strong>Compromiso:</strong> {a.compromiso}</div>}
+                {a.situacionesEspeciales && <div><strong>Situaciones Especiales:</strong> {a.situacionesEspeciales}</div>}
+              </div>
+            )}
+          </div>
+        );
+      },
+    }),
     ...gradeColumns,
     ...finalGradeColumn,
     columnHelper.accessor('active', {

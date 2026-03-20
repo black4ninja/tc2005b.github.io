@@ -1,51 +1,45 @@
-# Plan: Sesión persistente, protección de rutas, y nombre dinámico en TopBar
+# Plan: Simplificar layout EvaluacionEntrevistaPage — quitar columna competencia
 
 ## Context
 
-El login con email+contraseña ya funciona, pero hay 3 problemas:
-1. **La sesión no persiste** al refrescar — AuthContext ya tiene `fetchMe()` que se llama en mount con el token de localStorage, pero el `DashboardLayout` no espera a que termine la carga ni redirige si no hay sesión.
-2. **`/admin` y `/alumno` no están protegidos** — cualquier persona puede acceder sin login.
-3. **El TopBar muestra "Prof. García" hardcoded** en lugar del email/nombre del usuario real.
+La EvaluacionEntrevistaPage ya tiene la grilla alumnos×competencias con selects de profesor, periodo, nivel y retroalimentación. El usuario quiere simplificar el layout:
+- **Quitar** la columna izquierda del row header (periodo badge, nombre competencia, nivel, descripción, descriptores de nivel) — ocupa demasiado espacio
+- **Agregar** solo el nombre de la competencia como título dentro de cada card/celda, para saber cuál se evalúa
 
----
+## Archivos a modificar
 
-## Archivos a Modificar (3)
+| Archivo | Cambio |
+|---------|--------|
+| `EvaluacionEntrevistaPage.tsx` | Quitar `<td>` row header + `<th>Competencia</th>`, agregar nombre competencia dentro del `.cell` |
+| `EvaluacionEntrevistaPage.module.css` | Quitar estilos de row header (`compLabel`, `compNivel`, `compDescripcion`, `levelDescriptors`, `periodoBadge`, sticky first-child), agregar `.cellCompName` |
 
-### 1. `packages/web/src/components/dashboard/templates/DashboardLayout/DashboardLayout.tsx`
-Agregar protección de ruta directamente aquí (es el layout wrapper para `/admin` y `/alumno`):
-- Importar `useAuth` y `Navigate` de react-router
-- Si `isLoading` → mostrar un spinner/loading simple
-- Si `!isAuthenticated` → `<Navigate to="/login" replace />`
-- Si `user.userType !== role` → `<Navigate to="/login" replace />` (admin no puede ver /alumno y viceversa)
-- Si todo ok → render normal (Sidebar + Header + Outlet)
+## Cambios en TSX
 
-Esto protege ambas rutas sin necesidad de crear un componente ProtectedRoute separado.
+1. **Eliminar** el `<th>Competencia</th>` del `<thead>`
+2. **Eliminar** todo el primer `<td>` del `<tr>` de cada competencia (el que contiene periodoMap badge, compLabel, compNivel, compDescripcion, details/levelDescriptors)
+3. **Agregar** dentro de cada `.cell` (antes del label "Profesor") el nombre de la competencia como título:
+   ```tsx
+   <div className={styles.cellCompName}>{comp.competencia}</div>
+   ```
 
-### 2. `packages/web/src/components/dashboard/organisms/DashboardHeader/DashboardHeader.tsx`
-- Importar `useAuth`
-- Reemplazar los valores hardcoded de `profileName` y `profileRole`:
-  - `profileName` = `user?.name || user?.email || 'Usuario'`
-  - `profileRole` = `role === 'admin' ? 'Administrador' : 'Alumno'` (este ya está bien basado en role)
+## Cambios en CSS
 
-### 3. `packages/web/src/components/dashboard/pages/LoginPage/LoginPage.tsx`
-- Importar `useAuth`
-- Si ya está autenticado, redirigir a `/admin` o `/alumno` según `user.userType` (evita que un usuario logueado vea el form de login)
-
----
-
-## Orden de Implementación
-
-1. `DashboardLayout.tsx` — agregar guards de auth
-2. `DashboardHeader.tsx` — usar datos reales del usuario
-3. `LoginPage.tsx` — redirigir si ya está logueado
-
----
+1. **Quitar** las reglas de sticky en `.grid th:first-child` y `.grid td:first-child` (ya no hay columna fija)
+2. **Quitar** `.compLabel`, `.compNivel`, `.compDescripcion`, `.levelDescriptors` y sub-reglas, `.periodoBadge` — ya no se usan
+3. **Agregar** `.cellCompName`:
+   ```css
+   .cellCompName {
+     font-size: 0.8125rem;
+     font-weight: 600;
+     color: var(--color-text, #333);
+     margin-bottom: 0.5rem;
+     padding-bottom: 0.5rem;
+     border-bottom: 1px solid var(--color-border, #eee);
+   }
+   ```
 
 ## Verificación
 
-1. Sin sesión: acceder a `/admin` → redirige a `/login`
-2. Sin sesión: acceder a `/alumno` → redirige a `/login`
-3. Login con credenciales válidas → redirige a `/admin`, sesión persiste al refrescar
-4. En `/admin`, el TopBar muestra el email/nombre del usuario logueado
-5. Ya logueado: acceder a `/login` → redirige al dashboard
-6. Logout → redirige a `/login`, no puede acceder a `/admin`
+1. `cd packages/web && npx tsc --noEmit` — sin errores
+2. Cada card muestra: nombre competencia (título) → profesor → periodo → nivel → retroalimentación → guardar
+3. No hay columna izquierda redundante
