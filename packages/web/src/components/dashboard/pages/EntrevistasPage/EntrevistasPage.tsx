@@ -89,7 +89,9 @@ export default function EntrevistasPage() {
 
       if (competenciasRes.ok) {
         const competenciasData = await competenciasRes.json();
-        setCompetencias(competenciasData.competencias);
+        setCompetencias(
+          competenciasData.competencias.filter((c: any) => !c.esCalculada),
+        );
       }
     } catch (err: any) {
       setError(err.message);

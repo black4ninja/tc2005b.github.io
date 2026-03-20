@@ -3,6 +3,11 @@ import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
 import styles from './CompetenciaForm.module.css';
 
+interface DependenciaRef {
+  id: string;
+  competencia: string;
+}
+
 interface CompetenciaData {
   id?: string;
   orden?: number;
@@ -16,16 +21,25 @@ interface CompetenciaData {
   solido?: string;
   destacado?: string;
   fechaIdealEvaluacion?: string;
+  esCalculada?: boolean;
+  dependencias?: DependenciaRef[];
+}
+
+interface CompetenciaOption {
+  id: string;
+  competencia: string;
+  esCalculada?: boolean;
 }
 
 interface CompetenciaFormProps {
   competencia?: CompetenciaData;
+  allCompetencias?: CompetenciaOption[];
   onSave: (data: Omit<CompetenciaData, 'id'>) => void;
   onCancel: () => void;
   loading?: boolean;
 }
 
-export default function CompetenciaForm({ competencia, onSave, onCancel, loading }: CompetenciaFormProps) {
+export default function CompetenciaForm({ competencia, allCompetencias = [], onSave, onCancel, loading }: CompetenciaFormProps) {
   const [orden, setOrden] = useState<number | ''>(competencia?.orden ?? '');
   const [nombre, setNombre] = useState(competencia?.competencia ?? '');
   const [nivel, setNivel] = useState(competencia?.nivel ?? '');
@@ -37,7 +51,16 @@ export default function CompetenciaForm({ competencia, onSave, onCancel, loading
   const [solido, setSolido] = useState(competencia?.solido ?? '');
   const [destacado, setDestacado] = useState(competencia?.destacado ?? '');
   const [fechaIdealEvaluacion, setFechaIdealEvaluacion] = useState(competencia?.fechaIdealEvaluacion ?? '');
+  const [esCalculada, setEsCalculada] = useState(competencia?.esCalculada ?? false);
+  const [selectedDeps, setSelectedDeps] = useState<string[]>(
+    (competencia?.dependencias ?? []).map((d) => d.id),
+  );
   const [error, setError] = useState('');
+
+  // Filter: only show direct (non-calculated) competencias, exclude self
+  const availableDeps = allCompetencias.filter(
+    (c) => !c.esCalculada && c.id !== competencia?.id,
+  );
 
   function handleSubmit() {
     if (!nombre.trim()) {
@@ -46,6 +69,10 @@ export default function CompetenciaForm({ competencia, onSave, onCancel, loading
     }
     if (!nivel.trim()) {
       setError('El nivel es requerido');
+      return;
+    }
+    if (esCalculada && selectedDeps.length === 0) {
+      setError('Una competencia calculada debe tener al menos 1 dependencia');
       return;
     }
     setError('');
@@ -61,7 +88,15 @@ export default function CompetenciaForm({ competencia, onSave, onCancel, loading
       solido: solido.trim() || undefined,
       destacado: destacado.trim() || undefined,
       fechaIdealEvaluacion: fechaIdealEvaluacion.trim() || undefined,
-    });
+      esCalculada,
+      dependencias: esCalculada ? selectedDeps.map((id) => ({ id, competencia: '' })) : [],
+    } as any);
+  }
+
+  function toggleDep(id: string) {
+    setSelectedDeps((prev) =>
+      prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id],
+    );
   }
 
   return (
@@ -179,6 +214,44 @@ export default function CompetenciaForm({ competencia, onSave, onCancel, loading
         onChange={(v) => setFechaIdealEvaluacion(v)}
         disabled={loading}
       />
+
+      <div className={styles.field}>
+        <label className={styles.label} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={esCalculada}
+            onChange={(e) => {
+              setEsCalculada(e.target.checked);
+              if (!e.target.checked) setSelectedDeps([]);
+            }}
+            disabled={loading}
+          />
+          Es calculada (valor derivado del MIN de otras competencias)
+        </label>
+      </div>
+
+      {esCalculada && (
+        <div className={styles.field}>
+          <label className={styles.label}>Dependencias (competencias directas)</label>
+          {availableDeps.length === 0 ? (
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>No hay competencias directas disponibles</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px' }}>
+              {availableDeps.map((dep) => (
+                <label key={dep.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedDeps.includes(dep.id)}
+                    onChange={() => toggleDep(dep.id)}
+                    disabled={loading}
+                  />
+                  {dep.competencia}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {error && <span className={styles.error}>{error}</span>}
 

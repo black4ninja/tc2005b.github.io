@@ -6,6 +6,7 @@ import {
   getCompetenciasStatus,
   getCompetenciasAlumno,
   updateCompetenciaAlumno,
+  propagarCompetencias,
 } from '../controllers/competencias-alumno.controller.js';
 
 const router = Router();
@@ -14,6 +15,7 @@ router.use('/admin/grupos/:grupoId/competencias-alumno', identifyUser, requireAd
 
 // Fixed paths BEFORE parameterized paths
 router.get('/admin/grupos/:grupoId/competencias-alumno/status', getCompetenciasStatus);
+router.post('/admin/grupos/:grupoId/competencias-alumno/propagar', propagarCompetencias);
 router.post('/admin/grupos/:grupoId/competencias-alumno', crearCompetenciasAlumno);
 
 // Competencias del alumno

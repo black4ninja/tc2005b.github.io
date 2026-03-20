@@ -44,6 +44,11 @@ interface ActividadAlumnoData {
   orden: number;
 }
 
+interface DependenciaRef {
+  id: string;
+  competencia: string;
+}
+
 interface CompetenciaAlumnoData {
   id: string;
   competencia: string;
@@ -52,6 +57,8 @@ interface CompetenciaAlumnoData {
   orden: number;
   valorPeriodo1: string;
   valorPeriodo2: string;
+  esCalculada?: boolean;
+  dependencias?: DependenciaRef[];
   retroPeriodo1: string;
   retroPeriodo2: string;
   guiaEvidencias: string;
@@ -363,6 +370,8 @@ export default function MallaEvaluacionPage() {
         },
       );
       if (!res.ok) throw new Error('Error al guardar evaluación');
+      // Re-fetch to get recalculated computed competencias
+      await fetchCompetencias();
     } catch (err: any) {
       setError(err.message);
       await fetchCompetencias();
@@ -410,14 +419,14 @@ export default function MallaEvaluacionPage() {
       }),
     );
     try {
-      const res = await fetch(
-        `${API_BASE}/alumno/grupos/${grupoId}/malla/${actId}`,
-        {
-          method: 'PUT',
-          headers: { ...authHeaders, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ semanaCompletada: value }),
-        },
-      );
+      const url = isAlumno
+        ? `${API_BASE}/alumno/grupos/${grupoId}/malla/${actId}`
+        : `${API_BASE}/admin/grupos/${grupoId}/alumnos/${alumnoId}/malla/${actId}`;
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { ...authHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ semanaCompletada: value }),
+      });
       if (!res.ok) throw new Error('Error al guardar semana completada');
     } catch (err: any) {
       setError(err.message);
@@ -724,7 +733,20 @@ export default function MallaEvaluacionPage() {
   const compColumnHelper = createColumnHelper<CompetenciaAlumnoData>();
 
   const adminCompColumns = [
-    compColumnHelper.accessor('competencia', { header: 'Competencia' }),
+    compColumnHelper.accessor('competencia', {
+      header: 'Competencia',
+      cell: (info) => {
+        const row = info.row.original;
+        return (
+          <span>
+            {info.getValue()}
+            {row.esCalculada && (
+              <span style={{ marginLeft: '6px', fontSize: '0.75rem', color: 'var(--color-proyecto)', fontWeight: 500 }}>(Calc.)</span>
+            )}
+          </span>
+        );
+      },
+    }),
     compColumnHelper.accessor('nivel', { header: 'Nivel' }),
     compColumnHelper.accessor('fechaIdealEvaluacion', {
       header: 'Fecha Ideal',
@@ -737,6 +759,13 @@ export default function MallaEvaluacionPage() {
       header: 'Eval. P1',
       cell: (info) => {
         const row = info.row.original;
+        if (row.esCalculada) {
+          const val = info.getValue();
+          const label = evalLabel(val);
+          return label
+            ? <span className={styles.evalChip} title="Calculada: MIN de dependencias">{label}</span>
+            : <span className={styles.zeroValue}>Sin evaluar</span>;
+        }
         return (
           <select
             className={styles.evalSelect}
@@ -763,6 +792,13 @@ export default function MallaEvaluacionPage() {
       header: 'Eval. P2',
       cell: (info) => {
         const row = info.row.original;
+        if (row.esCalculada) {
+          const val = info.getValue();
+          const label = evalLabel(val);
+          return label
+            ? <span className={styles.evalChip} title="Calculada: MIN de dependencias">{label}</span>
+            : <span className={styles.zeroValue}>Sin evaluar</span>;
+        }
         return (
           <select
             className={styles.evalSelect}
@@ -817,7 +853,20 @@ export default function MallaEvaluacionPage() {
   /* ---------- Table columns for competencias (alumno) ---------- */
 
   const alumnoCompColumns = [
-    compColumnHelper.accessor('competencia', { header: 'Competencia' }),
+    compColumnHelper.accessor('competencia', {
+      header: 'Competencia',
+      cell: (info) => {
+        const row = info.row.original;
+        return (
+          <span>
+            {info.getValue()}
+            {row.esCalculada && (
+              <span style={{ marginLeft: '6px', fontSize: '0.75rem', color: 'var(--color-proyecto)', fontWeight: 500 }}>(Calc.)</span>
+            )}
+          </span>
+        );
+      },
+    }),
     compColumnHelper.accessor('nivel', { header: 'Nivel' }),
     compColumnHelper.accessor('fechaIdealEvaluacion', {
       header: 'Fecha Ideal',
@@ -911,9 +960,12 @@ export default function MallaEvaluacionPage() {
     }),
   ];
 
-  const getCompActions = (row: CompetenciaAlumnoData): ActionItem[] => [
-    { label: 'Editar retro', icon: 'edit_note', onClick: () => openCompModal(row) },
-  ];
+  const getCompActions = (row: CompetenciaAlumnoData): ActionItem[] => {
+    if (row.esCalculada) return [];
+    return [
+      { label: 'Editar retro', icon: 'edit_note', onClick: () => openCompModal(row) },
+    ];
+  };
 
   /* ---------- Derived ---------- */
 
@@ -1148,6 +1200,7 @@ export default function MallaEvaluacionPage() {
             emptyMessage="No hay actividades de evaluación para este alumno"
             pagination={false}
             actions={getAlumnoActions}
+            initialSorting={[{ id: 'semanaPlaneada', desc: false }]}
           />
         )}
         {/* Actividades tab — alumno viewing own */}
@@ -1159,6 +1212,7 @@ export default function MallaEvaluacionPage() {
             searchPlaceholder="Buscar actividad..."
             emptyMessage="No hay actividades de evaluación asignadas"
             pagination={false}
+            initialSorting={[{ id: 'semanaPlaneada', desc: false }]}
           />
         )}
         {/* Actividades tab — no alumno context */}

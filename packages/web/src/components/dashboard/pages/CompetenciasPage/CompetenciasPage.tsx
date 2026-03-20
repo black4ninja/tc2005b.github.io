@@ -13,6 +13,11 @@ interface IndicacionData {
   descripcion: string;
 }
 
+interface DependenciaRef {
+  id: string;
+  competencia: string;
+}
+
 interface CompetenciaData {
   id: string;
   orden?: number;
@@ -26,6 +31,8 @@ interface CompetenciaData {
   solido?: string;
   destacado?: string;
   fechaIdealEvaluacion?: string;
+  esCalculada?: boolean;
+  dependencias?: DependenciaRef[];
 }
 
 const API_BASE = '/api';
@@ -153,11 +160,16 @@ export default function CompetenciasPage() {
     setSaving(true);
     setError('');
     try {
+      // Transform dependencias from [{id, competencia}] to array of IDs for the backend
+      const payload = {
+        ...data,
+        dependencias: (data.dependencias ?? []).map((d) => d.id),
+      };
       const url = editCompetencia
         ? `${API_BASE}/admin/competencias/${editCompetencia.id}`
         : `${API_BASE}/admin/competencias`;
       const method = editCompetencia ? 'PUT' : 'POST';
-      const res = await fetch(url, { method, headers, body: JSON.stringify(data) });
+      const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.message || 'Error al guardar');
@@ -193,6 +205,24 @@ export default function CompetenciasPage() {
     compColumnHelper.accessor('orden', { header: 'Orden', cell: (info) => info.getValue() ?? '—' }),
     compColumnHelper.accessor('competencia', { header: 'Competencia' }),
     compColumnHelper.accessor('nivel', { header: 'Nivel' }),
+    compColumnHelper.accessor('esCalculada', {
+      header: 'Tipo',
+      cell: (info) => info.getValue()
+        ? <span style={{ color: 'var(--color-proyecto)', fontWeight: 500 }}>Calculada</span>
+        : <span style={{ color: 'var(--text-secondary)' }}>Directa</span>,
+    }),
+    compColumnHelper.accessor('dependencias', {
+      header: 'Dependencias',
+      cell: (info) => {
+        const deps = info.getValue();
+        if (!deps || deps.length === 0) return <span className={styles.truncate}>—</span>;
+        return (
+          <span className={styles.truncate} title={deps.map((d) => d.competencia).join(', ')}>
+            {deps.map((d) => d.competencia).join(', ')}
+          </span>
+        );
+      },
+    }),
     compColumnHelper.accessor('descripcionNivel', {
       header: 'Descripción Nivel',
       cell: (info) => <span className={styles.truncate} title={info.getValue()}>{info.getValue() || '—'}</span>,
@@ -302,6 +332,7 @@ export default function CompetenciasPage() {
       <Modal isOpen={compModalOpen} onClose={closeCompModal} title={editCompetencia ? 'Editar Competencia' : 'Nueva Competencia'} wide>
         <CompetenciaForm
           competencia={editCompetencia}
+          allCompetencias={competencias}
           onSave={handleSaveComp}
           onCancel={closeCompModal}
           loading={saving}

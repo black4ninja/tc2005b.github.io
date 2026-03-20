@@ -151,14 +151,24 @@ export async function updateActividadAlumno(req: Request, res: Response): Promis
   try {
     const query = new Parse.Query<ActividadEvaluacionAlumno>('ActividadEvaluacionAlumno');
     query.equalTo('exists' as any, true as any);
+    query.include('actividadGrupo' as any);
     const registro = await query.get(actividadId, { useMasterKey: true });
 
-    const { observaciones, aprendizajePlaneado } = req.body;
+    const { observaciones, aprendizajePlaneado, semanaCompletada } = req.body;
     if (typeof observaciones === 'string') {
       registro.setObservaciones(observaciones);
     }
     if (typeof aprendizajePlaneado === 'number') {
       registro.setAprendizajePlaneado(aprendizajePlaneado);
+    }
+    if (typeof semanaCompletada === 'number') {
+      registro.setSemanaCompletada(semanaCompletada);
+      const tipo = registro.getActividadGrupo()?.get('tipo');
+      if (tipo !== 'proyecto') {
+        registro.setAprendizajeGanado(
+          semanaCompletada > 0 ? registro.getAprendizajePlaneado() : 0
+        );
+      }
     }
 
     await registro.save(null, { useMasterKey: true });

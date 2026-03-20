@@ -32,6 +32,7 @@ interface AdminTableProps<T> {
   pagination?: boolean | number;
   getRowId?: (row: T) => string;
   loading?: boolean;
+  initialSorting?: SortingState;
 }
 
 export default function AdminTable<T>({
@@ -47,8 +48,9 @@ export default function AdminTable<T>({
   pagination = false,
   getRowId,
   loading = false,
+  initialSorting = [],
 }: AdminTableProps<T>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const [globalFilter, setGlobalFilter] = useState('');
 
   const columns: ColumnDef<T, any>[] = actions

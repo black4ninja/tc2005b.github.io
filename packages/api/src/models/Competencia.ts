@@ -83,7 +83,22 @@ export class Competencia extends BaseModel {
     this.set('orden', orden);
   }
 
+  getEsCalculada(): boolean {
+    return this.get('esCalculada') ?? false;
+  }
+  setEsCalculada(val: boolean): void {
+    this.set('esCalculada', val);
+  }
+
+  getDependencias(): Parse.Object[] {
+    return this.get('dependencias') ?? [];
+  }
+  setDependencias(deps: Parse.Object[]): void {
+    this.set('dependencias', deps);
+  }
+
   toSafeJSON(): Record<string, unknown> {
+    const deps = this.getDependencias();
     return {
       id: this.id,
       competencia: this.getCompetencia(),
@@ -97,6 +112,11 @@ export class Competencia extends BaseModel {
       destacado: this.getDestacado(),
       fechaIdealEvaluacion: this.getFechaIdealEvaluacion(),
       orden: this.getOrden(),
+      esCalculada: this.getEsCalculada(),
+      dependencias: deps.map((d) => ({
+        id: d.id,
+        competencia: d.get('competencia') ?? '',
+      })),
       active: this.get('active'),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,

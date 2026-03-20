@@ -80,6 +80,11 @@ export class CompetenciaAlumno extends BaseModel {
       solido: comp?.get('solido') ?? '',
       destacado: comp?.get('destacado') ?? '',
       fechaIdealEvaluacion: comp?.get('fechaIdealEvaluacion') ?? '',
+      esCalculada: comp?.get('esCalculada') ?? false,
+      dependencias: (comp?.get('dependencias') ?? []).map((d: Parse.Object) => ({
+        id: d.id,
+        competencia: d.get('competencia') ?? '',
+      })),
       // Campos del alumno
       valorPeriodo1: this.getValorPeriodo1(),
       valorPeriodo2: this.getValorPeriodo2(),

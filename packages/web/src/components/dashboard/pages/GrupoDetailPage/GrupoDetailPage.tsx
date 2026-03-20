@@ -77,6 +77,13 @@ export default function GrupoDetailPage() {
   const [competenciaStatus, setCompetenciaStatus] = useState<CompetenciaStatus | null>(null);
   const [creatingCompetencias, setCreatingCompetencias] = useState(false);
 
+  const [propagarModalOpen, setPropagarModalOpen] = useState(false);
+  const [propagarLoading, setPropagarLoading] = useState(false);
+  const [periodoOrigen, setPeriodoOrigen] = useState('valorPeriodo1');
+  const [periodoDestino, setPeriodoDestino] = useState('valorPeriodo2');
+  const [competenciasList, setCompetenciasList] = useState<{ id: string; competencia: string; esCalculada: boolean }[]>([]);
+  const [selectedCompetenciaId, setSelectedCompetenciaId] = useState('');
+
   const [periodos, setPeriodos] = useState<PeriodoInfo[]>([]);
   const [calificacionesMap, setCalificacionesMap] = useState<Map<string, CalificacionAlumno>>(new Map());
 
@@ -203,6 +210,52 @@ export default function GrupoDetailPage() {
       setError(err.message);
     } finally {
       setCreatingCompetencias(false);
+    }
+  }
+
+  async function fetchCompetenciasList() {
+    try {
+      const res = await fetch(`${API_BASE}/admin/competencias`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCompetenciasList(
+          (data.competencias ?? []).map((c: any) => ({ id: c.id, competencia: c.competencia, esCalculada: c.esCalculada }))
+        );
+      }
+    } catch {
+      // non-critical
+    }
+  }
+
+  function openPropagarModal() {
+    setSelectedCompetenciaId('');
+    setPropagarModalOpen(true);
+    fetchCompetenciasList();
+  }
+
+  async function handlePropagar() {
+    setPropagarLoading(true);
+    setError('');
+    try {
+      const body: any = { periodoOrigen, periodoDestino };
+      if (selectedCompetenciaId) body.competenciaId = selectedCompetenciaId;
+      const res = await fetch(`${API_BASE}/admin/grupos/${id}/competencias-alumno/propagar`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || 'Error al propagar competencias');
+
+      setToast(`Competencias propagadas: ${result.updated} registros actualizados`);
+      setTimeout(() => setToast(''), 3000);
+      setPropagarModalOpen(false);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setPropagarLoading(false);
     }
   }
 
@@ -492,6 +545,10 @@ export default function GrupoDetailPage() {
               : `Crear Competencias (${competenciaStatus.alumnosSinCompetencias} pendientes)`}
           </DashButton>
         )}
+        <DashButton variant="outline" onClick={openPropagarModal}>
+          <span className="material-icons" style={{ fontSize: 18 }}>content_copy</span>
+          Propagar Competencias
+        </DashButton>
       </div>
 
       {loading ? (
@@ -525,6 +582,54 @@ export default function GrupoDetailPage() {
           onDone={() => { setCsvModalOpen(false); fetchAlumnos(); fetchMallaStatus(); fetchCalificaciones(); }}
           onCancel={() => setCsvModalOpen(false)}
         />
+      </Modal>
+
+      <Modal isOpen={propagarModalOpen} onClose={() => setPropagarModalOpen(false)} title="Propagar Competencias">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 14 }}>
+            Esto sobrescribirá los valores del periodo destino con los del periodo origen para los alumnos del grupo.
+          </p>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            Competencia
+            <select value={selectedCompetenciaId} onChange={e => setSelectedCompetenciaId(e.target.value)} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--dash-border)' }}>
+              <option value="">— Seleccionar competencia —</option>
+              {competenciasList.filter(c => !c.esCalculada).map(c => (
+                <option key={c.id} value={c.id}>{c.competencia}</option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            Periodo origen
+            <select value={periodoOrigen} onChange={e => setPeriodoOrigen(e.target.value)} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--dash-border)' }}>
+              <option value="valorPeriodo1">Periodo 1</option>
+              <option value="valorPeriodo2">Periodo 2</option>
+            </select>
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            Periodo destino
+            <select value={periodoDestino} onChange={e => setPeriodoDestino(e.target.value)} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--dash-border)' }}>
+              <option value="valorPeriodo1">Periodo 1</option>
+              <option value="valorPeriodo2">Periodo 2</option>
+            </select>
+          </label>
+          {periodoOrigen === periodoDestino && (
+            <p style={{ margin: 0, color: 'var(--dash-danger)', fontSize: 13 }}>
+              El periodo origen y destino deben ser diferentes.
+            </p>
+          )}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <DashButton variant="outline" onClick={() => setPropagarModalOpen(false)}>
+              Cancelar
+            </DashButton>
+            <DashButton
+              variant="primary"
+              onClick={handlePropagar}
+              disabled={propagarLoading || periodoOrigen === periodoDestino || !selectedCompetenciaId}
+            >
+              {propagarLoading ? 'Propagando...' : 'Propagar'}
+            </DashButton>
+          </div>
+        </div>
       </Modal>
 
       {toast && <div className={styles.toast}>{toast}</div>}
