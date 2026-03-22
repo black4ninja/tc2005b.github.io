@@ -22,6 +22,7 @@ import AvancesEquipoPage from './components/dashboard/pages/AvancesEquipoPage/Av
 import EntrevistasPage from './components/dashboard/pages/EntrevistasPage/EntrevistasPage';
 import EvaluacionEntrevistaPage from './components/dashboard/pages/EvaluacionEntrevistaPage/EvaluacionEntrevistaPage';
 import AlumnoCalendarioPage from './components/dashboard/pages/AlumnoCalendarioPage/AlumnoCalendarioPage';
+import AlumnoCompetenciasPage from './components/dashboard/pages/AlumnoCompetenciasPage/AlumnoCompetenciasPage';
 
 export default function App() {
   return (
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="alumno" element={<AlumnoDashboard />} />
         <Route path="alumno/grupos/:id/calendario" element={<AlumnoCalendarioPage />} />
         <Route path="alumno/grupos/:id/malla" element={<MallaEvaluacionPage />} />
+        <Route path="alumno/grupos/:id/competencias" element={<AlumnoCompetenciasPage />} />
       </Route>
     </Routes>
   );

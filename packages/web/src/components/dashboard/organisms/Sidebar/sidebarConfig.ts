@@ -31,6 +31,14 @@ export function getSidebarItems(role: DashboardRole, selectedGrupoId?: string, p
       disabled: !perfilCompleto,
     });
   }
+  if (selectedGrupoId) {
+    items.push({
+      label: 'Competencias',
+      icon: 'emoji_events',
+      path: `/alumno/grupos/${selectedGrupoId}/competencias`,
+      disabled: !perfilCompleto,
+    });
+  }
   items.push(
     { label: 'Documentación', icon: 'menu_book', path: '/docs/', external: true, disabled: !perfilCompleto },
     { label: 'Agendar Entrevistas', icon: 'event_available', path: AGENDA_ENTREVISTAS_URL, external: true, disabled: !perfilCompleto },
