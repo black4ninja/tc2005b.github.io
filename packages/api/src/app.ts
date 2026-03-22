@@ -1,5 +1,8 @@
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import cors from 'cors';
+import { config } from './config/index.js';
 import healthRoutes from './routes/health.routes.js';
 import testRoutes from './routes/test.routes.js';
 import emailRoutes from './routes/email.routes.js';
@@ -52,6 +55,30 @@ app.use('/api', evaluacionesEntrevistaRoutes);
 
 export function finalize() {
   app.use(errorHandler);
+
+  // En produccion, servir frontend, Docusaurus y contenido legacy
+  if (config.environment === 'production') {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const distPath = path.resolve(__dirname, '../../../dist');
+
+    // Docusaurus en /docs
+    app.use('/docs', express.static(path.join(distPath, 'docs')));
+
+    // Contenido legacy
+    const legacyDirs = ['ejercicios', 'laboratorios', 'lecturas', 'documentos', 'imagenes', 'css', 'js'];
+    for (const dir of legacyDirs) {
+      app.use(`/${dir}`, express.static(path.join(distPath, dir)));
+    }
+
+    // Frontend SPA — archivos estaticos
+    app.use(express.static(distPath));
+
+    // SPA fallback — rutas no encontradas devuelven index.html
+    app.get('*', (_req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
 }
 
 export default app;
