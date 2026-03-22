@@ -10,10 +10,11 @@ interface NavItemProps {
   badge?: number;
   collapsed?: boolean;
   disabled?: boolean;
+  external?: boolean;
   onClick?: () => void;
 }
 
-export default function NavItem({ icon, label, path, badge, collapsed, disabled, onClick }: NavItemProps) {
+export default function NavItem({ icon, label, path, badge, collapsed, disabled, external, onClick }: NavItemProps) {
   if (disabled) {
     return (
       <div
@@ -24,6 +25,22 @@ export default function NavItem({ icon, label, path, badge, collapsed, disabled,
         {!collapsed && <span className={styles.label}>{label}</span>}
         {!collapsed && badge !== undefined && badge > 0 && <Badge count={badge} />}
       </div>
+    );
+  }
+
+  if (external) {
+    return (
+      <a
+        href={path}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${styles.navItem} ${collapsed ? styles.collapsed : ''}`}
+        onClick={onClick}
+      >
+        <Icon name={icon} size="sm" />
+        {!collapsed && <span className={styles.label}>{label}</span>}
+        {!collapsed && badge !== undefined && badge > 0 && <Badge count={badge} />}
+      </a>
     );
   }
 

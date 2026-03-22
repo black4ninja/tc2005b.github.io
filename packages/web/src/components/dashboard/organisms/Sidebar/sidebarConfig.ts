@@ -1,14 +1,21 @@
 import type { SidebarItem, DashboardRole } from '../../../../types/dashboard';
 
+const AGENDA_ENTREVISTAS_URL =
+  'https://docs.google.com/spreadsheets/d/1U1fbfaBWMp4Nje13qi2C3mhjhW0B8NxC-JXD0ff6fNQ/edit?gid=32307462#gid=32307462';
+
 const adminItems: SidebarItem[] = [
   { label: 'Dashboard', icon: 'dashboard', path: '/admin' },
   { label: 'Grupos', icon: 'groups', path: '/admin/grupos' },
   { label: 'Competencias', icon: 'emoji_events', path: '/admin/competencias' },
   { label: 'Actividades', icon: 'assignment', path: '/admin/actividades' },
+  { label: 'Documentación', icon: 'menu_book', path: '/docs/', external: true },
+  { label: 'Agendar Entrevistas', icon: 'event_available', path: AGENDA_ENTREVISTAS_URL, external: true },
 ];
 
 const alumnoBaseItems: SidebarItem[] = [
   { label: 'Dashboard', icon: 'dashboard', path: '/alumno' },
+  { label: 'Documentación', icon: 'menu_book', path: '/docs/', external: true },
+  { label: 'Agendar Entrevistas', icon: 'event_available', path: AGENDA_ENTREVISTAS_URL, external: true },
 ];
 
 export function getSidebarItems(role: DashboardRole, selectedGrupoId?: string, perfilCompleto?: boolean): SidebarItem[] {

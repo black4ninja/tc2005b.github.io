@@ -97,6 +97,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
               path={item.path}
               badge={item.badge}
               disabled={item.disabled}
+              external={item.external}
               collapsed={collapsed}
               onClick={onCloseMobile}
             />
