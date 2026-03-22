@@ -50,6 +50,8 @@ export async function runUserSeed(dryRun: boolean): Promise<void> {
     if (existing) {
       console.log(`  UPDATE: ${data.email}`);
       if (!dryRun) {
+        if (!existing.has('active')) existing.set('active', true);
+        if (!existing.has('exists')) existing.set('exists', true);
         existing.setName(data.name);
         existing.setUserType(data.userType);
         existing.setPasswordHash(passwordHash);
@@ -58,7 +60,7 @@ export async function runUserSeed(dryRun: boolean): Promise<void> {
     } else {
       console.log(`  CREATE: ${data.email}`);
       if (!dryRun) {
-        const user = new AppUser();
+        const user = new AppUser().initDefaults();
         user.setEmail(data.email);
         user.setName(data.name);
         user.setUserType(data.userType);

@@ -46,14 +46,27 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const data: ActivityFormData = { tipo };
-    if (titulo.trim()) data.titulo = titulo.trim();
-    if (descripcion.trim()) data.descripcion = descripcion.trim();
-    if (enlace.trim()) {
+
+    if (mode === 'edit') {
+      // En modo edición, enviar todos los campos para permitir limpiarlos
+      data.titulo = titulo.trim();
+      data.descripcion = descripcion.trim();
       data.enlace = enlace.trim();
-      data.externo = externo;
+      data.externo = enlace.trim() ? externo : false;
+      data.duracion = duracion.trim();
+      data.fechaEntrega = fechaEntrega.trim();
+    } else {
+      // En modo creación, solo enviar campos con contenido
+      if (titulo.trim()) data.titulo = titulo.trim();
+      if (descripcion.trim()) data.descripcion = descripcion.trim();
+      if (enlace.trim()) {
+        data.enlace = enlace.trim();
+        data.externo = externo;
+      }
+      if (duracion.trim()) data.duracion = duracion.trim();
+      if (fechaEntrega.trim()) data.fechaEntrega = fechaEntrega.trim();
     }
-    if (duracion.trim()) data.duracion = duracion.trim();
-    if (fechaEntrega.trim()) data.fechaEntrega = fechaEntrega.trim();
+
     onSave(data);
   };
 
