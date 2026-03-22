@@ -17,6 +17,44 @@ export default function EntregaBlock({ datos, onChange }: Props) {
           rows={4}
         />
       </div>
+      <div className={styles.field}>
+        <label>Tag de Git (opcional)</label>
+        <input
+          type="text"
+          value={(datos.tag as string) ?? ''}
+          onChange={(e) => onChange({ ...datos, tag: e.target.value })}
+          placeholder="ej. avance2"
+        />
+      </div>
+      <div className={styles.fieldRow}>
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            checked={!!datos.video}
+            onChange={(e) => onChange({ ...datos, video: e.target.checked })}
+          />
+          Requiere video
+        </label>
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            checked={!!datos.coevaluacion}
+            onChange={(e) => onChange({ ...datos, coevaluacion: e.target.checked })}
+          />
+          Requiere coevaluación
+        </label>
+      </div>
+      {!!datos.coevaluacion && (
+        <div className={styles.field}>
+          <label>URL del formulario de coevaluación</label>
+          <input
+            type="text"
+            value={(datos.coevaluacionUrl as string) ?? ''}
+            onChange={(e) => onChange({ ...datos, coevaluacionUrl: e.target.value })}
+            placeholder="ej. documentos/Coevaluacion.docx"
+          />
+        </div>
+      )}
     </div>
   );
 }

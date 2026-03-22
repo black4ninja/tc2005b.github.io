@@ -21,3 +21,4 @@ export { EvaluacionEntrevista } from './EvaluacionEntrevista.js';
 export { CompetenciaAlumno } from './CompetenciaAlumno.js';
 export { Pagina } from './Pagina.js';
 export type { ContentBlock } from './Pagina.js';
+export { Etiqueta } from './Etiqueta.js';

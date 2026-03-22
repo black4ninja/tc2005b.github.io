@@ -20,12 +20,20 @@ function renderBlock(block: ContentBlock, pagina: PaginaData) {
           {(datos.subtitulo as string) && (
             <p className={styles.labDescription}>{datos.subtitulo as string}</p>
           )}
-          {(datos.modalidad as string) && (
+          {((datos.modalidad as string) || (datos.fechaEntrega as string)) && (
             <div className={styles.infoBadges}>
-              <span className={styles.infoBadge}>
-                <span className="material-icons">group</span>
-                {datos.modalidad as string}
-              </span>
+              {(datos.modalidad as string) && (
+                <span className={styles.infoBadge}>
+                  <span className="material-icons">group</span>
+                  {datos.modalidad as string}
+                </span>
+              )}
+              {(datos.fechaEntrega as string) && (
+                <span className={`${styles.infoBadge} ${styles.infoBadgeDate}`}>
+                  <span className="material-icons">event</span>
+                  {datos.fechaEntrega as string}
+                </span>
+              )}
             </div>
           )}
         </header>
@@ -148,9 +156,36 @@ function renderBlock(block: ContentBlock, pagina: PaginaData) {
             <span className="material-icons">assignment_turned_in</span>
           </div>
           <h2 className={styles.sectionTitle}>Entrega</h2>
-          <div className={styles.entregaContent}>
-            <p>{datos.contenido as string}</p>
-          </div>
+          <div
+            className={styles.entregaContent}
+            dangerouslySetInnerHTML={{ __html: datos.contenido as string }}
+          />
+          {((datos.video as boolean) || (datos.coevaluacion as boolean)) && (
+            <div className={styles.entregaExtras}>
+              {(datos.video as boolean) && (
+                <div className={`${styles.entregaExtra} ${styles.entregaExtraVideo}`}>
+                  <span className="material-icons">videocam</span>
+                  <span>Este avance requiere la entrega de un video demostrativo.</span>
+                </div>
+              )}
+              {(datos.coevaluacion as boolean) && (
+                <div className={`${styles.entregaExtra} ${styles.entregaExtraCoeval}`}>
+                  <span className="material-icons">rate_review</span>
+                  <span>
+                    Este avance requiere coevaluación.
+                    {(datos.coevaluacionUrl as string) && (
+                      <>
+                        {' '}
+                        <a href={datos.coevaluacionUrl as string} target="_blank" rel="noopener noreferrer">
+                          Ir al formulario
+                        </a>
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </section>
       );
 

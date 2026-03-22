@@ -9,15 +9,6 @@ import { CompetenciaAlumno } from '../models/CompetenciaAlumno.js';
 import { PlanEvaluacion, type PeriodoConfig } from '../models/PlanEvaluacion.js';
 import { Grupo } from '../models/Grupo.js';
 
-const VALOR_TO_NUMBER: Record<string, number> = {
-  '': 0,
-  'Incipiente B (0%)': 0,
-  'Incipiente A (15%)': 15,
-  'Básico (70%)': 70,
-  'Sólido (85%)': 85,
-  'Destacado (100%)': 100,
-};
-
 const NUMBER_TO_VALOR: Record<number, string> = {
   0: '',
   15: 'Incipiente A (15%)',
@@ -26,13 +17,9 @@ const NUMBER_TO_VALOR: Record<number, string> = {
   100: 'Destacado (100%)',
 };
 
-function valorToNumber(label: string): number {
-  return VALOR_TO_NUMBER[label] ?? 0;
-}
-
 function numberToValor(num: unknown): string {
   if (typeof num === 'number') return NUMBER_TO_VALOR[num] ?? '';
-  if (typeof num === 'string') return num; // already a string label
+  if (typeof num === 'string') return num;
   return '';
 }
 
@@ -132,16 +119,74 @@ export async function initEvaluaciones(req: Request, res: Response): Promise<voi
     const entrevista = await fetchEntrevistaFull(entrevistaId);
     const { periodoMap, periodoNames } = await fetchPeriodoMapAndNames(grupoId);
 
+    // Get current equipo members and competencias
+    const equipo = entrevista.getEquipo();
+    const miembros: AppUser[] = equipo ? (equipo.get('miembros') ?? []) : [];
+    const competencias: Competencia[] = entrevista.getCompetencias();
+    const currentMiembroIds = new Set(miembros.map((m) => m.id));
+    const currentCompIds = new Set(competencias.map((c) => c.id));
+    const asignacion = entrevista.getAsignacionProfesores();
+    const entrevistaPointer = Entrevista.createWithoutData(entrevistaId) as Entrevista;
+
     // Check if evaluaciones already exist
     const existing = await fetchEvaluaciones(entrevistaId);
     if (existing.length > 0) {
-      const alumnoIds = [...new Set(existing.map((e) => e.getAlumno()?.id).filter(Boolean))] as string[];
+      // Sync: soft-delete orphaned records (alumnos/competencias no longer in entrevista)
+      const toDelete: EvaluacionEntrevista[] = [];
+      for (const ev of existing) {
+        const alumnoId = ev.getAlumno()?.id;
+        const compId = ev.getCompetencia()?.id;
+        if (!alumnoId || !currentMiembroIds.has(alumnoId) || !compId || !currentCompIds.has(compId)) {
+          ev.softDelete();
+          toDelete.push(ev);
+        }
+      }
+      if (toDelete.length > 0) {
+        await Parse.Object.saveAll(toDelete, { useMasterKey: true });
+      }
+
+      // Sync: create missing records for new alumnos/competencias
+      const existingKeys = new Set(
+        existing
+          .filter((e) => {
+            const aId = e.getAlumno()?.id;
+            const cId = e.getCompetencia()?.id;
+            return aId && currentMiembroIds.has(aId) && cId && currentCompIds.has(cId);
+          })
+          .map((e) => `${e.getAlumno()!.id}-${e.getCompetencia()!.id}`),
+      );
+
+      const toCreate: EvaluacionEntrevista[] = [];
+      for (const alumno of miembros) {
+        for (const comp of competencias) {
+          const key = `${alumno.id}-${comp.id}`;
+          if (!existingKeys.has(key)) {
+            const eval_ = new EvaluacionEntrevista().initDefaults();
+            eval_.setEntrevista(entrevistaPointer);
+            eval_.setAlumno(AppUser.createWithoutData(alumno.id) as AppUser);
+            eval_.setCompetencia(Competencia.createWithoutData(comp.id) as Competencia);
+            eval_.setComentario('');
+            const profesorId = asignacion[key];
+            if (profesorId) {
+              eval_.setProfesor(AppUser.createWithoutData(profesorId) as AppUser);
+            }
+            toCreate.push(eval_);
+          }
+        }
+      }
+      if (toCreate.length > 0) {
+        await Parse.Object.saveAll(toCreate, { useMasterKey: true });
+      }
+
+      // Re-fetch synced evaluaciones
+      const synced = await fetchEvaluaciones(entrevistaId);
+      const alumnoIds = [...currentMiembroIds];
       const compAlumnoMap = await fetchCompetenciasAlumnoMap(grupoId, alumnoIds);
 
       res.json({
         status: 'ok',
         entrevista: entrevista.toSafeJSON(),
-        evaluaciones: existing.map((e) => e.toSafeJSON()),
+        evaluaciones: synced.map((e) => e.toSafeJSON()),
         periodoMap,
         periodoNames,
         compAlumnoMap,
@@ -149,13 +194,7 @@ export async function initEvaluaciones(req: Request, res: Response): Promise<voi
       return;
     }
 
-    // Build cells: alumno × competencia
-    const equipo = entrevista.getEquipo();
-    const miembros: AppUser[] = equipo ? (equipo.get('miembros') ?? []) : [];
-    const competencias: Competencia[] = entrevista.getCompetencias();
-
-    const entrevistaPointer = Entrevista.createWithoutData(entrevistaId) as Entrevista;
-
+    // No existing evaluaciones — create all cells: alumno × competencia
     const toSave: EvaluacionEntrevista[] = [];
     for (const alumno of miembros) {
       for (const comp of competencias) {
@@ -164,6 +203,10 @@ export async function initEvaluaciones(req: Request, res: Response): Promise<voi
         eval_.setAlumno(AppUser.createWithoutData(alumno.id) as AppUser);
         eval_.setCompetencia(Competencia.createWithoutData(comp.id) as Competencia);
         eval_.setComentario('');
+        const profesorId = asignacion[`${alumno.id}-${comp.id}`];
+        if (profesorId) {
+          eval_.setProfesor(AppUser.createWithoutData(profesorId) as AppUser);
+        }
         toSave.push(eval_);
       }
     }
@@ -222,19 +265,21 @@ export async function listEvaluaciones(req: Request, res: Response): Promise<voi
 
 export async function updateEvaluacion(req: Request, res: Response): Promise<void> {
   const { evaluacionId } = req.params;
-  const { profesorId, comentario, valorAsignado, periodo, compAlumnoId } = req.body;
+  const { comentario, valorAsignado } = req.body;
 
   try {
     const query = BaseModel.queryActive<EvaluacionEntrevista>('EvaluacionEntrevista');
     query.include('alumno');
     query.include('competencia');
     query.include('profesor');
+    query.include('entrevista');
     const evaluacion = await query.get(evaluacionId, { useMasterKey: true });
 
-    if (profesorId) {
-      evaluacion.setProfesor(AppUser.createWithoutData(profesorId) as AppUser);
-    } else if (profesorId === null || profesorId === '') {
-      evaluacion.setProfesor(null);
+    // Block editing if entrevista is liberada
+    const entrevista = evaluacion.getEntrevista();
+    if (entrevista && (entrevista as any).get('liberada') === true) {
+      res.status(400).json({ status: 'error', message: 'No se puede editar una evaluación liberada' });
+      return;
     }
 
     if (typeof comentario === 'string') {
@@ -245,38 +290,7 @@ export async function updateEvaluacion(req: Request, res: Response): Promise<voi
       evaluacion.setValorAsignado(valorAsignado);
     }
 
-    if (typeof periodo === 'string') {
-      evaluacion.setPeriodo(periodo);
-    }
-
     await evaluacion.save(null, { useMasterKey: true });
-
-    // Dual-write: also update CompetenciaAlumno if provided
-    let updatedCompAlumno: CompAlumnoEntry | null = null;
-    if (compAlumnoId && typeof valorAsignado === 'string') {
-      const caQuery = BaseModel.queryActive<CompetenciaAlumno>('CompetenciaAlumno');
-      caQuery.include('competencia');
-      const ca = await caQuery.get(compAlumnoId, { useMasterKey: true });
-
-      const numericVal = valorToNumber(valorAsignado);
-      if (periodo && periodo.includes('1')) {
-        ca.set('valorPeriodo1', numericVal);
-        if (typeof comentario === 'string') ca.setRetroPeriodo1(comentario);
-      } else if (periodo && periodo.includes('2')) {
-        ca.set('valorPeriodo2', numericVal);
-        if (typeof comentario === 'string') ca.setRetroPeriodo2(comentario);
-      }
-
-      await ca.save(null, { useMasterKey: true });
-      updatedCompAlumno = {
-        id: ca.id!,
-        valorPeriodo1: numberToValor(ca.get('valorPeriodo1')),
-        valorPeriodo2: numberToValor(ca.get('valorPeriodo2')),
-        retroPeriodo1: ca.getRetroPeriodo1(),
-        retroPeriodo2: ca.getRetroPeriodo2(),
-        evidencias: ca.getEvidencias(),
-      };
-    }
 
     // Re-fetch with includes
     const refetchQuery = BaseModel.queryActive<EvaluacionEntrevista>('EvaluacionEntrevista');
@@ -288,7 +302,6 @@ export async function updateEvaluacion(req: Request, res: Response): Promise<voi
     res.json({
       status: 'ok',
       evaluacion: updated.toSafeJSON(),
-      ...(updatedCompAlumno ? { compAlumno: updatedCompAlumno } : {}),
     });
   } catch (error: any) {
     if (error?.code === Parse.Error.OBJECT_NOT_FOUND) {

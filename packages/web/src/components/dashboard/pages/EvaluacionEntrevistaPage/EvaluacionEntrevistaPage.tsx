@@ -54,13 +54,31 @@ interface EntrevistaDetail {
   equipo: { id: string; nombre: string; miembros: AlumnoData[] };
   profesores: ProfesorData[];
   competencias: CompetenciaData[];
+  liberada?: boolean;
 }
 
 interface LocalEdit {
-  profesorId: string;
   comentario: string;
   valorAsignado: string;
-  periodo: string;
+}
+
+const PROFESOR_COLORS = [
+  { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
+  { bg: '#fce7f3', color: '#9d174d', border: '#f9a8d4' },
+  { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
+  { bg: '#fef3c7', color: '#92400e', border: '#fcd34d' },
+  { bg: '#e0e7ff', color: '#3730a3', border: '#a5b4fc' },
+  { bg: '#ffe4e6', color: '#9f1239', border: '#fda4af' },
+  { bg: '#ccfbf1', color: '#134e4a', border: '#5eead4' },
+  { bg: '#f3e8ff', color: '#6b21a8', border: '#c4b5fd' },
+];
+
+function getProfesorColor(profesorId: string) {
+  let hash = 0;
+  for (let i = 0; i < profesorId.length; i++) {
+    hash = ((hash << 5) - hash + profesorId.charCodeAt(i)) | 0;
+  }
+  return PROFESOR_COLORS[Math.abs(hash) % PROFESOR_COLORS.length];
 }
 
 const EVALUACION_OPTIONS = [
@@ -143,22 +161,9 @@ export default function EvaluacionEntrevistaPage() {
     const local = localEdits.get(evalId);
     if (local) return local;
 
-    // Pre-load valorAsignado from compAlumno if the evaluacion doesn't have one yet
-    const compKey = `${ev.alumno.id}-${ev.competencia.id}`;
-    const ca = compAlumnoMap[compKey];
-    const defaultPeriodo = ev.periodo || periodoMap[ev.competencia.id] || '';
-
-    let preloadedValor = ev.valorAsignado || '';
-    if (!preloadedValor && ca && defaultPeriodo) {
-      if (defaultPeriodo.includes('1')) preloadedValor = ca.valorPeriodo1;
-      else if (defaultPeriodo.includes('2')) preloadedValor = ca.valorPeriodo2;
-    }
-
     return {
-      profesorId: ev.profesor?.id ?? '',
       comentario: ev.comentario ?? '',
-      valorAsignado: preloadedValor,
-      periodo: defaultPeriodo,
+      valorAsignado: ev.valorAsignado ?? '',
     };
   }
 
@@ -167,10 +172,8 @@ export default function EvaluacionEntrevistaPage() {
       const next = new Map(prev);
       const ev = evaluaciones.find((e) => e.id === evalId);
       const existing = next.get(evalId) ?? {
-        profesorId: ev?.profesor?.id ?? '',
         comentario: ev?.comentario ?? '',
         valorAsignado: ev?.valorAsignado ?? '',
-        periodo: ev?.periodo || (ev ? periodoMap[ev.competencia.id] : '') || '',
       };
       next.set(evalId, { ...existing, [field]: value });
       return next;
@@ -180,15 +183,11 @@ export default function EvaluacionEntrevistaPage() {
   function hasChanges(evalId: string, ev: EvaluacionData): boolean {
     const local = localEdits.get(evalId);
     if (!local) return false;
-    const origProfesor = ev.profesor?.id ?? '';
     const origComentario = ev.comentario ?? '';
     const origValor = ev.valorAsignado ?? '';
-    const origPeriodo = ev.periodo || periodoMap[ev.competencia.id] || '';
     return (
-      local.profesorId !== origProfesor ||
       local.comentario !== origComentario ||
-      local.valorAsignado !== origValor ||
-      local.periodo !== origPeriodo
+      local.valorAsignado !== origValor
     );
   }
 
@@ -206,12 +205,6 @@ export default function EvaluacionEntrevistaPage() {
     const local = localEdits.get(evalId);
     if (!local) return;
 
-    const ev = evaluaciones.find((e) => e.id === evalId);
-    if (!ev) return;
-
-    const compKey = `${ev.alumno.id}-${ev.competencia.id}`;
-    const ca = compAlumnoMap[compKey];
-
     setSavingCellId(evalId);
     setError('');
     try {
@@ -219,26 +212,13 @@ export default function EvaluacionEntrevistaPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
-          profesorId: local.profesorId || null,
           comentario: local.comentario,
           valorAsignado: local.valorAsignado,
-          periodo: local.periodo,
-          compAlumnoId: ca?.id || null,
         }),
       });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.message || 'Error al guardar');
-      }
-
-      const result = await res.json();
-
-      // Update compAlumnoMap locally if the server returned updated data
-      if (result.compAlumno) {
-        setCompAlumnoMap((prev) => ({
-          ...prev,
-          [compKey]: result.compAlumno,
-        }));
       }
 
       setLocalEdits((prev) => {
@@ -257,6 +237,7 @@ export default function EvaluacionEntrevistaPage() {
   const alumnos = entrevista?.equipo?.miembros ?? [];
   const competencias = entrevista?.competencias ?? [];
   const profesores = entrevista?.profesores ?? [];
+  const isLiberada = entrevista?.liberada === true;
 
   const fechaFormatted = entrevista?.fecha
     ? (() => {
@@ -289,6 +270,13 @@ export default function EvaluacionEntrevistaPage() {
       </div>
 
       {error && <div className={styles.error}>{error}</div>}
+
+      {isLiberada && (
+        <div className={styles.liberadaBanner}>
+          <span className="material-icons" style={{ fontSize: '1rem' }}>check_circle</span>
+          Esta evaluación ya fue liberada a la malla de competencias (solo lectura)
+        </div>
+      )}
 
       {alumnos.length === 0 || competencias.length === 0 ? (
         <p>No hay alumnos o competencias configuradas para esta entrevista.</p>
@@ -342,24 +330,31 @@ export default function EvaluacionEntrevistaPage() {
                             })()}
                           </div>
                           <label className={styles.cellLabel}>Profesor</label>
-                          <select
-                            className={styles.cellSelect}
-                            value={local.profesorId}
-                            onChange={(e) => setEdit(ev.id, 'profesorId', e.target.value)}
-                            disabled={isSaving}
-                          >
-                            <option value="">— Sin profesor —</option>
-                            {profesores.map((p) => (
-                              <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                          </select>
+                          {ev.profesor ? (() => {
+                            const pc = getProfesorColor(ev.profesor.id);
+                            return (
+                              <span
+                                className={styles.profesorBadge}
+                                style={{ background: pc.bg, color: pc.color, borderColor: pc.border }}
+                              >
+                                {ev.profesor.name}
+                              </span>
+                            );
+                          })() : (
+                            <span className={styles.profesorTextMuted}>Sin asignar</span>
+                          )}
+                          {currentMalla && (
+                            <span className={styles.currentValue}>
+                              Valor actual: {currentMalla}
+                            </span>
+                          )}
 
                           <label className={styles.cellLabel}>Nivel</label>
                           <select
                             className={`${styles.cellSelect} ${local.valorAsignado ? styles.cellSelectLevel : ''}`}
                             value={local.valorAsignado}
                             onChange={(e) => setEdit(ev.id, 'valorAsignado', e.target.value)}
-                            disabled={isSaving}
+                            disabled={isSaving || isLiberada}
                           >
                             {EVALUACION_OPTIONS.map((opt) => (
                               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -372,22 +367,19 @@ export default function EvaluacionEntrevistaPage() {
                             value={local.comentario}
                             onChange={(e) => setEdit(ev.id, 'comentario', e.target.value)}
                             placeholder="Retroalimentación..."
-                            disabled={isSaving}
+                            disabled={isSaving || isLiberada}
                           />
 
                           <div className={styles.cellFooter}>
-                            {currentMalla && (
-                              <span className={styles.currentValue}>
-                                Valor actual: {currentMalla}
-                              </span>
+                            {!isLiberada && (
+                              <button
+                                className={styles.cellSaveBtn}
+                                disabled={!changed || isSaving}
+                                onClick={() => handleSaveCell(ev.id)}
+                              >
+                                {isSaving ? 'Guardando...' : 'Guardar'}
+                              </button>
                             )}
-                            <button
-                              className={styles.cellSaveBtn}
-                              disabled={!changed || isSaving}
-                              onClick={() => handleSaveCell(ev.id)}
-                            >
-                              {isSaving ? 'Guardando...' : 'Guardar'}
-                            </button>
                           </div>
                         </div>
                       </td>

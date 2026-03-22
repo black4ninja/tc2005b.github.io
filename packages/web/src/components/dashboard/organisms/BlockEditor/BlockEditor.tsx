@@ -40,12 +40,12 @@ function generateId(): string {
 
 function getDefaultDatos(tipo: ContentBlockType): Record<string, unknown> {
   switch (tipo) {
-    case 'encabezado': return { subtitulo: '', modalidad: '' };
+    case 'encabezado': return { subtitulo: '', modalidad: '', fechaEntrega: '' };
     case 'objetivos': return { items: [''] };
     case 'instrucciones': return { html: '' };
     case 'preguntas': return { items: [''] };
     case 'recursos': return { items: [{ texto: '', url: '', externo: false }] };
-    case 'entrega': return { contenido: '' };
+    case 'entrega': return { contenido: '', tag: '', video: false, coevaluacion: false, coevaluacionUrl: '' };
     case 'practica': return { titulo: '', descripcion: '', enlace: '' };
     case 'texto': return { tituloSeccion: '', html: '' };
   }

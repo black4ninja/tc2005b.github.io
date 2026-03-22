@@ -50,6 +50,20 @@ export class Entrevista extends BaseModel {
     this.set('fecha', fecha);
   }
 
+  getAsignacionProfesores(): Record<string, string> {
+    return this.get('asignacionProfesores') ?? {};
+  }
+  setAsignacionProfesores(val: Record<string, string>): void {
+    this.set('asignacionProfesores', val);
+  }
+
+  isLiberada(): boolean {
+    return this.get('liberada') === true;
+  }
+  setLiberada(val: boolean): void {
+    this.set('liberada', val);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     const equipo = this.getEquipo();
     const miembros = equipo ? (equipo.get('miembros') ?? []).map((m: AppUser) => ({
@@ -88,6 +102,8 @@ export class Entrevista extends BaseModel {
       } : null,
       profesores,
       competencias,
+      asignacionProfesores: this.getAsignacionProfesores(),
+      liberada: this.isLiberada(),
       active: this.get('active'),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,

@@ -4,6 +4,7 @@
  * Prerrequisito: ejecutar generate-paginas-json.ts desde packages/web
  * Uso: cd packages/api && npx tsx scripts/seed-paginas.ts
  *      cd packages/api && npx tsx scripts/seed-paginas.ts --dry-run
+ *      cd packages/api && npx tsx scripts/seed-paginas.ts --file avances-data.json
  */
 
 import { readFileSync } from 'fs';
@@ -18,6 +19,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const dryRun = process.argv.includes('--dry-run');
+const fileArgIndex = process.argv.indexOf('--file');
+const dataFilename = fileArgIndex !== -1 && process.argv[fileArgIndex + 1]
+  ? process.argv[fileArgIndex + 1]
+  : 'paginas-data.json';
 
 interface ContentBlock {
   id: string;
@@ -49,11 +54,11 @@ async function main() {
   console.log(`Connecting to Parse Server at ${config.serverURL}...`);
 
   // Read the generated JSON
-  const dataPath = resolve(__dirname, 'paginas-data.json');
+  const dataPath = resolve(__dirname, dataFilename);
   const raw = readFileSync(dataPath, 'utf-8');
   const paginas: PaginaInput[] = JSON.parse(raw);
 
-  console.log(`\nLoaded ${paginas.length} pages from paginas-data.json\n`);
+  console.log(`\nLoaded ${paginas.length} pages from ${dataFilename}\n`);
 
   let created = 0;
   let skipped = 0;

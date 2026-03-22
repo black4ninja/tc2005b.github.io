@@ -61,7 +61,7 @@ export async function getPagina(req: Request, res: Response): Promise<void> {
 }
 
 export async function createPagina(req: Request, res: Response): Promise<void> {
-  const { titulo, slug, descripcion, icono, grupoId, bloques, publicado, orden } = req.body;
+  const { titulo, slug, descripcion, icono, grupoId, bloques, publicado, orden, etiquetas } = req.body;
 
   if (!titulo || typeof titulo !== 'string' || titulo.trim() === '') {
     res.status(400).json({ status: 'error', message: 'El título es requerido' });
@@ -99,6 +99,9 @@ export async function createPagina(req: Request, res: Response): Promise<void> {
     }
     pagina.setPublicado(publicado === true);
     if (orden !== undefined) pagina.setOrden(Number(orden));
+    if (Array.isArray(etiquetas) && etiquetas.every((e: any) => typeof e === 'string')) {
+      pagina.setEtiquetas(etiquetas);
+    }
 
     await pagina.save(null, { useMasterKey: true });
 
@@ -110,7 +113,7 @@ export async function createPagina(req: Request, res: Response): Promise<void> {
 
 export async function updatePagina(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { titulo, slug, descripcion, icono, grupoId, bloques, publicado, orden } = req.body;
+  const { titulo, slug, descripcion, icono, grupoId, bloques, publicado, orden, etiquetas } = req.body;
 
   try {
     const query = BaseModel.queryActive<Pagina>('Pagina');
@@ -167,6 +170,11 @@ export async function updatePagina(req: Request, res: Response): Promise<void> {
 
     if (publicado !== undefined) pagina.setPublicado(publicado === true);
     if (orden !== undefined) pagina.setOrden(Number(orden));
+    if (etiquetas !== undefined) {
+      if (Array.isArray(etiquetas) && etiquetas.every((e: any) => typeof e === 'string')) {
+        pagina.setEtiquetas(etiquetas);
+      }
+    }
 
     await pagina.save(null, { useMasterKey: true });
 

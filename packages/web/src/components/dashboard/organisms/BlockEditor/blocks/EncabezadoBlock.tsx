@@ -26,6 +26,15 @@ export default function EncabezadoBlock({ datos, onChange }: Props) {
           placeholder="ej. Individual, Colaborativa"
         />
       </div>
+      <div className={styles.field}>
+        <label>Fecha de entrega</label>
+        <input
+          type="text"
+          value={(datos.fechaEntrega as string) ?? ''}
+          onChange={(e) => onChange({ ...datos, fechaEntrega: e.target.value })}
+          placeholder="ej. Viernes 27 de marzo, 2026"
+        />
+      </div>
     </div>
   );
 }

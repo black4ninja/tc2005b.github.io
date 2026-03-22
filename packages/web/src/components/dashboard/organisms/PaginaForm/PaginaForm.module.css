@@ -110,6 +110,43 @@
   font-size: 11px;
 }
 
+/* Tag selector */
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.tagBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1.5px solid;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tagBadge:hover {
+  opacity: 0.85;
+}
+
+.tagBadgeSelected {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.tagBadgeUnselected {
+  opacity: 0.5;
+}
+
+.tagBadgeUnselected:hover {
+  opacity: 0.8;
+}
+
 /* Actions */
 .actions {
   display: flex;

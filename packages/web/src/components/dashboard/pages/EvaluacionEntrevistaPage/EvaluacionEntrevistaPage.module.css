@@ -61,8 +61,16 @@
   padding: 8px;
   text-align: left;
   vertical-align: top;
-  min-width: 280px;
-  width: 25%;
+  min-width: 44%;
+  width: 44%;
+}
+
+@media (min-width: 900px) {
+  .grid th,
+  .grid td {
+    min-width: 280px;
+    width: auto;
+  }
 }
 
 .grid thead th {
@@ -313,5 +321,35 @@
 
 .modalLink:hover {
   text-decoration: underline;
+}
+
+.profesorBadge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.profesorTextMuted {
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #999);
+  font-style: italic;
+  padding: 0.2rem 0;
+}
+
+.liberadaBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #d1fae5;
+  color: #065f46;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 

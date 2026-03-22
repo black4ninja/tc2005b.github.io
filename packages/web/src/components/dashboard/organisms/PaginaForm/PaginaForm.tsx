@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { PaginaData, ContentBlock } from '../../../../types/pagina';
+import type { PaginaData, ContentBlock, EtiquetaData } from '../../../../types/pagina';
 import BlockEditor from '../BlockEditor/BlockEditor';
 import PaginaContent from '../../../paginas/PaginaContent';
 import DashButton from '../../atoms/DashButton/DashButton';
@@ -7,6 +7,7 @@ import styles from './PaginaForm.module.css';
 
 interface PaginaFormProps {
   pagina?: PaginaData;
+  etiquetas?: EtiquetaData[];
   onSave: (data: Omit<PaginaData, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onCancel: () => void;
   loading?: boolean;
@@ -22,7 +23,7 @@ function toSlug(text: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-export default function PaginaForm({ pagina, onSave, onCancel, loading, previewMode }: PaginaFormProps) {
+export default function PaginaForm({ pagina, etiquetas: availableTags = [], onSave, onCancel, loading, previewMode }: PaginaFormProps) {
   const [activeTab, setActiveTab] = useState<'editar' | 'preview'>(previewMode ? 'preview' : 'editar');
 
   const [titulo, setTitulo] = useState(pagina?.titulo ?? '');
@@ -33,6 +34,7 @@ export default function PaginaForm({ pagina, onSave, onCancel, loading, previewM
   const [grupoId, setGrupoId] = useState(pagina?.grupoId ?? '');
   const [publicado, setPublicado] = useState(pagina?.publicado ?? false);
   const [bloques, setBloques] = useState<ContentBlock[]>(pagina?.bloques ?? []);
+  const [selectedTags, setSelectedTags] = useState<string[]>(pagina?.etiquetas ?? []);
 
   // Auto-generate slug from title if not manually edited
   useEffect(() => {
@@ -46,6 +48,12 @@ export default function PaginaForm({ pagina, onSave, onCancel, loading, previewM
     setSlug(value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
   }
 
+  function toggleTag(tagId: string) {
+    setSelectedTags((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId],
+    );
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     onSave({
@@ -56,6 +64,7 @@ export default function PaginaForm({ pagina, onSave, onCancel, loading, previewM
       grupoId: grupoId || null,
       bloques,
       publicado,
+      etiquetas: selectedTags,
     });
   }
 
@@ -180,6 +189,33 @@ export default function PaginaForm({ pagina, onSave, onCancel, loading, previewM
               />
               <label htmlFor="publicado-check">Publicado (visible públicamente)</label>
             </div>
+
+            {availableTags.length > 0 && (
+              <div className={`${styles.field} ${styles.metaFull}`}>
+                <label>Etiquetas</label>
+                <div className={styles.tagList}>
+                  {availableTags.map((tag) => {
+                    const isSelected = selectedTags.includes(tag.id);
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        className={`${styles.tagBadge} ${isSelected ? styles.tagBadgeSelected : styles.tagBadgeUnselected}`}
+                        style={{
+                          background: isSelected ? tag.color : 'transparent',
+                          color: isSelected ? tag.textColor : tag.textColor,
+                          borderColor: tag.textColor,
+                        }}
+                        onClick={() => toggleTag(tag.id)}
+                      >
+                        {isSelected && <span className="material-icons" style={{ fontSize: 14 }}>check</span>}
+                        {tag.nombre}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <BlockEditor bloques={bloques} onChange={setBloques} />

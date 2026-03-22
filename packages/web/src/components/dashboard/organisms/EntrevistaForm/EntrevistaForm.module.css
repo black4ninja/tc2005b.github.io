@@ -139,3 +139,65 @@
   color: var(--text-secondary);
   font-size: 13px;
 }
+
+.asignacionTableWrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+}
+
+.asignacionTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.asignacionTable th,
+.asignacionTable td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.asignacionTable tr:last-child td {
+  border-bottom: none;
+}
+
+.asignacionHeaderComp {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  min-width: 160px;
+}
+
+.asignacionHeaderAlumno {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  min-width: 140px;
+  font-size: 12px;
+}
+
+.asignacionCompCell {
+  color: var(--text-primary);
+  font-size: 12px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asignacionCell {
+  padding: 4px 6px;
+}
+
+.asignacionCellSelect {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 12px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+}

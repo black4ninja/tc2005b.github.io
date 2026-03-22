@@ -24,6 +24,7 @@ export interface PaginaData {
   bloques: ContentBlock[];
   publicado: boolean;
   orden?: number;
+  etiquetas?: string[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -32,4 +33,11 @@ export interface PaginaResumen {
   id: string;
   slug: string;
   titulo: string;
+}
+
+export interface EtiquetaData {
+  id: string;
+  nombre: string;
+  color: string;
+  textColor: string;
 }

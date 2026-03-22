@@ -65,6 +65,24 @@
   font-size: 14px;
 }
 
+.infoBadgeDate {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.infoBadgeTag {
+  background: #dbeafe;
+  color: #1e40af;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+}
+
+.infoBadgeWarning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 /* --- Section Cards --- */
 .sectionCard {
   background: var(--bg-card);
@@ -445,6 +463,44 @@
   font-size: 0.875rem;
   color: var(--text-secondary);
   line-height: 1.7;
+}
+
+.entregaExtras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-color);
+}
+
+.entregaExtra {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.entregaExtra :global(.material-icons) {
+  font-size: 18px;
+}
+
+.entregaExtraVideo {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.entregaExtraCoeval {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.entregaExtraCoeval a {
+  color: #991b1b;
+  font-weight: 600;
 }
 
 /* --- Prev / Next Navigation --- */

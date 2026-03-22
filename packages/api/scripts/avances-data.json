@@ -1,0 +1,262 @@
+[
+  {
+    "titulo": "Avance 1: Propuesta de proyecto",
+    "slug": "av1",
+    "descripcion": "En este avance de proyecto formarán su equipo de trabajo, firmarán cartas de confidencialidad, crearán una identidad para ustedes como despacho y realizarán la propuesta formal de su proyecto.",
+    "icono": "flag",
+    "grupoId": null,
+    "bloques": [
+      {
+        "id": "block-5001",
+        "tipo": "encabezado",
+        "datos": {
+          "subtitulo": "En este avance de proyecto formarán su equipo de trabajo, firmarán cartas de confidencialidad, crearán una identidad para ustedes como despacho y realizarán la propuesta formal de su proyecto.",
+          "modalidad": "Colaborativa",
+          "fechaEntrega": "Viernes 27 de marzo, 2026"
+        }
+      },
+      {
+        "id": "block-5002",
+        "tipo": "objetivos",
+        "datos": {
+          "items": [
+            "Formalizar el equipo de trabajo y establecer las bases para desarrollar el proyecto de la Unidad de Formación"
+          ]
+        }
+      },
+      {
+        "id": "block-5003",
+        "tipo": "instrucciones",
+        "datos": {
+          "html": "<h3>Firma de cartas de confidencialidad</h3><p>Los socios formadores comparten información sensible de su organización, por lo cual debemos tratar dicha información con el cuidado y la seriedad que merece. Por ello, de manera individual hay que descargar, llenar y firmar la <a href=\"/documentos/CartaConfidencialidadAlumno.pdf\" target=\"_blank\">Carta de confidencialidad</a>, y honrar los acuerdos que en ella se establecen.<br><br>Sube tu carta firmada (en formato PDF) a la siguiente carpeta: <a href=\"https://drive.google.com/drive/folders/1OF9BdAy0OKb4Tqh6n_7CsPo-B_WRMdxz?usp=sharing\" target=\"_blank\">Carpeta de Google Drive</a>. Puedes escanear el documento firmado o usar una firma digital.</p>\n<p>Elaboren un documento para establecer su despacho de consultoría en Construcción de software, y otro documento en el que presentarán la propuesta formal del proyecto.<br><br>El documento del despacho debe contener al menos lo siguiente:</p>\n<h3>Conformación del equipo</h3><p>Indicar para cada uno de los integrantes del despacho su nombre, matrícula y datos de contacto. Además deben identificar las fortalezas y áreas de oportunidad de cada uno de ustedes. Así como las expectativas que tienen del curso.<br><br>Posteriormente elaborar un breve listado de lo que esperan lograr y obtener como equipo en el presente curso, así como sus compromisos para lograrlo.</p>\n<h3>Identidad corporativa</h3><ul><li>Razón social y logotipo, con los que deberán identificar todos los documentos que se generen a lo largo del desarrollo del proyecto.</li><li>Principios y valores, así como los objetivos de su despacho de consultoría en desarrollo de sistemas y bases de datos.</li><li>¿Qué ofrece para sus clientes?, ¿Qué compromiso tiene con la sociedad?</li></ul>\n<p>La propuesta del proyecto debe considerar:</p>\n<h3>Alcance organizacional</h3><p>Deberás describir brevemente la institución o empresa para la que se desarrolla el proyecto, indicando si se trata de un área o departamento específico, así como su misión o propósito general.</p>\n<h3>Descripción del problema o situación actual de la empresa</h3><p>Deberás describir a detalle la situación actual de la empresa. Por ejemplo su forma de operar actualmente y los inconvenientes de hacerlo así. En esta sección NO se espera que se incluya una propuesta de solución.</p>\n<h3>Requerimientos de información</h3><p>Identificarás de manera general los catálogos que le darán soporte al sistema de información. Al respecto se espera que identifiques de manera completa campos y posibles relaciones entre los catálogos.</p>\n<h3>Plan de trabajo y aprendizaje adquirido</h3><p><strong>En TODAS sus presentaciones deben incluir el plan de trabajo actualizado y el aprendizaje adquirido como equipo.</strong> El plan de trabajo debe incluir al menos:</p><ul><li>Las actividades pendientes del proyecto y el periodo de tiempo en el que se realizarán.</li><li>Para las actividades del siguiente avance los responsables de llevarlas a cabo, la fecha en la que las realizarán y el intervalo de esfuerzo estimado.</li><li>Para las actividades que se llevaron a cabo en este avance el tiempo que les tomó realizarlas y la diferencia con su estimación.</li></ul>\n<h3>Canal de comunicación</h3><ul><li>Soliciten a los profesores la creación de un canal en Discord con el nombre de su equipo. Este canal será utilizado para la comunicación directa entre el equipo y los profesores.</li><li>Asegúrense de que todos los miembros del equipo tengan acceso al canal.</li><li>Suban el documento generado en el canal del equipo.</li></ul>\n<p>Recuerda que toda la documentación que generen en torno al proyecto deberá mostrar la imagen corporativa de tu equipo y mantener consistencia gráfica en aspectos como fuentes tipográficas, colores o sombreados, imágenes, márgenes y alineación.</p>"
+        }
+      },
+      {
+        "id": "block-5004",
+        "tipo": "entrega",
+        "datos": {
+          "contenido": "Por medio de Discord en el canal del equipo con los profesores (<strong><em>nombreEquipo</em></strong>).<br><br>La calificación del avance será con base en la satisfacción de los interesados del proyecto (principalmente profesores y socios formadores).",
+          "tag": "",
+          "video": false,
+          "coevaluacion": false,
+          "coevaluacionUrl": ""
+        }
+      }
+    ],
+    "publicado": true,
+    "orden": 0
+  },
+  {
+    "titulo": "Avance 2: Análisis y diseño de la solución",
+    "slug": "av3",
+    "descripcion": "En este avance de proyecto comenzarán con el diseño de la base de datos y de la aplicación web. Identificarás los requisitos funcionales, los requisitos no funcionales, y los requisitos de información; así como el diseño de la interacción y primera versión de la interfaz.",
+    "icono": "flag",
+    "grupoId": null,
+    "bloques": [
+      {
+        "id": "block-5005",
+        "tipo": "encabezado",
+        "datos": {
+          "subtitulo": "En este avance de proyecto comenzarán con el diseño de la base de datos y de la aplicación web. Identificarás los requisitos funcionales, los requisitos no funcionales, y los requisitos de información; así como el diseño de la interacción y primera versión de la interfaz.",
+          "modalidad": "Colaborativa",
+          "fechaEntrega": "Viernes 17 de abril, 2026"
+        }
+      },
+      {
+        "id": "block-5006",
+        "tipo": "objetivos",
+        "datos": {
+          "items": [
+            "Desarrollar tus habilidades de trabajo colaborativo",
+            "Desarrollar tu capacidad de administración del tiempo",
+            "Desarrollar tu habilidad de diseño de bases de datos.",
+            "Desarrollar tu habilidad de diseño de la información.",
+            "Desarrollar tu habilidad de diseño de la interacción.",
+            "Desarrollar tu habilidad de diseño e implementación de interfaces HTML5."
+          ]
+        }
+      },
+      {
+        "id": "block-5007",
+        "tipo": "instrucciones",
+        "datos": {
+          "html": "<p>Redacten un documento (o varios) que incluya(n) los siguientes segmentos:</p>\n<h3>Diagrama de contexto</h3><p>Haciendo uso formal de la nomenclatura descrita en el curso para la elaboración de este diagrama, elaborar el diagrama de contexto de nivel 0 para identificar a todos los interesados en el sistema de información que dará solución a la problemática descrita anteriormente. Recuerda detallar los flujos de datos entre interesados y sistema a un nivel de campos, ya que este será el punto de entrada para diseñar el modelo de persistencia.</p>\n<h3>Requisitos funcionales</h3><p>Identificación completa de los requerimientos de la organización que pretenden cubrirse con el sistema. Se espera que se elabore un <strong>diagrama de casos de uso</strong> que cumpla con los lineamientos descritos en la Unidad de Formación Análisis de Requerimientos de Software.<br><br><strong>Tabla de priorización de requisitos</strong> que considere el riesgo, valor, complejidad y estabilidad.<br><br><strong>Detalle de los casos de uso</strong> que identificaste en la tabla de alta prioridad, la plantilla a utilizar queda a su criterio pero debe incluir el <strong>diagrama de actividad</strong> de cada uno. Posteriormente se recomienda que los validen con el cliente y a partir de este momento se procede a definir el modelo de datos del proyecto.</p>\n<h3>Reglas de negocio</h3><p>Identificar y describir las reglas de negocio definidas por la organización que deben ser atendidas por el sistema.</p>\n<h3>Modelo Entidad-Relación</h3><p>Diagrama con entidades, asociaciones y las extensiones necesarias (ISA's, entidades débiles, roles, en caso de ser necesarias) con la cardinalidad explícita, incluyendo posibles cotas de cardinalidad con base en las lecturas sobre la notación básica y/o las extensiones al modelo. Para mayor legibilidad del diagrama, omite en éste los atributos que se detallarán en el siguiente punto. Se espera que el modelo presentado sea <strong>\"validado\"</strong> en la medida de lo posible por el cliente, al menos a nivel de atributos.<br><br><strong>Diccionario de datos:</strong> Tablas detallando los atributos de cada elemento del modelo, tal como se realizó en el Ejercicio de Modelo Entidad-Relación completo.<br><br><strong>Documentación de restricciones adicionales:</strong> Documentarás las restricciones adicionales que deben obedecer los datos de tu modelo.</p>\n<h3>Tablas correspondientes (Modelo Relacional)</h3><p>Establecerás las tablas con las que tu modelo se instrumentará en una base de datos relacional, aplicando las reglas de traslado.</p>\n<h3>Requisitos no funcionales</h3><p>Identificar y describir cada uno de los requisitos no funcionales de tu proyecto, recuerden redactarlos de una forma en la que al final puedan medir su logro.</p>\n<h3>Mapa del sitio</h3><p>El formato del diagrama es libre. Debe permitir identificar la navegación que tiene que realizar el usuario para lograr sus objetivos.</p>\n<h3>Bosquejo de la aplicación</h3><p>Diseñarán una propuesta de interfaz gráfica por medio de wireframes (puede ser en papel, usando el editor de ventanas de MS VISIO o cualquier otro editor web como Cacoo, Lucid Chart, entre otros) que atenderá los aspectos funcionales identificados. Se espera que se muestre la evolución del bosquejo o prototipo con base a las revisiones hechas por el cliente.</p>\n<h3>Plan de comunicación</h3><p>Esbozo general del plan de comunicación donde determinen la forma en la que se van a comunicar con cada uno de los interesados del proyecto.</p>\n<h3>Guía de estilo de codificación</h3><p>Definan la guía de estilo de codificación y convenciones de código que estarán usando para su proyecto. Pueden utilizar una guía de estilo de terceros, o bien, elaborar la propia. Asegúrense de al menos abordar aspectos como variables, strings, funciones, parámetros, comentarios, objetos y estatutos de control.</p>\n<h3>Plan de trabajo actualizado y aprendizaje adquirido</h3><p>El plan de trabajo debe incluir al menos:</p><ul><li>Las actividades pendientes del proyecto y el periodo de tiempo en el que se realizarán.</li><li>Para las actividades del siguiente avance los responsables de llevarlas a cabo, la fecha en la que las realizarán y el intervalo de esfuerzo estimado.</li><li>Para las actividades que se llevaron a cabo en este avance el tiempo que les tomó realizarlas y la diferencia con su estimación.</li></ul>\n<p>Recuerda que toda la documentación que generen en torno al proyecto deberá mostrar la imagen corporativa de tu equipo y mantener consistencia gráfica en aspectos como fuentes tipográficas, colores o sombreados, imágenes, márgenes y alineación.</p>"
+        }
+      },
+      {
+        "id": "block-5008",
+        "tipo": "entrega",
+        "datos": {
+          "contenido": "Por medio de su repositorio de equipo. Al último commit del avance, asígnenle el tag <code>avance2</code>.<br><br>La calificación del avance será con base en la satisfacción de los interesados del proyecto (principalmente profesores y socios formadores).",
+          "tag": "avance2",
+          "video": true,
+          "coevaluacion": true,
+          "coevaluacionUrl": "documentos/Coevaluacion.docx"
+        }
+      }
+    ],
+    "publicado": true,
+    "orden": 1
+  },
+  {
+    "titulo": "Avance 3: Creación de la Base de Datos",
+    "slug": "av4",
+    "descripcion": "",
+    "icono": "flag",
+    "grupoId": null,
+    "bloques": [
+      {
+        "id": "block-5009",
+        "tipo": "encabezado",
+        "datos": {
+          "subtitulo": "",
+          "modalidad": "Colaborativa",
+          "fechaEntrega": "Viernes 24 de abril, 2026"
+        }
+      },
+      {
+        "id": "block-5010",
+        "tipo": "objetivos",
+        "datos": {
+          "items": [
+            "Aplicar tus conocimientos sobre bases de datos y desarrollo web."
+          ]
+        }
+      },
+      {
+        "id": "block-5011",
+        "tipo": "instrucciones",
+        "datos": {
+          "html": "<p>Uno de los integrantes del equipo deberá entregar el trabajo indicando las matrículas y nombres de los integrantes.<br><br>Este documento debe incluir los siguientes elementos:</p>\n<h3>Tablas Correspondientes (Modelo Relacional Revisado)</h3><p>Establecerás las tablas con las que tu modelo se instrumentará en una base de datos relacional. Como te habrás dado cuenta en este caso solo son mejoras o refinamientos a tu avance anterior. Se espera que el modelo entregado haya sido revisado en compañía del profesor y nuevamente validado por el cliente. <b>(nombre del Mer_Revisado.doc)</b></p>\n<h3>Tablas del proyecto</h3><p>En base al modelo relacional que definiste en la entrega anterior, debes definir el script para crear las tablas, incluyendo los constraints de llaves primarias y foráneas. <b>(nombre del script estructura.sql)</b></p>\n<h3>Prototipo de navegación de la aplicación web</h3><p>Debe presentarse un prototipo completamente navegable que cumpla con las expectativas del cliente relacionadas con la interface, como colores institucionales, secuencia de navegación, mensajes de retroalimentación, layout de reportes.</p>\n<h3>Carga de datos y su script correspondiente</h3><p>Las tablas deben contener una muestra representativa de datos que permita consultarlas. Una muestra representativa de datos es aquella que hace referencia a datos que pudieran ser equivalente en extensión, formato y valor a los reales. Por ejemplo, para el registro de un nombre completo, sería un dato representativo: \"Juan Manuel González de Cossío\". <b>No</b> son datos representativos: \"Prueba Prueba Ejemplo Ejemplo2\".</p><ul><li>En el caso de tablas que representan <b>clasificaciones</b> (Ejemplos: Tipos de producto, Habilidades, Nacionalidad) deben aparecer todos los registros si son menos de 10 o un mínimo de 10.</li><li>Para tablas que representen entidades con <b>información permanente</b> o de largo plazo (Ejemplos: Clientes, Proveedores, Productos, Alumnos, Empleados) cargar un mínimo de 20 registros.</li><li>Para tablas que representen <b>asociaciones o entidades con información transaccional</b> (Ejemplos: Préstamos, Compras, Ventas, Unidades producidas.) cargar un mínimo de 50 registros por tabla. Es necesario que el código para la carga de datos, sea también parte del script.</li></ul>\n<h3>Plan de trabajo actualizado y aprendizaje adquirido</h3><p>El plan de trabajo debe incluir al menos:</p><ul><li>Las actividades pendientes del proyecto y el periodo de tiempo en el que se realizarán.</li><li>Para las actividades del siguiente avance los responsables de llevarlas a cabo, la fecha en la que las realizarán y el intervalo de esfuerzo estimado.</li><li>Para las actividades que se llevaron a cabo en este avance el tiempo que les tomó realizarlas y la diferencia con su estimación.</li></ul>"
+        }
+      },
+      {
+        "id": "block-5012",
+        "tipo": "entrega",
+        "datos": {
+          "contenido": "<b>Importante:</b> Toda la documentación que generen en torno al proyecto deberá mostrar la imagen corporativa de tu equipo y mantener consistencia gráfica en aspectos como fuentes tipográficas, colores o sombreados, imágenes, márgenes y alineación.<br><br>Entrega por medio del repositorio de equipo en Bitbucket o GitHub.<br><br>La calificación del avance será con base en la satisfacción de los interesados del proyecto (principalmente profesores y socios formadores).",
+          "tag": "",
+          "video": false,
+          "coevaluacion": true,
+          "coevaluacionUrl": "documentos/Coevaluacion.docx"
+        }
+      }
+    ],
+    "publicado": true,
+    "orden": 2
+  },
+  {
+    "titulo": "Avance 4: Prueba de concepto",
+    "slug": "av5",
+    "descripcion": "",
+    "icono": "flag",
+    "grupoId": null,
+    "bloques": [
+      {
+        "id": "block-5013",
+        "tipo": "encabezado",
+        "datos": {
+          "subtitulo": "",
+          "modalidad": "Colaborativa",
+          "fechaEntrega": "Viernes 1 de mayo, 2026"
+        }
+      },
+      {
+        "id": "block-5014",
+        "tipo": "instrucciones",
+        "datos": {
+          "html": "<p>Este avance debe incluir:</p>\n<h3>Avance del 90% del análisis de requisitos funcionales</h3><p>El avance debe considerar los ajustes derivados de la retroalimentación de los socios formadores y profesores.</p>\n<h3>Descripción inicial de la arquitectura de software</h3><p>Debe al menos incluir:</p><ul><li>La estructura general de la aplicación y su(s) estilo(s) arquitectónico(s).</li><li>La descomposición de la aplicación en componentes funcionales.</li><li>Las interfaces entre la aplicación de software y los datos fuera de ella.</li><li>La descripción de cómo la arquitectura soporta los requisitos no funcionales.</li></ul>\n<h3>Avance del 30% del diseño e implementación de requisitos funcionales</h3><p>Para la entrega de esta sección se requiere que envíes el código y los scripts de la base de datos. Se sugiere que se implementen los requisitos de mayor valor y riesgo, considerando el dominio técnico que tienes hasta el momento.</p>\n<h3>Diseño y ejecución de pruebas</h3><p>Haciendo uso de la metodología para traducir casos de uso a casos de prueba, se espera que tengan diseñadas el 30% de las pruebas de tu aplicación, las hayan ejecutado, y hayan realizado las correcciones pertinentes.</p>\n<h3>Usabilidad</h3><p>La interfaz ofrecida por la aplicación, debe mostrar evidencia de haber sido diseñada con base en los lineamientos descritos en la lectura de las \"8 reglas de oro\", además de reflejar los ajustes que el cliente haya sugerido (por lo que es necesario presentarle un prototipo funcional con anticipación). La interfaz debe mostrar evidencia de al menos 3 mejoras resultantes de la evaluación heurística realizada por tus compañeros, para ello deben mostrar los reportes de usabilidad y la nueva interfaz.</p>\n<h3>Reportes</h3><p>Se espera que tengan identificado el detalle del contenido de cada uno de ellos, es decir, encabezados, detalle, pie de página, gráficos esperados, etc. El detalle debe ser a nivel de campo y basta que \"Anexe\" una imagen a una forma para verlo desde el prototipo.</p>\n<h3>Identificar el ambiente de producción</h3><p>Se espera una breve descripción donde se identifique de manera breve y precisa el proveedor de alojamiento en el cual quedará desplegado el sistema. Se recomienda que esta información se comparta con el cliente para elaborar un acuerdo sobre la inversión.<br><br>Para buscar un proveedor de alojamiento considera que debes asegurarte que soporte tu stack tecnológico (node+mysql). Además si tu aplicación maneja datos personales, para <strong>cumplir con la Ley Federal de Protección de Datos Personales</strong> es necesario que los datos se comuniquen por medio de un protocolo seguro como <strong><a target=\"_blank\" href=\"https://medium.com/free-code-camp/web-security-an-introduction-to-http-5fa07140f9b3\">HTTPS</a></strong>. Para utilizar HTTPS es necesario contar con un certificado de seguridad SSL proporcionado por una Autoridad Certificadora. Muchos proveedores de alojamiento ofrecen este servicio con un pago extra; o bien puedes generarlo tu mismo si el proveedor de alojamiento ofrece acceso a consola (ssh) con <a target=\"_blank\" href=\"https://letsencrypt.org/getting-started/\">letsencrypt</a> como <a target=\"_blank\" href=\"https://www.digitalocean.com/products/one-click-apps/lamp/\">DigitalOcean</a>, o si el proveedor <a target=\"_blank\" href=\"https://community.letsencrypt.org/t/web-hosting-who-support-lets-encrypt/6920\">soporta letsencrypt</a>.</p>\n<h3>Plan de trabajo actualizado y aprendizaje adquirido</h3><p>El plan de trabajo debe incluir al menos:</p><ul><li>Las actividades pendientes del proyecto y el periodo de tiempo en el que se realizarán.</li><li>Para las actividades del siguiente avance los responsables de llevarlas a cabo, la fecha en la que las realizarán y el intervalo de esfuerzo estimado.</li><li>Para las actividades que se llevaron a cabo en este avance el tiempo que les tomó realizarlas y la diferencia con su estimación.</li></ul>"
+        }
+      },
+      {
+        "id": "block-5015",
+        "tipo": "entrega",
+        "datos": {
+          "contenido": "<b>Importante:</b> Toda la documentación que generen en torno al proyecto deberá mostrar la imagen corporativa de tu equipo y mantener consistencia gráfica en aspectos como fuentes tipográficas, colores o sombreados, imágenes, márgenes y alineación.<br><br>Recuerden incluir la actualización de su plan de trabajo.<br><br><b>Por medio de su repositorio del proyecto con el tag <code>avance4</code>.</b><br><br>La calificación del avance será con base en la satisfacción de los interesados del proyecto (principalmente profesores y socios formadores).",
+          "tag": "avance4",
+          "video": true,
+          "coevaluacion": true,
+          "coevaluacionUrl": "documentos/Coevaluacion.docx"
+        }
+      }
+    ],
+    "publicado": true,
+    "orden": 3
+  },
+  {
+    "titulo": "Avance 5: Versión Beta del Sistema",
+    "slug": "av6",
+    "descripcion": "",
+    "icono": "flag",
+    "grupoId": null,
+    "bloques": [
+      {
+        "id": "block-5016",
+        "tipo": "encabezado",
+        "datos": {
+          "subtitulo": "",
+          "modalidad": "Colaborativa",
+          "fechaEntrega": "Viernes 29 de mayo, 2026"
+        }
+      },
+      {
+        "id": "block-5017",
+        "tipo": "instrucciones",
+        "datos": {
+          "html": "<p>Este avance debe incluir:</p>\n<h3>Análisis completo de los requisitos funcionales</h3><p>Se deben considerar los ajustes derivados de la retroalimentación de los socios formadores y profesores.</p>\n<h3>Avance del 60% del diseño e implementación de requisitos funcionales</h3><p>Codificación de la aplicación versión Beta: La aplicación debe mostrar evidencia de que se han atendido la funcionalidad que le da valor al proceso de negocio del cliente, no sólo mostrar que funciona la gestión de catálogos \"ABC de la aplicación\".</p>\n<h3>Diseño y ejecución de pruebas</h3><p>Haciendo uso de la <a href=\"documentos/GeneratingTestCasesFromUseCasesJune01.pdf\" target=\"_blank\">metodología para traducir casos de uso a casos de prueba</a>, se espera que tengan diseñadas el 60% de las pruebas de tu aplicación, las hayan ejecutado, y hayan realizado las correcciones pertinentes.</p>\n<h3>Aceptación de requisitos funcionales por parte del cliente</h3><p>Se espera una evidencia (un documento firmado) donde el cliente acepte al menos el 30% de los casos de uso implementados y probados.</p>\n<h3>Descripción de la arquitectura de ejecución</h3><p>Se espera que elaboren un diagrama de despliegue para describir con claridad el ambiente de ejecución en producción.</p>\n<p>Es importante que esta versión refleje los ajustes y recomendaciones hechas por el cliente, así como las que hayan identificado a lo largo del semestre.</p>\n<h3>Plan de trabajo actualizado y aprendizaje adquirido</h3><p>El plan de trabajo debe incluir al menos:</p><ul><li>Las actividades pendientes del proyecto y el periodo de tiempo en el que se realizarán.</li><li>Para las actividades del siguiente avance los responsables de llevarlas a cabo, la fecha en la que las realizarán y el intervalo de esfuerzo estimado.</li><li>Para las actividades que se llevaron a cabo en este avance el tiempo que les tomó realizarlas y la diferencia con su estimación.</li></ul>"
+        }
+      },
+      {
+        "id": "block-5018",
+        "tipo": "entrega",
+        "datos": {
+          "contenido": "<b>Importante:</b> Toda la documentación que generen en torno al proyecto deberá mostrar la imagen corporativa de tu equipo y mantener consistencia gráfica en aspectos como fuentes tipográficas, colores o sombreados, imágenes, márgenes y alineación.<br><br><b>Por medio de su repositorio del proyecto con el tag <code>avance5</code>.</b><br><br>La calificación del avance será con base en la satisfacción de los interesados del proyecto (principalmente profesores y socios formadores).",
+          "tag": "avance5",
+          "video": true,
+          "coevaluacion": true,
+          "coevaluacionUrl": "documentos/Coevaluacion.docx"
+        }
+      }
+    ],
+    "publicado": true,
+    "orden": 4
+  },
+  {
+    "titulo": "Avance 6: Versión 1.0",
+    "slug": "av7",
+    "descripcion": "",
+    "icono": "flag",
+    "grupoId": null,
+    "bloques": [
+      {
+        "id": "block-5019",
+        "tipo": "encabezado",
+        "datos": {
+          "subtitulo": "",
+          "modalidad": "Colaborativa",
+          "fechaEntrega": "Viernes 5 de junio, 2026"
+        }
+      },
+      {
+        "id": "block-5020",
+        "tipo": "instrucciones",
+        "datos": {
+          "html": "<p>La entrega final debe incluir:</p>\n<h3>Artefactos de ingeniería actualizados en su totalidad</h3>\n<h3>Versión 1.0 del sistema</h3><p>El sistema debe estar implementado en su totalidad, probado, y se debe mostrar evidencia de la corrección de las fallas detectadas durante el desarrollo.</p>\n<h3>Despliegue del sistema</h3><p>El sistema debe estar desplegado en el ambiente de producción, además debe existir evidencia de que el cliente aceptó la totalidad de los requisitos comprometidos. Es evidente que el producto funcionando cumple con el acuerdo definido al inicio del curso, por ejemplo, si se comprometió la entrega de un manual o capacitación existe un documento que lo avale.</p>\n<h3>Presentación final</h3><p>La presentación final utiliza un lenguaje adecuado para la audiencia. La presentación cuenta con una secuencia y estructura clara, haciendo un uso adecuado del tiempo disponible, así como una adecuada participación de cada uno de los integrantes del equipo. La aplicación se muestra por medio de un video. Al final de la presentación se logra el objetivo de dar por concluido el proyecto, o en su defecto se especifican con claridad los compromisos por cada una de las partes.</p>\n<h3>Video y poster para ExpoIngenierías</h3><p>Preparar el video y el poster para participar en ExpoIngenierías. Deben subirse en: <a href=\"https://drive.google.com/drive/folders/1UJKb8ao6BcyClzMROy2ldbV6nbq8g1li?usp=sharing\" target=\"_blank\">Carpeta de Google Drive</a>. Las especificaciones se encuentran en esa misma carpeta. Si el equipo es seleccionado para la fase final, deben preparar un stand para el evento y presentar ahí su proyecto.</p>"
+        }
+      },
+      {
+        "id": "block-5021",
+        "tipo": "entrega",
+        "datos": {
+          "contenido": "<b>Importante:</b> Toda la documentación que generen en torno al proyecto deberá mostrar la imagen corporativa de tu equipo y mantener consistencia gráfica en aspectos como fuentes tipográficas, colores o sombreados, imágenes, márgenes y alineación.<br><br><b>Por medio de su repositorio del proyecto, en la rama <code>master o main</code> con el tag <code>1.0</code></b><br><br>La calificación será con base en la satisfacción de los interesados del proyecto (principalmente profesores y socios formadores).",
+          "tag": "1.0",
+          "video": false,
+          "coevaluacion": true,
+          "coevaluacionUrl": "documentos/Coevaluacion.docx"
+        }
+      }
+    ],
+    "publicado": true,
+    "orden": 5
+  }
+]

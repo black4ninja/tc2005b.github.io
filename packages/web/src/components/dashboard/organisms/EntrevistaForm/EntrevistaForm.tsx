@@ -26,6 +26,8 @@ interface EntrevistaData {
   equipo: { id: string; nombre: string; miembros: { id: string; name: string; email: string }[] };
   profesores: { id: string; name: string; email: string }[];
   competencias: { id: string; competencia: string; nivel: string }[];
+  asignacionProfesores?: Record<string, string>;
+  liberada?: boolean;
 }
 
 interface EntrevistaFormProps {
@@ -33,7 +35,7 @@ interface EntrevistaFormProps {
   equipos: EquipoOption[];
   profesores: ProfesorOption[];
   competencias: CompetenciaOption[];
-  onSave: (data: { equipoId: string; profesores: string[]; competencias: string[]; fecha: string }) => void;
+  onSave: (data: { equipoId: string; profesores: string[]; competencias: string[]; fecha: string; asignacionProfesores: Record<string, string> }) => void;
   onCancel: () => void;
   loading?: boolean;
 }
@@ -54,6 +56,9 @@ export default function EntrevistaForm({
   );
   const [selectedCompetencias, setSelectedCompetencias] = useState<Set<string>>(
     new Set(entrevista?.competencias.map((c) => c.id) ?? []),
+  );
+  const [asignacionProfesores, setAsignacionProfesores] = useState<Record<string, string>>(
+    entrevista?.asignacionProfesores ?? {},
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -80,6 +85,22 @@ export default function EntrevistaForm({
     });
   }
 
+  const selectedProfesoresList = useMemo(
+    () => profesores.filter((p) => selectedProfesores.has(p.id)),
+    [profesores, selectedProfesores],
+  );
+
+  const selectedCompetenciasList = useMemo(
+    () => competencias.filter((c) => selectedCompetencias.has(c.id)),
+    [competencias, selectedCompetencias],
+  );
+
+  function setAsignacion(alumnoId: string, compId: string, profId: string) {
+    setAsignacionProfesores((prev) => ({ ...prev, [`${alumnoId}-${compId}`]: profId }));
+  }
+
+  const miembrosEquipo = selectedEquipo?.miembros ?? [];
+
   function toggleAllCompetencias() {
     if (selectedCompetencias.size === competencias.length) {
       setSelectedCompetencias(new Set());
@@ -100,11 +121,22 @@ export default function EntrevistaForm({
 
   function handleSubmit() {
     if (!validate()) return;
+    // Only include asignaciones for selected competencias and current equipo members
+    const filteredAsignacion: Record<string, string> = {};
+    for (const miembro of miembrosEquipo) {
+      for (const compId of selectedCompetencias) {
+        const key = `${miembro.id}-${compId}`;
+        if (asignacionProfesores[key]) {
+          filteredAsignacion[key] = asignacionProfesores[key];
+        }
+      }
+    }
     onSave({
       equipoId,
       profesores: Array.from(selectedProfesores),
       competencias: Array.from(selectedCompetencias),
       fecha,
+      asignacionProfesores: filteredAsignacion,
     });
   }
 
@@ -205,6 +237,47 @@ export default function EntrevistaForm({
         </div>
         {errors.competencias && <span className={styles.fieldError}>{errors.competencias}</span>}
       </div>
+
+      {/* Asignación profesor → alumno × competencia */}
+      {selectedProfesoresList.length > 0 && selectedCompetenciasList.length > 0 && miembrosEquipo.length > 0 && (
+        <div className={styles.checkboxSection}>
+          <span className={styles.fieldLabel}>Asignación de profesores por alumno y competencia</span>
+          <div className={styles.asignacionTableWrapper}>
+            <table className={styles.asignacionTable}>
+              <thead>
+                <tr>
+                  <th className={styles.asignacionHeaderComp}>Competencia</th>
+                  {miembrosEquipo.map((m) => (
+                    <th key={m.id} className={styles.asignacionHeaderAlumno}>{m.name}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {selectedCompetenciasList.map((comp) => (
+                  <tr key={comp.id}>
+                    <td className={styles.asignacionCompCell}>{comp.competencia}</td>
+                    {miembrosEquipo.map((m) => (
+                      <td key={m.id} className={styles.asignacionCell}>
+                        <select
+                          className={styles.asignacionCellSelect}
+                          value={asignacionProfesores[`${m.id}-${comp.id}`] ?? ''}
+                          onChange={(e) => setAsignacion(m.id, comp.id, e.target.value)}
+                          disabled={loading}
+                        >
+                          <option value="">—</option>
+                          {selectedProfesoresList.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </select>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Actions */}
       <div className={styles.actions}>

@@ -68,6 +68,13 @@ export class Pagina extends BaseModel {
     this.set('orden', orden);
   }
 
+  getEtiquetas(): string[] {
+    return this.get('etiquetas') ?? [];
+  }
+  setEtiquetas(etiquetas: string[]): void {
+    this.set('etiquetas', etiquetas);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     return {
       id: this.id,
@@ -79,6 +86,7 @@ export class Pagina extends BaseModel {
       bloques: this.getBloques(),
       publicado: this.getPublicado(),
       orden: this.getOrden(),
+      etiquetas: this.getEtiquetas(),
       active: this.get('active'),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
