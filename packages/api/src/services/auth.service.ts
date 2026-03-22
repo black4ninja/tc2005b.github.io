@@ -4,6 +4,14 @@ import { AppUser, MagicToken, AppSession } from '../models/index.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { emailService } from './email.service.js';
 
+function normalizeEmail(input: string): string {
+  let email = input.toLowerCase().trim();
+  if (/^[a-z]\d{8}$/.test(email)) {
+    email = `${email}@tec.mx`;
+  }
+  return email;
+}
+
 class AuthService {
   async requestMagicLink(email: string): Promise<{ success: boolean; message: string }> {
     const genericResponse = {
@@ -13,7 +21,7 @@ class AuthService {
 
     try {
       const query = BaseModel.queryActive<AppUser>('AppUser');
-      query.equalTo('email', email.toLowerCase().trim());
+      query.equalTo('email', normalizeEmail(email));
       const user = await query.first({ useMasterKey: true });
 
       if (!user) {
@@ -121,7 +129,7 @@ class AuthService {
     meta: { userAgent: string; ipAddress: string },
   ): Promise<{ session: AppSession; user: AppUser }> {
     const query = BaseModel.queryActive<AppUser>('AppUser');
-    query.equalTo('email', email.toLowerCase().trim());
+    query.equalTo('email', normalizeEmail(email));
     const user = await query.first({ useMasterKey: true });
 
     if (!user || !user.isActive()) {
@@ -153,7 +161,7 @@ class AuthService {
     meta: { userAgent: string; ipAddress: string },
   ): Promise<{ session: AppSession; user: AppUser }> {
     const query = BaseModel.queryActive<AppUser>('AppUser');
-    query.equalTo('email', email.toLowerCase().trim());
+    query.equalTo('email', normalizeEmail(email));
     const user = await query.first({ useMasterKey: true });
 
     if (!user || !user.isActive()) {

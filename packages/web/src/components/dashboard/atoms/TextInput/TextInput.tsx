@@ -6,13 +6,15 @@ interface TextInputProps {
   type?: string;
   placeholder?: string;
   icon?: string;
+  endIcon?: string;
+  onEndIconClick?: () => void;
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
   error?: string;
 }
 
-export default function TextInput({ label, type = 'text', placeholder, icon, value, onChange, disabled, error }: TextInputProps) {
+export default function TextInput({ label, type = 'text', placeholder, icon, endIcon, onEndIconClick, value, onChange, disabled, error }: TextInputProps) {
   return (
     <div className={styles.wrapper}>
       {label && <label className={styles.label}>{label}</label>}
@@ -26,6 +28,11 @@ export default function TextInput({ label, type = 'text', placeholder, icon, val
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
         />
+        {endIcon && (
+          <button type="button" className={styles.endIconBtn} onClick={onEndIconClick} tabIndex={-1}>
+            <Icon name={endIcon} size="sm" className={styles.icon} />
+          </button>
+        )}
       </div>
       {error && <span className={styles.error}>{error}</span>}
     </div>

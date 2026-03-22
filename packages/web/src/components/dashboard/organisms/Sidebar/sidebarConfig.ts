@@ -12,21 +12,18 @@ const adminItems: SidebarItem[] = [
   { label: 'Agendar Entrevistas', icon: 'event_available', path: AGENDA_ENTREVISTAS_URL, external: true },
 ];
 
-const alumnoBaseItems: SidebarItem[] = [
-  { label: 'Dashboard', icon: 'dashboard', path: '/alumno' },
-  { label: 'Documentación', icon: 'menu_book', path: '/docs/', external: true },
-  { label: 'Agendar Entrevistas', icon: 'event_available', path: AGENDA_ENTREVISTAS_URL, external: true },
-];
-
 export function getSidebarItems(role: DashboardRole, selectedGrupoId?: string, perfilCompleto?: boolean): SidebarItem[] {
   if (role === 'admin') return adminItems;
-  const items = [...alumnoBaseItems];
+  const items: SidebarItem[] = [];
   if (selectedGrupoId) {
     items.push({
       label: 'Calendario',
       icon: 'calendar_month',
       path: `/alumno/grupos/${selectedGrupoId}/calendario`,
     });
+  }
+  items.push({ label: 'Dashboard', icon: 'dashboard', path: '/alumno' });
+  if (selectedGrupoId) {
     items.push({
       label: 'Malla',
       icon: 'grid_view',
@@ -34,6 +31,10 @@ export function getSidebarItems(role: DashboardRole, selectedGrupoId?: string, p
       disabled: !perfilCompleto,
     });
   }
+  items.push(
+    { label: 'Documentación', icon: 'menu_book', path: '/docs/', external: true, disabled: !perfilCompleto },
+    { label: 'Agendar Entrevistas', icon: 'event_available', path: AGENDA_ENTREVISTAS_URL, external: true, disabled: !perfilCompleto },
+  );
   return items;
 }
 

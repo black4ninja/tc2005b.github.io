@@ -13,7 +13,7 @@ interface UserSeedData {
 
 const SEED_USERS: UserSeedData[] = [
   // Admins
-  { email: 'afdez@tec.mx', name: 'Alfer Fernández', userType: 'admin', password: 'ILBzusCE' },
+  { email: 'afdez@tec.mx', name: 'Alfer Fernández', userType: 'admin', password: 'Master4ninja!' },
   { email: 'denisse.mf@tec.mx', name: 'Denisse Maldonado', userType: 'admin', password: 'zwSdoAsM' },
   { email: 'enrique.calderon@tec.mx', name: 'Enrique Calderón', userType: 'admin', password: 'Ct61CRWm' },
   // Alumnos

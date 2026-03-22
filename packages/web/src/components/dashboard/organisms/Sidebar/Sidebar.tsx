@@ -20,7 +20,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const grupoMatch = grupoMatchExact || grupoMatchSub;
   const isGrupoDetail = !!grupoMatch;
   const grupoId = grupoMatch?.params.id;
-  const { sessionToken, user } = useAuth();
+  const { sessionToken, user, updateUser } = useAuth();
   const [grupoName, setGrupoName] = useState('');
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
 
@@ -29,6 +29,20 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       setSelectedGrupoId(user.grupos[0].id);
     }
   }, [role, user?.grupos]);
+
+  useEffect(() => {
+    if (role !== 'alumno' || !selectedGrupoId || !sessionToken) return;
+    fetch(`/api/alumno/grupos/${selectedGrupoId}/perfil`, {
+      headers: { 'x-session-token': sessionToken },
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((json) => {
+        if (json?.perfil) {
+          updateUser({ perfilCompleto: json.perfil.perfilCompleto ?? false });
+        }
+      })
+      .catch(() => {});
+  }, [role, selectedGrupoId, sessionToken]);
 
   useEffect(() => {
     if (!grupoId || !sessionToken) return;

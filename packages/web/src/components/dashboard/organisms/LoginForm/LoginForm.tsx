@@ -8,9 +8,18 @@ import { useAuth } from '../../../../context/AuthContext';
 
 type FormState = 'idle' | 'sending' | 'error';
 
+function normalizeEmail(input: string): string {
+  let email = input.toLowerCase().trim();
+  if (/^[a-z]\d{8}$/.test(email)) {
+    email = `${email}@tec.mx`;
+  }
+  return email;
+}
+
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [state, setState] = useState<FormState>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -19,7 +28,11 @@ export default function LoginForm() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      navigate(user.userType === 'admin' ? '/admin' : '/alumno', { replace: true });
+      if (user.userType === 'alumno' && user.grupos?.length > 0) {
+        navigate(`/alumno/grupos/${user.grupos[0].id}/calendario`, { replace: true });
+      } else {
+        navigate(user.userType === 'admin' ? '/admin' : '/alumno', { replace: true });
+      }
     }
   }, [isLoading, isAuthenticated, user, navigate]);
 
@@ -33,7 +46,7 @@ export default function LoginForm() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({ email: normalizeEmail(email), password }),
       });
 
       const data = await res.json();
@@ -47,7 +60,11 @@ export default function LoginForm() {
       login(data.sessionToken, data.user);
 
       const userType = data.user.userType;
-      navigate(userType === 'admin' ? '/admin' : '/alumno', { replace: true });
+      if (userType === 'alumno' && data.user.grupos?.length > 0) {
+        navigate(`/alumno/grupos/${data.user.grupos[0].id}/calendario`, { replace: true });
+      } else {
+        navigate(userType === 'admin' ? '/admin' : '/alumno', { replace: true });
+      }
     } catch {
       setState('error');
       setErrorMsg('Error de conexión. Intenta de nuevo.');
@@ -75,9 +92,11 @@ export default function LoginForm() {
         />
         <TextInput
           label="Contraseña"
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           placeholder="••••••••"
           icon="lock"
+          endIcon={showPassword ? 'visibility_off' : 'visibility'}
+          onEndIconClick={() => setShowPassword(!showPassword)}
           value={password}
           onChange={setPassword}
           disabled={state === 'sending'}
