@@ -24,6 +24,7 @@ import calificacionesRoutes from './routes/calificaciones.routes.js';
 import alumnoMallaRoutes from './routes/alumno-malla.routes.js';
 import entrevistaRoutes from './routes/entrevista.routes.js';
 import evaluacionesEntrevistaRoutes from './routes/evaluaciones-entrevista.routes.js';
+import paginasRoutes from './routes/paginas.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 
 const app = express();
@@ -52,6 +53,7 @@ app.use('/api', calificacionesRoutes);
 app.use('/api', alumnoMallaRoutes);
 app.use('/api', entrevistaRoutes);
 app.use('/api', evaluacionesEntrevistaRoutes);
+app.use('/api', paginasRoutes);
 
 export function finalize() {
   app.use(errorHandler);

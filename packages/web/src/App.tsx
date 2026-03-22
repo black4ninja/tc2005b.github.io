@@ -23,6 +23,8 @@ import EntrevistasPage from './components/dashboard/pages/EntrevistasPage/Entrev
 import EvaluacionEntrevistaPage from './components/dashboard/pages/EvaluacionEntrevistaPage/EvaluacionEntrevistaPage';
 import AlumnoCalendarioPage from './components/dashboard/pages/AlumnoCalendarioPage/AlumnoCalendarioPage';
 import AlumnoCompetenciasPage from './components/dashboard/pages/AlumnoCompetenciasPage/AlumnoCompetenciasPage';
+import PaginaPage from './components/paginas/PaginaPage';
+import PaginasPage from './components/dashboard/pages/PaginasPage/PaginasPage';
 
 export default function App() {
   return (
@@ -33,6 +35,7 @@ export default function App() {
         <Route path="labs/:labId" element={<LabPage />} />
         <Route path="avances/:avanceId" element={<AvancePage />} />
         <Route path="politicas" element={<CodeReviewsPage />} />
+        <Route path="paginas/:slug" element={<PaginaPage />} />
       </Route>
 
       {/* Auth */}
@@ -56,6 +59,7 @@ export default function App() {
         <Route path="admin/grupos/:id/calendario" element={<AdminCalendarioPage />} />
         <Route path="admin/competencias" element={<CompetenciasPage />} />
         <Route path="admin/actividades" element={<ActividadesPage />} />
+        <Route path="admin/paginas" element={<PaginasPage />} />
       </Route>
 
       {/* Student dashboard */}

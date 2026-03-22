@@ -1,0 +1,347 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.editorLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+/* Block card */
+.blockCard {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #fafbfc;
+  overflow: hidden;
+}
+
+.blockHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f1f5f9;
+  cursor: pointer;
+  user-select: none;
+}
+
+.blockHeader:hover {
+  background: #e8ecf1;
+}
+
+.blockIcon {
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+.blockLabel {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.blockActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.blockActionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+}
+
+.blockActionBtn:hover {
+  background: #dde1e7;
+  color: var(--text-primary);
+}
+
+.blockActionBtn .material-icons {
+  font-size: 18px;
+}
+
+.blockActionBtnDanger:hover {
+  background: #fdecea;
+  color: var(--dash-danger);
+}
+
+.blockBody {
+  padding: 14px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Add block button */
+.addBlockWrapper {
+  position: relative;
+}
+
+.addBlockBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.addBlockBtn:hover {
+  border-color: var(--dash-primary);
+  color: var(--dash-primary);
+  background: #f0f5ff;
+}
+
+.addBlockBtn .material-icons {
+  font-size: 18px;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  padding: 6px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: left;
+  width: 100%;
+}
+
+.dropdownItem:hover {
+  background: #f1f5f9;
+  color: var(--text-primary);
+}
+
+.dropdownItem .material-icons {
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+/* Block form fields */
+.blockFields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.field input,
+.field textarea {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: white;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--dash-primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.htmlTextarea {
+  font-family: 'Courier New', Consolas, monospace;
+  font-size: 12px !important;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* List items (objetivos, preguntas) */
+.listItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.listItem input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+}
+
+.listItem input:focus {
+  outline: none;
+  border-color: var(--dash-primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.listNumber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e8ecf1;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.removeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.removeBtn:hover {
+  background: #fdecea;
+  color: var(--dash-danger);
+}
+
+.removeBtn .material-icons {
+  font-size: 16px;
+}
+
+.addItemBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px dashed var(--border-color);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.addItemBtn:hover {
+  border-color: var(--dash-primary);
+  color: var(--dash-primary);
+}
+
+.addItemBtn .material-icons {
+  font-size: 16px;
+}
+
+/* Recursos specific */
+.recursoRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: white;
+}
+
+.recursoFields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recursoFields input[type="text"] {
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+}
+
+.recursoFields input[type="text"]:focus {
+  outline: none;
+  border-color: var(--dash-primary);
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* Empty state */
+.emptyBlocks {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+}

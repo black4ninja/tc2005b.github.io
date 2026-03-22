@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { ActividadTipo } from '@/types/calendario';
+import type { PaginaResumen } from '@/types/pagina';
 import DashButton from '@/components/dashboard/atoms/DashButton/DashButton';
 import styles from './ActivityForm.module.css';
+
+const API_BASE = '/api';
 
 const TIPO_OPTIONS: { value: ActividadTipo; label: string }[] = [
   { value: 'lab', label: 'Laboratorio' },
@@ -42,6 +45,62 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
   const [externo, setExterno] = useState(initialData?.externo ?? false);
   const [duracion, setDuracion] = useState(initialData?.duracion ?? '');
   const [fechaEntrega, setFechaEntrega] = useState(initialData?.fechaEntrega ?? '');
+
+  // Page picker state
+  const [paginas, setPaginas] = useState<PaginaResumen[]>([]);
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickerFilter, setPickerFilter] = useState('');
+  const [paginasLoaded, setPaginasLoaded] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  // Close picker on outside click
+  useEffect(() => {
+    if (!showPicker) return;
+    function handleClick(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowPicker(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showPicker]);
+
+  async function loadPaginas() {
+    if (paginasLoaded) {
+      setShowPicker(true);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/paginas`);
+      if (res.ok) {
+        const data = await res.json();
+        setPaginas(data.paginas ?? []);
+        setPaginasLoaded(true);
+      }
+    } catch {
+      // silently fail
+    }
+    setShowPicker(true);
+  }
+
+  function selectPagina(p: PaginaResumen) {
+    setEnlace(`/paginas/${p.slug}`);
+    setExterno(false);
+    setShowPicker(false);
+    setPickerFilter('');
+  }
+
+  // Find matching page name for the current enlace
+  const matchedPagina = enlace.startsWith('/paginas/')
+    ? paginas.find((p) => `/paginas/${p.slug}` === enlace)
+    : undefined;
+
+  const filteredPaginas = pickerFilter
+    ? paginas.filter((p) =>
+        p.titulo.toLowerCase().includes(pickerFilter.toLowerCase()) ||
+        p.slug.toLowerCase().includes(pickerFilter.toLowerCase())
+      )
+    : paginas;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,12 +161,66 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
 
       <div className={styles.field}>
         <label>Enlace</label>
-        <input
-          type="text"
-          value={enlace}
-          onChange={(e) => setEnlace(e.target.value)}
-          placeholder="URL o ruta interna (/labs/lab1)"
-        />
+        <div className={styles.enlaceWrapper} ref={pickerRef}>
+          <div className={styles.enlaceInputRow}>
+            <input
+              type="text"
+              value={enlace}
+              onChange={(e) => setEnlace(e.target.value)}
+              placeholder="URL o ruta interna (/labs/lab1)"
+              className={styles.enlaceInput}
+            />
+            <button
+              type="button"
+              className={styles.pickerBtn}
+              onClick={loadPaginas}
+              title="Seleccionar página"
+            >
+              <span className="material-icons">article</span>
+            </button>
+          </div>
+          {matchedPagina && (
+            <span className={styles.paginaBadge}>
+              <span className="material-icons">article</span>
+              {matchedPagina.titulo}
+            </span>
+          )}
+          {showPicker && (
+            <div className={styles.pickerDropdown}>
+              <input
+                type="text"
+                className={styles.pickerSearch}
+                value={pickerFilter}
+                onChange={(e) => setPickerFilter(e.target.value)}
+                placeholder="Buscar página..."
+                autoFocus
+              />
+              {filteredPaginas.length === 0 ? (
+                <div className={styles.pickerEmpty}>
+                  {paginas.length === 0 ? 'No hay páginas publicadas' : 'Sin resultados'}
+                </div>
+              ) : (
+                <ul className={styles.pickerList}>
+                  {filteredPaginas.map((p) => (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        className={styles.pickerItem}
+                        onClick={() => selectPagina(p)}
+                      >
+                        <span className="material-icons">article</span>
+                        <span className={styles.pickerItemText}>
+                          <strong>{p.titulo}</strong>
+                          <code>/paginas/{p.slug}</code>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {enlace.trim() && (

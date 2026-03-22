@@ -6,3 +6,111 @@
 {"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T07:09:00.943Z"}
 {"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T07:09:06.364Z"}
 {"level":"warn","message":"DeprecationWarning: PublicAPIRouter is deprecated and will be removed in a future version. pages.enableRouter","timestamp":"2026-03-22T07:09:06.366Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T20:37:23.474Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:37:23.474Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:37:23.474Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:37:23.479Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:37:23.480Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:37:23.480Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:37:27.843Z"}
+{"level":"warn","message":"DeprecationWarning: PublicAPIRouter is deprecated and will be removed in a future version. pages.enableRouter","timestamp":"2026-03-22T20:37:27.844Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T20:54:54.036Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:54:54.036Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:54:54.036Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.043Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.046Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.046Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T20:54:54.045Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:54:54.046Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:54:54.046Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.051Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.053Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.053Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T20:54:54.058Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:54:54.059Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:54:54.059Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.066Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.068Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.069Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T20:54:54.085Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:54:54.086Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:54:54.086Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.095Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.098Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.098Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T20:54:54.319Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:54:54.320Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:54:54.320Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.328Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.332Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.332Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T20:54:54.360Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:54:54.361Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:54:54.361Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.366Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.368Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.369Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T20:54:54.388Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:54:54.389Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T20:54:54.389Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.394Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.396Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:54:54.397Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:55:02.475Z"}
+{"level":"warn","message":"DeprecationWarning: PublicAPIRouter is deprecated and will be removed in a future version. pages.enableRouter","timestamp":"2026-03-22T20:55:02.477Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:55:02.729Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:55:02.729Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:55:02.729Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:55:02.729Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:55:02.729Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T20:55:02.798Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T21:31:09.830Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T21:31:09.831Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T21:31:09.831Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.836Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.838Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.838Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T21:31:09.828Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T21:31:09.829Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T21:31:09.829Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.834Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.836Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.836Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T21:31:09.836Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T21:31:09.837Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T21:31:09.837Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.842Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.844Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.845Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T21:31:09.829Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T21:31:09.829Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T21:31:09.829Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.834Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.846Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.846Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T21:31:09.828Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T21:31:09.828Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T21:31:09.828Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.841Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.844Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.845Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T21:31:09.843Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T21:31:09.844Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T21:31:09.844Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.849Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.851Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.851Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'encodeParseObjectInCloudFunction' default will change to 'true' in a future version.","timestamp":"2026-03-22T21:31:09.853Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'enableInsecureAuthAdapters' default will change to 'false' in a future version.","timestamp":"2026-03-22T21:31:09.854Z"}
+{"level":"warn","message":"DeprecationWarning: The Parse Server option 'databaseOptions.allowPublicExplain' default will change to 'false' in a future version.","timestamp":"2026-03-22T21:31:09.854Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.860Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.864Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:09.864Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:14.647Z"}
+{"level":"warn","message":"DeprecationWarning: PublicAPIRouter is deprecated and will be removed in a future version. pages.enableRouter","timestamp":"2026-03-22T21:31:14.648Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:14.809Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:14.812Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:14.918Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:14.920Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:14.920Z"}
+{"level":"warn","message":"DeprecationWarning: insecure adapter is deprecated and will be removed in a future version.","timestamp":"2026-03-22T21:31:14.932Z"}

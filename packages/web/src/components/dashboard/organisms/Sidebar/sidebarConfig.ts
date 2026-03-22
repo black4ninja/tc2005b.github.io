@@ -8,6 +8,7 @@ const adminItems: SidebarItem[] = [
   { label: 'Grupos', icon: 'groups', path: '/admin/grupos' },
   { label: 'Competencias', icon: 'emoji_events', path: '/admin/competencias' },
   { label: 'Actividades', icon: 'assignment', path: '/admin/actividades' },
+  { label: 'Páginas', icon: 'article', path: '/admin/paginas' },
   { label: 'Documentación', icon: 'menu_book', path: '/docs/', external: true },
   { label: 'Agendar Entrevistas', icon: 'event_available', path: AGENDA_ENTREVISTAS_URL, external: true },
 ];
