@@ -67,7 +67,7 @@
   color: #dc2626;
   font-size: 0.7rem;
   font-weight: 600;
-  white-space: nowrap;
+  flex-wrap: wrap;
 }
 
 /* Activity type colors via data attributes */

@@ -72,7 +72,7 @@ export default function ActivityItem({ actividad, isFilteredOut }: ActivityItemP
         {actividad.fechaEntrega && (
           <span className={styles.entregaBadge}>
             <i className="material-icons" style={{ fontSize: 12 }}>event</i>
-            Entrega: {actividad.fechaEntrega}
+            {actividad.fechaEntrega}
           </span>
         )}
       </div>
