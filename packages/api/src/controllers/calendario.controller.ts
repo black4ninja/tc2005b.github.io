@@ -5,14 +5,21 @@ import { Semana } from '../models/Semana.js';
 import { Actividad } from '../models/Actividad.js';
 
 export async function getCalendarioByGrupo(req: Request, res: Response): Promise<void> {
-  const { grupoName } = req.params;
+  const { grupoIdentifier } = req.params;
 
   try {
-    // Find the grupo by name
-    const grupoQuery = new Parse.Query<Grupo>('Grupo');
-    grupoQuery.equalTo('name', grupoName);
-    grupoQuery.equalTo('exists' as any, true as any);
-    const grupo = await grupoQuery.first({ useMasterKey: true });
+    // Try by Parse ID first, then fall back to name lookup
+    let grupo: Grupo | undefined;
+    try {
+      const byId = await new Parse.Query<Grupo>('Grupo').get(grupoIdentifier, { useMasterKey: true });
+      if (byId.get('exists')) grupo = byId;
+    } catch {
+      // Not a valid Parse ID — try by name
+      const q = new Parse.Query<Grupo>('Grupo');
+      q.equalTo('name', grupoIdentifier);
+      q.equalTo('exists' as any, true as any);
+      grupo = (await q.first({ useMasterKey: true })) ?? undefined;
+    }
 
     if (!grupo) {
       res.status(404).json({ status: 'error', message: 'Grupo no encontrado' });

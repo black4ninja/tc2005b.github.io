@@ -45,20 +45,30 @@ interface SemanaEspecialData {
 
 type SemanaData = SemanaNormalData | SemanaEspecialData;
 
-const GRUPO_DATA = {
-  name: '501',
-  curso: 'TC2005B',
-  nombreCurso: 'Construcción de Software y Toma de Decisiones',
-  salon: '4205',
-  enlaces: {
-    asesoriaDenisse: 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0glSuRv-Qk1CwD4IJ1nBDWu2LSplGiPrW0Eo0DdEYxakViDvjwVkBsWBgh4U3wYpsD8GP9TRqd',
-    asesoriaAlex: 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0glSuRv-Qk1CwD4IJ1nBDWu2LSplGiPrW0Eo0DdEYxakViDvjwVkBsWBgh4U3wYpsD8GP9TRqd',
-    politicasEquipo: '/politicas',
-    integridadMIT: 'https://integrity.mit.edu/handbook/writing-code',
-    mallaEvaluacion: 'https://docs.google.com/spreadsheets/d/1DzGDdW9kCbSaVki8JP3T85q9jfWLOmCUv7tRsYMLYLE/edit?usp=sharing',
-    agendaEntrevistas: 'https://docs.google.com/spreadsheets/d/1U1fbfaBWMp4Nje13qi2C3mhjhW0B8NxC-JXD0ff6fNQ/edit?gid=32307462#gid=32307462',
+interface GrupoData {
+  name: string;
+  curso: string;
+  nombreCurso: string;
+  salon: string;
+  enlaces: Record<string, string>;
+}
+
+const GRUPOS_DATA: GrupoData[] = [
+  {
+    name: '501',
+    curso: 'TC2005B',
+    nombreCurso: 'Construcción de Software y Toma de Decisiones',
+    salon: '4205',
+    enlaces: {
+      asesoriaDenisse: 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0glSuRv-Qk1CwD4IJ1nBDWu2LSplGiPrW0Eo0DdEYxakViDvjwVkBsWBgh4U3wYpsD8GP9TRqd',
+      asesoriaAlex: 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0glSuRv-Qk1CwD4IJ1nBDWu2LSplGiPrW0Eo0DdEYxakViDvjwVkBsWBgh4U3wYpsD8GP9TRqd',
+      politicasEquipo: '/politicas',
+      integridadMIT: 'https://integrity.mit.edu/handbook/writing-code',
+      mallaEvaluacion: 'https://docs.google.com/spreadsheets/d/1DzGDdW9kCbSaVki8JP3T85q9jfWLOmCUv7tRsYMLYLE/edit?usp=sharing',
+      agendaEntrevistas: 'https://docs.google.com/spreadsheets/d/1U1fbfaBWMp4Nje13qi2C3mhjhW0B8NxC-JXD0ff6fNQ/edit?gid=32307462#gid=32307462',
+    },
   },
-};
+];
 
 const SEMANAS_DATA: SemanaData[] = [
   // SEMANA 1
@@ -516,39 +526,35 @@ const SEMANAS_DATA: SemanaData[] = [
   },
 ];
 
-export async function runCalendarioSeed(dryRun: boolean): Promise<void> {
-  console.log(`\n--- Seed Calendario ${dryRun ? '(DRY RUN)' : ''} ---\n`);
-
-  // Find or create the Grupo
+async function findOrCreateGrupo(grupoData: GrupoData, dryRun: boolean): Promise<Grupo | null> {
   const grupoQuery = new Parse.Query<Grupo>('Grupo');
-  grupoQuery.equalTo('name', GRUPO_DATA.name);
+  grupoQuery.equalTo('name', grupoData.name);
   let grupo = await grupoQuery.first({ useMasterKey: true });
 
   if (!grupo) {
-    console.log(`  CREATE Grupo: ${GRUPO_DATA.name}`);
+    console.log(`  CREATE Grupo: ${grupoData.name}`);
     if (!dryRun) {
       grupo = new Grupo().initDefaults() as Grupo;
-      grupo.setName(GRUPO_DATA.name);
+      grupo.setName(grupoData.name);
     }
   } else {
-    console.log(`  UPDATE Grupo: ${GRUPO_DATA.name}`);
+    console.log(`  UPDATE Grupo: ${grupoData.name}`);
   }
 
   if (!dryRun && grupo) {
-    grupo.setCurso(GRUPO_DATA.curso);
-    grupo.setNombreCurso(GRUPO_DATA.nombreCurso);
-    grupo.setSalon(GRUPO_DATA.salon);
-    grupo.setEnlaces(GRUPO_DATA.enlaces);
+    grupo.setCurso(grupoData.curso);
+    grupo.setNombreCurso(grupoData.nombreCurso);
+    grupo.setSalon(grupoData.salon);
+    grupo.setEnlaces(grupoData.enlaces);
     await grupo.save(null, { useMasterKey: true });
   }
 
-  if (dryRun) {
-    console.log(`  Would create ${SEMANAS_DATA.length} semanas with their actividades`);
-    console.log(`\nCalendario seed dry run complete.\n`);
-    return;
-  }
+  return grupo;
+}
 
-  if (!grupo) return;
+async function seedCalendarioForGrupo(grupo: Grupo): Promise<number> {
+  const grupoName = grupo.getName();
+  console.log(`\n  --- Seeding calendario for Grupo ${grupoName} ---`);
 
   // Clean up existing semanas and actividades for this grupo (idempotent)
   console.log('  Cleaning existing semanas/actividades...');
@@ -558,7 +564,6 @@ export async function runCalendarioSeed(dryRun: boolean): Promise<void> {
   const existingSemanas = await existingSemanaQuery.find({ useMasterKey: true });
 
   if (existingSemanas.length > 0) {
-    // Delete actividades for these semanas
     const existingActQuery = new Parse.Query<Actividad>('Actividad');
     existingActQuery.containedIn('semana', existingSemanas);
     existingActQuery.limit(2000);
@@ -668,5 +673,50 @@ export async function runCalendarioSeed(dryRun: boolean): Promise<void> {
     }
   }
 
-  console.log(`\nCalendario seed complete: ${SEMANAS_DATA.length} semanas, ${totalActividades} actividades.\n`);
+  console.log(`  Grupo ${grupoName}: ${SEMANAS_DATA.length} semanas, ${totalActividades} actividades.`);
+  return totalActividades;
+}
+
+export async function runCalendarioSeed(dryRun: boolean): Promise<void> {
+  console.log(`\n--- Seed Calendario ${dryRun ? '(DRY RUN)' : ''} ---\n`);
+
+  // 1. Find or create grupos from GRUPOS_DATA
+  const seededNames = new Set<string>();
+  const gruposToSeed: Grupo[] = [];
+
+  for (const grupoData of GRUPOS_DATA) {
+    const grupo = await findOrCreateGrupo(grupoData, dryRun);
+    if (grupo) {
+      gruposToSeed.push(grupo);
+      seededNames.add(grupoData.name);
+    }
+  }
+
+  // 2. Also discover any other existing grupos in the DB
+  const allGruposQuery = new Parse.Query<Grupo>('Grupo');
+  allGruposQuery.equalTo('exists' as any, true as any);
+  allGruposQuery.limit(100);
+  const allGrupos = await allGruposQuery.find({ useMasterKey: true });
+
+  for (const grupo of allGrupos) {
+    if (!seededNames.has(grupo.getName())) {
+      console.log(`  DISCOVERED existing Grupo: ${grupo.getName()}`);
+      gruposToSeed.push(grupo);
+      seededNames.add(grupo.getName());
+    }
+  }
+
+  if (dryRun) {
+    console.log(`\n  Would seed ${SEMANAS_DATA.length} semanas with actividades for ${gruposToSeed.length} grupo(s): ${[...seededNames].join(', ')}`);
+    console.log(`\nCalendario seed dry run complete.\n`);
+    return;
+  }
+
+  // 3. Seed calendario for each grupo
+  let grandTotalActividades = 0;
+  for (const grupo of gruposToSeed) {
+    grandTotalActividades += await seedCalendarioForGrupo(grupo);
+  }
+
+  console.log(`\nCalendario seed complete: ${gruposToSeed.length} grupo(s), ${SEMANAS_DATA.length} semanas each, ${grandTotalActividades} total actividades.\n`);
 }

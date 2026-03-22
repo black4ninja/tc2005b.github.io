@@ -3,6 +3,6 @@ import { getCalendarioByGrupo } from '../controllers/calendario.controller.js';
 
 const router = Router();
 
-router.get('/calendario/:grupoName', getCalendarioByGrupo);
+router.get('/calendario/:grupoIdentifier', getCalendarioByGrupo);
 
 export default router;

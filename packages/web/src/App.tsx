@@ -21,12 +21,13 @@ import EquiposPage from './components/dashboard/pages/EquiposPage/EquiposPage';
 import AvancesEquipoPage from './components/dashboard/pages/AvancesEquipoPage/AvancesEquipoPage';
 import EntrevistasPage from './components/dashboard/pages/EntrevistasPage/EntrevistasPage';
 import EvaluacionEntrevistaPage from './components/dashboard/pages/EvaluacionEntrevistaPage/EvaluacionEntrevistaPage';
+import AlumnoCalendarioPage from './components/dashboard/pages/AlumnoCalendarioPage/AlumnoCalendarioPage';
 
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<CalendarPage />} />
+        <Route index element={<Navigate to="/login" replace />} />
         <Route path="calendario/:grupoId" element={<CalendarPage />} />
         <Route path="labs/:labId" element={<LabPage />} />
         <Route path="avances/:avanceId" element={<AvancePage />} />
@@ -51,7 +52,7 @@ export default function App() {
         <Route path="admin/grupos/:id/equipos/:equipoId/avances" element={<AvancesEquipoPage />} />
         <Route path="admin/grupos/:id/entrevistas" element={<EntrevistasPage />} />
         <Route path="admin/grupos/:id/entrevistas/:entrevistaId/evaluacion" element={<EvaluacionEntrevistaPage />} />
-        <Route path="admin/calendario" element={<AdminCalendarioPage />} />
+        <Route path="admin/grupos/:id/calendario" element={<AdminCalendarioPage />} />
         <Route path="admin/competencias" element={<CompetenciasPage />} />
         <Route path="admin/actividades" element={<ActividadesPage />} />
       </Route>
@@ -59,6 +60,7 @@ export default function App() {
       {/* Student dashboard */}
       <Route element={<DashboardLayout role="alumno" />}>
         <Route path="alumno" element={<AlumnoDashboard />} />
+        <Route path="alumno/grupos/:id/calendario" element={<AlumnoCalendarioPage />} />
         <Route path="alumno/grupos/:id/malla" element={<MallaEvaluacionPage />} />
       </Route>
     </Routes>
