@@ -55,8 +55,8 @@ export async function crearCompetenciasAlumno(req: Request, res: Response): Prom
         registro.setGrupo(grupoPointer);
         registro.setAlumno(alumno);
         registro.setCompetencia(comp);
-        registro.setValorPeriodo1('');
-        registro.setValorPeriodo2('');
+        registro.setValorPeriodo1(0);
+        registro.setValorPeriodo2(0);
         registro.setRetroPeriodo1('');
         registro.setRetroPeriodo2('');
         toSave.push(registro);
@@ -69,8 +69,10 @@ export async function crearCompetenciasAlumno(req: Request, res: Response): Prom
     }
 
     res.status(201).json({ status: 'ok', created, skipped });
-  } catch (error) {
-    res.status(500).json({ status: 'error', message: 'Error al crear competencias de alumnos' });
+  } catch (error: any) {
+    console.error('[crearCompetenciasAlumno] Error:', error?.message ?? error);
+    console.error('[crearCompetenciasAlumno] Stack:', error?.stack);
+    res.status(500).json({ status: 'error', message: 'Error al crear competencias de alumnos', detail: error?.message });
   }
 }
 

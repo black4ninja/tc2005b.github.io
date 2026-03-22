@@ -127,8 +127,14 @@ export async function updateMyActividad(req: Request, res: Response): Promise<vo
     const query = new Parse.Query<ActividadEvaluacionAlumno>('ActividadEvaluacionAlumno');
     query.equalTo('exists' as any, true as any);
     query.equalTo('alumno' as any, alumnoPointer as any);
+    query.equalTo('objectId' as any, actividadId as any);
     query.include('actividadGrupo' as any);
-    const registro = await query.get(actividadId, { useMasterKey: true });
+    const registro = await query.first({ useMasterKey: true });
+
+    if (!registro) {
+      res.status(403).json({ status: 'error', message: 'No tienes acceso a este recurso' });
+      return;
+    }
 
     // Solo permite actualizar semanaCompletada
     const { semanaCompletada } = req.body;
@@ -209,7 +215,13 @@ export async function updateMyCompetenciaEvidencias(req: Request, res: Response)
     const query = new Parse.Query<CompetenciaAlumno>('CompetenciaAlumno');
     query.equalTo('exists' as any, true as any);
     query.equalTo('alumno' as any, alumnoPointer as any);
-    const registro = await query.get(compAlumnoId, { useMasterKey: true });
+    query.equalTo('objectId' as any, compAlumnoId as any);
+    const registro = await query.first({ useMasterKey: true });
+
+    if (!registro) {
+      res.status(403).json({ status: 'error', message: 'No tienes acceso a este recurso' });
+      return;
+    }
 
     // Solo permite actualizar evidencias
     const { evidencias } = req.body;

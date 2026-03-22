@@ -18,5 +18,6 @@ export { Equipo } from './Equipo.js';
 export { GrupoAlumno } from './GrupoAlumno.js';
 export { Entrevista } from './Entrevista.js';
 export { EvaluacionEntrevista } from './EvaluacionEntrevista.js';
+export { CompetenciaAlumno } from './CompetenciaAlumno.js';
 export { Pagina } from './Pagina.js';
 export type { ContentBlock } from './Pagina.js';

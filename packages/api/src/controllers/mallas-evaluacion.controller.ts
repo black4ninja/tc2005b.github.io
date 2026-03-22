@@ -146,13 +146,22 @@ export async function getMallaAlumno(req: Request, res: Response): Promise<void>
 }
 
 export async function updateActividadAlumno(req: Request, res: Response): Promise<void> {
-  const { actividadId } = req.params;
+  const { alumnoId, actividadId } = req.params;
 
   try {
+    const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId);
+
     const query = new Parse.Query<ActividadEvaluacionAlumno>('ActividadEvaluacionAlumno');
     query.equalTo('exists' as any, true as any);
+    query.equalTo('objectId' as any, actividadId as any);
+    query.equalTo('alumno' as any, alumnoPointer as any);
     query.include('actividadGrupo' as any);
-    const registro = await query.get(actividadId, { useMasterKey: true });
+    const registro = await query.first({ useMasterKey: true });
+
+    if (!registro) {
+      res.status(404).json({ status: 'error', message: 'Actividad no encontrada para este alumno' });
+      return;
+    }
 
     const { observaciones, aprendizajePlaneado, semanaCompletada } = req.body;
     if (typeof observaciones === 'string') {
