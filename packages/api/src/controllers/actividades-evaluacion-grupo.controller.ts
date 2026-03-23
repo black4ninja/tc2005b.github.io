@@ -3,6 +3,8 @@ import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { ActividadEvaluacionGrupo } from '../models/ActividadEvaluacionGrupo.js';
 import { ActividadEvaluacion } from '../models/ActividadEvaluacion.js';
+import { ActividadEvaluacionAlumno } from '../models/ActividadEvaluacionAlumno.js';
+import { PlanEvaluacion } from '../models/PlanEvaluacion.js';
 import { Grupo } from '../models/Grupo.js';
 
 const TIPOS_VALIDOS = [
@@ -114,10 +116,49 @@ export async function deleteActividadEvaluacionGrupo(req: Request, res: Response
   try {
     const query = new Parse.Query<ActividadEvaluacionGrupo>('ActividadEvaluacionGrupo');
     query.equalTo('exists' as any, true as any);
+    query.include('grupo');
     const act = await query.get(id, { useMasterKey: true });
+    const grupo = act.getGrupo();
 
+    // 1. Soft-delete the actividad
     act.softDelete();
     await act.save(null, { useMasterKey: true });
+
+    // 2. Cascade: soft-delete ActividadEvaluacionAlumno records
+    const alumnoActQuery = new Parse.Query<ActividadEvaluacionAlumno>('ActividadEvaluacionAlumno');
+    alumnoActQuery.equalTo('actividadGrupo', act);
+    alumnoActQuery.equalTo('active' as any, true as any);
+    alumnoActQuery.limit(5000);
+    const alumnoActs = await alumnoActQuery.find({ useMasterKey: true });
+
+    if (alumnoActs.length > 0) {
+      for (const rec of alumnoActs) {
+        rec.softDelete();
+      }
+      await Parse.Object.saveAll(alumnoActs, { useMasterKey: true });
+    }
+
+    // 3. Cascade: remove actividadId from PlanEvaluacion periodos
+    if (grupo) {
+      const planQuery = new Parse.Query<PlanEvaluacion>('PlanEvaluacion');
+      planQuery.equalTo('grupo', grupo);
+      planQuery.equalTo('active' as any, true as any);
+      const plan = await planQuery.first({ useMasterKey: true });
+
+      if (plan) {
+        const periodos = plan.getPeriodos();
+        let changed = false;
+        for (const periodo of periodos) {
+          const before = periodo.actividades.length;
+          periodo.actividades = periodo.actividades.filter((aid) => aid !== id);
+          if (periodo.actividades.length !== before) changed = true;
+        }
+        if (changed) {
+          plan.setPeriodos(periodos);
+          await plan.save(null, { useMasterKey: true });
+        }
+      }
+    }
 
     res.json({ status: 'ok', message: 'Actividad de evaluación eliminada' });
   } catch (error: any) {
