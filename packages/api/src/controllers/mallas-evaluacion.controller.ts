@@ -5,6 +5,7 @@ import { ActividadEvaluacionAlumno } from '../models/ActividadEvaluacionAlumno.j
 import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
 import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
+import { registrarLog } from '../models/AuditLog.js';
 
 export async function crearMallasEvaluacion(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
@@ -146,7 +147,7 @@ export async function getMallaAlumno(req: Request, res: Response): Promise<void>
 }
 
 export async function updateActividadAlumno(req: Request, res: Response): Promise<void> {
-  const { alumnoId, actividadId } = req.params;
+  const { grupoId, alumnoId, actividadId } = req.params;
 
   try {
     const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId);
@@ -163,24 +164,69 @@ export async function updateActividadAlumno(req: Request, res: Response): Promis
       return;
     }
 
-    const { observaciones, aprendizajePlaneado, semanaCompletada } = req.body;
+    // Capture before values for audit log
+    const antes = {
+      observaciones: registro.getObservaciones(),
+      aprendizajePlaneado: registro.getAprendizajePlaneado(),
+      aprendizajeGanado: registro.getAprendizajeGanado(),
+      semanaCompletada: registro.getSemanaCompletada(),
+    };
+
+    const { observaciones, aprendizajePlaneado, semanaCompletada, calificacion } = req.body;
+    const acciones: string[] = [];
+    const cambios: Record<string, { antes: any; despues: any }> = {};
+
     if (typeof observaciones === 'string') {
       registro.setObservaciones(observaciones);
+      acciones.push('Actualizó observaciones');
+      cambios.observaciones = { antes: antes.observaciones, despues: observaciones };
     }
     if (typeof aprendizajePlaneado === 'number') {
       registro.setAprendizajePlaneado(aprendizajePlaneado);
+      acciones.push(`Cambió aprendizaje planeado de ${antes.aprendizajePlaneado} a ${aprendizajePlaneado}`);
+      cambios.aprendizajePlaneado = { antes: antes.aprendizajePlaneado, despues: aprendizajePlaneado };
     }
     if (typeof semanaCompletada === 'number') {
       registro.setSemanaCompletada(semanaCompletada);
+      // Si el admin ya asignó una calificación parcial (ganado > 0), no sobrescribir
       const tipo = registro.getActividadGrupo()?.get('tipo');
+      const currentGanado = registro.getAprendizajeGanado();
       if (tipo !== 'proyecto') {
-        registro.setAprendizajeGanado(
-          semanaCompletada > 0 ? registro.getAprendizajePlaneado() : 0
-        );
+        if (semanaCompletada > 0 && currentGanado === 0) {
+          registro.setAprendizajeGanado(registro.getAprendizajePlaneado());
+        } else if (semanaCompletada === 0) {
+          registro.setAprendizajeGanado(0);
+        }
       }
+      acciones.push(`Cambió semana completada de ${antes.semanaCompletada} a ${semanaCompletada}`);
+      cambios.semanaCompletada = { antes: antes.semanaCompletada, despues: semanaCompletada };
+    }
+    if (typeof calificacion === 'number') {
+      const clamped = Math.max(0, Math.min(100, calificacion));
+      const planeado = registro.getAprendizajePlaneado();
+      const nuevoGanado = Math.round(planeado * (clamped / 100) * 100) / 100;
+      registro.setAprendizajeGanado(nuevoGanado);
+      acciones.push(`Asignó calificación ${clamped}% (ganado: ${nuevoGanado})`);
+      cambios.calificacion = { antes: antes.aprendizajeGanado, despues: nuevoGanado };
     }
 
     await registro.save(null, { useMasterKey: true });
+
+    // Audit log (fire-and-forget)
+    const user = req.appUser;
+    if (user && acciones.length > 0) {
+      registrarLog({
+        entidad: 'ActividadEvaluacionAlumno',
+        entidadId: actividadId,
+        grupoId: grupoId ?? '',
+        alumnoId,
+        usuarioId: user.id,
+        usuarioNombre: user.get('name') ?? '',
+        rol: 'admin',
+        accion: acciones.join('; '),
+        cambios,
+      }).catch(console.error);
+    }
 
     res.json({ status: 'ok', actividad: registro.toSafeJSON() });
   } catch (error) {

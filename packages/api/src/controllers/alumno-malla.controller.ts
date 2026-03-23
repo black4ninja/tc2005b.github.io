@@ -9,6 +9,7 @@ import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { BaseModel } from '../models/BaseModel.js';
+import { registrarLog } from '../models/AuditLog.js';
 
 /* ------------------------------------------------------------------ */
 /*  Helper: validate alumno belongs to grupo                           */
@@ -138,21 +139,42 @@ export async function updateMyActividad(req: Request, res: Response): Promise<vo
 
     // Solo permite actualizar semanaCompletada
     const { semanaCompletada } = req.body;
+    const antesSemana = registro.getSemanaCompletada();
+
     if (typeof semanaCompletada === 'number') {
       registro.setSemanaCompletada(semanaCompletada);
 
       // Auto-asignar aprendizaje ganado (excepto proyectos)
+      // Si el admin ya asignó una calificación parcial (ganado > 0), no sobrescribir
       const tipo = registro.getActividadGrupo()?.get('tipo');
+      const currentGanado = registro.getAprendizajeGanado();
       if (tipo !== 'proyecto') {
-        if (semanaCompletada > 0) {
+        if (semanaCompletada > 0 && currentGanado === 0) {
           registro.setAprendizajeGanado(registro.getAprendizajePlaneado());
-        } else {
+        } else if (semanaCompletada === 0) {
           registro.setAprendizajeGanado(0);
         }
       }
     }
 
     await registro.save(null, { useMasterKey: true });
+
+    // Audit log (fire-and-forget)
+    const user = req.appUser;
+    if (user && typeof semanaCompletada === 'number') {
+      const { grupoId } = req.params;
+      registrarLog({
+        entidad: 'ActividadEvaluacionAlumno',
+        entidadId: actividadId,
+        grupoId: grupoId ?? '',
+        alumnoId,
+        usuarioId: user.id,
+        usuarioNombre: user.get('name') ?? '',
+        rol: 'alumno',
+        accion: `Marcó semana completada: ${semanaCompletada} (antes: ${antesSemana})`,
+        cambios: { semanaCompletada: { antes: antesSemana, despues: semanaCompletada } },
+      }).catch(console.error);
+    }
 
     res.json({ status: 'ok', actividad: registro.toSafeJSON() });
   } catch (error) {

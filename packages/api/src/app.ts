@@ -29,6 +29,7 @@ import etiquetasRoutes from './routes/etiquetas.routes.js';
 import documentosRoutes from './routes/documentos.routes.js';
 import lecturasRoutes from './routes/lecturas.routes.js';
 import ejerciciosRoutes from './routes/ejercicios.routes.js';
+import auditLogRoutes from './routes/audit-log.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 
 const app = express();
@@ -62,6 +63,7 @@ app.use('/api', etiquetasRoutes);
 app.use('/api', documentosRoutes);
 app.use('/api', lecturasRoutes);
 app.use('/api', ejerciciosRoutes);
+app.use('/api', auditLogRoutes);
 
 export function finalize() {
   app.use(errorHandler);

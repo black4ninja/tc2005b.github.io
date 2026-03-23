@@ -5,6 +5,7 @@ import { ActividadEvaluacionGrupo } from '../models/ActividadEvaluacionGrupo.js'
 import { ActividadEvaluacionAlumno } from '../models/ActividadEvaluacionAlumno.js';
 import { Grupo } from '../models/Grupo.js';
 import { AppUser } from '../models/AppUser.js';
+import { registrarLog } from '../models/AuditLog.js';
 
 export async function getAvancesEquipo(req: Request, res: Response): Promise<void> {
   const { grupoId, equipoId } = req.params;
@@ -96,28 +97,55 @@ export async function getAvancesEquipo(req: Request, res: Response): Promise<voi
 }
 
 export async function calificarAvance(req: Request, res: Response): Promise<void> {
-  const { actividadAlumnoId } = req.params;
+  const { grupoId, actividadAlumnoId } = req.params;
 
   try {
     const query = new Parse.Query<ActividadEvaluacionAlumno>('ActividadEvaluacionAlumno');
     query.equalTo('exists' as any, true as any);
     query.include('actividadGrupo' as any);
+    query.include('alumno' as any);
     const registro = await query.get(actividadAlumnoId, { useMasterKey: true });
 
+    const antesGanado = registro.getAprendizajeGanado();
+    const antesObs = registro.getObservaciones();
     const { calificacion, observaciones } = req.body;
+    const acciones: string[] = [];
+    const cambios: Record<string, { antes: any; despues: any }> = {};
 
     if (typeof calificacion === 'number') {
       const clamped = Math.max(0, Math.min(100, calificacion));
       const aprendizajePlaneado = registro.getAprendizajePlaneado();
       const aprendizajeGanado = aprendizajePlaneado * (clamped / 100);
-      registro.setAprendizajeGanado(Math.round(aprendizajeGanado * 100) / 100);
+      const nuevoGanado = Math.round(aprendizajeGanado * 100) / 100;
+      registro.setAprendizajeGanado(nuevoGanado);
+      acciones.push(`Asignó calificación ${clamped}% (ganado: ${nuevoGanado})`);
+      cambios.calificacion = { antes: antesGanado, despues: nuevoGanado };
     }
 
     if (typeof observaciones === 'string') {
       registro.setObservaciones(observaciones);
+      acciones.push('Actualizó observaciones');
+      cambios.observaciones = { antes: antesObs, despues: observaciones };
     }
 
     await registro.save(null, { useMasterKey: true });
+
+    // Audit log (fire-and-forget)
+    const user = req.appUser;
+    const alumnoId = registro.get('alumno')?.id;
+    if (user && acciones.length > 0 && alumnoId) {
+      registrarLog({
+        entidad: 'ActividadEvaluacionAlumno',
+        entidadId: actividadAlumnoId,
+        grupoId: grupoId ?? '',
+        alumnoId,
+        usuarioId: user.id,
+        usuarioNombre: user.get('name') ?? '',
+        rol: 'admin',
+        accion: acciones.join('; '),
+        cambios,
+      }).catch(console.error);
+    }
 
     res.json({
       status: 'ok',

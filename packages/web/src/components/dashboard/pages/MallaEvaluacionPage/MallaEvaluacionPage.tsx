@@ -143,7 +143,13 @@ export default function MallaEvaluacionPage() {
   const [alumnoInfo, setAlumnoInfo] = useState<AlumnoInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
   const [activeTab, setActiveTab] = useState<TabKey>('actividades');
+
+  // Audit log modal state
+  const [logModalActId, setLogModalActId] = useState<string | null>(null);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
 
   // Competencias
   const [competenciasAlumno, setCompetenciasAlumno] = useState<CompetenciaAlumnoData[]>([]);
@@ -345,9 +351,15 @@ export default function MallaEvaluacionPage() {
       );
       if (!res.ok) throw new Error('Error al guardar competencia');
       closeCompModal();
+      const scrollY = window.scrollY;
       await fetchCompetencias();
+      requestAnimationFrame(() => window.scrollTo(0, scrollY));
+      setToast('Competencia actualizada');
+      setTimeout(() => setToast(''), 3000);
     } catch (err: any) {
       setError(err.message);
+      setToast('Error al guardar competencia');
+      setTimeout(() => setToast(''), 3000);
     } finally {
       setSavingComp(false);
     }
@@ -371,10 +383,18 @@ export default function MallaEvaluacionPage() {
       );
       if (!res.ok) throw new Error('Error al guardar evaluación');
       // Re-fetch to get recalculated computed competencias
+      const scrollY = window.scrollY;
       await fetchCompetencias();
+      requestAnimationFrame(() => window.scrollTo(0, scrollY));
+      setToast('Evaluación actualizada');
+      setTimeout(() => setToast(''), 3000);
     } catch (err: any) {
       setError(err.message);
+      const scrollY = window.scrollY;
       await fetchCompetencias();
+      requestAnimationFrame(() => window.scrollTo(0, scrollY));
+      setToast('Error al guardar evaluación');
+      setTimeout(() => setToast(''), 3000);
     }
   }
 
@@ -404,6 +424,56 @@ export default function MallaEvaluacionPage() {
     }
   }
 
+  /* ---------- Calificación % inline edit (admin only) ---------- */
+
+  async function handleCalificacionChange(actId: string, value: number) {
+    const clamped = Math.max(0, Math.min(100, value));
+    // Optimistic update
+    setActividadesAlumno((prev) =>
+      prev.map((a) => {
+        if (a.id !== actId) return a;
+        const ganado = Math.round(a.aprendizajePlaneado * (clamped / 100) * 100) / 100;
+        return { ...a, aprendizajeGanado: ganado };
+      }),
+    );
+    try {
+      const res = await fetch(
+        `${API_BASE}/admin/grupos/${grupoId}/alumnos/${alumnoId}/malla/${actId}`,
+        {
+          method: 'PUT',
+          headers: { ...authHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ calificacion: clamped }),
+        },
+      );
+      if (!res.ok) throw new Error('Error al guardar calificación');
+    } catch (err: any) {
+      setError(err.message);
+      await fetchData();
+    }
+  }
+
+  /* ---------- Audit log modal ---------- */
+
+  async function openAuditLog(actId: string) {
+    setLogModalActId(actId);
+    setAuditLogs([]);
+    setLoadingLogs(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/admin/grupos/${grupoId}/alumnos/${alumnoId}/audit-log?entidadId=${actId}`,
+        { headers: authHeaders },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setAuditLogs(data.logs ?? []);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingLogs(false);
+    }
+  }
+
   /* ---------- Semana completada inline edit (alumno) ---------- */
 
   async function handleSemanaCompletadaChange(actId: string, value: number) {
@@ -412,8 +482,13 @@ export default function MallaEvaluacionPage() {
         if (a.id !== actId) return a;
         const updated: typeof a = { ...a, semanaCompletada: value };
         // Auto-asignar aprendizaje ganado (excepto proyectos)
+        // Si ya tiene calificación parcial (ganado > 0), no sobrescribir
         if (a.tipo !== 'proyecto') {
-          updated.aprendizajeGanado = value > 0 ? a.aprendizajePlaneado : 0;
+          if (value > 0 && a.aprendizajeGanado === 0) {
+            updated.aprendizajeGanado = a.aprendizajePlaneado;
+          } else if (value === 0) {
+            updated.aprendizajeGanado = 0;
+          }
         }
         return updated;
       }),
@@ -601,6 +676,7 @@ export default function MallaEvaluacionPage() {
         const row = info.row.original;
         return (
           <input
+            key={`${row.id}-planeado-${info.getValue()}`}
             type="number"
             className={styles.inlineNumberInput}
             defaultValue={info.getValue()}
@@ -629,6 +705,35 @@ export default function MallaEvaluacionPage() {
         return val === 0 ? <span className={styles.zeroValue}>0</span> : val;
       },
     }),
+    columnHelper.display({
+      id: 'calificacion',
+      header: 'Calif. %',
+      cell: (info) => {
+        const row = info.row.original;
+        const currentPct = row.aprendizajePlaneado > 0
+          ? Math.round((row.aprendizajeGanado / row.aprendizajePlaneado) * 100)
+          : 0;
+        return (
+          <input
+            key={`${row.id}-${currentPct}`}
+            type="number"
+            className={styles.inlineNumberInput}
+            defaultValue={currentPct}
+            min={0}
+            max={100}
+            onBlur={(e) => {
+              const val = Number(e.target.value);
+              if (!isNaN(val) && val !== currentPct) {
+                handleCalificacionChange(row.id, val);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+            }}
+          />
+        );
+      },
+    }),
     columnHelper.accessor('semanaCompletada', {
       header: 'Sem. Completada',
       cell: (info) => {
@@ -642,6 +747,20 @@ export default function MallaEvaluacionPage() {
         const val = info.getValue();
         return val ? <span className={styles.obsCell}>{val}</span> : <span className={styles.zeroValue}>—</span>;
       },
+    }),
+    columnHelper.display({
+      id: 'auditLog',
+      header: '',
+      cell: (info) => (
+        <button
+          className={styles.logBtn}
+          title="Ver historial de cambios"
+          onClick={() => openAuditLog(info.row.original.id)}
+        >
+          <span className="material-icons" style={{ fontSize: 18 }}>history</span>
+        </button>
+      ),
+      enableSorting: false,
     }),
   ];
 
@@ -992,7 +1111,7 @@ export default function MallaEvaluacionPage() {
       if (ownIds.has(act.actividadGrupoId)) {
         totalPlaneado += act.aprendizajePlaneado;
         totalGanado += act.aprendizajeGanado;
-        if (act.aprendizajeGanado < act.aprendizajePlaneado) {
+        if (act.semanaCompletada === 0) {
           faltantes.push({ nombre: act.nombre, tipo: act.tipo, ganado: act.aprendizajeGanado, planeado: act.aprendizajePlaneado });
         }
       }
@@ -1005,7 +1124,7 @@ export default function MallaEvaluacionPage() {
           if (prevIds.has(act.actividadGrupoId) && !ownIds.has(act.actividadGrupoId)) {
             totalPlaneado += act.aprendizajePlaneado;
             totalGanado += act.aprendizajeGanado;
-            if (act.aprendizajeGanado < act.aprendizajePlaneado) {
+            if (act.semanaCompletada === 0) {
               faltantes.push({ nombre: act.nombre, tipo: act.tipo, ganado: act.aprendizajeGanado, planeado: act.aprendizajePlaneado });
             }
           }
@@ -1362,6 +1481,40 @@ export default function MallaEvaluacionPage() {
           </div>
         </div>
       </Modal>
+      {logModalActId && (
+        <Modal isOpen onClose={() => setLogModalActId(null)} title="Historial de cambios">
+          <div className={styles.logModal}>
+            {loadingLogs ? (
+              <p className={styles.logEmpty}>Cargando...</p>
+            ) : auditLogs.length === 0 ? (
+              <p className={styles.logEmpty}>No hay cambios registrados</p>
+            ) : (
+              <ul className={styles.logList}>
+                {auditLogs.map((log: any) => {
+                  const date = new Date(log.createdAt?.iso ?? log.createdAt);
+                  const dateStr = date.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+                  const timeStr = date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+                  return (
+                    <li key={log.id} className={styles.logEntry}>
+                      <div className={styles.logHeader}>
+                        <span className={styles.logUser}>
+                          <span className="material-icons" style={{ fontSize: 14 }}>
+                            {log.rol === 'admin' ? 'admin_panel_settings' : 'person'}
+                          </span>
+                          {log.usuarioNombre} ({log.rol})
+                        </span>
+                        <span className={styles.logDate}>{dateStr} {timeStr}</span>
+                      </div>
+                      <div className={styles.logAction}>{log.accion}</div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </Modal>
+      )}
+      {toast && <div className={styles.toast}>{toast}</div>}
     </div>
   );
 }
