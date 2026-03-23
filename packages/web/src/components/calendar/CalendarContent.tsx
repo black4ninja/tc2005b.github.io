@@ -30,6 +30,8 @@ import Modal from '@/components/dashboard/atoms/Modal/Modal';
 import ActivityForm from './ActivityForm';
 import WeekForm from './WeekForm';
 import SortableWeekItem from './SortableWeekItem';
+import DashButton from '@/components/dashboard/atoms/DashButton/DashButton';
+import { useAuth } from '@/context/AuthContext';
 import styles from './CalendarContent.module.css';
 
 const API_BASE = '/api';
@@ -46,10 +48,18 @@ interface CalendarContentProps {
 
 export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-height)', editable }: CalendarContentProps) {
   const grupoKey = grupoId ?? '501';
+  const { sessionToken } = useAuth();
 
   const [apiCalendario, setApiCalendario] = useState<Calendario | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Copy calendar state
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [grupos, setGrupos] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedSourceGrupo, setSelectedSourceGrupo] = useState('');
+  const [isCopying, setIsCopying] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,6 +87,64 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
 
     return () => { cancelled = true; };
   }, [grupoKey]);
+
+  const refetchCalendario = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/calendario/${grupoKey}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setApiCalendario(data.calendario);
+    } catch (err: any) {
+      console.warn('Error refetching calendario:', err.message);
+    }
+  }, [grupoKey]);
+
+  async function openCopyModal() {
+    setCopyError(null);
+    setSelectedSourceGrupo('');
+    setShowCopyModal(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const otherGrupos = (data.grupos ?? [])
+          .filter((g: any) => g.id !== calendario?.grupoId)
+          .map((g: any) => ({ id: g.id, name: g.name }));
+        setGrupos(otherGrupos);
+      }
+    } catch {
+      // silently fail
+    }
+  }
+
+  async function handleCopyCalendario() {
+    if (!selectedSourceGrupo || !calendario?.grupoId) return;
+    setIsCopying(true);
+    setCopyError(null);
+    try {
+      const res = await fetch(`${API_BASE}/admin/calendario/copy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-session-token': sessionToken ?? '',
+        },
+        body: JSON.stringify({
+          sourceGrupoId: selectedSourceGrupo,
+          targetGrupoId: calendario.grupoId,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || 'Error al copiar');
+      setShowCopyModal(false);
+      await refetchCalendario();
+    } catch (err: any) {
+      setCopyError(err.message);
+    } finally {
+      setIsCopying(false);
+    }
+  }
 
   const calendario = apiCalendario ?? CALENDARIO_MAP[grupoKey];
   const semanas = calendario?.semanas ?? [];
@@ -468,6 +536,14 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
           <i className="material-icons">info</i>
           Este calendario es tentativo y está sujeto a cambios.
         </div>
+        {editable && (
+          <div className={styles.copyRow}>
+            <DashButton variant="outline" onClick={openCopyModal}>
+              <span className="material-icons" style={{ fontSize: 18 }}>content_copy</span>
+              Copiar de otro grupo
+            </DashButton>
+          </div>
+        )}
         {editable && (anySaving || anyError) && (
           <div className={styles.saveStatus}>
             {anySaving && <span className={styles.savingText}>Guardando...</span>}
@@ -540,6 +616,42 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
             onCancel={() => setShowWeekModal(false)}
             loading={isCreatingSemana}
           />
+        </Modal>
+      )}
+
+      {showCopyModal && (
+        <Modal isOpen onClose={() => setShowCopyModal(false)} title="Copiar calendario de otro grupo">
+          <div className={styles.copyModal}>
+            <p className={styles.copyWarning}>
+              <i className="material-icons">warning</i>
+              Esto reemplazará todo el calendario actual con el del grupo seleccionado. Esta acción no se puede deshacer.
+            </p>
+            <div className={styles.copyField}>
+              <label>Grupo origen</label>
+              <select
+                value={selectedSourceGrupo}
+                onChange={(e) => setSelectedSourceGrupo(e.target.value)}
+              >
+                <option value="">— Seleccionar grupo —</option>
+                {grupos.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+            </div>
+            {copyError && <p className={styles.copyError}>{copyError}</p>}
+            <div className={styles.copyActions}>
+              <DashButton variant="outline" onClick={() => setShowCopyModal(false)} disabled={isCopying}>
+                Cancelar
+              </DashButton>
+              <DashButton
+                variant="primary"
+                onClick={handleCopyCalendario}
+                disabled={!selectedSourceGrupo || isCopying}
+              >
+                {isCopying ? 'Copiando...' : 'Copiar calendario'}
+              </DashButton>
+            </div>
+          </div>
         </Modal>
       )}
     </>

@@ -39,6 +39,71 @@
   font-size: 16px;
 }
 
+.copyRow {
+  margin-bottom: 6px;
+}
+
+.copyModal {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.copyWarning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  background: #fef2f2;
+  color: #991b1b;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.copyWarning .material-icons {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.copyField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.copyField label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.copyField select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.copyError {
+  margin: 0;
+  color: #dc2626;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.copyActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .saveStatus {
   display: flex;
   align-items: center;
