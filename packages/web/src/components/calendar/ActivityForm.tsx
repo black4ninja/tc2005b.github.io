@@ -12,7 +12,6 @@ interface DocumentoResumen {
 
 interface LecturaResumen {
   nombre: string;
-  tipo: 'directorio' | 'archivo';
   ruta: string;
 }
 
