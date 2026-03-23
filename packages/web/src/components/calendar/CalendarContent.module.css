@@ -22,6 +22,23 @@
   }
 }
 
+.disclaimer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.disclaimer .material-icons {
+  font-size: 16px;
+}
+
 .saveStatus {
   display: flex;
   align-items: center;

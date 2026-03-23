@@ -464,6 +464,10 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
   return (
     <>
       <div className={styles.stickyControls} style={{ top: stickyTop }}>
+        <div className={styles.disclaimer}>
+          <i className="material-icons">info</i>
+          Este calendario es tentativo y está sujeto a cambios.
+        </div>
         {editable && (anySaving || anyError) && (
           <div className={styles.saveStatus}>
             {anySaving && <span className={styles.savingText}>Guardando...</span>}
