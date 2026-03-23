@@ -27,6 +27,7 @@ import evaluacionesEntrevistaRoutes from './routes/evaluaciones-entrevista.route
 import paginasRoutes from './routes/paginas.routes.js';
 import etiquetasRoutes from './routes/etiquetas.routes.js';
 import documentosRoutes from './routes/documentos.routes.js';
+import lecturasRoutes from './routes/lecturas.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 
 const app = express();
@@ -58,6 +59,7 @@ app.use('/api', evaluacionesEntrevistaRoutes);
 app.use('/api', paginasRoutes);
 app.use('/api', etiquetasRoutes);
 app.use('/api', documentosRoutes);
+app.use('/api', lecturasRoutes);
 
 export function finalize() {
   app.use(errorHandler);

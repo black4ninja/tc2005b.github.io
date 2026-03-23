@@ -10,6 +10,12 @@ interface DocumentoResumen {
   ruta: string;
 }
 
+interface LecturaResumen {
+  nombre: string;
+  tipo: 'directorio' | 'archivo';
+  ruta: string;
+}
+
 const API_BASE = '/api';
 
 const TIPO_OPTIONS: { value: ActividadTipo; label: string }[] = [
@@ -66,9 +72,16 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
   const [docsLoaded, setDocsLoaded] = useState(false);
   const docPickerRef = useRef<HTMLDivElement>(null);
 
+  // Lectura picker state
+  const [lecturas, setLecturas] = useState<LecturaResumen[]>([]);
+  const [showLecturaPicker, setShowLecturaPicker] = useState(false);
+  const [lecturaFilter, setLecturaFilter] = useState('');
+  const [lecturasLoaded, setLecturasLoaded] = useState(false);
+  const lecturaPickerRef = useRef<HTMLDivElement>(null);
+
   // Close pickers on outside click
   useEffect(() => {
-    if (!showPicker && !showDocPicker) return;
+    if (!showPicker && !showDocPicker && !showLecturaPicker) return;
     function handleClick(e: MouseEvent) {
       if (showPicker && pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
         setShowPicker(false);
@@ -76,13 +89,17 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
       if (showDocPicker && docPickerRef.current && !docPickerRef.current.contains(e.target as Node)) {
         setShowDocPicker(false);
       }
+      if (showLecturaPicker && lecturaPickerRef.current && !lecturaPickerRef.current.contains(e.target as Node)) {
+        setShowLecturaPicker(false);
+      }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [showPicker, showDocPicker]);
+  }, [showPicker, showDocPicker, showLecturaPicker]);
 
   async function loadPaginas() {
     setShowDocPicker(false);
+    setShowLecturaPicker(false);
     if (paginasLoaded) {
       setShowPicker(true);
       return;
@@ -102,6 +119,7 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
 
   async function loadDocumentos() {
     setShowPicker(false);
+    setShowLecturaPicker(false);
     if (docsLoaded) {
       setShowDocPicker(true);
       return;
@@ -133,6 +151,33 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
     setDocFilter('');
   }
 
+  async function loadLecturas() {
+    setShowPicker(false);
+    setShowDocPicker(false);
+    if (lecturasLoaded) {
+      setShowLecturaPicker(true);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/lecturas`);
+      if (res.ok) {
+        const data = await res.json();
+        setLecturas(data.lecturas ?? []);
+        setLecturasLoaded(true);
+      }
+    } catch {
+      // silently fail
+    }
+    setShowLecturaPicker(true);
+  }
+
+  function selectLectura(l: LecturaResumen) {
+    setEnlace(l.ruta);
+    setExterno(false);
+    setShowLecturaPicker(false);
+    setLecturaFilter('');
+  }
+
   // Find matching page name for the current enlace
   const matchedPagina = enlace.startsWith('/paginas/')
     ? paginas.find((p) => `/paginas/${p.slug}` === enlace)
@@ -155,6 +200,17 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
         d.nombre.toLowerCase().includes(docFilter.toLowerCase())
       )
     : documentos;
+
+  // Find matching lectura for the current enlace
+  const matchedLectura = enlace.startsWith('/lecturas/')
+    ? lecturas.find((l) => l.ruta === enlace)
+    : undefined;
+
+  const filteredLecturas = lecturaFilter
+    ? lecturas.filter((l) =>
+        l.nombre.toLowerCase().includes(lecturaFilter.toLowerCase())
+      )
+    : lecturas;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,6 +296,14 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
             >
               <span className="material-icons">description</span>
             </button>
+            <button
+              type="button"
+              className={styles.pickerBtn}
+              onClick={loadLecturas}
+              title="Seleccionar lectura"
+            >
+              <span className="material-icons">menu_book</span>
+            </button>
           </div>
           {matchedPagina && (
             <span className={styles.paginaBadge}>
@@ -251,6 +315,12 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
             <span className={styles.documentoBadge}>
               <span className="material-icons">description</span>
               {matchedDocumento.nombre}
+            </span>
+          )}
+          {matchedLectura && (
+            <span className={styles.lecturaBadge}>
+              <span className="material-icons">menu_book</span>
+              {matchedLectura.nombre}
             </span>
           )}
           {showPicker && (
@@ -315,6 +385,41 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
                         <span className={styles.pickerItemText}>
                           <strong>{d.nombre}</strong>
                           <code>{d.ruta}</code>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          {showLecturaPicker && (
+            <div className={styles.pickerDropdown} ref={lecturaPickerRef}>
+              <input
+                type="text"
+                className={styles.pickerSearch}
+                value={lecturaFilter}
+                onChange={(e) => setLecturaFilter(e.target.value)}
+                placeholder="Buscar lectura..."
+                autoFocus
+              />
+              {filteredLecturas.length === 0 ? (
+                <div className={styles.pickerEmpty}>
+                  {lecturas.length === 0 ? 'No hay lecturas' : 'Sin resultados'}
+                </div>
+              ) : (
+                <ul className={styles.pickerList}>
+                  {filteredLecturas.map((l) => (
+                    <li key={l.nombre}>
+                      <button
+                        type="button"
+                        className={styles.pickerItem}
+                        onClick={() => selectLectura(l)}
+                      >
+                        <span className="material-icons">menu_book</span>
+                        <span className={styles.pickerItemText}>
+                          <strong>{l.nombre}</strong>
+                          <code>{l.ruta}</code>
                         </span>
                       </button>
                     </li>
