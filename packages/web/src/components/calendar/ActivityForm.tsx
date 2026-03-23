@@ -15,6 +15,11 @@ interface LecturaResumen {
   ruta: string;
 }
 
+interface EjercicioResumen {
+  nombre: string;
+  ruta: string;
+}
+
 const API_BASE = '/api';
 
 const TIPO_OPTIONS: { value: ActividadTipo; label: string }[] = [
@@ -78,9 +83,23 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
   const [lecturasLoaded, setLecturasLoaded] = useState(false);
   const lecturaPickerRef = useRef<HTMLDivElement>(null);
 
+  // Ejercicio picker state
+  const [ejercicios, setEjercicios] = useState<EjercicioResumen[]>([]);
+  const [showEjercicioPicker, setShowEjercicioPicker] = useState(false);
+  const [ejercicioFilter, setEjercicioFilter] = useState('');
+  const [ejerciciosLoaded, setEjerciciosLoaded] = useState(false);
+  const ejercicioPickerRef = useRef<HTMLDivElement>(null);
+
+  function closeAllPickers() {
+    setShowPicker(false);
+    setShowDocPicker(false);
+    setShowLecturaPicker(false);
+    setShowEjercicioPicker(false);
+  }
+
   // Close pickers on outside click
   useEffect(() => {
-    if (!showPicker && !showDocPicker && !showLecturaPicker) return;
+    if (!showPicker && !showDocPicker && !showLecturaPicker && !showEjercicioPicker) return;
     function handleClick(e: MouseEvent) {
       if (showPicker && pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
         setShowPicker(false);
@@ -91,14 +110,16 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
       if (showLecturaPicker && lecturaPickerRef.current && !lecturaPickerRef.current.contains(e.target as Node)) {
         setShowLecturaPicker(false);
       }
+      if (showEjercicioPicker && ejercicioPickerRef.current && !ejercicioPickerRef.current.contains(e.target as Node)) {
+        setShowEjercicioPicker(false);
+      }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [showPicker, showDocPicker, showLecturaPicker]);
+  }, [showPicker, showDocPicker, showLecturaPicker, showEjercicioPicker]);
 
   async function loadPaginas() {
-    setShowDocPicker(false);
-    setShowLecturaPicker(false);
+    closeAllPickers();
     if (paginasLoaded) {
       setShowPicker(true);
       return;
@@ -117,8 +138,7 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
   }
 
   async function loadDocumentos() {
-    setShowPicker(false);
-    setShowLecturaPicker(false);
+    closeAllPickers();
     if (docsLoaded) {
       setShowDocPicker(true);
       return;
@@ -151,8 +171,7 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
   }
 
   async function loadLecturas() {
-    setShowPicker(false);
-    setShowDocPicker(false);
+    closeAllPickers();
     if (lecturasLoaded) {
       setShowLecturaPicker(true);
       return;
@@ -175,6 +194,32 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
     setExterno(false);
     setShowLecturaPicker(false);
     setLecturaFilter('');
+  }
+
+  async function loadEjercicios() {
+    closeAllPickers();
+    if (ejerciciosLoaded) {
+      setShowEjercicioPicker(true);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/ejercicios`);
+      if (res.ok) {
+        const data = await res.json();
+        setEjercicios(data.ejercicios ?? []);
+        setEjerciciosLoaded(true);
+      }
+    } catch {
+      // silently fail
+    }
+    setShowEjercicioPicker(true);
+  }
+
+  function selectEjercicio(ej: EjercicioResumen) {
+    setEnlace(ej.ruta);
+    setExterno(false);
+    setShowEjercicioPicker(false);
+    setEjercicioFilter('');
   }
 
   // Find matching page name for the current enlace
@@ -210,6 +255,17 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
         l.nombre.toLowerCase().includes(lecturaFilter.toLowerCase())
       )
     : lecturas;
+
+  // Find matching ejercicio for the current enlace
+  const matchedEjercicio = enlace.startsWith('/ejercicios/')
+    ? ejercicios.find((ej) => ej.ruta === enlace)
+    : undefined;
+
+  const filteredEjercicios = ejercicioFilter
+    ? ejercicios.filter((ej) =>
+        ej.nombre.toLowerCase().includes(ejercicioFilter.toLowerCase())
+      )
+    : ejercicios;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -303,6 +359,14 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
             >
               <span className="material-icons">menu_book</span>
             </button>
+            <button
+              type="button"
+              className={styles.pickerBtn}
+              onClick={loadEjercicios}
+              title="Seleccionar ejercicio"
+            >
+              <span className="material-icons">edit</span>
+            </button>
           </div>
           {matchedPagina && (
             <span className={styles.paginaBadge}>
@@ -320,6 +384,12 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
             <span className={styles.lecturaBadge}>
               <span className="material-icons">menu_book</span>
               {matchedLectura.nombre}
+            </span>
+          )}
+          {matchedEjercicio && (
+            <span className={styles.ejercicioBadge}>
+              <span className="material-icons">edit</span>
+              {matchedEjercicio.nombre}
             </span>
           )}
           {showPicker && (
@@ -419,6 +489,41 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
                         <span className={styles.pickerItemText}>
                           <strong>{l.nombre}</strong>
                           <code>{l.ruta}</code>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          {showEjercicioPicker && (
+            <div className={styles.pickerDropdown} ref={ejercicioPickerRef}>
+              <input
+                type="text"
+                className={styles.pickerSearch}
+                value={ejercicioFilter}
+                onChange={(e) => setEjercicioFilter(e.target.value)}
+                placeholder="Buscar ejercicio..."
+                autoFocus
+              />
+              {filteredEjercicios.length === 0 ? (
+                <div className={styles.pickerEmpty}>
+                  {ejercicios.length === 0 ? 'No hay ejercicios' : 'Sin resultados'}
+                </div>
+              ) : (
+                <ul className={styles.pickerList}>
+                  {filteredEjercicios.map((ej) => (
+                    <li key={ej.nombre}>
+                      <button
+                        type="button"
+                        className={styles.pickerItem}
+                        onClick={() => selectEjercicio(ej)}
+                      >
+                        <span className="material-icons">edit</span>
+                        <span className={styles.pickerItemText}>
+                          <strong>{ej.nombre}</strong>
+                          <code>{ej.ruta}</code>
                         </span>
                       </button>
                     </li>
