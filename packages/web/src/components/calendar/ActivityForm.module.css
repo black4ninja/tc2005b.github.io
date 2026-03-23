@@ -129,6 +129,23 @@
   font-size: 14px;
 }
 
+.documentoBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 2px 10px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 12px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.documentoBadge .material-icons {
+  font-size: 14px;
+}
+
 .pickerDropdown {
   position: absolute;
   top: calc(100% + 4px);

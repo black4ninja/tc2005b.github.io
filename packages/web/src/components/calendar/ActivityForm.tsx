@@ -4,6 +4,12 @@ import type { PaginaResumen } from '@/types/pagina';
 import DashButton from '@/components/dashboard/atoms/DashButton/DashButton';
 import styles from './ActivityForm.module.css';
 
+interface DocumentoResumen {
+  nombre: string;
+  extension: string;
+  ruta: string;
+}
+
 const API_BASE = '/api';
 
 const TIPO_OPTIONS: { value: ActividadTipo; label: string }[] = [
@@ -53,19 +59,30 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
   const [paginasLoaded, setPaginasLoaded] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
-  // Close picker on outside click
+  // Document picker state
+  const [documentos, setDocumentos] = useState<DocumentoResumen[]>([]);
+  const [showDocPicker, setShowDocPicker] = useState(false);
+  const [docFilter, setDocFilter] = useState('');
+  const [docsLoaded, setDocsLoaded] = useState(false);
+  const docPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close pickers on outside click
   useEffect(() => {
-    if (!showPicker) return;
+    if (!showPicker && !showDocPicker) return;
     function handleClick(e: MouseEvent) {
-      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+      if (showPicker && pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
         setShowPicker(false);
+      }
+      if (showDocPicker && docPickerRef.current && !docPickerRef.current.contains(e.target as Node)) {
+        setShowDocPicker(false);
       }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [showPicker]);
+  }, [showPicker, showDocPicker]);
 
   async function loadPaginas() {
+    setShowDocPicker(false);
     if (paginasLoaded) {
       setShowPicker(true);
       return;
@@ -83,6 +100,25 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
     setShowPicker(true);
   }
 
+  async function loadDocumentos() {
+    setShowPicker(false);
+    if (docsLoaded) {
+      setShowDocPicker(true);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/documentos`);
+      if (res.ok) {
+        const data = await res.json();
+        setDocumentos(data.documentos ?? []);
+        setDocsLoaded(true);
+      }
+    } catch {
+      // silently fail
+    }
+    setShowDocPicker(true);
+  }
+
   function selectPagina(p: PaginaResumen) {
     setEnlace(`/paginas/${p.slug}`);
     setExterno(false);
@@ -90,9 +126,21 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
     setPickerFilter('');
   }
 
+  function selectDocumento(d: DocumentoResumen) {
+    setEnlace(d.ruta);
+    setExterno(false);
+    setShowDocPicker(false);
+    setDocFilter('');
+  }
+
   // Find matching page name for the current enlace
   const matchedPagina = enlace.startsWith('/paginas/')
     ? paginas.find((p) => `/paginas/${p.slug}` === enlace)
+    : undefined;
+
+  // Find matching document for the current enlace
+  const matchedDocumento = enlace.startsWith('/documentos/')
+    ? documentos.find((d) => d.ruta === enlace)
     : undefined;
 
   const filteredPaginas = pickerFilter
@@ -101,6 +149,12 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
         p.slug.toLowerCase().includes(pickerFilter.toLowerCase())
       )
     : paginas;
+
+  const filteredDocs = docFilter
+    ? documentos.filter((d) =>
+        d.nombre.toLowerCase().includes(docFilter.toLowerCase())
+      )
+    : documentos;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,11 +232,25 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
             >
               <span className="material-icons">article</span>
             </button>
+            <button
+              type="button"
+              className={styles.pickerBtn}
+              onClick={loadDocumentos}
+              title="Seleccionar documento"
+            >
+              <span className="material-icons">description</span>
+            </button>
           </div>
           {matchedPagina && (
             <span className={styles.paginaBadge}>
               <span className="material-icons">article</span>
               {matchedPagina.titulo}
+            </span>
+          )}
+          {matchedDocumento && (
+            <span className={styles.documentoBadge}>
+              <span className="material-icons">description</span>
+              {matchedDocumento.nombre}
             </span>
           )}
           {showPicker && (
@@ -212,6 +280,41 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
                         <span className={styles.pickerItemText}>
                           <strong>{p.titulo}</strong>
                           <code>/paginas/{p.slug}</code>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          {showDocPicker && (
+            <div className={styles.pickerDropdown} ref={docPickerRef}>
+              <input
+                type="text"
+                className={styles.pickerSearch}
+                value={docFilter}
+                onChange={(e) => setDocFilter(e.target.value)}
+                placeholder="Buscar documento..."
+                autoFocus
+              />
+              {filteredDocs.length === 0 ? (
+                <div className={styles.pickerEmpty}>
+                  {documentos.length === 0 ? 'No hay documentos' : 'Sin resultados'}
+                </div>
+              ) : (
+                <ul className={styles.pickerList}>
+                  {filteredDocs.map((d) => (
+                    <li key={d.nombre}>
+                      <button
+                        type="button"
+                        className={styles.pickerItem}
+                        onClick={() => selectDocumento(d)}
+                      >
+                        <span className="material-icons">description</span>
+                        <span className={styles.pickerItemText}>
+                          <strong>{d.nombre}</strong>
+                          <code>{d.ruta}</code>
                         </span>
                       </button>
                     </li>
