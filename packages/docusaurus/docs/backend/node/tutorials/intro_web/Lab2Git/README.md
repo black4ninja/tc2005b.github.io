@@ -210,7 +210,7 @@ git commit -m "delete praise.txt"
 ```
 
 ### Mostrar el estatus actual
-Edita el archivo previamente commiteado y agrega los cambios a la staging area.
+Crea un nuevo archivo y agrégalo a la staging area.
 
 ```
 echo "git is awesome" > message.txt
