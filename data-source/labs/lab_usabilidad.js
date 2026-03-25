@@ -2,35 +2,44 @@
 const LAB = {
   id: 'lab_usabilidad',
   numero: null,
-  titulo: 'Evaluaci\u00f3n Heur\u00edstica de Usabilidad',
-  descripcion: 'En esta actividad exploraremos las heur\u00edsticas de usabilidad y llevar\u00e1s a cabo una evaluaci\u00f3n Heur\u00edstica de Usabilidad.',
+  titulo: 'Atomic Design — Construcción de Interfaces Modulares',
+  descripcion: 'Aprende a construir interfaces web desde sus componentes más pequeños hasta páginas completas usando la metodología Atomic Design. Construirás un catálogo de videojuegos paso a paso.',
   modalidad: 'Colaborativa',
   objetivos: [
-    'Reconocer las heur\u00edsticas de usabilidad propuestas por Nielsen',
-    'Aprender a realizar evaluaciones heur\u00edsticas de usabilidad',
-    'Documentar los hallazgos de la evaluaci\u00f3n de usabilidad por medio de Reportes de Aspecto de Usabilidad (UAR, por sus siglas en ingl\u00e9s).'
+    'Entender los 5 niveles de Atomic Design: Átomos, Moléculas, Organismos, Plantillas y Páginas',
+    'Aprender a identificar y separar componentes en diferentes niveles de complejidad',
+    'Crear CSS modular y reutilizable siguiendo los principios de Atomic Design',
+    'Construir una página web completa aplicando la metodología desde cero'
   ],
   instruccionesHtml:
     '<ol class="lab-steps">' +
-      '<li>Revisa junto con el profesor la presentaci\u00f3n <a target="_blank" href="https://docs.google.com/presentation/d/1gD8Sv1YURwXO-JulMDnzKPiEkZX9-lbRHT1FAzjqGF0/edit?usp=sharing">Usabilidad</a>.</li>' +
-      '<li>Con su equipo, lleven a cabo un an\u00e1lisis heur\u00edstico del proyecto de otro equipo.</li>' +
-      '<li>Cada integrante deber\u00e1 identificar al menos dos aspectos de usabilidad y deber\u00e1n reportarlos a trav\u00e9s de un Usability Aspect Report (UAR) al equipo correspondiente. Recuerda que en el UAR debes incluir:' +
+      '<li>Accede al tutorial interactivo completo de Atomic Design: <a target="_blank" href="/docs/node/tutorials/intro_web/Lab3CSS/AtomicDesign.html">🎮 Tutorial GameVault - Atomic Design</a></li>' +
+      '<li>Sigue el tutorial paso a paso para construir el proyecto GameVault:' +
         '<ul>' +
-          '<li>La heur\u00edstica de usabilidad que se est\u00e1 evaluando.</li>' +
-          '<li>La explicaci\u00f3n sobre por qu\u00e9 se est\u00e1 violando la heur\u00edstica o por qu\u00e9 es una buena pr\u00e1ctica de la heur\u00edstica.</li>' +
-          '<li>La evidencia de la heur\u00edstica (captura de pantalla o dise\u00f1o de la interfaz).</li>' +
-          '<li>La severidad del problema o impacto del beneficio.</li>' +
-          '<li>Si es un problema, su posible soluci\u00f3n o desventajas potenciales.</li>' +
+          '<li><strong>Paso 0:</strong> Preparación del proyecto y estructura de archivos</li>' +
+          '<li><strong>Nivel 1 - Átomos:</strong> Crea los elementos más pequeños (botones, badges, ratings)</li>' +
+          '<li><strong>Nivel 2 - Moléculas:</strong> Combina átomos para formar componentes funcionales</li>' +
+          '<li><strong>Nivel 3 - Organismos:</strong> Construye secciones completas de la interfaz</li>' +
+          '<li><strong>Nivel 4 - Plantilla:</strong> Define la estructura de la página</li>' +
+          '<li><strong>Nivel 5 - Página:</strong> Agrega el contenido real</li>' +
         '</ul>' +
       '</li>' +
-      '<li>Env\u00eda tu UAR al equipo que est\u00e1s evaluando y tambi\u00e9n entr\u00e9gala en tu repositorio personal o de equipo.</li>' +
+      '<li>Cada nivel incluye:' +
+        '<ul>' +
+          '<li>Explicación conceptual del nivel</li>' +
+          '<li>Código CSS y HTML con comentarios explicativos</li>' +
+          '<li>Previsualizaciones interactivas en vivo</li>' +
+          '<li>Checkpoints para validar tu progreso</li>' +
+        '</ul>' +
+      '</li>' +
+      '<li>Al finalizar, tendrás un proyecto completo organizado con Atomic Design que podrás usar como referencia para futuros proyectos.</li>' +
     '</ol>',
   recursos: [
-    { texto: '10 Usability Heuristics for User Interface Design', url: 'http://www.nngroup.com/articles/ten-usability-heuristics/', externo: true },
-    { texto: 'How to Conduct a Heuristic Evaluation', url: 'http://www.nngroup.com/articles/how-to-conduct-a-heuristic-evaluation/', externo: true },
-    { texto: '10 Usability Heuristics Applied to Video Games', url: 'https://www.nngroup.com/articles/usability-heuristics-applied-video-games/', externo: true },
-    { texto: 'The Psychology of Color in Web Design', url: 'https://medium.com/wd-tips-tricks/the-psychology-of-color-in-web-design-dba7df0eb21b#.9cqjvbwwl', externo: true },
-    { texto: '16 little UI design rules that make a big impact', url: 'https://uxplanet.org/16-ui-design-tips-ba2e7524d203', externo: true }
+    { texto: '🎮 Tutorial Completo: GameVault con Atomic Design', url: '/docs/node/tutorials/intro_web/Lab3CSS/AtomicDesign.html', externo: false },
+    { texto: 'Atomic Design Methodology', url: 'https://atomicdesign.bradfrost.com/', externo: true },
+    { texto: 'Pattern Lab - Tool for Atomic Design', url: 'https://patternlab.io/', externo: true },
+    { texto: 'BEM Naming Convention', url: 'https://getbem.com/', externo: true },
+    { texto: 'CSS Variables (Custom Properties)', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties', externo: true }
   ],
-  entrega: 'A trav\u00e9s de tu repositorio personal (Bitbucket o GitHub).'
+  entrega: 'A través de tu repositorio personal (Bitbucket o GitHub) con la estructura completa del proyecto GameVault.'
 };
