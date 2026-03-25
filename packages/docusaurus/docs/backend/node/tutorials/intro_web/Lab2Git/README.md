@@ -54,7 +54,7 @@ Al momento de iniciar un repositorio puedes hacerlo desde línea de comando.
 git init
 ```
 
-Para saber que el repositorio se inicio correctamente se debe crear un folder .git que por default es una carpeta ocular, debes habilitar ver este tipo de carpetas para poder verlas desde el administrador de archivos de tu sistema operativo.
+Para saber que el repositorio se inicio correctamente se debe crear un folder .git que por default es una carpeta oculta, debes habilitar ver este tipo de carpetas para poder verlas desde el administrador de archivos de tu sistema operativo.
 
 Al momento de crear un nuevo repositorio se crea un branch default, más adelante trabajaremos con los branches. Por ahora lo único que debes saber es que el default es **master**, sí creas el repositorio desde la nube en ocasiones puede ser llamado como **main**.
 
