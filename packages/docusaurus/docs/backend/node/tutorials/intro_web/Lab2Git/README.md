@@ -137,8 +137,8 @@ index 5db4f02..d845108 100644
 --- a/message.txt
 +++ b/message.txt
 @@ -1 +1 @@
--"git is awesom"
-+"git is awesome"
+-git is awesom
++git is awesome
 ```
 
 Vamos a agregar los archivos modificados y a hacer el commit en 1 sola línea de comando
@@ -194,7 +194,7 @@ git commit -m "rename message.txt"
 Vamos a borrar el archivo anterior
 
 ```
-git rm message.txt
+git rm praise.txt
 ```
 
 El cambio ya se encuentra en staging, por lo que diff no lo mostrará. Usa --cached
@@ -206,7 +206,7 @@ git diff --cached
 Has commit del cambio
 
 ```
-git commit -m "delete message.txt"
+git commit -m "delete praise.txt"
 ```
 
 ### Mostrar el estatus actual
@@ -233,10 +233,8 @@ El resultado se verá como
 ```
 On branch master
 
-No commits yet
-
 Changes to be committed:
-  (use "git rm --cached <file>..." to unstage)
+  (use "git restore --staged <file>..." to unstage)
         new file:   message.txt
 
 Untracked files:
@@ -255,6 +253,18 @@ git log
 
 El resultado se verá como
 ```
+commit d1f4e89aad4565d8d7d725678ffadc48b3cdec52
+Author: sandbox <sandbox@example.com>
+Date:   Thu Mar 14 15:00:00 2024 +0000
+
+    delete praise.txt
+
+commit c2e3d78aad4565d8d7d725678ffadc48b3cdec52
+Author: sandbox <sandbox@example.com>
+Date:   Thu Mar 14 15:00:00 2024 +0000
+
+    rename message.txt
+
 commit ecdeb79aad4565d8d7d725678ffadc48b3cdec52
 Author: sandbox <sandbox@example.com>
 Date:   Thu Mar 14 15:00:00 2024 +0000
@@ -275,6 +285,8 @@ git log --oneline
 ```
 
 ```
+d1f4e89 delete praise.txt
+c2e3d78 rename message.txt
 ecdeb79 edit message
 3a2bd8f add message
 ```
@@ -286,15 +298,29 @@ git log --graph
 ```
 
 ```
+* commit d1f4e89aad4565d8d7d725678ffadc48b3cdec52
+| Author: sandbox <sandbox@example.com>
+| Date:   Thu Mar 14 15:00:00 2024 +0000
+|
+|     delete praise.txt
+|
+* commit c2e3d78aad4565d8d7d725678ffadc48b3cdec52
+| Author: sandbox <sandbox@example.com>
+| Date:   Thu Mar 14 15:00:00 2024 +0000
+|
+|     rename message.txt
+|
 * commit ecdeb79aad4565d8d7d725678ffadc48b3cdec52
 | Author: sandbox <sandbox@example.com>
 | Date:   Thu Mar 14 15:00:00 2024 +0000
-| 
+|
 |     edit message
-| 
+|
 * commit 3a2bd8f0929c605193120bd1ad12732f49457e99
   Author: sandbox <sandbox@example.com>
   Date:   Thu Mar 14 15:00:00 2024 +0000
+
+      add message
 ```
 
 Y por último podemos combinar la visualización en una línea y en grafo
@@ -304,6 +330,8 @@ git log --oneline --graph
 ```
 
 ```
+* d1f4e89 delete praise.txt
+* c2e3d78 rename message.txt
 * ecdeb79 edit message
 * 3a2bd8f add message
 ```
@@ -319,19 +347,19 @@ git show HEAD
 HEAD es el apuntador especial que marca donde se encuentra la línea del último commit del repositorio.
 
 ```
-commit ecdeb79aad4565d8d7d725678ffadc48b3cdec52
+commit d1f4e89aad4565d8d7d725678ffadc48b3cdec52
 Author: sandbox <sandbox@example.com>
 Date:   Thu Mar 14 15:00:00 2024 +0000
 
-    edit message
+    delete praise.txt
 
-diff --git a/message.txt b/message.txt
-index 0165e86..118f108 100644
---- a/message.txt
-+++ b/message.txt
-@@ -1 +1 @@
--git is awesom
-+git is awesome
+diff --git a/praise.txt b/praise.txt
+deleted file mode 100644
+index 118f108..0000000
+--- a/praise.txt
++++ /dev/null
+@@ -1 +0,0 @@
+-git is awesome
 ```
 
 Mostrar el segundo-al-último commit
@@ -340,7 +368,7 @@ Mostrar el segundo-al-último commit
 git show HEAD~1
 ```
 
-Usar HEAD~n muestra el nth-antes-del-último commit o usa el has del commit específico en lugar de HEAD~n.
+Usar HEAD~n muestra el nth-antes-del-último commit o usa el hash del commit específico en lugar de HEAD~n.
 
 Cuando crear un commit siempre se crea un hash de ese commit, este es la firma directa de ese commit y justamente sirve para cuando necesitamos ver el detalle de ese commit o como en este caso ver o regresar a un commit.
 
@@ -356,7 +384,7 @@ Ya que algunos comandos o en algunas visualizaciones te aparece simplificado
 ecdeb79
 ```
 
-El simplificado sirve para visualización pero para los comandos utiliza el completo.
+El hash simplificado también funciona para la mayoría de comandos como `git show`, `git checkout`, etc., siempre y cuando no sea ambiguo. Git resolverá el hash corto automáticamente.
 
 ### Resumen
 Con esto hemos visto los comandos básicos de git para trabajar con nuestro repositorio local.
