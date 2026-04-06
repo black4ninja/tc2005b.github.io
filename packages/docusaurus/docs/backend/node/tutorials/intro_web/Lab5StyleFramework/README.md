@@ -25,7 +25,7 @@ La guía tiene cuatro partes que se conectan entre sí:
 
 ### Descarga los archivos iniciales
 
-📥 [**Descargar archivos de inicio (devcard-starter.zip)**](/node/tutorials/intro_web/Lab5StyleFramework/devcard-starter.zip)
+📥 [**Descargar archivos de inicio (devcard-starter.zip)**](pathname:///node/tutorials/intro_web/Lab5StyleFramework/devcard-starter.zip)
 
 O si prefieres, crea manualmente la siguiente estructura de carpetas y archivos:
 
@@ -743,8 +743,8 @@ Los frameworks de CSS son herramientas, no atajos para no aprender CSS. Si no en
 
 ### Ejemplos Completos
 
-📝 [**Ver ejemplo con Bootstrap**](/node/tutorials/intro_web/Lab5StyleFramework/bootstrap-example.html)  
-📝 [**Ver ejemplo con Tailwind**](/node/tutorials/intro_web/Lab5StyleFramework/tailwind-example.html)
+📝 [**Ver ejemplo con Bootstrap**](pathname:///node/tutorials/intro_web/Lab5StyleFramework/bootstrap-example.html)  
+📝 [**Ver ejemplo con Tailwind**](pathname:///node/tutorials/intro_web/Lab5StyleFramework/tailwind-example.html)
 
 ### Tips para el Proyecto Final
 
