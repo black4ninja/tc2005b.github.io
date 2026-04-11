@@ -275,4 +275,4 @@ La última ruta **logout** es la forma en la que destruimos la sesión y vaciamo
 
 Como ves es muy sencillo el uso y manejo, sin embargo verifica y establece bien los momentos de creación, actualización y eliminación ya que es muy común perder una sesión por no fijarse el ciclo que puede seguir un usuario y se llega a caminos sin salida donde se borró la sesión pero aún se necesitaba la información.
 
-[Ver ejemplo completo](/node/tutorials/intro_web/LAB14Sesiones/test-project.zip)
+<a href="/docs/node/tutorials/intro_web/LAB14Sesiones/test-project.zip" download="lab14-sesiones.zip">Ver ejemplo completo</a>

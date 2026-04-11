@@ -484,4 +484,4 @@ O el comando que elimina toda aplicación corriendo
 pm2 kill
 ````
 
-[Ver ejemplo completo](/node/tutorials/intro_web/Lab12EJS/test-project.zip)
+<a href="/docs/node/tutorials/intro_web/Lab12EJS/test-project.zip" download="lab12-ejs.zip">Ver ejemplo completo</a>

@@ -39,7 +39,7 @@ Dentro de lo que hemos visto en nuestros laboratorios de control de versiones, h
 
 Para poder evitar subir archivos al repositorio, necesitamos un archivo llamado **.gitignore**, observa que este archivo empieza con un punto y lo único que contiene son los archivos y carpetas que queremos ignorar.
 
-Dentro de la comunidad ya existen algunos estándares para estos archivos según los lenguajes que estemos trabajando, para lo que vamos a realizar en este laboratorio, te dejo el [archivo](/node/tutorials/intro_web/Lab11Express/test-project.zip) para que lo agregues en la raíz de la carpeta de tu proyecto.
+Dentro de la comunidad ya existen algunos estándares para estos archivos según los lenguajes que estemos trabajando, para lo que vamos a realizar en este laboratorio, te dejo el <a href="/docs/node/tutorials/intro_web/Lab11Express/test-project.zip" download="lab11-express-template.zip">archivo</a> para que lo agregues en la raíz de la carpeta de tu proyecto.
 
 Para los proyectos de node lo que vamos a querer evitar es subir una carpeta llamada **node_modules**, esta carpeta contendrá todas las librerías del proyecto. La razón de por que queremos evitar subirlas es por que esta acción se hace siempre que se inicia el proyecto, guardarlas puede crear el conflicto de guardar librerías viejas que a la larga causan más mal que bien y por tanto cada vez que clonamos el repositorio hacemos un fresh install que nos asegura la calidad del proyecto se mantiene.
 
@@ -464,4 +464,4 @@ Si recargamos el navegador y entramos a **localhost:3000/formulario/form_method*
 
 Este último cambio nos permite no solo crear la cantidad de niveles que deseemos de rutas y módulos, sino que nos permite crear una estructura lógica total de un proyecto de desarrollo web sin ningún problema.
 
-[Ver ejemplo completo](/node/tutorials/intro_web/Lab11Express/test-project.zip)
+<a href="/docs/node/tutorials/intro_web/Lab11Express/test-project.zip" download="lab11-express.zip">Ver ejemplo completo</a>

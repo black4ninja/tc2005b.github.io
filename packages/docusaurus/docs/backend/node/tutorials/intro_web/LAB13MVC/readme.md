@@ -367,4 +367,4 @@ Y con esto hemos conectado la arquitectura completa de nuestro proyecto, tenemos
 
 Entiendo que de inicio parecen muchos archivos, pero esta buena práctica hará que tu código sea más simple en proyectos grandes pues la misma forma de repetir las cosas una y otra vez hace que el código sea lo más igual posible.
 
-[Ver ejemplo completo](/node/tutorials/intro_web/LAB13MVC/test-project.zip)
+<a href="/docs/node/tutorials/intro_web/LAB13MVC/test-project.zip" download="lab13-mvc.zip">Ver ejemplo completo</a>

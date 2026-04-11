@@ -270,4 +270,4 @@ Hemos abierto una puerta a mucho poder dentro de nuestras aplicaciones web, pero
 
 La documentación que puedes consultar para entender que otros comandos contiene la librería de mariadb puedes encontrarlos [desde aquí.](https://mariadb.com/docs/server/connect/programming-languages/nodejs/)
 
-[Ver ejemplo completo](/node/tutorials/intro_web/Lab17BD/test-project.zip)
+<a href="/docs/node/tutorials/intro_web/Lab17BD/test-project.zip" download="lab17-bd.zip">Ver ejemplo completo</a>

@@ -55,8 +55,8 @@ export async function crearCompetenciasAlumno(req: Request, res: Response): Prom
         registro.setGrupo(grupoPointer);
         registro.setAlumno(alumno);
         registro.setCompetencia(comp);
-        registro.setValorPeriodo1(0);
-        registro.setValorPeriodo2(0);
+        registro.setValorPeriodo1('0');
+        registro.setValorPeriodo2('0');
         registro.setRetroPeriodo1('');
         registro.setRetroPeriodo2('');
         toSave.push(registro);

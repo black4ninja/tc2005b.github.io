@@ -369,4 +369,4 @@ Este último paso es bastante sencillo en términos de solo realizar la canaliza
 
 De esta manera podemos trabajar con archivos en nuestro servidor, utilizando multer y haciendo variaciones, un proyecto de manejo de archivos tiene varias consideraciones importantes y adicionales que puedes manejar, revisa esto para evitar caer en problemas según el tipo de arquitectura o servidores que estés utilizando.
 
-[Ver ejemplo completo](/node/tutorials/intro_web/Lab22Archivos/test-project.zip)
+<a href="/docs/node/tutorials/intro_web/Lab22Archivos/test-project.zip" download="lab22-archivos.zip">Ver ejemplo completo</a>

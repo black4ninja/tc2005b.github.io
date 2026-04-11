@@ -82,7 +82,7 @@ Por último la respuesta que obtenemos de la llamada puede ser convertida de dif
 
 Para comenzar nuestro laboratorio utilizaremos una plantilla base para no empezar desde 0 y poder avanzar en lo que nos pide el laboratorio sobre AJAX, pero vamos a explicar un poco lo que necesitamos.
 
-[Descargar plantilla proyecto](/node/tutorials/intro_web/Lab24AJAX/template.zip)
+<a href="/docs/node/tutorials/intro_web/Lab24AJAX/template.zip" download="lab24-ajax-template.zip">Descargar plantilla proyecto</a>
 
 Coloca el proyecto y ejecuta el **npm install**, si ejecutas el proyecto podrás acceder a la ruta index viendo algo como lo siguiente:
 
@@ -424,4 +424,4 @@ Con esto espero que veas las ventajas y las implicaciones que tiene el manejo de
 
 Construir APIs que sean útiles es parte del desafío de desarrollo web, pero al menos ya sabes como poder llamarlas desde tu cliente y manipularlas de diferentes maneras.
 
-[Ver ejemplo completo](/node/tutorials/intro_web/Lab24AJAX/test-project.zip)
+<a href="/docs/node/tutorials/intro_web/Lab24AJAX/test-project.zip" download="lab24-ajax.zip">Ver ejemplo completo</a>

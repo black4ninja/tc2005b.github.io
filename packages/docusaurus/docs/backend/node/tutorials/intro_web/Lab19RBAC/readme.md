@@ -15,7 +15,7 @@ Dentro de este diagrama podemos identificar el modelo de entidad relación que v
 
 Vamos a tomar como referencia nuestro laboratorio de MVC para practicar, te dejo una copia que puedes descargar para comenzar con la plantilla que ya teníamos.
 
-[Descargar plantilla proyecto](/node/tutorials/intro_web/Lab19RBAC/MVC.zip)
+<a href="/docs/node/tutorials/intro_web/Lab19RBAC/MVC.zip" download="lab19-plantilla-mvc.zip">Descargar plantilla proyecto</a>
 
 Para correr el proyecto no te olvides de ejecutar:
 
@@ -455,4 +455,4 @@ Prueba también una vez logueado la ruta de **usuarios/editar_usuario**, a la cu
 
 ¿Estás listo? No esperes más experimenta con otro permiso, crea su middleware correspondiente y a haz las validaciones correspondientes tanto a nivel ruta como a nivel de interfaz gráfica.
 
-[Ver ejemplo completo](/node/tutorials/intro_web/Lab19RBAC/test_project.zip)
+<a href="/docs/node/tutorials/intro_web/Lab19RBAC/test_project.zip" download="lab19-rbac.zip">Ver ejemplo completo</a>

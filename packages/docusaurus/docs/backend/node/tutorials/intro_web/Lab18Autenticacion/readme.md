@@ -17,7 +17,7 @@ Dependiendo de la forma en que trabajemos podemos separar este diagrama en parte
 
 Vamos a tomar como referencia nuestro laboratorio de MVC para practicar, te dejo una copia que puedes descargar para comenzar con la plantilla que ya teníamos.
 
-[Descargar plantilla proyecto](/node/tutorials/intro_web/Lab18Autenticacion/MVC.zip)
+<a href="/docs/node/tutorials/intro_web/Lab18Autenticacion/MVC.zip" download="lab18-plantilla-mvc.zip">Descargar plantilla proyecto</a>
 
 Para correr el proyecto no te olvides de ejecutar:
 
@@ -500,4 +500,4 @@ Para sistemas administrativos esto es ideal por que te permite bloquear todas la
 
 Todavía existen varias optimizaciones que podemos realizar como agregar un token de seguridad para ataques CSRF, o el manejo de errores para el inicio de sesión y que el usuario sepa que algo salió mal, incluso mejoras sustanciales al código para hacerlo más genérico, como siempre es cuestión de práctica y que te vayas adaptando a los nuevos conceptos.
 
-[Ver ejemplo completo](/node/tutorials/intro_web/Lab18Autenticacion/test-project.zip)
+<a href="/docs/node/tutorials/intro_web/Lab18Autenticacion/test-project.zip" download="lab18-autenticacion.zip">Ver ejemplo completo</a>

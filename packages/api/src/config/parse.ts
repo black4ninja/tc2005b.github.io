@@ -1,7 +1,7 @@
 import { config } from './index.js';
 
 export async function initializeParseServer() {
-  const { default: ParseServer } = await import('parse-server');
+  const { default: ParseServer } = (await import('parse-server')) as any;
 
   const parseServer = new ParseServer({
     databaseURI: config.databaseURI,
