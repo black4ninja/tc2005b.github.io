@@ -29,7 +29,7 @@ if (existsSync(docsBuild)) {
 }
 
 // 3. Legacy static content
-const legacyDirs = ['ejercicios', 'laboratorios', 'lecturas', 'documentos', 'imagenes'];
+const legacyDirs = ['ejercicios', 'laboratorios', 'lecturas', 'documentos', 'imagenes', 'uml'];
 const legacySrc = join(ROOT, 'static-legacy');
 
 for (const dir of legacyDirs) {

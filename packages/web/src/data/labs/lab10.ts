@@ -19,7 +19,7 @@ const lab10: Lab = {
     '<ol class="lab-steps">' +
       '<li>' +
         '<div class="center-align">' +
-          '<img class="responsive-img" alt="Diagrama de secuencia de una interaccion con distintos metodos de HTTP" src="uml/rutas_formas.png">' +
+          '<img class="responsive-img" alt="Diagrama de secuencia de una interaccion con distintos metodos de HTTP" src="/uml/rutas_formas.png">' +
         '</div>' +
       '</li>' +
       '<li>Sigue la demostracion del profesor en la sesion de clase.</li>' +

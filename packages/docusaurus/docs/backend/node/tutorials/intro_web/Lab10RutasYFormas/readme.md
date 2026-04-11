@@ -432,4 +432,4 @@ Más adelante veremos como hacer de manera más simple este proceso, pero al men
 
 En resumen, crear rutas, utilizar métodos de conexión, definir el correcto estándar de subida y bajada es el día a día del desarrollador de back-end ya que es la apertura a que los usuarios puedan conectarse al servidor y ejecutar, acciones, funciones o almacenar información.
 
-[Ver ejemplo completo](/node/tutorials/intro_web/Lab10RutasYFormas/ejemplo.zip)
+<a href="/docs/node/tutorials/intro_web/Lab10RutasYFormas/ejemplo.zip" download="lab10-rutas-y-formas.zip">Ver ejemplo completo</a>
