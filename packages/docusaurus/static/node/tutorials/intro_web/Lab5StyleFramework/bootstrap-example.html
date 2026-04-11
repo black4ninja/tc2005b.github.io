@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevCard — Bootstrap</title>
+  <!-- Bootstrap desde CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+</head>
+<body class="bg-light">
+
+  <!-- Navbar con Bootstrap -->
+  <nav class="navbar navbar-dark bg-primary px-4">
+    <span class="navbar-brand fw-bold">DevCard</span>
+    <button id="toggle-dark" class="btn btn-light btn-sm">🌙 Modo oscuro</button>
+  </nav>
+
+  <!-- Hero con Bootstrap -->
+  <div class="bg-white text-center py-5">
+    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=devcard" 
+         alt="Avatar" 
+         class="rounded-circle border border-primary border-4 mb-3"
+         style="width: 120px; height: 120px;">
+    <h1 class="fw-bold">Ada Lovelace</h1>
+    <p class="text-muted">Full-Stack Developer</p>
+    <a href="#" class="btn btn-primary mt-2">Ver proyectos</a>
+  </div>
+
+  <!-- Tarjetas con Bootstrap Grid -->
+  <div class="container py-5">
+    <h2 class="mb-4">Mis habilidades</h2>
+    <!-- row + col-md-4 = 3 columnas en tablet+, 1 en móvil -->
+    <div class="row g-4">
+
+      <div class="col-12 col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <div class="fs-1">🌐</div>
+            <h5 class="card-title mt-2">HTML & CSS</h5>
+            <p class="card-text text-muted">Semántica, Flexbox, Grid y diseño responsivo.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <div class="fs-1">⚙️</div>
+            <h5 class="card-title mt-2">JavaScript</h5>
+            <p class="card-text text-muted">ES6+, DOM, Fetch API y programación asíncrona.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <div class="fs-1">🗄️</div>
+            <h5 class="card-title mt-2">Node.js</h5>
+            <p class="card-text text-muted">APIs REST, Express y manejo de bases de datos.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <div class="fs-1">⚛️</div>
+            <h5 class="card-title mt-2">React</h5>
+            <p class="card-text text-muted">Componentes, Hooks, Context API y Redux.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <div class="fs-1">🎨</div>
+            <h5 class="card-title mt-2">UI/UX Design</h5>
+            <p class="card-text text-muted">Figma, prototipado y diseño centrado en el usuario.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <div class="fs-1">📊</div>
+            <h5 class="card-title mt-2">Bases de Datos</h5>
+            <p class="card-text text-muted">MySQL, MongoDB y diseño de esquemas.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="text-center py-4 border-top">
+    <p class="text-muted mb-0">✉️ ada@devcard.io — GitHub: @ada</p>
+  </footer>
+
+  <script>
+    // Dark mode toggle para Bootstrap
+    const btn = document.getElementById('toggle-dark');
+    btn.addEventListener('click', () => {
+      document.body.classList.toggle('bg-dark');
+      document.body.classList.toggle('text-light');
+      const isDark = document.body.classList.contains('bg-dark');
+      btn.textContent = isDark ? '☀️ Modo claro' : '🌙 Modo oscuro';
+      
+      // Cambiar clases de las cards
+      document.querySelectorAll('.card').forEach(card => {
+        card.classList.toggle('bg-secondary');
+        card.classList.toggle('text-light');
+      });
+    });
+  </script>
+
+</body>
+</html>

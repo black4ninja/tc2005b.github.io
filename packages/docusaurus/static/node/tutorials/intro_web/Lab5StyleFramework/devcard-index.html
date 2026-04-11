@@ -1,0 +1,60 @@
+<!-- DevCard — página de perfil de desarrollador -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevCard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <span class="navbar__logo">DevCard</span>
+    <ul class="navbar__links">
+      <li><a href="#">Inicio</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#contact">Contacto</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <img class="hero__avatar"
+         src="https://api.dicebear.com/7.x/avataaars/svg?seed=devcard"
+         alt="Avatar">
+    <h1 class="hero__name">Ada Lovelace</h1>
+    <p class="hero__role">Full-Stack Developer</p>
+    <a href="#" class="btn">Ver proyectos</a>
+  </section>
+
+  <!-- Skills -->
+  <section class="skills" id="skills">
+    <h2>Mis habilidades</h2>
+    <div class="skills__grid">
+      <div class="skill-card">
+        <span class="skill-card__icon">🌐</span>
+        <h3>HTML & CSS</h3>
+        <p>Semántica, Flexbox, Grid y diseño responsivo.</p>
+      </div>
+      <div class="skill-card">
+        <span class="skill-card__icon">⚙️</span>
+        <h3>JavaScript</h3>
+        <p>ES6+, DOM, Fetch API y programación asíncrona.</p>
+      </div>
+      <div class="skill-card">
+        <span class="skill-card__icon">🗄️</span>
+        <h3>Node.js</h3>
+        <p>APIs REST, Express y manejo de bases de datos.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer id="contact">
+    <p>✉️ ada@devcard.io — GitHub: @ada</p>
+  </footer>
+
+</body>
+</html>
