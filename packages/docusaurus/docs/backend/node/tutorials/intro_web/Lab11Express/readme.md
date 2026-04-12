@@ -39,7 +39,48 @@ Dentro de lo que hemos visto en nuestros laboratorios de control de versiones, h
 
 Para poder evitar subir archivos al repositorio, necesitamos un archivo llamado **.gitignore**, observa que este archivo empieza con un punto y lo único que contiene son los archivos y carpetas que queremos ignorar.
 
-Dentro de la comunidad ya existen algunos estándares para estos archivos según los lenguajes que estemos trabajando, para lo que vamos a realizar en este laboratorio, te dejo el <a href="/docs/node/tutorials/intro_web/Lab11Express/test-project.zip" download="lab11-express-template.zip">archivo</a> para que lo agregues en la raíz de la carpeta de tu proyecto.
+Dentro de la comunidad ya existen algunos estándares para estos archivos según los lenguajes que estemos trabajando. Para nuestro proyecto de Node.js con Express, crea un archivo llamado **.gitignore** en la raíz de tu proyecto y coloca lo siguiente:
+
+```
+# Dependencias
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Variables de entorno (pueden contener contraseñas o claves)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Datos de ejecución
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Directorios de compilación y salida
+dist/
+build/
+
+# Reportes de cobertura de pruebas
+coverage/
+.nyc_output/
+
+# Cache de herramientas
+.npm
+.eslintcache
+*.tsbuildinfo
+
+# Salida de npm pack
+*.tgz
+```
+
+Observa que la entrada más importante para nosotros es **node_modules/**, que es la carpeta donde se instalan todas las dependencias del proyecto. Las entradas de **.env** también son fundamentales ya que estos archivos suelen contener información sensible como contraseñas o claves de API que nunca deben subirse al repositorio.
 
 Para los proyectos de node lo que vamos a querer evitar es subir una carpeta llamada **node_modules**, esta carpeta contendrá todas las librerías del proyecto. La razón de por que queremos evitar subirlas es por que esta acción se hace siempre que se inicia el proyecto, guardarlas puede crear el conflicto de guardar librerías viejas que a la larga causan más mal que bien y por tanto cada vez que clonamos el repositorio hacemos un fresh install que nos asegura la calidad del proyecto se mantiene.
 
@@ -74,10 +115,10 @@ El archivo **package.json** nos dará una visibilidad inicial de como ejecutar y
 Ahora vamos a instalar nuestra primera librería, en este caso express.
 
 ```
-npm install express -s
+npm install express
 ```
 
-La bandera -s le dirá a npm que debe agregarla a nuestro package.json, por lo que debes estar a la misma altura al manejarlo, esto permitirá que se vaya haciendo la lista de las librerías que vayamos usando en el proyecto.
+A partir de npm 5, cualquier paquete que instales se agrega automáticamente a las dependencias de tu **package.json**, por lo que ya no es necesario usar la bandera `-s` o `--save` que se utilizaba en versiones anteriores.
 
 Si revisamos el resultado final del archivo package.json se vería como lo siguiente:
 
@@ -141,13 +182,43 @@ Por tanto, antes de que nuestro servidor imprima la url del request, deberá imp
 
 Vamos a probarlo, pero para hacerlo vamos a cambiar la forma en la que ejecutamos nuestro código.
 
+## node --watch
+
+Hasta ahora hemos ejecutado nuestro servidor con `node index.js`, pero cada vez que hacemos un cambio debemos detenerlo manualmente con `Ctrl+C` y volver a ejecutarlo. Esto se vuelve tedioso muy rápido.
+
+A partir de Node.js 18, existe la bandera `--watch` que reinicia automáticamente el proceso cada vez que detecta cambios en los archivos de tu proyecto:
+
+```
+node --watch index.js
+```
+
+Al ejecutarlo verás algo como:
+
+```
+Restarting 'index.js'
+```
+
+Cada vez que guardes un cambio en cualquier archivo importado, Node reiniciará el servidor automáticamente sin que tengas que hacer nada. Esta es la forma más sencilla de trabajar en desarrollo ya que no requiere instalar ninguna librería adicional.
+
+> **Nota:** Si necesitas limitar qué carpetas observa, puedes usar `node --watch-path=./src index.js` para que solo reinicie ante cambios en una carpeta específica.
+
 ## pm2
+
+Si bien `node --watch` es perfecto para desarrollo local, cuando necesitamos algo más robusto o prepararnos para producción, existe **pm2**.
 
 Como vimos al inicio del laboratorio, te pedí que instalaras de manera global la librería de pm2, esta librería queremos tenerla instalada fuera del proyecto ya que será lo mismo para cualquier proyecto que tengamos que ejecutar.
 
-PM2 es una librería de administración de procesos, dicho de otra forma es una librería que impide que nuestro servidor se apague solo por el echo de cerrar la terminal. Es decir, crea un proceso en segundo plano que no sea dependiente de la terminal.
+PM2 es una librería de administración de procesos, dicho de otra forma es una librería que impide que nuestro servidor se apague solo por el hecho de cerrar la terminal. Es decir, crea un proceso en segundo plano que no sea dependiente de la terminal.
 
-La principal ventaja de usarla es facilitar nuestro flujo de trabajo al evitar estar prendiendo y apagando el servidor constantemente, pero también nos permite añadir configuraciones adicionales para nuestro servidor que iremos viendo poco a poco. Por último con esta librería estaremos añadiendo una capa lo más parecida a cuando vayamos a desplegar nuestro proyecto en producción, y esto es importante ya que entre más igual sea el desarrollo y el pase a producción, más fácil será realizar el despliegue.
+Las ventajas de pm2 sobre `node --watch` son:
+
+- **Proceso en segundo plano:** el servidor sigue corriendo aunque cierres la terminal.
+- **Administración de logs:** puedes consultar la consola y los errores con `pm2 logs`.
+- **Reinicio automático ante crashes:** si tu servidor falla, pm2 lo levanta de nuevo.
+- **Monitoreo:** puedes ver el uso de CPU y memoria de tus procesos.
+- **Entorno de producción:** pm2 es lo que usarás cuando despliegues tu proyecto en un servidor real.
+
+En resumen, usa `node --watch` cuando estés programando rápidamente en tu máquina y pm2 cuando necesites que el servidor corra de manera estable en segundo plano o en un servidor de producción.
 
 Por ahora ve aprendiendo los siguiente comandos de inicio:
 
@@ -328,7 +399,7 @@ Ve que la principal diferencia fue haber separado en funciones nuestro código p
 Ahora bien vamos a mejorar la forma en la que trabajamos con nuestro formulario, y esto lo haremos a través de una nueva librería que debemos instalar en nuestro proyecto.
 
 ```
-npm install body-parser -s
+npm install body-parser
 ```
 
 Para usarla, la colocaremos debajo de la declaración de la variable **app**.
