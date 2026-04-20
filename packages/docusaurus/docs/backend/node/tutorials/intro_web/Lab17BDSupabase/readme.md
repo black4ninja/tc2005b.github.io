@@ -95,9 +95,7 @@ Entra a [supabase.com](https://supabase.com) y crea tu cuenta. Una vez dentro de
 5. Elige la región más cercana (por ejemplo `East US (North Virginia)` si estás en México).
 6. Haz clic en **Create new project** y espera ~1 minuto mientras se provisiona.
 
-> *Pendiente: captura del formulario de nuevo proyecto en Supabase.*
-
-Cuando termine te deja en el dashboard del proyecto. Los dos menús que vamos a usar son:
+Mientras se aprovisiona verás una barra de progreso. Cuando termine, el sidebar izquierdo mostrará todos los módulos del proyecto (Table Editor, SQL Editor, Authentication, Storage, etc.) y en la parte superior aparecerá el nombre que le diste. Los dos menús que vamos a usar son:
 
 - **SQL Editor** — para ejecutar SQL directamente sobre tu base.
 - **Table Editor** — para ver las tablas y datos de forma visual.
@@ -159,11 +157,15 @@ CREATE TABLE game_platforms (
 
 Haz clic en **Run** y verifica que no haya errores.
 
-> *Pendiente: captura del SQL Editor de Supabase con el script ejecutado.*
+Si todo corrió bien, en el panel inferior del editor aparece el mensaje **Success. No rows returned**. Abre el **Table Editor** en el sidebar izquierdo: deben listarse las 5 tablas recién creadas (`studios`, `genres`, `platforms`, `games`, `game_platforms`), todas vacías todavía.
 
-A diferencia del laboratorio pasado donde usamos 7 registros de libros, aquí vamos a cargar un dataset **con volumen real** — 30 estudios, 15 géneros, 12 plataformas y alrededor de 90 juegos con sus respectivas relaciones. Esto nos permitirá hacer JOINs, paginación y agregaciones que tienen sentido.
+A diferencia del laboratorio pasado donde usamos 7 registros de libros, aquí vamos a cargar un dataset **con volumen real** — 30 estudios, 15 géneros, 12 plataformas, 95 juegos y 413 relaciones juego-plataforma. Esto nos permitirá hacer JOINs, paginación y agregaciones que tienen sentido.
 
-El archivo `seed.sql` incluido en el ejemplo contiene todos los `INSERT`. Ábrelo, cópialo completo y pégalo en el SQL Editor. Ejecútalo.
+Descarga el archivo con todos los `INSERT` y pégalo en el SQL Editor de Supabase:
+
+<a href="/docs/node/tutorials/intro_web/Lab17BDSupabase/seed.sql" download="seed.sql">Descargar seed.sql</a>
+
+Ejecútalo con **Run**. Como son más de 550 inserts, puede tardar un par de segundos.
 
 Para validar, corre:
 
@@ -175,21 +177,21 @@ SELECT COUNT(*) FROM platforms;
 SELECT COUNT(*) FROM game_platforms;
 ```
 
-Y revisa en **Table Editor** que los datos se vean bien:
-
-> *Pendiente: captura del Table Editor mostrando la tabla `games` poblada.*
+Las cuentas deben dar exactamente: `games` = 95, `studios` = 30, `genres` = 15, `platforms` = 12, `game_platforms` = 413. Después entra a **Table Editor > games** y navega las filas: vas a reconocer títulos como *Elden Ring*, *The Witcher 3* y *Baldur's Gate 3* con sus precios y ratings.
 
 ## Obtener la cadena de conexión
 
-Ve a **Project Settings > Database**. Hasta abajo encontrarás la sección **Connection string**. Selecciona la variante **URI** y copia la cadena. Se ve algo así:
+En el **topbar** del dashboard (arriba de todo, junto al nombre del proyecto) haz clic en el botón **Connect**. Se abre un modal que por defecto te muestra la opción **Direct connection** seleccionada.
+
+Antes de copiar nada, cambia la selección a **Transaction pooler** — es el recomendado para servidores Express que abren muchas conexiones cortas. Copia el valor que aparece en el campo URI; se ve algo así:
 
 ```
 postgres://postgres.xxxxxxxx:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres
 ```
 
-Sustituye `[YOUR-PASSWORD]` por la contraseña que guardaste al crear el proyecto. Guárdala, la vamos a meter a un archivo `.env` en un momento.
+Sustituye `[YOUR-PASSWORD]` por la contraseña que guardaste al crear el proyecto. Guárdala, la vamos a meter al archivo `.env` en un momento.
 
-> *Pendiente: captura de la pantalla Project Settings > Database con la Connection string marcada.*
+El modal también te muestra otras dos variantes que vale la pena conocer: **Direct connection** (puerto 5432, una conexión por cliente, útil solo para operaciones administrativas) y **Session pooler** (puerto 5432, mantiene la sesión entre queries, útil para clientes que usan prepared statements largos). Para este lab usamos el **Transaction pooler**.
 
 ## Preparar el proyecto de NodeJS
 
@@ -282,9 +284,7 @@ Corre tu servidor:
 node index.js
 ```
 
-Y visita `http://localhost:3000/test_db`. Deberías ver un JSON con 20 juegos:
-
-> *Pendiente: captura del navegador mostrando el JSON de `/test_db`.*
+Y visita `http://localhost:3000/test_db`. Deberías ver un arreglo JSON con 20 objetos, cada uno con los campos `id`, `title`, `studio_id`, `genre_id`, `release_year`, `price` y `rating`. El orden es el de inserción, así que el primero será *The Legend of Zelda: Breath of the Wild*.
 
 Si te marca error de conexión, revisa: que la contraseña en `.env` sea correcta, que no haya espacios alrededor del `=`, y que la cadena URI sea la que copiaste de **Project Settings > Database**.
 
@@ -328,9 +328,10 @@ app.get('/buscar', async (req, res) => {
 });
 ```
 
-Prueba ambas rutas con el payload de inyección. La segunda devolverá vacío (porque busca literalmente el texto `' OR 1=1 --` en el título) y la primera te delatará el problema:
+Prueba ambas rutas con el payload de inyección y compara lo que devuelve cada una:
 
-> *Pendiente: captura comparando el resultado de `/buscar-inseguro` (devuelve todos) vs `/buscar` (devuelve vacío) con el payload `' OR 1=1 --`.*
+- `/buscar-inseguro?titulo=' OR 1=1 --` regresa **las 50 primeras filas** (el límite del `LIMIT 50`), porque el `OR 1=1` forzó el `WHERE` a cumplirse para toda la tabla.
+- `/buscar?titulo=' OR 1=1 --` regresa un arreglo **vacío**, porque el texto literal `' OR 1=1 --` nunca coincide con ningún título real del catálogo.
 
 **Regla práctica**: nunca concatenes input de usuario dentro de un string SQL. Siempre pasa los valores como argumentos.
 
@@ -470,7 +471,7 @@ app.use('/games', gameRoutes);
 
 Crea las vistas `views/games.ejs` (tabla con paginación) y `views/buscar.ejs` (formulario de búsqueda). El detalle completo de las vistas está en el ejemplo descargable al final del laboratorio.
 
-Ahora entra a `http://localhost:3000/games` y vas a ver la tabla paginada. Pasa a `?page=2`, `?page=3` — cada página te trae 20 juegos distintos. Ésta es la razón por la que armamos un dataset con ~90 registros: con los 7 libros del laboratorio anterior la paginación no se nota.
+Ahora entra a `http://localhost:3000/games` y vas a ver la tabla paginada. Pasa a `?page=2`, `?page=3` — cada página te trae 20 juegos distintos. Con 95 registros totales vas a tener 5 páginas; las primeras 4 con 20 juegos y la última con 15. Ésta es la razón por la que armamos un dataset grande: con los 7 libros del laboratorio anterior la paginación no se nota.
 
 ## Bonus: Supabase JS Client + Row Level Security
 
@@ -513,7 +514,7 @@ Córrelo:
 node supabase-example.js
 ```
 
-Si lo pruebas **ahora mismo** te va a regresar un arreglo vacío, aunque la tabla tenga 90 juegos. ¿Por qué?
+Si lo pruebas **ahora mismo** te va a regresar un arreglo vacío, aunque la tabla tenga 95 juegos. ¿Por qué?
 
 Porque la `SUPABASE_ANON_KEY` es una llave **pública** diseñada para usarse desde el browser. Supabase rechaza cualquier lectura con esta llave a menos que la tabla tenga habilitado **Row Level Security** y haya una política explícita que permita ver las filas. Es un `deny by default` — lo contrario al driver `pg`, que confía en el usuario una vez conectado.
 
@@ -527,7 +528,7 @@ Para que el cliente JS pueda leer los juegos:
    - **Target roles**: `anon, authenticated`
    - **USING expression**: `true`
 
-> *Pendiente: captura del formulario de creación de política RLS en Supabase.*
+Guarda la política y confirma que en la pestaña **Policies** de la tabla `games` aparezca listada con estado **Enabled** y el ícono de candado de la tabla cambie a abierto.
 
 Vuelve a correr `node supabase-example.js` y ahora sí verás los 10 juegos con mejor rating.
 
@@ -540,5 +541,3 @@ Vuelve a correr `node supabase-example.js` y ahora sí verás los 10 juegos con 
 - Investiga los otros servicios de Supabase: Auth (lo usaremos en el próximo laboratorio), Realtime y Storage.
 - Revisa la documentación oficial del driver [`pg`](https://node-postgres.com/) y de [Supabase JS](https://supabase.com/docs/reference/javascript/introduction).
 - **Jamás subas tu archivo `.env` al repositorio**. Úsalo solo en desarrollo y, en producción, configura las variables de entorno a través de tu plataforma de despliegue.
-
-<a href="/docs/node/tutorials/intro_web/Lab17BDSupabase/test-project.zip" download="lab17-bd-supabase.zip">Ver ejemplo completo</a>
