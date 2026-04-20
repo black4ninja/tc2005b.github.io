@@ -3,14 +3,14 @@ sidebar_position: 17.5
 ---
 # Interacción con la Base de Datos (PostgreSQL + Supabase)
 
-Este laboratorio es una variante del laboratorio anterior (Interacción con la Base de Datos con MariaDB). Aquí vamos a conectar nuestro proyecto de NodeJS con una base de datos **PostgreSQL** hospedada en **Supabase**, en vez de instalar un servidor local.
+En este laboratorio vamos a conectar nuestro proyecto de NodeJS con una base de datos relacional. En particular usaremos **PostgreSQL** hospedada en **Supabase**, un servicio administrado en la nube que nos evita instalar un servidor local en cada computadora del salón.
 
-La idea es que veas cómo cambia el flujo cuando trabajas con una base de datos administrada en la nube y, sobre todo, que introduzcamos prácticas de seguridad importantes que no tocamos en el laboratorio pasado:
+La meta es que veas el flujo completo de una aplicación web moderna contra una base de datos y que incorpores desde el día uno tres prácticas de seguridad que luego vas a repetir en cualquier proyecto serio:
 
-1. Guardar credenciales en variables de entorno (`.env`) en lugar de hardcodearlas.
+1. Guardar credenciales en variables de entorno (`.env`) en lugar de hardcodearlas en el código.
 2. Usar **queries parametrizadas** para evitar inyección de SQL.
-3. Trabajar con un dataset con volumen real para justificar paginación y JOINs.
-4. Conocer **Row Level Security (RLS)**, una característica de PostgreSQL / Supabase que no existe de forma nativa en MySQL/MariaDB.
+3. Trabajar con un dataset de volumen real para justificar paginación y JOINs.
+4. Conocer **Row Level Security (RLS)**, una característica propia de PostgreSQL/Supabase que aplica reglas de acceso a nivel de la propia base de datos.
 
 **Pre-requisitos**:
 - Haber terminado los laboratorios previos (Express, EJS, MVC).
@@ -159,7 +159,7 @@ Haz clic en **Run** y verifica que no haya errores.
 
 Si todo corrió bien, en el panel inferior del editor aparece el mensaje **Success. No rows returned**. Abre el **Table Editor** en el sidebar izquierdo: deben listarse las 5 tablas recién creadas (`studios`, `genres`, `platforms`, `games`, `game_platforms`), todas vacías todavía.
 
-A diferencia del laboratorio pasado donde usamos 7 registros de libros, aquí vamos a cargar un dataset **con volumen real** — 30 estudios, 15 géneros, 12 plataformas, 95 juegos y 413 relaciones juego-plataforma. Esto nos permitirá hacer JOINs, paginación y agregaciones que tienen sentido.
+Ahora vamos a cargar un dataset **con volumen real** — 30 estudios, 15 géneros, 12 plataformas, 95 juegos y 413 relaciones juego-plataforma. Elegimos este tamaño intencionalmente: con solo un puñado de registros la paginación, los JOINs y las agregaciones no tienen sentido práctico y cuesta ver su utilidad.
 
 Descarga el archivo con todos los `INSERT` y pégalo en el SQL Editor de Supabase:
 
@@ -204,7 +204,7 @@ npm i express body-parser ejs pg dotenv
 
 Las dos librerías nuevas son:
 
-- **pg**: el driver oficial de PostgreSQL para NodeJS (equivalente al `mariadb` que usamos antes).
+- **pg**: el driver oficial de PostgreSQL para NodeJS. Se encarga de abrir conexiones a la base, enviar queries y parsear los resultados.
 - **dotenv**: lee variables de entorno desde un archivo `.env` y las expone en `process.env`.
 
 Crea un archivo `.gitignore` con lo siguiente:
@@ -273,10 +273,10 @@ app.listen(3000, () => {
 });
 ```
 
-Dos diferencias importantes respecto al laboratorio con MariaDB:
+Dos detalles importantes de esta configuración:
 
-1. **`ssl: { rejectUnauthorized: false }`**: Supabase exige conexiones TLS. Esta opción acepta el certificado administrado por Supabase.
-2. **`connectionString` desde `.env`**: no hardcodeamos usuario, contraseña ni host.
+1. **`ssl: { rejectUnauthorized: false }`**: Supabase exige conexiones TLS. Esta opción acepta el certificado administrado por Supabase sin exigir que lo tengamos pre-instalado localmente.
+2. **`connectionString` desde `.env`**: no hardcodeamos usuario, contraseña ni host; todo se lee de variables de entorno que nunca se suben al repositorio.
 
 Corre tu servidor:
 
@@ -290,7 +290,7 @@ Si te marca error de conexión, revisa: que la contraseña en `.env` sea correct
 
 ## Queries parametrizadas y SQL injection
 
-Hasta aquí replicamos lo mismo que hicimos con MariaDB, solo cambiando de motor. Ahora vamos a abordar algo que el laboratorio anterior dejó pendiente: **cómo evitar inyección de SQL en la práctica**.
+Ya tenemos una conexión funcional y nuestra primera query. Ahora vamos a abordar uno de los temas de seguridad más importantes cuando trabajas con bases de datos: **cómo evitar la inyección de SQL en la práctica**.
 
 Imagina que quieres un endpoint que busque juegos por título. Una primera versión ingenua sería concatenar la variable a la query:
 
@@ -471,7 +471,7 @@ app.use('/games', gameRoutes);
 
 Crea las vistas `views/games.ejs` (tabla con paginación) y `views/buscar.ejs` (formulario de búsqueda). El detalle completo de las vistas está en el ejemplo descargable al final del laboratorio.
 
-Ahora entra a `http://localhost:3000/games` y vas a ver la tabla paginada. Pasa a `?page=2`, `?page=3` — cada página te trae 20 juegos distintos. Con 95 registros totales vas a tener 5 páginas; las primeras 4 con 20 juegos y la última con 15. Ésta es la razón por la que armamos un dataset grande: con los 7 libros del laboratorio anterior la paginación no se nota.
+Ahora entra a `http://localhost:3000/games` y vas a ver la tabla paginada. Pasa a `?page=2`, `?page=3` — cada página te trae 20 juegos distintos. Con 95 registros totales vas a tener 5 páginas; las primeras 4 con 20 juegos y la última con 15. Ésta es la razón por la que armamos un dataset grande: con pocos registros la paginación simplemente no se nota y el patrón parece opcional.
 
 ## Bonus: Supabase JS Client + Row Level Security
 
@@ -532,7 +532,7 @@ Guarda la política y confirma que en la pestaña **Policies** de la tabla `game
 
 Vuelve a correr `node supabase-example.js` y ahora sí verás los 10 juegos con mejor rating.
 
-**Lo valioso de RLS**: las reglas de acceso viven en la base de datos, no en el código de la aplicación. Si un programador olvida validar permisos en un endpoint, la base de datos sigue aplicando la política. En MySQL/MariaDB no existe nada equivalente a este nivel de granularidad — ahí la autorización depende totalmente del código.
+**Lo valioso de RLS**: las reglas de acceso viven en la base de datos, no en el código de la aplicación. Si un programador olvida validar permisos en un endpoint, la base de datos sigue aplicando la política y corta el acceso. Esta es una de las razones por las que elegir un motor como PostgreSQL para aplicaciones con datos sensibles vale la pena — obtienes una capa de defensa que no depende del código de la aplicación.
 
 ## Siguientes pasos
 
