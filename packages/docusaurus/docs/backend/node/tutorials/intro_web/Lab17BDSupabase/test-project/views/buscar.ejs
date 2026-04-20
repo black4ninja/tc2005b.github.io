@@ -1,0 +1,53 @@
+<!DOCTYPE HTML>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Búsqueda — <%= titulo %></title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 2rem; background: #f9fafb; }
+        .warning { background: #fee2e2; border-left: 4px solid #dc2626; padding: 0.75rem 1rem; margin-bottom: 1rem; color: #991b1b; }
+        .safe    { background: #dcfce7; border-left: 4px solid #16a34a; padding: 0.75rem 1rem; margin-bottom: 1rem; color: #166534; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #e5e7eb; text-align: left; }
+        th { background: #111827; color: white; }
+        input { padding: 0.4rem; width: 300px; }
+    </style>
+</head>
+<body>
+    <h1>Búsqueda de juegos</h1>
+
+    <% if (modo === 'inseguro') { %>
+        <div class="warning">
+            <strong>Modo inseguro activo.</strong> Esta ruta concatena la entrada del usuario directamente en el SQL — vulnerable a inyección.
+        </div>
+    <% } else { %>
+        <div class="safe">
+            <strong>Modo seguro.</strong> La entrada se envía como parámetro ($1), el driver la trata como valor, nunca como SQL.
+        </div>
+    <% } %>
+
+    <form method="get" action="<%= modo === 'inseguro' ? '/games/buscar-inseguro' : '/games/buscar' %>">
+        <input type="text" name="titulo" value="<%= titulo %>" placeholder="Título del juego" />
+        <button type="submit">Buscar</button>
+    </form>
+
+    <p>Búsqueda: <code><%= titulo %></code> — <%= resultados.length %> resultados</p>
+
+    <table>
+        <thead>
+            <tr><th>#</th><th>Título</th><th>Año</th><th>Precio</th><th>Rating</th></tr>
+        </thead>
+        <tbody>
+            <% resultados.forEach(j => { %>
+                <tr>
+                    <td><%= j.id %></td>
+                    <td><%= j.title %></td>
+                    <td><%= j.release_year %></td>
+                    <td>$<%= j.price %></td>
+                    <td><%= j.rating %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</body>
+</html>
