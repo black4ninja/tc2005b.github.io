@@ -31,7 +31,7 @@ const lab17: Lab = {
       '</li>' +
       '<li>A continuaci\u00f3n, haremos una implementaci\u00f3n a partir del dise\u00f1o que se presenta en el siguiente diagrama de secuencia:' +
         '<div class="center-align">' +
-          '<img alt="Diagrama de secuencia de una interacci\u00f3n con un estilo arquitect\u00f3nico MVC" src="uml/mvc_bd_secuencia.png">' +
+          '<img class="responsive-img" alt="Diagrama de secuencia de una interacci\u00f3n con un estilo arquitect\u00f3nico MVC" src="/uml/mvc_bd_secuencia.png">' +
         '</div>' +
       '</li>' +
       '<li>Para conectarnos con la base de datos y ejecutar consultas desde nuestra aplicaci\u00f3n:' +

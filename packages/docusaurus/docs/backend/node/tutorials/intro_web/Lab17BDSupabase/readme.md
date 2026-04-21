@@ -362,6 +362,12 @@ test-project/
     └── buscar.ejs
 ```
 
+Antes de escribir los archivos, te conviene tener en mente cómo va a viajar un request por cada una de las tres rutas que vamos a construir — listado paginado, búsqueda segura y búsqueda insegura. Este diagrama de secuencia muestra exactamente quién llama a quién en cada flujo:
+
+![Diagrama de secuencia de los tres flujos MVC contra Supabase](imgs/secuencia.png)
+
+Úsalo como mapa mientras lees el código que sigue: cada flecha del diagrama corresponde a una línea concreta en los archivos que vamos a crear.
+
 **`util/database.js`** — exporta el pool una sola vez:
 
 ```
@@ -420,6 +426,22 @@ exports.findByTitleInsegura = async (titulo) => {
     return rows;
 };
 ```
+
+Para que veas las 4 queries de un vistazo, aquí está el resumen visual — las verdes son seguras (usan placeholders), la roja es la versión vulnerable que solo existe para la demo:
+
+![Resumen de las 4 queries de game.model.js: fetchAll, count, findByTitle seguras; findByTitleInsegura vulnerable](imgs/queries.png)
+
+### Anatomía de los queries
+
+La mayoría de estos queries van más allá del clásico `SELECT * FROM tabla WHERE columna = valor`. Lo que es nuevo:
+
+- **`LEFT JOIN studios s ON s.id = g.studio_id`** — trae columnas de otra tabla cuando la llave coincide. `LEFT` asegura que el juego aparezca aunque no tenga estudio asignado (la columna `studio` viene en `NULL`). Con `INNER JOIN` (o simplemente `JOIN`) ese juego se omitiría del resultado.
+- **Alias con `AS`** — `games g` le da un apodo corto a la tabla (permite escribir `g.title` en vez de `games.title`). `s.name AS studio` cambia el nombre de la columna en el resultado, así el JavaScript la accede como `j.studio` en lugar de `j.name`.
+- **`ORDER BY g.title`** — ordena el resultado alfabéticamente por título (ascendente por default; agrega `DESC` para invertir).
+- **`LIMIT $1 OFFSET $2`** — paginación a nivel SQL: trae **$1** filas empezando desde la **$2**. La base recorta antes de enviar, nunca se mueven los 95 juegos por la red para mostrar 20.
+- **`COUNT(*)::int AS total`** — `COUNT(*)` cuenta filas. El **`::int`** es un cast de PostgreSQL: sin él, `pg` devuelve `bigint` como string (`"95"`) para no perder precisión en números muy grandes. Como sabemos que 95 cabe en `int`, casteamos para trabajarlo como número en JavaScript.
+- **`ILIKE $1`** — versión case-insensitive de `LIKE`, específica de PostgreSQL. `'zelda'` hace match con `'Zelda'`, `'ZELDA'`, etc.
+- **Comodín `%...%`** — dentro de `LIKE`/`ILIKE`, `%` significa "cualquier texto, incluido vacío". `'%zelda%'` = título que contiene la palabra en cualquier posición. Un solo `%` al final (`'zelda%'`) = empieza con; uno al inicio (`'%zelda'`) = termina con.
 
 **`controllers/game.controller.js`**:
 
