@@ -100,7 +100,7 @@ Mientras se aprovisiona verás una barra de progreso. Cuando termine, el sidebar
 - **SQL Editor** — para ejecutar SQL directamente sobre tu base.
 - **Table Editor** — para ver las tablas y datos de forma visual.
 - **Project Settings > Database** — de aquí vamos a sacar la cadena de conexión.
-- **Project Settings > API** — de aquí vamos a sacar la URL pública y la `anon key` (para el bonus).
+- **Project Settings > API Keys** — de aquí vamos a sacar la URL pública y la **publishable key** (para el bonus).
 
 ## Crear el esquema y cargar datos
 
@@ -221,10 +221,10 @@ Ahora crea un archivo `.env` (sin extensión adicional, solo `.env`) con este co
 ```
 DATABASE_URL=postgres://postgres.xxxxxxxx:TU_PASSWORD@aws-0-us-east-1.pooler.supabase.com:6543/postgres
 SUPABASE_URL=https://xxxxxxxx.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOi...tu_anon_key_publica
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxxxxxxxxxxxxxxxxxxx
 ```
 
-Las dos últimas (`SUPABASE_URL` y `SUPABASE_ANON_KEY`) las sacas de **Project Settings > API** y las usaremos hasta la sección bonus.
+Las dos últimas (`SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY`) las sacas de **Project Settings > API Keys** y las usaremos hasta la sección bonus. La **publishable key** es la llave pública de tu proyecto — está diseñada para ser embebida en código de frontend. (Si ves un tab **Legacy anon, service_role API keys**, **no lo uses**: ese sistema está siendo reemplazado por el de Publishable/Secret).
 
 ## Primera conexión a Supabase
 
@@ -475,12 +475,51 @@ Ahora entra a `http://localhost:3000/games` y vas a ver la tabla paginada. Pasa 
 
 ## Bonus: Supabase JS Client + Row Level Security
 
-Hasta aquí tratamos a Supabase como un Postgres administrado y nos conectamos por el driver `pg`. Pero Supabase también expone una API REST autogenerada y un cliente oficial que nos permite hacer queries desde JavaScript con una sintaxis tipo query builder.
+Hasta aquí tratamos a Supabase como un Postgres cualquiera y nos conectamos por el driver `pg`. Eso es una de las dos formas en que Supabase permite acceder a tus datos. La otra es el **cliente JavaScript oficial** (`@supabase/supabase-js`), que habla con una **API REST autogenerada** a partir de tu esquema. Son dos filosofías muy distintas y conviene que entiendas cuándo usar cada una antes de escribir código.
+
+### ¿Por qué dos formas de acceso?
+
+**Con el driver `pg` (lo que hicimos hasta ahora):**
+
+- Abres una conexión TCP directa al PostgreSQL con usuario y contraseña de administrador.
+- Esa conexión **confía en ti**: una vez conectado puedes leer/escribir cualquier tabla. La autorización depende 100% del código de tu servidor.
+- La credencial (usuario + password) es muy sensible. Si se filtra, quien la tenga puede leer toda tu base.
+- **Solo sirve desde un servidor** que tú controles. No puedes usar `pg` desde un navegador o una app móvil porque tendrías que mandar la contraseña al cliente.
+- Ideal para: backends donde escribes todo el SQL, queries complejas con muchos JOINs, transacciones, migrations.
+
+**Con `@supabase/supabase-js`:**
+
+- No abres una conexión a Postgres. Haces requests HTTP(S) a una API REST que Supabase genera automáticamente a partir de tus tablas.
+- La API **no confía en ti** por default: para cada request valida permisos contra las políticas de **Row Level Security (RLS)** definidas en tu base.
+- Se usa con llaves de API (`sb_publishable_...` y `sb_secret_...`) que identifican el contexto del request, no abren una sesión de base.
+- **Funciona en el navegador y móvil** con seguridad — siempre que tengas RLS configurado, la publishable key es segura en código público.
+- Se integra con el resto del stack de Supabase (Auth, Realtime, Storage) en un solo cliente.
+- Ideal para: código que corre en el cliente (web/mobile), prototipos rápidos, apps que aprovechan Auth/Realtime, endpoints públicos de solo lectura.
+
+En resumen: **`pg` es la llave maestra del sótano; `supabase-js` es la puerta principal con torniquete**. En proyectos reales es común usar las dos: `pg` para tareas administrativas del backend, `supabase-js` para el acceso que hace tu frontend.
+
+### Las nuevas API Keys de Supabase
+
+Entra a **Project Settings > API Keys**. Vas a ver dos secciones (ignora por completo el tab viejo **Legacy anon, service_role API keys** — ese sistema se está retirando):
+
+- **Publishable key** (`sb_publishable_...`): es pública. Se puede embeber en JavaScript que corre en el browser o en una app móvil. Supabase **siempre aplica RLS** a los requests hechos con esta llave. Si no tienes políticas, no ves datos.
+- **Secret key** (`sb_secret_...`): privilegiada. Solo va en código de servidor que tú controlas. **Ignora RLS** y puede leer/escribir cualquier cosa. Nunca la expongas al cliente.
+
+Para este bonus vamos a usar la **publishable key**, específicamente porque queremos ver a RLS en acción.
+
+### Configurar el cliente y hacer la primera query
 
 Instala el cliente:
 
 ```
 npm i @supabase/supabase-js
+```
+
+Asegúrate de tener en tu `.env`:
+
+```
+SUPABASE_URL=https://xxxxxxxx.supabase.co
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxxxxxxxxxxxxxxxxxxx
 ```
 
 Crea un archivo `supabase-example.js`:
@@ -491,7 +530,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY
+    process.env.SUPABASE_PUBLISHABLE_KEY
 );
 
 async function main() {
@@ -514,15 +553,15 @@ Córrelo:
 node supabase-example.js
 ```
 
-Si lo pruebas **ahora mismo** te va a regresar un arreglo vacío, aunque la tabla tenga 95 juegos. ¿Por qué?
+Si lo pruebas **ahora mismo** te va a regresar un arreglo vacío (`[]`), aunque la tabla tenga 95 juegos. ¿Por qué?
 
-Porque la `SUPABASE_ANON_KEY` es una llave **pública** diseñada para usarse desde el browser. Supabase rechaza cualquier lectura con esta llave a menos que la tabla tenga habilitado **Row Level Security** y haya una política explícita que permita ver las filas. Es un `deny by default` — lo contrario al driver `pg`, que confía en el usuario una vez conectado.
+Porque es una publishable key y Supabase está aplicando el comportamiento por default: `deny-all` para cualquier tabla sin RLS configurado con políticas explícitas. Esto es **exactamente lo contrario** al driver `pg`, que una vez conectado te deja leer todo. Para que la publishable key pueda leer los juegos hay que decirle a la base qué tiene permitido devolver.
 
-Para que el cliente JS pueda leer los juegos:
+### Activar RLS y crear una política
 
-1. En Supabase, ve a **Authentication > Policies** (o Table Editor > selecciona `games` > **RLS**).
-2. Haz clic en **Enable RLS** para la tabla `games`.
-3. Agrega una política con estas opciones:
+1. En el sidebar izquierdo entra a **Authentication > Policies** (también puedes llegar desde **Table Editor > games > RLS**).
+2. Para la tabla `games`, haz clic en **Enable RLS**.
+3. Agrega una política nueva con estas opciones:
    - **Policy name**: `Allow public read on games`
    - **Allowed operation**: `SELECT`
    - **Target roles**: `anon, authenticated`
@@ -532,7 +571,7 @@ Guarda la política y confirma que en la pestaña **Policies** de la tabla `game
 
 Vuelve a correr `node supabase-example.js` y ahora sí verás los 10 juegos con mejor rating.
 
-**Lo valioso de RLS**: las reglas de acceso viven en la base de datos, no en el código de la aplicación. Si un programador olvida validar permisos en un endpoint, la base de datos sigue aplicando la política y corta el acceso. Esta es una de las razones por las que elegir un motor como PostgreSQL para aplicaciones con datos sensibles vale la pena — obtienes una capa de defensa que no depende del código de la aplicación.
+**La lección clave de RLS**: las reglas de acceso viven **dentro de la base de datos**, no en el código de la aplicación. Si un programador olvida validar permisos en un endpoint, la base sigue aplicando la política y corta el acceso. Combinado con Supabase Auth (que veremos en el siguiente laboratorio), puedes escribir políticas como *"cada usuario solo ve sus propios juegos favoritos"* y eso se va a cumplir no importa qué request llegue — porque la base sabe quién está autenticado. Esta capa extra de defensa es una de las razones principales para elegir PostgreSQL/Supabase cuando manejas datos sensibles.
 
 ## Siguientes pasos
 
