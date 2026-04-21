@@ -53,7 +53,7 @@ Antes de empezar a escribir código conviene tener clara la foto completa de có
  │                   └───────┬───────┘           │
  └───────────────────────────┼───────────────────┘
                              │  SQL sobre TLS
-                             │  (puerto 6543, pooler)
+                             │  (puerto 5432, session pooler)
                              v
  ┌───────────────────────────────────────────────┐
  │          Supabase  —  PostgreSQL              │
@@ -78,7 +78,7 @@ Antes de empezar a escribir código conviene tener clara la foto completa de có
 2. Express lo entrega al **router**, que decide qué **controller** atiende la URL.
 3. El controller le pide los datos al **model**, que es el único archivo que sabe SQL.
 4. El model usa un **pool de conexiones** de la librería `pg` (node-postgres). El pool lee credenciales de `.env` — nunca están hardcodeadas.
-5. La conexión sale por TLS al puerto 6543 de Supabase (pooler de Postgres).
+5. La conexión sale por TLS al puerto 5432 de Supabase (session pooler).
 6. Supabase ejecuta el SQL contra las 5 tablas relacionales del catálogo y regresa las filas.
 7. El model devuelve al controller, el controller renderiza la vista EJS, y el HTML final regresa al navegador.
 
@@ -183,15 +183,20 @@ Las cuentas deben dar exactamente: `games` = 95, `studios` = 30, `genres` = 15, 
 
 En el **topbar** del dashboard (arriba de todo, junto al nombre del proyecto) haz clic en el botón **Connect**. Se abre un modal que por defecto te muestra la opción **Direct connection** seleccionada.
 
-Antes de copiar nada, cambia la selección a **Transaction pooler** — es el recomendado para servidores Express que abren muchas conexiones cortas. Copia el valor que aparece en el campo URI; se ve algo así:
+Antes de copiar nada, cambia la selección a **Session pooler** — es el default más seguro para un servidor Express que corre persistentemente en tu laptop. Copia el valor que aparece en el campo URI; se ve algo así:
 
 ```
-postgres://postgres.xxxxxxxx:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+postgresql://postgres.xxxxxxxx:[YOUR-PASSWORD]@aws-0-us-east-1.pooler.supabase.com:5432/postgres
 ```
+
+> **Nota:** los esquemas `postgres://` y `postgresql://` son **equivalentes** — Postgres acepta ambos. Supabase puede mostrarte cualquiera de los dos según la versión del modal. No necesitas cambiarlo.
 
 Sustituye `[YOUR-PASSWORD]` por la contraseña que guardaste al crear el proyecto. Guárdala, la vamos a meter al archivo `.env` en un momento.
 
-El modal también te muestra otras dos variantes que vale la pena conocer: **Direct connection** (puerto 5432, una conexión por cliente, útil solo para operaciones administrativas) y **Session pooler** (puerto 5432, mantiene la sesión entre queries, útil para clientes que usan prepared statements largos). Para este lab usamos el **Transaction pooler**.
+El modal te ofrece otras dos variantes que vale la pena conocer:
+
+- **Direct connection** (puerto 5432): una conexión directa, sin pooling. Útil para operaciones administrativas desde tu máquina (migraciones, seeds, backups).
+- **Transaction pooler** (puerto 6543): pooling a nivel de transacción, diseñado para **funciones serverless** que abren y cierran conexiones por invocación (Vercel Functions, AWS Lambda). **No lo uses en este lab:** algunas redes con filtrado no estándar (campus, Wi-Fi público) bloquean el puerto 6543 o no responden al handshake TLS, y tu servidor quedará colgado esperando sin error visible. El session pooler (:5432) es más resiliente para un servidor Express local.
 
 ## Preparar el proyecto de NodeJS
 
@@ -199,7 +204,7 @@ Ahora vamos a crear el proyecto base igual que en los laboratorios anteriores. A
 
 ```
 npm init -y
-npm i express body-parser ejs pg dotenv
+npm i express ejs pg dotenv
 ```
 
 Las dos librerías nuevas son:
@@ -219,7 +224,7 @@ El segundo es **muy importante**: `.env` contendrá tu contraseña de base de da
 Ahora crea un archivo `.env` (sin extensión adicional, solo `.env`) con este contenido, sustituyendo con tu cadena real:
 
 ```
-DATABASE_URL=postgres://postgres.xxxxxxxx:TU_PASSWORD@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+DATABASE_URL=postgresql://postgres.xxxxxxxx:TU_PASSWORD@aws-0-us-east-1.pooler.supabase.com:5432/postgres
 SUPABASE_URL=https://xxxxxxxx.supabase.co
 SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxxxxxxxxxxxxxxxxxxx
 ```
@@ -233,21 +238,23 @@ Crea `index.js` con la plantilla base que ya conoces, pero esta vez cargando `do
 ```
 require('dotenv').config();
 
-const express    = require('express');
-const path       = require('path');
-const bodyParser = require('body-parser');
-const { Pool }   = require('pg');
+const express  = require('express');
+const path     = require('path');
+const { Pool } = require('pg');
 
 const app = express();
 
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
+    // Supabase administra el certificado TLS por nosotros, así que esta línea
+    // es segura aquí. NO la copies tal cual contra un Postgres propio sin
+    // revisar y confiar en el cert — desactivar la validación te expone a MITM.
     ssl: { rejectUnauthorized: false },
     max: 5
 });
@@ -260,8 +267,7 @@ app.get('/', (req, res) => {
 app.get('/test_db', async (req, res) => {
     try {
         const { rows } = await pool.query('SELECT * FROM games LIMIT 20');
-        res.writeHead(200, { 'Content-type': 'application/json' });
-        res.end(JSON.stringify(rows));
+        res.json(rows);
     } catch (e) {
         console.log(e);
         res.status(500).send('Error al conectar con la base de datos');
@@ -273,10 +279,11 @@ app.listen(3000, () => {
 });
 ```
 
-Dos detalles importantes de esta configuración:
+Tres detalles importantes de esta configuración:
 
-1. **`ssl: { rejectUnauthorized: false }`**: Supabase exige conexiones TLS. Esta opción acepta el certificado administrado por Supabase sin exigir que lo tengamos pre-instalado localmente.
+1. **`ssl: { rejectUnauthorized: false }`**: Supabase exige conexiones TLS y administra el certificado por nosotros. Esta opción le dice a `pg` que confíe en el cert aunque no lo tengamos pre-instalado. Es seguro con Supabase, pero **no copies esta línea tal cual** a un Postgres propio sin antes revisar el certificado — desactivar la validación te deja vulnerable a ataques de hombre en el medio (MITM).
 2. **`connectionString` desde `.env`**: no hardcodeamos usuario, contraseña ni host; todo se lee de variables de entorno que nunca se suben al repositorio.
+3. **`express.urlencoded`**: desde Express 4.16 (2017) ya no necesitas la librería `body-parser` por separado — el middleware está integrado directamente en Express. Antes se importaba `body-parser` y se llamaba `bodyParser.urlencoded(...)`; hoy es solo `express.urlencoded(...)`. Muchos tutoriales viejos todavía usan body-parser y eso confunde.
 
 Corre tu servidor:
 
@@ -330,7 +337,7 @@ app.get('/buscar', async (req, res) => {
 
 Prueba ambas rutas con el payload de inyección y compara lo que devuelve cada una:
 
-- `/buscar-inseguro?titulo=' OR 1=1 --` regresa **las 50 primeras filas** (el límite del `LIMIT 50`), porque el `OR 1=1` forzó el `WHERE` a cumplirse para toda la tabla.
+- `/buscar-inseguro?titulo=' OR 1=1 --` regresa **las 95 filas del catálogo completo**, porque el `OR 1=1` fuerza el `WHERE` a cumplirse para cada fila de la tabla. En un sistema real equivalente este sería el momento en que el atacante se lleva toda tu base de usuarios.
 - `/buscar?titulo=' OR 1=1 --` regresa un arreglo **vacío**, porque el texto literal `' OR 1=1 --` nunca coincide con ningún título real del catálogo.
 
 **Regla práctica**: nunca concatenes input de usuario dentro de un string SQL. Siempre pasa los valores como argumentos.
@@ -469,7 +476,129 @@ const gameRoutes = require('./routes/game.routes.js');
 app.use('/games', gameRoutes);
 ```
 
-Crea las vistas `views/games.ejs` (tabla con paginación) y `views/buscar.ejs` (formulario de búsqueda). El detalle completo de las vistas está en el ejemplo descargable al final del laboratorio.
+Ahora las vistas. Crea `views/games.ejs` con la tabla paginada del catálogo:
+
+```
+<!DOCTYPE HTML>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Catálogo de juegos — página <%= page %></title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 2rem; background: #f9fafb; }
+        h1 { margin-bottom: 0.2rem; }
+        .meta { color: #6b7280; margin-bottom: 1.5rem; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #e5e7eb; text-align: left; }
+        th { background: #111827; color: white; }
+        tr:hover { background: #f3f4f6; }
+        .pager { margin-top: 1.5rem; }
+        .pager a, .pager span { padding: 0.35rem 0.7rem; margin-right: 0.3rem; border: 1px solid #d1d5db; border-radius: 4px; text-decoration: none; color: #111827; }
+        .pager .current { background: #111827; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Catálogo de juegos</h1>
+    <p class="meta"><%= total %> juegos en total — página <%= page %> de <%= totalPages %></p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th><th>Título</th><th>Estudio</th><th>Género</th>
+                <th>Año</th><th>Precio</th><th>Rating</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% juegos.forEach(j => { %>
+                <tr>
+                    <td><%= j.id %></td>
+                    <td><%= j.title %></td>
+                    <td><%= j.studio %></td>
+                    <td><%= j.genre %></td>
+                    <td><%= j.release_year %></td>
+                    <td>$<%= j.price %></td>
+                    <td><%= j.rating %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+
+    <div class="pager">
+        <% if (page > 1) { %>
+            <a href="/games?page=<%= page - 1 %>">← Anterior</a>
+        <% } %>
+        <% for (let p = 1; p <= totalPages; p++) { %>
+            <% if (p === page) { %>
+                <span class="current"><%= p %></span>
+            <% } else { %>
+                <a href="/games?page=<%= p %>"><%= p %></a>
+            <% } %>
+        <% } %>
+        <% if (page < totalPages) { %>
+            <a href="/games?page=<%= page + 1 %>">Siguiente →</a>
+        <% } %>
+    </div>
+</body>
+</html>
+```
+
+Y `views/buscar.ejs` con el formulario de búsqueda que además indica visualmente el modo (seguro / inseguro):
+
+```
+<!DOCTYPE HTML>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Búsqueda — <%= titulo %></title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 2rem; background: #f9fafb; }
+        .warning { background: #fee2e2; border-left: 4px solid #dc2626; padding: 0.75rem 1rem; margin-bottom: 1rem; color: #991b1b; }
+        .safe    { background: #dcfce7; border-left: 4px solid #16a34a; padding: 0.75rem 1rem; margin-bottom: 1rem; color: #166534; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #e5e7eb; text-align: left; }
+        th { background: #111827; color: white; }
+        input { padding: 0.4rem; width: 300px; }
+    </style>
+</head>
+<body>
+    <h1>Búsqueda de juegos</h1>
+
+    <% if (modo === 'inseguro') { %>
+        <div class="warning">
+            <strong>Modo inseguro activo.</strong> Esta ruta concatena la entrada del usuario directamente en el SQL — vulnerable a inyección.
+        </div>
+    <% } else { %>
+        <div class="safe">
+            <strong>Modo seguro.</strong> La entrada se envía como parámetro ($1), el driver la trata como valor, nunca como SQL.
+        </div>
+    <% } %>
+
+    <form method="get" action="<%= modo === 'inseguro' ? '/games/buscar-inseguro' : '/games/buscar' %>">
+        <input type="text" name="titulo" value="<%= titulo %>" placeholder="Título del juego" />
+        <button type="submit">Buscar</button>
+    </form>
+
+    <p>Búsqueda: <code><%= titulo %></code> — <%= resultados.length %> resultados</p>
+
+    <table>
+        <thead>
+            <tr><th>#</th><th>Título</th><th>Año</th><th>Precio</th><th>Rating</th></tr>
+        </thead>
+        <tbody>
+            <% resultados.forEach(j => { %>
+                <tr>
+                    <td><%= j.id %></td>
+                    <td><%= j.title %></td>
+                    <td><%= j.release_year %></td>
+                    <td>$<%= j.price %></td>
+                    <td><%= j.rating %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</body>
+</html>
+```
 
 Ahora entra a `http://localhost:3000/games` y vas a ver la tabla paginada. Pasa a `?page=2`, `?page=3` — cada página te trae 20 juegos distintos. Con 95 registros totales vas a tener 5 páginas; las primeras 4 con 20 juegos y la última con 15. Ésta es la razón por la que armamos un dataset grande: con pocos registros la paginación simplemente no se nota y el patrón parece opcional.
 
@@ -502,12 +631,12 @@ En resumen: **`pg` es la llave maestra del sótano; `supabase-js` es la puerta p
 
 Entra a **Project Settings > API Keys**. Vas a ver dos secciones (ignora por completo el tab viejo **Legacy anon, service_role API keys** — ese sistema se está retirando):
 
-- **Publishable key** (`sb_publishable_...`): es pública. Se puede embeber en JavaScript que corre en el browser o en una app móvil. Supabase **siempre aplica RLS** a los requests hechos con esta llave. Si no tienes políticas, no ves datos.
-- **Secret key** (`sb_secret_...`): privilegiada. Solo va en código de servidor que tú controlas. **Ignora RLS** y puede leer/escribir cualquier cosa. Nunca la expongas al cliente.
+- **Publishable key** (`sb_publishable_...`): es pública. Se puede embeber en JavaScript que corre en el browser o en una app móvil **siempre que tengas RLS habilitado** en las tablas accesibles. La llave por sí sola **no es una barrera** — respeta lo que la base diga, no añade restricciones. Si una tabla tiene RLS deshabilitado, esta llave la lee sin problema.
+- **Secret key** (`sb_secret_...`): privilegiada. **Ignora RLS** y puede leer/escribir cualquier cosa como si fuera superusuario. Úsala solo en código server-side que tú controles, para tareas como seeds, migraciones, jobs programados o reportes administrativos que necesitan cruzar todas las políticas. **Nunca** la pongas en código que llegue al navegador o a una app móvil — cualquier persona que inspeccione la página vería toda tu base de datos.
 
-Para este bonus vamos a usar la **publishable key**, específicamente porque queremos ver a RLS en acción.
+Para este bonus vamos a usar la **publishable key** porque queremos ver el comportamiento que vería un cliente real (navegador, móvil) contra nuestra base.
 
-### Configurar el cliente y hacer la primera query
+### Configurar el cliente
 
 Instala el cliente:
 
@@ -547,35 +676,67 @@ async function main() {
 main();
 ```
 
-Córrelo:
+Vamos a correrlo en **tres fases** para ver cómo la combinación llave + RLS determina qué datos regresan.
+
+### Fase 1 — tabla sin RLS
+
+Corre el ejemplo:
 
 ```
 node supabase-example.js
 ```
 
-Si lo pruebas **ahora mismo** te va a regresar un arreglo vacío (`[]`), aunque la tabla tenga 95 juegos. ¿Por qué?
+Te regresa los **10 juegos con mejor rating**. ¿Por qué funciona si estamos usando una llave pública?
 
-Porque es una publishable key y Supabase está aplicando el comportamiento por default: `deny-all` para cualquier tabla sin RLS configurado con políticas explícitas. Esto es **exactamente lo contrario** al driver `pg`, que una vez conectado te deja leer todo. Para que la publishable key pueda leer los juegos hay que decirle a la base qué tiene permitido devolver.
+Porque la tabla `games` fue creada desde el **SQL Editor**, y las tablas creadas por SQL nacen con **RLS deshabilitado** por default. La publishable key no ignora RLS (eso lo hace solo la secret key), pero si no hay RLS que aplicar, tampoco hay nada que bloquee la lectura.
 
-### Activar RLS y crear una política
+**Este es un detalle de seguridad crítico que muchos principiantes ignoran:** si creas tablas con SQL y las expones con la publishable key sin activar RLS, cualquier persona con tu URL y tu publishable key puede leer todo. Y la publishable key está pensada precisamente para estar pública.
 
-1. En el sidebar izquierdo entra a **Authentication > Policies** (también puedes llegar desde **Table Editor > games > RLS**).
-2. Para la tabla `games`, haz clic en **Enable RLS**.
-3. Agrega una política nueva con estas opciones:
+### Fase 2 — RLS activado, sin política
+
+Vamos a activar RLS para ver el comportamiento real de `deny-by-default`:
+
+1. En el dashboard de Supabase, entra a **Table Editor** y selecciona la tabla `games`.
+2. Abre la pestaña **Policies** en la parte superior (también puedes llegar desde el sidebar **Database > Policies**).
+3. Haz clic en **Enable RLS**. El ícono de candado de la tabla se cierra.
+
+Corre el ejemplo **sin crear política todavía**:
+
+```
+node supabase-example.js
+```
+
+Ahora te regresa un arreglo **vacío** (`[]`). Este es el verdadero `deny-by-default` de Postgres: con RLS encendido y sin políticas, **ninguna fila califica** para ser devuelta a un request hecho con la publishable key. La base de datos está cortando el acceso antes de que el SQL siquiera se evalúe.
+
+### Fase 3 — RLS activado + política SELECT pública
+
+Ahora agrega una política que permita leer:
+
+1. En la misma pestaña **Policies**, haz clic en **New Policy**.
+2. Configura:
    - **Policy name**: `Allow public read on games`
    - **Allowed operation**: `SELECT`
    - **Target roles**: `anon, authenticated`
-   - **USING expression**: `true`
+3. En el generador vas a ver un **SQL preview** en la parte inferior. Dentro del bloque `USING ( ... )` vas a encontrar un comentario placeholder tipo `-- Provide a SQL expression for the policy`. Reemplázalo por `true`. El resultado debe quedar así:
+   ```
+   USING (true)
+   ```
+4. Guarda la política.
 
-Guarda la política y confirma que en la pestaña **Policies** de la tabla `games` aparezca listada con estado **Enabled** y el ícono de candado de la tabla cambie a abierto.
+Vuelve a correr:
 
-Vuelve a correr `node supabase-example.js` y ahora sí verás los 10 juegos con mejor rating.
+```
+node supabase-example.js
+```
 
-**La lección clave de RLS**: las reglas de acceso viven **dentro de la base de datos**, no en el código de la aplicación. Si un programador olvida validar permisos en un endpoint, la base sigue aplicando la política y corta el acceso. Combinado con Supabase Auth (que veremos en el siguiente laboratorio), puedes escribir políticas como *"cada usuario solo ve sus propios juegos favoritos"* y eso se va a cumplir no importa qué request llegue — porque la base sabe quién está autenticado. Esta capa extra de defensa es una de las razones principales para elegir PostgreSQL/Supabase cuando manejas datos sensibles.
+Y ahora sí regresa los 10 juegos con mejor rating. La política `USING (true)` le dice a Postgres: *"para cualquier request SELECT hecho por el rol anon o authenticated, permite todas las filas"*.
+
+**La lección clave de RLS**: las reglas de acceso viven **dentro de la base de datos**, no en el código de la aplicación. Si un programador olvida validar permisos en un endpoint, la base sigue aplicando la política y corta el acceso. Combinado con Supabase Auth (que veremos en el siguiente laboratorio), puedes escribir políticas como *"cada usuario solo ve sus propios juegos favoritos"* usando `USING (user_id = auth.uid())` y eso se va a cumplir no importa qué request llegue — porque la base sabe quién está autenticado. Esta capa extra de defensa es una de las razones principales para elegir PostgreSQL/Supabase cuando manejas datos sensibles.
 
 ## Siguientes pasos
 
 - Mueve la lógica del cliente Supabase a tu modelo (igual que hicimos con `pg`) y agrega rutas que comparen tiempos de respuesta entre ambos enfoques.
+- **Manejo de errores idiomático.** En cada handler usamos `try/catch` + `console.log` + `res.status(500).send(...)`. Funciona para un lab, pero en proyectos serios rápidamente se vuelve repetitivo. El patrón idiomático de Express es pasar el error con `next(e)` y tener un middleware de error centralizado al final del pipeline que lo transforme en respuesta y lo registre. Investígalo para tu siguiente proyecto.
 - Investiga **ORMs** como [Prisma](https://www.prisma.io/) o [Drizzle](https://orm.drizzle.team/). Un ORM te genera queries parametrizadas automáticamente, te da autocompletado de columnas en tu editor y valida tipos en tiempo de compilación — la siguiente capa de protección contra inyección.
 - Investiga los otros servicios de Supabase: Auth (lo usaremos en el próximo laboratorio), Realtime y Storage.
 - Revisa la documentación oficial del driver [`pg`](https://node-postgres.com/) y de [Supabase JS](https://supabase.com/docs/reference/javascript/introduction).
