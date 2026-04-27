@@ -472,6 +472,32 @@ XSS no se mitiga con una sola línea. Es defensa en profundidad:
    <h1>Resultados para: <%- q %></h1>
    ```
 
+   **Mini ejercicio**: compruébalo en tu propio servidor. Crea `views/buscar.ejs`:
+
+   ```ejs
+   <h1>Resultados para: <%= q %></h1>
+   ```
+
+   Y agrega la ruta en `index.js`:
+
+   ```javascript
+   app.get('/buscar', (request, response) => {
+       response.render('buscar', { q: request.query.q || '' });
+   });
+   ```
+
+   Visita `http://localhost:3000/buscar?q=<script>alert('XSS')</script>` en el navegador. Vas a ver el `<script>` literalmente como texto en la página — no se ejecuta ningún `alert`. Eso es el escape automático de EJS protegiéndote.
+
+   Ahora cambia **una sola letra** en la vista: reemplaza `<%=` por `<%-` (con guion en lugar de signo igual):
+
+   ```ejs
+   <h1>Resultados para: <%- q %></h1>
+   ```
+
+   Recarga la misma URL. Esta vez el navegador ejecuta el `alert('XSS')`. Ese es el ataque XSS reflejado más simple — y la diferencia entre seguro e inseguro fue **un único carácter** en la plantilla.
+
+   > **La lección**: `<%=` por default, `<%-` solo cuando confías 100% en el origen del HTML (por ejemplo, contenido que tú mismo generas en el servidor con sanitización previa). Cuando hagas code review de un proyecto, busca todos los `<%-` y justifica cada uno.
+
 2. **Cookies con `HttpOnly`** (defensa de daños). Si a pesar de todo un atacante logra inyectar un script, al menos no podrá robar las cookies de sesión.
 
 3. **`SameSite=Lax` o `Strict`** en cookies de sesión (defensa contra CSRF, complementaria a XSS):
@@ -484,6 +510,182 @@ XSS no se mitiga con una sola línea. Es defensa en profundidad:
 5. **Validar entrada en el servidor**: rechaza inputs que claramente no son válidos (un campo "edad" que contiene `<script>` debe rechazarse antes de llegar a la base).
 
 > **La lección clave**: XSS es responsabilidad del **renderizado**, no de la entrada. Aunque guardes texto malicioso en la base, si lo escapas correctamente al renderizarlo, no hay ataque. Por eso EJS escapa por default — para que el caso seguro sea el caso fácil.
+
+## CSRF — Cross-Site Request Forgery
+
+CSRF es básicamente la imagen espejo de XSS:
+
+| | XSS | CSRF |
+|---|---|---|
+| Qué inyecta | Código en tu sitio | Petición desde otro sitio |
+| Quién ejecuta | El navegador de la víctima en tu sitio | El navegador de la víctima contra tu sitio |
+| Qué se aprovecha | Falta de escapado | Que las cookies viajan automáticamente |
+| Defensa principal | Escapar salida + CSP | SameSite cookies + CSRF tokens |
+
+El truco que hace funcionar a CSRF es algo que ya enseñamos en este lab: **las cookies del usuario viajan automáticamente en cada petición a su dominio**. Si el usuario está logueado en `tu-banco.com` y otra página le hace que su navegador envíe un POST a `tu-banco.com/transferir`, esa petición lleva la cookie de sesión adjunta — porque el navegador no distingue *quién* originó la petición, solo *a dónde* va.
+
+### El flujo del ataque
+
+```
+   ┌──────────┐                ┌──────────┐                ┌────────────┐
+   │ Atacante │                │ Víctima  │                │ tu-banco.  │
+   │          │                │          │                │ com        │
+   └─────┬────┘                └─────┬────┘                └──────┬─────┘
+         │                           │                            │
+         │                           │ 1. Login normal            │
+         │                           │ ───────────────────────────>
+         │                           │ 2. Cookie de sesión        │
+         │                           │ <───────────────────────────
+         │                           │                            │
+         │ 3. Le manda link a        │                            │
+         │    evil.com (correo,      │                            │
+         │    chat, anuncio)         │                            │
+         │ ──────────────────────────>                            │
+         │                           │                            │
+         │                           │ 4. Visita evil.com en      │
+         │                           │    otra pestaña.           │
+         │                           │    evil.com tiene un       │
+         │                           │    <form action=           │
+         │                           │    "tu-banco.com/          │
+         │                           │    transferir"> con        │
+         │                           │    submit() automático     │
+         │                           │                            │
+         │                           │ 5. POST disparado por JS.  │
+         │                           │    El navegador adjunta    │
+         │                           │    la cookie de sesión     │
+         │                           │    porque el destino es    │
+         │                           │    tu-banco.com            │
+         │                           │ ───────────────────────────>
+         │                           │                            │
+         │                           │                            │ 6. Cookie válida.
+         │                           │                            │    Ejecuta la
+         │                           │                            │    transferencia.
+         │                           │ 7. Respuesta (que evil.com │
+         │                           │    no puede leer por CORS, │
+         │                           │    pero el daño ya está    │
+         │                           │    hecho)                  │
+         │                           │ <───────────────────────────
+         │                           │                            │
+```
+
+Detalle clave: **el atacante nunca lee la respuesta** — la Same-Origin Policy lo bloquea. Pero no la necesita. La acción ya se ejecutó del lado del servidor.
+
+Ejemplo concreto. Una página maliciosa puede ser tan simple como:
+
+```html
+<!-- evil.com/cupon-gratis.html -->
+<h1>¡Felicidades! Reclama tu cupón</h1>
+
+<form id="f" action="https://tu-banco.com/transferir" method="POST" style="display:none">
+    <input name="destino" value="cuenta-del-atacante">
+    <input name="monto"   value="10000">
+</form>
+<script>document.getElementById('f').submit();</script>
+```
+
+La víctima solo tiene que abrir esa página estando logueada en su banco. No necesita dar clic en nada.
+
+### Las defensas
+
+Hay tres capas. Las dos primeras son **defensas pasivas** (configuras una vez y olvidas); la tercera es **activa** (token explícito en cada formulario).
+
+#### 1. Cookies con `SameSite`
+
+La defensa más importante hoy en día. `SameSite` le dice al navegador en qué casos enviar la cookie:
+
+```javascript
+response.cookie('mi_cookie', '123', { httpOnly: true, sameSite: 'lax' });
+```
+
+Tres valores posibles:
+
+- **`SameSite=Strict`** — la cookie nunca viaja en peticiones que vengan de otro dominio. Máxima seguridad, peor UX: si alguien te manda un link a tu app por correo, el primer click no llevará tu sesión y aparecerás como deslogueado.
+- **`SameSite=Lax`** — la cookie no viaja en peticiones cross-site automáticas (POST de un form en evil.com, fetch desde otro dominio, iframe), **pero sí viaja en navegación top-level con GET** (clicks en links). Es el balance correcto para la mayoría de los casos.
+- **`SameSite=None; Secure`** — la cookie viaja en todos los requests. Necesario para login federado tipo OAuth donde el flujo cruza dominios legítimamente. **Requiere `Secure`**, es decir, solo funciona sobre HTTPS.
+
+> **Buenas noticias**: desde 2020 todos los navegadores modernos usan **`Lax` por default** si no especificas `SameSite`. Pero **declarar explícitamente** (`sameSite: 'lax'`) es buena práctica — hace tu intención visible al lector del código y te protege si en el futuro un navegador cambia su default.
+
+Para sesiones de Express, configúralo en la opción `cookie` de la sesión:
+
+```javascript
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'cambia-esto-en-desarrollo',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: false   // pon true cuando despliegues a HTTPS
+    }
+}));
+```
+
+#### 2. Verificar `Origin` o `Referer` en peticiones críticas
+
+En cualquier POST/PUT/DELETE, puedes inspeccionar el header `Origin` (o `Referer` como fallback) y rechazar la petición si no viene de tu propio dominio:
+
+```javascript
+function sameOriginOnly(req, res, next) {
+    const origen = req.headers.origin || req.headers.referer || '';
+    if (!origen.startsWith('http://localhost:3000')) {
+        return res.status(403).send('Origen no permitido');
+    }
+    next();
+}
+
+app.post('/transferir', sameOriginOnly, controller.transferir);
+```
+
+Es defensa en profundidad, no reemplaza a `SameSite` ni a tokens — pero si las otras dos fallan por algún bug raro de configuración, esta atrapa el ataque.
+
+#### 3. CSRF tokens
+
+Un valor único e impredecible que tu servidor incluye en cada formulario y verifica al recibir el POST. Como una página atacante **no puede leer el HTML de tu sitio** (Same-Origin Policy lo prevé), no puede saber el token, y su POST falsificado falla la verificación.
+
+El paquete clásico era `csurf`, pero **está deprecado desde 2022** — su mantenedor lo abandonó, tenía vulnerabilidades reportadas, y nunca recibió fixes. La alternativa moderna y mantenida es [`csrf-csrf`](https://www.npmjs.com/package/csrf-csrf), que implementa el patrón **Double Submit Cookie**.
+
+```bash
+npm i csrf-csrf
+```
+
+```javascript
+const { doubleCsrf } = require('csrf-csrf');
+
+const {
+    generateCsrfToken,
+    doubleCsrfProtection,
+} = doubleCsrf({
+    getSecret:    () => process.env.CSRF_SECRET || 'cambia-esto-en-desarrollo',
+    getSessionIdentifier: (req) => req.session.id,
+    cookieName:   'x-csrf-token',
+    cookieOptions: { httpOnly: true, sameSite: 'lax', secure: false }
+});
+
+// Endpoint o middleware que entrega un token nuevo a cada vista
+app.use((req, res, next) => {
+    res.locals.csrfToken = generateCsrfToken(req, res);
+    next();
+});
+
+// Aplica protección a todas las rutas que muten estado (POST/PUT/DELETE)
+app.use(doubleCsrfProtection);
+```
+
+En tu plantilla EJS:
+
+```ejs
+<form action="/transferir" method="POST">
+    <input type="hidden" name="x-csrf-token" value="<%= csrfToken %>">
+    <input name="monto">
+    <button>Transferir</button>
+</form>
+```
+
+Cómo funciona el patrón **Double Submit Cookie**: el servidor manda el token en **dos lugares** — una cookie y un campo del formulario. Cuando llega el POST, verifica que ambos coincidan. Una página atacante en evil.com no puede leer la cookie ni el HTML del formulario, así que no puede sincronizar los dos valores. Su POST falla.
+
+> **La lección clave**: SameSite cookies + CSRF tokens son **defensas independientes** que se complementan. SameSite te protege a nivel del navegador (sin código adicional en tus controladores). Los tokens te protegen a nivel de aplicación (sin depender de la configuración del navegador del usuario). En sistemas serios — bancos, salud, gobierno — usa los dos.
+
+> **Cuándo NO te preocupes por CSRF**: si tu API es **stateless con tokens en headers** (`Authorization: Bearer ...`) en lugar de cookies, CSRF no aplica — el navegador no adjunta headers personalizados automáticamente cross-origin, solo cookies. Los SPAs modernos que usan JWT en localStorage caen en este caso. Pero si guardas el token JWT en una cookie (común para evitar que XSS lo lea), entonces **vuelves al territorio CSRF** y necesitas las defensas de arriba.
 
 ## Helmet.js — headers de seguridad por default
 
@@ -552,6 +754,28 @@ app.use(helmet({
 
 > **La lección clave de CSP**: el patrón es **deny-by-default + allowlist explícita**. Cada vez que un script se rompe, decides si es legítimo (lo añades) o sospechoso (lo bloqueas y revisas qué lo cargó). Esto hace que XSS sea mucho más difícil de explotar — aunque el atacante logre inyectar `<script src="https://evil.com/...">`, el navegador se niega a cargarlo porque `evil.com` no está en tu allowlist.
 
+### Cuidado con `Cross-Origin-Resource-Policy`
+
+Helmet también activa por default `Cross-Origin-Resource-Policy: same-origin` — un header que le dice al navegador *"otros sitios no pueden cargar mis recursos como `<img>`, `<script>` o `<link>`"*. Eso protege contra ataques de tipo **Spectre** y filtración de información cross-origin.
+
+El efecto colateral en desarrollo: si tu sitio carga **un recurso desde una CDN externa** (un `<img>` desde Cloudinary, un favicon desde un servicio de iconos, una fuente desde Google Fonts), y esa CDN también tiene este header configurado de forma estricta, el navegador puede bloquear la carga.
+
+Si en un laboratorio futuro empiezas a ver errores tipo:
+
+```
+NotSameOriginAfterDefaultedToSameOriginByCoep
+```
+
+o assets externos que dejan de cargar al meter Helmet, ajusta la política:
+
+```javascript
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
+```
+
+> **Regla práctica**: empieza con los defaults de Helmet. Solo afloja una política específica cuando un caso real lo exige, y documenta el porqué con un comentario en el código. Aflojar todo "por si acaso" anula buena parte de la protección.
+
 ### Helmet + el resto del lab
 
 Tu `index.js` final con todas las protecciones queda más o menos así:
@@ -587,7 +811,7 @@ app.use(session({
 
 ## Siguientes pasos
 
-- Investiga el ataque **CSRF (Cross-Site Request Forgery)** — la otra cara de XSS. La defensa estándar es un **CSRF token** en formularios. El paquete `csurf` está deprecado; usa `csrf-csrf` para proyectos nuevos.
 - Lee el [OWASP Top 10](https://owasp.org/www-project-top-ten/) — la lista de las 10 vulnerabilidades web más frecuentes. Cada una merece un par de horas de lectura.
 - Si vas a desplegar a producción, configura un **store persistente** para sesiones (`connect-redis`, `connect-mongo`, `connect-pg-simple`) — la default in-memory pierde sesiones cada vez que reinicia el servidor y no escala a múltiples instancias.
 - Aprende sobre **CSP nonces** y **`strict-dynamic`** para tener una CSP estricta sin desactivar `'unsafe-inline'`.
+- Investiga **SQL injection** — el ataque clásico que ya vimos parcialmente en el Lab17BDSupabase. Junto con XSS y CSRF cubre los tres ataques de inyección más comunes.
