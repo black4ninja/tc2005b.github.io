@@ -655,20 +655,28 @@ const {
     generateCsrfToken,
     doubleCsrfProtection,
 } = doubleCsrf({
-    getSecret:    () => process.env.CSRF_SECRET || 'cambia-esto-en-desarrollo',
+    getSecret:            () => process.env.CSRF_SECRET || 'cambia-esto-en-desarrollo',
     getSessionIdentifier: (req) => req.session.id,
-    cookieName:   'x-csrf-token',
-    cookieOptions: { httpOnly: true, sameSite: 'lax', secure: false }
+    cookieName:           'x-csrf-token',
+    cookieOptions:        { httpOnly: true, sameSite: 'lax', secure: false },
+
+    // Por default csrf-csrf v4 solo busca el token en el header x-csrf-token.
+    // Como nuestro <form> lo envía en el body como input hidden, le decimos
+    // explícitamente que también revise req.body.
+    getCsrfTokenFromRequest: (req) => req.body['x-csrf-token'] || req.headers['x-csrf-token']
 });
 
-// Endpoint o middleware que entrega un token nuevo a cada vista
+// Orden importante:
+// 1. PRIMERO validar el token del request entrante (POST/PUT/DELETE).
+app.use(doubleCsrfProtection);
+
+// 2. DESPUÉS generar un token nuevo para la siguiente vista.
+//    Si invirtieras el orden, regenerarías el token antes de validarlo
+//    y la validación pasaría siempre — anulando la protección.
 app.use((req, res, next) => {
     res.locals.csrfToken = generateCsrfToken(req, res);
     next();
 });
-
-// Aplica protección a todas las rutas que muten estado (POST/PUT/DELETE)
-app.use(doubleCsrfProtection);
 ```
 
 En tu plantilla EJS:
