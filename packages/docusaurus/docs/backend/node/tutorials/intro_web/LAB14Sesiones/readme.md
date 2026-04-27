@@ -679,6 +679,21 @@ app.use((req, res, next) => {
 });
 ```
 
+> **Importante — ajustar `saveUninitialized` a `true`**: `csrf-csrf` firma el token con `req.session.id` (eso es lo que hace `getSessionIdentifier`). Pero si tu `express-session` está configurado con `saveUninitialized: false` — el default razonable que usamos antes — la sesión **no se persiste** en el GET inicial, y por lo tanto no hay `connect.sid` cookie. Cuando llega el POST, Express crea **una sesión nueva con un ID distinto**, el HMAC del token no coincide, y obtienes **403 siempre**, incluso con un token válido.
+>
+> Cuando integres `csrf-csrf`, actualiza tu configuración de sesión:
+>
+> ```javascript
+> app.use(session({
+>     secret: process.env.SESSION_SECRET || 'cambia-esto-en-desarrollo',
+>     resave: false,
+>     saveUninitialized: true,   // necesario para csrf-csrf: el token se firma con el session ID
+>     cookie: { httpOnly: true, sameSite: 'lax' }
+> }));
+> ```
+>
+> El trade-off es que ahora cada visitante (incluso uno que solo entra a la home y nunca interactúa) recibe una cookie de sesión. En aplicaciones públicas con mucho tráfico anónimo eso aumenta el costo del session store; la alternativa es generar el token solo en rutas que realmente vayan a recibir un POST y persistir la sesión explícitamente con `req.session.save()` antes de generarlo.
+
 En tu plantilla EJS:
 
 ```ejs
@@ -808,7 +823,7 @@ app.use(cookieParser());
 app.use(session({
     secret: 'mi string secreto que debe ser un string aleatorio muy largo, no como éste',
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,   // true porque vamos a integrar csrf-csrf (ver sección CSRF)
     cookie: { httpOnly: true, sameSite: 'lax' }
 }));
 
