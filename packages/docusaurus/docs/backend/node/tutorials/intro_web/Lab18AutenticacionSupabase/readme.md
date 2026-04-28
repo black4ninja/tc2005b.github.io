@@ -19,6 +19,14 @@ La meta del laboratorio es que termines con un flujo completo de **registro → 
 
 > **Nota**: este laboratorio convive con **Lab18Autenticacion** (la versión MariaDB). Si tu curso está en la pista Supabase, ignora esa versión — todo lo que necesitas está aquí.
 
+### Plantilla del proyecto
+
+Para arrancar más rápido puedes descargar la plantilla MVC ya preparada (estructura de carpetas, `package.json` con dependencias, `index.js` base con sesión configurada). Si prefieres continuar tu propio `test-project/` del Lab17.5, también funciona — los pasos son los mismos.
+
+<a href="/docs/node/tutorials/intro_web/Lab18AutenticacionSupabase/MVC.zip" download="lab18-supabase-plantilla-mvc.zip">Descargar plantilla del proyecto</a>
+
+Dentro del zip, recuerda crear tu archivo `.env` (no viene incluido) con tu `DATABASE_URL` y `SESSION_SECRET`, e instalar dependencias con `npm install` antes de correr el servidor.
+
 ## El flujo en un diagrama
 
 Antes de tocar código, mira el diagrama de secuencia del caso de uso "registrar un usuario". Es el mismo diagrama del lab original — el flujo entre rutas, controladores, modelo y base de datos no cambia con el motor que uses; lo único que cambia es **cómo** el modelo habla con la base. Aquí ese "cómo" es `pg` contra Supabase en lugar de `mariadb` contra MariaDB local.
