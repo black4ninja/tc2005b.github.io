@@ -41,7 +41,7 @@ Antes de empezar, asegúrate de que tu proyecto del Lab18 Supabase corre correct
 
 ```bash
 cd test-project
-npm start
+node index.js
 ```
 
 Abre el navegador en `http://localhost:3000/usuarios/registro`, registra un usuario y haz login. Si todo funciona, listo: vamos a extender ese mismo proyecto.
@@ -154,14 +154,18 @@ Insertamos los 3 roles y 4 permisos iniciales:
 INSERT INTO roles (nombre) VALUES
     ('lector'),
     ('editor'),
-    ('administrador');
+    ('administrador')
+ON CONFLICT (nombre) DO NOTHING;
 
 INSERT INTO permisos (clave) VALUES
     ('ver_notas'),
     ('crear_nota'),
     ('editar_nota'),
-    ('eliminar_nota');
+    ('eliminar_nota')
+ON CONFLICT (clave) DO NOTHING;
 ```
+
+> **¿Por qué `ON CONFLICT DO NOTHING`?** Si vuelves a correr este script (porque te equivocaste, o porque otro compañero ya lo corrió en un proyecto compartido), Postgres ignora las filas que ya existen en lugar de fallar con un error de constraint `UNIQUE`. Esto se conoce como **operación idempotente**: se puede ejecutar 1 vez o 100 veces y el resultado es el mismo. Es un buen hábito en scripts de migración y datos semilla.
 
 ### Matriz de asignación rol → permiso
 
@@ -179,17 +183,20 @@ Tradúcela a SQL:
 -- lector: solo ver
 INSERT INTO rol_permiso (id_rol, id_permiso)
 SELECT r.id, p.id FROM roles r, permisos p
-WHERE r.nombre = 'lector' AND p.clave = 'ver_notas';
+WHERE r.nombre = 'lector' AND p.clave = 'ver_notas'
+ON CONFLICT (id_rol, id_permiso) DO NOTHING;
 
 -- editor: ver, crear, editar
 INSERT INTO rol_permiso (id_rol, id_permiso)
 SELECT r.id, p.id FROM roles r, permisos p
-WHERE r.nombre = 'editor' AND p.clave IN ('ver_notas','crear_nota','editar_nota');
+WHERE r.nombre = 'editor' AND p.clave IN ('ver_notas','crear_nota','editar_nota')
+ON CONFLICT (id_rol, id_permiso) DO NOTHING;
 
 -- administrador: todo
 INSERT INTO rol_permiso (id_rol, id_permiso)
 SELECT r.id, p.id FROM roles r, permisos p
-WHERE r.nombre = 'administrador';
+WHERE r.nombre = 'administrador'
+ON CONFLICT (id_rol, id_permiso) DO NOTHING;
 ```
 
 ### Consulta de validación
@@ -210,7 +217,8 @@ Como aún no asignaste roles a tus usuarios, asígnale el rol de administrador a
 
 ```sql
 INSERT INTO usuario_rol (username, id_rol)
-SELECT 'tu_usuario', r.id FROM roles r WHERE r.nombre = 'administrador';
+SELECT 'tu_usuario', r.id FROM roles r WHERE r.nombre = 'administrador'
+ON CONFLICT (username, id_rol) DO NOTHING;
 ```
 
 Vuelve a correr la consulta. Debe regresarte 4 filas con los 4 permisos. Si funciona, la base ya está lista.
@@ -643,13 +651,16 @@ Si todavía no los registraste vía la web, regístralos uno por uno desde `http
 DELETE FROM usuario_rol WHERE username IN ('ana','beto','carla');
 
 INSERT INTO usuario_rol (username, id_rol)
-SELECT 'ana', id FROM roles WHERE nombre = 'lector';
+SELECT 'ana', id FROM roles WHERE nombre = 'lector'
+ON CONFLICT (username, id_rol) DO NOTHING;
 
 INSERT INTO usuario_rol (username, id_rol)
-SELECT 'beto', id FROM roles WHERE nombre = 'editor';
+SELECT 'beto', id FROM roles WHERE nombre = 'editor'
+ON CONFLICT (username, id_rol) DO NOTHING;
 
 INSERT INTO usuario_rol (username, id_rol)
-SELECT 'carla', id FROM roles WHERE nombre = 'administrador';
+SELECT 'carla', id FROM roles WHERE nombre = 'administrador'
+ON CONFLICT (username, id_rol) DO NOTHING;
 ```
 
 ### Matriz de pruebas esperadas
