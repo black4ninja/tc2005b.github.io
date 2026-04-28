@@ -35,9 +35,11 @@ A medida que escribimos cada función vas a poder ubicar exactamente en qué fle
 
 ## 1. Crear la tabla `users` en Supabase
 
-Entra al **SQL Editor** de tu proyecto Supabase (el que creaste en el Lab17.5) y ejecuta:
+Antes de tocar código, abre el **SQL Editor** de tu proyecto Supabase (el mismo que usaste en el Lab17.5) y ejecuta este script para crear la tabla de usuarios. El proceso es idéntico al del lab anterior — abrir el SQL Editor, pegar el script, dar **Run** — así que aquí solo te dejo el SQL listo para copiar:
 
 ```sql
+-- Ejecutar en el SQL Editor de Supabase antes de iniciar el laboratorio
+
 CREATE TABLE IF NOT EXISTS users (
     id        SERIAL PRIMARY KEY,
     username  VARCHAR(60)  NOT NULL UNIQUE,
@@ -131,7 +133,7 @@ Si vienes del Lab18 versión MariaDB, hay cuatro diferencias que conviene marcar
 
 ## 4. Vista del formulario y rutas de registro
 
-Crea `views/usuarios/registro.ejs`. Reusa la lógica del lab original — un solo formulario que cambia su acción y su título según el booleano `registro`:
+Crea `views/usuarios/registro.ejs` — un solo formulario que cambia su acción y su título según el booleano `registro` que le pasemos al renderizar (lo vamos a reusar para el login en la sección 6):
 
 ```html
 <!DOCTYPE html>
@@ -202,7 +204,7 @@ router.post('/registro', controller.post_registro);
 module.exports = router;
 ```
 
-Finalmente, en `index.js`, registra el módulo de rutas (junto al `gameRoutes` que ya tenías):
+Finalmente, en `index.js`, registra el módulo de rutas junto a las que ya tenías del Lab17.5:
 
 ```javascript
 const usuarioRoutes = require('./routes/usuarios.routes.js');
@@ -225,7 +227,7 @@ Instala la librería:
 npm i bcryptjs
 ```
 
-Modifica `models/usuarios.model.js`. Importa bcrypt arriba del archivo y aplica el hash dentro de `save()`:
+Reemplaza el contenido de `models/usuarios.model.js` con esta versión actualizada — importa bcrypt al inicio y aplica el hash dentro de `save()`:
 
 ```javascript
 const pool   = require('../util/database.js');
@@ -306,20 +308,27 @@ exports.do_login = async (req, res) => {
 
         req.session.username   = usuario.username;
         req.session.isLoggedIn = true;
-        res.render('usuarios/logged', { user: usuario });
+        res.redirect('/usuarios/logged');
 
     } catch (e) {
         console.error(e);
         res.redirect('/usuarios/login');
     }
 };
+
+exports.get_logged = async (req, res) => {
+    const usuario = await model.User.findByUsername(req.session.username);
+    if (!usuario) return res.redirect('/usuarios/login');
+    res.render('usuarios/logged', { user: usuario });
+};
 ```
 
-Tres detalles importantes:
+Cuatro detalles importantes:
 
 1. **`bcrypt.compare(plano, hash)`** — el orden importa. El primer argumento es la contraseña en texto plano que el usuario te mandó; el segundo, el hash que sacaste de la base. Internamente bcrypt extrae el salt y el cost del hash, vuelve a hashear el plano con esos mismos parámetros y compara byte a byte.
 2. **Mismo redirect en "usuario no existe" y "contraseña incorrecta"** — a propósito. Si respondieras con mensajes distintos, le estarías diciendo a un atacante *"este username sí existe, sigue probando contraseñas"*. La regla es: **nunca filtres si un usuario existe o no en respuestas a usuarios no autenticados**.
 3. **`req.session.isLoggedIn` y `req.session.username`** — guardamos lo mínimo en la sesión. **No** guardamos el objeto `usuario` completo (tendría el hash de la password); cuando lo necesitemos, lo buscamos por username con `findByUsername`.
+4. **`do_login` exitoso hace `res.redirect('/usuarios/logged')`, no `res.render(...)`** — esto se llama el patrón **Post/Redirect/Get (PRG)**. Si renderizaras la vista directamente desde el POST, recargar la página le pediría al navegador re-enviar el formulario (incluyendo la contraseña). Con el redirect, el navegador acaba en una URL GET limpia que se puede recargar sin efectos colaterales. La vista `logged.ejs` la renderiza el GET de `/usuarios/logged`, que está en `get_logged`.
 
 Crea la vista de éxito `views/usuarios/logged.ejs`:
 
@@ -343,26 +352,27 @@ Crea la vista de éxito `views/usuarios/logged.ejs`:
 
 > **Por qué no mostrar el hash**: el lab original en MariaDB rendereaba `<%= user.password %>` para que vieras el hash en pantalla. Aquí lo omitimos a propósito. Aunque hashear la contraseña la protege, mostrarla — incluso hasheada — en una vista del usuario no aporta valor y le revela el algoritmo y cost factor a cualquiera que vea la página, dándole pistas a un atacante sobre qué tipo de cracking usar. **Regla general**: no expongas detalles internos que no aporten al usuario final.
 
-Y registra las rutas en `routes/usuarios.routes.js`:
+Y registra las rutas nuevas en `routes/usuarios.routes.js`:
 
 ```javascript
 router.get('/login',  controller.render_login);
 router.post('/login', controller.do_login);
+router.get('/logged', controller.get_logged);
 ```
 
 Reinicia el servidor. Ahora completa el flujo:
 
 1. Entra a `/usuarios/registro`, registra un nuevo usuario.
 2. Te redirige a `/usuarios/login`. Inicia sesión con esas credenciales.
-3. Si todo bien, ves la vista `logged.ejs` con tu nombre.
+3. Si todo bien, te redirige a `/usuarios/logged` y ves la vista con tu nombre.
 4. Prueba el caso negativo: inicia sesión con la contraseña equivocada — debe regresarte al formulario de login.
 5. Prueba con un username inexistente — mismo resultado, mismo redirect.
 
+Hay un agujero todavía: `/usuarios/logged` se carga aunque no hayas iniciado sesión — basta con escribir la URL directamente en el navegador. Lo cierras en la siguiente sección con un middleware.
+
 ## 7. Middleware `is-auth` para rutas protegidas
 
-Hay un agujero en el flujo actual: si después de iniciar sesión cierras el navegador y vuelves a `/usuarios/login`, el formulario se carga normalmente. Peor: si tuvieras una ruta tipo `/usuarios/perfil` o `/admin`, **cualquiera** podría entrar sin haber iniciado sesión, porque no estamos revisando la sesión en esas rutas.
-
-La solución estándar es un **middleware de autenticación**: una función que se ejecuta antes del controlador, revisa `req.session.isLoggedIn`, y o bien deja pasar (`next()`) o bien redirige al login.
+Como dijimos al final de la sección anterior, `/usuarios/logged` está abierta — cualquiera puede escribir la URL y ver la página, aunque la lógica del controlador después no encuentre la sesión y termine redirigiendo. Y si mañana agregaras una ruta tipo `/admin` se te puede olvidar revisar la sesión ahí. La solución estándar es un **middleware de autenticación** reutilizable: una función que corre antes del controlador, revisa `req.session.isLoggedIn`, y o bien deja pasar (`next()`) o bien redirige al login.
 
 Crea `util/is-auth.js`:
 
@@ -375,30 +385,23 @@ module.exports = (req, res, next) => {
 };
 ```
 
-Ahora agrega un controlador y una ruta protegida. En `controllers/usuarios.controller.js`:
-
-```javascript
-exports.get_logged = async (req, res) => {
-    const usuario = await model.User.findByUsername(req.session.username);
-    if (!usuario) return res.redirect('/usuarios/login');
-    res.render('usuarios/logged', { user: usuario });
-};
-```
-
-Y en `routes/usuarios.routes.js`:
+Y en `routes/usuarios.routes.js`, importa el middleware y aplícalo a la ruta `/logged` que ya tenías:
 
 ```javascript
 const isAuth = require('../util/is-auth.js');
 
+// Reemplaza la línea anterior:
+//   router.get('/logged', controller.get_logged);
+// por esta:
 router.get('/logged', isAuth, controller.get_logged);
 ```
 
-Fíjate cómo registramos el middleware: `router.get('/logged', isAuth, controller.get_logged)`. Express ejecuta los handlers en orden — primero `isAuth`, y solo si llama a `next()` continúa con `get_logged`. Si `isAuth` responde con un redirect, la cadena se corta ahí.
+Express ejecuta los handlers en orden — primero `isAuth`, y solo si llama a `next()` continúa con `get_logged`. Si `isAuth` responde con un redirect, la cadena se corta ahí.
 
 Pruébalo:
 
 - Inicia sesión y entra a `http://localhost:3000/usuarios/logged` → ves tu perfil.
-- Reinicia el servidor (la sesión vive en memoria, se pierde en cada restart) y vuelve a `/usuarios/logged` → te redirige a `/usuarios/login`.
+- Reinicia el servidor (la sesión vive en memoria, se pierde en cada restart) y vuelve a `/usuarios/logged` → te redirige a `/usuarios/login` **antes** de que se ejecute el controlador.
 
 > **La lección clave**: una vez que tienes `is-auth.js`, proteger una nueva ruta es agregar **una palabra**. Por ejemplo, si mañana creas un dashboard de admin, basta con `router.get('/admin', isAuth, controller.admin)`. Lo opuesto — verificar la sesión a mano dentro de cada controlador — siempre se olvida en algún endpoint y ahí va a estar tu primera vulnerabilidad.
 
