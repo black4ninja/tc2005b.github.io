@@ -113,6 +113,14 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
+:::info ¿Por qué aquí `systemctl` y en el lab `service`?
+En la Parte 3 usamos `sudo service nginx restart` porque el contenedor Docker **no tiene `systemd`** (lo dejamos fuera para que el contenedor sea liviano).
+
+Un servidor real con Ubuntu **sí tiene `systemd`**, que es el sistema moderno de administración de servicios en Linux. Por eso ahí se usa `systemctl` (la forma "moderna"). El comando `service` también funciona en servidores reales — es una forma compatible más vieja —, así que si te equivocas no pasa nada grave.
+
+**Regla simple:** dentro del contenedor del lab usa `service`, en un servidor real usa `systemctl`.
+:::
+
 A partir de aquí, cuando alguien escribe `tusitio.com` en su navegador, el DNS lo manda a tu servidor, Nginx ve el `Host: tusitio.com` en la petición y la dirige al backend Express. ✨
 
 ---

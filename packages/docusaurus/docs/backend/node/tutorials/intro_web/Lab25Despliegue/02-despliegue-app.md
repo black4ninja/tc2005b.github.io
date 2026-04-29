@@ -19,17 +19,16 @@ Asegúrate de estar **dentro del contenedor** como usuario `estudiante`. El prom
 estudiante@3a7fa64f27c8:~$
 ```
 
-Si no, ejecuta `docker exec -it mi-servidor bash` y luego `su estudiante` (contraseña: `password`).
+Si no, abre una terminal en la carpeta `servidor-virtual/` y ejecuta `docker compose exec mi-servidor bash`.
 :::
 
 ---
 
 ## 1. Clonar el repositorio
 
-La aplicación está en GitHub. La vamos a **clonar** (descargar una copia) usando `git`:
+La aplicación está en GitHub. La vamos a **clonar** (descargar una copia) usando `git`. Como ya entraste al contenedor en `/home/estudiante`, no necesitas moverte a ningún lado:
 
 ```bash
-cd ~
 git clone https://github.com/black4ninja/deploy-workshop.git
 ```
 
@@ -48,13 +47,31 @@ Entra a la carpeta y mira qué hay dentro:
 
 ```bash
 cd deploy-workshop
-ls
+ls -la
 ```
+
+:::info ¿Por qué `ls -la` y no solo `ls`?
+La bandera `-a` ("all") muestra **archivos ocultos** (los que empiezan con `.`). En este proyecto hay archivos importantes como `.env.example` y `.gitignore` que `ls` por sí solo **no muestra**. La bandera `-l` ("long") muestra detalles como permisos, dueño, fecha y tamaño.
+:::
 
 Verás algo como:
 
 ```
-README.md  controllers/  index.js  middleware/  models/  package.json  public/  routes/  sql/  util/  views/  .env.example
+drwxr-xr-x  ... .
+drwxr-xr-x  ... ..
+-rw-r--r--  ... .env.example
+-rw-r--r--  ... .gitignore
+-rw-r--r--  ... README.md
+drwxr-xr-x  ... controllers
+-rw-r--r--  ... index.js
+drwxr-xr-x  ... middleware
+drwxr-xr-x  ... models
+-rw-r--r--  ... package.json
+drwxr-xr-x  ... public
+drwxr-xr-x  ... routes
+drwxr-xr-x  ... sql
+drwxr-xr-x  ... util
+drwxr-xr-x  ... views
 ```
 
 :::tip ¿Qué es esta aplicación?
@@ -120,21 +137,31 @@ Las líneas con `#` al inicio están **comentadas** (ignoradas).
 
 ### Generar un SESSION_SECRET seguro
 
-`SESSION_SECRET` es una cadena aleatoria que se usa para **firmar las cookies de sesión** de los usuarios. Si alguien la conoce, podría falsificar sesiones. Por eso debe ser **larga, aleatoria e impredecible**.
+`SESSION_SECRET` es una cadena aleatoria que se usa para **firmar las cookies de sesión** de los usuarios. Cuando un usuario se loguea, Express le manda al navegador una cookie firmada con esta clave; cuando el usuario regresa, Express verifica con la misma clave que la cookie no fue alterada. **Si alguien conoce la clave, puede falsificar sesiones de cualquier usuario.**
 
-En lugar de inventarla, le pedimos a Node.js que genere una segura por nosotros:
+Por eso debe cumplir tres reglas:
+
+1. **Aleatoria**: nada de palabras del diccionario o frases pronunciables.
+2. **Larga**: 32 bytes (256 bits) es lo recomendado en la industria.
+3. **Secreta**: nunca se sube a GitHub, nunca se comparte por chat.
+
+En lugar de inventarla, le pedimos a Node.js que la genere usando su módulo `crypto`, que produce números **criptográficamente seguros**:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Te imprimirá algo como:
+Esto genera **32 bytes aleatorios** y los imprime como **hexadecimal** (caracteres del 0-9 y a-f), dándote una cadena de **64 caracteres** como esta:
 
 ```
 a8f4c2e9b1d7036e54a1f8c2b9e6d3a7f1c8b5e2d9a6f3c0e7b4a1d8f5c2e9b6
 ```
 
 **Copia ese valor** (selecciónalo con el mouse, click derecho → Copiar). Lo vamos a usar en el siguiente paso.
+
+:::warning No uses una cadena que tú hayas inventado
+Aunque te sientas creativo, **`miClaveSuperSecreta123!`** es muchísimo más fácil de adivinar que 32 bytes aleatorios reales. Las cadenas que uno se inventa siguen patrones humanos (palabras, fechas, nombres) que un atacante puede aprovechar. Siempre genera la clave con `crypto.randomBytes`.
+:::
 
 ### Crear el archivo `.env`
 
@@ -172,7 +199,7 @@ La aplicación detecta si `DATABASE_URL` está vacía y, si lo está, **funciona
 
 ## 4. Probar la aplicación manualmente
 
-Antes de meter PM2 en el medio, vamos a probar que la app arranca bien. Ejecuta:
+Antes de levantarla con PM2, vamos a hacer una prueba "a mano" para confirmar que la app arranca bien. Ejecuta:
 
 ```bash
 npm start
@@ -184,13 +211,18 @@ Deberías ver:
 Servidor escuchando en http://localhost:3000
 ```
 
-¡La app está corriendo! Pero está bloqueando la terminal. Vamos a probarla **abriendo otra ventana de terminal en tu computadora** y ejecutando:
+¡La app está corriendo! Pero **fíjate en dos cosas**:
+
+1. La terminal está **bloqueada**: no te deja escribir nada más.
+2. Si cierras esta terminal, **la app se muere**.
+
+Vamos a probarla **abriendo otra ventana de terminal en tu computadora** y ejecutando:
 
 ```bash
 curl http://localhost:3000
 ```
 
-Verás muchísimo HTML como respuesta — es la página principal de la app, que ya está accesible desde tu computadora gracias al `-p 3000:3000` que usamos al levantar el contenedor.
+Verás muchísimo HTML como respuesta — es la página principal de la app, que ya está accesible desde tu computadora gracias al mapeo de puerto `3000:3000` que pusimos en el `docker-compose.yml`.
 
 :::tip También puedes abrir el navegador
 Mientras la app está corriendo, abre tu navegador y ve a `http://localhost:3000`. Vas a ver la página de bienvenida del **Deploy Workshop**.
@@ -204,7 +236,11 @@ Vuelve a la terminal donde está corriendo `npm start` y presiona:
 Ctrl + C
 ```
 
-Esto detiene el proceso. Pero **acabamos de descubrir un problema**: cuando cerramos la terminal, la app se muere. En un servidor real necesitamos que **siga viva sin importar qué pase**. Para eso usamos **PM2**.
+Esto **mata el proceso** y la app deja de responder. Para confirmarlo, vuelve a hacer `curl http://localhost:3000` y verás un error de conexión.
+
+:::info ¿Para qué sirvió este paso?
+Lo arrancamos a mano con `npm start` para **probar que la app sirve** y para que sientas el problema: si cierras la terminal o pasa cualquier cosa, **la app muere**. En un servidor real esto sería catastrófico — nadie podría usar la página hasta que alguien la reinicie manualmente. Por eso, en producción **nunca** se arranca una app así. Se usa un **gestor de procesos** como PM2, que es lo que vamos a hacer ahora.
+:::
 
 ---
 
@@ -227,10 +263,10 @@ PM2 se instala **globalmente** en el sistema (con `-g`) para poder usarlo desde 
 sudo npm install -g pm2
 ```
 
-Te va a pedir la contraseña de `sudo` — es la misma del usuario: `password`.
-
-:::warning ¿Por qué `sudo`?
+:::info ¿Por qué `sudo`?
 Porque instalar algo de forma global modifica carpetas del sistema. `sudo` es como decir *"hazlo como administrador"*. En tu propia computadora con Mac/Windows también pasa: por eso a veces te pide tu contraseña al instalar programas.
+
+En este lab configuramos el contenedor para que **`sudo` no pida contraseña** (con `NOPASSWD` en el Dockerfile) y así la práctica fluya sin interrupciones. **En un servidor real no harías esto** — siempre te pedirá la contraseña como medida de seguridad.
 :::
 
 Verifica que se instaló:

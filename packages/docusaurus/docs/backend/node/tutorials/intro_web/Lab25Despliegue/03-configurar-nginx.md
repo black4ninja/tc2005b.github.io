@@ -45,12 +45,13 @@ Es **el patrón estándar** en producción.
 Nginx busca configuraciones de sitios en la carpeta `/etc/nginx/sites-available/`. Vamos a crear un archivo ahí.
 
 :::warning Asegúrate de estar dentro del contenedor
-Si abriste otra terminal, vuelve a entrar al contenedor:
+Si abriste otra terminal, vuelve a entrar al contenedor desde la carpeta `servidor-virtual/`:
 
 ```bash
-docker exec -it mi-servidor bash
-su estudiante
+docker compose exec mi-servidor bash
 ```
+
+(Ya entras directamente como `estudiante`, no necesitas `su`).
 :::
 
 Crea el archivo con `nano`:
@@ -58,8 +59,6 @@ Crea el archivo con `nano`:
 ```bash
 sudo nano /etc/nginx/sites-available/deploy-workshop
 ```
-
-Te pide la contraseña de `sudo` (recuerda: `password`).
 
 Pega este contenido en el editor:
 
@@ -249,8 +248,8 @@ sudo service nginx restart
 
 ### El navegador no carga nada (timeout)
 
-- Verifica que el contenedor esté corriendo: `docker ps`. Si no aparece `mi-servidor`, ejecuta `docker start mi-servidor` y vuelve a entrar.
-- Verifica que los puertos estén mapeados: en `docker ps` debes ver `0.0.0.0:80->80/tcp`.
+- Verifica que el contenedor esté corriendo: `docker compose ps` (desde la carpeta `servidor-virtual/`). Si no aparece `mi-servidor` con estado `Up`, ejecuta `docker compose start` y vuelve a entrar.
+- Verifica que los puertos estén mapeados: en `docker compose ps` debes ver `0.0.0.0:80->80/tcp`.
 
 ### `pm2: command not found`
 
@@ -272,7 +271,17 @@ Lo que aprendiste:
 8. ✅ Qué es un proxy inverso y por qué se usa Nginx.
 9. ✅ Cómo configurar Nginx para reenviar tráfico a Express.
 
-**Estos pasos son los mismos** que harías en un servidor real (DigitalOcean, AWS EC2, Linode, etc.). La única diferencia es que en lugar de `docker exec` usarías SSH para conectarte al servidor.
+**Estos pasos son los mismos** que harías en un servidor real (DigitalOcean, AWS EC2, Linode, etc.). La única diferencia es que en lugar de `docker compose exec` usarías SSH para conectarte al servidor.
+
+:::warning Ojo: si haces `docker compose down` se pierde todo el trabajo
+Toda la configuración que acabas de hacer (la app clonada, las dependencias instaladas, el `.env`, PM2 corriendo, la config de Nginx) vive **dentro del contenedor**.
+
+Si ejecutas `docker compose down`, el contenedor se borra y **vas a perder todo**. La próxima vez que levantes el contenedor con `docker compose up -d`, tendrás que repetir las **Partes 2 y 3** completas.
+
+Si solo quieres apagar el contenedor sin perder el trabajo, usa **`docker compose stop`** (apaga sin borrar) y después **`docker compose start`** (vuelve a encender desde el mismo estado).
+
+En un despliegue real esto se resuelve usando **volúmenes persistentes** o, mejor aún, dejando que la app, las dependencias y la base de datos vivan en su propio servicio (cada uno en su contenedor). Es tema para un curso más avanzado.
+:::
 
 ---
 
