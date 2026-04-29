@@ -257,16 +257,18 @@ Es como cuando dejas Spotify abierto en segundo plano: cierras la ventana pero l
 
 ### Instalar PM2
 
-PM2 se instala **globalmente** en el sistema (con `-g`) para poder usarlo desde cualquier carpeta:
+PM2 se instala **globalmente** (con `-g`) para poder usarlo desde cualquier carpeta:
 
 ```bash
-sudo npm install -g pm2
+npm install -g pm2
 ```
 
-:::info ¿Por qué `sudo`?
-Porque instalar algo de forma global modifica carpetas del sistema. `sudo` es como decir *"hazlo como administrador"*. En tu propia computadora con Mac/Windows también pasa: por eso a veces te pide tu contraseña al instalar programas.
+:::info ¿Por qué no necesitamos `sudo` aquí?
+Cuando instalas Node "directamente" en el sistema, los paquetes globales (`-g`) se guardan en carpetas del sistema (`/usr/lib/...`) y se requiere `sudo` para escribir ahí.
 
-En este lab configuramos el contenedor para que **`sudo` no pida contraseña** (con `NOPASSWD` en el Dockerfile) y así la práctica fluya sin interrupciones. **En un servidor real no harías esto** — siempre te pedirá la contraseña como medida de seguridad.
+En cambio, en este contenedor instalamos Node **a través de `nvm`** (lo viste en el Dockerfile en la Parte 1). nvm guarda Node y todos sus paquetes globales en **tu carpeta personal** (`/home/estudiante/.nvm/...`), que **te pertenece**. Por eso `npm install -g` funciona sin `sudo`.
+
+Es una de las grandes ventajas de usar nvm: nunca más te peleas con permisos para instalar globales.
 :::
 
 Verifica que se instaló:

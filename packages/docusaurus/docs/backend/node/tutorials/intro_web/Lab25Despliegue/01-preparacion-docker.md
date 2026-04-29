@@ -119,10 +119,6 @@ RUN apt-get update && apt-get install -y \
     sudo \
     && apt-get clean
 
-# Instalar Node.js 20 (LTS)
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
-
 # Crear un usuario "estudiante" con permisos para usar sudo
 # (sin que nos pida contraseña al usar sudo, para no atorarnos durante el lab)
 RUN useradd -m -s /bin/bash estudiante \
@@ -130,6 +126,22 @@ RUN useradd -m -s /bin/bash estudiante \
     && usermod -aG sudo estudiante \
     && echo "estudiante ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/estudiante \
     && chmod 0440 /etc/sudoers.d/estudiante
+
+# Instalar Node.js 20 LTS usando NVM (Node Version Manager)
+# para el usuario "estudiante"
+USER estudiante
+WORKDIR /home/estudiante
+
+ENV NVM_DIR=/home/estudiante/.nvm
+ENV NODE_VERSION=20
+
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash \
+    && . "$NVM_DIR/nvm.sh" \
+    && nvm install $NODE_VERSION \
+    && nvm alias default $NODE_VERSION
+
+# Volver a root para los pasos finales del Dockerfile
+USER root
 
 # Abrir los puertos 80 (web) y 3000 (Express)
 EXPOSE 80 3000
@@ -146,11 +158,26 @@ Guarda el archivo.
 - **`FROM ubuntu:22.04`**: empezamos desde una imagen base de Ubuntu Linux 22.04. Es como decir *"dame una computadora con Ubuntu recién instalado"*.
 - **`ENV DEBIAN_FRONTEND=noninteractive`**: evita que durante la instalación de paquetes el sistema te pregunte cosas (queremos que sea automático).
 - **`RUN apt-get update && apt-get install ...`**: instala programas. `apt-get` es el "instalador" de Ubuntu, equivalente a `npm install` pero para programas del sistema. Estamos instalando: `curl` (para descargar archivos), `git` (para clonar repos), `nano` y `vim` (editores de texto), `nginx` (servidor web), `sudo` (para tener permisos de administrador).
-- **`curl ... setup_20.x | bash -`**: descarga e instala Node.js versión 20 LTS (la versión recomendada actualmente).
 - **`useradd ... estudiante`**: crea un usuario llamado **estudiante** con contraseña `password`. En Linux es buena práctica no trabajar como `root` (administrador máximo), por eso creamos un usuario normal.
 - **`echo "estudiante ALL=(ALL) NOPASSWD:ALL"`**: configura que el usuario `estudiante` pueda usar `sudo` **sin que le pidan contraseña**. En un servidor real **no harías esto** (sería inseguro), pero aquí lo dejamos así para que la práctica fluya sin interrupciones.
+- **`USER estudiante`** y **`WORKDIR /home/estudiante`**: a partir de aquí los comandos del Dockerfile se ejecutan **como el usuario `estudiante`** y dentro de su carpeta personal. Esto es importante para instalar nvm en el lugar correcto.
+- **`ENV NVM_DIR ...`** y **`ENV NODE_VERSION=20`**: variables de entorno que le dicen a `nvm` dónde instalarse y qué versión de Node bajar.
+- **`curl ... nvm/v0.40.1/install.sh | bash`**: descarga e instala **nvm** (*Node Version Manager*), una herramienta que permite tener varias versiones de Node.js instaladas y cambiar entre ellas con un solo comando. Es el estándar de la industria para manejar Node — en lugar de instalar Node "directo", se instala nvm y desde ahí instalas las versiones que necesites.
+- **`nvm install $NODE_VERSION`**: usando nvm, instalamos Node.js **20 LTS** (*Long Term Support*, soporte a largo plazo, la versión recomendada actualmente).
+- **`nvm alias default $NODE_VERSION`**: hacemos que **Node 20 sea la versión por defecto** cada vez que se abra una terminal nueva. Sin esta línea, tendrías que ejecutar `nvm use 20` manualmente al entrar.
+- **`USER root`**: regresamos a root para los últimos pasos del Dockerfile (declarar puertos, dejar el contenedor encendido).
 - **`EXPOSE 80 3000`**: declara que el contenedor va a usar los puertos 80 (Nginx) y 3000 (Express).
 - **`CMD ["tail", "-f", "/dev/null"]`**: un truco para que el contenedor no se apague después de iniciar. Le decimos *"quédate ahí parado esperando, no hagas nada"*.
+:::
+
+:::info ¿Por qué nvm en lugar de instalar Node directo?
+**nvm** te deja tener instaladas varias versiones de Node al mismo tiempo (16, 18, 20, 22…) y cambiar entre ellas con un comando como `nvm use 18`. Esto es muy útil cuando:
+
+- Trabajas en varios proyectos que requieren versiones distintas.
+- Quieres probar tu app con una versión más nueva sin romper la actual.
+- Una librería deja de soportar versiones viejas y necesitas migrar.
+
+Como bonus, **nvm instala Node en tu carpeta personal**, así que cuando ejecutes `npm install -g algo` ya no necesitas `sudo` (los paquetes globales se guardan en `~/.nvm/versions/node/v20.x.x/`, que es tuyo).
 :::
 
 ---

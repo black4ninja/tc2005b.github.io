@@ -253,7 +253,11 @@ sudo service nginx restart
 
 ### `pm2: command not found`
 
-Significa que PM2 no está instalado para el usuario actual o no está en el PATH. Vuelve a instalarlo: `sudo npm install -g pm2`.
+Significa que PM2 no está instalado o que nvm no se cargó en esta sesión.
+
+1. Verifica que nvm esté activo: `command -v nvm`. Debería responder `nvm`. Si responde vacío, ejecuta `source ~/.bashrc` para cargarlo.
+2. Verifica que Node esté disponible: `node --version`. Debería responder `v20.x.x`.
+3. Si todo está bien, instala PM2 otra vez: `npm install -g pm2` (sin `sudo`).
 
 ---
 
