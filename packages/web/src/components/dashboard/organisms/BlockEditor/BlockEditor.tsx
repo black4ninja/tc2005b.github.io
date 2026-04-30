@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ContentBlock, ContentBlockType } from '../../../../types/pagina';
+import { randomUUID } from '../../../../utils/uuid';
 import EncabezadoBlock from './blocks/EncabezadoBlock';
 import ObjetivosBlock from './blocks/ObjetivosBlock';
 import InstruccionesBlock from './blocks/InstruccionesBlock';
@@ -35,7 +36,7 @@ function getBlockIcon(tipo: ContentBlockType): string {
 }
 
 function generateId(): string {
-  return crypto.randomUUID();
+  return randomUUID();
 }
 
 function getDefaultDatos(tipo: ContentBlockType): Record<string, unknown> {

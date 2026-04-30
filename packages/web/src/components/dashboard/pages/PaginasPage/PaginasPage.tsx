@@ -6,6 +6,7 @@ import Modal from '../../atoms/Modal/Modal';
 import PaginaForm from '../../organisms/PaginaForm/PaginaForm';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import type { PaginaData, EtiquetaData } from '../../../../types/pagina';
+import { randomUUID } from '../../../../utils/uuid';
 import styles from './PaginasPage.module.css';
 
 const API_BASE = '/api';
@@ -164,7 +165,7 @@ export default function PaginasPage() {
 
       const newBloques = pagina.bloques.map((b) => ({
         ...b,
-        id: crypto.randomUUID(),
+        id: randomUUID(),
       }));
 
       const res = await fetch(`${API_BASE}/admin/paginas`, {
