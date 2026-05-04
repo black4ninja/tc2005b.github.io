@@ -16,6 +16,7 @@ interface ActividadEvaluacionData {
   aprendizajePlaneado: number;
   semanaPlaneada: number;
   orden: number;
+  congelada: boolean;
 }
 
 const API_BASE = '/api';
@@ -178,6 +179,23 @@ export default function ActividadesGrupoPage() {
     }
   }
 
+  async function handleToggleCongelada(item: ActividadEvaluacionData) {
+    try {
+      const res = await fetch(`${baseUrl}/${item.id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ congelada: !item.congelada }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Error al cambiar estado de congelada');
+      }
+      await fetchActividades();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }
+
   const columnHelper = createColumnHelper<ActividadEvaluacionData>();
 
   const columns = [
@@ -208,7 +226,23 @@ export default function ActividadesGrupoPage() {
     }),
     columnHelper.accessor('nombre', {
       header: 'Actividad',
-      cell: (info) => <span className={styles.nombreCell}>{info.getValue()}</span>,
+      cell: (info) => {
+        const row = info.row.original;
+        return (
+          <span className={styles.nombreCell} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            {row.congelada && (
+              <span
+                className="material-icons"
+                title="Congelada — los alumnos no pueden modificar la semana completada"
+                style={{ fontSize: 16, color: 'var(--color-warning, #b58900)' }}
+              >
+                lock
+              </span>
+            )}
+            {info.getValue()}
+          </span>
+        );
+      },
     }),
     columnHelper.accessor('aprendizajePlaneado', {
       header: 'Aprendizaje planeado',
@@ -222,6 +256,11 @@ export default function ActividadesGrupoPage() {
 
   const getActions = (row: ActividadEvaluacionData): ActionItem[] => [
     { label: 'Editar', icon: 'edit', onClick: () => openEdit(row) },
+    {
+      label: row.congelada ? 'Descongelar' : 'Congelar',
+      icon: row.congelada ? 'lock_open' : 'lock',
+      onClick: () => handleToggleCongelada(row),
+    },
     { label: 'Malla de Evaluación', icon: 'grid_view', onClick: () => navigate(`/admin/grupos/${grupoId}/actividades-evaluacion/${row.id}/malla`) },
     { label: 'Eliminar', icon: 'delete', onClick: () => handleDelete(row), variant: 'danger' },
   ];

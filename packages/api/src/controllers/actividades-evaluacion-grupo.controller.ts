@@ -75,7 +75,7 @@ export async function createActividadEvaluacionGrupo(req: Request, res: Response
 
 export async function updateActividadEvaluacionGrupo(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { nombre, tipo, aprendizajePlaneado, semanaPlaneada } = req.body;
+  const { nombre, tipo, aprendizajePlaneado, semanaPlaneada, congelada } = req.body;
 
   try {
     const query = BaseModel.queryActive<ActividadEvaluacionGrupo>('ActividadEvaluacionGrupo');
@@ -97,6 +97,13 @@ export async function updateActividadEvaluacionGrupo(req: Request, res: Response
     }
     if (aprendizajePlaneado !== undefined) act.setAprendizajePlaneado(Number(aprendizajePlaneado) || 0);
     if (semanaPlaneada !== undefined) act.setSemanaPlaneada(Number(semanaPlaneada) || 0);
+    if (congelada !== undefined) {
+      if (typeof congelada !== 'boolean') {
+        res.status(400).json({ status: 'error', message: 'congelada debe ser booleano' });
+        return;
+      }
+      act.setCongelada(congelada);
+    }
 
     await act.save(null, { useMasterKey: true });
 

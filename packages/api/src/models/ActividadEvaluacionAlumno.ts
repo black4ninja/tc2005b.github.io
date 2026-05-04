@@ -73,6 +73,7 @@ export class ActividadEvaluacionAlumno extends BaseModel {
       grupoId: this.getGrupo()?.id,
       alumnoId: this.getAlumno()?.id,
       actividadGrupoId: actGrupo?.id,
+      congelada: actGrupo?.get('congelada') ?? false,
       active: this.get('active'),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,

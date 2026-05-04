@@ -137,6 +137,15 @@ export async function updateMyActividad(req: Request, res: Response): Promise<vo
       return;
     }
 
+    // Bloquear si la actividad está congelada por el profesor
+    if (registro.getActividadGrupo()?.get('congelada') === true) {
+      res.status(403).json({
+        status: 'error',
+        message: 'Esta actividad está congelada por el profesor y no puede modificarse.',
+      });
+      return;
+    }
+
     // Solo permite actualizar semanaCompletada
     const { semanaCompletada } = req.body;
     const antesSemana = registro.getSemanaCompletada();

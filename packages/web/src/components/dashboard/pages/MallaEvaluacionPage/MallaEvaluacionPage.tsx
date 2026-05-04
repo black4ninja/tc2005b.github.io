@@ -42,6 +42,7 @@ interface ActividadAlumnoData {
   semanaCompletada: number;
   observaciones: string;
   orden: number;
+  congelada: boolean;
 }
 
 interface DependenciaRef {
@@ -477,6 +478,13 @@ export default function MallaEvaluacionPage() {
   /* ---------- Semana completada inline edit (alumno) ---------- */
 
   async function handleSemanaCompletadaChange(actId: string, value: number) {
+    // Defensa: si la actividad está congelada, el alumno no puede modificar.
+    // Backend también valida; esto solo evita el round-trip y muestra mensaje inmediato.
+    const target = actividadesAlumno.find((a) => a.id === actId);
+    if (isAlumno && target?.congelada) {
+      setError('Esta actividad está congelada por el profesor y no puede modificarse.');
+      return;
+    }
     setActividadesAlumno((prev) =>
       prev.map((a) => {
         if (a.id !== actId) return a;
@@ -502,7 +510,10 @@ export default function MallaEvaluacionPage() {
         headers: { ...authHeaders, 'Content-Type': 'application/json' },
         body: JSON.stringify({ semanaCompletada: value }),
       });
-      if (!res.ok) throw new Error('Error al guardar semana completada');
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.message || 'Error al guardar semana completada');
+      }
     } catch (err: any) {
       setError(err.message);
       await fetchData();
@@ -815,22 +826,36 @@ export default function MallaEvaluacionPage() {
       header: 'Sem. Completada',
       cell: (info) => {
         const row = info.row.original;
+        const isLocked = !!row.congelada;
         return (
-          <input
-            type="number"
-            className={styles.inlineNumberInput}
-            defaultValue={info.getValue()}
-            min={0}
-            onBlur={(e) => {
-              const val = Number(e.target.value);
-              if (!isNaN(val) && val !== info.getValue()) {
-                handleSemanaCompletadaChange(row.id, val);
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-            }}
-          />
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <input
+              type="number"
+              className={styles.inlineNumberInput}
+              defaultValue={info.getValue()}
+              min={0}
+              disabled={isLocked}
+              title={isLocked ? 'Congelada por el profesor' : undefined}
+              onBlur={(e) => {
+                const val = Number(e.target.value);
+                if (!isNaN(val) && val !== info.getValue()) {
+                  handleSemanaCompletadaChange(row.id, val);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+              }}
+            />
+            {isLocked && (
+              <span
+                className="material-icons"
+                title="Congelada por el profesor"
+                style={{ fontSize: 16, color: 'var(--color-warning, #b58900)' }}
+              >
+                lock
+              </span>
+            )}
+          </div>
         );
       },
     }),

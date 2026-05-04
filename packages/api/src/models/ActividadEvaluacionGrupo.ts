@@ -49,6 +49,13 @@ export class ActividadEvaluacionGrupo extends BaseModel {
     this.set('grupo', grupo);
   }
 
+  getCongelada(): boolean {
+    return this.get('congelada') ?? false;
+  }
+  setCongelada(congelada: boolean): void {
+    this.set('congelada', !!congelada);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     return {
       id: this.id,
@@ -58,6 +65,7 @@ export class ActividadEvaluacionGrupo extends BaseModel {
       semanaPlaneada: this.getSemanaPlaneada(),
       orden: this.getOrden(),
       grupoId: this.getGrupo()?.id,
+      congelada: this.getCongelada(),
       active: this.get('active'),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
