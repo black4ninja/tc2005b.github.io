@@ -3,6 +3,16 @@ import { config } from '../config/index.js';
 import { AppUser, MagicToken, AppSession } from '../models/index.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { emailService } from './email.service.js';
+import { hasAnyActiveGrupoForAlumno } from './grupo-alumno.service.js';
+
+/**
+ * Para alumnos: verifica que tengan al menos un GrupoAlumno activo.
+ * Admins no se ven afectados (no tienen GrupoAlumno).
+ */
+async function alumnoHasAccess(user: AppUser): Promise<boolean> {
+  if (!user.isAlumno()) return true;
+  return hasAnyActiveGrupoForAlumno(user.id);
+}
 
 function normalizeEmail(input: string): string {
   let email = input.toLowerCase().trim();
@@ -72,6 +82,9 @@ class AuthService {
     if (!user || !user.isActive()) {
       throw new Error('Usuario no encontrado o inactivo');
     }
+    if (!(await alumnoHasAccess(user))) {
+      throw new Error('Has sido dado de baja de todos tus grupos. Contacta a tu profesor.');
+    }
 
     magicToken.markUsed();
     await magicToken.save(null, { useMasterKey: true });
@@ -117,6 +130,12 @@ class AuthService {
     if (!user || !user.isActive()) {
       return null;
     }
+    // Si el alumno fue dado de baja de todos sus grupos, invalidar la sesión.
+    if (!(await alumnoHasAccess(user))) {
+      session.softDelete();
+      await session.save(null, { useMasterKey: true });
+      return null;
+    }
 
     session.refreshActivity(config.auth.sessionExpiryDays);
     await session.save(null, { useMasterKey: true });
@@ -134,6 +153,9 @@ class AuthService {
 
     if (!user || !user.isActive()) {
       throw new Error('No existe una cuenta registrada con este correo');
+    }
+    if (!(await alumnoHasAccess(user))) {
+      throw new Error('Has sido dado de baja de todos tus grupos. Contacta a tu profesor.');
     }
 
     user.setLastLogin(new Date());
@@ -176,6 +198,9 @@ class AuthService {
     const valid = await bcrypt.compare(password, hash);
     if (!valid) {
       throw new Error('Credenciales inválidas');
+    }
+    if (!(await alumnoHasAccess(user))) {
+      throw new Error('Has sido dado de baja de todos tus grupos. Contacta a tu profesor.');
     }
 
     user.setLastLogin(new Date());

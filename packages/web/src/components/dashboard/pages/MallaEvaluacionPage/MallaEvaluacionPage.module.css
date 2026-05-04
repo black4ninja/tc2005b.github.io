@@ -224,10 +224,11 @@
 }
 
 .obsCell {
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Limita el ancho para forzar line-clamp del TruncatedText.
+     La altura está limitada por -webkit-line-clamp en el atom (default 2 líneas). */
+  max-width: 280px;
+  width: 280px;
+  white-space: normal;
 }
 
 .form {

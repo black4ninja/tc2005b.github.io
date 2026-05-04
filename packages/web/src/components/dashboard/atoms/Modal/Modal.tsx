@@ -8,9 +8,10 @@ interface ModalProps {
   title: string;
   children: ReactNode;
   wide?: boolean;
+  extraWide?: boolean;
 }
 
-export default function Modal({ isOpen, onClose, title, children, wide }: ModalProps) {
+export default function Modal({ isOpen, onClose, title, children, wide, extraWide }: ModalProps) {
   useEffect(() => {
     if (!isOpen) return;
     function handleKey(e: KeyboardEvent) {
@@ -24,7 +25,10 @@ export default function Modal({ isOpen, onClose, title, children, wide }: ModalP
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={`${styles.card} ${wide ? styles.cardWide : ''}`} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`${styles.card} ${extraWide ? styles.cardExtraWide : wide ? styles.cardWide : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className={styles.header}>
           <h2 className={styles.title}>{title}</h2>
           <button className={styles.closeBtn} onClick={onClose}>

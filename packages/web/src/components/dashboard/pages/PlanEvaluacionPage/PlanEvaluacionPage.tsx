@@ -30,6 +30,7 @@ interface ActividadData {
   tipo: string;
   aprendizajePlaneado: number;
   semanaPlaneada: number;
+  congelada: boolean;
 }
 
 const API_BASE = '/api';
@@ -60,6 +61,7 @@ export default function PlanEvaluacionPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [expandedWeeks, setExpandedWeeks] = useState<Record<string, boolean>>({});
+  const [bulkBusy, setBulkBusy] = useState<Record<number, boolean>>({});
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -302,6 +304,80 @@ export default function PlanEvaluacionPage() {
 
   function toggleWeek(key: string) {
     setExpandedWeeks((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  /* ---------- Bulk congelar / descongelar por periodo ---------- */
+
+  async function handleBulkCongelar(periodoIdx: number, congelada: boolean) {
+    const periodo = periodos[periodoIdx];
+    // SOLO actividades seleccionadas en ESTE periodo (no las heredadas, no las de otros)
+    const ids = [...periodo.actividades];
+    if (ids.length === 0) {
+      setError('Este periodo no tiene actividades seleccionadas');
+      return;
+    }
+    const accion = congelada ? 'congelar' : 'descongelar';
+    const nombrePeriodo = periodo.nombre || `Periodo ${periodoIdx + 1}`;
+    if (!confirm(
+      `¿${accion.charAt(0).toUpperCase() + accion.slice(1)} ${ids.length} actividad(es) ` +
+      `seleccionadas en "${nombrePeriodo}"?\n\n` +
+      (congelada
+        ? 'Los alumnos NO podrán modificar la "Semana completada" de estas actividades.'
+        : 'Los alumnos PODRÁN modificar nuevamente la "Semana completada" de estas actividades.')
+    )) {
+      return;
+    }
+
+    setBulkBusy((prev) => ({ ...prev, [periodoIdx]: true }));
+    setError('');
+    setSuccess('');
+    try {
+      const res = await fetch(
+        `${API_BASE}/admin/grupos/${grupoId}/actividades-evaluacion/bulk-congelar`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ actividadIds: ids, congelada }),
+        },
+      );
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.message || 'Error al actualizar actividades');
+      }
+      // Aplicar el cambio solo a las que realmente se actualizaron (excluir skipped)
+      const updatedIds: string[] = Array.isArray(json.actividadIds) ? json.actividadIds : ids;
+      setActividades((prev) =>
+        prev.map((a) => (updatedIds.includes(a.id) ? { ...a, congelada } : a)),
+      );
+      const skipped: string[] = Array.isArray(json.skippedIds) ? json.skippedIds : [];
+      const accionLabel = congelada ? 'congeladas' : 'descongeladas';
+      if (skipped.length > 0) {
+        // Algunas IDs del plan ya no existen en la BD (huérfanas tras eliminación).
+        // No es un error: aplicamos lo que se pudo y avisamos.
+        setSuccess(
+          `${json.updated} actividad(es) ${accionLabel} en "${nombrePeriodo}". ` +
+          `${skipped.length} se omitieron porque ya no existen en este grupo ` +
+          `(plan desactualizado — al guardar el plan se limpiarán).`,
+        );
+      } else {
+        setSuccess(
+          `${json.updated} actividad(es) ${accionLabel} en "${nombrePeriodo}"`,
+        );
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBulkBusy((prev) => ({ ...prev, [periodoIdx]: false }));
+    }
+  }
+
+  function getCongeladasCount(periodoIdx: number): { total: number; congeladas: number } {
+    const ids = new Set(periodos[periodoIdx]?.actividades ?? []);
+    let congeladas = 0;
+    for (const a of actividades) {
+      if (ids.has(a.id) && a.congelada) congeladas++;
+    }
+    return { total: ids.size, congeladas };
   }
 
   /* ---------- Render ---------- */
@@ -621,6 +697,58 @@ export default function PlanEvaluacionPage() {
                     );
                   })}
                 </div>
+
+                {/* Bulk congelar / descongelar — opera sobre periodo.actividades únicamente */}
+                {(() => {
+                  const { total, congeladas } = getCongeladasCount(pi);
+                  const busy = !!bulkBusy[pi];
+                  const sinSeleccion = total === 0;
+                  return (
+                    <div
+                      className={styles.bulkCongelarBar}
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 12,
+                        alignItems: 'center',
+                        marginTop: 12,
+                        paddingTop: 12,
+                        borderTop: '1px solid var(--border-color, #eee)',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: '0.8125rem',
+                          color: 'var(--text-secondary)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        <span className="material-icons" style={{ fontSize: 16 }}>lock</span>
+                        {sinSeleccion
+                          ? 'Sin actividades seleccionadas en este periodo'
+                          : `${congeladas} de ${total} actividad(es) seleccionadas están congeladas`}
+                      </span>
+                      <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+                        <DashButton
+                          variant="outline"
+                          onClick={() => handleBulkCongelar(pi, true)}
+                          disabled={sinSeleccion || busy || congeladas === total}
+                        >
+                          {busy ? 'Aplicando...' : `Congelar las ${total} seleccionadas`}
+                        </DashButton>
+                        <DashButton
+                          variant="outline"
+                          onClick={() => handleBulkCongelar(pi, false)}
+                          disabled={sinSeleccion || busy || congeladas === 0}
+                        >
+                          {busy ? 'Aplicando...' : `Descongelar las ${total} seleccionadas`}
+                        </DashButton>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>

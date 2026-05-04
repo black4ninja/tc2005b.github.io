@@ -58,6 +58,77 @@
   color: #e65100;
 }
 
+.rowInactive {
+  opacity: 0.55;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.rowInactive:hover {
+  opacity: 0.85;
+}
+
+.equipoFilterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-bottom: -8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.equipoFilterLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.equipoFilterSelect {
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 200px;
+  outline: none;
+}
+
+.equipoFilterSelect:focus {
+  border-color: var(--accent, #2563eb);
+}
+
+.equipoFilterCount {
+  margin-left: auto;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.equipoFilterClear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.equipoFilterClear:hover {
+  background: var(--bg-page);
+}
+
 .emailCell {
   display: inline-flex;
   align-items: center;
@@ -107,28 +178,25 @@
 }
 
 .profileTooltipWrap {
-  position: relative;
   display: inline-flex;
   align-items: center;
+  outline: none;
 }
 
+/* position/top/left son inyectados inline: portal al body con position: fixed */
 .profileTooltip {
-  display: none;
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-left: 8px;
   background: #fff;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 12px 16px;
   min-width: 280px;
   max-width: 360px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  z-index: 1100;
   font-size: 13px;
   line-height: 1.5;
+  color: var(--text-primary);
+  pointer-events: none;
 }
 
 .profileTooltip div {
@@ -137,10 +205,6 @@
 
 .profileTooltip div:last-child {
   margin-bottom: 0;
-}
-
-.profileTooltipWrap:hover .profileTooltip {
-  display: block;
 }
 
 .toast {

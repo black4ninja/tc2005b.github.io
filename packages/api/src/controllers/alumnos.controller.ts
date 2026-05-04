@@ -15,12 +15,16 @@ export async function listAlumnos(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
 
   try {
-    const alumnos = await getAlumnosDeGrupo(grupoId);
+    // Admin necesita ver TAMBIÉN los dados de baja para poder reactivarlos.
+    const alumnos = await getAlumnosDeGrupo(grupoId, { includeInactive: true });
 
     res.json({
       status: 'ok',
       alumnos: alumnos.map((item) => ({
         ...item.alumno.toSafeJSON(),
+        // Override: el `active` que importa al admin del grupo es el del LINK
+        // GrupoAlumno (alumno dado de baja DEL GRUPO), no el de AppUser.
+        active: item.active,
         repositorioIndividual: item.repositorioIndividual,
         experiencia: item.experiencia,
         expectativas: item.expectativas,

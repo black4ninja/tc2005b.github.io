@@ -7,10 +7,22 @@ import { Grupo } from '../models/Grupo.js';
 import { AppUser } from '../models/AppUser.js';
 import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
 
-function parseValorCompetencia(valor: string): number {
-  if (!valor) return 0;
-  const match = valor.match(/(\d+)%/);
-  return match ? parseInt(match[1], 10) : 0;
+function parseValorCompetencia(valor: unknown): number {
+  // Los valores se guardan como number (0, 15, 70, 85, 100) en el flujo nuevo,
+  // pero hay datos legacy guardados como string tipo "Básico (70%)".
+  if (valor === null || valor === undefined || valor === '') return 0;
+  if (typeof valor === 'number') return Number.isFinite(valor) ? valor : 0;
+  if (typeof valor === 'string') {
+    const trimmed = valor.trim();
+    if (trimmed === '') return 0;
+    // Caso "70" o "70.5" — string puramente numérico
+    const asNumber = Number(trimmed);
+    if (Number.isFinite(asNumber)) return asNumber;
+    // Caso legacy "Básico (70%)" — extraer dígitos antes de %
+    const match = trimmed.match(/(\d+)%/);
+    return match ? parseInt(match[1], 10) : 0;
+  }
+  return 0;
 }
 
 function computeActividadesScore(

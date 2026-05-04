@@ -5,6 +5,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
 import DashButton from '../../atoms/DashButton/DashButton';
+import TruncatedText from '../../atoms/TruncatedText/TruncatedText';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import type { ActividadTipo } from '@/types/calendario';
 import styles from './MallaEvaluacionPage.module.css';
@@ -754,10 +755,14 @@ export default function MallaEvaluacionPage() {
     }),
     columnHelper.accessor('observaciones', {
       header: 'Observaciones',
-      cell: (info) => {
-        const val = info.getValue();
-        return val ? <span className={styles.obsCell}>{val}</span> : <span className={styles.zeroValue}>—</span>;
-      },
+      cell: (info) => (
+        <TruncatedText
+          text={info.getValue()}
+          lines={2}
+          placeholder={<span className={styles.zeroValue}>—</span>}
+          className={styles.obsCell}
+        />
+      ),
     }),
     columnHelper.display({
       id: 'auditLog',
@@ -861,10 +866,14 @@ export default function MallaEvaluacionPage() {
     }),
     columnHelper.accessor('observaciones', {
       header: 'Observaciones',
-      cell: (info) => {
-        const val = info.getValue();
-        return val ? <span className={styles.obsCell}>{val}</span> : <span className={styles.zeroValue}>—</span>;
-      },
+      cell: (info) => (
+        <TruncatedText
+          text={info.getValue()}
+          lines={2}
+          placeholder={<span className={styles.zeroValue}>—</span>}
+          className={styles.obsCell}
+        />
+      ),
     }),
   ];
 
@@ -927,10 +936,14 @@ export default function MallaEvaluacionPage() {
     }),
     compColumnHelper.accessor('retroPeriodo1', {
       header: 'Retro P1',
-      cell: (info) => {
-        const val = info.getValue();
-        return val ? <span className={styles.obsCell}>{val}</span> : <span className={styles.zeroValue}>—</span>;
-      },
+      cell: (info) => (
+        <TruncatedText
+          text={info.getValue()}
+          lines={2}
+          placeholder={<span className={styles.zeroValue}>—</span>}
+          className={styles.obsCell}
+        />
+      ),
     }),
     compColumnHelper.accessor('valorPeriodo2', {
       header: 'Eval. P2',
@@ -960,10 +973,14 @@ export default function MallaEvaluacionPage() {
     }),
     compColumnHelper.accessor('retroPeriodo2', {
       header: 'Retro P2',
-      cell: (info) => {
-        const val = info.getValue();
-        return val ? <span className={styles.obsCell}>{val}</span> : <span className={styles.zeroValue}>—</span>;
-      },
+      cell: (info) => (
+        <TruncatedText
+          text={info.getValue()}
+          lines={2}
+          placeholder={<span className={styles.zeroValue}>—</span>}
+          className={styles.obsCell}
+        />
+      ),
     }),
     compColumnHelper.display({
       id: 'evidencias',
@@ -1029,10 +1046,14 @@ export default function MallaEvaluacionPage() {
     }),
     compColumnHelper.accessor('retroPeriodo1', {
       header: 'Retro P1',
-      cell: (info) => {
-        const val = info.getValue();
-        return val ? <span className={styles.obsCell}>{val}</span> : <span className={styles.zeroValue}>—</span>;
-      },
+      cell: (info) => (
+        <TruncatedText
+          text={info.getValue()}
+          lines={2}
+          placeholder={<span className={styles.zeroValue}>—</span>}
+          className={styles.obsCell}
+        />
+      ),
     }),
     compColumnHelper.accessor('valorPeriodo2', {
       header: 'Eval. P2',
@@ -1044,10 +1065,14 @@ export default function MallaEvaluacionPage() {
     }),
     compColumnHelper.accessor('retroPeriodo2', {
       header: 'Retro P2',
-      cell: (info) => {
-        const val = info.getValue();
-        return val ? <span className={styles.obsCell}>{val}</span> : <span className={styles.zeroValue}>—</span>;
-      },
+      cell: (info) => (
+        <TruncatedText
+          text={info.getValue()}
+          lines={2}
+          placeholder={<span className={styles.zeroValue}>—</span>}
+          className={styles.obsCell}
+        />
+      ),
     }),
     compColumnHelper.display({
       id: 'evidencias',

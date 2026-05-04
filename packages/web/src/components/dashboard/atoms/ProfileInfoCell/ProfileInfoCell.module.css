@@ -1,0 +1,29 @@
+.profileTooltipWrap {
+  display: inline-flex;
+  align-items: center;
+  outline: none;
+}
+
+/* position/top/left son inyectados inline: portal al body con position: fixed */
+.profileTooltip {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 16px;
+  min-width: 280px;
+  max-width: 360px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  z-index: 1100;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  pointer-events: none;
+}
+
+.profileTooltip div {
+  margin-bottom: 6px;
+}
+
+.profileTooltip div:last-child {
+  margin-bottom: 0;
+}

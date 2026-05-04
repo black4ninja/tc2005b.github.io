@@ -5,6 +5,7 @@ import { Grupo } from '../models/Grupo.js';
 
 export interface AlumnoConPerfil {
   alumno: AppUser;
+  active: boolean;
   repositorioIndividual: string;
   experiencia: string;
   expectativas: string;
@@ -14,15 +15,22 @@ export interface AlumnoConPerfil {
 }
 
 /**
- * Obtiene los alumnos activos de un grupo vía GrupoAlumno,
- * incluyendo los campos de perfil del link GrupoAlumno.
+ * Obtiene los alumnos de un grupo vía GrupoAlumno.
+ * Por defecto solo activos. Pasar { includeInactive: true } para incluir alumnos
+ * dados de baja del grupo (soft-delete via active=false). El campo `active` del
+ * resultado refleja el estado del LINK GrupoAlumno (no de AppUser).
  */
-export async function getAlumnosDeGrupo(grupoId: string): Promise<AlumnoConPerfil[]> {
+export async function getAlumnosDeGrupo(
+  grupoId: string,
+  options: { includeInactive?: boolean } = {},
+): Promise<AlumnoConPerfil[]> {
   const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
 
   const query = new Parse.Query<GrupoAlumno>('GrupoAlumno');
   query.equalTo('exists' as any, true as any);
-  query.equalTo('active' as any, true as any);
+  if (!options.includeInactive) {
+    query.equalTo('active' as any, true as any);
+  }
   query.equalTo('grupo' as any, grupoPointer as any);
   query.include('alumno' as any);
   query.limit(1000);
@@ -34,6 +42,7 @@ export async function getAlumnosDeGrupo(grupoId: string): Promise<AlumnoConPerfi
     if (alumno && alumno.get('exists') === true) {
       result.push({
         alumno,
+        active: link.get('active') === true,
         repositorioIndividual: link.getRepositorioIndividual(),
         experiencia: link.getExperiencia(),
         expectativas: link.getExpectativas(),
@@ -44,6 +53,23 @@ export async function getAlumnosDeGrupo(grupoId: string): Promise<AlumnoConPerfi
     }
   }
   return result;
+}
+
+/**
+ * True si el alumno tiene al menos un GrupoAlumno activo (i.e. NO ha sido dado de
+ * baja de todos sus grupos). Usado por el flujo de login para bloquear el acceso
+ * de alumnos sin grupos activos.
+ */
+export async function hasAnyActiveGrupoForAlumno(alumnoId: string): Promise<boolean> {
+  const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId) as AppUser;
+
+  const query = new Parse.Query<GrupoAlumno>('GrupoAlumno');
+  query.equalTo('exists' as any, true as any);
+  query.equalTo('active' as any, true as any);
+  query.equalTo('alumno' as any, alumnoPointer as any);
+  query.limit(1);
+  const count = await query.count({ useMasterKey: true });
+  return count > 0;
 }
 
 /**

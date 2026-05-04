@@ -54,6 +54,21 @@ const EMPTY_FORM: FormData = {
   semanaPlaneada: 0,
 };
 
+interface AlumnoProgresoRow {
+  alumnoId: string;
+  name: string;
+  email: string;
+  matricula: string;
+  registroId: string | null;
+  aprendizajePlaneado: number;
+  aprendizajeGanado: number;
+  semanaCompletada: number;
+  observaciones: string;
+  completada: boolean;
+}
+
+type ProgresoFilter = 'todos' | 'completados' | 'pendientes';
+
 export default function ActividadesGrupoPage() {
   const { id: grupoId } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -69,6 +84,17 @@ export default function ActividadesGrupoPage() {
   const [editItem, setEditItem] = useState<ActividadEvaluacionData | undefined>();
   const [form, setForm] = useState<FormData>({ ...EMPTY_FORM });
 
+  // Stats de completado por actividad: { [actId]: completados }, totalAlumnos del grupo
+  const [stats, setStats] = useState<Record<string, number>>({});
+  const [totalAlumnos, setTotalAlumnos] = useState<number>(0);
+
+  // Modal de progreso de alumnos por actividad
+  const [progresoOpen, setProgresoOpen] = useState(false);
+  const [progresoActividad, setProgresoActividad] = useState<ActividadEvaluacionData | null>(null);
+  const [progresoLoading, setProgresoLoading] = useState(false);
+  const [progresoRows, setProgresoRows] = useState<AlumnoProgresoRow[]>([]);
+  const [progresoFilter, setProgresoFilter] = useState<ProgresoFilter>('todos');
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'x-session-token': sessionToken ?? '',
@@ -79,18 +105,53 @@ export default function ActividadesGrupoPage() {
   const fetchActividades = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(baseUrl, {
-        headers: { 'x-session-token': sessionToken ?? '' },
-      });
-      if (!res.ok) throw new Error('Error al cargar actividades de evaluación');
-      const json = await res.json();
+      const [actRes, statsRes] = await Promise.all([
+        fetch(baseUrl, { headers: { 'x-session-token': sessionToken ?? '' } }),
+        fetch(`${baseUrl}/completion-stats`, { headers: { 'x-session-token': sessionToken ?? '' } }),
+      ]);
+      if (!actRes.ok) throw new Error('Error al cargar actividades de evaluación');
+      const json = await actRes.json();
       setData(json.actividades);
+      if (statsRes.ok) {
+        const sj = await statsRes.json();
+        setStats(sj.stats ?? {});
+        setTotalAlumnos(sj.totalAlumnos ?? 0);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   }, [sessionToken, baseUrl]);
+
+  async function openProgresoModal(item: ActividadEvaluacionData) {
+    setProgresoActividad(item);
+    setProgresoOpen(true);
+    setProgresoLoading(true);
+    setProgresoRows([]);
+    setProgresoFilter('todos');
+    try {
+      const res = await fetch(`${baseUrl}/${item.id}/alumnos-progreso`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Error al cargar progreso');
+      }
+      const json = await res.json();
+      setProgresoRows(json.alumnos ?? []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setProgresoLoading(false);
+    }
+  }
+
+  function closeProgresoModal() {
+    setProgresoOpen(false);
+    setProgresoActividad(null);
+    setProgresoRows([]);
+  }
 
   useEffect(() => {
     fetchActividades();
@@ -252,10 +313,36 @@ export default function ActividadesGrupoPage() {
       header: 'Semana planeada',
       cell: (info) => info.getValue() || '—',
     }),
+    columnHelper.display({
+      id: 'completados',
+      header: 'Completados',
+      cell: (info) => {
+        const row = info.row.original;
+        const completados = stats[row.id] ?? 0;
+        const total = totalAlumnos;
+        if (total === 0) {
+          return <span className={styles.completionCell}>—</span>;
+        }
+        const cls =
+          completados === 0
+            ? styles.completionBadgeNone
+            : completados >= total
+            ? styles.completionBadgeAll
+            : styles.completionBadge;
+        return (
+          <span className={styles.completionCell}>
+            <span className={`${styles.completionBadge} ${cls}`}>
+              {completados}/{total}
+            </span>
+          </span>
+        );
+      },
+    }),
   ];
 
   const getActions = (row: ActividadEvaluacionData): ActionItem[] => [
     { label: 'Editar', icon: 'edit', onClick: () => openEdit(row) },
+    { label: 'Ver progreso de alumnos', icon: 'people', onClick: () => openProgresoModal(row) },
     {
       label: row.congelada ? 'Descongelar' : 'Congelar',
       icon: row.congelada ? 'lock_open' : 'lock',
@@ -361,6 +448,128 @@ export default function ActividadesGrupoPage() {
             </DashButton>
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        isOpen={progresoOpen}
+        onClose={closeProgresoModal}
+        extraWide
+        title={`Progreso de alumnos — ${progresoActividad?.nombre ?? ''}`}
+      >
+        {(() => {
+          const total = progresoRows.length;
+          const completados = progresoRows.filter((r) => r.completada).length;
+          const pendientes = total - completados;
+          const visibleRows = progresoRows.filter((r) => {
+            if (progresoFilter === 'completados') return r.completada;
+            if (progresoFilter === 'pendientes') return !r.completada;
+            return true;
+          });
+          return (
+            <div>
+              <div className={styles.progresoToolbar}>
+                <div className={styles.progresoSummary}>
+                  <strong>{completados} de {total} alumnos han marcado la actividad</strong>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>
+                    {pendientes} pendiente{pendientes !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className={styles.filterChips} role="tablist">
+                  <button
+                    type="button"
+                    className={`${styles.filterChip} ${progresoFilter === 'todos' ? styles.filterChipActive : ''}`}
+                    onClick={() => setProgresoFilter('todos')}
+                  >
+                    Todos ({total})
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.filterChip} ${progresoFilter === 'completados' ? styles.filterChipActive : ''}`}
+                    onClick={() => setProgresoFilter('completados')}
+                  >
+                    Completados ({completados})
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.filterChip} ${progresoFilter === 'pendientes' ? styles.filterChipActive : ''}`}
+                    onClick={() => setProgresoFilter('pendientes')}
+                  >
+                    Pendientes ({pendientes})
+                  </button>
+                </div>
+              </div>
+
+              {progresoLoading ? (
+                <p>Cargando progreso...</p>
+              ) : visibleRows.length === 0 ? (
+                <p style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  No hay alumnos en este filtro.
+                </p>
+              ) : (
+                <div className={styles.progresoTableWrap}>
+                  <table className={styles.progresoTable}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: '4%' }}>#</th>
+                        <th>Alumno</th>
+                        <th className={styles.numCell}>Aprend. Planeado</th>
+                        <th className={styles.numCell}>Aprend. Ganado</th>
+                        <th className={styles.numCell}>Sem. Completada</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleRows.map((r, i) => (
+                        <tr
+                          key={r.alumnoId}
+                          className={!r.completada ? styles.progresoRowIncomplete : undefined}
+                        >
+                          <td>{i + 1}</td>
+                          <td>
+                            <div className={styles.alumnoNameCell}>
+                              <strong>{r.name || '—'}</strong>
+                              <small>
+                                {r.matricula ? `${r.matricula} · ` : ''}{r.email}
+                              </small>
+                            </div>
+                          </td>
+                          <td className={styles.numCell}>{r.aprendizajePlaneado}</td>
+                          <td className={styles.numCell}>
+                            {r.aprendizajeGanado === 0 ? (
+                              <span className={styles.zeroValue}>0</span>
+                            ) : (
+                              r.aprendizajeGanado
+                            )}
+                          </td>
+                          <td className={styles.numCell}>
+                            {r.semanaCompletada === 0 ? (
+                              <span className={styles.zeroValue}>—</span>
+                            ) : (
+                              r.semanaCompletada
+                            )}
+                          </td>
+                          <td>
+                            {r.completada ? (
+                              <span className={`${styles.statusBadge} ${styles.statusBadgeOk}`}>
+                                <span className="material-icons" style={{ fontSize: 14 }}>check_circle</span>
+                                Completada
+                              </span>
+                            ) : (
+                              <span className={`${styles.statusBadge} ${styles.statusBadgePending}`}>
+                                <span className="material-icons" style={{ fontSize: 14 }}>radio_button_unchecked</span>
+                                Pendiente
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </Modal>
     </div>
   );

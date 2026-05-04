@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
@@ -6,6 +6,8 @@ import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
 import AlumnoForm from '../../organisms/AlumnoForm/AlumnoForm';
 import CSVImportModal from '../../organisms/CSVImportModal/CSVImportModal';
+import CompetenciasQuickModal from '../../organisms/CompetenciasQuickModal/CompetenciasQuickModal';
+import ProfileInfoCell from '../../atoms/ProfileInfoCell/ProfileInfoCell';
 import DashButton from '../../atoms/DashButton/DashButton';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import styles from './GrupoDetailPage.module.css';
@@ -52,6 +54,12 @@ interface CompetenciaStatus {
   alumnosSinCompetencias: number;
 }
 
+interface AlumnoEquipoInfo {
+  equipoId: string;
+  nombre: string;
+  repositorio: string;
+}
+
 const API_BASE = '/api';
 
 export default function GrupoDetailPage() {
@@ -86,6 +94,14 @@ export default function GrupoDetailPage() {
 
   const [periodos, setPeriodos] = useState<PeriodoInfo[]>([]);
   const [calificacionesMap, setCalificacionesMap] = useState<Map<string, CalificacionAlumno>>(new Map());
+  const [equiposMap, setEquiposMap] = useState<Map<string, AlumnoEquipoInfo>>(new Map());
+
+  // Filtro por equipo — NO persistente (sólo durante esta visita).
+  // '' = todos, '__none__' = sin equipo, otro valor = equipoId.
+  const [equipoFilter, setEquipoFilter] = useState<string>('');
+
+  // Modal de competencias rápidas
+  const [compModalAlumno, setCompModalAlumno] = useState<AlumnoData | null>(null);
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -150,6 +166,37 @@ export default function GrupoDetailPage() {
     }
   }, [id, sessionToken]);
 
+  const fetchEquipos = useCallback(async () => {
+    if (!id) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${id}/equipos`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const map = new Map<string, AlumnoEquipoInfo>();
+      for (const eq of data.equipos ?? []) {
+        const info: AlumnoEquipoInfo = {
+          equipoId: eq?.id ?? '',
+          nombre: typeof eq?.nombre === 'string' ? eq.nombre : '',
+          repositorio: typeof eq?.repositorio === 'string' ? eq.repositorio : '',
+        };
+        const miembros = Array.isArray(eq?.miembros) ? eq.miembros : [];
+        for (const m of miembros) {
+          const aid = m?.id;
+          if (typeof aid === 'string' && aid && !map.has(aid)) {
+            // Si un alumno aparece en >1 equipo (no debería), conserva el primero (más reciente
+            // por createdAt descendente del backend).
+            map.set(aid, info);
+          }
+        }
+      }
+      setEquiposMap(map);
+    } catch {
+      // non-critical — la columna mostrará "—" para todos
+    }
+  }, [id, sessionToken]);
+
   const fetchAlumnos = useCallback(async () => {
     if (!id) return;
     try {
@@ -178,6 +225,10 @@ export default function GrupoDetailPage() {
   useEffect(() => {
     fetchAlumnos();
   }, [fetchAlumnos]);
+
+  useEffect(() => {
+    fetchEquipos();
+  }, [fetchEquipos]);
 
   useEffect(() => {
     fetchMallaStatus();
@@ -380,6 +431,28 @@ export default function GrupoDetailPage() {
     return <span className={`${styles.gradeBadge} ${cls}`}>{val.toFixed(1)}%</span>;
   }
 
+  // Equipos únicos para el select (deduplicados por equipoId)
+  const equiposUnicos = useMemo(() => {
+    const seen = new Map<string, string>(); // equipoId → nombre
+    for (const info of equiposMap.values()) {
+      if (info.equipoId && !seen.has(info.equipoId)) {
+        seen.set(info.equipoId, info.nombre || '(sin nombre)');
+      }
+    }
+    return Array.from(seen.entries())
+      .map(([id, nombre]) => ({ id, nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  }, [equiposMap]);
+
+  // Lista filtrada de alumnos según el filtro de equipo
+  const filteredAlumnos = useMemo(() => {
+    if (!equipoFilter) return alumnos;
+    if (equipoFilter === '__none__') {
+      return alumnos.filter((a) => !equiposMap.has(a.id));
+    }
+    return alumnos.filter((a) => equiposMap.get(a.id)?.equipoId === equipoFilter);
+  }, [alumnos, equiposMap, equipoFilter]);
+
   const columnHelper = createColumnHelper<AlumnoData>();
 
   const gradeColumns = periodos.map((p, i) =>
@@ -453,30 +526,60 @@ export default function GrupoDetailPage() {
     }),
     columnHelper.accessor('matricula', { header: 'Matrícula' }),
     columnHelper.display({
-      id: 'perfil',
-      header: 'Perfil',
+      id: 'equipo',
+      header: 'Equipo',
       cell: ({ row }) => {
-        const a = row.original;
-        const hasProfile = a.experiencia || a.expectativas || a.compromiso || a.situacionesEspeciales;
+        const eq = equiposMap.get(row.original.id);
+        if (!eq || !eq.nombre) return <span className={styles.emptyField}>—</span>;
+        return <span>{eq.nombre}</span>;
+      },
+    }),
+    columnHelper.display({
+      id: 'repoEquipo',
+      header: 'Repo Equipo',
+      cell: ({ row }) => {
+        const eq = equiposMap.get(row.original.id);
+        const url = eq?.repositorio ?? '';
+        if (!url) return <span className={styles.emptyField}>—</span>;
+        const display = url.replace(/^https?:\/\/(www\.)?/, '');
+        const short = display.length > 30 ? display.slice(0, 30) + '…' : display;
+        // Solo renderizar como link si es URL válida; si no, mostrar texto plano para evitar
+        // generar enlaces rotos hacia rutas relativas del propio sitio.
+        const isHttpUrl = /^https?:\/\//i.test(url);
         return (
-          <div className={styles.profileTooltipWrap}>
-            <span
-              className="material-icons"
-              style={{ fontSize: 20, color: hasProfile ? 'var(--dash-primary)' : 'var(--text-secondary)', cursor: 'default' }}
-            >
-              {hasProfile ? 'info' : 'info_outline'}
-            </span>
-            {hasProfile && (
-              <div className={styles.profileTooltip}>
-                {a.experiencia && <div><strong>Experiencia:</strong> {a.experiencia}</div>}
-                {a.expectativas && <div><strong>Expectativas:</strong> {a.expectativas}</div>}
-                {a.compromiso && <div><strong>Compromiso:</strong> {a.compromiso}</div>}
-                {a.situacionesEspeciales && <div><strong>Situaciones Especiales:</strong> {a.situacionesEspeciales}</div>}
-              </div>
+          <span className={styles.repoCell}>
+            {isHttpUrl ? (
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.repoLink}
+                title={url}
+              >
+                {short}
+              </a>
+            ) : (
+              <span title={url}>{short}</span>
             )}
-          </div>
+            <button
+              className={styles.copyIcon}
+              title="Copiar URL"
+              onClick={() => {
+                navigator.clipboard.writeText(url);
+                setToast('URL copiada');
+                setTimeout(() => setToast(''), 2000);
+              }}
+            >
+              <span className="material-icons" style={{ fontSize: 16 }}>content_copy</span>
+            </button>
+          </span>
         );
       },
+    }),
+    columnHelper.display({
+      id: 'perfil',
+      header: 'Perfil',
+      cell: ({ row }) => <ProfileInfoCell alumno={row.original} />,
     }),
     ...gradeColumns,
     ...finalGradeColumn,
@@ -484,7 +587,7 @@ export default function GrupoDetailPage() {
       header: 'Estado',
       cell: (info) => (
         <span className={`${styles.badge} ${info.getValue() ? styles.badgeActive : styles.badgeInactive}`}>
-          {info.getValue() ? 'Activo' : 'Inactivo'}
+          {info.getValue() ? 'Activo' : 'Dado de baja'}
         </span>
       ),
     }),
@@ -493,6 +596,7 @@ export default function GrupoDetailPage() {
   const getActions = (alumno: AlumnoData): ActionItem[] => [
     { label: 'Editar', icon: 'edit', onClick: () => openEditAlumno(alumno) },
     { label: 'Malla de Evaluación', icon: 'grid_view', onClick: () => navigate(`/admin/grupos/${id}/alumnos/${alumno.id}/malla`) },
+    { label: 'Competencias rápidas', icon: 'school', onClick: () => setCompModalAlumno(alumno) },
     {
       label: alumno.active ? 'Desactivar' : 'Activar',
       icon: alumno.active ? 'toggle_off' : 'toggle_on',
@@ -554,16 +658,69 @@ export default function GrupoDetailPage() {
       {loading ? (
         <p>Cargando...</p>
       ) : (
-        <AdminTable
-          title="Alumnos del grupo"
-          columns={columns}
-          data={alumnos}
-          actions={getActions}
-          onAdd={openCreateAlumno}
-          addLabel="Agregar Alumno"
-          emptyMessage="No hay alumnos registrados"
-          searchPlaceholder="Buscar alumno..."
-        />
+        <>
+          {(equiposUnicos.length > 0 || equipoFilter) && (
+            <div className={styles.equipoFilterBar}>
+              <label className={styles.equipoFilterLabel} htmlFor="equipo-filter">
+                <span className="material-icons" style={{ fontSize: 18 }}>filter_list</span>
+                Filtrar por equipo
+              </label>
+              <select
+                id="equipo-filter"
+                className={styles.equipoFilterSelect}
+                value={equipoFilter}
+                onChange={(e) => setEquipoFilter(e.target.value)}
+              >
+                <option value="">Todos los equipos ({alumnos.length})</option>
+                <option value="__none__">
+                  Sin equipo ({alumnos.filter((a) => !equiposMap.has(a.id)).length})
+                </option>
+                {equiposUnicos.map((eq) => {
+                  const count = alumnos.filter(
+                    (a) => equiposMap.get(a.id)?.equipoId === eq.id,
+                  ).length;
+                  return (
+                    <option key={eq.id} value={eq.id}>
+                      {eq.nombre} ({count})
+                    </option>
+                  );
+                })}
+              </select>
+              {equipoFilter && (
+                <>
+                  <span className={styles.equipoFilterCount}>
+                    Mostrando {filteredAlumnos.length} de {alumnos.length}
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.equipoFilterClear}
+                    onClick={() => setEquipoFilter('')}
+                    title="Limpiar filtro"
+                  >
+                    <span className="material-icons" style={{ fontSize: 16 }}>close</span>
+                    Limpiar
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          <AdminTable
+            title="Alumnos del grupo"
+            columns={columns}
+            data={filteredAlumnos}
+            actions={getActions}
+            onAdd={openCreateAlumno}
+            addLabel="Agregar Alumno"
+            emptyMessage={
+              equipoFilter
+                ? 'No hay alumnos en este filtro'
+                : 'No hay alumnos registrados'
+            }
+            searchPlaceholder="Buscar alumno..."
+            getRowClassName={(a) => (a.active ? undefined : styles.rowInactive)}
+            tableId="grupo-alumnos"
+          />
+        </>
       )}
 
       <Modal isOpen={alumnoModalOpen} onClose={closeAlumnoModal} title={editAlumno ? 'Editar Alumno' : 'Nuevo Alumno'}>
@@ -632,7 +789,17 @@ export default function GrupoDetailPage() {
         </div>
       </Modal>
 
+      <CompetenciasQuickModal
+        open={!!compModalAlumno}
+        onClose={() => setCompModalAlumno(null)}
+        grupoId={id ?? ''}
+        alumnoId={compModalAlumno?.id ?? ''}
+        alumnoNombre={compModalAlumno?.name ?? ''}
+        sessionToken={sessionToken ?? ''}
+      />
+
       {toast && <div className={styles.toast}>{toast}</div>}
     </div>
   );
 }
+

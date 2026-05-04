@@ -197,6 +197,117 @@
   font-size: 14px;
 }
 
+/* Column visibility toggle */
+.columnsMenuWrap {
+  position: relative;
+}
+
+.columnsBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.columnsBtn:hover {
+  background: var(--border-color);
+}
+
+.columnsBtnDirty {
+  border-color: var(--accent, #2563eb);
+}
+
+.columnsBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--accent, #2563eb);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.columnsMenu {
+  /* position/top/right son inyectados inline: portal al body con position: fixed */
+  min-width: 220px;
+  max-width: 320px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--sidebar-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  z-index: 1100;
+  padding: 8px;
+}
+
+.columnsMenuHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 8px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.columnsResetBtn {
+  border: none;
+  background: transparent;
+  color: var(--accent, #2563eb);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.columnsResetBtn:hover {
+  background: var(--bg-page);
+}
+
+.columnsList {
+  display: flex;
+  flex-direction: column;
+}
+
+.columnsItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.columnsItem:hover {
+  background: var(--bg-page);
+}
+
+.columnsItem input[type='checkbox'] {
+  cursor: pointer;
+  accent-color: var(--accent, #2563eb);
+}
+
 /* Responsive: cards layout */
 @media (max-width: 640px) {
   .header {
