@@ -11,6 +11,8 @@
     "seed:dry-run": "tsx scripts/seed.ts --dry-run",
     "seed:competencias": "tsx scripts/seed-competencias.ts",
     "seed:competencias:dry-run": "tsx scripts/seed-competencias.ts --dry-run",
+    "export:evaluacion": "tsx scripts/export-evaluacion-md.ts",
+    "review:periodo": "tsx scripts/review-entregables.ts",
     "test": "vitest run --globals",
     "test:watch": "vitest --globals"
   },

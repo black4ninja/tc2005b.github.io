@@ -38,3 +38,6 @@ Thumbs.db
 
 # Deprecated backup directory
 deprecated/backup/
+
+# Generated evaluation guides (regenerable via `yarn export:evaluacion`)
+/docs/
