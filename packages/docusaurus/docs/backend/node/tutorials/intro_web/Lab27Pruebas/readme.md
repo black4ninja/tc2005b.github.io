@@ -209,16 +209,16 @@ npm test -- --coverage
 
 Tomen una **captura del reporte** que aparece en la terminal. La idea aquí **no es alcanzar un porcentaje específico**, sino **explorar qué tanto de la lógica de `personaje.js`, `combate.js` y `nivel.js` están ejercitando sus pruebas** — y reflexionar sobre las ramas que quedaron sin cubrir.
 
-El reporte se ve así en consola (los porcentajes dependen de sus pruebas):
+El reporte se ve así en consola (los porcentajes dependen de sus pruebas — y suelen ser **más bajos de lo que esperan**):
 
 ```
 ----------------|---------|----------|---------|---------|
 File            | % Stmts | % Branch | % Funcs | % Lines |
 ----------------|---------|----------|---------|---------|
-All files       |   72.3  |   55.0   |   85    |  72.3   |
- personaje.js   |   78.0  |   60.0   |   90    |  78.0   |
- combate.js     |   70.0  |   50.0   |   80    |  70.0   |
- nivel.js       |   68.0  |   55.0   |   80    |  68.0   |
+All files       |   58.0  |   45.0   |   60    |  58.0   |
+ personaje.js   |   65.0  |   50.0   |   70    |  65.0   |
+ combate.js     |   55.0  |   40.0   |   50    |  55.0   |
+ nivel.js       |   50.0  |   45.0   |   60    |  50.0   |
 ----------------|---------|----------|---------|---------|
 ```
 
@@ -232,6 +232,14 @@ Más que el número global, fíjense en:
 - **Ramas (`branches`) sin cubrir:** un `if/else` donde solo se prueba uno de los dos caminos. La cobertura de ramas suele ser **más baja** que la de statements — esto es normal.
 - **Comparación entre archivos:** ¿Cuál de los tres módulos quedó mejor cubierto? ¿Por qué?
 
+### Entregable concreto del análisis
+
+Escriban en el `README.md` del proyecto (o como comentario al subir la tarea) **mínimo 3 oraciones** respondiendo:
+
+1. ¿Qué módulo (`personaje.js`, `combate.js` o `nivel.js`) quedó mejor cubierto y por qué crees que fue así?
+2. ¿Qué línea o rama específica en rojo te llamó la atención? Cita el archivo y el número de línea.
+3. ¿Qué decidirías hacer con esa línea: agregar un test que la cubra, marcarla como código defensivo aceptable, o refactorizar? Justifica brevemente.
+
 > No se preocupen si su cobertura final no es del 80% o 90%. Lo importante es que entiendan **qué significa cada número** y **qué decisión tomarían** para subirlo si fuera necesario.
 
 ---
@@ -242,6 +250,7 @@ Más que el número global, fíjense en:
 2. **Cada test debe tener un nombre descriptivo.** No se acepta `'funciona'` o `'test1'`.
 3. **Cada test debe seguir el patrón AAA** visualmente separado (con comentarios o líneas en blanco).
 4. **Suban el zip del proyecto completo** (sin `node_modules`) a la plataforma.
+5. **Incluyan el análisis de cobertura** (las 3 oraciones en `README.md` o como comentario de entrega) junto con la captura del reporte.
 
 ---
 
