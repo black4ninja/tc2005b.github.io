@@ -810,9 +810,9 @@ Cada quien muestra su juego. Discusión guiada:
 
 Si quieres comparar tu solución con un proyecto base ya armado al final de Clase 2:
 
-<a href="/docs/node/tutorials/intro_web/Lab26Videojuegos/test-project.zip" download="lab26-highway-dodger.zip">Descargar Highway Dodger (proyecto completo)</a>
+<a href="/docs/node/tutorials/intro_web/Lab26Videojuegos/test-project.zip" download="highway_dodger.zip">Descargar Highway Dodger (proyecto completo)</a>
 
-> Nota: el zip **no incluye** `node_modules`. Después de descomprimir, ejecuta `npm install` y luego `node server.js` (o `npm start`).
+> Nota: el zip ya incluye `node_modules`, así que después de descomprimir solo necesitas ejecutar `node server.js` (o `npm start`) y abrir `http://localhost:3000`. Si prefieres reinstalar las dependencias desde cero, borra `node_modules` y corre `npm install`.
 
 ---
 
