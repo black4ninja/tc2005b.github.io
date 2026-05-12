@@ -9,7 +9,7 @@ Para este laboratorio vamos a simplificar un poco nuestra arquitectura y solo tr
 
 Empecemos configurando un proyecto desde 0, a estas alturas ya debes de saber como:
 
-```
+```bash
 npm init -y
 ```
 
@@ -24,12 +24,11 @@ Introduce los valores generales que necesites del proyecto para el archivo princ
 
 Ahora vamos a instalar las librerías básicas que necesitamos para este proyecto.
 
-```
+```bash
 npm i express
-npm i body-parser
 npm i multer
 ```
-Al momento hemos usado la librería de express y el body-parser que no son nuevas para nosotros, la nueva librería que usaremos es la de **multer**.
+Al momento hemos usado la librería de express que no es nueva para nosotros, la nueva librería que usaremos es la de **multer**.
 
 Multer es una librería que nos permite manejar archivos dentro de nuestros formularios para poder subirlos al servidor, pero quizás te estés preguntando. ¿Por qué necesitamos hacer todo esto si tengo el input file disponible en mi formulario?. Si bien esto es correcto, al momento de subir al servidor veremos que esto no funciona, y de echo cuando analizamos la razón tiene todo un sentido de lógica.
 
@@ -43,29 +42,33 @@ Esta es la única manera a nivel teórica en como podemos subir archivos, librer
 
 Vamos a cargar la base de nuestro **index.js** con lo siguiente:
 
-```
+```js
 const express = require('express');
 const multer = require('multer');
-var path = require('path');
+const path = require('path');
+const fs = require('fs');
 const app = express();
-const port = 5000;
-const log = console.log
+const port = 3000;
+const log = console.log;
 
-const bodyParser = require('body-parser');
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.listen(port, () => {
-//server starts listening for any attempts from a client to connect at port: {port}
+    // server starts listening for any attempts from a client to connect at port: {port}
     console.log(`Now listening on port ${port}`);
 });
 ```
 
-Un cambio que estamos haciendo es usar otro puerto para la ejecución del servidor en 5000.
+Un cambio que estamos haciendo es usar otro puerto para la ejecución del servidor en 3000.
+
+> **Nota (macOS):** En macOS Monterey y posteriores el puerto **5000** está ocupado por defecto por el **Receptor de AirPlay** (verás un `403 Forbidden` con `Server: AirTunes/...`). Por eso usamos **3000**. Si prefieres liberar el 5000, puedes desactivarlo en *Ajustes del Sistema → General → AirDrop y Handoff → Receptor de AirPlay*.
+
+> **Nota (Express ≥ 4.16):** Antes era común usar `body-parser` como dependencia aparte. Hoy ya no es necesario: `express.urlencoded()` viene integrado en Express. Si en otro tutorial ves `npm i body-parser` y `bodyParser.urlencoded(...)`, equivale a lo que hacemos arriba.
 
 Ya que estamos sirviendo la carpeta pública, vamos a crearla dentro del proyecto y dentro de ella vamos a crear un archivo **index.html**, con el siguiente contenido.
 
-```
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -92,11 +95,10 @@ Algunos puntos importantes a tomar en cuenta desde aquí son los siguientes:
 
 Definir la ruta del form en este caso a
 
-```
-action = "/upload_file"
-method = "POST"
+```html
+action="/upload_file"
+method="POST"
 enctype="multipart/form-data"
-
 ```
 
 En el action vamos a definir la ruta que vamos a utilizar para subir nuestro archivo, en este caso será el  **/upload_file**.
@@ -122,18 +124,18 @@ Ya que tenemos nuestro form armado y corriendo vamos además de una carpeta **pu
 Como mencioné, no nos enfocaremos en una arquitectura completa para este laboratorio, pero al menos haremos el uso de rutas y controladores por facilidad. Para ello debemos crear a la altura de **index.js** otro archivo al que llamaremos **index.controller.js**,
  este archivo deberá contener de momento lo siguiente:
 
-```
+```js
 const log = console.log
 
 module.exports.upload_file = async (req, res) => {
     log("Cargando el archivo")
-    res.status(200).json({code: 200, msg:"Ok"})
+    res.status(200).json({code: 200, msg:"Ok"})
 }
 ```
 
 Por último en nuestro archivo **index.js** antes de la declaración del servidor vamos a agregar la ruta para subir la imagen de la siguiente forma.
 
-```
+```js
 const controller = require("./index.controller.js")
 app.post('/upload_file', controller.upload_file);
 ```
@@ -150,7 +152,7 @@ Ahora bien, vamos a cargar el archivo que agregamos a nuestro proyecto, como ya 
 
 Para ello necesitamos configurar en donde se guardará el archivo y con que nombre. Esto lo haremos de forma muy lineal con la siguiente configuración, dentro de nuestro archivo **index.controller.js** arriba de la función **upload_file**.
 
-```
+```js
 const multer = require('multer'); // Using Promise API
 
 const storage = multer.diskStorage({
@@ -171,13 +173,13 @@ La siguiente definición carga la librería de **multer** y especifica que el de
 
 Ahora dentro de nuestra función de **/upload_file** vamos a sustituir el
 
-```
+```js
 res.status(200).json({code: 200, msg:"Ok"})
 ```
 
-Por lo siguiente:
+Por lo siguiente, de modo que el handler completo dentro de **`index.controller.js`** quede así:
 
-```
+```js
 module.exports.upload_file = async (req, res) => {
     upload(req, res, function (err) {
         if (err) {
@@ -193,15 +195,15 @@ module.exports.upload_file = async (req, res) => {
 
 La línea más importante de todo este código es la siguiente:
 
-```
-var upload = multer({ storage : storage }).array('file',1);
+```js
+const upload = multer({ storage: storage }).array('file', 1);
 ```
 
 Aquí no solo llamamos a nuestra configuración de **multer**, sino que vamos a recibir un arreglo de archivos que vienen de el **index.html** y el string **'file'** es el id que otorgamos en el formulario al **input** en su propiedad de **name** recuerda siempre esto ya que el primer error que se comete al estar aprendiendo en los formularios es definir estos ids.
 
 Para nuestro caso solo vamos a subir un archivo pero **multer** nos permite agregar múltiples archivos desde la propiedad del file a partir de nuestro form. Te dejo esta configuración en caso de que en otros proyectos quieras trabajar con múltiples archivos, funciona prácticamente igual.
 
-```
+```js
 var pathDest = req.files[0].destination.slice(1)
 ```
 
@@ -229,8 +231,8 @@ Las rutas que utilizamos son las rutas relativas y estas se construyen a través
 
 Si quiero acceder a un archivo dentro de esta carpeta basta con que agregue **\{\{dominio\}\}/\{\{ruta_desde_public\}\}**
 
-```
-http://localhost:5000/imagen_prueba.png
+```text
+http://localhost:3000/imagen_prueba.png
 ```
 
 En mi caso el resultado en el navegador es el siguiente:
@@ -251,7 +253,7 @@ Para el laboratorio simplemente lo haremos fuera de la carpeta **public** pero l
 
 Para comenzar vamos a expandir nuestro **index.html** con un nuevo formulario debajo del que ya tenemos.
 
-```
+```html
 <div class="container">
     <h1>Multipart File Private Upload</h1>
     <form action="/upload_file_private" method="POST" enctype="multipart/form-data" id="form">
@@ -266,16 +268,16 @@ Para comenzar vamos a expandir nuestro **index.html** con un nuevo formulario de
 
 Ahora vamos a añadir una nueva ruta de **POST** en el **index.js**
 
-```
+```js
 app.post('/upload_file_private', controller.upload_file_private);
 ```
 
 Y dentro de nuestro archivo **index.controller.js** definiremos la función:
 
-```
+```js
 module.exports.upload_file_private = async (req, res) => {
     log("Cargando el archivo")
-    res.status(200).json({code: 200, msg:"Ok"})
+    res.status(200).json({code: 200, msg:"Ok"})
 }
 ```
 
@@ -285,45 +287,54 @@ Nuevamente ejecutamos el servidor y debemos ver algo como lo siguiente con el nu
 
 ![lab_22](imgs/009.png)
 
-Ahora vamos a crear una nueva carpeta en el proyecto llamada **private** y teniendo lo siguiente.
+Ahora vamos a crear una nueva carpeta en el proyecto llamada **private** a la altura de **index.js**.
+
+> **Importante:** Multer **no crea** la carpeta destino automáticamente. Si no existe, la subida fallará con `HTTP 500` y en consola verás `ENOENT: no such file or directory './private/...'`. Asegúrate de crear la carpeta **antes** de probar.
 
 ![lab_22](imgs/010.png)
 
+Como alternativa más robusta (recomendada para evitar este error en cualquier máquina) puedes crear la carpeta desde el propio código al arrancar el servidor. Agrega esta línea en tu `index.js` justo después de `const fs = require('fs');`:
+
+```js
+fs.mkdirSync('./private', { recursive: true });
+```
+
 El siguiente paso será crear una nueva configuración de multer para subir nuestros nuevos archivos a esta carpeta.
 
-```
+```js
 const storage2 = multer.diskStorage({
-    destination: function (req, file, callback) {
-        callback(null, './private/');
-    },
-
-    filename: function (req, file, callback) {
-        return callback(null,file.originalname);
-    }
+    destination: function (req, file, callback) {
+        callback(null, './private/');
+    },
+    filename: function (req, file, callback) {
+        return callback(null, file.originalname);
+    }
 });
-const upload2 = multer({ storage : storage2 }).array('file',1);
+const upload2 = multer({ storage: storage2 }).array('file', 1);
 ```
 
 **Nota: Esta es una configuración adicional a la que ya tenemos, la anterior no la vayas a eliminar**
 
-Por último sustituimos el 
+Por último sustituimos el
 
-```
+```js
 res.status(200).json({code: 200, msg:"Ok"})
 ```
 
-Por el código de subida de la información:
+Por el código de subida de la información, dejando la función `upload_file_private` así:
 
-```
-upload2(req,res,function(err) {
-    if (err) {
-        console.error(err);
-        return res.status(500).json({ code: 500, msg: "Error uploading file" });
-    }
+```js
+module.exports.upload_file_private = async (req, res) => {
+    upload2(req, res, function (err) {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ code: 500, msg: "Error uploading file" });
+        }
 
-    console.log("Upload Successful:", req.files); // Log uploaded files
-    res.status(200).json({ code: 200, msg: "Ok" });
-})
+        console.log("Upload Successful:", req.files); // Log uploaded files
+        res.status(200).json({ code: 200, msg: "Ok" });
+    });
+}
 ```
 
 ![lab_1](imgs/011.png)
@@ -336,34 +347,47 @@ Para esto es que no podemos dar acceso público, pero podemos dar un acceso a tr
 
 Este es el proceso de control ya que al dar acceso mediante URL podemos agregar tanto procesamiento adicional al archivo en caso de ser necesario o en su defecto protegerlo con el sistema de autenticación que definamos para el **API**.
 
-```
+Esta ruta va dentro de **`index.js`**:
+
+```js
 app.get('/get_private_file/:file', controller.get_private_file);
 ```
+
 Hasta ahora, solo habíamos utilizado 2 formas para obtener información de nuestro request:
 
-```
-req.body //POST
-req.query //GET
+```js
+req.body  // POST
+req.query // GET
 ```
 
 Ahora añadiremos el **req.params** que nos permite agregar un parámetro sin importar el tipo de conexión a través de la url y separarlo por **/**, por tanto podemos recibir tantos parámetros como deseemos.
 
-Dentro de nuestro controller debemos agregar la librería path al inicio.
+Dentro de nuestro **`index.controller.js`** debemos agregar la librería `path` al inicio del archivo (junto a los demás `require`):
 
-```
-var path = require('path');
+```js
+const path = require('path');
 ```
 
-Y al final colocamos nuestra función para acceder al archivo privado.
+Y al final colocamos nuestra función para acceder al archivo privado:
 
-```
-module.exports.get_private_file = async(req, res) => {
-    var fileName = req.params.file
-    res.sendFile(path.join(__dirname, './private', fileName));
+```js
+module.exports.get_private_file = async (req, res) => {
+    // Saneamos el nombre para evitar path traversal (ver nota de seguridad abajo)
+    const fileName = path.basename(req.params.file);
+    const filePath = path.join(__dirname, './private', fileName);
+
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error("sendFile error:", err.message);
+            res.status(404).json({ code: 404, msg: "Archivo no encontrado" });
+        }
+    });
 }
 ```
 
-Con el uso del método de express **res.sendFile** podemos interpretar un archivo y cargarlo del lado del cliente.
+Con el uso del método de express **res.sendFile** podemos interpretar un archivo y cargarlo del lado del cliente. El callback opcional permite responder con un JSON limpio cuando el archivo no existe en lugar de dejar que Express devuelva un 404 plano.
+
+> **Seguridad — path traversal:** Si pasas el `req.params.file` directo a `path.join`, un alumno (o atacante) puede pedir `/get_private_file/..%2F..%2Fetc%2Fpasswd` y leer archivos fuera de la carpeta `private/`. Por eso usamos **`path.basename()`**, que descarta cualquier prefijo de ruta y solo deja el nombre del archivo. Es una práctica mínima pero crítica al exponer descargas por nombre.
 
 Este último paso es bastante sencillo en términos de solo realizar la canalización del archivo a la carpeta **private** pero tomando en cuenta que esto nos da control de acceso y de procesamiento en el proceso de consultar archivos que no están directamente abiertos al público nos permite hacer muchas cosas a largo plazo.
 
