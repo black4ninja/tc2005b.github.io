@@ -9,7 +9,7 @@ sidebar_position: 27
 
 En este laboratorio van a traducir los **casos de prueba diseñados en la sesión anterior** (Lab 1 de pruebas, sobre papel) a **pruebas automatizadas reales** usando **Jest**, sobre un proyecto base llamado `rpg-pruebas` — un pequeño RPG por turnos escrito en Node.js que ya tiene la lógica lista para ser probada.
 
-> **Objetivo del lab:** Traducir los casos de prueba que diseñaron en el Lab 1 a pruebas automatizadas con Jest. Aplicar el **patrón AAA**, los **matchers correctos** y **medir cobertura de código** sobre el proyecto `rpg-pruebas`.
+> **Objetivo del lab:** Traducir los casos de prueba que diseñaron en el Lab 1 a pruebas automatizadas con Jest. Aplicar el **patrón AAA**, los **matchers correctos** y **explorar cobertura de código** sobre el proyecto `rpg-pruebas`.
 
 ---
 
@@ -22,7 +22,7 @@ Al final de la sesión deben tener estos tres archivos creados y todas las prueb
 | `tests/personaje.test.js` | 8 pruebas que cubran los casos diseñados en el Lab 1 |
 | `tests/combate.test.js` | 4 pruebas para `calcularDanio()` |
 | `tests/nivel.test.js` | 4 pruebas para `calcularRecompensa()` |
-| Reporte de cobertura | **≥ 80%** en `statements` y `branches` |
+| Reporte de cobertura | Captura del reporte + breve análisis de qué quedó cubierto y qué no |
 
 ---
 
@@ -199,7 +199,7 @@ test('mismo nivel: multiplicador 1.0', () => {
 
 ---
 
-## Verificación — Medir cobertura y entregar
+## Verificación — Explorar cobertura y entregar
 
 Cuando tengan todas sus pruebas escritas, ejecuten:
 
@@ -207,26 +207,32 @@ Cuando tengan todas sus pruebas escritas, ejecuten:
 npm test -- --coverage
 ```
 
-Tomen una **captura del reporte** que aparece en la terminal. Verifiquen que cumplen el mínimo de **80%** en `statements` y `branches` para los archivos:
+Tomen una **captura del reporte** que aparece en la terminal. La idea aquí **no es alcanzar un porcentaje específico**, sino **explorar qué tanto de la lógica de `personaje.js`, `combate.js` y `nivel.js` están ejercitando sus pruebas** — y reflexionar sobre las ramas que quedaron sin cubrir.
 
-- `src/personaje.js`
-- `src/combate.js`
-- `src/nivel.js`
-
-El reporte se ve así en consola (los porcentajes varían según sus pruebas):
+El reporte se ve así en consola (los porcentajes dependen de sus pruebas):
 
 ```
 ----------------|---------|----------|---------|---------|
 File            | % Stmts | % Branch | % Funcs | % Lines |
 ----------------|---------|----------|---------|---------|
-All files       |   90.2  |   85.7   |  100    |  90.2   |
- personaje.js   |   95.0  |   90.0   |  100    |  95.0   |
- combate.js     |   85.7  |   80.0   |  100    |  85.7   |
- nivel.js       |   88.8  |   85.7   |  100    |  88.8   |
+All files       |   72.3  |   55.0   |   85    |  72.3   |
+ personaje.js   |   78.0  |   60.0   |   90    |  78.0   |
+ combate.js     |   70.0  |   50.0   |   80    |  70.0   |
+ nivel.js       |   68.0  |   55.0   |   80    |  68.0   |
 ----------------|---------|----------|---------|---------|
 ```
 
-> Jest también genera un reporte HTML detallado en la carpeta `coverage/lcov-report/index.html`. Ábranlo en el navegador para ver línea por línea qué se ejecutó y qué no.
+> Jest también genera un reporte HTML detallado en `coverage/lcov-report/index.html`. Ábranlo en el navegador para ver **línea por línea** qué se ejecutó (verde) y qué no (rojo) — es la parte más útil del reporte.
+
+### ¿Qué deben observar?
+
+Más que el número global, fíjense en:
+
+- **Líneas en rojo:** ¿qué casos del código nunca se ejecutaron? ¿Vale la pena agregar un test que las cubra, o es código defensivo difícil de alcanzar?
+- **Ramas (`branches`) sin cubrir:** un `if/else` donde solo se prueba uno de los dos caminos. La cobertura de ramas suele ser **más baja** que la de statements — esto es normal.
+- **Comparación entre archivos:** ¿Cuál de los tres módulos quedó mejor cubierto? ¿Por qué?
+
+> No se preocupen si su cobertura final no es del 80% o 90%. Lo importante es que entiendan **qué significa cada número** y **qué decisión tomarían** para subirlo si fuera necesario.
 
 ---
 
@@ -246,7 +252,7 @@ All files       |   90.2  |   85.7   |  100    |  90.2   |
 | Cantidad de pruebas (mínimo 16) | **20** | 8 personaje + 4 combate + 4 nivel |
 | Patrón AAA aplicado correctamente | **20** | Visualmente separado en cada test |
 | Matchers correctos (`toBe` vs `toEqual`, etc.) | **20** | Especialmente `toThrow` para errores |
-| Cobertura ≥ 80% | **20** | En `statements` y `branches` |
+| Exploración de cobertura | **20** | Captura del reporte + breve análisis de qué quedó cubierto y qué no |
 | Nombres descriptivos en los tests | **10** | Que el reporte sea legible |
 | Todas las pruebas pasan | **10** | Sin tests rotos ni `skip` |
 | **Total** | **100** | |
