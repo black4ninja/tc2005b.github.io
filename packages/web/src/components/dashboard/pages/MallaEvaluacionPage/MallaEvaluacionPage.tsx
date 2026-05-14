@@ -749,8 +749,37 @@ export default function MallaEvaluacionPage() {
     columnHelper.accessor('semanaCompletada', {
       header: 'Sem. Completada',
       cell: (info) => {
-        const val = info.getValue();
-        return val === 0 ? <span className={styles.zeroValue}>0</span> : val;
+        const row = info.row.original;
+        return (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <input
+              key={`${row.id}-completada-${info.getValue()}`}
+              type="number"
+              className={styles.inlineNumberInput}
+              defaultValue={info.getValue()}
+              min={0}
+              title={row.congelada ? 'Actividad congelada — el alumno no puede modificarla, pero el admin sí' : undefined}
+              onBlur={(e) => {
+                const val = Number(e.target.value);
+                if (!isNaN(val) && val !== info.getValue()) {
+                  handleSemanaCompletadaChange(row.id, val);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+              }}
+            />
+            {row.congelada && (
+              <span
+                className="material-icons"
+                title="Congelada para el alumno"
+                style={{ fontSize: 16, color: 'var(--color-asueto)' }}
+              >
+                lock
+              </span>
+            )}
+          </div>
+        );
       },
     }),
     columnHelper.accessor('observaciones', {
