@@ -67,6 +67,11 @@ export default function CompetenciasQuickModal({
   const [toast, setToast] = useState('');
   const [competencias, setCompetencias] = useState<CompetenciaAlumno[]>([]);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [editingRetro, setEditingRetro] = useState<{
+    compId: string;
+    field: 'retroPeriodo1' | 'retroPeriodo2';
+  } | null>(null);
+  const [retroDraft, setRetroDraft] = useState('');
 
   const fetchCompetencias = useCallback(async () => {
     if (!grupoId || !alumnoId) return;
@@ -96,6 +101,8 @@ export default function CompetenciasQuickModal({
       setError('');
       setToast('');
       setSavingId(null);
+      setEditingRetro(null);
+      setRetroDraft('');
     }
   }, [open, fetchCompetencias]);
 
@@ -134,9 +141,121 @@ export default function CompetenciasQuickModal({
     }
   }
 
+  function startEditRetro(
+    compId: string,
+    field: 'retroPeriodo1' | 'retroPeriodo2',
+    currentValue: string,
+  ) {
+    setEditingRetro({ compId, field });
+    setRetroDraft(currentValue ?? '');
+  }
+
+  function cancelEditRetro() {
+    setEditingRetro(null);
+    setRetroDraft('');
+  }
+
+  async function handleRetroSave(
+    compId: string,
+    field: 'retroPeriodo1' | 'retroPeriodo2',
+  ) {
+    setSavingId(compId);
+    try {
+      const res = await fetch(
+        `${API_BASE}/admin/grupos/${grupoId}/alumnos/${alumnoId}/competencias/${compId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'x-session-token': sessionToken,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ [field]: retroDraft }),
+        },
+      );
+      if (!res.ok) throw new Error('Error al guardar retroalimentación');
+      const savedValue = retroDraft;
+      // Actualización local (la retro no afecta competencias calculadas,
+      // así que no hace falta recargar la tabla).
+      setCompetencias((prev) =>
+        prev.map((item) =>
+          item.id === compId ? { ...item, [field]: savedValue } : item,
+        ),
+      );
+      setEditingRetro(null);
+      setRetroDraft('');
+      setToast('Retroalimentación guardada');
+      setTimeout(() => setToast(''), 2000);
+    } catch (err: any) {
+      setError(err?.message ?? 'Error al guardar');
+    } finally {
+      setSavingId(null);
+    }
+  }
+
   function goToFullMalla() {
     onClose();
     navigate(`/admin/grupos/${grupoId}/alumnos/${alumnoId}/malla`);
+  }
+
+  function renderRetroCell(
+    c: CompetenciaAlumno,
+    field: 'retroPeriodo1' | 'retroPeriodo2',
+  ) {
+    const value = field === 'retroPeriodo1' ? c.retroPeriodo1 : c.retroPeriodo2;
+    const isEditing =
+      editingRetro?.compId === c.id && editingRetro?.field === field;
+    const isSaving = savingId === c.id;
+
+    if (isEditing) {
+      return (
+        <td className={styles.retroCell}>
+          <div className={styles.retroEdit}>
+            <textarea
+              className={styles.retroTextarea}
+              value={retroDraft}
+              autoFocus
+              disabled={isSaving}
+              rows={4}
+              placeholder="Escribe la retroalimentación..."
+              onChange={(e) => setRetroDraft(e.target.value)}
+            />
+            <button
+              type="button"
+              className={styles.retroSaveBtn}
+              disabled={isSaving}
+              onClick={() => handleRetroSave(c.id, field)}
+            >
+              {isSaving ? 'Guardando...' : 'Guardar'}
+            </button>
+            <button
+              type="button"
+              className={styles.retroCancelBtn}
+              disabled={isSaving}
+              onClick={cancelEditRetro}
+            >
+              Cancelar
+            </button>
+          </div>
+        </td>
+      );
+    }
+
+    return (
+      <td className={styles.retroCell}>
+        <button
+          type="button"
+          className={styles.retroDisplay}
+          title="Clic para editar retroalimentación"
+          onClick={() => startEditRetro(c.id, field, value)}
+        >
+          {value ? (
+            <TruncatedText text={value} lines={2} />
+          ) : (
+            <span className={styles.retroEmpty}>+ Agregar retro</span>
+          )}
+        </button>
+      </td>
+    );
   }
 
   return (
@@ -217,13 +336,7 @@ export default function CompetenciasQuickModal({
                           </select>
                         )}
                       </td>
-                      <td className={styles.retroCell}>
-                        <TruncatedText
-                          text={c.retroPeriodo1}
-                          lines={2}
-                          placeholder={<span className={styles.zero}>—</span>}
-                        />
-                      </td>
+                      {renderRetroCell(c, 'retroPeriodo1')}
                       <td>
                         {c.esCalculada ? (
                           <span className={styles.evalChip} title="Calculada: MIN de dependencias">
@@ -242,13 +355,7 @@ export default function CompetenciasQuickModal({
                           </select>
                         )}
                       </td>
-                      <td className={styles.retroCell}>
-                        <TruncatedText
-                          text={c.retroPeriodo2}
-                          lines={2}
-                          placeholder={<span className={styles.zero}>—</span>}
-                        />
-                      </td>
+                      {renderRetroCell(c, 'retroPeriodo2')}
                       <td>
                         {evidencias.length === 0 ? (
                           <span className={styles.zero}>—</span>
@@ -279,7 +386,7 @@ export default function CompetenciasQuickModal({
         )}
 
         <p className={styles.helpText}>
-          La retroalimentación es solo lectura aquí. Para editarla, usa <strong>Abrir malla completa</strong>.
+          Haz clic en una celda de <strong>Retro P1</strong> o <strong>Retro P2</strong> para editar la retroalimentación.
         </p>
       </div>
     </Modal>

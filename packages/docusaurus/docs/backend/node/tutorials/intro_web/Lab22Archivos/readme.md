@@ -3,6 +3,59 @@ sidebar_position: 22
 ---
 # Archivos
 
+## Antes de empezar: migrando de npm a pnpm
+
+:::warning Contexto de seguridad
+Durante septiembre de 2025 ocurrió uno de los ataques de **cadena de suministro (supply chain)** más grandes en la historia de npm: se comprometieron las cuentas de varios mantenedores populares y se publicaron versiones maliciosas de paquetes con millones de descargas semanales. El código inyectado robaba credenciales y variables de entorno durante la instalación. Esto nos recuerda que **instalar dependencias no es una operación inocente**: cada `npm install` ejecuta código de terceros en tu máquina.
+:::
+
+Como medida de mitigación y buena práctica, en este laboratorio (y de aquí en adelante) vamos a usar **pnpm** en lugar de **npm**.
+
+### ¿Qué es pnpm?
+
+`pnpm` (*performant npm*) es un gestor de paquetes para Node.js, alternativo a `npm`. Usa exactamente el mismo `package.json` y el mismo registro de paquetes (npmjs.com), así que **no cambia tus dependencias ni tu código**: solo cambia *cómo* se instalan y se guardan.
+
+### ¿En qué se diferencia de npm?
+
+| Aspecto | npm | pnpm |
+|---|---|---|
+| Almacenamiento | Copia cada dependencia dentro de `node_modules` de cada proyecto | Guarda **una sola copia** de cada versión en un almacén global y la enlaza (hard links) a cada proyecto |
+| Espacio en disco | Se duplica en cada proyecto | Se comparte; ahorra mucho espacio |
+| Velocidad | Más lento al reinstalar | Mucho más rápido (reusa el almacén global) |
+| `node_modules` | Plano: cualquier paquete puede importar dependencias que no declaró | Estricto: solo puedes importar lo que declaraste en `package.json` |
+| Seguridad | Scripts de instalación se ejecutan por defecto | A partir de pnpm 10 los *lifecycle scripts* de dependencias **no se ejecutan automáticamente**; debes aprobarlos explícitamente |
+
+### ¿Por qué se recomienda la migración?
+
+1. **Superficie de ataque menor:** pnpm no ejecuta automáticamente los scripts `postinstall`/`preinstall` de las dependencias. Buena parte del malware de los ataques recientes se activaba precisamente en esos scripts.
+2. **`node_modules` estricto:** evita el "dependency hell" donde tu código funciona por accidente al usar un paquete que nunca instalaste explícitamente.
+3. **Rapidez y ahorro de disco:** al compartir un almacén global, instalar es más rápido y ocupa mucho menos espacio, especialmente con muchos proyectos.
+4. **Compatibilidad total:** usa el mismo `package.json`; migrar es prácticamente transparente.
+
+### Cómo instalar y usar pnpm
+
+```bash
+# Instalación (una sola vez, de forma global)
+npm install -g pnpm
+
+# Verifica la versión
+pnpm --version
+```
+
+La equivalencia de comandos es directa:
+
+| npm | pnpm |
+|---|---|
+| `npm init -y` | `pnpm init` |
+| `npm install` | `pnpm install` |
+| `npm i express` | `pnpm add express` |
+| `npm i -D nodemon` | `pnpm add -D nodemon` |
+| `npm run dev` | `pnpm dev` |
+
+:::tip
+A partir de aquí, todos los comandos de esta práctica usarán `pnpm`. Si en otro tutorial ves los comandos con `npm`, usa la tabla anterior para encontrar su equivalente.
+:::
+
 ## Uso de multer
 
 Para este laboratorio vamos a simplificar un poco nuestra arquitectura y solo trabajaremos con rutas y controladores, pues vamos a crear un archivo público y no haremos conexión con ninguna fuente de información.
@@ -10,10 +63,10 @@ Para este laboratorio vamos a simplificar un poco nuestra arquitectura y solo tr
 Empecemos configurando un proyecto desde 0, a estas alturas ya debes de saber como:
 
 ```bash
-npm init -y
+pnpm init
 ```
 
-Previo a otras sesiones haremos uso del **-y** para evitar agregar los parámetros y que sea más rápida la ejecución del init.
+A diferencia de `npm init -y`, el comando `pnpm init` genera el `package.json` directamente con los valores por defecto, sin pedirte los parámetros uno por uno, así que la ejecución del init es más rápida.
 
 Introduce los valores generales que necesites del proyecto para el archivo principal usaremos **index.js**.
 
@@ -25,8 +78,8 @@ Introduce los valores generales que necesites del proyecto para el archivo princ
 Ahora vamos a instalar las librerías básicas que necesitamos para este proyecto.
 
 ```bash
-npm i express
-npm i multer
+pnpm add express
+pnpm add multer
 ```
 Al momento hemos usado la librería de express que no es nueva para nosotros, la nueva librería que usaremos es la de **multer**.
 

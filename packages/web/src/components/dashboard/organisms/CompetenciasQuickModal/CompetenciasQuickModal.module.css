@@ -106,6 +106,103 @@
   opacity: 0.55;
 }
 
+.retroDisplay {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px dashed transparent;
+  border-radius: 6px;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  font: inherit;
+  color: var(--text-primary);
+  cursor: text;
+}
+
+.retroDisplay:hover {
+  border-color: var(--border-color);
+  background: var(--bg-page);
+}
+
+.retroEmpty {
+  color: var(--accent, #2563eb);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.retroEdit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.retroTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid var(--accent, #2563eb);
+  border-radius: 6px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.retroTextarea:focus {
+  outline: none;
+  border-color: var(--accent, #2563eb);
+}
+
+.retroTextarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.retroSaveBtn {
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent, #2563eb);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.retroSaveBtn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.retroSaveBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.retroCancelBtn {
+  width: 100%;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.retroCancelBtn:hover:not(:disabled) {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+.retroCancelBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .evalSelect {
   padding: 4px 8px;
   border: 1px solid var(--border-color);
