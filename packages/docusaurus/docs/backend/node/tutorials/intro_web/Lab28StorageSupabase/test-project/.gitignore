@@ -1,0 +1,4 @@
+node_modules
+.env
+pnpm-debug.log
+.DS_Store
