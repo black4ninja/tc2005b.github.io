@@ -8,6 +8,7 @@ import DashButton from '../../atoms/DashButton/DashButton';
 import TruncatedText from '../../atoms/TruncatedText/TruncatedText';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import type { ActividadTipo } from '@/types/calendario';
+import { exportMallaAlumnoXlsx } from '../../../../utils/mallaExport';
 import styles from './MallaEvaluacionPage.module.css';
 
 /* ------------------------------------------------------------------ */
@@ -178,6 +179,9 @@ export default function MallaEvaluacionPage() {
 
   // Evidencias input state
   const [evidenciaInputs, setEvidenciaInputs] = useState<Record<string, string>>({});
+
+  // Export XLSX state
+  const [exporting, setExporting] = useState(false);
 
   const authHeaders: Record<string, string> = {
     'x-session-token': sessionToken ?? '',
@@ -621,6 +625,45 @@ export default function MallaEvaluacionPage() {
       setError(err.message);
     } finally {
       setSavingObs(false);
+    }
+  }
+
+  /* ---------- Export XLSX (admin only) ---------- */
+
+  async function handleExportXlsx() {
+    if (!grupoId || !alumnoId || !alumnoInfo) return;
+    setExporting(true);
+    setError('');
+    try {
+      // La matrícula y el nombre del grupo no están en el estado de esta
+      // página; se consultan solo al momento de exportar.
+      let matricula = '';
+      let grupoNombre = '';
+      const [alumnosRes, gruposRes] = await Promise.all([
+        fetch(`${API_BASE}/admin/grupos/${grupoId}/alumnos`, { headers: authHeaders }),
+        fetch(`${API_BASE}/admin/grupos`, { headers: authHeaders }),
+      ]);
+      if (alumnosRes.ok) {
+        const data = await alumnosRes.json();
+        matricula = data.alumnos?.find((a: any) => a.id === alumnoId)?.matricula ?? '';
+      }
+      if (gruposRes.ok) {
+        const data = await gruposRes.json();
+        grupoNombre = data.grupos?.find((g: any) => g.id === grupoId)?.name ?? '';
+      }
+      await exportMallaAlumnoXlsx({
+        alumno: { name: alumnoInfo.name, email: alumnoInfo.email, matricula },
+        grupoNombre,
+        actividades: actividadesAlumno,
+        competencias: competenciasAlumno,
+        periodos,
+      });
+      setToast('Malla exportada a XLSX');
+      setTimeout(() => setToast(''), 3000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -1249,7 +1292,15 @@ export default function MallaEvaluacionPage() {
 
   return (
     <div className={styles.page}>
-      <h1 className={styles.pageTitle}>Malla de Evaluación</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <h1 className={styles.pageTitle}>Malla de Evaluación</h1>
+        {!isAlumno && alumnoId && (
+          <DashButton variant="outline" onClick={handleExportXlsx} disabled={exporting || loadingCompetencias}>
+            <span className="material-icons" style={{ fontSize: 18 }}>file_download</span>
+            {exporting ? 'Exportando...' : 'Exportar XLSX'}
+          </DashButton>
+        )}
+      </div>
       {hasAlumnoData && alumnoInfo && (
         <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
           Alumno: <strong>{alumnoInfo.name}</strong> ({alumnoInfo.email})

@@ -10,6 +10,15 @@ import CompetenciasQuickModal from '../../organisms/CompetenciasQuickModal/Compe
 import ProfileInfoCell from '../../atoms/ProfileInfoCell/ProfileInfoCell';
 import DashButton from '../../atoms/DashButton/DashButton';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
+import {
+  buildMallaWorkbook,
+  downloadBlob,
+  exportMallaAlumnoXlsx,
+  fetchMallaExportData,
+  fetchPlanPeriodos,
+  mallaFileName,
+  sanitizeFileName,
+} from '../../../../utils/mallaExport';
 import styles from './GrupoDetailPage.module.css';
 
 interface AlumnoData {
@@ -102,6 +111,11 @@ export default function GrupoDetailPage() {
 
   // Modal de competencias rápidas
   const [compModalAlumno, setCompModalAlumno] = useState<AlumnoData | null>(null);
+
+  // Export de mallas a XLSX
+  const [exportingMallas, setExportingMallas] = useState(false);
+  const [exportProgress, setExportProgress] = useState('');
+  const [exportingAlumnoId, setExportingAlumnoId] = useState<string | null>(null);
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -425,6 +439,98 @@ export default function GrupoDetailPage() {
     }
   }
 
+  async function handleExportMallaAlumno(alumno: AlumnoData) {
+    if (!id) return;
+    setExportingAlumnoId(alumno.id);
+    setError('');
+    try {
+      const [periodos, data] = await Promise.all([
+        fetchPlanPeriodos(id, sessionToken ?? ''),
+        fetchMallaExportData(id, alumno.id, sessionToken ?? ''),
+      ]);
+      await exportMallaAlumnoXlsx({
+        alumno: { name: alumno.name, email: alumno.email, matricula: alumno.matricula },
+        grupoNombre: grupo?.name ?? '',
+        actividades: data.actividades,
+        competencias: data.competencias,
+        periodos,
+      });
+      setToast(`Malla de ${alumno.name} exportada`);
+      setTimeout(() => setToast(''), 3000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setExportingAlumnoId(null);
+    }
+  }
+
+  async function handleExportMallasGrupo() {
+    if (!id) return;
+    // Respeta el filtro de equipo activo; sólo alumnos activos.
+    const targets = filteredAlumnos.filter((a) => a.active);
+    if (targets.length === 0) {
+      setToast('No hay alumnos activos para exportar');
+      setTimeout(() => setToast(''), 3000);
+      return;
+    }
+    if (!confirm(`¿Exportar la malla de evaluación de ${targets.length} alumno(s) en un ZIP?`)) return;
+
+    setExportingMallas(true);
+    setExportProgress(`0/${targets.length}`);
+    setError('');
+    try {
+      const periodos = await fetchPlanPeriodos(id, sessionToken ?? '');
+      const { default: JSZip } = await import('jszip');
+      const zip = new JSZip();
+      const errores: string[] = [];
+      let done = 0;
+
+      const BATCH = 4;
+      for (let i = 0; i < targets.length; i += BATCH) {
+        const batch = targets.slice(i, i + BATCH);
+        await Promise.all(
+          batch.map(async (alumno) => {
+            try {
+              const data = await fetchMallaExportData(id, alumno.id, sessionToken ?? '');
+              const buffer = await buildMallaWorkbook({
+                alumno: { name: alumno.name, email: alumno.email, matricula: alumno.matricula },
+                grupoNombre: grupo?.name ?? '',
+                actividades: data.actividades,
+                competencias: data.competencias,
+                periodos,
+              });
+              zip.file(mallaFileName({ name: alumno.name, email: alumno.email, matricula: alumno.matricula }), buffer);
+            } catch {
+              errores.push(alumno.name);
+            } finally {
+              done++;
+              setExportProgress(`${done}/${targets.length}`);
+            }
+          }),
+        );
+      }
+
+      const exportados = targets.length - errores.length;
+      if (exportados === 0) throw new Error('No se pudo exportar ninguna malla');
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const fecha = new Date().toISOString().slice(0, 10);
+      downloadBlob(blob, `Mallas_${sanitizeFileName(grupo?.name ?? 'grupo')}_${fecha}.zip`);
+
+      setToast(
+        errores.length > 0
+          ? `${exportados} mallas exportadas. Fallaron: ${errores.join(', ')}`
+          : `${exportados} mallas exportadas`,
+      );
+      setTimeout(() => setToast(''), 6000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setExportingMallas(false);
+      setExportProgress('');
+    }
+  }
+
   function gradeBadge(val: number | null | undefined) {
     if (val == null) return '—';
     const cls = val < 50 ? styles.gradeRed : val < 70 ? styles.gradeOrange : styles.gradeGreen;
@@ -596,6 +702,11 @@ export default function GrupoDetailPage() {
   const getActions = (alumno: AlumnoData): ActionItem[] => [
     { label: 'Editar', icon: 'edit', onClick: () => openEditAlumno(alumno) },
     { label: 'Malla de Evaluación', icon: 'grid_view', onClick: () => navigate(`/admin/grupos/${id}/alumnos/${alumno.id}/malla`) },
+    {
+      label: exportingAlumnoId === alumno.id ? 'Exportando...' : 'Exportar malla (XLSX)',
+      icon: 'file_download',
+      onClick: () => handleExportMallaAlumno(alumno),
+    },
     { label: 'Competencias rápidas', icon: 'school', onClick: () => setCompModalAlumno(alumno) },
     {
       label: alumno.active ? 'Desactivar' : 'Activar',
@@ -652,6 +763,14 @@ export default function GrupoDetailPage() {
         <DashButton variant="outline" onClick={openPropagarModal}>
           <span className="material-icons" style={{ fontSize: 18 }}>content_copy</span>
           Propagar Competencias
+        </DashButton>
+        <DashButton
+          variant="outline"
+          onClick={handleExportMallasGrupo}
+          disabled={exportingMallas || loading}
+        >
+          <span className="material-icons" style={{ fontSize: 18 }}>file_download</span>
+          {exportingMallas ? `Exportando ${exportProgress}...` : 'Exportar Mallas (XLSX)'}
         </DashButton>
       </div>
 
