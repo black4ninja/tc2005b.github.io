@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import styles from './LoginPage.module.css';
 import Icon from '../../atoms/Icon/Icon';
 import LoginForm from '../../organisms/LoginForm/LoginForm';
+import { APP_NAME, APP_TAGLINE } from '../../../../config/app';
 
 export default function LoginPage() {
   return (
@@ -11,8 +12,8 @@ export default function LoginPage() {
           <div className={styles.logoWrap}>
             <Icon name="school" size="lg" />
           </div>
-          <h1 className={styles.title}>TC2005B</h1>
-          <p className={styles.subtitle}>Construcción de Software y Toma de Decisiones</p>
+          <h1 className={styles.title}>{APP_NAME}</h1>
+          <p className={styles.subtitle}>{APP_TAGLINE}</p>
         </div>
 
         <LoginForm />

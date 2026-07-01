@@ -1,13 +1,14 @@
 import { Link } from 'react-router';
 import styles from './HomePage.module.css';
+import { APP_NAME, APP_TAGLINE } from '../../config/app';
 
 export default function HomePage() {
   return (
     <div className={styles.home}>
       <section className={styles.hero}>
-        <h1 className={styles.heroTitle}>TC2005B</h1>
+        <h1 className={styles.heroTitle}>{APP_NAME}</h1>
         <p className={styles.heroSubtitle}>
-          Construcción de Software y Toma de Decisiones
+          {APP_TAGLINE}
         </p>
         <p className={styles.heroMeta}>
           Tecnológico de Monterrey &mdash; Campus Querétaro

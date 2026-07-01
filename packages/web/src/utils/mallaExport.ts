@@ -7,6 +7,7 @@
  * import dinámico para no engordar el bundle principal.
  */
 import type * as ExcelJS from 'exceljs';
+import { APP_NAME } from '../config/app';
 
 const API_BASE = '/api';
 
@@ -581,7 +582,7 @@ export async function buildMallaWorkbook(input: MallaExportInput): Promise<Array
   const mod: any = await import('exceljs');
   const ExcelJSLib = mod.default ?? mod;
   const wb: ExcelJS.Workbook = new ExcelJSLib.Workbook();
-  wb.creator = 'TC2005B';
+  wb.creator = APP_NAME;
   wb.created = new Date();
 
   buildActividadesSheet(wb, input);
