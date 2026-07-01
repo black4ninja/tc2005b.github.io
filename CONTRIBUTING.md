@@ -11,7 +11,9 @@ Usamos un GitFlow **simplificado**, sin rama `develop`:
 
 - **`main` es la única rama base y protegida.** Nunca se hace commit ni push directo a `main`.
 - Todo cambio se desarrolla en una **rama corta** creada a partir de `main`.
-- Todo cambio entra a `main` **exclusivamente vía Pull Request revisado y aprobado**.
+- Todo cambio entra a `main` **exclusivamente vía Pull Request**, con code review
+  antes de mergear. GitHub **no exige approval de terceros** (equipo pequeño /
+  maintainer único), pero el PR y la resolución de hilos del review sí son obligatorios.
 - La rama se **elimina** después de mergear.
 
 ```bash
@@ -107,8 +109,9 @@ El code review se realiza **una vez finalizada la rama, antes de mergear** (no d
 
 3. **Resolver dentro del mismo PR.** Atiende el máximo posible de comentarios en el
    propio PR; una vez atendido cada hilo, se **resuelve/cierra** (no se dejan hilos abiertos).
-4. Se mergea solo cuando: el PR está aprobado, no quedan hilos `(blocking)` sin
-   resolver, y CI/tests pasan.
+4. Se mergea solo cuando: se hizo el code review, **no quedan hilos sin resolver**
+   (GitHub lo bloquea vía *required conversation resolution*), y CI/tests pasan.
+   No se exige approval formal de terceros mientras haya un único maintainer.
 
 ### Con `gh` (comentarios inline y resolución de hilos)
 
