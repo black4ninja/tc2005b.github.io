@@ -5,6 +5,7 @@ export type { PolicyConditions } from './Policy.js';
 export { MagicToken } from './MagicToken.js';
 export { AppSession } from './AppSession.js';
 export { Grupo } from './Grupo.js';
+export { Materia } from './Materia.js';
 export { Semana } from './Semana.js';
 export { Actividad } from './Actividad.js';
 export { IndicacionMalla } from './IndicacionMalla.js';

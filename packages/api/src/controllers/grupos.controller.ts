@@ -7,6 +7,7 @@ export async function listGrupos(_req: Request, res: Response): Promise<void> {
   try {
     const query = new Parse.Query<Grupo>('Grupo');
     query.equalTo('exists' as any, true as any);
+    query.include('materia' as any);
     query.descending('createdAt');
     const grupos = await query.find({ useMasterKey: true });
 
@@ -20,7 +21,7 @@ export async function listGrupos(_req: Request, res: Response): Promise<void> {
 }
 
 export async function createGrupo(req: Request, res: Response): Promise<void> {
-  const { name, fechaInicio, fechaFin } = req.body;
+  const { name, fechaInicio, fechaFin, materiaId } = req.body;
 
   if (!name || typeof name !== 'string' || name.trim() === '') {
     res.status(400).json({ status: 'error', message: 'El nombre es requerido' });
@@ -32,6 +33,9 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
     grupo.setName(name.trim());
     if (fechaInicio) grupo.setFechaInicio(new Date(fechaInicio));
     if (fechaFin) grupo.setFechaFin(new Date(fechaFin));
+    if (materiaId) {
+      grupo.setMateria(Parse.Object.extend('Materia').createWithoutData(materiaId));
+    }
 
     await grupo.save(null, { useMasterKey: true });
 
@@ -43,10 +47,11 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
 
 export async function updateGrupo(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { name, fechaInicio, fechaFin } = req.body;
+  const { name, fechaInicio, fechaFin, materiaId } = req.body;
 
   try {
     const query = BaseModel.queryActive<Grupo>('Grupo');
+    query.include('materia' as any);
     const grupo = await query.get(id, { useMasterKey: true });
 
     if (name !== undefined) {
@@ -61,6 +66,13 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
     }
     if (fechaFin !== undefined) {
       grupo.setFechaFin(fechaFin ? new Date(fechaFin) : undefined!);
+    }
+    if (materiaId !== undefined) {
+      if (materiaId === null || materiaId === '') {
+        grupo.unset('materia');
+      } else {
+        grupo.setMateria(Parse.Object.extend('Materia').createWithoutData(materiaId));
+      }
     }
 
     await grupo.save(null, { useMasterKey: true });

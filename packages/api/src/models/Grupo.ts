@@ -55,7 +55,16 @@ export class Grupo extends BaseModel {
     this.set('enlaces', enlaces);
   }
 
+  /** Materia (asignatura) a la que pertenece el grupo. */
+  getMateria(): Parse.Object | undefined {
+    return this.get('materia');
+  }
+  setMateria(materia: Parse.Object): void {
+    this.set('materia', materia);
+  }
+
   toSafeJSON(): Record<string, unknown> {
+    const materia = this.getMateria();
     return {
       id: this.id,
       name: this.getName(),
@@ -65,6 +74,11 @@ export class Grupo extends BaseModel {
       nombreCurso: this.getNombreCurso(),
       salon: this.getSalon(),
       enlaces: this.getEnlaces(),
+      // Requiere query.include('materia') para traer nombre/slug; si no,
+      // solo el id queda disponible.
+      materia: materia
+        ? { id: materia.id, nombre: materia.get('nombre') ?? null, slug: materia.get('slug') ?? null }
+        : null,
       active: this.get('active'),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
