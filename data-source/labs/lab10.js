@@ -38,7 +38,7 @@ const LAB = {
   entrega: 'A traves de tu repositorio personal.',
   practica: {
     titulo: "Pr\u00e1ctica: Rutas y Formas",
-    enlace: "/docs/docs/backend/node/tutorials/intro_web/Lab10RutasYFormas/",
+    enlace: "/docs/backend/node/tutorials/intro_web/Lab10RutasYFormas/",
     descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en el Docusaurus del curso"
   }
 };

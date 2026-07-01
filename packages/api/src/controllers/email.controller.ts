@@ -44,7 +44,7 @@ export async function sendTestMagicLink(req: Request, res: Response): Promise<vo
     const result = await emailService.sendMagicLinkEmail({
       email,
       name: name || 'Usuario',
-      magicLinkUrl: 'https://tc2005b.github.io/auth/verify?token=test-token-12345',
+      magicLinkUrl: 'https://groups.meeplab.com/auth/verify?token=test-token-12345',
       expirationTime: '15 minutos',
     });
 

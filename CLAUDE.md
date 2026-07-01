@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Course website for **TC2005B - Construcción de Software y Toma de Decisiones** at Tecnológico de Monterrey, Campus Querétaro. Hosted via GitHub Pages.
+Course website for **TC2005B - Construcción de Software y Toma de Decisiones** at Tecnológico de Monterrey, Campus Querétaro. Deployed on a server (`groups.meeplab.com`) that pulls from this repository and serves the built `dist/` directory (previously hosted on GitHub Pages).
 
 ## Architecture
 
@@ -58,3 +58,14 @@ Legacy static HTML content (ejercicios, laboratorios, lecturas, documentos) live
 - **Fonts:** Inter (Google Fonts) + Material Icons.
 - **Data pattern:** Each lab/avance is a separate TS file with typed `export default`. Barrel exports use dynamic imports for code splitting.
 - **Links:** Internal links use React Router paths (`/labs/lab1`, `/avances/av1`). External links use full URLs.
+
+## Development workflow
+
+Full rules in [`CONTRIBUTING.md`](./CONTRIBUTING.md). Key points (mandatory):
+
+- **Never commit or push directly to `main`.** All changes land via reviewed PR. Branch off `main`; no `develop` branch.
+- **Branch names:** [Conventional Branch](https://conventionalbranch.org/) — `feature/…`, `bugfix/…`, `hotfix/…`, `chore/…`, `docs/…`, `test/…` (lowercase kebab-case).
+- **Commits:** [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) — `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, etc.; `!`/`BREAKING CHANGE:` for major.
+- **Versioning:** [SemVer](https://semver.org/), tracked in [`CHANGELOG.md`](./CHANGELOG.md) (Keep a Changelog).
+- **Code review:** done when the branch is finished, before merge. No general comments — leave **inline** comments on the specific code, following [Conventional Comments](https://conventionalcomments.org/). Resolve every thread within the same PR before merging.
+- **PRs:** title follows Conventional Commits; body follows [the PR template](./.github/PULL_REQUEST_TEMPLATE.md). Per user preference, PRs and commits carry **no AI/Claude references or co-author lines**.

@@ -108,7 +108,7 @@ const lab11: Lab = {
   entrega: 'A traves de tu repositorio personal.',
   practica: {
     titulo: "Pr\u00e1ctica: Express",
-    enlace: "/docs/docs/backend/node/tutorials/intro_web/Lab11Express/",
+    enlace: "/docs/backend/node/tutorials/intro_web/Lab11Express/",
     descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en el Docusaurus del curso"
   }
 };

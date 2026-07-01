@@ -14,16 +14,10 @@ const config = {
   tagline: 'Construcción de software y toma de decisiones',
   favicon: 'img/favicon.ico',
 
-  // Set the production url of your site here
-  url: 'https://tc2005b.github.io',
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
+  // URL de producción del sitio (usada para sitemap y canonical/og tags)
+  url: 'https://groups.meeplab.com',
+  // El Docusaurus se sirve bajo /docs/ del sitio (merge-builds → dist/docs/)
   baseUrl: '/docs/',
-
-  // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'tc2005b', // Usually your GitHub org/user name.
-  projectName: 'tc2005b.github.io', // Usually your repo name.
 
   onBrokenLinks: 'throw',
 
@@ -47,6 +41,8 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          // Servir los docs en la raíz del baseUrl (/docs/) en lugar de /docs/docs/
+          routeBasePath: '/',
           sidebarPath: './sidebars.js',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
@@ -55,6 +51,23 @@ const config = {
         },
         theme: {
           customCss: './src/css/custom.css',
+        },
+      }),
+    ],
+  ],
+
+  plugins: [
+    [
+      '@docusaurus/plugin-client-redirects',
+      /** @type {import('@docusaurus/plugin-client-redirects').Options} */
+      ({
+        // Redirige las URLs viejas /docs/docs/... a las nuevas /docs/...
+        // `existingPath` es la ruta nueva sin baseUrl (p. ej.
+        // "/backend/node/tutorials/intro_web/Lab1HTML"); el baseUrl "/docs/"
+        // se antepone automáticamente al valor devuelto, así que devolver
+        // "/docs<existingPath>" reproduce la URL vieja "/docs/docs/...".
+        createRedirects(existingPath) {
+          return [`/docs${existingPath}`];
         },
       }),
     ],

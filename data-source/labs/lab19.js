@@ -42,7 +42,7 @@ const LAB = {
   entrega: 'A trav\u00e9s de Bitbucket o GitHub (Repositorio de Equipo).',
   practica: {
     titulo: "Pr\u00e1ctica: RBAC",
-    enlace: "/docs/docs/backend/node/tutorials/intro_web/Lab19RBAC/",
+    enlace: "/docs/backend/node/tutorials/intro_web/Lab19RBAC/",
     descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en el Docusaurus del curso"
   }
 };

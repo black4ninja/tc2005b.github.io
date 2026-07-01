@@ -96,7 +96,7 @@ const LAB = {
   entrega: 'A trav\u00e9s de tu repositorio personal.',
   practica: {
     titulo: "Pr\u00e1ctica: EJS",
-    enlace: "/docs/docs/backend/node/tutorials/intro_web/Lab12EJS/",
+    enlace: "/docs/backend/node/tutorials/intro_web/Lab12EJS/",
     descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en el Docusaurus del curso"
   }
 };

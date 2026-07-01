@@ -4,7 +4,7 @@
  *   1. Copies Vite build output (dist/web/) to dist/
  *   2. Copies Docusaurus build to dist/docs/
  *   3. Copies legacy static content to dist/
- *   4. Creates 404.html for SPA routing on GitHub Pages
+ *   4. Creates a 404.html SPA fallback (deep-link restore)
  */
 
 import { cpSync, mkdirSync, writeFileSync, existsSync } from 'fs';
@@ -53,24 +53,20 @@ if (existsSync(legacyJs)) {
   console.log('✓ legacy js/ → dist/js/');
 }
 
-// 4. SPA fallback 404.html for GitHub Pages
+// 4. SPA fallback 404.html (deep-link restore)
+//    Lo ideal en el servidor es `try_files $uri /index.html;` (nginx) para que
+//    las rutas del SPA sirvan index.html directamente. Este 404.html es un
+//    respaldo agnóstico del host: si el servidor sirve 404.html para rutas no
+//    encontradas, guarda la URL solicitada y regresa a la raíz para que el
+//    decoder de index.html la restaure vía history.replaceState.
 const spa404 = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>TC2005B</title>
   <script>
-    // SPA redirect for GitHub Pages
-    // https://github.com/rafgraph/spa-github-pages
-    var pathSegmentsToKeep = 0;
-    var l = window.location;
-    l.replace(
-      l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-      l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-      l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-      (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-      l.hash
-    );
+    sessionStorage.redirect = location.href;
+    location.replace(location.protocol + '//' + location.host + '/');
   </script>
 </head>
 <body></body>
@@ -78,9 +74,5 @@ const spa404 = `<!DOCTYPE html>
 `;
 writeFileSync(join(DIST, '404.html'), spa404);
 console.log('✓ 404.html (SPA fallback)');
-
-// 5. .nojekyll for GitHub Pages
-writeFileSync(join(DIST, '.nojekyll'), '');
-console.log('✓ .nojekyll');
 
 console.log('\n✅ Build merge complete!\n');
