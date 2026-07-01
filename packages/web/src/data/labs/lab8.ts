@@ -41,7 +41,7 @@ const lab8: Lab = {
   entrega: 'A traves de tu repositorio personal',
   practica: {
     titulo: "Pr\u00e1ctica: Intro al Backend",
-    enlace: "/docs/backend/node/tutorials/intro_web/Lab8IntroBackend/",
+    enlace: "/docs/tc2005b/backend/node/tutorials/intro_web/Lab8IntroBackend/",
     descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en el Docusaurus del curso"
   }
 };

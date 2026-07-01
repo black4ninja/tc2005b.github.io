@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { config } from './config/index.js';
 import healthRoutes from './routes/health.routes.js';
 import testRoutes from './routes/test.routes.js';
@@ -9,6 +10,9 @@ import emailRoutes from './routes/email.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import gruposRoutes from './routes/grupos.routes.js';
+import materiasRoutes from './routes/materias.routes.js';
+import meRoutes from './routes/me.routes.js';
+import { docsGate } from './middlewares/docs-gate.middleware.js';
 import alumnosRoutes from './routes/alumnos.routes.js';
 import calendarioRoutes from './routes/calendario.routes.js';
 import indicacionesMallaRoutes from './routes/indicaciones-malla.routes.js';
@@ -34,8 +38,12 @@ import { errorHandler } from './middlewares/error.middleware.js';
 
 const app = express();
 
-app.use(cors());
+// CORS credenciado: restringido al origen del frontend (no reflejar cualquiera,
+// que con credentials permitiría lecturas cross-site). En prod el sitio es
+// mismo-origen; en dev el SPA llama vía proxy de Vite (también mismo-origen).
+app.use(cors({ origin: config.auth.frontendUrl, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 app.use('/api', healthRoutes);
 app.use('/api', testRoutes);
@@ -43,6 +51,8 @@ app.use('/api', emailRoutes);
 app.use('/api', authRoutes);
 app.use('/api', adminRoutes);
 app.use('/api', gruposRoutes);
+app.use('/api', materiasRoutes);
+app.use('/api', meRoutes);
 app.use('/api', alumnosRoutes);
 app.use('/api', calendarioRoutes);
 app.use('/api', indicacionesMallaRoutes);
@@ -74,7 +84,8 @@ export function finalize() {
     const __dirname = path.dirname(__filename);
     const distPath = path.resolve(__dirname, '../../../dist');
 
-    // Docusaurus en /docs
+    // Docusaurus en /docs — gate de acceso por materia ANTES del estático.
+    app.use('/docs', docsGate);
     app.use('/docs', express.static(path.join(distPath, 'docs')));
 
     // Contenido legacy

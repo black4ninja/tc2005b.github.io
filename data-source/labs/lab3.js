@@ -56,7 +56,7 @@ const LAB = {
   entrega: 'A trav\u00e9s de tu repositorio personal (Bitbucket o GitHub)',
   practica: {
     titulo: "Pr\u00e1ctica: CSS",
-    enlace: "/docs/backend/node/tutorials/intro_web/Lab3CSS/",
+    enlace: "/docs/tc2005b/backend/node/tutorials/intro_web/Lab3CSS/",
     descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en el Docusaurus del curso"
   }
 };

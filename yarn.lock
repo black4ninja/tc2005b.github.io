@@ -298,23 +298,6 @@
   resolved "https://registry.yarnpkg.com/@apollo/utils.withrequired/-/utils.withrequired-2.0.1.tgz#e72bc512582a6f26af150439f7eb7473b46ba874"
   integrity sha512-YBDiuAX9i1lLc6GeTy1m7DGLFn/gMnvXqlalOIMjM7DeOgIacEjjfwPqb0M1CQ2v11HhR15d1NmxJoRCfrNqcA==
 
-"@azure/msal-browser@^5.5.0":
-  version "5.5.0"
-  resolved "https://registry.yarnpkg.com/@azure/msal-browser/-/msal-browser-5.5.0.tgz#04d64be27b534da39fe06475642ff8a58a92e092"
-  integrity sha512-ImdTOyk8ISv1HMJez2dR0E3D9mBn0lpRieUGXjMGKgI2Ufs7NoIdeSKzm1JUTF0NyJaVbnANplcNLzJiO1G73w==
-  dependencies:
-    "@azure/msal-common" "16.3.0"
-
-"@azure/msal-common@16.3.0":
-  version "16.3.0"
-  resolved "https://registry.yarnpkg.com/@azure/msal-common/-/msal-common-16.3.0.tgz#9535ca0b01e93ef73a42aded77e8ac2726ce8c82"
-  integrity sha512-qNc/noEts5Kf6oLtbuLEg1PkmM+GXEQlxC5VCrmCFbDo3Xyg5hDR3UFR2jZ8MK76epGuBWKSWoa2rCIYZVp5AQ==
-
-"@azure/msal-react@^5.0.7":
-  version "5.0.7"
-  resolved "https://registry.yarnpkg.com/@azure/msal-react/-/msal-react-5.0.7.tgz#5973d596413fcbb12271eda6021a8e8a09de23f7"
-  integrity sha512-PFHKN5BXhGkYQu9tN6t0svhs9LudAppdmJgR60pyCtYHaTDLE0BdG/07Paa5drPmEoD5Fjh+qSfgyMZgYYsCmQ==
-
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.28.6", "@babel/code-frame@^7.29.0":
   version "7.29.0"
   resolved "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.29.0.tgz#7cd7a59f15b3cc0dcd803038f7792712a7d0b15c"
@@ -3950,6 +3933,11 @@
   dependencies:
     "@types/node" "*"
 
+"@types/cookie-parser@^1.4.10":
+  version "1.4.10"
+  resolved "https://registry.yarnpkg.com/@types/cookie-parser/-/cookie-parser-1.4.10.tgz#a045272a383a30597a01955d4f9c790018f214e4"
+  integrity sha512-B4xqkqfZ8Wek+rCOeRxsjMS9OgvzebEzzLYw7NHYuvzb7IdxOkI0ZHGgeEBX4PUM7QGVvNSK60T3OvWj3YfBRg==
+
 "@types/cors@^2.8.17":
   version "2.8.19"
   resolved "https://registry.yarnpkg.com/@types/cors/-/cors-2.8.19.tgz#d93ea2673fd8c9f697367f5eeefc2bbfa94f0342"
@@ -5844,6 +5832,14 @@ convert-source-map@^2.0.0:
   resolved "https://registry.yarnpkg.com/convert-source-map/-/convert-source-map-2.0.0.tgz#4b560f649fc4e918dd0ab75cf4961e8bc882d82a"
   integrity sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==
 
+cookie-parser@^1.4.7:
+  version "1.4.7"
+  resolved "https://registry.yarnpkg.com/cookie-parser/-/cookie-parser-1.4.7.tgz#e2125635dfd766888ffe90d60c286404fa0e7b26"
+  integrity sha512-nGUvgXnotP3BsjiLX2ypbQnWoGUPIIfHQNZkkC668ntrzGWEZVW70HDEB1qnNGMicPje6EttlIgzo51YSwNQGw==
+  dependencies:
+    cookie "0.7.2"
+    cookie-signature "1.0.6"
+
 cookie-signature@1.0.6:
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/cookie-signature/-/cookie-signature-1.0.6.tgz#e303a882b342cc3ee8ca513a79999734dab3ae2c"
@@ -5864,7 +5860,7 @@ cookie@0.7.1:
   resolved "https://registry.yarnpkg.com/cookie/-/cookie-0.7.1.tgz#2f73c42142d5d5cf71310a74fc4ae61670e5dbc9"
   integrity sha512-6DnInpx7SJ2AK3+CTUE/ZM0vWTUboZCegxhC2xiIydHR9jNuTAASBrfEpHhiGOZw/nX51bHt6YQl8jsGo4y/0w==
 
-cookie@^0.7.1, cookie@~0.7.1:
+cookie@0.7.2, cookie@^0.7.1, cookie@~0.7.1:
   version "0.7.2"
   resolved "https://registry.yarnpkg.com/cookie/-/cookie-0.7.2.tgz#556369c472a2ba910f2979891b526b3436237ed7"
   integrity sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w==

@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await fetch(`${API_BASE}/auth/logout`, {
           method: 'POST',
           headers: { 'x-session-token': token },
+          credentials: 'include',
         });
       } catch {
         // Ignore errors on logout
@@ -73,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch(`${API_BASE}/auth/me`, {
         headers: { 'x-session-token': token },
+        credentials: 'include',
       });
 
       if (!res.ok) {

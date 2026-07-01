@@ -21,13 +21,15 @@ export const config = {
     from: process.env.EMAIL_FROM || 'no_reply@meeplab.com',
     fromName: process.env.EMAIL_FROM_NAME || 'TC2005B',
   },
-  azure: {
-    clientId: process.env.AZURE_CLIENT_ID || '',
-    tenantId: process.env.AZURE_TENANT_ID || '',
-  },
   auth: {
     magicLinkExpiryMinutes: parseInt(process.env.MAGIC_LINK_EXPIRY_MINUTES || '15', 10),
     sessionExpiryDays: parseInt(process.env.SESSION_EXPIRY_DAYS || '7', 10),
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+  },
+  cookies: {
+    // Cookie de sesión para navegaciones top-level (p. ej. gate de /docs/*).
+    name: process.env.SESSION_COOKIE_NAME || 'session_token',
+    secure: (process.env.NODE_ENV || 'development') === 'production',
+    sameSite: 'lax' as const,
   },
 };

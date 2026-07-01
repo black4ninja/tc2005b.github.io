@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { authService } from '../services/auth.service.js';
 import { getGruposDeAlumno } from '../services/grupo-alumno.service.js';
+import { setSessionCookie, clearSessionCookie, getSessionToken } from '../utils/session-cookie.js';
 
 export async function requestMagicLink(req: Request, res: Response): Promise<void> {
   const { email } = req.body;
@@ -38,6 +39,7 @@ export async function verifyMagicLink(req: Request, res: Response): Promise<void
       extras = { grupos: grupos.map((g) => ({ id: g.id, name: g.get('name') ?? '' })) };
     }
 
+    setSessionCookie(res, session.getToken());
     res.json({
       status: 'ok',
       sessionToken: session.getToken(),
@@ -49,15 +51,14 @@ export async function verifyMagicLink(req: Request, res: Response): Promise<void
 }
 
 export async function logout(req: Request, res: Response): Promise<void> {
-  const sessionToken = req.headers['x-session-token'] as string;
-
-  if (!sessionToken) {
-    res.status(400).json({ status: 'error', message: 'Session token requerido' });
-    return;
-  }
+  const sessionToken = getSessionToken(req);
 
   try {
-    await authService.logout(sessionToken);
+    if (sessionToken) {
+      await authService.logout(sessionToken);
+    }
+    // Siempre limpiar la cookie, aunque no venga token (logout idempotente).
+    clearSessionCookie(res);
     res.json({ status: 'ok', message: 'Sesión cerrada' });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'Error al cerrar sesión' });
