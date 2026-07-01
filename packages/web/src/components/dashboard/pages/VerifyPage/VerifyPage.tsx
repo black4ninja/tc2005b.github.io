@@ -29,6 +29,7 @@ export default function VerifyPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token }),
+          credentials: 'include',
         });
 
         if (cancelled) return;

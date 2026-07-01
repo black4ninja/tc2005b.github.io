@@ -30,4 +30,10 @@ export const config = {
     sessionExpiryDays: parseInt(process.env.SESSION_EXPIRY_DAYS || '7', 10),
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
   },
+  cookies: {
+    // Cookie de sesión para navegaciones top-level (p. ej. gate de /docs/*).
+    name: process.env.SESSION_COOKIE_NAME || 'session_token',
+    secure: (process.env.NODE_ENV || 'development') === 'production',
+    sameSite: 'lax' as const,
+  },
 };

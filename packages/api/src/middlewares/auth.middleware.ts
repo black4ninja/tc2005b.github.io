@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { AppUser } from '../models/index.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { authService } from '../services/auth.service.js';
+import { getSessionToken } from '../utils/session-cookie.js';
 import { config } from '../config/index.js';
 
 // Type augmentation
@@ -14,7 +15,7 @@ declare global {
 }
 
 export async function identifyUser(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const sessionToken = req.headers['x-session-token'] as string | undefined;
+  const sessionToken = getSessionToken(req);
   const appUserId = req.headers['x-app-user-id'] as string | undefined;
 
   try {

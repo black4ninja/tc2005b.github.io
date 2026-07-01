@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { microsoftService } from '../services/microsoft.service.js';
 import { authService } from '../services/auth.service.js';
 import { getGruposDeAlumno } from '../services/grupo-alumno.service.js';
+import { setSessionCookie } from '../utils/session-cookie.js';
 
 export async function loginWithMicrosoft(req: Request, res: Response) {
   try {
@@ -28,6 +29,7 @@ export async function loginWithMicrosoft(req: Request, res: Response) {
       extras = { grupos: grupos.map((g) => ({ id: g.id, name: g.get('name') ?? '' })) };
     }
 
+    setSessionCookie(res, session.getToken());
     res.json({
       status: 'success',
       sessionToken: session.getToken(),

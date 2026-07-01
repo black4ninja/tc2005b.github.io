@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { authService } from '../services/auth.service.js';
 import { getGruposDeAlumno } from '../services/grupo-alumno.service.js';
+import { setSessionCookie } from '../utils/session-cookie.js';
 
 export async function loginWithPassword(req: Request, res: Response): Promise<void> {
   try {
@@ -22,6 +23,7 @@ export async function loginWithPassword(req: Request, res: Response): Promise<vo
       extras = { grupos: grupos.map((g) => ({ id: g.id, name: g.get('name') ?? '' })) };
     }
 
+    setSessionCookie(res, session.getToken());
     res.json({
       status: 'ok',
       sessionToken: session.getToken(),

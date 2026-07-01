@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { config } from './config/index.js';
 import healthRoutes from './routes/health.routes.js';
 import testRoutes from './routes/test.routes.js';
@@ -35,8 +36,12 @@ import { errorHandler } from './middlewares/error.middleware.js';
 
 const app = express();
 
-app.use(cors());
+// origin:true refleja el Origin de la petición (permite cualquiera pero de forma
+// compatible con credentials, a diferencia de '*'). En prod el sitio es
+// mismo-origen, así que esto solo aplica a llamadas cross-origin de dev.
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 app.use('/api', healthRoutes);
 app.use('/api', testRoutes);
