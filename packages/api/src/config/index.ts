@@ -21,10 +21,6 @@ export const config = {
     from: process.env.EMAIL_FROM || 'no_reply@meeplab.com',
     fromName: process.env.EMAIL_FROM_NAME || 'TC2005B',
   },
-  azure: {
-    clientId: process.env.AZURE_CLIENT_ID || '',
-    tenantId: process.env.AZURE_TENANT_ID || '',
-  },
   auth: {
     magicLinkExpiryMinutes: parseInt(process.env.MAGIC_LINK_EXPIRY_MINUTES || '15', 10),
     sessionExpiryDays: parseInt(process.env.SESSION_EXPIRY_DAYS || '7', 10),

@@ -49,7 +49,6 @@ export default function App() {
       {/* Auth */}
       <Route path="login" element={<LoginPage />} />
       <Route path="auth/verify" element={<VerifyPage />} />
-      <Route path="auth/microsoft/callback" element={<Navigate to="/login" replace />} />
 
       {/* Admin dashboard */}
       <Route element={<DashboardLayout role="admin" />}>

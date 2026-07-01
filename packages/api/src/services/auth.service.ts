@@ -143,40 +143,6 @@ class AuthService {
     return { session, user };
   }
 
-  async loginWithMicrosoft(
-    email: string,
-    meta: { userAgent: string; ipAddress: string },
-  ): Promise<{ session: AppSession; user: AppUser }> {
-    const query = BaseModel.queryActive<AppUser>('AppUser');
-    query.equalTo('email', normalizeEmail(email));
-    const user = await query.first({ useMasterKey: true });
-
-    if (!user || !user.isActive()) {
-      throw new Error('No existe una cuenta registrada con este correo');
-    }
-    if (!(await alumnoHasAccess(user))) {
-      throw new Error('Has sido dado de baja de todos tus grupos. Contacta a tu profesor.');
-    }
-
-    user.setLastLogin(new Date());
-    await user.save(null, { useMasterKey: true });
-
-    const session = new AppSession().initDefaults();
-    session.generateToken();
-    session.setUser(user);
-
-    const expiryDays = config.auth.sessionExpiryDays;
-    const expiresAt = new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000);
-    session.setExpiresAt(expiresAt);
-    session.setLastActivity(new Date());
-    session.setUserAgent(meta.userAgent);
-    session.setIpAddress(meta.ipAddress);
-
-    await session.save(null, { useMasterKey: true });
-
-    return { session, user };
-  }
-
   async loginWithPassword(
     email: string,
     password: string,
