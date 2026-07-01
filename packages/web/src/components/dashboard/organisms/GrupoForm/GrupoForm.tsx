@@ -2,18 +2,14 @@ import { useState } from 'react';
 import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
 import styles from './GrupoForm.module.css';
-
-interface MateriaOption {
-  id: string;
-  nombre: string;
-}
+import type { MateriaOption, MateriaRef } from '../../../../types/materia';
 
 interface GrupoData {
   id?: string;
   name: string;
   fechaInicio?: string;
   fechaFin?: string;
-  materia?: { id: string; nombre: string; slug: string } | null;
+  materia?: MateriaRef | null;
 }
 
 interface GrupoSavePayload {

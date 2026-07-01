@@ -33,29 +33,35 @@ async function findOrCreateMateria(
   nombre: string,
   cache: Map<string, Materia>,
 ): Promise<Materia> {
-  const key = codigo.toUpperCase();
-  const cached = cache.get(key);
+  const codigoCanonico = codigo.trim().toUpperCase();
+  const slug = toSlug(codigo);
+  const cached = cache.get(codigoCanonico);
   if (cached) return cached;
 
-  const q = new Parse.Query<Materia>('Materia');
-  q.equalTo('codigo' as any, codigo as any);
-  q.equalTo('exists' as any, true as any);
-  let materia = await q.first({ useMasterKey: true });
+  // Reusar si ya existe por código canónico O por slug (misma instancia Docusaurus),
+  // para no crear duplicados que rompan la unicidad de slug/código.
+  const byCodigo = new Parse.Query<Materia>('Materia');
+  byCodigo.equalTo('codigo' as any, codigoCanonico as any);
+  byCodigo.equalTo('exists' as any, true as any);
+  const bySlug = new Parse.Query<Materia>('Materia');
+  bySlug.equalTo('slug' as any, slug as any);
+  bySlug.equalTo('exists' as any, true as any);
+  let materia = await Parse.Query.or(byCodigo, bySlug).first({ useMasterKey: true });
 
   if (!materia) {
     materia = new Materia().initDefaults();
-    materia.setCodigo(codigo);
-    materia.setNombre(nombre || codigo);
-    materia.setSlug(toSlug(codigo));
+    materia.setCodigo(codigoCanonico);
+    materia.setNombre(nombre || codigoCanonico);
+    materia.setSlug(slug);
     if (!dryRun) {
       await materia.save(null, { useMasterKey: true });
-      console.log(`  + Materia creada: ${codigo} (slug: ${materia.getSlug()}) → id: ${materia.id}`);
+      console.log(`  + Materia creada: ${codigoCanonico} (slug: ${slug}) → id: ${materia.id}`);
     } else {
-      console.log(`  + Materia CREARÍA: ${codigo} (slug: ${toSlug(codigo)})`);
+      console.log(`  + Materia CREARÍA: ${codigoCanonico} (slug: ${slug})`);
     }
   }
 
-  cache.set(key, materia);
+  cache.set(codigoCanonico, materia);
   return materia;
 }
 

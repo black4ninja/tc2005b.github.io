@@ -36,10 +36,10 @@ import { errorHandler } from './middlewares/error.middleware.js';
 
 const app = express();
 
-// origin:true refleja el Origin de la petición (permite cualquiera pero de forma
-// compatible con credentials, a diferencia de '*'). En prod el sitio es
-// mismo-origen, así que esto solo aplica a llamadas cross-origin de dev.
-app.use(cors({ origin: true, credentials: true }));
+// CORS credenciado: restringido al origen del frontend (no reflejar cualquiera,
+// que con credentials permitiría lecturas cross-site). En prod el sitio es
+// mismo-origen; en dev el SPA llama vía proxy de Vite (también mismo-origen).
+app.use(cors({ origin: config.auth.frontendUrl, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 

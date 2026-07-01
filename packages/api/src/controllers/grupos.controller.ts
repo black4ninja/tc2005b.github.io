@@ -34,7 +34,14 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
     if (fechaInicio) grupo.setFechaInicio(new Date(fechaInicio));
     if (fechaFin) grupo.setFechaFin(new Date(fechaFin));
     if (materiaId) {
-      grupo.setMateria(Parse.Object.extend('Materia').createWithoutData(materiaId));
+      const materia = await BaseModel.queryActive('Materia')
+        .get(materiaId, { useMasterKey: true })
+        .catch(() => null);
+      if (!materia) {
+        res.status(400).json({ status: 'error', message: 'Materia no encontrada' });
+        return;
+      }
+      grupo.setMateria(materia);
     }
 
     await grupo.save(null, { useMasterKey: true });

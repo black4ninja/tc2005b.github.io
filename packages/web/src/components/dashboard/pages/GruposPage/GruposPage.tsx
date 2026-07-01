@@ -6,12 +6,8 @@ import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
 import GrupoForm from '../../organisms/GrupoForm/GrupoForm';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
+import type { MateriaOption, MateriaRef } from '../../../../types/materia';
 import styles from './GruposPage.module.css';
-
-interface MateriaOption {
-  id: string;
-  nombre: string;
-}
 
 interface GrupoData {
   id: string;
@@ -19,7 +15,7 @@ interface GrupoData {
   fechaInicio?: string;
   fechaFin?: string;
   active: boolean;
-  materia?: { id: string; nombre: string; slug: string } | null;
+  materia?: MateriaRef | null;
 }
 
 const API_BASE = '/api';

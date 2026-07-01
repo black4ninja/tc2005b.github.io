@@ -41,10 +41,21 @@ export async function createMateria(req: Request, res: Response): Promise<void> 
       return;
     }
 
+    const codigoCanonico = codigo ? String(codigo).trim().toUpperCase() : '';
+    if (codigoCanonico) {
+      const dupCodigo = new Parse.Query<Materia>('Materia');
+      dupCodigo.equalTo('codigo' as any, codigoCanonico as any);
+      dupCodigo.equalTo('exists' as any, true as any);
+      if (await dupCodigo.first({ useMasterKey: true })) {
+        res.status(409).json({ status: 'error', message: 'Ya existe una materia con ese código' });
+        return;
+      }
+    }
+
     const materia = new Materia().initDefaults();
     materia.setNombre(nombre.trim());
     materia.setSlug(slug);
-    if (codigo) materia.setCodigo(codigo.trim());
+    if (codigoCanonico) materia.setCodigo(codigoCanonico);
 
     await materia.save(null, { useMasterKey: true });
 
@@ -89,7 +100,20 @@ export async function updateMateria(req: Request, res: Response): Promise<void> 
       materia.setSlug(slug);
     }
 
-    if (codigo !== undefined) materia.setCodigo((codigo ?? '').trim());
+    if (codigo !== undefined) {
+      const codigoCanonico = (codigo ?? '').trim().toUpperCase();
+      if (codigoCanonico && codigoCanonico !== materia.getCodigo()) {
+        const dupCodigo = new Parse.Query<Materia>('Materia');
+        dupCodigo.equalTo('codigo' as any, codigoCanonico as any);
+        dupCodigo.equalTo('exists' as any, true as any);
+        dupCodigo.notEqualTo('objectId' as any, id as any);
+        if (await dupCodigo.first({ useMasterKey: true })) {
+          res.status(409).json({ status: 'error', message: 'Ya existe una materia con ese código' });
+          return;
+        }
+      }
+      materia.setCodigo(codigoCanonico);
+    }
 
     await materia.save(null, { useMasterKey: true });
 
