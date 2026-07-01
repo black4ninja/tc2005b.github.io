@@ -24,12 +24,26 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const { sessionToken, user, updateUser } = useAuth();
   const [grupoName, setGrupoName] = useState('');
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
+  const [docsHref, setDocsHref] = useState('/docs/');
 
   useEffect(() => {
     if (role === 'alumno' && user?.grupos?.length) {
       setSelectedGrupoId(user.grupos[0].id);
     }
   }, [role, user?.grupos]);
+
+  // Link a la documentación del usuario: si tiene una sola materia, enlaza
+  // directo a /docs/<slug>/; si tiene varias (o ninguna), a la landing /docs/.
+  useEffect(() => {
+    if (!sessionToken) return;
+    fetch('/api/me/materias', { headers: { 'x-session-token': sessionToken } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        const materias: { slug: string }[] = json?.materias ?? [];
+        setDocsHref(materias.length === 1 ? `/docs/${materias[0].slug}/` : '/docs/');
+      })
+      .catch(() => {});
+  }, [sessionToken]);
 
   useEffect(() => {
     if (role !== 'alumno' || !selectedGrupoId || !sessionToken) return;
@@ -61,7 +75,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
 
   const items = isGrupoDetail
     ? getGrupoDetailItems(grupoId!)
-    : getSidebarItems(role, role === 'alumno' ? selectedGrupoId : undefined, user?.perfilCompleto);
+    : getSidebarItems(role, role === 'alumno' ? selectedGrupoId : undefined, user?.perfilCompleto, docsHref);
 
   return (
     <>

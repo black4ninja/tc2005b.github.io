@@ -3,18 +3,25 @@ import type { SidebarItem, DashboardRole } from '../../../../types/dashboard';
 const AGENDA_ENTREVISTAS_URL =
   'https://docs.google.com/spreadsheets/d/1U1fbfaBWMp4Nje13qi2C3mhjhW0B8NxC-JXD0ff6fNQ/edit?gid=32307462#gid=32307462';
 
-const adminItems: SidebarItem[] = [
-  { label: 'Dashboard', icon: 'dashboard', path: '/admin' },
-  { label: 'Grupos', icon: 'groups', path: '/admin/grupos' },
-  { label: 'Competencias', icon: 'emoji_events', path: '/admin/competencias' },
-  { label: 'Actividades', icon: 'assignment', path: '/admin/actividades' },
-  { label: 'Páginas', icon: 'article', path: '/admin/paginas' },
-  { label: 'Documentación', icon: 'menu_book', path: '/docs/', external: true },
-  { label: 'Agendar Entrevistas', icon: 'event_available', path: AGENDA_ENTREVISTAS_URL, external: true },
-];
-
-export function getSidebarItems(role: DashboardRole, selectedGrupoId?: string, perfilCompleto?: boolean): SidebarItem[] {
-  if (role === 'admin') return adminItems;
+// `docsHref` es el link a la documentación (Docusaurus) del usuario: por defecto
+// la landing `/docs/`, o `/docs/<slug>/` de su materia cuando se conoce.
+export function getSidebarItems(
+  role: DashboardRole,
+  selectedGrupoId?: string,
+  perfilCompleto?: boolean,
+  docsHref: string = '/docs/',
+): SidebarItem[] {
+  if (role === 'admin') {
+    return [
+      { label: 'Dashboard', icon: 'dashboard', path: '/admin' },
+      { label: 'Grupos', icon: 'groups', path: '/admin/grupos' },
+      { label: 'Competencias', icon: 'emoji_events', path: '/admin/competencias' },
+      { label: 'Actividades', icon: 'assignment', path: '/admin/actividades' },
+      { label: 'Páginas', icon: 'article', path: '/admin/paginas' },
+      { label: 'Documentación', icon: 'menu_book', path: docsHref, external: true },
+      { label: 'Agendar Entrevistas', icon: 'event_available', path: AGENDA_ENTREVISTAS_URL, external: true },
+    ];
+  }
   const items: SidebarItem[] = [];
   if (selectedGrupoId) {
     items.push({
@@ -41,7 +48,7 @@ export function getSidebarItems(role: DashboardRole, selectedGrupoId?: string, p
     });
   }
   items.push(
-    { label: 'Documentación', icon: 'menu_book', path: '/docs/', external: true, disabled: !perfilCompleto },
+    { label: 'Documentación', icon: 'menu_book', path: docsHref, external: true, disabled: !perfilCompleto },
     { label: 'Agendar Entrevistas', icon: 'event_available', path: AGENDA_ENTREVISTAS_URL, external: true, disabled: !perfilCompleto },
   );
   return items;

@@ -11,6 +11,8 @@ import authRoutes from './routes/auth.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import gruposRoutes from './routes/grupos.routes.js';
 import materiasRoutes from './routes/materias.routes.js';
+import meRoutes from './routes/me.routes.js';
+import { docsGate } from './middlewares/docs-gate.middleware.js';
 import alumnosRoutes from './routes/alumnos.routes.js';
 import calendarioRoutes from './routes/calendario.routes.js';
 import indicacionesMallaRoutes from './routes/indicaciones-malla.routes.js';
@@ -50,6 +52,7 @@ app.use('/api', authRoutes);
 app.use('/api', adminRoutes);
 app.use('/api', gruposRoutes);
 app.use('/api', materiasRoutes);
+app.use('/api', meRoutes);
 app.use('/api', alumnosRoutes);
 app.use('/api', calendarioRoutes);
 app.use('/api', indicacionesMallaRoutes);
@@ -81,7 +84,8 @@ export function finalize() {
     const __dirname = path.dirname(__filename);
     const distPath = path.resolve(__dirname, '../../../dist');
 
-    // Docusaurus en /docs
+    // Docusaurus en /docs — gate de acceso por materia ANTES del estático.
+    app.use('/docs', docsGate);
     app.use('/docs', express.static(path.join(distPath, 'docs')));
 
     // Contenido legacy
