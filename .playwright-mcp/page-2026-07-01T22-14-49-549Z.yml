@@ -1,0 +1,407 @@
+- generic [ref=f11e2]:
+  - region "Saltar al contenido principal":
+    - link "Saltar al contenido principal" [ref=f11e3] [cursor=pointer]:
+      - /url: "#__docusaurus_skipToContent_fallback"
+  - navigation "Principal" [ref=f11e4]:
+    - generic [ref=f11e5]:
+      - generic [ref=f11e6]:
+        - link "TC2005B" [ref=f11e7] [cursor=pointer]:
+          - /url: /docs/
+          - generic [ref=f11e8]: TC2005B
+        - link "Guía del curso" [ref=f11e9] [cursor=pointer]:
+          - /url: /docs/tc2005b/intro
+      - button "Cambiar entre modo oscuro y claro (actualmente system mode)" [disabled] [ref=f11e12]:
+        - img [ref=f11e13]
+  - generic [ref=f11e17]:
+    - complementary [ref=f11e18]:
+      - navigation "Barra lateral de Documentos" [ref=f11e21]:
+        - list [ref=f11e22]:
+          - listitem [ref=f11e23]:
+            - link "TC2005B" [ref=f11e24] [cursor=pointer]:
+              - /url: /docs/tc2005b/intro
+              - generic "TC2005B" [ref=f11e25]
+          - listitem [ref=f11e26]:
+            - generic [ref=f11e27]:
+              - link "Desarrollo Web" [ref=f11e28] [cursor=pointer]:
+                - /url: /docs/tc2005b/backend/
+                - generic "Desarrollo Web" [ref=f11e29]
+              - button "Colapsar categoría 'Desarrollo Web' de la barra lateral" [expanded] [ref=f11e30] [cursor=pointer]
+            - list [ref=f11e31]:
+              - listitem [ref=f11e32]:
+                - generic [ref=f11e33]:
+                  - link "NodeJS" [ref=f11e34] [cursor=pointer]:
+                    - /url: /docs/tc2005b/backend/node/
+                    - generic "NodeJS" [ref=f11e35]
+                  - button "Colapsar categoría 'NodeJS' de la barra lateral" [expanded] [ref=f11e36] [cursor=pointer]
+                - list [ref=f11e37]:
+                  - listitem [ref=f11e38]:
+                    - generic [ref=f11e39]:
+                      - link "Tutoriales" [ref=f11e40] [cursor=pointer]:
+                        - /url: /docs/tc2005b/backend/node/tutorials/
+                        - generic "Tutoriales" [ref=f11e41]
+                      - button "Colapsar categoría 'Tutoriales' de la barra lateral" [expanded] [ref=f11e42] [cursor=pointer]
+                    - list [ref=f11e43]:
+                      - listitem [ref=f11e44]:
+                        - generic [ref=f11e45]:
+                          - link "Introducción a Web" [ref=f11e46] [cursor=pointer]:
+                            - /url: /docs/tc2005b/category/introducción-a-web
+                            - generic "Introducción a Web" [ref=f11e47]
+                          - button "Colapsar categoría 'Introducción a Web' de la barra lateral" [expanded] [ref=f11e48] [cursor=pointer]
+                        - list [ref=f11e49]:
+                          - listitem [ref=f11e50]:
+                            - link "Intro a Desarrollo Web con HTML" [ref=f11e51] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab1HTML/
+                              - generic "Intro a Desarrollo Web con HTML" [ref=f11e52]
+                          - listitem [ref=f11e53]:
+                            - link "Control de versiones" [ref=f11e54] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab2Git/
+                              - generic "Control de versiones" [ref=f11e55]
+                          - listitem [ref=f11e56]:
+                            - link "Atomic Design — Construcción de Interfaces Modulares" [ref=f11e57] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab3CSS/
+                              - generic "Atomic Design — Construcción de Interfaces Modulares" [ref=f11e58]
+                          - listitem [ref=f11e59]:
+                            - link "Intro a Javascript" [ref=f11e60] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab4JS/
+                              - generic "Intro a Javascript" [ref=f11e61]
+                          - listitem [ref=f11e62]:
+                            - link "CSS Avanzado y Frameworks de Estilo" [ref=f11e63] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab5StyleFramework/
+                              - generic "CSS Avanzado y Frameworks de Estilo" [ref=f11e64]
+                          - listitem [ref=f11e65]:
+                            - link "Programación Orientada a Eventos" [ref=f11e66] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab6POE/
+                              - generic "Programación Orientada a Eventos" [ref=f11e67]
+                          - listitem [ref=f11e68]:
+                            - link "Manejo de ramas en Git" [ref=f11e69] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab7Branches/
+                              - generic "Manejo de ramas en Git" [ref=f11e70]
+                          - listitem [ref=f11e71]:
+                            - link "Introducción al back-end" [ref=f11e72] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab8IntroBackend/
+                              - generic "Introducción al back-end" [ref=f11e73]
+                          - listitem [ref=f11e74]:
+                            - link "Rutas y Formas" [ref=f11e75] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab10RutasYFormas/
+                              - generic "Rutas y Formas" [ref=f11e76]
+                          - listitem [ref=f11e77]:
+                            - link "Express" [ref=f11e78] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab11Express/
+                              - generic "Express" [ref=f11e79]
+                          - listitem [ref=f11e80]:
+                            - link "HTML Dinámico (EJS)" [ref=f11e81] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab12EJS/
+                              - generic "HTML Dinámico (EJS)" [ref=f11e82]
+                          - listitem [ref=f11e83]:
+                            - link "Revisiones de Código (Code Reviews)" [ref=f11e84] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab13CodeReviews/
+                              - generic "Revisiones de Código (Code Reviews)" [ref=f11e85]
+                          - listitem [ref=f11e86]:
+                            - link "MVC" [ref=f11e87] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/LAB13MVC/
+                              - generic "MVC" [ref=f11e88]
+                          - listitem [ref=f11e89]:
+                            - link "Sesiones" [ref=f11e90] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/LAB14Sesiones/
+                              - generic "Sesiones" [ref=f11e91]
+                          - listitem [ref=f11e92]:
+                            - link "Interacción con la Base de Datos" [ref=f11e93] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab17BD/
+                              - generic "Interacción con la Base de Datos" [ref=f11e94]
+                          - listitem [ref=f11e95]:
+                            - link "Interacción con la Base de Datos (PostgreSQL + Supabase)" [ref=f11e96] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab17BDSupabase/
+                              - generic "Interacción con la Base de Datos (PostgreSQL + Supabase)" [ref=f11e97]
+                          - listitem [ref=f11e98]:
+                            - link "Autenticación" [ref=f11e99] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab18Autenticacion/
+                              - generic "Autenticación" [ref=f11e100]
+                          - listitem [ref=f11e101]:
+                            - link "Autenticación (PostgreSQL + Supabase)" [ref=f11e102] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab18AutenticacionSupabase/
+                              - generic "Autenticación (PostgreSQL + Supabase)" [ref=f11e103]
+                          - listitem [ref=f11e104]:
+                            - link "RBAC (Role-based access control)" [ref=f11e105] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab19RBAC/
+                              - generic "RBAC (Role-based access control)" [ref=f11e106]
+                          - listitem [ref=f11e107]:
+                            - link "RBAC paso a paso (PostgreSQL + Supabase)" [ref=f11e108] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab19RBACSupabase/
+                              - generic "RBAC paso a paso (PostgreSQL + Supabase)" [ref=f11e109]
+                          - listitem [ref=f11e110]:
+                            - link "Archivos" [ref=f11e111] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab22Archivos/
+                              - generic "Archivos" [ref=f11e112]
+                          - listitem [ref=f11e113]:
+                            - link "AJAX" [ref=f11e114] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab24AJAX/
+                              - generic "AJAX" [ref=f11e115]
+                          - listitem [ref=f11e116]:
+                            - generic [ref=f11e117]:
+                              - link "Despliegue de Aplicaciones Web" [ref=f11e118] [cursor=pointer]:
+                                - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab25Despliegue/
+                                - generic "Despliegue de Aplicaciones Web" [ref=f11e119]
+                              - button "Ampliar la categoría 'Despliegue de Aplicaciones Web' de la barra lateral" [ref=f11e120] [cursor=pointer]
+                          - listitem [ref=f11e121]:
+                            - link "Lab 26 — Taller de Videojuegos Web" [ref=f11e122] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab26Videojuegos/
+                              - generic "Lab 26 — Taller de Videojuegos Web" [ref=f11e123]
+                          - listitem [ref=f11e124]:
+                            - link "Lab 27 — Pruebas unitarias con Jest" [ref=f11e125] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab27Pruebas/
+                              - generic "Lab 27 — Pruebas unitarias con Jest" [ref=f11e126]
+                          - listitem [ref=f11e127]:
+                            - link "Storage en la nube (Supabase Storage)" [ref=f11e128] [cursor=pointer]:
+                              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab28StorageSupabase/
+                              - generic "Storage en la nube (Supabase Storage)" [ref=f11e129]
+    - main [ref=f11e130]:
+      - generic [ref=f11e132]:
+        - generic [ref=f11e134]:
+          - article [ref=f11e135]:
+            - navigation "Rastro de navegación" [ref=f11e136]:
+              - list [ref=f11e137]:
+                - listitem [ref=f11e138]:
+                  - link "Página de Inicio" [ref=f11e139] [cursor=pointer]:
+                    - /url: /docs/
+                    - img [ref=f11e140]
+                - listitem [ref=f11e142]:
+                  - link "Desarrollo Web" [ref=f11e143] [cursor=pointer]:
+                    - /url: /docs/tc2005b/backend/
+                - listitem [ref=f11e144]:
+                  - link "NodeJS" [ref=f11e145] [cursor=pointer]:
+                    - /url: /docs/tc2005b/backend/node/
+                - listitem [ref=f11e146]:
+                  - link "Tutoriales" [ref=f11e147] [cursor=pointer]:
+                    - /url: /docs/tc2005b/backend/node/tutorials/
+                - listitem [ref=f11e148]:
+                  - link "Introducción a Web" [ref=f11e149] [cursor=pointer]:
+                    - /url: /docs/tc2005b/category/introducción-a-web
+                - listitem [ref=f11e150]:
+                  - generic [ref=f11e151]: Intro a Desarrollo Web con HTML
+            - generic [ref=f11e152]:
+              - heading "Intro a Desarrollo Web con HTML" [level=1] [ref=f11e154]
+              - paragraph [ref=f11e155]:
+                - text: Como apoyo para el tema puedes usar la siguiente referencia
+                - link "HTML for Babies" [ref=f11e156] [cursor=pointer]:
+                  - /url: https://htmlforbabies.com/
+                - text: .
+              - heading "Plantilla básica de HTMLEnlace directo al Plantilla básica de HTML" [level=2] [ref=f11e157]:
+                - text: Plantilla básica de HTML
+                - link "Enlace directo al Plantilla básica de HTML" [ref=f11e158] [cursor=pointer]:
+                  - /url: "#plantilla-básica-de-html"
+                  - text: "#"
+              - code [ref=f11e162]:
+                - generic [ref=f11e163]: <!DOCTYPE html>
+                - generic [ref=f11e164]: <html lang="en">
+                - generic [ref=f11e165]: <head>
+                - generic [ref=f11e166]: <meta charset="utf-8">
+                - generic [ref=f11e167]: <title>HTML</title>
+                - generic [ref=f11e168]: </head>
+                - generic [ref=f11e169]: <body>
+                - generic [ref=f11e170]: <!-- Content -->
+                - generic [ref=f11e171]: </body>
+                - generic [ref=f11e172]: </html>
+              - heading "Introducción a HTMLEnlace directo al Introducción a HTML" [level=2] [ref=f11e173]:
+                - text: Introducción a HTML
+                - link "Enlace directo al Introducción a HTML" [ref=f11e174] [cursor=pointer]:
+                  - /url: "#introducción-a-html"
+                  - text: "#"
+              - paragraph [ref=f11e175]: El desarrollo web se basa en programación por etiquetas, estas vienen de la forma.
+              - code [ref=f11e179]:
+                - generic [ref=f11e180]: <tag></tag>
+              - paragraph [ref=f11e181]: Esta sintaxis fue creada por el creador de la WWW Tim Berners Lee, y se ha vuelto el modelo estándar de desarrollo web que los navegadores hoy en día utilizan para todo lo que hoy en día se encuentra disponible en Internet.
+              - paragraph [ref=f11e182]: Si bien los navegadores web utilizan el HTML como estándar, no es el único protocolo de comunicación para obtener información de un servidor.
+              - blockquote [ref=f11e183]:
+                - paragraph [ref=f11e184]: ¡Recuerda! En desarrollo web la unidad mínima de trabajo es una arquitectura Cliente-Servidor, desde la cual el cliente funciona como nuestro navegador y desde aquí empezaremos a hacer peticiones a un servidor del cual podemos obtener archivos estáticos (html,css,js,jpg,png,etc.) o resultados procesados por la entidad de nuestro servidor.
+              - paragraph [ref=f11e185]: Es muy importante que desde ahora tomes en cuenta en donde se encuentra la información y en que momento para que puedas resolver errores, es decir si estoy viendo un HTML ¿quién lo está cargando?, ¿el servidor me ha devuelto una respuesta?, preguntas como las anteriores nos ayudan a ubicar y entre mas conceptos añadimos más fácil se vuelve añadir más complejidad.
+              - heading "Estándares adicionales de transmisión de información HTML, XML, JSONEnlace directo al Estándares adicionales de transmisión de información HTML, XML, JSON" [level=2] [ref=f11e186]:
+                - text: Estándares adicionales de transmisión de información HTML, XML, JSON
+                - link "Enlace directo al Estándares adicionales de transmisión de información HTML, XML, JSON" [ref=f11e187] [cursor=pointer]:
+                  - /url: "#estándares-adicionales-de-transmisión-de-información-html-xml-json"
+                  - text: "#"
+              - paragraph [ref=f11e188]: Para entender este punto debemos localizarnos en las capas del modelo de redes OSI e identificar el protocolo TCP/IP.
+              - paragraph [ref=f11e189]:
+                - text: Este protocolo envía paquetes de información entre el cliente y el servidor y esto nos genera lo que conocemos como
+                - strong [ref=f11e190]: requests
+                - text: .
+              - paragraph [ref=f11e191]: Los requests no son más que llamadas url que nosotros escribimos en el navegador o que mandamos llamar con cada interacción que tenemos en una página web.
+              - paragraph [ref=f11e192]:
+                - text: Es entonces que lo que vamos a procesar en el servidor son estas urls, y todas aquellas que no se encuentren son lo que conocemos como el famoso
+                - strong [ref=f11e193]: 404 not found
+                - text: ", más adelante veremos estos códigos de error en profundidad."
+              - paragraph [ref=f11e194]: El siguiente paso al hacer un requests es que debemos saber que nos debe regresar algo, incluso si ocurre un error, y lo ideal es que nos devuelva en un formato estándar que podamos entender.
+              - paragraph [ref=f11e195]: El más básico ya lo mencionamos es HTML
+              - code [ref=f11e199]:
+                - generic [ref=f11e200]: <html>
+                - generic [ref=f11e201]: <head>
+                - generic [ref=f11e202]: ...
+                - generic [ref=f11e203]: </head>
+                - generic [ref=f11e204]: <body>
+                - generic [ref=f11e205]: ...
+                - generic [ref=f11e206]: </body>
+                - generic [ref=f11e207]: </html>
+              - paragraph [ref=f11e208]: Otro estándar utilizado en la industria que si bien es más viejo más no es obsoleto es XML. Este estándar tiene un cierto parecido con HTML en que utiliza un sistema de etiquetas, más la diferencia con HTML es que este se centra en modelar información general, que es definida por los ingenieros de software.
+              - code [ref=f11e212]:
+                - generic [ref=f11e213]: <cuerpo>
+                - generic [ref=f11e214]: <cabeza></cabeza>
+                - generic [ref=f11e215]: <torso></torso>
+                - generic [ref=f11e216]: <piernas></piernas>
+                - generic [ref=f11e217]: </cuerpo>
+              - paragraph [ref=f11e218]: Como puedes ver HTML tiene su sintaxis específica como si fuera un lenguaje de programación, mientras que XML puede modelar cualquier tipo de dato con la diferencia que esto no será visible en el navegador.
+              - paragraph [ref=f11e219]:
+                - text: "Por último el otro tipo de estándar más usado es conocido como JSON, este estándar es más nuevo y busca ser una evolución a XML en el sentido de reducir el duplicado con el uso de etiquetas manejando la información en una estructura de datos como la pudiéramos encontrar en otros lenguajes de programación: listas, objetos, diccionarios o tablas hash."
+                - link "Ver estándar JSON" [ref=f11e220] [cursor=pointer]:
+                  - /url: https://www.json.org/json-en.html
+              - code [ref=f11e224]:
+                - generic [ref=f11e225]: "{"
+                - generic [ref=f11e226]: "\"cuerpo\":{"
+                - generic [ref=f11e227]: "\"cabeza\":{}"
+                - generic [ref=f11e228]: "\"torso\":{}"
+                - generic [ref=f11e229]: "\"piernas\":{}"
+                - generic [ref=f11e230]: "}"
+                - generic [ref=f11e231]: "}"
+              - paragraph [ref=f11e232]: Existen muchos otros estándares de manejo de información para TCP/IP que puedes encontrar por ejemplo uno muy popular últimamente es GraphQL, cada uno tiene sus reglas y veremos algunos durante el curso.
+              - heading "Etiquetas HTMLEnlace directo al Etiquetas HTML" [level=2] [ref=f11e233]:
+                - text: Etiquetas HTML
+                - link "Enlace directo al Etiquetas HTML" [ref=f11e234] [cursor=pointer]:
+                  - /url: "#etiquetas-html"
+                  - text: "#"
+              - paragraph [ref=f11e235]: Como ya mencionamos HTML utiliza las etiquetas para poder funcionar, para poder utilizarlas tenemos etiquetas que abren y cierran o etiquetas que cierran en la misma.
+              - code [ref=f11e239]:
+                - generic [ref=f11e240]: <tag></tag> <!--Etiqueta que abre y cierra-->
+                - generic [ref=f11e241]: <tag/> <!-- Etiqueta que abre y cierra al declararse -->
+              - paragraph [ref=f11e242]: La diferencia entre cada una es que la primera admite contenido adentro de la misma, mientras que la segunda solo utiliza la etiqueta para manejar su información sin utilizar contenido interno.
+              - paragraph [ref=f11e243]: Es así que la etiqueta más básica en HTML podríamos manejarla como la siguiente
+              - code [ref=f11e247]:
+                - generic [ref=f11e248]: <h1> HTML For Babies</h1>
+              - heading "Atributos HTMLEnlace directo al Atributos HTML" [level=2] [ref=f11e249]:
+                - text: Atributos HTML
+                - link "Enlace directo al Atributos HTML" [ref=f11e250] [cursor=pointer]:
+                  - /url: "#atributos-html"
+                  - text: "#"
+              - paragraph [ref=f11e251]:
+                - text: Una vez que tenemos una etiqueta básica veremos que dentro de los símbolos de la etiqueta que abre es decir, dentro de
+                - strong [ref=f11e252]: <>
+                - text: podemos tener atributos, estos dependerán de cada etiqueta, algunos son globales y otros son específicos.
+              - paragraph [ref=f11e253]: "Este es un ejemplo básico:"
+              - code [ref=f11e257]:
+                - generic [ref=f11e258]: <ol id="family">
+                - generic [ref=f11e259]: <li>Baby</li>
+                - generic [ref=f11e260]: <li>Daddy</li>
+                - generic [ref=f11e261]: <li>Mommy</li>
+                - generic [ref=f11e262]: </ol>
+              - paragraph [ref=f11e263]: Aquí estamos declarando el atributo id cuyo valor será el de "family".
+              - paragraph [ref=f11e264]:
+                - text: Los atributos globales que toda propiedad de HTML puede tener son el
+                - strong [ref=f11e265]: id
+                - text: y el
+                - strong [ref=f11e266]: class
+                - text: .
+              - list [ref=f11e267]:
+                - listitem [ref=f11e268]: El id como su nombre indica es un identificador único, y así como en los lenguajes de programación con las variables la idea es que solo exista 1 por archivo HTML, esto ayuda para hacer referencia específica a una etiqueta cuando usamos estilos CSS o para acceder a un valor si lo llamamos desde un archivo JS.
+                - listitem [ref=f11e269]: El class, es un atributo utilizado más por el estilo CSS, este lo veremos con más profundidad en próximos laboratorios.
+              - paragraph [ref=f11e270]: Otro ejemplo de etiqueta en HTML usando el atributo id sería una tabla como la siguiente
+              - code [ref=f11e274]:
+                - generic [ref=f11e275]: <table id="bday">
+                - generic [ref=f11e276]: <tbody>
+                - generic [ref=f11e277]: <tr>
+                - generic [ref=f11e278]: <td>Baby</td>
+                - generic [ref=f11e279]: <td>1 🎂</td>
+                - generic [ref=f11e280]: </tr>
+                - generic [ref=f11e281]: </tbody>
+                - generic [ref=f11e282]: </table>
+              - paragraph [ref=f11e283]:
+                - text: Para ver algunos otro atributos podemos ver el siguiente ejemplo con la etiqueta
+                - strong [ref=f11e284]: a
+              - code [ref=f11e288]:
+                - generic [ref=f11e289]: <a href="https://html6.com"
+                - generic [ref=f11e290]: target="_blank"
+                - generic [ref=f11e291]: rel="nofollow"
+                - generic [ref=f11e292]: title="HTML6">
+                - generic [ref=f11e293]: HTML Editor </a>
+              - paragraph [ref=f11e294]: Las propiedades que tenemos es el href, target, rel,title. Primero entendamos que la etiqueta a sirve para formar un hipervínculo dentro de la página, es decir es un link que nos lleva a otro lugar.
+              - list [ref=f11e295]:
+                - listitem [ref=f11e296]: El atributo href recibe la url de la página a donde queremos ir.
+                - listitem [ref=f11e297]:
+                  - text: El atributo target es opcional y en este caso abre una nueva pestaña del navegador con la indicación
+                  - strong [ref=f11e298]: _blank
+                  - text: .
+                - listitem [ref=f11e299]: El atributo rel igualmente es opcional y por default una etiqueta a utiliza el nofollow, esto sirve para que en caso de los buscadores como Google cuando entran a revisar las páginas y detectan estas etiquetas crean un mapa de a que sitios lleva la página, esto ayuda a la página destino a posicionarse mejor en internet, existe todo un tema al respecto dentro de marketing y SEO (Search Engine Optimization) para que funcione correctamente.
+                - listitem [ref=f11e300]: El atributo title ayuda a mostrar al usuario un título si pasa por encima el cursor.
+              - heading "Formularios HTMLEnlace directo al Formularios HTML" [level=2] [ref=f11e301]:
+                - text: Formularios HTML
+                - link "Enlace directo al Formularios HTML" [ref=f11e302] [cursor=pointer]:
+                  - /url: "#formularios-html"
+                  - text: "#"
+              - paragraph [ref=f11e303]:
+                - text: Además de las páginas como un todo HTML, lo más importante a manejar son los
+                - strong [ref=f11e304]: form
+                - text: o formularios, ya que estos son los que permiten guardar información una página web.
+              - paragraph [ref=f11e305]: La estructura básica de un formulario completo es la siguiente
+              - code [ref=f11e309]:
+                - generic [ref=f11e310]: <form action="/age.php" method="post">
+                - generic [ref=f11e311]: "Age: <input value=\"2\""
+                - generic [ref=f11e312]: min="0" max="99"
+                - generic [ref=f11e313]: id="age" step="1"
+                - generic [ref=f11e314]: type="number" />
+                - generic [ref=f11e315]: <input type="submit" value="Submit" />
+                - generic [ref=f11e316]: </form>
+              - paragraph [ref=f11e317]: La etiqueta form recibe varios atributos importantes
+              - code [ref=f11e321]:
+                - generic [ref=f11e322]: <form action="/age.php" method="post"></form>
+              - list [ref=f11e323]:
+                - listitem [ref=f11e324]:
+                  - text: El
+                  - strong [ref=f11e325]: action
+                  - text: es la url que vamos a llamar y desde donde se subirá la información que vamos a enviar del formulario.
+                - listitem [ref=f11e326]:
+                  - text: El
+                  - strong [ref=f11e327]: method
+                  - text: "será el tipo de request que hará la url es decir podrá ser de tipo: GET,POST,PUT,DELETE."
+              - blockquote [ref=f11e328]:
+                - paragraph [ref=f11e329]: "Nota: Cuando llames la url, asegúrate que tu servidor pueda manejar la llamada, el error más común es hacer una llamada POST y que el servidor solo procese la url mediante un GET."
+              - blockquote [ref=f11e330]:
+                - paragraph [ref=f11e331]:
+                  - text: En el ejemplo de código la url es
+                  - strong [ref=f11e332]: /age.php
+                  - text: ", esto funciona para servidores desarrollados en php, pero otro tipo de urls pueden ser de formato sin extensión como"
+                  - strong [ref=f11e333]: /age
+                  - text: solamente.
+              - paragraph [ref=f11e334]:
+                - text: Dentro del formulario observa que tenemos etiquetas de tipo
+                - strong [ref=f11e335]: input
+                - text: ", todas estas etiquetas tienen gran variación de parámetros ya que nos permiten hacer campos de texto, listas, botones, entre otros. Investiga las posibilidades que puedes realizar con los input y podrás guardar cualquier tipo de información incluso archivos en tu servidor y tu base de datos."
+            - link "Editar esta página" [ref=f11e339] [cursor=pointer]:
+              - /url: https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/docs/tc2005b/backend/node/tutorials/intro_web/Lab1HTML/README.md
+              - img [ref=f11e340]
+              - text: Editar esta página
+          - navigation "Página del documento" [ref=f11e344]:
+            - link "Anterior « Introducción a Web" [ref=f11e345] [cursor=pointer]:
+              - /url: /docs/tc2005b/category/introducción-a-web
+              - generic [ref=f11e346]: Anterior
+              - generic [ref=f11e347]: « Introducción a Web
+            - link "Siguiente Control de versiones »" [ref=f11e348] [cursor=pointer]:
+              - /url: /docs/tc2005b/backend/node/tutorials/intro_web/Lab2Git/
+              - generic [ref=f11e349]: Siguiente
+              - generic [ref=f11e350]: Control de versiones »
+        - list [ref=f11e353]:
+          - listitem [ref=f11e354]:
+            - link "Plantilla básica de HTML" [ref=f11e355] [cursor=pointer]:
+              - /url: "#plantilla-básica-de-html"
+          - listitem [ref=f11e356]:
+            - link "Introducción a HTML" [ref=f11e357] [cursor=pointer]:
+              - /url: "#introducción-a-html"
+          - listitem [ref=f11e358]:
+            - link "Estándares adicionales de transmisión de información HTML, XML, JSON" [ref=f11e359] [cursor=pointer]:
+              - /url: "#estándares-adicionales-de-transmisión-de-información-html-xml-json"
+          - listitem [ref=f11e360]:
+            - link "Etiquetas HTML" [ref=f11e361] [cursor=pointer]:
+              - /url: "#etiquetas-html"
+          - listitem [ref=f11e362]:
+            - link "Atributos HTML" [ref=f11e363] [cursor=pointer]:
+              - /url: "#atributos-html"
+          - listitem [ref=f11e364]:
+            - link "Formularios HTML" [ref=f11e365] [cursor=pointer]:
+              - /url: "#formularios-html"
+  - contentinfo [ref=f11e366]:
+    - generic [ref=f11e369]: Copyright © 2026 TC2005B.

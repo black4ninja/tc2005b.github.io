@@ -1,0 +1,29 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e7]: school
+    - heading "Grupos" [level=1] [ref=e8]
+    - paragraph [ref=e9]: Plataforma académica
+  - generic [ref=e11]:
+    - heading "login Iniciar sesión" [level=3] [ref=e12]:
+      - generic [ref=e13]: login
+      - text: Iniciar sesión
+    - paragraph [ref=e14]: Ingresa tu correo institucional y contraseña para acceder.
+    - generic [ref=e15]:
+      - generic [ref=e16]: Correo electrónico
+      - generic [ref=e17]:
+        - generic [ref=e18]: email
+        - textbox "a00000000@tec.mx" [ref=e19]
+    - generic [ref=e20]:
+      - generic [ref=e21]: Contraseña
+      - generic [ref=e22]:
+        - generic [ref=e23]: lock
+        - textbox "••••••••" [ref=e24]
+        - button "visibility" [ref=e25] [cursor=pointer]:
+          - generic [ref=e26]: visibility
+    - button "login Iniciar sesión" [ref=e27] [cursor=pointer]:
+      - generic [ref=e28]: login
+      - text: Iniciar sesión
+  - link "arrow_back Volver al sitio" [ref=e30] [cursor=pointer]:
+    - /url: /
+    - generic [ref=e31]: arrow_back
+    - text: Volver al sitio

@@ -25,6 +25,11 @@ const MATERIAS: MateriaInput[] = [
     slug: 'tc2005b',
     codigo: 'TC2005B',
   },
+  {
+    nombre: 'Integración de seguridad informática en redes y sistemas de software',
+    slug: 'tc2007b',
+    codigo: 'TC2007B',
+  },
 ];
 
 async function main() {
