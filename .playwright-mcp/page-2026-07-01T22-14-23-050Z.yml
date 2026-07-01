@@ -1,0 +1,1344 @@
+- generic [ref=f10e32]:
+  - complementary [ref=f10e33]:
+    - link "school Grupos" [ref=f10e35] [cursor=pointer]:
+      - /url: /alumno
+      - generic [ref=f10e36]: school
+      - generic [ref=f10e37]: Grupos
+    - generic [ref=f10e38]:
+      - generic [ref=f10e39]: Grupo
+      - combobox [ref=f10e40] [cursor=pointer]:
+        - option "Prueba" [selected]
+        - option "Prueba 2"
+    - navigation [ref=f10e41]:
+      - link "calendar_month Calendario" [ref=f10e42] [cursor=pointer]:
+        - /url: /alumno/grupos/fC1d8fNuFu/calendario
+        - generic [ref=f10e43]: calendar_month
+        - generic [ref=f10e44]: Calendario
+      - link "dashboard Dashboard" [ref=f10e45] [cursor=pointer]:
+        - /url: /alumno
+        - generic [ref=f10e46]: dashboard
+        - generic [ref=f10e47]: Dashboard
+      - link "grid_view Malla" [ref=f10e48] [cursor=pointer]:
+        - /url: /alumno/grupos/fC1d8fNuFu/malla
+        - generic [ref=f10e49]: grid_view
+        - generic [ref=f10e50]: Malla
+      - link "emoji_events Competencias" [ref=f10e51] [cursor=pointer]:
+        - /url: /alumno/grupos/fC1d8fNuFu/competencias
+        - generic [ref=f10e52]: emoji_events
+        - generic [ref=f10e53]: Competencias
+      - link "menu_book Documentación" [ref=f10e54] [cursor=pointer]:
+        - /url: /docs/tc2005b/
+        - generic [ref=f10e55]: menu_book
+        - generic [ref=f10e56]: Documentación
+      - link "event_available Agendar Entrevistas" [ref=f10e57] [cursor=pointer]:
+        - /url: https://docs.google.com/spreadsheets/d/1U1fbfaBWMp4Nje13qi2C3mhjhW0B8NxC-JXD0ff6fNQ/edit?gid=32307462#gid=32307462
+        - generic [ref=f10e58]: event_available
+        - generic [ref=f10e59]: Agendar Entrevistas
+    - link "arrow_back Volver al sitio" [ref=f10e61] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f10e62]: arrow_back
+      - generic [ref=f10e63]: Volver al sitio
+  - banner [ref=f10e64]:
+    - button "Toggle sidebar" [ref=f10e66] [cursor=pointer]:
+      - generic [ref=f10e67]: menu
+    - button "A a00889204@tec.mx Alumno" [ref=f10e70] [cursor=pointer]:
+      - generic [ref=f10e71]:
+        - generic [ref=f10e72]: A
+        - generic [ref=f10e73]:
+          - generic [ref=f10e74]: a00889204@tec.mx
+          - generic [ref=f10e75]: Alumno
+  - main [ref=f10e76]:
+    - generic [ref=f10e77]:
+      - generic [ref=f10e78]:
+        - generic [ref=f10e79]: info
+        - text: Este calendario es tentativo y está sujeto a cambios.
+      - generic [ref=f10e80]:
+        - generic [ref=f10e81]: "Filtrar:"
+        - button "assignment Labs" [ref=f10e82] [cursor=pointer]:
+          - generic [ref=f10e83]: assignment
+          - text: Labs
+        - button "menu_book Lecturas" [ref=f10e84] [cursor=pointer]:
+          - generic [ref=f10e85]: menu_book
+          - text: Lecturas
+        - button "edit Ejercicios" [ref=f10e86] [cursor=pointer]:
+          - generic [ref=f10e87]: edit
+          - text: Ejercicios
+        - button "stars Proyecto" [ref=f10e88] [cursor=pointer]:
+          - generic [ref=f10e89]: stars
+          - text: Proyecto
+        - button "check_circle Evaluación" [ref=f10e90] [cursor=pointer]:
+          - generic [ref=f10e91]: check_circle
+          - text: Evaluación
+        - button "work Trabajo" [ref=f10e92] [cursor=pointer]:
+          - generic [ref=f10e93]: work
+          - text: Trabajo
+        - button "free_breakfast Recesos" [ref=f10e94] [cursor=pointer]:
+          - generic [ref=f10e95]: free_breakfast
+          - text: Recesos
+        - button "assignment Actividades" [ref=f10e96] [cursor=pointer]:
+          - generic [ref=f10e97]: assignment
+          - text: Actividades
+        - button "Expandir todo" [ref=f10e98] [cursor=pointer]
+      - navigation [ref=f10e99]:
+        - button "Sem 1" [ref=f10e100] [cursor=pointer]
+        - button "Campus sin servicio" [ref=f10e101] [cursor=pointer]
+        - button "Sem 2" [ref=f10e102] [cursor=pointer]
+        - button "Sem 3" [ref=f10e103] [cursor=pointer]
+        - button "Sem 4" [ref=f10e104] [cursor=pointer]
+        - button "Sem 5" [ref=f10e105] [cursor=pointer]
+        - button "Semana Tec" [ref=f10e106] [cursor=pointer]
+        - button "Sem 6" [ref=f10e107] [cursor=pointer]
+        - button "Sem 7" [ref=f10e108] [cursor=pointer]
+        - button "Sem 8" [ref=f10e109] [cursor=pointer]
+        - button "Sem 9" [ref=f10e110] [cursor=pointer]
+        - button "Sem 10" [ref=f10e111] [cursor=pointer]
+    - main [ref=f10e112]:
+      - generic [ref=f10e113]:
+        - button "1 Semana 1 23 al 27 de marzo 2 Info 5 Labs 2 Discusión 2 Proyecto 1 Trabajo 6 Lecturas 1 Ejercicios expand_more" [ref=f10e114] [cursor=pointer]:
+          - generic [ref=f10e115]: "1"
+          - generic [ref=f10e116]:
+            - heading "Semana 1" [level=2] [ref=f10e117]
+            - text: 23 al 27 de marzo
+          - generic [ref=f10e118]:
+            - generic [ref=f10e119]: 2 Info
+            - generic [ref=f10e120]: 5 Labs
+            - generic [ref=f10e121]: 2 Discusión
+            - generic [ref=f10e122]: 2 Proyecto
+            - generic [ref=f10e123]: 1 Trabajo
+            - generic [ref=f10e124]: 6 Lecturas
+            - generic [ref=f10e125]: 1 Ejercicios
+          - generic [ref=f10e126]: expand_more
+        - generic [ref=f10e127]:
+          - generic [ref=f10e128]:
+            - heading "Lunes" [level=3] [ref=f10e129]
+            - generic [ref=f10e130]: Sesión plenaria en el salón 4205
+            - generic [ref=f10e131]:
+              - generic [ref=f10e132]:
+                - generic [ref=f10e133]: info_outline
+                - generic [ref=f10e134]:
+                  - text: Introducción al curso
+                  - emphasis [ref=f10e135]: (Intenciones educativas, objetivos, metodología, política de laptops, celulares y apuntes)
+                - generic [ref=f10e136]: 45 min
+              - generic [ref=f10e137]:
+                - generic [ref=f10e138]: info_outline
+                - link "Malla de evaluación" [ref=f10e140] [cursor=pointer]:
+                  - /url: https://docs.google.com/spreadsheets/d/1DzGDdW9kCbSaVki8JP3T85q9jfWLOmCUv7tRsYMLYLE/edit?usp=sharing
+              - generic [ref=f10e141]:
+                - generic [ref=f10e142]: assignment
+                - 'link "Lab 0: Presentación en la plataforma de comunicación" [ref=f10e144] [cursor=pointer]':
+                  - /url: /labs/lab0
+                - generic [ref=f10e145]: 10 min
+              - generic [ref=f10e146]:
+                - generic [ref=f10e147]: assignment
+                - 'link "Lab 1: Introducción a las aplicaciones web, HTML5 y ciclo de vida de los sistemas de información" [ref=f10e149] [cursor=pointer]':
+                  - /url: /labs/lab1
+                - generic [ref=f10e150]: 55 min
+              - generic [ref=f10e151]:
+                - generic [ref=f10e152]: free_breakfast
+                - generic [ref=f10e153]: 20 min
+              - generic [ref=f10e154]:
+                - generic [ref=f10e155]: forum
+                - generic [ref=f10e156]: Datos en sistemas de software
+                - generic [ref=f10e157]: 1h 50min
+              - generic [ref=f10e158]:
+                - generic [ref=f10e159]: stars
+                - generic [ref=f10e160]:
+                  - 'link "Avance de proyecto 1: Conformación de los equipos" [ref=f10e161] [cursor=pointer]':
+                    - /url: /avances/av1
+                  - generic [ref=f10e162]:
+                    - generic [ref=f10e163]: event
+                    - text: Viernes 27 de marzo
+                - generic [ref=f10e164]: 10 min
+              - generic [ref=f10e165]:
+                - generic [ref=f10e166]: work
+                - generic [ref=f10e167]: Presentación socio formador
+                - generic [ref=f10e168]: 1h
+          - generic [ref=f10e169]:
+            - heading "Martes" [level=3] [ref=f10e170]
+            - generic [ref=f10e171]:
+              - generic [ref=f10e172]: Previo a la sesión
+              - generic [ref=f10e173]:
+                - generic [ref=f10e174]: menu_book
+                - 'link "Lectura: Introducción a la gestión de proyectos" [ref=f10e176] [cursor=pointer]':
+                  - /url: /documentos/0_bloqueAdmP_introduccion.pptx
+            - generic [ref=f10e177]:
+              - generic [ref=f10e178]:
+                - generic [ref=f10e179]: menu_book
+                - link "Diseño de la interacción" [ref=f10e181] [cursor=pointer]:
+                  - /url: https://www.haikudeck.com/p/stJQgEylw2/diseo-de-la-interaccin
+                - generic [ref=f10e182]: 30 min
+              - generic [ref=f10e183]:
+                - generic [ref=f10e184]: assignment
+                - 'link "Lab 4: CSS" [ref=f10e186] [cursor=pointer]':
+                  - /url: /labs/lab3
+                - generic [ref=f10e187]: 55 min
+              - generic [ref=f10e188]:
+                - generic [ref=f10e189]: free_breakfast
+                - generic [ref=f10e190]: 20 min
+              - generic [ref=f10e191]:
+                - generic [ref=f10e192]: menu_book
+                - generic [ref=f10e193]: Presentación proyecto exitoso
+                - generic [ref=f10e194]: 30 min
+              - generic [ref=f10e195]:
+                - generic [ref=f10e196]: menu_book
+                - generic [ref=f10e197]:
+                  - text: "Requisitos de software y Casos de uso. Ejemplo de caso de uso: Registrar venta en punto de venta"
+                  - generic [ref=f10e198]:
+                    - text: (
+                    - link "Requisitos de software" [ref=f10e200] [cursor=pointer]:
+                      - /url: documentos/Conceptos - Requisitos de Software.pptx
+                    - generic [ref=f10e201]:
+                      - text: ","
+                      - link "Casos de uso" [ref=f10e202] [cursor=pointer]:
+                        - /url: documentos/Requisitos de Software - Casos de Uso.pptx
+                    - text: )
+                - generic [ref=f10e203]: 1h
+              - generic [ref=f10e204]:
+                - generic [ref=f10e205]: edit
+                - 'link "Caso de estudio: Requisitos de software" [ref=f10e207] [cursor=pointer]':
+                  - /url: documentos/Caso de Estudio-All-about-pools.pdf
+                - generic [ref=f10e208]: 10 min
+          - generic [ref=f10e209]:
+            - heading "Miércoles" [level=3] [ref=f10e210]
+            - generic [ref=f10e211]:
+              - generic [ref=f10e212]: Previo a la sesión
+              - generic [ref=f10e213]:
+                - generic [ref=f10e214]: menu_book
+                - 'link "Lectura: Sistemas de información en los negocios" [ref=f10e216] [cursor=pointer]':
+                  - /url: /documentos/Tema01-Introduccion_SI.pptx
+            - generic [ref=f10e217]:
+              - generic [ref=f10e218]:
+                - generic [ref=f10e219]: assignment
+                - 'link "Lab 2: Control de versiones" [ref=f10e221] [cursor=pointer]':
+                  - /url: /labs/lab2
+                - generic [ref=f10e222]: 1h 55min
+              - generic [ref=f10e223]:
+                - generic [ref=f10e224]: free_breakfast
+                - generic [ref=f10e225]: 20 min
+              - generic [ref=f10e226]:
+                - generic [ref=f10e227]: forum
+                - generic [ref=f10e228]: Resolución de dudas de las lecturas
+                - generic [ref=f10e229]: 55 min
+              - generic [ref=f10e230]:
+                - generic [ref=f10e231]: menu_book
+                - generic [ref=f10e232]: Revisión del caso de estudio
+                - generic [ref=f10e233]: 55 min
+          - generic [ref=f10e234]:
+            - heading "Jueves" [level=3] [ref=f10e235]
+            - generic [ref=f10e236]:
+              - generic [ref=f10e237]:
+                - generic [ref=f10e238]: assignment
+                - 'link "Lab 3: Manejo de ramas" [ref=f10e240] [cursor=pointer]':
+                  - /url: /labs/lab7
+                - generic [ref=f10e241]: 1h 50min
+              - generic [ref=f10e242]:
+                - generic [ref=f10e243]: stars
+                - generic [ref=f10e244]: Validación de avance proyecto, retroalimentación y corrección / trabajo en proyecto
+                - generic [ref=f10e245]: 1h 50min
+          - generic [ref=f10e246]:
+            - generic [ref=f10e247]: schedule
+            - generic [ref=f10e248]: "S1: 1h 50min · S2: 3h"
+          - generic [ref=f10e249]:
+            - generic [ref=f10e250]: schedule
+            - generic [ref=f10e251]: "S1: 1h 25min · S2: 1h 40min"
+          - generic [ref=f10e252]:
+            - generic [ref=f10e253]: schedule
+            - generic [ref=f10e254]: "S1: 1h 55min · S2: 1h 50min"
+          - generic [ref=f10e255]:
+            - generic [ref=f10e256]: schedule
+            - generic [ref=f10e257]: "Total: 3h 40min"
+      - generic [ref=f10e258]:
+        - button "Sin servicio Campus sin servicio 30 de marzo al 3 de abril expand_more" [ref=f10e259] [cursor=pointer]:
+          - generic [ref=f10e260]: Sin servicio
+          - generic [ref=f10e261]:
+            - heading "Campus sin servicio" [level=2] [ref=f10e262]
+            - text: 30 de marzo al 3 de abril
+          - generic [ref=f10e263]: expand_more
+        - generic [ref=f10e264]:
+          - generic [ref=f10e265]: event_busy
+          - paragraph [ref=f10e266]:
+            - strong [ref=f10e267]: Campus sin servicio
+      - generic [ref=f10e268]:
+        - button "2 Semana 2 6 al 10 de abril 6 Lecturas 3 Ejercicios 4 Labs 2 Proyecto 2 Discusión 1 Trabajo expand_more" [ref=f10e269] [cursor=pointer]:
+          - generic [ref=f10e270]: "2"
+          - generic [ref=f10e271]:
+            - heading "Semana 2" [level=2] [ref=f10e272]
+            - text: 6 al 10 de abril
+          - generic [ref=f10e273]:
+            - generic [ref=f10e274]: 6 Lecturas
+            - generic [ref=f10e275]: 3 Ejercicios
+            - generic [ref=f10e276]: 4 Labs
+            - generic [ref=f10e277]: 2 Proyecto
+            - generic [ref=f10e278]: 2 Discusión
+            - generic [ref=f10e279]: 1 Trabajo
+          - generic [ref=f10e280]: expand_more
+        - generic [ref=f10e281]:
+          - generic [ref=f10e282]:
+            - heading "Lunes" [level=3] [ref=f10e283]
+            - generic [ref=f10e284]:
+              - generic [ref=f10e285]: Previo a la sesión
+              - generic [ref=f10e286]:
+                - generic [ref=f10e287]: menu_book
+                - 'link "Lectura: Gestión del alcance" [ref=f10e289] [cursor=pointer]':
+                  - /url: documentos/3_bloqueAdmP_alcance.pptx
+              - generic [ref=f10e290]:
+                - generic [ref=f10e291]: edit
+                - link "Nodeschools" [ref=f10e293] [cursor=pointer]:
+                  - /url: documentos/3_bloqueAdmP_alcance.pptx
+            - generic [ref=f10e294]:
+              - generic [ref=f10e295]:
+                - generic [ref=f10e296]: assignment
+                - 'link "Lab 6: Programación Orientada a Eventos y Navegación" [ref=f10e298] [cursor=pointer]':
+                  - /url: /labs/lab6
+                - generic [ref=f10e299]: 1h 50min
+              - generic [ref=f10e300]:
+                - generic [ref=f10e301]: free_breakfast
+                - generic [ref=f10e302]: 20 min
+              - generic [ref=f10e303]:
+                - generic [ref=f10e304]: stars
+                - generic [ref=f10e305]:
+                  - 'link "Avance de proyecto 2: Análisis y diseño de la solución" [ref=f10e306] [cursor=pointer]':
+                    - /url: /avances/av3
+                  - generic [ref=f10e307]:
+                    - generic [ref=f10e308]: event
+                    - text: Viernes 17 de abril
+                - generic [ref=f10e309]: 15 min
+              - generic [ref=f10e310]:
+                - generic [ref=f10e311]: forum
+                - generic [ref=f10e312]: Resolución de dudas de las lecturas
+                - generic [ref=f10e313]: 55 min
+              - generic [ref=f10e314]:
+                - generic [ref=f10e315]: menu_book
+                - link "Diagrama de contexto aplicado al proyecto" [ref=f10e317] [cursor=pointer]:
+                  - /url: documentos/Diagrama de contexto.pptx
+                - generic [ref=f10e318]: 40 min
+          - generic [ref=f10e319]:
+            - heading "Martes" [level=3] [ref=f10e320]
+            - generic [ref=f10e321]:
+              - generic [ref=f10e322]: Previo a la sesión
+              - generic [ref=f10e323]:
+                - generic [ref=f10e324]: menu_book
+                - 'link "Lectura: DB vs DBMS" [ref=f10e326] [cursor=pointer]':
+                  - /url: /lecturas/lectura1_DBvsDBMS.html
+              - generic [ref=f10e327]:
+                - generic [ref=f10e328]: menu_book
+                - 'link "Lectura: Notación del modelo entidad relación y Restricciones adicionales" [ref=f10e330] [cursor=pointer]':
+                  - /url: lecturas/lectura2_Mer/lectura2.html
+            - generic [ref=f10e331]:
+              - generic [ref=f10e332]:
+                - generic [ref=f10e333]: assignment
+                - 'link "Lab 7: Debugging y CSS Avanzado (Variables de css) / Responsive design" [ref=f10e335] [cursor=pointer]':
+                  - /url: /paginas/prueba
+                - generic [ref=f10e336]: 1h 50min
+              - generic [ref=f10e337]:
+                - generic [ref=f10e338]: free_breakfast
+                - generic [ref=f10e339]: 20 min
+              - generic [ref=f10e340]:
+                - generic [ref=f10e341]: forum
+                - generic [ref=f10e342]: Resolución de dudas de la lectura
+                - generic [ref=f10e343]: 30 min
+              - generic [ref=f10e344]:
+                - generic [ref=f10e345]: edit
+                - 'link "Casos de estudio 2: Farmacéutica y liga de fútbol" [ref=f10e347] [cursor=pointer]':
+                  - /url: ejercicios/ej1_MER_farmaceutica_futbol.html
+                - generic [ref=f10e348]: 1h 20min
+          - generic [ref=f10e349]:
+            - heading "Miércoles" [level=3] [ref=f10e350]
+            - generic [ref=f10e351]:
+              - generic [ref=f10e352]:
+                - generic [ref=f10e353]: assignment
+                - 'link "Lab 8: Introducción al back-end" [ref=f10e355] [cursor=pointer]':
+                  - /url: /labs/lab8
+                - generic [ref=f10e356]: 1h 20min
+              - generic [ref=f10e357]:
+                - generic [ref=f10e358]: free_breakfast
+                - generic [ref=f10e359]: 20 min
+              - generic [ref=f10e360]:
+                - generic [ref=f10e361]: menu_book
+                - generic [ref=f10e362]: Revisión del caso de estudio
+                - generic [ref=f10e363]: 1h
+              - generic [ref=f10e364]:
+                - generic [ref=f10e365]: menu_book
+                - link "Diagrama de clases y patrones de diseño" [ref=f10e367] [cursor=pointer]:
+                  - /url: documentos/Introduccion al diseno de software - Diagramas de clases.pptx
+                - generic [ref=f10e368]: 40 min
+              - generic [ref=f10e369]:
+                - generic [ref=f10e370]: edit
+                - 'link "Caso 3: Diagrama de clases para un videojuego" [ref=f10e372] [cursor=pointer]':
+                  - /url: documentos/DiagramaClases_Videojuego.pdf
+                - generic [ref=f10e373]: 10 min
+          - generic [ref=f10e374]:
+            - heading "Jueves" [level=3] [ref=f10e375]
+            - generic [ref=f10e376]:
+              - generic [ref=f10e377]:
+                - generic [ref=f10e378]: assignment
+                - 'link "Lab 10: Rutas y formas" [ref=f10e380] [cursor=pointer]':
+                  - /url: /labs/lab10
+                - generic [ref=f10e381]: 1h 5min
+              - generic [ref=f10e382]:
+                - generic [ref=f10e383]: stars
+                - generic [ref=f10e384]: Validación de avance proyecto, retroalimentación y corrección / trabajo en proyecto
+                - generic [ref=f10e385]: 1h 50min
+              - generic [ref=f10e386]:
+                - generic [ref=f10e387]: free_breakfast
+                - generic [ref=f10e388]: 20 min
+              - generic [ref=f10e389]:
+                - generic [ref=f10e390]: work
+                - generic [ref=f10e391]: Trabajo en proyecto
+                - generic [ref=f10e392]: 1h 50min
+          - generic [ref=f10e393]:
+            - generic [ref=f10e394]: schedule
+            - generic [ref=f10e395]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e396]:
+            - generic [ref=f10e397]: schedule
+            - generic [ref=f10e398]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e399]:
+            - generic [ref=f10e400]: schedule
+            - generic [ref=f10e401]: "S1: 1h 20min · S2: 1h 50min"
+          - generic [ref=f10e402]:
+            - generic [ref=f10e403]: schedule
+            - generic [ref=f10e404]: "S1: 2h 55min · S2: 1h 50min"
+      - generic [ref=f10e405]:
+        - button "3 Semana 3 13 al 17 de abril 3 Lecturas 3 Labs 5 Discusión 1 Ejercicios 2 Info 1 Proyecto 1 Trabajo expand_more" [ref=f10e406] [cursor=pointer]:
+          - generic [ref=f10e407]: "3"
+          - generic [ref=f10e408]:
+            - heading "Semana 3" [level=2] [ref=f10e409]
+            - text: 13 al 17 de abril
+          - generic [ref=f10e410]:
+            - generic [ref=f10e411]: 3 Lecturas
+            - generic [ref=f10e412]: 3 Labs
+            - generic [ref=f10e413]: 5 Discusión
+            - generic [ref=f10e414]: 1 Ejercicios
+            - generic [ref=f10e415]: 2 Info
+            - generic [ref=f10e416]: 1 Proyecto
+            - generic [ref=f10e417]: 1 Trabajo
+          - generic [ref=f10e418]: expand_more
+        - generic [ref=f10e419]:
+          - generic [ref=f10e420]:
+            - heading "Lunes" [level=3] [ref=f10e421]
+            - generic [ref=f10e422]:
+              - generic [ref=f10e423]: Previo a la sesión
+              - generic [ref=f10e424]:
+                - generic [ref=f10e425]: menu_book
+                - 'link "Lectura: Reglas de traslado MER a MR" [ref=f10e427] [cursor=pointer]':
+                  - /url: /lecturas/lectura3_Mr/
+            - generic [ref=f10e428]:
+              - generic [ref=f10e429]:
+                - generic [ref=f10e430]: assignment
+                - 'link "Lab 11: Express" [ref=f10e432] [cursor=pointer]':
+                  - /url: /labs/lab11
+                - generic [ref=f10e433]: 1h 50min
+              - generic [ref=f10e434]:
+                - generic [ref=f10e435]: free_breakfast
+                - generic [ref=f10e436]: 20 min
+              - generic [ref=f10e437]:
+                - generic [ref=f10e438]: forum
+                - generic [ref=f10e439]: Resolución de dudas de la lectura
+                - generic [ref=f10e440]: 30 min
+              - generic [ref=f10e441]:
+                - generic [ref=f10e442]: assignment
+                - 'link "Lab 9: DBMS de escritorio" [ref=f10e444] [cursor=pointer]':
+                  - /url: /labs/lab9
+                - generic [ref=f10e445]: 1h 20min
+          - generic [ref=f10e446]:
+            - heading "Martes" [level=3] [ref=f10e447]
+            - generic [ref=f10e448]:
+              - generic [ref=f10e449]: Previo a la sesión
+              - generic [ref=f10e450]:
+                - generic [ref=f10e451]: menu_book
+                - 'link "Lectura: Gestión de la comunicación" [ref=f10e453] [cursor=pointer]':
+                  - /url: documentos/2_bloqueAdmP_comunicacion.pptx
+            - generic [ref=f10e454]:
+              - generic [ref=f10e455]:
+                - generic [ref=f10e456]: assignment
+                - 'link "Lab 12: HTML dinámico" [ref=f10e458] [cursor=pointer]':
+                  - /url: /labs/lab12
+                - generic [ref=f10e459]: 1h 50min
+              - generic [ref=f10e460]:
+                - generic [ref=f10e461]: free_breakfast
+                - generic [ref=f10e462]: 20 min
+              - generic [ref=f10e463]:
+                - generic [ref=f10e464]: forum
+                - generic [ref=f10e465]: Resolución de dudas de la lectura
+                - generic [ref=f10e466]: 30 min
+              - generic [ref=f10e467]:
+                - generic [ref=f10e468]: edit
+                - 'link "Casos de estudio 4: MER, DD y MR" [ref=f10e470] [cursor=pointer]':
+                  - /url: ejercicios/ej2_MER_DD_MR.html
+                - generic [ref=f10e471]: 1h 20min
+          - generic [ref=f10e472]:
+            - heading "Miércoles" [level=3] [ref=f10e473]
+            - generic [ref=f10e474]:
+              - generic [ref=f10e475]: Previo a la sesión
+              - generic [ref=f10e476]:
+                - generic [ref=f10e477]: menu_book
+                - 'link "Lectura: Modelo Relacional y Álgebra Relacional" [ref=f10e479] [cursor=pointer]':
+                  - /url: lecturas/lectura4_Mr_Ar/lectura_Mr_Ar.html
+              - generic [ref=f10e480]:
+                - generic [ref=f10e481]: info_outline
+                - link "Política de trabajo en equipo" [ref=f10e483] [cursor=pointer]:
+                  - /url: /politicas
+                - generic [ref=f10e484]: 15 min
+            - generic [ref=f10e485]:
+              - generic [ref=f10e486]:
+                - generic [ref=f10e487]: forum
+                - generic [ref=f10e488]: Code review, Programador tóxico
+                - generic [ref=f10e489]: 50 min
+              - generic [ref=f10e490]:
+                - generic [ref=f10e491]: forum
+                - generic [ref=f10e492]: Simulación de entrevista de evaluación
+                - generic [ref=f10e493]: 1h
+              - generic [ref=f10e494]:
+                - generic [ref=f10e495]: info_outline
+                - generic [ref=f10e496]: Agenda tu evaluación de competencias de esta semana
+              - generic [ref=f10e497]:
+                - generic [ref=f10e498]: free_breakfast
+                - generic [ref=f10e499]: 20 min
+              - generic [ref=f10e500]:
+                - generic [ref=f10e501]: forum
+                - generic [ref=f10e502]: Resolución de dudas de la lectura
+                - generic [ref=f10e503]: 50 min
+          - generic [ref=f10e504]:
+            - heading "Jueves" [level=3] [ref=f10e505]
+            - generic [ref=f10e506]:
+              - generic [ref=f10e507]:
+                - generic [ref=f10e508]: stars
+                - generic [ref=f10e509]: Presentación de avance proyecto 2, retroalimentación y corrección
+                - generic [ref=f10e510]: 1h 50min
+              - generic [ref=f10e511]:
+                - generic [ref=f10e512]: free_breakfast
+                - generic [ref=f10e513]: 20 min
+              - generic [ref=f10e514]:
+                - generic [ref=f10e515]: work
+                - generic [ref=f10e516]: Trabajo en proyecto
+                - generic [ref=f10e517]: 1h 20min
+          - generic [ref=f10e518]:
+            - generic [ref=f10e519]: schedule
+            - generic [ref=f10e520]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e521]:
+            - generic [ref=f10e522]: schedule
+            - generic [ref=f10e523]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e524]:
+            - generic [ref=f10e525]: schedule
+            - generic [ref=f10e526]: "S1: 1h 50min · S2: 50 min"
+          - generic [ref=f10e527]:
+            - generic [ref=f10e528]: schedule
+            - generic [ref=f10e529]: "S1: 1h 50min · S2: 1h 20min"
+      - generic [ref=f10e530]:
+        - button "4 Semana 4 20 al 24 de abril 2 Lecturas 5 Labs 2 Proyecto 2 Discusión 2 Ejercicios 1 Info 2 Eval 1 Trabajo expand_more" [ref=f10e531] [cursor=pointer]:
+          - generic [ref=f10e532]: "4"
+          - generic [ref=f10e533]:
+            - heading "Semana 4" [level=2] [ref=f10e534]
+            - text: 20 al 24 de abril
+          - generic [ref=f10e535]:
+            - generic [ref=f10e536]: 2 Lecturas
+            - generic [ref=f10e537]: 5 Labs
+            - generic [ref=f10e538]: 2 Proyecto
+            - generic [ref=f10e539]: 2 Discusión
+            - generic [ref=f10e540]: 2 Ejercicios
+            - generic [ref=f10e541]: 1 Info
+            - generic [ref=f10e542]: 2 Eval
+            - generic [ref=f10e543]: 1 Trabajo
+          - generic [ref=f10e544]: expand_more
+        - generic [ref=f10e545]:
+          - generic [ref=f10e546]:
+            - heading "Lunes" [level=3] [ref=f10e547]
+            - generic [ref=f10e548]:
+              - generic [ref=f10e549]: Previo a la sesión
+              - generic [ref=f10e550]:
+                - generic [ref=f10e551]: menu_book
+                - 'link "Lectura: Diagramas de secuencia" [ref=f10e553] [cursor=pointer]':
+                  - /url: documentos/Introduccion al diseno de software - Diagramas de secuencia.pptx
+            - generic [ref=f10e554]:
+              - generic [ref=f10e555]:
+                - generic [ref=f10e556]: assignment
+                - 'link "Lab 13: MVC" [ref=f10e558] [cursor=pointer]':
+                  - /url: /labs/lab13
+                - generic [ref=f10e559]: 1h 50min
+              - generic [ref=f10e560]:
+                - generic [ref=f10e561]: free_breakfast
+                - generic [ref=f10e562]: 20 min
+              - generic [ref=f10e563]:
+                - generic [ref=f10e564]: stars
+                - generic [ref=f10e565]:
+                  - 'link "Avance de proyecto 3: Creación de la base de datos" [ref=f10e566] [cursor=pointer]':
+                    - /url: /avances/av4
+                  - generic [ref=f10e567]:
+                    - generic [ref=f10e568]: event
+                    - text: Viernes 24 de abril
+                - generic [ref=f10e569]: 15 min
+              - generic [ref=f10e570]:
+                - generic [ref=f10e571]: forum
+                - generic [ref=f10e572]: Solicitar en equipo una asesoría con Enrique sobre su modelo de datos
+              - generic [ref=f10e573]:
+                - generic [ref=f10e574]: edit
+                - 'link "Ejercicio: Identificación de Llaves en un MR y expresión de consultas en álgebra relacional" [ref=f10e576] [cursor=pointer]':
+                  - /url: ejercicios/ej3_mr_ar/ej3.html
+                - generic [ref=f10e577]: 1h 35min
+          - generic [ref=f10e578]:
+            - heading "Martes" [level=3] [ref=f10e579]
+            - generic [ref=f10e580]:
+              - generic [ref=f10e581]: Previo a la sesión
+              - generic [ref=f10e582]:
+                - generic [ref=f10e583]: menu_book
+                - 'link "Lectura: Álgebra relacional, SQL básico y funciones agregadas" [ref=f10e585] [cursor=pointer]':
+                  - /url: lecturas/lectura5_sql/index.html
+              - generic [ref=f10e586]:
+                - generic [ref=f10e587]: info_outline
+                - generic [ref=f10e588]:
+                  - text: Instalar MariaDB
+                  - emphasis [ref=f10e589]: "(Opción 1: Instalar XAMPP | Opción 2: Instalar MySQL Community Server + MySQL Workbench)"
+                  - generic [ref=f10e590]:
+                    - text: (
+                    - link "XAMPP" [ref=f10e592] [cursor=pointer]:
+                      - /url: https://www.apachefriends.org/es/index.html
+                    - generic [ref=f10e593]:
+                      - text: ","
+                      - link "MySQL Community Server" [ref=f10e594] [cursor=pointer]:
+                        - /url: https://dev.mysql.com/downloads/mysql/
+                    - generic [ref=f10e595]:
+                      - text: ","
+                      - link "MySQL Workbench" [ref=f10e596] [cursor=pointer]:
+                        - /url: https://dev.mysql.com/downloads/workbench/
+                    - text: )
+            - generic [ref=f10e597]:
+              - generic [ref=f10e598]:
+                - generic [ref=f10e599]: assignment
+                - 'link "Lab 17: Interacción con la base de datos" [ref=f10e601] [cursor=pointer]':
+                  - /url: /labs/lab17
+                - generic [ref=f10e602]: 50 min
+              - generic [ref=f10e603]:
+                - generic [ref=f10e604]: free_breakfast
+                - generic [ref=f10e605]: 20 min
+              - generic [ref=f10e606]:
+                - generic [ref=f10e607]: forum
+                - generic [ref=f10e608]: Resolución de dudas de la lectura
+                - generic [ref=f10e609]: 1h
+              - generic [ref=f10e610]:
+                - generic [ref=f10e611]: edit
+                - 'link "Ejercicio: Traducción de álgebra relacional a SQL" [ref=f10e613] [cursor=pointer]':
+                  - /url: ejercicios/ej4_ar_sql.html
+                - generic [ref=f10e614]: 50 min
+          - generic [ref=f10e615]:
+            - heading "Miércoles" [level=3] [ref=f10e616]
+            - generic [ref=f10e617]:
+              - generic [ref=f10e618]:
+                - generic [ref=f10e619]: assignment
+                - 'link "Lab 24: AJAX y Datatables" [ref=f10e621] [cursor=pointer]':
+                  - /url: /labs/lab24
+                - generic [ref=f10e622]: 1h 50min
+              - generic [ref=f10e623]:
+                - generic [ref=f10e624]: check_circle
+                - generic [ref=f10e625]: Evaluación de competencias
+              - generic [ref=f10e626]:
+                - generic [ref=f10e627]: free_breakfast
+                - generic [ref=f10e628]: 20 min
+              - generic [ref=f10e629]:
+                - generic [ref=f10e630]: assignment
+                - 'link "Lab 15: Conociendo el Ambiente de MariaDB" [ref=f10e632] [cursor=pointer]':
+                  - /url: /labs/lab15
+                - generic [ref=f10e633]: 20 min
+              - generic [ref=f10e634]:
+                - generic [ref=f10e635]: assignment
+                - generic [ref=f10e636]: "Lab 16: Creación de constraints para instrumentar integridad referencial en MariaDB"
+                - generic [ref=f10e637]: 30 min
+          - generic [ref=f10e638]:
+            - heading "Jueves" [level=3] [ref=f10e639]
+            - generic [ref=f10e640]:
+              - generic [ref=f10e641]:
+                - generic [ref=f10e642]: stars
+                - generic [ref=f10e643]: Validación de avance proyecto 3, retroalimentación y corrección
+                - generic [ref=f10e644]: 1h 50min
+              - generic [ref=f10e645]:
+                - generic [ref=f10e646]: free_breakfast
+                - generic [ref=f10e647]: 20 min
+              - generic [ref=f10e648]:
+                - generic [ref=f10e649]: work
+                - generic [ref=f10e650]: Trabajo en proyecto
+                - generic [ref=f10e651]: 1h 20min
+              - generic [ref=f10e652]:
+                - generic [ref=f10e653]: check_circle
+                - generic [ref=f10e654]: Evaluación de competencias
+          - generic [ref=f10e655]:
+            - generic [ref=f10e656]: schedule
+            - generic [ref=f10e657]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e658]:
+            - generic [ref=f10e659]: schedule
+            - generic [ref=f10e660]: "S1: 50 min · S2: 1h 50min"
+          - generic [ref=f10e661]:
+            - generic [ref=f10e662]: schedule
+            - generic [ref=f10e663]: "S1: 1h 50min · S2: 50 min"
+          - generic [ref=f10e664]:
+            - generic [ref=f10e665]: schedule
+            - generic [ref=f10e666]: "S1: 1h 50min · S2: 1h 20min"
+      - generic [ref=f10e667]:
+        - button "5 Semana 5 27 de abril al 1 de mayo 2 Lecturas 1 Info 4 Labs 2 Discusión 2 Proyecto 2 Ejercicios 3 Eval 2 Trabajo expand_more" [ref=f10e668] [cursor=pointer]:
+          - generic [ref=f10e669]: "5"
+          - generic [ref=f10e670]:
+            - heading "Semana 5" [level=2] [ref=f10e671]
+            - text: 27 de abril al 1 de mayo
+          - generic [ref=f10e672]:
+            - generic [ref=f10e673]: 2 Lecturas
+            - generic [ref=f10e674]: 1 Info
+            - generic [ref=f10e675]: 4 Labs
+            - generic [ref=f10e676]: 2 Discusión
+            - generic [ref=f10e677]: 2 Proyecto
+            - generic [ref=f10e678]: 2 Ejercicios
+            - generic [ref=f10e679]: 3 Eval
+            - generic [ref=f10e680]: 2 Trabajo
+          - generic [ref=f10e681]: expand_more
+        - generic [ref=f10e682]:
+          - generic [ref=f10e683]:
+            - heading "Lunes" [level=3] [ref=f10e684]
+            - generic [ref=f10e685]:
+              - generic [ref=f10e686]: Previo a la sesión
+              - generic [ref=f10e687]:
+                - generic [ref=f10e688]: menu_book
+                - 'link "Lectura: Metodología para diseñar casos de pruebas a partir de casos de uso" [ref=f10e690] [cursor=pointer]':
+                  - /url: documentos/GeneratingTestCasesFromUseCasesJune01.pdf
+              - generic [ref=f10e691]:
+                - generic [ref=f10e692]: info_outline
+                - generic [ref=f10e693]: Agenda tu evaluación de competencias de esta semana
+            - generic [ref=f10e694]:
+              - generic [ref=f10e695]:
+                - generic [ref=f10e696]: assignment
+                - 'link "Lab 18: Autentificación" [ref=f10e698] [cursor=pointer]':
+                  - /url: /labs/lab18
+                - generic [ref=f10e699]: 1h 50min
+              - generic [ref=f10e700]:
+                - generic [ref=f10e701]: free_breakfast
+                - generic [ref=f10e702]: 20 min
+              - generic [ref=f10e703]:
+                - generic [ref=f10e704]: forum
+                - generic [ref=f10e705]: Resolución de dudas de la lectura
+                - generic [ref=f10e706]: 45 min
+              - generic [ref=f10e707]:
+                - generic [ref=f10e708]: stars
+                - generic [ref=f10e709]:
+                  - 'link "Avance de proyecto 4: Prueba de concepto" [ref=f10e710] [cursor=pointer]':
+                    - /url: /avances/av5
+                  - generic [ref=f10e711]:
+                    - generic [ref=f10e712]: event
+                    - text: Viernes 15 de mayo
+                - generic [ref=f10e713]: 15 min
+              - generic [ref=f10e714]:
+                - generic [ref=f10e715]: edit
+                - 'link "Ejercicio: Expresión de consultas en SQL usando funciones agregadas" [ref=f10e717] [cursor=pointer]':
+                  - /url: ejercicios/ej5_ar_sql2.html
+                - generic [ref=f10e718]: 50 min
+          - generic [ref=f10e719]:
+            - heading "Martes" [level=3] [ref=f10e720]
+            - generic [ref=f10e721]:
+              - generic [ref=f10e722]: Previo a la sesión
+              - generic [ref=f10e723]:
+                - generic [ref=f10e724]: menu_book
+                - 'link "Lectura: Consultas en SQL usando roles y Sub-consultas" [ref=f10e726] [cursor=pointer]':
+                  - /url: lecturas/lectura6_sql_roles/lectura_sql_roles.html
+            - generic [ref=f10e727]:
+              - generic [ref=f10e728]:
+                - generic [ref=f10e729]: assignment
+                - 'link "Lab 14: Manejo de sesiones y cookies" [ref=f10e731] [cursor=pointer]':
+                  - /url: /labs/lab14
+                - generic [ref=f10e732]: 1h 50min
+              - generic [ref=f10e733]:
+                - generic [ref=f10e734]: free_breakfast
+                - generic [ref=f10e735]: 20 min
+              - generic [ref=f10e736]:
+                - generic [ref=f10e737]: forum
+                - generic [ref=f10e738]: Resolución de dudas de la lectura
+                - generic [ref=f10e739]: 40 min
+              - generic [ref=f10e740]:
+                - generic [ref=f10e741]: edit
+                - 'link "Ejercicio: Expresión de consultas en SQL usando Sub-consultas" [ref=f10e743] [cursor=pointer]':
+                  - /url: ejercicios/ej6_sql_subconsultas.html
+                - generic [ref=f10e744]: 1h 10min
+              - generic [ref=f10e745]:
+                - generic [ref=f10e746]: assignment
+                - 'link "Lab 20: Consultas en SQL" [ref=f10e748] [cursor=pointer]':
+                  - /url: /labs/lab20
+                - generic [ref=f10e749]: 40 min
+          - generic [ref=f10e750]:
+            - heading "Miércoles" [level=3] [ref=f10e751]
+            - generic [ref=f10e752]:
+              - generic [ref=f10e753]:
+                - generic [ref=f10e754]: assignment
+                - 'link "Lab 19: Control de acceso basado en atributos" [ref=f10e756] [cursor=pointer]':
+                  - /url: /labs/lab19
+                - generic [ref=f10e757]: 1h 50min
+              - generic [ref=f10e758]:
+                - generic [ref=f10e759]: check_circle
+                - generic [ref=f10e760]: Evaluación de competencias
+              - generic [ref=f10e761]:
+                - generic [ref=f10e762]: free_breakfast
+                - generic [ref=f10e763]: 20 min
+              - generic [ref=f10e764]:
+                - generic [ref=f10e765]: work
+                - generic [ref=f10e766]: Trabajo en proyecto
+                - generic [ref=f10e767]: 1h 50min
+              - generic [ref=f10e768]:
+                - generic [ref=f10e769]: check_circle
+                - generic [ref=f10e770]: Evaluación de competencias
+          - generic [ref=f10e771]:
+            - heading "Jueves" [level=3] [ref=f10e772]
+            - generic [ref=f10e773]:
+              - generic [ref=f10e774]:
+                - generic [ref=f10e775]: stars
+                - generic [ref=f10e776]: Presentación de avance proyecto 4, retroalimentación y corrección
+                - generic [ref=f10e777]: 1h 50min
+              - generic [ref=f10e778]:
+                - generic [ref=f10e779]: free_breakfast
+                - generic [ref=f10e780]: 20 min
+              - generic [ref=f10e781]:
+                - generic [ref=f10e782]: work
+                - generic [ref=f10e783]: Trabajo en proyecto
+                - generic [ref=f10e784]: 1h 50min
+              - generic [ref=f10e785]:
+                - generic [ref=f10e786]: check_circle
+                - generic [ref=f10e787]: Evaluación de competencias
+          - generic [ref=f10e788]:
+            - generic [ref=f10e789]: schedule
+            - generic [ref=f10e790]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e791]:
+            - generic [ref=f10e792]: schedule
+            - generic [ref=f10e793]: "S1: 1h 50min · S2: 2h 30min"
+          - generic [ref=f10e794]:
+            - generic [ref=f10e795]: schedule
+            - generic [ref=f10e796]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e797]:
+            - generic [ref=f10e798]: schedule
+            - generic [ref=f10e799]: "S1: 1h 50min · S2: 1h 50min"
+      - generic [ref=f10e800]:
+        - button "Tec Semana Tec 4 al 8 de mayo expand_more" [ref=f10e801] [cursor=pointer]:
+          - generic [ref=f10e802]: Tec
+          - generic [ref=f10e803]:
+            - heading "Semana Tec" [level=2] [ref=f10e804]
+            - text: 4 al 8 de mayo
+          - generic [ref=f10e805]: expand_more
+        - generic [ref=f10e806]:
+          - generic [ref=f10e807]: event_busy
+          - paragraph [ref=f10e808]:
+            - strong [ref=f10e809]: Semana Tec
+          - paragraph [ref=f10e810]:
+            - strong [ref=f10e811]: Domingo, fecha límite para considerar actividades en la evaluación del periodo 1
+      - generic [ref=f10e812]:
+        - button "6 Semana 6 11 al 15 de mayo 1 Discusión 5 Labs 1 Info 2 Proyecto 1 Trabajo 1 Eval expand_more" [ref=f10e813] [cursor=pointer]:
+          - generic [ref=f10e814]: "6"
+          - generic [ref=f10e815]:
+            - heading "Semana 6" [level=2] [ref=f10e816]
+            - text: 11 al 15 de mayo
+          - generic [ref=f10e817]:
+            - generic [ref=f10e818]: 1 Discusión
+            - generic [ref=f10e819]: 5 Labs
+            - generic [ref=f10e820]: 1 Info
+            - generic [ref=f10e821]: 2 Proyecto
+            - generic [ref=f10e822]: 1 Trabajo
+            - generic [ref=f10e823]: 1 Eval
+          - generic [ref=f10e824]: expand_more
+        - generic [ref=f10e825]:
+          - generic [ref=f10e826]:
+            - heading "Lunes" [level=3] [ref=f10e827]
+            - generic [ref=f10e828]:
+              - generic [ref=f10e829]:
+                - generic [ref=f10e830]: forum
+                - generic [ref=f10e831]: Pruebas y usabilidad
+                - generic [ref=f10e832]: 1h 50min
+              - generic [ref=f10e833]:
+                - generic [ref=f10e834]: free_breakfast
+                - generic [ref=f10e835]: 20 min
+              - generic [ref=f10e836]:
+                - generic [ref=f10e837]: assignment
+                - 'link "Lab 21: Funciones Agregadas y Sub-consultas" [ref=f10e839] [cursor=pointer]':
+                  - /url: /labs/lab21
+                - generic [ref=f10e840]: 1h 50min
+          - generic [ref=f10e841]:
+            - heading "Martes" [level=3] [ref=f10e842]
+            - generic [ref=f10e843]:
+              - generic [ref=f10e844]:
+                - generic [ref=f10e845]: assignment
+                - 'link "Lab 22: Subir y bajar archivos" [ref=f10e847] [cursor=pointer]':
+                  - /url: /labs/lab22
+                - generic [ref=f10e848]: 1h 50min
+              - generic [ref=f10e849]:
+                - generic [ref=f10e850]: free_breakfast
+                - generic [ref=f10e851]: 20 min
+              - generic [ref=f10e852]:
+                - generic [ref=f10e853]: info_outline
+                - generic [ref=f10e854]: Agenda tu evaluación de competencias de esta semana
+              - generic [ref=f10e855]:
+                - generic [ref=f10e856]: assignment
+                - 'link "Lab 23: Stored procedures" [ref=f10e858] [cursor=pointer]':
+                  - /url: /labs/lab23
+                - generic [ref=f10e859]: 1h 50min
+          - generic [ref=f10e860]:
+            - heading "Miércoles" [level=3] [ref=f10e861]
+            - generic [ref=f10e862]:
+              - generic [ref=f10e863]:
+                - generic [ref=f10e864]: assignment
+                - 'link "Lab 26: Servicios web" [ref=f10e866] [cursor=pointer]':
+                  - /url: /labs/lab26
+                - generic [ref=f10e867]: 1h 50min
+              - generic [ref=f10e868]:
+                - generic [ref=f10e869]: free_breakfast
+                - generic [ref=f10e870]: 20 min
+              - generic [ref=f10e871]:
+                - generic [ref=f10e872]: assignment
+                - 'link "Lab 25: Transacciones" [ref=f10e874] [cursor=pointer]':
+                  - /url: /labs/lab25
+                - generic [ref=f10e875]: 1h 50min
+          - generic [ref=f10e876]:
+            - heading "Jueves" [level=3] [ref=f10e877]
+            - generic [ref=f10e878]:
+              - generic [ref=f10e879]:
+                - generic [ref=f10e880]: stars
+                - generic [ref=f10e881]: Presentación de avance proyecto 4, retroalimentación y corrección
+                - generic [ref=f10e882]: 1h 50min
+              - generic [ref=f10e883]:
+                - generic [ref=f10e884]: free_breakfast
+                - generic [ref=f10e885]: 20 min
+              - generic [ref=f10e886]:
+                - generic [ref=f10e887]: stars
+                - generic [ref=f10e888]:
+                  - 'link "Avance de proyecto 5: Versión Beta del Sistema" [ref=f10e889] [cursor=pointer]':
+                    - /url: /avances/av6
+                  - generic [ref=f10e890]:
+                    - generic [ref=f10e891]: event
+                    - text: Viernes 29 de mayo
+                - generic [ref=f10e892]: 20 min
+              - generic [ref=f10e893]:
+                - generic [ref=f10e894]: work
+                - generic [ref=f10e895]: Trabajo en proyecto
+                - generic [ref=f10e896]: 1h 30min
+              - generic [ref=f10e897]:
+                - generic [ref=f10e898]: check_circle
+                - generic [ref=f10e899]: Evaluación de competencias
+          - generic [ref=f10e900]:
+            - generic [ref=f10e901]: schedule
+            - generic [ref=f10e902]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e903]:
+            - generic [ref=f10e904]: schedule
+            - generic [ref=f10e905]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e906]:
+            - generic [ref=f10e907]: schedule
+            - generic [ref=f10e908]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e909]:
+            - generic [ref=f10e910]: schedule
+            - generic [ref=f10e911]: "S1: 1h 50min · S2: 1h 50min"
+      - generic [ref=f10e912]:
+        - button "7 Semana 7 18 al 22 de mayo 3 Lecturas 4 Info 1 Discusión 3 Ejercicios 1 Labs 1 Trabajo 1 Proyecto 1 Eval expand_more" [ref=f10e913] [cursor=pointer]:
+          - generic [ref=f10e914]: "7"
+          - generic [ref=f10e915]:
+            - heading "Semana 7" [level=2] [ref=f10e916]
+            - text: 18 al 22 de mayo
+          - generic [ref=f10e917]:
+            - generic [ref=f10e918]: 3 Lecturas
+            - generic [ref=f10e919]: 4 Info
+            - generic [ref=f10e920]: 1 Discusión
+            - generic [ref=f10e921]: 3 Ejercicios
+            - generic [ref=f10e922]: 1 Labs
+            - generic [ref=f10e923]: 1 Trabajo
+            - generic [ref=f10e924]: 1 Proyecto
+            - generic [ref=f10e925]: 1 Eval
+          - generic [ref=f10e926]: expand_more
+        - generic [ref=f10e927]:
+          - generic [ref=f10e928]:
+            - heading "Lunes" [level=3] [ref=f10e929]
+            - generic [ref=f10e930]:
+              - generic [ref=f10e931]: Previo a la sesión
+              - generic [ref=f10e932]:
+                - generic [ref=f10e933]: menu_book
+                - 'link "Lectura: Normalización" [ref=f10e935] [cursor=pointer]':
+                  - /url: lecturas/lectura9_normalizacion/normalizacion.html
+            - generic [ref=f10e936]:
+              - generic [ref=f10e937]:
+                - generic [ref=f10e938]: info_outline
+                - generic [ref=f10e939]: Agenda tu evaluación de competencias de esta semana
+              - generic [ref=f10e940]:
+                - generic [ref=f10e941]: info_outline
+                - link "5 steps to speed up your image heavy website" [ref=f10e943] [cursor=pointer]:
+                  - /url: https://codeburst.io/5-steps-to-speed-up-your-image-heavy-website-65c874a86966
+                - generic [ref=f10e944]: 20 min
+              - generic [ref=f10e945]:
+                - generic [ref=f10e946]: free_breakfast
+                - generic [ref=f10e947]: 20 min
+              - generic [ref=f10e948]:
+                - generic [ref=f10e949]: forum
+                - generic [ref=f10e950]: Resolución de dudas de la lectura
+                - generic [ref=f10e951]: 50 min
+              - generic [ref=f10e952]:
+                - generic [ref=f10e953]: edit
+                - 'link "Ejercicio: Normalización" [ref=f10e955] [cursor=pointer]':
+                  - /url: ejercicios/ej9_normalizacion.html
+                - generic [ref=f10e956]: 1h
+          - generic [ref=f10e957]:
+            - heading "Martes" [level=3] [ref=f10e958]
+            - generic [ref=f10e959]:
+              - generic [ref=f10e960]:
+                - generic [ref=f10e961]: info_outline
+                - link "The Web Developer Roadmap" [ref=f10e963] [cursor=pointer]:
+                  - /url: https://roadmap.sh/
+                - generic [ref=f10e964]: 30 min
+              - generic [ref=f10e965]:
+                - generic [ref=f10e966]: free_breakfast
+                - generic [ref=f10e967]: 20 min
+              - generic [ref=f10e968]:
+                - generic [ref=f10e969]: menu_book
+                - link "Diagramas de estado" [ref=f10e971] [cursor=pointer]:
+                  - /url: documentos/Diagramas de estado.pptx
+                - generic [ref=f10e972]: 50 min
+              - generic [ref=f10e973]:
+                - generic [ref=f10e974]: edit
+                - 'link "Ejercicio: Diagramas de estado" [ref=f10e976] [cursor=pointer]':
+                  - /url: documentos/EjerciciosDiagramaEstado.docx
+                - generic [ref=f10e977]: 1h
+          - generic [ref=f10e978]:
+            - heading "Miércoles" [level=3] [ref=f10e979]
+            - generic [ref=f10e980]:
+              - generic [ref=f10e981]:
+                - generic [ref=f10e982]: assignment
+                - link "Guías de preparación para el despliegue" [ref=f10e984] [cursor=pointer]:
+                  - /url: /labs/lab27
+                - generic [ref=f10e985]: 20 min
+              - generic [ref=f10e986]:
+                - generic [ref=f10e987]: work
+                - generic [ref=f10e988]: Trabajo en proyecto
+                - generic [ref=f10e989]: 1h 30min
+              - generic [ref=f10e990]:
+                - generic [ref=f10e991]: free_breakfast
+                - generic [ref=f10e992]: 20 min
+              - generic [ref=f10e993]:
+                - generic [ref=f10e994]: menu_book
+                - link "Diagramas de despliegue" [ref=f10e996] [cursor=pointer]:
+                  - /url: documentos/Diagramas de despliegue.pptx
+                - generic [ref=f10e997]: 50 min
+              - generic [ref=f10e998]:
+                - generic [ref=f10e999]: edit
+                - 'link "Ejercicio: Diagramas de despliegue. Elaborar diagramas de despliegue de los entornos de desarrollo y producción del proyecto" [ref=f10e1001] [cursor=pointer]':
+                  - /url: documentos/Ejercicio - Diagrama de despliegue.docx
+                - generic [ref=f10e1002]: 1h
+          - generic [ref=f10e1003]:
+            - heading "Jueves" [level=3] [ref=f10e1004]
+            - generic [ref=f10e1005]:
+              - generic [ref=f10e1006]:
+                - generic [ref=f10e1007]: info_outline
+                - generic [ref=f10e1008]: Límite para dar de baja el bloque
+              - generic [ref=f10e1009]:
+                - generic [ref=f10e1010]: stars
+                - generic [ref=f10e1011]: Taller de despliegue
+                - generic [ref=f10e1012]: 1h 50min
+              - generic [ref=f10e1013]:
+                - generic [ref=f10e1014]: free_breakfast
+                - generic [ref=f10e1015]: 20 min
+              - generic [ref=f10e1016]:
+                - generic [ref=f10e1017]: check_circle
+                - generic [ref=f10e1018]: Evaluación de competencias
+          - generic [ref=f10e1019]:
+            - generic [ref=f10e1020]: schedule
+            - generic [ref=f10e1021]: "S1: 20 min · S2: 1h 50min"
+          - generic [ref=f10e1022]:
+            - generic [ref=f10e1023]: schedule
+            - generic [ref=f10e1024]: "S1: 30 min · S2: 1h 50min"
+          - generic [ref=f10e1025]:
+            - generic [ref=f10e1026]: schedule
+            - generic [ref=f10e1027]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e1028]:
+            - generic [ref=f10e1029]: schedule
+            - generic [ref=f10e1030]: "Total: 1h 50min"
+      - generic [ref=f10e1031]:
+        - button "8 Semana 8 25 al 29 de mayo 1 Labs 4 Eval 3 Trabajo 2 Proyecto 1 Info expand_more" [ref=f10e1032] [cursor=pointer]:
+          - generic [ref=f10e1033]: "8"
+          - generic [ref=f10e1034]:
+            - heading "Semana 8" [level=2] [ref=f10e1035]
+            - text: 25 al 29 de mayo
+          - generic [ref=f10e1036]:
+            - generic [ref=f10e1037]: 1 Labs
+            - generic [ref=f10e1038]: 4 Eval
+            - generic [ref=f10e1039]: 3 Trabajo
+            - generic [ref=f10e1040]: 2 Proyecto
+            - generic [ref=f10e1041]: 1 Info
+          - generic [ref=f10e1042]: expand_more
+        - generic [ref=f10e1043]:
+          - generic [ref=f10e1044]:
+            - heading "Lunes" [level=3] [ref=f10e1045]
+            - generic [ref=f10e1046]:
+              - generic [ref=f10e1047]:
+                - generic [ref=f10e1048]: free_breakfast
+                - generic [ref=f10e1049]: 20 min
+              - generic [ref=f10e1050]:
+                - generic [ref=f10e1051]: assignment
+                - 'link "Lab 28: Triggers" [ref=f10e1053] [cursor=pointer]':
+                  - /url: /labs/lab28
+                - generic [ref=f10e1054]: 1h 50min
+              - generic [ref=f10e1055]:
+                - generic [ref=f10e1056]: check_circle
+                - generic [ref=f10e1057]: Evaluación de competencias
+          - generic [ref=f10e1058]:
+            - heading "Martes" [level=3] [ref=f10e1059]
+            - generic [ref=f10e1060]:
+              - generic [ref=f10e1061]:
+                - generic [ref=f10e1062]: free_breakfast
+                - generic [ref=f10e1063]: 20 min
+              - generic [ref=f10e1064]:
+                - generic [ref=f10e1065]: work
+                - generic [ref=f10e1066]: Trabajo en proyecto
+                - generic [ref=f10e1067]: 1h 50min
+              - generic [ref=f10e1068]:
+                - generic [ref=f10e1069]: check_circle
+                - generic [ref=f10e1070]: Evaluación de competencias
+          - generic [ref=f10e1071]:
+            - heading "Miércoles" [level=3] [ref=f10e1072]
+            - generic [ref=f10e1073]:
+              - generic [ref=f10e1074]:
+                - generic [ref=f10e1075]: free_breakfast
+                - generic [ref=f10e1076]: 20 min
+              - generic [ref=f10e1077]:
+                - generic [ref=f10e1078]: work
+                - generic [ref=f10e1079]: Trabajo en proyecto
+                - generic [ref=f10e1080]: 1h 50min
+              - generic [ref=f10e1081]:
+                - generic [ref=f10e1082]: check_circle
+                - generic [ref=f10e1083]: Evaluación de competencias
+          - generic [ref=f10e1084]:
+            - heading "Jueves" [level=3] [ref=f10e1085]
+            - generic [ref=f10e1086]:
+              - generic [ref=f10e1087]:
+                - generic [ref=f10e1088]: stars
+                - generic [ref=f10e1089]: Presentación de avance proyecto 5, retroalimentación y corrección
+                - generic [ref=f10e1090]: 1h 30min
+              - generic [ref=f10e1091]:
+                - generic [ref=f10e1092]: stars
+                - generic [ref=f10e1093]:
+                  - 'link "Avance de proyecto 6: Versión 1.0" [ref=f10e1094] [cursor=pointer]':
+                    - /url: /avances/av7
+                  - generic [ref=f10e1095]:
+                    - generic [ref=f10e1096]: event
+                    - text: Viernes 5 de junio
+                - generic [ref=f10e1097]: 20 min
+              - generic [ref=f10e1098]:
+                - generic [ref=f10e1099]: free_breakfast
+                - generic [ref=f10e1100]: 20 min
+              - generic [ref=f10e1101]:
+                - generic [ref=f10e1102]: info_outline
+                - generic [ref=f10e1103]: Agenda tu evaluación de competencias de la semana 10
+              - generic [ref=f10e1104]:
+                - generic [ref=f10e1105]: work
+                - generic [ref=f10e1106]: Trabajo en proyecto
+                - generic [ref=f10e1107]: 1h 50min
+              - generic [ref=f10e1108]:
+                - generic [ref=f10e1109]: check_circle
+                - generic [ref=f10e1110]: Evaluación de competencias
+          - generic [ref=f10e1111]:
+            - generic [ref=f10e1112]: schedule
+            - generic [ref=f10e1113]: "Total: 1h 50min"
+          - generic [ref=f10e1114]:
+            - generic [ref=f10e1115]: schedule
+            - generic [ref=f10e1116]: "Total: 1h 50min"
+          - generic [ref=f10e1117]:
+            - generic [ref=f10e1118]: schedule
+            - generic [ref=f10e1119]: "Total: 1h 50min"
+          - generic [ref=f10e1120]:
+            - generic [ref=f10e1121]: schedule
+            - generic [ref=f10e1122]: "S1: 1h 50min · S2: 1h 50min"
+      - generic [ref=f10e1123]:
+        - button "9 Semana 9 1 al 5 de junio 6 Trabajo 7 Eval 1 Discusión 1 Proyecto 2 Info expand_more" [ref=f10e1124] [cursor=pointer]:
+          - generic [ref=f10e1125]: "9"
+          - generic [ref=f10e1126]:
+            - heading "Semana 9" [level=2] [ref=f10e1127]
+            - text: 1 al 5 de junio
+          - generic [ref=f10e1128]:
+            - generic [ref=f10e1129]: 6 Trabajo
+            - generic [ref=f10e1130]: 7 Eval
+            - generic [ref=f10e1131]: 1 Discusión
+            - generic [ref=f10e1132]: 1 Proyecto
+            - generic [ref=f10e1133]: 2 Info
+          - generic [ref=f10e1134]: expand_more
+        - generic [ref=f10e1135]:
+          - generic [ref=f10e1136]:
+            - heading "Lunes" [level=3] [ref=f10e1137]
+            - generic [ref=f10e1138]:
+              - generic [ref=f10e1139]:
+                - generic [ref=f10e1140]: work
+                - generic [ref=f10e1141]: Trabajo en proyecto
+                - generic [ref=f10e1142]: 1h 50min
+              - generic [ref=f10e1143]:
+                - generic [ref=f10e1144]: check_circle
+                - generic [ref=f10e1145]: Evaluación de competencias
+              - generic [ref=f10e1146]:
+                - generic [ref=f10e1147]: free_breakfast
+                - generic [ref=f10e1148]: 20 min
+              - generic [ref=f10e1149]:
+                - generic [ref=f10e1150]: work
+                - generic [ref=f10e1151]: Trabajo en proyecto
+                - generic [ref=f10e1152]: 1h 50min
+              - generic [ref=f10e1153]:
+                - generic [ref=f10e1154]: check_circle
+                - generic [ref=f10e1155]: Evaluación de competencias
+          - generic [ref=f10e1156]:
+            - heading "Martes" [level=3] [ref=f10e1157]
+            - generic [ref=f10e1158]:
+              - generic [ref=f10e1159]:
+                - generic [ref=f10e1160]: work
+                - generic [ref=f10e1161]: Trabajo en proyecto
+                - generic [ref=f10e1162]: 1h 30min
+              - generic [ref=f10e1163]:
+                - generic [ref=f10e1164]: check_circle
+                - generic [ref=f10e1165]: Evaluación de competencias
+              - generic [ref=f10e1166]:
+                - generic [ref=f10e1167]: free_breakfast
+                - generic [ref=f10e1168]: 20 min
+              - generic [ref=f10e1169]:
+                - generic [ref=f10e1170]: work
+                - generic [ref=f10e1171]: Trabajo en proyecto
+                - generic [ref=f10e1172]: 1h 50min
+              - generic [ref=f10e1173]:
+                - generic [ref=f10e1174]: check_circle
+                - generic [ref=f10e1175]: Evaluación de competencias
+          - generic [ref=f10e1176]:
+            - heading "Miércoles" [level=3] [ref=f10e1177]
+            - generic [ref=f10e1178]:
+              - generic [ref=f10e1179]:
+                - generic [ref=f10e1180]: work
+                - generic [ref=f10e1181]: Trabajo en proyecto
+                - generic [ref=f10e1182]: 1h 30min
+              - generic [ref=f10e1183]:
+                - generic [ref=f10e1184]: check_circle
+                - generic [ref=f10e1185]: Evaluación de competencias
+              - generic [ref=f10e1186]:
+                - generic [ref=f10e1187]: free_breakfast
+                - generic [ref=f10e1188]: 20 min
+              - generic [ref=f10e1189]:
+                - generic [ref=f10e1190]: work
+                - generic [ref=f10e1191]: Trabajo en proyecto
+                - generic [ref=f10e1192]: 1h 50min
+              - generic [ref=f10e1193]:
+                - generic [ref=f10e1194]: forum
+                - generic [ref=f10e1195]: Responder ECOA
+              - generic [ref=f10e1196]:
+                - generic [ref=f10e1197]: check_circle
+                - generic [ref=f10e1198]: Evaluación de competencias
+          - generic [ref=f10e1199]:
+            - heading "Jueves" [level=3] [ref=f10e1200]
+            - generic [ref=f10e1201]:
+              - generic [ref=f10e1202]:
+                - generic [ref=f10e1203]: stars
+                - generic [ref=f10e1204]: Validación de avance proyecto, retroalimentación y corrección
+                - generic [ref=f10e1205]: 1h 40min
+              - generic [ref=f10e1206]:
+                - generic [ref=f10e1207]: info_outline
+                - generic [ref=f10e1208]: Agenda de presentaciones finales
+                - generic [ref=f10e1209]: 10 min
+              - generic [ref=f10e1210]:
+                - generic [ref=f10e1211]: free_breakfast
+                - generic [ref=f10e1212]: 20 min
+              - generic [ref=f10e1213]:
+                - generic [ref=f10e1214]: check_circle
+                - generic [ref=f10e1215]: Evaluación de competencias
+              - generic [ref=f10e1216]:
+                - generic [ref=f10e1217]: info_outline
+                - generic [ref=f10e1218]: Domingo, fecha límite para considerar actividades en la evaluación del periodo 2
+          - generic [ref=f10e1219]:
+            - generic [ref=f10e1220]: schedule
+            - generic [ref=f10e1221]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e1222]:
+            - generic [ref=f10e1223]: schedule
+            - generic [ref=f10e1224]: "S1: 1h 30min · S2: 1h 50min"
+          - generic [ref=f10e1225]:
+            - generic [ref=f10e1226]: schedule
+            - generic [ref=f10e1227]: "S1: 1h 30min · S2: 1h 50min"
+          - generic [ref=f10e1228]:
+            - generic [ref=f10e1229]: schedule
+            - generic [ref=f10e1230]: "Total: 1h 50min"
+      - generic [ref=f10e1231]:
+        - button "10 Semana 10 — Semana actual 8 al 12 de junio expand_more" [expanded] [ref=f10e1232] [cursor=pointer]:
+          - generic [ref=f10e1233]: "10"
+          - generic [ref=f10e1234]:
+            - heading "Semana 10 — Semana actual" [level=2] [ref=f10e1235]
+            - text: 8 al 12 de junio
+          - generic [ref=f10e1236]: expand_more
+        - generic [ref=f10e1239]:
+          - generic [ref=f10e1240]:
+            - heading "Lunes" [level=3] [ref=f10e1241]
+            - generic [ref=f10e1242]:
+              - generic [ref=f10e1243]:
+                - generic [ref=f10e1244]: work
+                - generic [ref=f10e1245]: Trabajo en proyecto
+                - generic [ref=f10e1246]: 1h 50min
+              - generic [ref=f10e1247]:
+                - generic [ref=f10e1248]: check_circle
+                - generic [ref=f10e1249]: Evaluación de competencias
+              - generic [ref=f10e1250]:
+                - generic [ref=f10e1251]: free_breakfast
+                - generic [ref=f10e1252]: 20 min
+              - generic [ref=f10e1253]:
+                - generic [ref=f10e1254]: work
+                - generic [ref=f10e1255]: Trabajo en proyecto
+                - generic [ref=f10e1256]: 1h 50min
+              - generic [ref=f10e1257]:
+                - generic [ref=f10e1258]: check_circle
+                - generic [ref=f10e1259]: Evaluación de competencias
+          - generic [ref=f10e1260]:
+            - heading "Martes" [level=3] [ref=f10e1261]
+            - generic [ref=f10e1262]:
+              - generic [ref=f10e1263]:
+                - generic [ref=f10e1264]: work
+                - generic [ref=f10e1265]: Trabajo en proyecto
+                - generic [ref=f10e1266]: 1h 50min
+              - generic [ref=f10e1267]:
+                - generic [ref=f10e1268]: check_circle
+                - generic [ref=f10e1269]: Evaluación de competencias
+              - generic [ref=f10e1270]:
+                - generic [ref=f10e1271]: free_breakfast
+                - generic [ref=f10e1272]: 20 min
+              - generic [ref=f10e1273]:
+                - generic [ref=f10e1274]: work
+                - generic [ref=f10e1275]: Trabajo en proyecto
+                - generic [ref=f10e1276]: 1h 50min
+              - generic [ref=f10e1277]:
+                - generic [ref=f10e1278]: check_circle
+                - generic [ref=f10e1279]: Evaluación de competencias
+          - generic [ref=f10e1280]:
+            - heading "Miércoles" [level=3] [ref=f10e1281]
+            - generic [ref=f10e1282]:
+              - generic [ref=f10e1283]:
+                - generic [ref=f10e1284]: work
+                - generic [ref=f10e1285]: Trabajo en proyecto
+                - generic [ref=f10e1286]: 1h 50min
+              - generic [ref=f10e1287]:
+                - generic [ref=f10e1288]: check_circle
+                - generic [ref=f10e1289]: Evaluación de competencias
+              - generic [ref=f10e1290]:
+                - generic [ref=f10e1291]: free_breakfast
+                - generic [ref=f10e1292]: 20 min
+              - generic [ref=f10e1293]:
+                - generic [ref=f10e1294]: work
+                - generic [ref=f10e1295]: Trabajo en proyecto
+                - generic [ref=f10e1296]: 1h 50min
+              - generic [ref=f10e1297]:
+                - generic [ref=f10e1298]: check_circle
+                - generic [ref=f10e1299]: Evaluación de competencias
+          - generic [ref=f10e1300]:
+            - heading "Jueves" [level=3] [ref=f10e1301]
+            - generic [ref=f10e1302]: Sesión plenaria
+            - generic [ref=f10e1303]:
+              - generic [ref=f10e1304]:
+                - generic [ref=f10e1305]: info_outline
+                - generic [ref=f10e1306]: Preparar presentaciones finales
+                - generic [ref=f10e1307]: 30 min
+              - generic [ref=f10e1308]:
+                - generic [ref=f10e1309]: stars
+                - generic [ref=f10e1310]: Presentaciones finales de proyecto (13:00 - 15:00)
+                - generic [ref=f10e1311]: 2h
+              - generic [ref=f10e1312]:
+                - generic [ref=f10e1313]: info_outline
+                - generic [ref=f10e1314]: Límite para reportar calificaciones
+          - generic [ref=f10e1315]:
+            - generic [ref=f10e1316]: schedule
+            - generic [ref=f10e1317]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e1318]:
+            - generic [ref=f10e1319]: schedule
+            - generic [ref=f10e1320]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e1321]:
+            - generic [ref=f10e1322]: schedule
+            - generic [ref=f10e1323]: "S1: 1h 50min · S2: 1h 50min"
+          - generic [ref=f10e1324]:
+            - generic [ref=f10e1325]: schedule
+            - generic [ref=f10e1326]: "Total: 2h 30min"

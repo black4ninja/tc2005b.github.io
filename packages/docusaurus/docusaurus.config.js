@@ -76,6 +76,18 @@ const config = {
         },
       }),
     ],
+    [
+      // Segunda instancia de docs: materia TC2007B → /docs/tc2007b/...
+      // (para agregar más materias, replicar este bloque con su id/path/slug).
+      '@docusaurus/plugin-content-docs',
+      /** @type {import('@docusaurus/plugin-content-docs').Options} */
+      ({
+        id: 'tc2007b',
+        path: 'docs/tc2007b',
+        routeBasePath: 'tc2007b',
+        sidebarPath: './sidebars/tc2007b.js',
+      }),
+    ],
   ],
 
   themeConfig:
@@ -84,13 +96,20 @@ const config = {
       // Replace with your project's social card
       image: 'img/docusaurus-social-card.jpg',
       navbar: {
-        title: 'TC2005B',
+        title: 'Docs',
         items: [
           {
             type: 'docSidebar',
             sidebarId: 'tutorialSidebar',
             position: 'left',
-            label: 'Guía del curso',
+            label: 'TC2005B',
+          },
+          {
+            type: 'docSidebar',
+            sidebarId: 'tutorialSidebar',
+            docsPluginId: 'tc2007b',
+            position: 'left',
+            label: 'TC2007B',
           },
         ],
       },
