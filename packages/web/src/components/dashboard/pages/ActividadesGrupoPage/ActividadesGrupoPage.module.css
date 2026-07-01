@@ -1,0 +1,283 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pageTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.tipoChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--chip-bg);
+  color: var(--chip-color);
+}
+
+.nombreCell {
+  max-width: 400px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 0 0;
+}
+
+.formLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.formInput {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transition: border-color 0.2s;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: var(--color-lab);
+  box-shadow: 0 0 0 2px var(--color-lab-light);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.error {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 0.875rem;
+  border: 1px solid #fecaca;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 64px 24px;
+  text-align: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.emptyState p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.completionCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+}
+
+.completionBadge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  background: var(--color-lab-light, #e0f2fe);
+  color: var(--color-lab, #0369a1);
+}
+
+.completionBadgeAll {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.completionBadgeNone {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.progresoToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 12px;
+}
+
+.progresoSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.875rem;
+}
+
+.progresoSummary strong {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.filterChips {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  background: var(--bg-page, #f3f4f6);
+  border-radius: 8px;
+}
+
+.filterChip {
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.filterChip:hover {
+  color: var(--text-primary);
+}
+
+.filterChipActive {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.progresoTableWrap {
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.progresoTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.progresoTable thead {
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  z-index: 1;
+}
+
+.progresoTable th {
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.progresoTable td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.progresoTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.progresoRowIncomplete {
+  background: rgba(220, 38, 38, 0.06);
+}
+
+.progresoRowIncomplete:hover {
+  background: rgba(220, 38, 38, 0.10);
+}
+
+.progresoTable tbody tr:not(.progresoRowIncomplete):hover {
+  background: var(--bg-page);
+}
+
+.alumnoNameCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alumnoNameCell strong {
+  font-weight: 600;
+}
+
+.alumnoNameCell small {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.numCell {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.zeroValue {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.statusBadgeOk {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.statusBadgePending {
+  background: #fef2f2;
+  color: #b91c1c;
+}

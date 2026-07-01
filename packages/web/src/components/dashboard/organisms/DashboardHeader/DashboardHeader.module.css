@@ -1,0 +1,41 @@
+.header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: var(--dashboard-header-height);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 997;
+  transition: left 0.3s ease;
+}
+.left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.menuBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  display: inline-flex;
+  transition: background 0.2s;
+}
+.menuBtn:hover { background: var(--bg-page); }
+.right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .header {
+    left: 0 !important;
+  }
+}

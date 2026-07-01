@@ -1,0 +1,274 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+
+.pageTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.loading,
+.error,
+.empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+}
+
+/* Accordion card */
+.card {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.card[open] > .cardSummary {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cardSummary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+.cardSummary::-webkit-details-marker {
+  display: none;
+}
+
+.chevron {
+  color: var(--text-secondary);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.card[open] .chevron {
+  transform: rotate(90deg);
+}
+
+.compName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 150px;
+}
+
+.compNivel {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.tipoBadge {
+  display: inline-flex;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.tipoDirecta {
+  background: var(--color-lab-light);
+  color: var(--color-lab);
+}
+
+.tipoCalculada {
+  background: var(--color-proyecto-light);
+  color: var(--color-proyecto);
+}
+
+.periodos {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.periodoChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.periodoChip strong {
+  color: var(--text-primary);
+}
+
+/* Expanded content */
+.cardBody {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.infoSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.infoLabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.infoText {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+/* Rubric grid */
+.rubricWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rubricGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(160px, 1fr));
+  gap: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 600px;
+}
+
+.rubricCol {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-card);
+}
+
+.rubricCol:last-child {
+  border-right: none;
+}
+
+.rubricColActive {
+  background: var(--color-lab-light);
+}
+
+.rubricHeader {
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.rubricHeaderActive {
+  background: var(--color-lab);
+  color: #fff;
+  border-bottom-color: var(--color-lab);
+}
+
+.rubricPercent {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.rubricBody {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* Retro sections */
+.retroGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .retroGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.retroCard {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--bg-page);
+  border: 1px solid var(--border-color);
+}
+
+.retroTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.retroText {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.noRetro {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Evidencias */
+.evidenciasList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.evidenciaLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-lab);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.evidenciaLink:hover {
+  text-decoration: underline;
+}

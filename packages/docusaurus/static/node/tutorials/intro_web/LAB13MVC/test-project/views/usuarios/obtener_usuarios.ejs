@@ -1,0 +1,19 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <%- include('./../css.ejs') %>
+</head>
+<body>
+  <h1>Obtener Usuarios</h1>
+  <ul>
+    <% for(var i = 0; i < usuarios.length; i++){  %>
+      <li>
+        <%= usuarios[i].id %>, 
+        <%= usuarios[i].nombre %>, 
+        <%= usuarios[i].activo %>
+      </li>
+    <% } %>
+  </ul>
+</body>
+<%- include('./../scripts.ejs') %>
+</html>

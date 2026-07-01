@@ -1,0 +1,81 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.miembrosSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.miembrosLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.miembrosSearch {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.miembrosSearch:focus {
+  border-color: var(--primary);
+}
+
+.miembrosList {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+}
+
+.miembroItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.miembroItem:hover {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.04));
+}
+
+.miembroItem input[type="checkbox"] {
+  accent-color: var(--primary);
+}
+
+.miembroName {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.miembroEmail {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+.emptyMiembros {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}

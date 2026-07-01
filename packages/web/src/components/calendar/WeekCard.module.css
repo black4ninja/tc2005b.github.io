@@ -1,0 +1,286 @@
+.weekCard {
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  margin-bottom: var(--space-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.3s;
+  scroll-margin-top: var(--topbar-height);
+}
+
+.weekCard:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.expanded {
+  box-shadow: var(--shadow-lg);
+}
+
+.specialWeek {
+  border-color: var(--color-asueto);
+  border-width: 2px;
+}
+
+.currentWeek {
+  border-color: var(--color-lab);
+  border-width: 2px;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12), var(--shadow-md);
+}
+
+.currentWeek .weekNumber {
+  background: var(--color-evaluacion);
+  animation: pulseNumber 2.5s ease-in-out infinite;
+}
+
+@keyframes pulseNumber {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+}
+
+.currentLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-evaluacion);
+  margin-left: 8px;
+}
+
+.weekDragHandle {
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  color: var(--text-secondary);
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+  touch-action: none;
+}
+
+.weekDragHandle:active {
+  cursor: grabbing;
+}
+
+.weekCard:hover .weekDragHandle {
+  opacity: 0.7;
+}
+
+.weekDragHandle:hover {
+  opacity: 1 !important;
+  color: var(--text-primary);
+}
+
+.weekDragHandle .material-icons {
+  font-size: 20px;
+}
+
+/* Week Header */
+.weekHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  padding: var(--space-md) var(--space-lg);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.weekHeader:hover {
+  background: #f8fafc;
+}
+
+.weekNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--color-lab);
+  color: #fff;
+  font-size: 1.125rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.weekNumberSpecial {
+  background: var(--color-asueto);
+  width: auto;
+  padding: 0 var(--space-md);
+  font-size: 0.8125rem;
+}
+
+.weekInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.weekInfo h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.weekDates {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.weekSummary {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.summaryChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  background: var(--chip-bg, #f1f5f9);
+  color: var(--chip-color, var(--text-secondary));
+}
+
+.weekDeleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.weekCard:hover .weekDeleteBtn {
+  opacity: 0.7;
+}
+
+.weekDeleteBtn:hover {
+  opacity: 1 !important;
+  color: var(--color-evaluacion);
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.weekDeleteBtn .material-icons {
+  font-size: 20px;
+}
+
+.chevron {
+  color: var(--text-muted);
+  transition: transform 0.3s ease;
+  font-size: 24px;
+}
+
+.expanded .weekHeader .chevron {
+  transform: rotate(180deg);
+}
+
+/* Week Content (collapsible) */
+.weekContent {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s ease;
+}
+
+.expanded .weekContent {
+  grid-template-rows: 1fr;
+}
+
+.weekContentInner {
+  overflow: hidden;
+}
+
+/* Day Grid */
+.dayGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border-color);
+  border-top: 1px solid var(--border-color);
+}
+
+/* Special Content */
+.specialContent {
+  padding: var(--space-lg) var(--space-xl);
+  text-align: center;
+  background: linear-gradient(135deg, var(--color-asueto-light), #fff8e1);
+}
+
+.specialContent .material-icons {
+  font-size: 48px;
+  color: var(--color-asueto);
+  margin-bottom: var(--space-sm);
+}
+
+.specialContent p {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.specialImportant {
+  margin-top: 0.5rem;
+  color: var(--color-evaluacion);
+}
+
+/* Responsive: Tablet */
+@media (max-width: 1024px) {
+  .dayGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Tablet: day-summary pairs in 2-col layout */
+  .dayGrid > :nth-child(1) { order: 1; }
+  .dayGrid > :nth-child(2) { order: 2; }
+  .dayGrid > :nth-child(5) { order: 3; }
+  .dayGrid > :nth-child(6) { order: 4; }
+  .dayGrid > :nth-child(3) { order: 5; }
+  .dayGrid > :nth-child(4) { order: 6; }
+  .dayGrid > :nth-child(7) { order: 7; }
+  .dayGrid > :nth-child(8) { order: 8; }
+
+  .weekSummary {
+    display: none;
+  }
+}
+
+/* Responsive: Mobile */
+@media (max-width: 768px) {
+  .dayGrid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Mobile: each day immediately followed by its summary */
+  .dayGrid > :nth-child(1) { order: 1; }
+  .dayGrid > :nth-child(5) { order: 2; }
+  .dayGrid > :nth-child(2) { order: 3; }
+  .dayGrid > :nth-child(6) { order: 4; }
+  .dayGrid > :nth-child(3) { order: 5; }
+  .dayGrid > :nth-child(7) { order: 6; }
+  .dayGrid > :nth-child(4) { order: 7; }
+  .dayGrid > :nth-child(8) { order: 8; }
+
+  .weekHeader {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .weekNumber {
+    width: 36px;
+    height: 36px;
+    font-size: 0.875rem;
+  }
+
+  .weekCard {
+    border-radius: 8px;
+  }
+}

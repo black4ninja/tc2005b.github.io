@@ -1,0 +1,255 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 24px;
+}
+.heading {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+.error {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 0.875rem;
+  border: 1px solid #fecaca;
+}
+
+/* Profile banner */
+.profileBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #fed7aa;
+}
+.profileBanner .material-icons {
+  font-size: 20px;
+}
+
+/* Stats row */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.statCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+}
+.statIcon {
+  font-size: 32px;
+  margin-top: 2px;
+}
+.statContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.statTitle {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.statValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.statSub {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Chart */
+.chartCard {
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+}
+.chartTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+}
+
+/* Chart + Profile row */
+.chartRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* Profile card */
+.profileCard {
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.profileField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.profileLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.profileValue {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.profileEmpty {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.profileTextarea {
+  font-family: inherit;
+  font-size: 0.875rem;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  resize: vertical;
+  min-height: 48px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+.profileTextarea:focus {
+  outline: none;
+  border-color: #5d87ff;
+  box-shadow: 0 0 0 2px rgba(93, 135, 255, 0.15);
+}
+.profileInput {
+  font-family: inherit;
+  font-size: 0.875rem;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+.profileInput:focus {
+  outline: none;
+  border-color: #5d87ff;
+  box-shadow: 0 0 0 2px rgba(93, 135, 255, 0.15);
+}
+.inputError {
+  border-color: #dc2626 !important;
+}
+.inputError:focus {
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15) !important;
+}
+.profileActions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+.profileActions button {
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+.btnEdit {
+  background: #5d87ff;
+  color: #fff;
+}
+.btnEdit:hover {
+  background: #4a6fcc;
+}
+.btnSave {
+  background: #13deb9;
+  color: #fff;
+}
+.btnSave:hover {
+  background: #0fb89e;
+}
+.btnSave:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btnCancel {
+  background: #e0e0e0;
+  color: var(--text-primary);
+}
+.btnCancel:hover {
+  background: #ccc;
+}
+.profileLink {
+  color: #5d87ff;
+  text-decoration: none;
+  word-break: break-all;
+}
+.profileLink:hover {
+  text-decoration: underline;
+}
+
+/* Field errors */
+.fieldError {
+  font-size: 0.75rem;
+  color: #dc2626;
+  margin-top: 2px;
+}
+
+/* Repo warning */
+.repoWarning {
+  font-size: 0.75rem;
+  color: #c2410c;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* Password section */
+.passwordSection {
+  border-top: 1px solid var(--border-color, #e0e0e0);
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.passwordTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .statsRow {
+    grid-template-columns: 1fr;
+  }
+  .chartRow {
+    grid-template-columns: 1fr;
+  }
+}

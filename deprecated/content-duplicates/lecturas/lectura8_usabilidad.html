@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es-mx">
+
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>Lineamientos Para El Diseño De La Interfaz Con El Usuario</title>
+</head>
+
+<body>
+    <main>
+        
+        <div class="navbar-fixed">
+            <nav>
+                <div class="blue darken-1 nav-wrapper">
+                    <a href="index.html" class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B Construcción de software y toma de decisiones</acronym></a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h3>Lineamientos Para El Diseño De La Interfaz Con El Usuario</h3>
+            </div>
+        </div>
+
+        <div class="container">
+            <div>
+                <h5>Introducción</h5>
+                <p align="justify">
+                    Para el desarrollo de un sistema de información hemos creado una serie de modelos que nos permiten plasmar diferentes perspectivas de la problemática que pretendemos solucionar con el sistema. Estos modelos nos permiten conocer los datos (MER-MR) , los procesos (DFD y EPS, en nuestro caso no elaborados)   y los módulos lógicos en que dividimos el problema para construir su solución (DE). 
+                    <br>
+                    <br>
+                    Sin embargo, para que toda esta solución que concebimos y modelamos pueda ser utilizada por las personas que finalmente son responsables de la información y los procesos para los que el sistema se construye, es necesario que el sistema cuente con una interfaz.
+                    <br>
+                    <br>
+                    A lo largo del curso hemos creado ejemplos de este tipo de interfaces que se materializan típicamente en formas, menús y reportes (tema por cubrir) . Las herramientas que hemos utilizado en el curso facilitan el planteamiento a nivel visual de estos elementos, pero como en las diferentes herramientas que a lo largo del curso hemos analizado, además de saber como crear una forma, un menú o un reporte, es importante contar con algunos lineamientos generales para asegurar que el diseño de la interfaz sea efectivo.
+                </p>
+            </div>
+            <div>
+                <h5>Las Ocho Reglas De Oro</h5>
+                <p align="justify">
+                    En [Shneiderman, 1992] se presentan ocho reglas de oro que encierran en buena medida la mayor parte de los lineamientos que deben considerarse para asegurar que las interfaces con el usuario sean adecuadas. Es importante notar que estos lineamientos son independientes de la herramienta que se utilice para la construcción, es decir, no son reglas para una herramienta en particular. A continuación presentamos las reglas y las comentamos brevemente:
+                </p>
+                <ol>
+                    <li style="text-align:justify"><b>Lucha por la consistencia.</b> El entrenamiento de los usuarios y la adquisición de confianza en el sistema se logran de manera mucho más efectiva si la interacción con el sistema es consistente, esto es, en condiciones similares la interacción es similar. Debe buscarse consistencia en la terminología, el formato, la distribución, el uso de colores, el texto de los mensajes, el uso de mensajes de confirmación para acciones delicadas, e incluso la secuencia u orden en que deben ejecutarse acciones similares.</li>
+                    
+                    <br>
+                    
+                    <li style="text-align:justify"><b>Habilita atajos para los usuarios frecuentes.</b> Los usuarios frecuentes del sistema se ven ampliamente beneficiados si se cuenta con teclas que puedan utilizarse en lugar de navegación con el mouse, o bien mecanismos que permitan pasar de una forma a otra sin navegar por menús cuando la interacción entre ambas es frecuente.</li>
+                    
+                    <br>
+                    
+                    <li style="text-align:justify"><b>Proporciona retroalimentación.</b> Es importante para el usuario contar con retroalimentación sobre lo que sucede en el sistema. Dependiendo de la importancia de la acción, esta puede limitarse a cambiar de forma el cursor para indicar que el sistema está ocupado o disponible, hasta un mensaje indicando las acciones ocurridas. En este caso, es conveniente que a menos  que se requiera que el usuario tome una decisión, los mensajes sencillamente aparezcan y sea decisión del usuario si los atiende o no, es decir, la retroalimentación no debe introducir acciones adicionales solo por recibirá. Otra forma efectiva de retroalimentación es mostrar la información involucrada antes y después de una transformación.</li>
+                    
+                    <br>
+                    
+                    <li style="text-align:justify"><b>Diseña diálogos que completen un objetivo.</b> Es importante que las acciones que se esperan del usuario en la interacción de una forma lo lleven a un estado consistente. En el diálogo para atender un objetivo debe ser perceptible un inicio, un proceso o transformación y una terminación del objetivo. Esto puede lograrse bien cuando el diálogo de una forma refleja lo que se diseñó como una transacción completa en un DFD de último nivel. Un diálogo inadecuado es aquel que deja tareas inconclusas o al menos produce la sensación de que esto ocurre.</li>
+                    
+                    <br>
+                    
+                    <li style="text-align:justify"><b>Ofrece un manejo de errores sencillos.</b> En todo lo posible, es conveniente utilizar el enfoque preventivo de errores, es decir, diseñar las interacciones de manera en que se exponga lo menos posible al usuario a cometer algún error.  Cuando un error ocurra, el mensaje debe ser lo más explícito posible y en términos comprensibles para el usuario, preferentemente referidos al contexto del negocio o problema. Ante un error, en los casos en que es viable, el sistema debe ofrecer alternativas simples para corregirlo, y en todos los casos conservar la consistencia, es decir, dejar la información en el estado consistente previo al error, y no aplicar cambios incompletos.</li>
+                    
+                    <br>
+                    
+                    <li style="text-align:justify"><b>Permite deshacer acciones.</b> Las aplicaciones que ofrecen la posibilidad de deshacer los últimos cambios cuando el usuario detecta que efectuó cambios no deseados o alguna condición le impide continuar, reducen la ansiedad del usuario y sus temores de utilizar el sistema. Esto puede instrumentarse desde una sencilla acción de cancelar, hasta un complejo mecanismo que almacene los diferentes estados de la información y permita regresar a alguno de los estados previos. La unidad reversible o la sofisticación del mecanismo convenientes depende del sentido particular de la operación que se realice en el sistema.</li>
+                    
+                    <br>
+                    
+                    <li style="text-align:justify"><b>Permite al usuario controlar el sistema.</b> La interacción debe diseñarse de manera que el usuario sea el iniciador de las acciones, más que el que responda a ellas. El usuario debe poder decidir qué hacer y contar con la posibilidad de suspender o cancelar las acciones en un punto específico. Un contraejemplo de esto es un sistema que obliga al usuario a realizar una extensa captura hasta que esta termine sin las opciones de guardar la parte que lleva o cancelar en cierto punto para continuar después. </li>
+                    
+                    <br>
+                    
+                    <li style="text-align:justify"><b>Evita la saturación de la memoria de corto plazo.</b> Se ha comprobado que la retención en la memoria humana de corto plazo de un número mayor a unos siete elementos de información a la vez, coloca al usuario en una situación de ansiedad o por lo menos lo obliga a regresar sobre sus pasos para recordar lo olvidado, reduciendo su eficiencia. Es importante considerar este principio al plantear opciones de un menú, botones de opciones, campos en una forma, o resultados de consultas en pantalla. Si el número de elementos requeridos para una interacción es muy grande, una alternativa es seccionarlos o agruparlos de manera que el usuario perciba por ejemplo "no más de siete grupos" en cada uno de los cuales hay "no más de siete elementos".</li>
+                </ol>
+            </div>
+            <div>
+                <h5>Algunos consejos adicionales.</h5>
+                <p align="justify">
+                    A fin de hacer más sencilla la aplicación de estos principios, a continuación se presentan algunas sugerencias, enfocadas a la herramienta de desarrollo del curso:
+                </p>
+                <ul>
+                    <li style="text-align:justify"><i class="tiny material-icons">done</i> Crear formas modelo que sirvan como plantillas de trabajo, en las cuales se definan estándares para aspectos morfológicos como tamaño, distribución, formato, colores, uso de imágenes y tipografía, y crear las diferentes formas de la aplicación con base en las formas modelo. </li>
+                    
+                    <br>
+                    
+                    <li style="text-align:justify"><i class="tiny material-icons">done</i> En términos de colores, se recomienda utilizar las selecciones de System, ya que éstos quedarán definidos respecto a la configuración de colores de Windows, haciendo posible que el usuario ajuste los colores del sistema a su gusto con sólo usar la configuración de los colores de Windows. </li>
+                    
+                    <br>
+                    
+                    <li style="text-align:justify"><i class="tiny material-icons">done</i> En cuanto a la tipografía se recomienda utilizar fuentes estándar para evitar la instalación de fuentes adicionales en los equipos que utilizarán la aplicación. La tipografía debe ser además lo universalmente legible y debe ser utilizada consistentemente en toda la aplicación. Se consigue una mayor unidad y aceptación visual utilizando  diferentes puntajes y tratamientos como negrita e itálica de una misma fuente, que incorporando múltiples fuentes.</li>
+                    
+                    <br>
+                    
+                    <li style="text-align:justify"><i class="tiny material-icons">done</i> Establecer mecanismos centralizados de manejo de errores que garanticen un uso consistente  de los mensajes. </li>
+                    
+                    <br>
+                    
+                    <li style="text-align:justify"><i class="tiny material-icons">done</i> Proporcionar pistas al usuario sobre lo que ocurre en el sistema. Para indicar el status de teclas como bloqueo de mayúsculas y números, insertar / sobrescribir, fecha y hora o mensajes informativos, puede utilizarse el control StatusBar, incluido en Project-Components bajo el título de Microsoft Windows Common Controls. La propiedad MousePointer del objeto Screen que representa el escritorio de la aplicación, puede ser utilizada para cambiar la forma del cursor. Así para indicar que el sistema va a iniciar una serie de operaciones en las que se mantendrá ocupado puede utilizarse la siguiente estructura:
+                    <br><br>Screen.MousePointer = vbHourglass
+                    <br>...Operaciones que mantendrán ocupado al sistema...
+                    <br>Screen.MousePointer = vbDefault
+                    <br><br>es importante mantener en parejas estos cambios, con el mismo sentido con el que se mantienen en parejas los paréntesis: si se deja uno abierto es difícil encontrar cual.</li>
+                    
+                    <br>
+                    
+                    <li style="text-align:justify"><i class="tiny material-icons">done</i> Utilizar la herramienta Package &amp; Deployment Wizard (incluida en el grupo de programas de Visual Basic, bajo Tools) para generar los diskettes o directorios fuente de instalación de la aplicación. Esto es muy importante en virtud de que lo más probable al generar una aplicación es que las PC's en las que se instalará la aplicación no tendrán instalado Visual Basic, por lo que debe instalarse la aplicación para producción, en modo ejecutable, junto con todos los prerrequisitos para que opere (DLL, OCX etc.). Antes de utilizar esta herramienta se recomienda dejar en el proyecto sólo aquellas componentes que se están utilizando (eliminar las que no se utilicen con la opción Project – Components) y hacer una prueba de compilación previa (con la opción File – Make Exe) que garantice que la aplicación compila por completo. Una vez hecho esto, seguir el Wizard para generar los diskettes de instalación, incluyendo explícitamente en la lista de archivos los requeridos por el sistema como bases de datos (MDB, DBF), archivos de texto (TXT) u otros archivos de parámetros creados para un fin particular. Por agilidad y confiabilidad del medio, se recomienda utilizar la opción de generar a directorios en disco duro y posteriormente copiar a diskette o si se cuenta con red,  sencillamente ofrecer los directorios generados como compartidos.</li>
+                    
+                    <br>
+                    
+                </ul>
+            </div>
+            <div>
+                <h5>Referencia:</h5>
+                <p align="justify">
+                    Shneiderman, Ben. Designing the user interface:strategies for effective human-computer interaction. Second Edition. Addison-Wesley Publishing Company. Maryland, U.S.A. 1992. 573p. ISBN 0-201-57286-9.
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="blue darken-1 page-footer">
+        <div class="container">
+            <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/" target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+        </div>
+        <div class="footer-copyright">
+            <div class="container">
+                © 2021 Escuela de Ingeniería y Ciencias - Tecnológico de Monterrey en Querétaro
+            </div>
+        </div>
+    </footer>
+
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="../js/materialize.min.js"></script>                                                          
+</body>
+</html>

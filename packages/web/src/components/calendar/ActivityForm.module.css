@@ -1,0 +1,277 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.field select,
+.field input,
+.field textarea {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.field select:focus,
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--color-lab);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.checkboxField {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.checkboxField label {
+  order: 2;
+  font-weight: 400;
+}
+
+.checkboxField input[type="checkbox"] {
+  order: 1;
+  width: 16px;
+  height: 16px;
+}
+
+/* Enlace field with page picker */
+.enlaceWrapper {
+  position: relative;
+}
+
+.enlaceInputRow {
+  display: flex;
+  gap: 4px;
+}
+
+.enlaceInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.enlaceInput:focus {
+  outline: none;
+  border-color: var(--color-lab);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.pickerBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.pickerBtn:hover {
+  border-color: var(--color-lab);
+  color: var(--color-lab);
+  background: #f0f5ff;
+}
+
+.pickerBtn .material-icons {
+  font-size: 18px;
+}
+
+.paginaBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 2px 10px;
+  background: #ede9fe;
+  color: #5b21b6;
+  border-radius: 12px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.paginaBadge .material-icons {
+  font-size: 14px;
+}
+
+.documentoBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 2px 10px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 12px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.documentoBadge .material-icons {
+  font-size: 14px;
+}
+
+.lecturaBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 2px 10px;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 12px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.lecturaBadge .material-icons {
+  font-size: 14px;
+}
+
+.ejercicioBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 2px 10px;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: 12px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.ejercicioBadge .material-icons {
+  font-size: 14px;
+}
+
+.pickerDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+  max-height: 240px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pickerSearch {
+  padding: 8px 12px;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  outline: none;
+  color: var(--text-primary);
+}
+
+.pickerList {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.pickerItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+
+.pickerItem:hover {
+  background: #f1f5f9;
+  color: var(--text-primary);
+}
+
+.pickerItem .material-icons {
+  font-size: 18px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.pickerItemText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.pickerItemText strong {
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pickerItemText code {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+.pickerEmpty {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-color);
+}

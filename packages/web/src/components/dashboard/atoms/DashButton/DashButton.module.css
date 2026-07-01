@@ -1,0 +1,29 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+.primary {
+  background: var(--dash-primary);
+  color: #fff;
+}
+.primary:hover { opacity: 0.9; }
+.outline {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+.outline:hover { background: var(--bg-page); }
+.text {
+  background: transparent;
+  color: var(--dash-primary);
+  padding: 8px;
+}
+.text:hover { background: var(--sidebar-active-bg); }

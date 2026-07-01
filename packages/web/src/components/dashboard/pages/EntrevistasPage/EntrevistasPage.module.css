@@ -1,0 +1,248 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pageTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.error {
+  padding: 12px 16px;
+  background: #fee;
+  color: #c00;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--primary-light, rgba(59, 130, 246, 0.1));
+  color: var(--primary);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.empty {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.helpSection {
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  background: var(--card-bg, #fff);
+}
+
+.helpSummary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary, #64748b);
+  list-style: none;
+}
+
+.helpSummary::-webkit-details-marker {
+  display: none;
+}
+
+.helpSummary::before {
+  content: '▶';
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+details[open] > .helpSummary::before {
+  transform: rotate(90deg);
+}
+
+.helpContent {
+  padding: 0 16px 16px;
+}
+
+.helpSteps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary, #64748b);
+  line-height: 1.5;
+}
+
+.liberarProfesores {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.liberarHint {
+  font-size: 12px;
+  color: var(--text-secondary, #64748b);
+  margin: 0;
+  font-style: italic;
+}
+
+.badgeBorrador {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badgeLiberada {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #d1fae5;
+  color: #065f46;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.estadoCol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.progressText {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.profesorProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profesorRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.profesorName {
+  color: var(--text-primary);
+}
+
+.progressComplete {
+  color: #059669;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.progressPending {
+  color: #d97706;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.liberarContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.liberarDesc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.liberarEquipo {
+  font-size: 14px;
+  margin: 0;
+}
+
+.liberarProgress {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.liberarField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.liberarLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.liberarSelect {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+
+.liberarActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.liberarCancel {
+  padding: 8px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.liberarCancel:hover {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.04));
+}
+
+.liberarBtn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #059669;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.liberarBtn:hover:not(:disabled) {
+  background: #047857;
+}
+
+.liberarBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

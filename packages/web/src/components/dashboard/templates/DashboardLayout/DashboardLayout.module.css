@@ -1,0 +1,28 @@
+.layout {
+  min-height: 100vh;
+  background: var(--bg-page);
+}
+.content {
+  padding-top: var(--dashboard-header-height);
+  padding-left: 24px;
+  padding-right: 24px;
+  padding-bottom: 24px;
+  transition: margin-left 0.3s ease;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .content {
+    margin-left: 0 !important;
+    padding: var(--dashboard-header-height) 16px 16px;
+  }
+}

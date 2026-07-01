@@ -1,0 +1,93 @@
+.activity {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: 6px 0;
+  border-left: 3px solid var(--activity-color, var(--border-color));
+  padding-left: var(--space-sm);
+  margin-bottom: 4px;
+  transition: opacity 0.3s, transform 0.3s;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.filteredOut {
+  opacity: 0.12;
+}
+
+.activity .material-icons {
+  font-size: 16px;
+  color: var(--activity-color, var(--text-muted));
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.activityBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.activityBody a {
+  color: var(--activity-color, var(--color-lab));
+  font-weight: 500;
+}
+
+.activityBody a:hover {
+  text-decoration: underline;
+}
+
+.descripcion {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.timeBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.entregaBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  margin-top: 4px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 0.7rem;
+  font-weight: 600;
+  flex-wrap: wrap;
+}
+
+/* Activity type colors via data attributes */
+.activity[data-type="lab"] { --activity-color: var(--color-lab); }
+.activity[data-type="lectura"] { --activity-color: var(--color-lectura); }
+.activity[data-type="ejercicio"] { --activity-color: var(--color-ejercicio); }
+.activity[data-type="proyecto"] { --activity-color: var(--color-proyecto); }
+.activity[data-type="evaluacion"] { --activity-color: var(--color-evaluacion); }
+.activity[data-type="asueto"] { --activity-color: var(--color-asueto); }
+.activity[data-type="trabajo"] { --activity-color: var(--color-trabajo); }
+.activity[data-type="discusion"] { --activity-color: var(--color-discusion); }
+.activity[data-type="info"] { --activity-color: var(--color-info); }
+
+.activity[data-type="break"] {
+  --activity-color: var(--color-break);
+  border-left-color: transparent;
+  border-top: 1px dashed var(--border-color);
+  border-bottom: 1px dashed var(--border-color);
+  padding: 4px var(--space-sm);
+  margin: 4px 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}

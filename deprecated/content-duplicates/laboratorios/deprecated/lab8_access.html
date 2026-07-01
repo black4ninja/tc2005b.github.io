@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="../css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="Lab%209_%20Bases%20de%20Datos%20de%20Escritorio%20%28MS%20Access%29_files/materialize.min.css"
+
+      media="screen,projection">
+    <link href="Lab%209_%20Bases%20de%20Datos%20de%20Escritorio%20%28MS%20Access%29_files/icon.css"
+
+      rel="stylesheet">
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lab 9: DBMS de escritorio</title>
+
+</head>
+
+<body>
+  <main>
+    <div class="navbar-fixed">
+      <nav>
+        <div class="blue darken-1 nav-wrapper"> <a href="https://black4ninja.github.io/tc2005b.github.io/index.html"
+
+            class="brand-logo"><acronym title="Construcción de software y toma de decisiones">TC2005B
+              Construcción de software y toma de decisiones</acronym></a> </div>
+      </nav>
+    </div>
+    <div class="container">
+      <div class="section">
+        <h3>Laboratorio 9: DBMS  de escritorio</h3>
+      </div>
+      <div class="section" id="modalidad">
+        <h5> <i class="small mdi-social-group"></i> Modalidad </h5>
+        <p> Individual.<br>
+        </p>
+        <div class="divider"></div>
+      </div>
+      <div class="section" id="objetivos">
+        <h5> <i class="small mdi-navigation-check"></i>Objetivos de
+          aprendizaje</h5>
+        <ul class="collection with-header">
+          <li class="collection-item">Usar el DBMS (Database Management
+            System) MariaDB, para presentar algunas de las actividades
+            necesarias para administrar bases de datos. </li>
+          <p><strong></strong><br>
+          </p>
+        </ul>
+      </div>
+      <div class="section" id="instrucciones">
+        <h5> <i class="small mdi-action-list"></i> Instrucciones</h5>
+        <ul class="collection">
+          <li class="collection-item">
+            <p><strong>Crear una base de datos</strong></p>
+            <p>La primera actividad en el proceso es crear una base de datos.
+              En esta actividad se establece el lugar o espacio en el que
+              físicamente será alojada una base de datos. En el caso de MariaDB,
+              el procedimiento es muy sencillo: </p>
+            <ol>
+              <li>Iniciar IDE DBeaver.</li>
+              <li>Crear la conexión con el usuario root y contraseña que
+                usaste en la instalación de MariaDB.</li>
+              <li>Crear la Base de Datos lab09db</li>
+              <li>Crear el usuario user_lab09db<strong></strong></li>
+              <li>Asignar los permisos necesarios al usuario </li>
+              <li>Realizar la conexión a la base de datos lab09db con el
+                usuario user_lab09db</li>
+            </ol>
+            <p><strong>Crear tablas</strong></p>
+            <p>Una definición operativa simple de base de datos relacional es
+              "colección de tablas interrelacionadas". De aquí que una de las
+              tareas básicas en la administración de bases de datos consista
+              en crear y modificar tablas.</p>
+            Crear las tablas "materiales", "proyectos", "proveedores" y
+            "entregan" siguiendo la definición siguiente:<br>
+            <p><strong>Tabla: materiales</strong></p>
+            <table>
+              <tbody>
+                <tr>
+                  <th>Columna</th>
+                  <th>Tipo</th>
+                </tr>
+                <tr>
+                  <td><u>Clave</u></td>
+                  <td>Numérico (entero largo) </td>
+                </tr>
+                <tr>
+                  <td>Descripción</td>
+                  <td>Texto (100 caracteres)</td>
+                </tr>
+                <tr>
+                  <td>Precio</td>
+                  <td>Numérico (simple)</td>
+                </tr>
+              </tbody>
+            </table>
+            <br>
+            <p><strong>Tabla: proyectos</strong></p>
+            <table>
+              <tbody>
+                <tr>
+                  <th>Columna</th>
+                  <th>Tipo</th>
+                </tr>
+                <tr>
+                  <td><u>Número</u></td>
+                  <td>Numérico (entero largo)</td>
+                </tr>
+                <tr>
+                  <td>Denominación</td>
+                  <td>Texto (100 caracteres)</td>
+                </tr>
+              </tbody>
+            </table>
+            <br>
+            <p><strong>Tabla: proveedores</strong></p>
+            <table>
+              <tbody>
+                <tr>
+                  <th>Columna</th>
+                  <th>Tipo</th>
+                </tr>
+                <tr>
+                  <td><u>RFC</u></td>
+                  <td>Texto (15 caracteres)</td>
+                </tr>
+                <tr>
+                  <td>RazonSocial</td>
+                  <td>Texto (100 caracteres)</td>
+                </tr>
+              </tbody>
+            </table>
+            <br>
+            <p><strong>Tabla: entregan</strong></p>
+            <br>
+            <table>
+              <tbody>
+                <tr>
+                  <th>Columna</th>
+                  <th>Tipo</th>
+                </tr>
+                <tr>
+                  <td><u>Clave</u></td>
+                  <td>Numérico (entero largo)</td>
+                </tr>
+                <tr>
+                  <td><u>RFC</u></td>
+                  <td>Texto (15 caracteres)</td>
+                </tr>
+                <tr>
+                  <td><u>Número</u></td>
+                  <td>Numérico (entero largo)</td>
+                </tr>
+                <tr>
+                  <td><u>Fecha</u></td>
+                  <td>Fecha/Hora</td>
+                </tr>
+                <tr>
+                  <td>Cantidad</td>
+                  <td>Numérico (entero largo)</td>
+                </tr>
+              </tbody>
+            </table>
+          </li>
+          <li class="collection-item">Para la tabla "entregan" asegurate de
+            definir la llave primaria y las llaves foraneas<br>
+            <br>
+            <p><strong>Carga de datos.</strong></p>
+            <p>Otra actividad frecuente en la administración de bases de datos
+              consiste en cargar datos a las tablas, provenientes de otros
+              sistemas o sencillamente de archivos que se han creado para este
+              efecto. </p>
+            <p> Carga los datos de las tablas siguiendo las instrucciones del
+              profesor.</p>
+            <p> Los archivos csv son archivos de texto que tienen renglones en
+              los que cada renglón corresponde a un registro o renglón de la
+              tabla y en cada uno de estos renglones, los valores
+              correspondientes a cada columa están separados por comas en
+              estos archivos. </p>
+            <p><strong>Cargar datos de archivos .csv que te entrega tu profesor<br>
+              </strong></p>
+            <p></p>
+            <p>Un wizard te irá proponiendo opciones para cargar el archivo
+              correspondiente. Estas son las respuestas a cada paso:</p>
+            <br>
+            <p>Define las siguientes consultas y guárdalas con el nombre que
+              se indica:</p>
+            <p><strong>Consulta Tuberías</strong></p>
+            <p>Clave, descripción y precio unitario de los materiales cuya
+              descripción contenga el patrón "Tub".</p>
+            <p><strong>Consulta Caros</strong></p>
+            <p>Clave, descripción y precio unitario de los materiales cuyo
+              precio es mayor que 300 pesos.</p>
+            <p><strong>Consulta Proveedores Ladrillos</strong></p>
+            <p>Aquí tendrás que agregar las tablas: materiales, entregan y
+              proveedores. En la parte de abajo seleccionar las columnas que
+              quieras que aparezcan así como sus condiciones.</p>
+            <p>Clave del material y razón social de los proveedores que
+              entregan productos cuya descripción contiene el patrón
+              "Ladrillos"</p>
+            <p><strong>Consulta Pinturas98</strong></p>
+            <p>Aquí tendrás que agregar todas las tablas. En la parte de abajo
+              seleccionar las columnas que quieras que aparezcan así como sus
+              condiciones.</p>
+            Descripción del material, razón social del proveedor, denominación
+            del proyecto, fecha y cantidad de las entregas de pinturas
+            realizadas durante 1998.
+            <p></p>
+            <div class="section" id="entrega">
+              <h5> <i class="small mdi-notification-event-available"></i>
+                Especificaciones de entrega </h5>
+              <p>A través de Bitbucket o GitHub con el nombre <em>matricula</em>.mdb
+                para archivo de Access 2003 o <em>matricula</em>.accdb para
+                archivo de Access 2007.</p>
+              <div class="divider"></div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </main>
+  <footer class="blue darken-1 page-footer">
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <h5 class="white-text">Secciones</h5>
+          <ol class="grey-text text-lighten-3">
+            <li><a class="grey-text text-lighten-3" href="#descripcion">Descripción</a></li>
+            <li><a class="grey-text text-lighten-3" href="#modalidad">Modalidad</a></li>
+            <li><a class="grey-text text-lighten-3" href="#objetivos">Objetivos</a></li>
+            <li><a class="grey-text text-lighten-3" href="#instrucciones">Instrucciones</a></li>
+            <li><a class="grey-text text-lighten-3" href="#preguntas">Preguntas</a></li>
+            <li><a class="grey-text text-lighten-3" href="#recursos">Recursos</a></li>
+            <li><a class="grey-text text-lighten-3" href="#entrega">Especificaciones
+                de entrega</a></li>
+          </ol>
+        </div>
+      </div>
+      <p class="grey-text text-lighten-4">Powered by <a href="http://materializecss.com/"
+
+          target="_blank" class="white-text text-lighten-4">Materialize</a>.</p>
+    </div>
+    <div class="footer-copyright">
+      <div class="container"> © 2021 Escuela de Ingeniería y Ciencias -
+        Tecnológico de Monterrey en Querétaro </div>
+    </div>
+  </footer>
+  <!--Import jQuery before materialize.js-->
+  <script type="text/javascript" src="Lab%209_%20Bases%20de%20Datos%20de%20Escritorio%20%28MS%20Access%29_files/jquery-2.1.1.min.js"></script>
+  <script type="text/javascript" src="Lab%209_%20Bases%20de%20Datos%20de%20Escritorio%20%28MS%20Access%29_files/materialize.min.js"></script>
+
+
+      <!--Import jQuery before materialize.js-->
+      <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+      <script type="text/javascript" src="../js/materialize.min.js"></script>
+</body>
+
+</html>

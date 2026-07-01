@@ -1,0 +1,34 @@
+{
+  "name": "@tc2005b/web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@azure/msal-browser": "^5.5.0",
+    "@azure/msal-react": "^5.0.7",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@tanstack/react-table": "^8.21.3",
+    "apexcharts": "^5.10.4",
+    "exceljs": "^4.4.0",
+    "jszip": "^3.10.1",
+    "react": "^19.0.0",
+    "react-apexcharts": "^2.1.0",
+    "react-dom": "^19.0.0",
+    "react-router": "^7.1.0",
+    "recharts": "^3.8.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.8.0",
+    "vite": "^6.0.0"
+  }
+}

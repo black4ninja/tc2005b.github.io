@@ -1,0 +1,203 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.fieldLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dateInput {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dateInput:focus {
+  border-color: var(--primary);
+}
+
+.selectInput {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.selectInput:focus {
+  border-color: var(--primary);
+}
+
+.miembrosChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.chip {
+  padding: 4px 10px;
+  background: var(--primary-light, rgba(37, 99, 235, 0.1));
+  color: var(--primary);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.checkboxSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkboxList {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+}
+
+.checkboxItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.checkboxItem:hover {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.04));
+}
+
+.checkboxItem input[type="checkbox"] {
+  accent-color: var(--primary);
+}
+
+.checkboxName {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.checkboxDetail {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+.selectAllItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+}
+
+.selectAllItem input[type="checkbox"] {
+  accent-color: var(--primary);
+}
+
+.fieldError {
+  font-size: 12px;
+  color: var(--danger, #dc2626);
+  margin-top: 2px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.emptyList {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.asignacionTableWrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+}
+
+.asignacionTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.asignacionTable th,
+.asignacionTable td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.asignacionTable tr:last-child td {
+  border-bottom: none;
+}
+
+.asignacionHeaderComp {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  min-width: 160px;
+}
+
+.asignacionHeaderAlumno {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  min-width: 140px;
+  font-size: 12px;
+}
+
+.asignacionCompCell {
+  color: var(--text-primary);
+  font-size: 12px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asignacionCell {
+  padding: 4px 6px;
+}
+
+.asignacionCellSelect {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 12px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+}

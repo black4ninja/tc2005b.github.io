@@ -1,0 +1,35 @@
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+.navItem:hover {
+  background: var(--bg-page);
+  color: var(--text-primary);
+}
+.active {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
+}
+.collapsed {
+  justify-content: center;
+  padding: 10px;
+}
+.label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
+}

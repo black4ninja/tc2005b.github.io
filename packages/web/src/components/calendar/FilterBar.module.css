@@ -1,0 +1,80 @@
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-sm);
+}
+
+.filterLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: var(--space-xs);
+}
+
+.filterPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1.5px solid var(--pill-color, var(--border-color));
+  background: transparent;
+  color: var(--pill-color, var(--text-secondary));
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.filterPill:hover {
+  background: color-mix(in srgb, var(--pill-color) 10%, transparent);
+}
+
+.filterPill.active {
+  background: var(--pill-color);
+  color: #fff;
+}
+
+.filterPill .material-icons {
+  font-size: 14px;
+}
+
+.btnExpandAll {
+  margin-left: auto;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.btnExpandAll:hover {
+  background: var(--bg-header);
+  color: #fff;
+  border-color: var(--bg-header);
+}
+
+@media (max-width: 768px) {
+  .filterBar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: var(--space-sm);
+  }
+
+  .filterBar::-webkit-scrollbar {
+    display: none;
+  }
+}

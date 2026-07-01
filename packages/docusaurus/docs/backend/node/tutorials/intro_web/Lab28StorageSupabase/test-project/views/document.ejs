@@ -1,0 +1,100 @@
+<!DOCTYPE HTML>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title><%= doc.title %> — Lab28StorageSupabase</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 2rem; background: #f9fafb; color: #111827; max-width: 720px; }
+        h1 { margin-bottom: 0.2rem; }
+        .meta { color: #6b7280; margin-bottom: 1.5rem; }
+        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.4rem 1rem; margin: 0; }
+        dt { font-weight: 600; color: #374151; }
+        dd { margin: 0; word-break: break-all; }
+        .preview { margin-top: 1rem; padding: 1rem; background: #f3f4f6; border-radius: 4px; text-align: center; }
+        .preview img { max-width: 100%; max-height: 360px; border-radius: 4px; }
+        .badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.75rem; }
+        .badge-pub { background: #dcfce7; color: #166534; }
+        .badge-prv { background: #fee2e2; color: #991b1b; }
+        .back { display: inline-block; margin-bottom: 1rem; color: #2563eb; text-decoration: none; }
+        .actions { margin-top: 1rem; }
+        .actions a, .actions button { margin-right: 0.5rem; text-decoration: none; }
+        .actions a.btn { background: #111827; color: white; padding: 0.5rem 0.9rem; border-radius: 4px; }
+        form.inline { display: inline; }
+        button.danger { background: #dc2626; color: white; border: none; padding: 0.5rem 0.9rem; border-radius: 4px; cursor: pointer; }
+        code { background: #f3f4f6; padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <a class="back" href="/documents">← volver</a>
+    <h1><%= doc.title %></h1>
+    <p class="meta">Documento #<%= doc.id %></p>
+
+    <div class="card">
+        <dl>
+            <dt>Visibilidad</dt>
+            <dd>
+                <% if (doc.is_public) { %>
+                    <span class="badge badge-pub">público</span>
+                <% } else { %>
+                    <span class="badge badge-prv">privado (signed URL)</span>
+                <% } %>
+            </dd>
+            <dt>Bucket</dt>
+            <dd><code><%= doc.bucket %></code></dd>
+            <dt>Path</dt>
+            <dd><code><%= doc.file_path %></code></dd>
+            <dt>MIME</dt>
+            <dd><%= doc.mime_type || '—' %></dd>
+            <dt>Tamaño</dt>
+            <dd><%= doc.size_bytes ? (doc.size_bytes / 1024).toFixed(1) + ' KB' : '—' %></dd>
+            <dt>Subido</dt>
+            <dd><%= new Date(doc.uploaded_at).toLocaleString('es-MX') %></dd>
+        </dl>
+
+        <div class="preview">
+            <% if (doc.is_public) { %>
+                <% if (doc.mime_type && doc.mime_type.startsWith('image/')) { %>
+                    <img src="<%= publicUrl %>" alt="<%= doc.title %>">
+                <% } else { %>
+                    <a href="<%= publicUrl %>" target="_blank">Abrir archivo (URL pública)</a>
+                <% } %>
+            <% } else { %>
+                <!-- Documento privado: pedimos una signed URL al backend y la insertamos -->
+                <div id="private-preview">cargando preview privado…</div>
+            <% } %>
+        </div>
+
+        <div class="actions">
+            <a class="btn" href="/documents/<%= doc.id %>/edit">Editar</a>
+            <form class="inline" method="post" action="/documents/<%= doc.id %>/delete"
+                  onsubmit="return confirm('¿Eliminar el documento y su archivo?')">
+                <button class="danger" type="submit">Eliminar</button>
+            </form>
+        </div>
+    </div>
+
+    <% if (!doc.is_public) { %>
+        <script>
+            // El servidor JAMÁS exporta la secret key. En vez de eso expone
+            // este endpoint que devuelve una URL FIRMADA temporal (vence en
+            // 60 segundos por default). El cliente solo recibe esa URL final.
+            (async () => {
+                const r = await fetch('/documents/<%= doc.id %>/signed-url');
+                const target = document.getElementById('private-preview');
+                if (!r.ok) {
+                    target.textContent = 'No se pudo obtener la URL firmada.';
+                    return;
+                }
+                const { url } = await r.json();
+                const mime = '<%= doc.mime_type || "" %>';
+                if (mime.startsWith('image/')) {
+                    target.innerHTML = '<img src="' + url + '" alt="(privado)">';
+                } else {
+                    target.innerHTML = '<a href="' + url + '" target="_blank">Abrir archivo (signed URL, expira pronto)</a>';
+                }
+            })();
+        </script>
+    <% } %>
+</body>
+</html>

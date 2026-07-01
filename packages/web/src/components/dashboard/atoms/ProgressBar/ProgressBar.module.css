@@ -1,0 +1,31 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.pct {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.track {
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}

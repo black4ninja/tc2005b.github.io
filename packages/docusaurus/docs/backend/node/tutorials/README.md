@@ -1,0 +1,106 @@
+# Tutoriales
+
+Los laboratorios son extensiones de lo que vemos en clase, siempre revisa el material ya que puede haber detalles que por tiempo no alcancemos a ver y que es tu responsabilidad entender para no retrasarte en las bases de lo que tienes que aprender del curso.
+
+- [LAB1 - Introducción a HTML](./intro_web/Lab1HTML/)
+  - Plantilla básica de HTML
+  - Introducción a HTML
+  - Estándares adicionales de transmisión de información HTML, XML, JSON
+  - Etiquetas HTML
+  - Atributos HTML
+  - Formularios HTML
+- [LAB2 - Control de versiones](./intro_web/Lab2Git/)
+  - Introducción básica
+  - Requerimientos Previos
+  - Manejo básico de repositorios
+  - Manejo de repositorios en la nube
+  - Conclusión
+- [LAB4 - Introducción a Javascript](./intro_web/Lab4JS/)
+  - Inline Scripting
+  - Estructura de código
+  - UseStrict
+  - Variables
+  - Tipos de datos
+  - Interacción: Alert, Prompt, Confirm
+  - Conversiones de Tipos
+  - Operadores Básicos Matemáticos
+  - Comparaciones
+  - Condicionales
+  - Ciclos
+  - Funciones
+  - Arreglos y Objetos
+- [LAB6 - Programación Orientada a Eventos](./intro_web/Lab6POE/)
+  - El DOM
+  - ¿Cómo seleccionar elementos en el documento?
+  - Usar eventos con Javascript
+- [LAB7 - Manejo de Ramas](./intro_web/Lab7Branches/)
+  - Introducción a las ramas
+  - Cambio entre ramas y obtener la última versión
+  - Gitflow Simplificado
+  - Hacer merge de las ramas con Pull Request
+  - Estrategias de Merge (merge, rebase, squash+merge)
+  - Actualizando cambios remotos
+  - Actualizar main o master
+  - Añadiendo etiquetas a versiones terminadas
+- [LAB8 - Introducción al Backend](./intro_web/Lab8IntroBackend/)
+  - Front-end y back-end
+  - Front-end
+  - Back-end
+  - Full-stack
+  - NodeJS
+  - Hello World
+  - Filesystem
+  - Async Sort
+  - Código Asíncrono
+  - Creando un servidor
+  - Ver que hace el servidor desde el navegador
+  - Devolver código HTML
+- [LAB10 - Rutas y Formas](./intro_web/Lab10RutasYFormas/)
+  - Rutas
+  - Formas
+- [LAB11 - Express](./intro_web/Lab11Express/)
+  - npm
+  - .gitignore
+  - npm init
+  - Básicos de express (Middlewares)
+  - pm2
+  - Rutas con express
+  - Separando en clases
+- [LAB12 - HTML Dinámico](./intro_web/Lab12EJS/)
+  - Carpeta pública
+  - EJS
+- [LAB13 - MVC](./intro_web/LAB13MVC/)
+  - MVC (Modelo Vista Controlador)
+  - Rutas y Controladores
+  - Modelos
+  - Vistas
+- [LAB14 - Sesiones](./intro_web/LAB14Sesiones/)
+  - Cookies
+  - Express session
+- [LAB17 - Interacción con la Base de datos](./intro_web/Lab17BD/)
+  - Conexión con MariaDB
+  - Funciones Asíncronas
+- [LAB18 - Autenticación](./intro_web/Lab18Autenticacion/)
+  - Registrar un usuario
+  - Encriptación de la contraseña
+  - Comparación de la contraseña
+  - Middleware de autenticación de sesión
+- [LAB19 - RBAC](./intro_web/Lab19RBAC/)
+  - Crear la base de datos
+  - Obtener permisos de los usuarios
+  - Interfaz gráfica dinámica
+  - Protección de rutas por permiso
+  - Cerrar sesión
+  - Asignar privilegio a un nuevo usuario
+- [LAB22 - Archivos](./intro_web/Lab22Archivos/)
+  - Uso de multer
+  - Subiendo archivos públicos
+  - Consulta de archivos públicos
+  - Consulta de archivos privados
+- [LAB24 - AJAX](./intro_web/Lab24AJAX/)
+  - Introducción
+  - Empezando con un API
+  - Event load
+  - Agregar producto AJAX
+  - Cargar lista de productos AJAX
+  - Data tables AJAX

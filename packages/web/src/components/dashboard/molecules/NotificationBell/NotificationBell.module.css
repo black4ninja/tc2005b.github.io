@@ -1,0 +1,47 @@
+.bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.badgeWrap {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+}
+.header {
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 4px;
+}
+.list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+.empty {
+  padding: 16px 12px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 0;
+}
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.item:hover { background: var(--bg-page); }
+.itemTitle {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.itemTime {
+  font-size: 11px;
+  color: var(--text-muted);
+}
