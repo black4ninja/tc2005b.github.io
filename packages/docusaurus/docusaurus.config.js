@@ -41,9 +41,11 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          // Servir los docs en la raíz del baseUrl (/docs/) en lugar de /docs/docs/
-          routeBasePath: '/',
-          sidebarPath: './sidebars.js',
+          // Instancia por defecto = materia TC2005B → /docs/tc2005b/...
+          // (multi-instancia: cada materia tendrá su carpeta, routeBasePath y sidebar).
+          path: 'docs/tc2005b',
+          routeBasePath: 'tc2005b',
+          sidebarPath: './sidebars/tc2005b.js',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
@@ -61,13 +63,16 @@ const config = {
       '@docusaurus/plugin-client-redirects',
       /** @type {import('@docusaurus/plugin-client-redirects').Options} */
       ({
-        // Redirige las URLs viejas /docs/docs/... a las nuevas /docs/...
+        // Redirige los esquemas viejos a las nuevas rutas /docs/tc2005b/...
         // `existingPath` es la ruta nueva sin baseUrl (p. ej.
-        // "/backend/node/tutorials/intro_web/Lab1HTML"); el baseUrl "/docs/"
-        // se antepone automáticamente al valor devuelto, así que devolver
-        // "/docs<existingPath>" reproduce la URL vieja "/docs/docs/...".
+        // "/tc2005b/backend/.../Lab1HTML"); el baseUrl "/docs/" se antepone al
+        // valor devuelto. Reproducimos:
+        //   - esquema previo:   /docs/backend/.../Lab1HTML   (devolviendo "/backend/...")
+        //   - esquema original: /docs/docs/backend/.../Lab1HTML (devolviendo "/docs/backend/...")
         createRedirects(existingPath) {
-          return [`/docs${existingPath}`];
+          if (!existingPath.startsWith('/tc2005b/')) return undefined;
+          const withoutSlug = existingPath.replace(/^\/tc2005b/, '');
+          return [withoutSlug, `/docs${withoutSlug}`];
         },
       }),
     ],

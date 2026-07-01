@@ -63,7 +63,7 @@
         "datos": {
           "titulo": "Práctica: Intro a Desarrollo Web con HTML",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab1HTML/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab1HTML/"
         }
       },
       {
@@ -223,7 +223,7 @@
         "datos": {
           "titulo": "Práctica: Rutas y Formas",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab10RutasYFormas/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab10RutasYFormas/"
         }
       },
       {
@@ -309,7 +309,7 @@
         "datos": {
           "titulo": "Práctica: Express",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab11Express/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab11Express/"
         }
       },
       {
@@ -404,7 +404,7 @@
         "datos": {
           "titulo": "Práctica: EJS",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab12EJS/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab12EJS/"
         }
       },
       {
@@ -492,7 +492,7 @@
         "datos": {
           "titulo": "Práctica: MVC",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/LAB13MVC/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/LAB13MVC/"
         }
       },
       {
@@ -588,7 +588,7 @@
         "datos": {
           "titulo": "Práctica: Sesiones",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/LAB14Sesiones/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/LAB14Sesiones/"
         }
       },
       {
@@ -754,7 +754,7 @@
         "datos": {
           "titulo": "Práctica: Interacción con Base de Datos",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab17BD/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab17BD/"
         }
       },
       {
@@ -874,7 +874,7 @@
         "datos": {
           "titulo": "Práctica: Autenticación",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab18Autenticacion/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab18Autenticacion/"
         }
       },
       {
@@ -965,7 +965,7 @@
         "datos": {
           "titulo": "Práctica: RBAC",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab19RBAC/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab19RBAC/"
         }
       },
       {
@@ -1060,7 +1060,7 @@
         "datos": {
           "titulo": "Práctica: Git",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab2Git/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab2Git/"
         }
       },
       {
@@ -1244,7 +1244,7 @@
         "datos": {
           "titulo": "Práctica: Archivos",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab22Archivos/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab22Archivos/"
         }
       },
       {
@@ -1379,7 +1379,7 @@
         "datos": {
           "titulo": "Práctica: AJAX",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab24AJAX/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab24AJAX/"
         }
       },
       {
@@ -1760,7 +1760,7 @@
         "datos": {
           "titulo": "Práctica: CSS",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab3CSS/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab3CSS/"
         }
       },
       {
@@ -1936,7 +1936,7 @@
         "datos": {
           "titulo": "Práctica: JavaScript",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab4JS/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab4JS/"
         }
       },
       {
@@ -2080,7 +2080,7 @@
         "datos": {
           "titulo": "Práctica: Frameworks de estilo",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab5StyleFramework/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab5StyleFramework/"
         }
       },
       {
@@ -2183,7 +2183,7 @@
         "datos": {
           "titulo": "Práctica: Programación Orientada a Eventos",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab6POE/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab6POE/"
         }
       },
       {
@@ -2329,7 +2329,7 @@
         "datos": {
           "titulo": "Práctica: Ramas en Git",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab7Branches/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab7Branches/"
         }
       },
       {
@@ -2418,7 +2418,7 @@
         "datos": {
           "titulo": "Práctica: Intro al Backend",
           "descripcion": "Consulta la guía práctica completa en el Docusaurus del curso",
-          "enlace": "/docs/backend/node/tutorials/intro_web/Lab8IntroBackend/"
+          "enlace": "/docs/tc2005b/backend/node/tutorials/intro_web/Lab8IntroBackend/"
         }
       },
       {
