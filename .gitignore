@@ -42,3 +42,7 @@ deprecated/backup/
 
 # Generated evaluation guides (regenerable via `yarn export:evaluacion`)
 /docs/
+
+# Playwright MCP artifacts (snapshots/screenshots de pruebas)
+.playwright-mcp/
+/gate-*.png
