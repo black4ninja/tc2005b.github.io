@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router';
 import Layout from './components/layout/Layout';
 import CalendarPage from './components/calendar/CalendarPage';
@@ -25,8 +26,15 @@ import AlumnoCalendarioPage from './components/dashboard/pages/AlumnoCalendarioP
 import AlumnoCompetenciasPage from './components/dashboard/pages/AlumnoCompetenciasPage/AlumnoCompetenciasPage';
 import PaginaPage from './components/paginas/PaginaPage';
 import PaginasPage from './components/dashboard/pages/PaginasPage/PaginasPage';
+import { APP_NAME, APP_TAGLINE } from './config/app';
 
 export default function App() {
+  // Título del navegador como fuente única de verdad (el <title> de index.html
+  // es solo un fallback pre-hidratación).
+  useEffect(() => {
+    document.title = `${APP_NAME} | ${APP_TAGLINE}`;
+  }, []);
+
   return (
     <Routes>
       <Route element={<Layout />}>
