@@ -11,6 +11,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 - El Docusaurus se sirve ahora en `/docs/...` en lugar de `/docs/docs/...`
   (`routeBasePath: '/'`). Las páginas registradas en BD y los enlaces de los
   labs se migraron al nuevo esquema.
+- Branding genérico configurable: el nombre y subtítulo de la app
+  (antes "TC2005B" / "Construcción de Software y Toma de Decisiones") ahora
+  salen de `packages/web/src/config/app.ts` (`APP_NAME`, `APP_TAGLINE`) y se
+  usan en login, navbar, home, sidebar, título del navegador y export XLSX.
 
 ### Deprecated
 - Se elimina el despliegue por **GitHub Pages**. El sitio se despliega en un
