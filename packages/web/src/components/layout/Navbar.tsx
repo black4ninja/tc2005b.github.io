@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import styles from './Navbar.module.css';
+import { APP_NAME, APP_TAGLINE } from '../../config/app';
 
 const AGENDA_ENTREVISTAS_URL =
   'https://docs.google.com/spreadsheets/d/1U1fbfaBWMp4Nje13qi2C3mhjhW0B8NxC-JXD0ff6fNQ/edit?gid=32307462#gid=32307462';
@@ -8,10 +9,10 @@ export default function Navbar() {
   return (
     <nav className={styles.topBar}>
       <Link to="/" className={styles.brand}>
-        TC2005B
+        {APP_NAME}
       </Link>
       <span className={styles.subtitle}>
-        Construcción de Software y Toma de Decisiones
+        {APP_TAGLINE}
       </span>
       <div className={styles.navLinks}>
         <a

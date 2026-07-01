@@ -6,6 +6,7 @@ import { getSidebarItems, getGrupoDetailItems } from './sidebarConfig';
 import styles from './Sidebar.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
 import { useAuth } from '../../../../context/AuthContext';
+import { APP_NAME } from '../../../../config/app';
 
 interface SidebarProps {
   role: DashboardRole;
@@ -84,7 +85,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
           <div className={styles.logo}>
             <Link to={role === 'admin' ? '/admin' : '/alumno'} className={styles.logoLink}>
               <Icon name="school" size="lg" />
-              {!collapsed && <span className={styles.logoText}>TC2005B</span>}
+              {!collapsed && <span className={styles.logoText}>{APP_NAME}</span>}
             </Link>
           </div>
         )}
