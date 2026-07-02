@@ -1,0 +1,69 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cabecera "Docusaurus": mismo look que un NavItem, pero es un botón toggle. */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s, color 0.2s;
+}
+.header:hover {
+  background: var(--bg-page);
+  color: var(--text-primary);
+}
+.header.collapsed {
+  justify-content: center;
+  padding: 10px;
+}
+
+/* La etiqueta empuja el chevron al extremo derecho. */
+.headerLabel {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 0 2px 20px;
+}
+
+/* Cada Docusaurus: enlace truncado a una sola línea con … */
+.link {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.2s, color 0.2s;
+}
+.link:hover {
+  background: var(--bg-page);
+  color: var(--text-primary);
+}
+
+.hint {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
