@@ -72,8 +72,12 @@ export default function EditorContenidoPage() {
 
   const [recursosOpen, setRecursosOpen] = useState(false);
   const [recursos, setRecursos] = useState<RecursoInfo[]>([]);
+  const [recursosCargando, setRecursosCargando] = useState(false);
   const [recursosError, setRecursosError] = useState('');
-  const [subiendo, setSubiendo] = useState(false);
+  // Contador (no booleano): varios pegados concurrentes no deben apagar el
+  // indicador cuando termina solo el primero.
+  const [subidasActivas, setSubidasActivas] = useState(0);
+  const subiendo = subidasActivas > 0;
   const archivoInputRef = useRef<HTMLInputElement>(null);
 
   // El autosave usa refs para leer el estado más reciente sin recrear timers.
@@ -232,7 +236,7 @@ export default function EditorContenidoPage() {
   /* ── Recursos: subir e insertar referencia `recurso:` (US-4) ── */
   async function subirArchivo(file: File): Promise<void> {
     if (!documento?.coleccionId || !docId) return;
-    setSubiendo(true);
+    setSubidasActivas((n) => n + 1);
     setError('');
     try {
       const form = new FormData();
@@ -255,20 +259,27 @@ export default function EditorContenidoPage() {
     } catch (err: any) {
       setError(err.message);
     } finally {
-      setSubiendo(false);
+      setSubidasActivas((n) => n - 1);
     }
   }
 
-  function onPaste(e: React.ClipboardEvent) {
+  /**
+   * Solo pegados DENTRO del panel de fuente: a nivel de página secuestraría
+   * el paste de los inputs de los modales (publicar/historial/recursos).
+   * Secuencial: el orden de inserción respeta el orden de los archivos.
+   */
+  async function onPasteFuente(e: React.ClipboardEvent) {
     const archivos = [...(e.clipboardData?.files ?? [])];
     if (!archivos.length || !documento) return;
     e.preventDefault();
-    for (const f of archivos) subirArchivo(f);
+    for (const f of archivos) await subirArchivo(f);
   }
 
   async function abrirRecursos() {
     if (!documento?.coleccionId) return;
     setRecursosError('');
+    setRecursos([]); // sin lista vieja: otro admin pudo borrar/subir entre aperturas
+    setRecursosCargando(true);
     setRecursosOpen(true);
     try {
       const res = await fetch(
@@ -280,6 +291,8 @@ export default function EditorContenidoPage() {
       setRecursos(json.recursos ?? []);
     } catch (err: any) {
       setRecursosError(err.message);
+    } finally {
+      setRecursosCargando(false);
     }
   }
 
@@ -402,7 +415,7 @@ export default function EditorContenidoPage() {
   }
 
   return (
-    <div className={styles.page} onKeyDown={onKeyDown} onPaste={onPaste}>
+    <div className={styles.page} onKeyDown={onKeyDown}>
       <div className={styles.header}>
         <Link to={`/admin/contenidos/${id}`} className={styles.volver}>
           <Icon name="arrow_back" size="sm" />
@@ -464,7 +477,7 @@ export default function EditorContenidoPage() {
       />
 
       <div className={styles.split}>
-        <div className={styles.fuente}>
+        <div className={styles.fuente} onPaste={onPasteFuente}>
           <CodeMirror
             ref={editorRef}
             value={cuerpo}
@@ -524,7 +537,9 @@ export default function EditorContenidoPage() {
       <Modal isOpen={recursosOpen} onClose={() => setRecursosOpen(false)} title="Recursos del documento">
         <div className={styles.modalCuerpo}>
           {recursosError && <div className={styles.error}>{recursosError}</div>}
-          {recursos.length === 0 ? (
+          {recursosCargando ? (
+            <p className={styles.hint}>Cargando…</p>
+          ) : recursos.length === 0 ? (
             <p className={styles.hint}>Sin recursos. Sube uno con 🖼️ o pega una imagen en el editor.</p>
           ) : (
             <div className={styles.versiones}>

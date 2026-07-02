@@ -6,6 +6,7 @@ import { Documento } from '../models/Documento.js';
 import { Recurso } from '../models/Recurso.js';
 import type { AppUser } from '../models/AppUser.js';
 import { getSlugsPermitidos } from '../services/contenidos.service.js';
+import { getColeccionActiva } from './cms-documentos.controller.js';
 import { FILES_INTERNAL_KEY, FILES_INTERNAL_HEADER } from '../middlewares/files-gate.middleware.js';
 
 /** Límite de subida (decisión #7 del diseño: cubre los ZIP/PDF actuales). */
@@ -15,7 +16,10 @@ export const RECURSO_MAX_BYTES = 50 * 1024 * 1024;
  * Mimes que pueden servirse INLINE sin riesgo de ejecutar script en el
  * origen de la app. El mime lo declara el cliente al subir (no es
  * confiable): todo lo demás baja como attachment octet-stream.
- * SVG excluido a propósito: puede contener <script>.
+ * SVG excluido a propósito (puede contener <script>). Video/audio excluidos
+ * también: reproducirlos embebidos exige soporte de Range/206 (Safari no
+ * arranca sin él) — como attachment se descargan íntegros; para video
+ * embebido usar enlaces de streaming (YouTube) como hoy.
  */
 const MIME_INLINE_SEGURO = new Set([
   'image/png',
@@ -24,10 +28,6 @@ const MIME_INLINE_SEGURO = new Set([
   'image/webp',
   'image/avif',
   'application/pdf',
-  'video/mp4',
-  'video/webm',
-  'audio/mpeg',
-  'audio/wav',
   'text/plain',
 ]);
 
@@ -47,16 +47,6 @@ function sanitizarNombre(original: string): string {
     .slice(0, 80) || 'archivo';
   const ext = punto > 0 ? original.slice(punto + 1).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10) : '';
   return ext ? `${base}.${ext}` : base;
-}
-
-async function getColeccionActiva(id: string): Promise<Coleccion | null> {
-  try {
-    const q = new Parse.Query<Coleccion>('Coleccion');
-    q.equalTo('exists' as any, true as any);
-    return await q.get(id, { useMasterKey: true });
-  } catch {
-    return null;
-  }
 }
 
 /**

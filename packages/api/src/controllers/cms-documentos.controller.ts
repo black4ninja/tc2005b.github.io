@@ -37,7 +37,8 @@ function parseSlug(valor: unknown): string | null {
   return typeof valor === 'string' && SLUG_REGEX.test(valor) ? valor : null;
 }
 
-async function getColeccionActiva(id: string): Promise<Coleccion | null> {
+/** Colección existente por id (compartido con recursos.controller). */
+export async function getColeccionActiva(id: string): Promise<Coleccion | null> {
   try {
     const q = new Parse.Query<Coleccion>('Coleccion');
     q.equalTo('exists' as any, true as any);
