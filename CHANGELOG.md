@@ -22,6 +22,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   Se removieron los workflows de GitHub Pages, `.nojekyll` y el hack SPA `?/`.
 
 ### Added
+- **CMS "Contenidos" (US-8)**: storage en AWS S3 — el files adapter cambia a
+  `@parse/s3-files-adapter` cuando el `.env` trae credenciales (bucket
+  privado `groups-meeplab-contenidos`; `directAccess` desactivado: S3 jamás
+  sirve directo) + script de migración GridFS→S3 con `--dry-run`.
 - **CMS "Contenidos" (US-6)**: importador Docusaurus→Contenidos con
   `--dry-run` y reporte de paridad (verificado: tc2005b y tc2007b, 0 y 1
   enlaces sin resolver, preexistentes); asignación de colecciones a grupos
