@@ -237,3 +237,19 @@
   outline: none;
   border-color: var(--dash-primary);
 }
+
+.abrirEditor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  background: var(--dash-primary);
+  color: #fff;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+.abrirEditor:hover {
+  opacity: 0.92;
+}

@@ -52,7 +52,7 @@ async function getColeccionActiva(id: string): Promise<Coleccion | null> {
  * `exists` (no `active`): el admin gestiona también documentos desactivados
  * — el flag `active` gobierna visibilidad en el visor (US-3), no la edición.
  */
-async function buscarDocumento(docId: string): Promise<{ documento: Documento; coleccion: Coleccion } | null> {
+export async function buscarDocumento(docId: string): Promise<{ documento: Documento; coleccion: Coleccion } | null> {
   try {
     const q = new Parse.Query<Documento>('Documento');
     q.equalTo('exists' as any, true as any);
