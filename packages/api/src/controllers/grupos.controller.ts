@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { Grupo } from '../models/Grupo.js';
+import { invalidateAllowedCache } from '../services/materia.service.js';
 
 export async function listGrupos(_req: Request, res: Response): Promise<void> {
   try {
@@ -83,6 +84,8 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
     }
 
     await grupo.save(null, { useMasterKey: true });
+    // Si cambió la materia del grupo, el acceso de sus alumnos cambió.
+    if (materiaId !== undefined) invalidateAllowedCache();
 
     res.json({ status: 'ok', grupo: grupo.toSafeJSON() });
   } catch (error: any) {

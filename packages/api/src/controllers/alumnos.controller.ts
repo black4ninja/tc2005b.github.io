@@ -10,6 +10,7 @@ import {
   findGrupoAlumnoLink,
   createGrupoAlumnoLink,
 } from '../services/grupo-alumno.service.js';
+import { invalidateAllowedCache } from '../services/materia.service.js';
 
 export async function listAlumnos(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
@@ -72,6 +73,7 @@ export async function createAlumno(req: Request, res: Response): Promise<void> {
       } else {
         await createGrupoAlumnoLink(existing, grupoPointer);
       }
+      invalidateAllowedCache(existing.id);
 
       res.status(201).json({
         status: 'ok',
@@ -94,6 +96,7 @@ export async function createAlumno(req: Request, res: Response): Promise<void> {
 
     await alumno.save(null, { useMasterKey: true });
     await createGrupoAlumnoLink(alumno, grupoPointer);
+    invalidateAllowedCache(alumno.id);
 
     res.status(201).json({
       status: 'ok',
@@ -145,6 +148,7 @@ export async function archiveAlumno(req: Request, res: Response): Promise<void> 
       link.activate();
     }
     await link.save(null, { useMasterKey: true });
+    invalidateAllowedCache(alumnoId);
 
     // Fetch alumno for response
     const alumnoQuery = new Parse.Query<AppUser>('AppUser');
@@ -172,6 +176,7 @@ export async function deleteAlumno(req: Request, res: Response): Promise<void> {
 
     link.softDelete();
     await link.save(null, { useMasterKey: true });
+    invalidateAllowedCache(alumnoId);
 
     res.json({ status: 'ok', message: 'Alumno eliminado del grupo' });
   } catch (error: any) {
@@ -272,6 +277,9 @@ export async function importAlumnosCSV(req: Request, res: Response): Promise<voi
       imported.push(i);
       credentials.push({ email, name: alumnoName, password });
     }
+
+    // Enrollment masivo: invalidar todo el cache de permisos una vez.
+    if (imported.length > 0) invalidateAllowedCache();
 
     res.json({
       status: 'ok',
