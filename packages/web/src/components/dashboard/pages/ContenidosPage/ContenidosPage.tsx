@@ -47,17 +47,20 @@ export default function ContenidosPage() {
 
   function openCreate() {
     setEditColeccion(undefined);
+    setError('');
     setModalOpen(true);
   }
 
   function openEdit(coleccion: ColeccionData) {
     setEditColeccion(coleccion);
+    setError('');
     setModalOpen(true);
   }
 
   function closeModal() {
     setModalOpen(false);
     setEditColeccion(undefined);
+    setError('');
   }
 
   async function handleSave(data: { nombre: string; slug: string; clave?: string; descripcion?: string; publicada?: boolean }) {
@@ -146,6 +149,7 @@ export default function ContenidosPage() {
       <Modal isOpen={modalOpen} onClose={closeModal} title={editColeccion ? 'Editar Colección' : 'Nueva Colección'}>
         <ColeccionForm
           coleccion={editColeccion}
+          errorExterno={error}
           onSave={handleSave}
           onCancel={closeModal}
           loading={saving}

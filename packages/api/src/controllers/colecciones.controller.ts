@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
 import Parse from 'parse/node';
-import { BaseModel } from '../models/BaseModel.js';
 import { Coleccion } from '../models/Coleccion.js';
 
 const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -73,7 +72,10 @@ export async function updateColeccion(req: Request, res: Response): Promise<void
   const { nombre, slug, clave, descripcion, icono, publicada } = req.body;
 
   try {
-    const query = BaseModel.queryActive<Coleccion>('Coleccion');
+    // Solo `exists`: el admin también edita colecciones desactivadas
+    // (mismo criterio que list/delete y que los documentos).
+    const query = new Parse.Query<Coleccion>('Coleccion');
+    query.equalTo('exists' as any, true as any);
     const coleccion = await query.get(id, { useMasterKey: true });
 
     if (nombre !== undefined) {

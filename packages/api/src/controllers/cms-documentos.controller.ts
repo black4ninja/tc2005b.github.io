@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
 import Parse from 'parse/node';
-import { BaseModel } from '../models/BaseModel.js';
 import { Coleccion } from '../models/Coleccion.js';
 import {
   Documento,
@@ -48,6 +47,25 @@ async function getColeccionActiva(id: string): Promise<Coleccion | null> {
   }
 }
 
+/**
+ * Busca un documento existente con su colección viva. Filtra SOLO por
+ * `exists` (no `active`): el admin gestiona también documentos desactivados
+ * — el flag `active` gobierna visibilidad en el visor (US-3), no la edición.
+ */
+async function buscarDocumento(docId: string): Promise<{ documento: Documento; coleccion: Coleccion } | null> {
+  try {
+    const q = new Parse.Query<Documento>('Documento');
+    q.equalTo('exists' as any, true as any);
+    q.include(['coleccion', 'borrador', 'version'] as any);
+    const documento = await q.get(docId, { useMasterKey: true });
+    const coleccion = documento.getColeccion();
+    if (!coleccion || coleccion.get('exists') === false) return null;
+    return { documento, coleccion };
+  } catch {
+    return null;
+  }
+}
+
 /** Query base de documentos existentes de una colección. */
 function queryDocumentos(coleccion: Coleccion): Parse.Query<Documento> {
   const q = new Parse.Query<Documento>('Documento');
@@ -71,7 +89,7 @@ async function slugDuplicado(
   return !!(await q.first({ useMasterKey: true }));
 }
 
-/** Hermanos activos bajo un padre (o raíz), ordenados. */
+/** Hermanos existentes bajo un padre (o raíz), ordenados. */
 async function getHermanos(coleccion: Coleccion, padre: Documento | null): Promise<Documento[]> {
   const q = queryDocumentos(coleccion);
   if (padre) q.equalTo('padre' as any, padre as any);
@@ -119,7 +137,9 @@ export async function createDocumento(req: Request, res: Response): Promise<void
     return;
   }
   const tipoValido: DocumentoTipo = DOCUMENTO_TIPOS.includes(tipo) ? tipo : 'md';
-  const plantillaValida: DocumentoPlantilla | null = DOCUMENTO_PLANTILLAS.includes(plantilla) ? plantilla : null;
+  // La plantilla solo aplica a páginas Markdown (una página HTML con esqueleto MD sería basura).
+  const plantillaValida: DocumentoPlantilla | null =
+    tipoValido === 'md' && DOCUMENTO_PLANTILLAS.includes(plantilla) ? plantilla : null;
 
   try {
     const coleccion = await getColeccionActiva(id);
@@ -147,7 +167,10 @@ export async function createDocumento(req: Request, res: Response): Promise<void
       return;
     }
 
+    // Al final de sus hermanos: max(orden)+1 (length colisionaría tras un borrado,
+    // porque el soft-delete deja huecos en la numeración).
     const hermanos = await getHermanos(coleccion, padre);
+    const ordenFinal = hermanos.length ? Math.max(...hermanos.map((h) => h.getOrden())) + 1 : 0;
 
     const documento = new Documento().initDefaults();
     documento.setColeccion(coleccion);
@@ -155,8 +178,8 @@ export async function createDocumento(req: Request, res: Response): Promise<void
     documento.setTitulo(titulo.trim());
     documento.setSlug(slugValido);
     documento.setTipo(tipoValido);
-    documento.setOrden(hermanos.length); // al final de sus hermanos
-    documento.setPlantilla(tipoValido === 'md' ? plantillaValida : null);
+    documento.setOrden(ordenFinal);
+    documento.setPlantilla(plantillaValida);
     documento.setPublicado(false);
     await documento.save(null, { useMasterKey: true });
 
@@ -185,14 +208,12 @@ export async function updateDocumento(req: Request, res: Response): Promise<void
   const { titulo, slug, plantilla } = req.body;
 
   try {
-    const q = BaseModel.queryActive<Documento>('Documento');
-    q.include('coleccion' as any);
-    const documento = await q.get(docId, { useMasterKey: true });
-    const coleccion = documento.getColeccion();
-    if (!coleccion || coleccion.get('exists') === false) {
+    const encontrado = await buscarDocumento(docId);
+    if (!encontrado) {
       res.status(404).json({ status: 'error', message: 'Documento no encontrado' });
       return;
     }
+    const { documento, coleccion } = encontrado;
 
     if (titulo !== undefined) {
       if (typeof titulo !== 'string' || titulo.trim() === '') {
@@ -219,16 +240,14 @@ export async function updateDocumento(req: Request, res: Response): Promise<void
     }
 
     if (plantilla !== undefined) {
-      documento.setPlantilla(DOCUMENTO_PLANTILLAS.includes(plantilla) ? plantilla : null);
+      documento.setPlantilla(
+        documento.getTipo() === 'md' && DOCUMENTO_PLANTILLAS.includes(plantilla) ? plantilla : null,
+      );
     }
 
     await documento.save(null, { useMasterKey: true });
     res.json({ status: 'ok', documento: documento.toSafeJSON() });
-  } catch (error: any) {
-    if (error?.code === Parse.Error.OBJECT_NOT_FOUND) {
-      res.status(404).json({ status: 'error', message: 'Documento no encontrado' });
-      return;
-    }
+  } catch (error) {
     res.status(500).json({ status: 'error', message: 'Error al actualizar documento' });
   }
 }
@@ -247,14 +266,12 @@ export async function moveDocumento(req: Request, res: Response): Promise<void> 
   }
 
   try {
-    const q = BaseModel.queryActive<Documento>('Documento');
-    q.include('coleccion' as any);
-    const documento = await q.get(docId, { useMasterKey: true });
-    const coleccion = documento.getColeccion();
-    if (!coleccion || coleccion.get('exists') === false) {
+    const encontrado = await buscarDocumento(docId);
+    if (!encontrado) {
       res.status(404).json({ status: 'error', message: 'Documento no encontrado' });
       return;
     }
+    const { documento, coleccion } = encontrado;
 
     let nuevoPadre: Documento | null = null;
     if (padreId) {
@@ -294,39 +311,40 @@ export async function moveDocumento(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Insertar entre los hermanos destino y renumerar 0..n (normalización determinista).
+    // Insertar entre los hermanos destino y renumerar 0..n; solo se guardan
+    // los que realmente cambiaron (evita reescribir n objetos por movimiento).
     const hermanos = (await getHermanos(coleccion, nuevoPadre)).filter((h) => h.id !== docId);
     const posicion = Math.min(orden, hermanos.length);
     hermanos.splice(posicion, 0, documento);
 
-    documento.setPadre(nuevoPadre);
-    hermanos.forEach((h, i) => h.setOrden(i));
-    await Parse.Object.saveAll(hermanos, { useMasterKey: true });
+    const padreAnteriorId = documento.getPadre()?.id ?? null;
+    const cambiados: Documento[] = [];
+    hermanos.forEach((h, i) => {
+      const cambioOrden = h.getOrden() !== i;
+      const cambioPadre = h.id === docId && padreAnteriorId !== (nuevoPadre?.id ?? null);
+      if (cambioOrden) h.setOrden(i);
+      if (cambioPadre) h.setPadre(nuevoPadre);
+      if (cambioOrden || cambioPadre) cambiados.push(h);
+    });
+    if (cambiados.length) await Parse.Object.saveAll(cambiados, { useMasterKey: true });
 
     res.json({ status: 'ok', documento: documento.toSafeJSON() });
-  } catch (error: any) {
-    if (error?.code === Parse.Error.OBJECT_NOT_FOUND) {
-      res.status(404).json({ status: 'error', message: 'Documento no encontrado' });
-      return;
-    }
+  } catch (error) {
     res.status(500).json({ status: 'error', message: 'Error al mover documento' });
   }
 }
 
-/** DELETE /admin/documentos/:docId — soft-delete (bloquea si tiene hijos activos). */
+/** DELETE /admin/documentos/:docId — soft-delete (bloquea si tiene hijos existentes). */
 export async function deleteDocumento(req: Request, res: Response): Promise<void> {
   const { docId } = req.params;
 
   try {
-    const q = new Parse.Query<Documento>('Documento');
-    q.equalTo('exists' as any, true as any);
-    q.include('coleccion' as any);
-    const documento = await q.get(docId, { useMasterKey: true });
-    const coleccion = documento.getColeccion();
-    if (!coleccion || coleccion.get('exists') === false) {
+    const encontrado = await buscarDocumento(docId);
+    if (!encontrado) {
       res.status(404).json({ status: 'error', message: 'Documento no encontrado' });
       return;
     }
+    const { documento } = encontrado;
 
     const hijos = new Parse.Query<Documento>('Documento');
     hijos.equalTo('exists' as any, true as any);
@@ -340,11 +358,7 @@ export async function deleteDocumento(req: Request, res: Response): Promise<void
     await documento.save(null, { useMasterKey: true });
 
     res.json({ status: 'ok', message: 'Documento eliminado' });
-  } catch (error: any) {
-    if (error?.code === Parse.Error.OBJECT_NOT_FOUND) {
-      res.status(404).json({ status: 'error', message: 'Documento no encontrado' });
-      return;
-    }
+  } catch (error) {
     res.status(500).json({ status: 'error', message: 'Error al eliminar documento' });
   }
 }
@@ -354,14 +368,12 @@ export async function getBorrador(req: Request, res: Response): Promise<void> {
   const { docId } = req.params;
 
   try {
-    const q = BaseModel.queryActive<Documento>('Documento');
-    q.include(['coleccion', 'borrador', 'version'] as any);
-    const documento = await q.get(docId, { useMasterKey: true });
-    const coleccion = documento.getColeccion();
-    if (!coleccion || coleccion.get('exists') === false) {
+    const encontrado = await buscarDocumento(docId);
+    if (!encontrado) {
       res.status(404).json({ status: 'error', message: 'Documento no encontrado' });
       return;
     }
+    const { documento } = encontrado;
     if (documento.getTipo() === 'categoria') {
       res.status(400).json({ status: 'error', message: 'Las categorías no tienen cuerpo' });
       return;
@@ -374,11 +386,7 @@ export async function getBorrador(req: Request, res: Response): Promise<void> {
       cuerpo: version?.getCuerpo() ?? '',
       esBorrador: !!documento.getBorrador(),
     });
-  } catch (error: any) {
-    if (error?.code === Parse.Error.OBJECT_NOT_FOUND) {
-      res.status(404).json({ status: 'error', message: 'Documento no encontrado' });
-      return;
-    }
+  } catch (error) {
     res.status(500).json({ status: 'error', message: 'Error al obtener borrador' });
   }
 }
@@ -397,20 +405,19 @@ export async function saveBorrador(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    const q = BaseModel.queryActive<Documento>('Documento');
-    q.include(['coleccion', 'borrador', 'version'] as any);
-    const documento = await q.get(docId, { useMasterKey: true });
-    const coleccion = documento.getColeccion();
-    if (!coleccion || coleccion.get('exists') === false) {
+    const encontrado = await buscarDocumento(docId);
+    if (!encontrado) {
       res.status(404).json({ status: 'error', message: 'Documento no encontrado' });
       return;
     }
+    const { documento } = encontrado;
     if (documento.getTipo() === 'categoria') {
       res.status(400).json({ status: 'error', message: 'Las categorías no tienen cuerpo' });
       return;
     }
 
     let borrador = documento.getBorrador();
+    const esNuevo = !borrador;
     if (!borrador) {
       borrador = new DocumentoVersion().initDefaults();
       borrador.setDocumento(documento);
@@ -421,17 +428,13 @@ export async function saveBorrador(req: Request, res: Response): Promise<void> {
     if (autor) borrador.setAutor(autor);
     await borrador.save(null, { useMasterKey: true });
 
-    if (!documento.getBorrador()) {
+    if (esNuevo) {
       documento.setBorrador(borrador);
       await documento.save(null, { useMasterKey: true });
     }
 
     res.json({ status: 'ok', esBorrador: true });
-  } catch (error: any) {
-    if (error?.code === Parse.Error.OBJECT_NOT_FOUND) {
-      res.status(404).json({ status: 'error', message: 'Documento no encontrado' });
-      return;
-    }
+  } catch (error) {
     res.status(500).json({ status: 'error', message: 'Error al guardar borrador' });
   }
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
+import { slugify, slugifyInput } from '../../../../utils/slug';
 import styles from './ColeccionForm.module.css';
 import type { ColeccionData } from '../../../../types/contenidos';
 
@@ -14,22 +15,14 @@ interface ColeccionSavePayload {
 
 interface ColeccionFormProps {
   coleccion?: ColeccionData;
+  /** Error del servidor (p. ej. slug duplicado) — se muestra dentro del modal. */
+  errorExterno?: string;
   onSave: (data: ColeccionSavePayload) => void;
   onCancel: () => void;
   loading?: boolean;
 }
 
-/** kebab-case básico para sugerir slug desde el nombre. */
-export function slugify(texto: string): string {
-  return texto
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
-export default function ColeccionForm({ coleccion, onSave, onCancel, loading }: ColeccionFormProps) {
+export default function ColeccionForm({ coleccion, errorExterno, onSave, onCancel, loading }: ColeccionFormProps) {
   const [nombre, setNombre] = useState(coleccion?.nombre ?? '');
   const [slug, setSlug] = useState(coleccion?.slug ?? '');
   const [slugTocado, setSlugTocado] = useState(!!coleccion);
@@ -45,18 +38,19 @@ export default function ColeccionForm({ coleccion, onSave, onCancel, loading }: 
   }
 
   function doSave() {
+    const slugFinal = slugify(slug);
     if (!nombre.trim()) {
       setError('El nombre es requerido');
       return;
     }
-    if (!slug.trim()) {
+    if (!slugFinal) {
       setError('El slug es requerido');
       return;
     }
     setError('');
     onSave({
       nombre: nombre.trim(),
-      slug: slug.trim(),
+      slug: slugFinal,
       clave: clave.trim() || undefined,
       descripcion: descripcion.trim() || undefined,
       ...(coleccion ? { publicada } : {}),
@@ -70,6 +64,7 @@ export default function ColeccionForm({ coleccion, onSave, onCancel, loading }: 
 
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
+      {errorExterno && <div className={styles.serverError}>{errorExterno}</div>}
       <TextInput
         label="Nombre"
         placeholder="Nombre de la colección"
@@ -84,7 +79,7 @@ export default function ColeccionForm({ coleccion, onSave, onCancel, loading }: 
         placeholder="tc2005b"
         icon="link"
         value={slug}
-        onChange={(v) => { setSlug(slugify(v)); setSlugTocado(true); setError(''); }}
+        onChange={(v) => { setSlug(slugifyInput(v)); setSlugTocado(true); setError(''); }}
         disabled={loading}
       />
       <TextInput

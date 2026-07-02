@@ -38,3 +38,11 @@
   gap: 8px;
   margin-top: 8px;
 }
+
+.serverError {
+  padding: 10px 14px;
+  background: #fdecea;
+  color: var(--dash-danger);
+  border-radius: 8px;
+  font-size: 13.5px;
+}

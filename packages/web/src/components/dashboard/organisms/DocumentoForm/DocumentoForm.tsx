@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
-import { slugify } from '../ColeccionForm/ColeccionForm';
+import { slugify, slugifyInput } from '../../../../utils/slug';
 import styles from './DocumentoForm.module.css';
 import type { DocumentoNodo, DocumentoTipo, DocumentoPlantilla } from '../../../../types/contenidos';
 
@@ -18,6 +18,8 @@ interface DocumentoFormProps {
   categorias: { id: string; label: string }[];
   /** Padre preseleccionado (p. ej. la categoría seleccionada en el árbol). */
   padreInicial?: string;
+  /** Error del servidor (p. ej. slug duplicado) — se muestra dentro del modal. */
+  errorExterno?: string;
   onSave: (data: DocumentoSavePayload) => void;
   onCancel: () => void;
   loading?: boolean;
@@ -34,7 +36,7 @@ export function aplanarCategorias(nodos: DocumentoNodo[], nivel = 0): { id: stri
   return out;
 }
 
-export default function DocumentoForm({ categorias, padreInicial, onSave, onCancel, loading }: DocumentoFormProps) {
+export default function DocumentoForm({ categorias, padreInicial, errorExterno, onSave, onCancel, loading }: DocumentoFormProps) {
   const [titulo, setTitulo] = useState('');
   const [slug, setSlug] = useState('');
   const [slugTocado, setSlugTocado] = useState(false);
@@ -50,18 +52,19 @@ export default function DocumentoForm({ categorias, padreInicial, onSave, onCanc
   }
 
   function doSave() {
+    const slugFinal = slugify(slug);
     if (!titulo.trim()) {
       setError('El título es requerido');
       return;
     }
-    if (!slug.trim()) {
+    if (!slugFinal) {
       setError('El slug es requerido');
       return;
     }
     setError('');
     onSave({
       titulo: titulo.trim(),
-      slug: slug.trim(),
+      slug: slugFinal,
       tipo,
       plantilla: tipo === 'md' && plantilla ? plantilla : undefined,
       padreId: padreId || undefined,
@@ -75,6 +78,7 @@ export default function DocumentoForm({ categorias, padreInicial, onSave, onCanc
 
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
+      {errorExterno && <div className={styles.serverError}>{errorExterno}</div>}
       <TextInput
         label="Título"
         placeholder="Título de la página"
@@ -89,7 +93,7 @@ export default function DocumentoForm({ categorias, padreInicial, onSave, onCanc
         placeholder="lab1-html"
         icon="link"
         value={slug}
-        onChange={(v) => { setSlug(slugify(v)); setSlugTocado(true); setError(''); }}
+        onChange={(v) => { setSlug(slugifyInput(v)); setSlugTocado(true); setError(''); }}
         disabled={loading}
       />
       <div className={styles.field}>

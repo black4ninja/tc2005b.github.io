@@ -5,7 +5,7 @@ import Modal from '../../atoms/Modal/Modal';
 import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
 import DocumentoForm, { aplanarCategorias, type DocumentoSavePayload } from '../../organisms/DocumentoForm/DocumentoForm';
-import { slugify } from '../../organisms/ColeccionForm/ColeccionForm';
+import { slugify, slugifyInput } from '../../../../utils/slug';
 import { buildArbol } from '../../../../types/contenidos';
 import type { ColeccionData, DocumentoData, DocumentoNodo, DocumentoPlantilla } from '../../../../types/contenidos';
 import styles from './ColeccionDetailPage.module.css';
@@ -30,6 +30,7 @@ export default function ColeccionDetailPage() {
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalError, setModalError] = useState('');
   const [saving, setSaving] = useState(false);
 
   // Metadatos del documento seleccionado (edición en panel)
@@ -42,6 +43,9 @@ export default function ColeccionDetailPage() {
   const [cuerpo, setCuerpo] = useState('');
   const [cuerpoDirty, setCuerpoDirty] = useState(false);
   const [cuerpoCargando, setCuerpoCargando] = useState(false);
+  // Si la carga del borrador falla, se BLOQUEA la edición: guardar sobre un
+  // editor vacío por error de red sobreescribiría el borrador real.
+  const [cuerpoError, setCuerpoError] = useState('');
   const [guardandoCuerpo, setGuardandoCuerpo] = useState(false);
 
   const headers: Record<string, string> = {
@@ -83,6 +87,48 @@ export default function ColeccionDetailPage() {
     [documentos, seleccionadoId],
   );
 
+  // Descendientes del seleccionado: destinos inválidos de "Mover a"
+  // (el server los rechazaría con el anti-ciclo; mejor ni ofrecerlos).
+  const descendientesSeleccionado = useMemo(() => {
+    const out = new Set<string>();
+    if (!seleccionadoId) return out;
+    const hijosPor = new Map<string | null, DocumentoData[]>();
+    for (const d of documentos) {
+      const key = d.padreId ?? null;
+      if (!hijosPor.has(key)) hijosPor.set(key, []);
+      hijosPor.get(key)!.push(d);
+    }
+    const pila = [seleccionadoId];
+    while (pila.length) {
+      const actual = pila.pop()!;
+      for (const hijo of hijosPor.get(actual) ?? []) {
+        if (!out.has(hijo.id)) {
+          out.add(hijo.id);
+          pila.push(hijo.id);
+        }
+      }
+    }
+    return out;
+  }, [documentos, seleccionadoId]);
+
+  const cargarCuerpo = useCallback(async (docId: string): Promise<void> => {
+    setCuerpoCargando(true);
+    setCuerpoError('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/documentos/${docId}/borrador`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) throw new Error('No se pudo cargar el contenido');
+      const json = await res.json();
+      setCuerpo(json.cuerpo ?? '');
+    } catch {
+      // Bloquear la edición: guardar sobre un cuerpo no cargado perdería el borrador real.
+      setCuerpoError('No se pudo cargar el contenido. Reintenta antes de editar.');
+    } finally {
+      setCuerpoCargando(false);
+    }
+  }, [sessionToken]);
+
   // Sincronizar panel + cargar cuerpo al seleccionar.
   useEffect(() => {
     if (!seleccionado) return;
@@ -92,18 +138,9 @@ export default function ColeccionDetailPage() {
     setMoverA(seleccionado.padreId ?? '');
     setCuerpo('');
     setCuerpoDirty(false);
+    setCuerpoError('');
     if (seleccionado.tipo === 'categoria') return;
-
-    let cancelado = false;
-    setCuerpoCargando(true);
-    fetch(`${API_BASE}/admin/documentos/${seleccionado.id}/borrador`, { headers: { 'x-session-token': sessionToken ?? '' } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        if (!cancelado && json) setCuerpo(json.cuerpo ?? '');
-      })
-      .catch(() => {})
-      .finally(() => { if (!cancelado) setCuerpoCargando(false); });
-    return () => { cancelado = true; };
+    cargarCuerpo(seleccionado.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seleccionadoId]);
 
@@ -116,40 +153,45 @@ export default function ColeccionDetailPage() {
     });
   }
 
-  async function llamada(url: string, method: string, body?: unknown): Promise<boolean> {
-    setError('');
+  /** Ejecuta la petición y devuelve el mensaje de error (o null si fue bien). */
+  async function llamada(url: string, method: string, body?: unknown): Promise<string | null> {
     try {
       const res = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Error en la operación');
+        return err.message || 'Error en la operación';
       }
-      return true;
+      return null;
     } catch (err: any) {
-      setError(err.message);
-      return false;
+      return err.message || 'Error en la operación';
     }
   }
 
   async function handleCrear(data: DocumentoSavePayload) {
     setSaving(true);
-    const ok = await llamada(`${API_BASE}/admin/colecciones/${id}/documentos`, 'POST', data);
+    const err = await llamada(`${API_BASE}/admin/colecciones/${id}/documentos`, 'POST', data);
     setSaving(false);
-    if (ok) {
-      setModalOpen(false);
-      if (data.padreId) setExpandidos((prev) => new Set(prev).add(data.padreId!));
-      await fetchDatos();
+    if (err) {
+      // Dentro del modal: un error en la página quedaría oculto tras el overlay.
+      setModalError(err);
+      return;
     }
+    setModalError('');
+    setModalOpen(false);
+    if (data.padreId) setExpandidos((prev) => new Set(prev).add(data.padreId!));
+    await fetchDatos();
   }
 
   async function handleGuardarMeta() {
     if (!seleccionado) return;
-    const ok = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}`, 'PUT', {
+    setError('');
+    const err = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}`, 'PUT', {
       titulo: metaTitulo,
-      slug: metaSlug,
+      slug: slugify(metaSlug),
       plantilla: metaPlantilla || null,
     });
-    if (ok) await fetchDatos();
+    if (err) setError(err);
+    else await fetchDatos();
   }
 
   /** Hermanos del seleccionado (mismo padre), ordenados. */
@@ -165,46 +207,57 @@ export default function ColeccionDetailPage() {
     const idx = hermanos.findIndex((h) => h.id === seleccionado.id);
     const destino = idx + direccion;
     if (destino < 0 || destino >= hermanos.length) return;
-    const ok = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}/mover`, 'PUT', {
+    setError('');
+    const err = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}/mover`, 'PUT', {
       padreId: seleccionado.padreId,
       orden: destino,
     });
-    if (ok) await fetchDatos();
+    if (err) setError(err);
+    else await fetchDatos();
   }
 
   async function handleMoverA() {
     if (!seleccionado) return;
     const nuevoPadre = moverA || null;
     if ((seleccionado.padreId ?? null) === nuevoPadre) return;
-    const ok = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}/mover`, 'PUT', {
+    setError('');
+    const err = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}/mover`, 'PUT', {
       padreId: nuevoPadre,
       orden: documentos.length, // al final; el server lo acota a los hermanos reales
     });
-    if (ok) {
-      if (nuevoPadre) setExpandidos((prev) => new Set(prev).add(nuevoPadre));
-      await fetchDatos();
+    if (err) {
+      setError(err);
+      return;
     }
+    if (nuevoPadre) setExpandidos((prev) => new Set(prev).add(nuevoPadre));
+    await fetchDatos();
   }
 
   async function handleEliminar() {
     if (!seleccionado) return;
     if (!confirm(`¿Eliminar "${seleccionado.titulo}"? Esta acción no se puede deshacer.`)) return;
-    const ok = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}`, 'DELETE');
-    if (ok) {
-      setSeleccionadoId(null);
-      await fetchDatos();
+    setError('');
+    const err = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}`, 'DELETE');
+    if (err) {
+      setError(err);
+      return;
     }
+    setSeleccionadoId(null);
+    await fetchDatos();
   }
 
   async function handleGuardarCuerpo() {
     if (!seleccionado) return;
     setGuardandoCuerpo(true);
-    const ok = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}/borrador`, 'PUT', { cuerpo });
+    setError('');
+    const err = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}/borrador`, 'PUT', { cuerpo });
     setGuardandoCuerpo(false);
-    if (ok) {
-      setCuerpoDirty(false);
-      await fetchDatos(); // refresca el estado borrador del árbol
+    if (err) {
+      setError(err);
+      return;
     }
+    setCuerpoDirty(false);
+    await fetchDatos(); // refresca el estado borrador del árbol
   }
 
   function renderNodo(nodo: DocumentoNodo, nivel: number) {
@@ -255,7 +308,7 @@ export default function ColeccionDetailPage() {
           {coleccion ? `${coleccion.clave ? `${coleccion.clave} — ` : ''}${coleccion.nombre}` : id}
         </h1>
         <div className={styles.headerActions}>
-          <DashButton onClick={() => setModalOpen(true)}>+ Página / Categoría</DashButton>
+          <DashButton onClick={() => { setModalError(''); setModalOpen(true); }}>+ Página / Categoría</DashButton>
         </div>
       </div>
 
@@ -287,7 +340,7 @@ export default function ColeccionDetailPage() {
                 </label>
                 <label className={styles.campo}>
                   <span>Slug</span>
-                  <input className={styles.input} value={metaSlug} onChange={(e) => setMetaSlug(slugify(e.target.value))} />
+                  <input className={styles.input} value={metaSlug} onChange={(e) => setMetaSlug(slugifyInput(e.target.value))} />
                 </label>
                 {seleccionado.tipo === 'md' && (
                   <label className={styles.campo}>
@@ -314,7 +367,7 @@ export default function ColeccionDetailPage() {
                 <select className={styles.input} value={moverA} onChange={(e) => setMoverA(e.target.value)}>
                   <option value="">Raíz de la colección</option>
                   {categorias
-                    .filter((c) => c.id !== seleccionado.id)
+                    .filter((c) => c.id !== seleccionado.id && !descendientesSeleccionado.has(c.id))
                     .map((c) => (
                       <option key={c.id} value={c.id}>{c.label}</option>
                     ))}
@@ -329,20 +382,31 @@ export default function ColeccionDetailPage() {
                       Cuerpo ({seleccionado.tipo === 'md' ? 'Markdown' : 'HTML'})
                     </span>
                     <span className={styles.editorEstado}>
-                      {cuerpoCargando ? 'Cargando…' : cuerpoDirty ? 'Cambios sin guardar' : 'Guardado'}
+                      {cuerpoCargando ? 'Cargando…' : cuerpoError ? 'Sin cargar' : cuerpoDirty ? 'Cambios sin guardar' : 'Guardado'}
                     </span>
-                    <DashButton onClick={handleGuardarCuerpo} disabled={guardandoCuerpo || cuerpoCargando || !cuerpoDirty}>
+                    <DashButton
+                      onClick={handleGuardarCuerpo}
+                      disabled={guardandoCuerpo || cuerpoCargando || !!cuerpoError || !cuerpoDirty}
+                    >
                       {guardandoCuerpo ? 'Guardando…' : 'Guardar borrador'}
                     </DashButton>
                   </div>
-                  <textarea
-                    className={styles.textarea}
-                    value={cuerpo}
-                    onChange={(e) => { setCuerpo(e.target.value); setCuerpoDirty(true); }}
-                    disabled={cuerpoCargando}
-                    spellCheck={false}
-                    placeholder={seleccionado.tipo === 'md' ? '# Escribe el contenido en Markdown…' : '<!-- HTML crudo de la página -->'}
-                  />
+                  {cuerpoError ? (
+                    <div className={styles.error}>
+                      {cuerpoError}
+                      {' '}
+                      <DashButton variant="outline" onClick={() => cargarCuerpo(seleccionado.id)}>Reintentar</DashButton>
+                    </div>
+                  ) : (
+                    <textarea
+                      className={styles.textarea}
+                      value={cuerpo}
+                      onChange={(e) => { setCuerpo(e.target.value); setCuerpoDirty(true); }}
+                      disabled={cuerpoCargando}
+                      spellCheck={false}
+                      placeholder={seleccionado.tipo === 'md' ? '# Escribe el contenido en Markdown…' : '<!-- HTML crudo de la página -->'}
+                    />
+                  )}
                   <p className={styles.hint}>Editor provisional — el editor con resaltado y preview llega en la siguiente iteración (US-2).</p>
                 </div>
               )}
@@ -351,12 +415,13 @@ export default function ColeccionDetailPage() {
         </div>
       </div>
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Nueva página o categoría">
+      <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); setModalError(''); }} title="Nueva página o categoría">
         <DocumentoForm
           categorias={categorias}
           padreInicial={seleccionado?.tipo === 'categoria' ? seleccionado.id : undefined}
+          errorExterno={modalError}
           onSave={handleCrear}
-          onCancel={() => setModalOpen(false)}
+          onCancel={() => { setModalOpen(false); setModalError(''); }}
           loading={saving}
         />
       </Modal>
