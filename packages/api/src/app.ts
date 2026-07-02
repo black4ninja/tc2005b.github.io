@@ -15,6 +15,7 @@ import contenidosRoutes from './routes/contenidos.routes.js';
 import contenidosVisorRoutes from './routes/contenidos-visor.routes.js';
 import meRoutes from './routes/me.routes.js';
 import { docsGate } from './middlewares/docs-gate.middleware.js';
+import { filesGate } from './middlewares/files-gate.middleware.js';
 import alumnosRoutes from './routes/alumnos.routes.js';
 import calendarioRoutes from './routes/calendario.routes.js';
 import indicacionesMallaRoutes from './routes/indicaciones-malla.routes.js';
@@ -46,6 +47,12 @@ const app = express();
 app.use(cors({ origin: config.auth.frontendUrl, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Los archivos de Parse (/parse/files/*) NUNCA se sirven directo (design §2):
+// solo el propio API los lee (llave interna) y los entrega vía el endpoint
+// gated de Recursos. Se registra aquí para correr antes del mount de Parse
+// (que index.ts agrega después).
+app.use(`${config.parseMount}/files`, filesGate);
 
 app.use('/api', healthRoutes);
 app.use('/api', testRoutes);

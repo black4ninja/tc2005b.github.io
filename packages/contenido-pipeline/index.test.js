@@ -46,6 +46,20 @@ describe('admonitions (paridad Docusaurus)', () => {
   });
 });
 
+describe('recursos (referencias recurso:)', () => {
+  it('reescribe imágenes y enlaces recurso: al endpoint gated', async () => {
+    const img = await renderMarkdown('![diagrama](recurso:abc123/diagrama.png)');
+    expect(img).toContain('src="/api/contenidos/recursos/abc123/diagrama.png"');
+    const link = await renderMarkdown('[starter](recurso:xyz/starter.zip)');
+    expect(link).toContain('href="/api/contenidos/recursos/xyz/starter.zip"');
+  });
+
+  it('sigue bloqueando protocolos peligrosos', async () => {
+    const html = await renderMarkdown('![x](javascript:alert(1))');
+    expect(html).not.toContain('javascript:');
+  });
+});
+
 describe('TOC', () => {
   it('extrae h2/h3 con sus ids (anclas)', async () => {
     const html = await renderMarkdown('# T\n\n## Objetivo\n\n### Detalle\n\n## Entrega');

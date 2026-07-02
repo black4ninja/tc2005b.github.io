@@ -22,6 +22,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   Se removieron los workflows de GitHub Pages, `.nojekyll` y el hack SPA `?/`.
 
 ### Added
+- **CMS "Contenidos" (US-4)**: recursos adjuntos — subida (límite 50 MB) y
+  pegado de imágenes en el editor con referencia `recurso:`, gestor por
+  documento, y stream vía endpoint gated por colección; los archivos de
+  Parse dejan de ser públicos (gate interno de `/parse/files`).
 - **CMS "Contenidos" (US-3)**: visor de lectura `/contenidos/<slug>/...` con
   autorización por request (árbol, TOC, breadcrumb y prev/next calculados en
   servidor; no permitido = 404), caches de permisos con invalidación y tema

@@ -16,3 +16,6 @@ export declare function renderMarkdown(cuerpo: string): Promise<string>;
 
 /** Extrae el TOC (h2/h3) del HTML renderizado por este pipeline. */
 export declare function extraerToc(html: string): TocEntry[];
+
+/** Prefijo del endpoint gated que sirve los Recursos (US-4). */
+export declare const RECURSOS_ENDPOINT: string;
