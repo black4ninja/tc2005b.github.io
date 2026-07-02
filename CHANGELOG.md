@@ -7,6 +7,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Removed
+- **Docusaurus retirado (US-7)**: se elimina `packages/docusaurus`, el gate
+  `/docs` por materia y el campo `Grupo.docusaurus[]`. `/docs/*` responde
+  301 permanente hacia `/contenidos/*` (mapa del importador + heurística).
+  La documentación vive ahora en el CMS "Contenidos".
+
 ### Changed
 - El Docusaurus se sirve ahora en `/docs/...` en lugar de `/docs/docs/...`
   (`routeBasePath: '/'`). Las páginas registradas en BD y los enlaces de los

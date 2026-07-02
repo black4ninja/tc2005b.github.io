@@ -2,7 +2,6 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { Materia } from '../models/Materia.js';
-import { invalidateMateriaSlugsCache, invalidateAllowedCache } from '../services/materia.service.js';
 
 const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -59,9 +58,6 @@ export async function createMateria(req: Request, res: Response): Promise<void> 
     if (codigoCanonico) materia.setCodigo(codigoCanonico);
 
     await materia.save(null, { useMasterKey: true });
-    // El conjunto de slugs cambió → invalidar cache del gate.
-    invalidateMateriaSlugsCache();
-    invalidateAllowedCache();
 
     res.status(201).json({ status: 'ok', materia: materia.toSafeJSON() });
   } catch (error) {
@@ -120,9 +116,6 @@ export async function updateMateria(req: Request, res: Response): Promise<void> 
     }
 
     await materia.save(null, { useMasterKey: true });
-    // slug/nombre pudieron cambiar → invalidar cache del gate.
-    invalidateMateriaSlugsCache();
-    invalidateAllowedCache();
 
     res.json({ status: 'ok', materia: materia.toSafeJSON() });
   } catch (error: any) {
@@ -144,9 +137,6 @@ export async function deleteMateria(req: Request, res: Response): Promise<void> 
 
     materia.softDelete();
     await materia.save(null, { useMasterKey: true });
-    // La materia dejó de existir → invalidar cache del gate.
-    invalidateMateriaSlugsCache();
-    invalidateAllowedCache();
 
     res.json({ status: 'ok', message: 'Materia eliminada' });
   } catch (error: any) {

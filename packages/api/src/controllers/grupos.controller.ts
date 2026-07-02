@@ -2,7 +2,6 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { Grupo } from '../models/Grupo.js';
-import { invalidateAllowedCache } from '../services/materia.service.js';
 import { invalidateColeccionesPermitidas } from '../services/contenidos.service.js';
 
 export async function listGrupos(_req: Request, res: Response): Promise<void> {
@@ -22,14 +21,6 @@ export async function listGrupos(_req: Request, res: Response): Promise<void> {
   }
 }
 
-function normalizeSlugs(value: unknown): string[] | null {
-  if (!Array.isArray(value)) return null;
-  const slugs = value
-    .filter((s): s is string => typeof s === 'string' && s.trim() !== '')
-    .map((s) => s.trim());
-  return [...new Set(slugs)];
-}
-
 /**
  * ids de colecciones → pointers VALIDADOS (existentes). null = payload no-array
  * (se ignora); un id inexistente es error del cliente (400).
@@ -47,7 +38,7 @@ async function resolverColecciones(value: unknown): Promise<Parse.Object[] | 'in
 }
 
 export async function createGrupo(req: Request, res: Response): Promise<void> {
-  const { name, fechaInicio, fechaFin, materiaId, docusaurus, colecciones } = req.body;
+  const { name, fechaInicio, fechaFin, materiaId, colecciones } = req.body;
 
   if (!name || typeof name !== 'string' || name.trim() === '') {
     res.status(400).json({ status: 'error', message: 'El nombre es requerido' });
@@ -69,8 +60,6 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
       }
       grupo.setMateria(materia);
     }
-    const docusSlugs = normalizeSlugs(docusaurus);
-    if (docusSlugs) grupo.setDocusaurus(docusSlugs);
 
     const coleccionesPtrs = await resolverColecciones(colecciones);
     if (coleccionesPtrs === 'invalido') {
@@ -90,7 +79,7 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
 
 export async function updateGrupo(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { name, fechaInicio, fechaFin, materiaId, docusaurus, colecciones } = req.body;
+  const { name, fechaInicio, fechaFin, materiaId, colecciones } = req.body;
 
   try {
     const query = BaseModel.queryActive<Grupo>('Grupo');
@@ -119,12 +108,7 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
         grupo.setMateria(Parse.Object.extend('Materia').createWithoutData(materiaId));
       }
     }
-    // Solo se aplica si es un array válido (incl. [] para limpiar); un valor
-    // no-array se ignora para no borrar las asignaciones existentes por error.
-    const docusSlugs = docusaurus !== undefined ? normalizeSlugs(docusaurus) : null;
-    if (docusSlugs) grupo.setDocusaurus(docusSlugs);
-
-    // Misma regla que docusaurus: solo un array válido aplica ([] limpia).
+    // Solo un array válido aplica ([] limpia); no-array se ignora.
     const coleccionesPtrs = colecciones !== undefined ? await resolverColecciones(colecciones) : null;
     if (coleccionesPtrs === 'invalido') {
       res.status(400).json({ status: 'error', message: 'Alguna colección indicada no existe' });
@@ -133,8 +117,6 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
     if (coleccionesPtrs) grupo.setColecciones(coleccionesPtrs);
 
     await grupo.save(null, { useMasterKey: true });
-    // Si cambió la materia o los docusaurus del grupo, cambió el acceso de sus alumnos.
-    if (materiaId !== undefined || docusSlugs) invalidateAllowedCache();
     if (coleccionesPtrs) invalidateColeccionesPermitidas();
 
     res.json({ status: 'ok', grupo: grupo.toSafeJSON() });

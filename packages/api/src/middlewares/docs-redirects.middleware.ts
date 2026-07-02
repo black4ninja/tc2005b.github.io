@@ -4,15 +4,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 /**
- * Redirects 301 /docs/* → /contenidos/* (US-6, design §6).
+ * Redirects 301 /docs/* → /contenidos/* (US-7: Docusaurus retirado).
  *
- * APAGADO por defecto: Docusaurus sigue siendo el sistema operativo hasta el
- * corte de la US-7. Se enciende con REDIRECT_DOCS_A_CONTENIDOS=true en el
- * .env del servidor (fase 2 del plan de deprecación).
- *
- * Se monta DESPUÉS de docsGate: la autorización corre primero — un usuario
- * sin acceso recibe el mismo 404 de siempre y el redirect jamás le filtra
- * slugs/estructura del CMS.
+ * SIEMPRE activos: /docs ya no sirve nada — los marcadores y enlaces viejos
+ * aterrizan en el CMS, cuyo gate responde 404 a quien no tiene acceso (el
+ * contenido en sí nunca viaja en el redirect).
  *
  * Mapa exacto: data/redirects-docs.json (raíz del paquete, fuera de src/ —
  * tsc no copia .json a dist y el runtime de producción es dist/), generado
@@ -32,8 +28,6 @@ try {
 } catch {
   mapa = {}; // sin mapa: solo heurística
 }
-
-export const redirectsActivos = process.env.REDIRECT_DOCS_A_CONTENIDOS === 'true';
 
 /**
  * Heurística viejo→nuevo por segmento (mismas reglas de slug que el
@@ -59,7 +53,7 @@ function heuristica(pathSinDocs: string): string {
 }
 
 export function docsRedirects(req: Request, res: Response, next: NextFunction): void {
-  if (!redirectsActivos || req.method !== 'GET') {
+  if (req.method !== 'GET') {
     next();
     return;
   }

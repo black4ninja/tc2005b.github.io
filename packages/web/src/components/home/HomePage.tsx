@@ -27,7 +27,7 @@ export default function HomePage() {
         <h3 className={styles.sectionTitle}>Recursos</h3>
         <div className={styles.linksGrid}>
           <a
-            href="/docs/"
+            href="/login"
             className={styles.linkCard}
             target="_blank"
             rel="noopener noreferrer"

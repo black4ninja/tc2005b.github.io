@@ -2,7 +2,6 @@
 /**
  * merge-builds.mjs — Assembles the final dist/ directory:
  *   1. Copies Vite build output (dist/web/) to dist/
- *   2. Copies Docusaurus build to dist/docs/
  *   3. Copies legacy static content to dist/
  *   4. Creates a 404.html SPA fallback (deep-link restore)
  */
@@ -18,14 +17,6 @@ const webDist = join(DIST, 'web');
 if (existsSync(webDist)) {
   cpSync(webDist, DIST, { recursive: true, force: true });
   console.log('✓ Vite build → dist/');
-}
-
-// 2. Docusaurus build → dist/docs/
-const docsBuild = join(ROOT, 'packages/docusaurus/build');
-if (existsSync(docsBuild)) {
-  mkdirSync(join(DIST, 'docs'), { recursive: true });
-  cpSync(docsBuild, join(DIST, 'docs'), { recursive: true, force: true });
-  console.log('✓ Docusaurus build → dist/docs/');
 }
 
 // 3. Legacy static content
