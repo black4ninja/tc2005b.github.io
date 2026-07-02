@@ -4,7 +4,8 @@
   "workspaces": [
     "packages/web",
     "packages/docusaurus",
-    "packages/api"
+    "packages/api",
+    "packages/contenido-pipeline"
   ],
   "scripts": {
     "dev": "concurrently -n web,docs,api -c cyan,magenta,yellow \"yarn workspace @tc2005b/web dev\" \"yarn workspace @tc2005b/docs start --port 3001\" \"yarn workspace @tc2005b/api dev\"",

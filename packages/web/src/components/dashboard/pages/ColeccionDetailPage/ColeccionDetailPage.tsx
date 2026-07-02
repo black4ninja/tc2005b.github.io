@@ -39,15 +39,6 @@ export default function ColeccionDetailPage() {
   const [metaPlantilla, setMetaPlantilla] = useState<'' | DocumentoPlantilla>('');
   const [moverA, setMoverA] = useState('');
 
-  // Cuerpo (editor provisional; el editor rico llega en la US-2)
-  const [cuerpo, setCuerpo] = useState('');
-  const [cuerpoDirty, setCuerpoDirty] = useState(false);
-  const [cuerpoCargando, setCuerpoCargando] = useState(false);
-  // Si la carga del borrador falla, se BLOQUEA la edición: guardar sobre un
-  // editor vacío por error de red sobreescribiría el borrador real.
-  const [cuerpoError, setCuerpoError] = useState('');
-  const [guardandoCuerpo, setGuardandoCuerpo] = useState(false);
-
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'x-session-token': sessionToken ?? '',
@@ -111,36 +102,14 @@ export default function ColeccionDetailPage() {
     return out;
   }, [documentos, seleccionadoId]);
 
-  const cargarCuerpo = useCallback(async (docId: string): Promise<void> => {
-    setCuerpoCargando(true);
-    setCuerpoError('');
-    try {
-      const res = await fetch(`${API_BASE}/admin/documentos/${docId}/borrador`, {
-        headers: { 'x-session-token': sessionToken ?? '' },
-      });
-      if (!res.ok) throw new Error('No se pudo cargar el contenido');
-      const json = await res.json();
-      setCuerpo(json.cuerpo ?? '');
-    } catch {
-      // Bloquear la edición: guardar sobre un cuerpo no cargado perdería el borrador real.
-      setCuerpoError('No se pudo cargar el contenido. Reintenta antes de editar.');
-    } finally {
-      setCuerpoCargando(false);
-    }
-  }, [sessionToken]);
-
-  // Sincronizar panel + cargar cuerpo al seleccionar.
+  // Sincronizar el panel de metadatos al seleccionar (el cuerpo se edita en
+  // la página del editor: /admin/contenidos/:id/editar/:docId).
   useEffect(() => {
     if (!seleccionado) return;
     setMetaTitulo(seleccionado.titulo);
     setMetaSlug(seleccionado.slug);
     setMetaPlantilla(seleccionado.plantilla ?? '');
     setMoverA(seleccionado.padreId ?? '');
-    setCuerpo('');
-    setCuerpoDirty(false);
-    setCuerpoError('');
-    if (seleccionado.tipo === 'categoria') return;
-    cargarCuerpo(seleccionado.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seleccionadoId]);
 
@@ -244,20 +213,6 @@ export default function ColeccionDetailPage() {
     }
     setSeleccionadoId(null);
     await fetchDatos();
-  }
-
-  async function handleGuardarCuerpo() {
-    if (!seleccionado) return;
-    setGuardandoCuerpo(true);
-    setError('');
-    const err = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}/borrador`, 'PUT', { cuerpo });
-    setGuardandoCuerpo(false);
-    if (err) {
-      setError(err);
-      return;
-    }
-    setCuerpoDirty(false);
-    await fetchDatos(); // refresca el estado borrador del árbol
   }
 
   function renderNodo(nodo: DocumentoNodo, nivel: number) {
@@ -382,32 +337,16 @@ export default function ColeccionDetailPage() {
                       Cuerpo ({seleccionado.tipo === 'md' ? 'Markdown' : 'HTML'})
                     </span>
                     <span className={styles.editorEstado}>
-                      {cuerpoCargando ? 'Cargando…' : cuerpoError ? 'Sin cargar' : cuerpoDirty ? 'Cambios sin guardar' : 'Guardado'}
+                      {seleccionado.borradorId ? 'Borrador en curso' : seleccionado.publicado ? 'Publicada' : 'Sin contenido publicado'}
                     </span>
-                    <DashButton
-                      onClick={handleGuardarCuerpo}
-                      disabled={guardandoCuerpo || cuerpoCargando || !!cuerpoError || !cuerpoDirty}
-                    >
-                      {guardandoCuerpo ? 'Guardando…' : 'Guardar borrador'}
-                    </DashButton>
+                    <Link to={`/admin/contenidos/${id}/editar/${seleccionado.id}`} className={styles.abrirEditor}>
+                      <Icon name="edit_note" size="sm" />
+                      <span>Abrir editor</span>
+                    </Link>
                   </div>
-                  {cuerpoError ? (
-                    <div className={styles.error}>
-                      {cuerpoError}
-                      {' '}
-                      <DashButton variant="outline" onClick={() => cargarCuerpo(seleccionado.id)}>Reintentar</DashButton>
-                    </div>
-                  ) : (
-                    <textarea
-                      className={styles.textarea}
-                      value={cuerpo}
-                      onChange={(e) => { setCuerpo(e.target.value); setCuerpoDirty(true); }}
-                      disabled={cuerpoCargando}
-                      spellCheck={false}
-                      placeholder={seleccionado.tipo === 'md' ? '# Escribe el contenido en Markdown…' : '<!-- HTML crudo de la página -->'}
-                    />
-                  )}
-                  <p className={styles.hint}>Editor provisional — el editor con resaltado y preview llega en la siguiente iteración (US-2).</p>
+                  <p className={styles.hint}>
+                    El contenido se edita en el editor (resaltado, preview en vivo, publicar e historial).
+                  </p>
                 </div>
               )}
             </>

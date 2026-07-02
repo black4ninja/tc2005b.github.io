@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router';
 import Layout from './components/layout/Layout';
 import CalendarPage from './components/calendar/CalendarPage';
@@ -29,6 +29,12 @@ import PaginasPage from './components/dashboard/pages/PaginasPage/PaginasPage';
 import ContenidosPage from './components/dashboard/pages/ContenidosPage/ContenidosPage';
 import ColeccionDetailPage from './components/dashboard/pages/ColeccionDetailPage/ColeccionDetailPage';
 import { APP_NAME, APP_TAGLINE } from './config/app';
+
+// El editor carga CodeMirror + el pipeline de render: se divide del bundle
+// principal y solo se descarga al entrar a editar.
+const EditorContenidoPage = lazy(
+  () => import('./components/dashboard/pages/EditorContenidoPage/EditorContenidoPage'),
+);
 
 export default function App() {
   // Título del navegador como fuente única de verdad (el <title> de index.html
@@ -71,6 +77,14 @@ export default function App() {
         <Route path="admin/paginas" element={<PaginasPage />} />
         <Route path="admin/contenidos" element={<ContenidosPage />} />
         <Route path="admin/contenidos/:id" element={<ColeccionDetailPage />} />
+        <Route
+          path="admin/contenidos/:id/editar/:docId"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando editor…</p>}>
+              <EditorContenidoPage />
+            </Suspense>
+          }
+        />
       </Route>
 
       {/* Student dashboard */}

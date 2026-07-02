@@ -1,0 +1,462 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams, Link } from 'react-router';
+import CodeMirror, { type ReactCodeMirrorRef } from '@uiw/react-codemirror';
+import { markdown } from '@codemirror/lang-markdown';
+import { html } from '@codemirror/lang-html';
+import { oneDark } from '@codemirror/theme-one-dark';
+import { EditorView } from '@codemirror/view';
+import { renderMarkdown } from '@tc2005b/contenido-pipeline';
+import { useAuth } from '../../../../context/AuthContext';
+import Modal from '../../atoms/Modal/Modal';
+import Icon from '../../atoms/Icon/Icon';
+import DashButton from '../../atoms/DashButton/DashButton';
+import type { DocumentoData } from '../../../../types/contenidos';
+import styles from './EditorContenidoPage.module.css';
+
+const API_BASE = '/api';
+const AUTOSAVE_MS = 1500;
+const PREVIEW_MS = 300;
+
+type EstadoGuardado = 'cargando' | 'guardado' | 'dirty' | 'guardando' | 'error';
+
+interface VersionInfo {
+  id: string;
+  numero: number;
+  mensaje: string | null;
+  autor: { id: string; name: string | null } | null;
+  esBorrador: boolean;
+  esPublicada: boolean;
+  createdAt: string;
+}
+
+/**
+ * Editor del CMS "Contenidos" (design §3): CodeMirror + preview en vivo con
+ * el MISMO pipeline unified que renderiza al publicar — WYSIWYG real.
+ * Autosave a borrador único; publicar congela una versión; historial/restaurar.
+ */
+export default function EditorContenidoPage() {
+  const { id, docId } = useParams<{ id: string; docId: string }>();
+  const { sessionToken } = useAuth();
+  const editorRef = useRef<ReactCodeMirrorRef>(null);
+
+  const [documento, setDocumento] = useState<DocumentoData | null>(null);
+  const [cuerpo, setCuerpo] = useState('');
+  const [estado, setEstado] = useState<EstadoGuardado>('cargando');
+  const [error, setError] = useState('');
+  const [previewHtml, setPreviewHtml] = useState('');
+
+  const [publicarOpen, setPublicarOpen] = useState(false);
+  const [mensajePublicar, setMensajePublicar] = useState('');
+  const [publicando, setPublicando] = useState(false);
+  const [publicarError, setPublicarError] = useState('');
+
+  const [historialOpen, setHistorialOpen] = useState(false);
+  const [versiones, setVersiones] = useState<VersionInfo[]>([]);
+  const [historialError, setHistorialError] = useState('');
+  const [verCuerpo, setVerCuerpo] = useState<{ numero: number; cuerpo: string } | null>(null);
+
+  // El autosave usa refs para leer el estado más reciente sin recrear timers.
+  const cuerpoRef = useRef(cuerpo);
+  cuerpoRef.current = cuerpo;
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const estadoRef = useRef(estado);
+  estadoRef.current = estado;
+  const documentoRef = useRef(documento);
+  documentoRef.current = documento;
+  // Single-flight: nunca dos PUT de borrador en paralelo (dos escrituras
+  // concurrentes sobre un documento sin borrador duplicarían versiones).
+  const saveEnVuelo = useRef<Promise<boolean> | null>(null);
+
+  function cancelarAutosave() {
+    if (autosaveTimer.current) {
+      clearTimeout(autosaveTimer.current);
+      autosaveTimer.current = null;
+    }
+  }
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'x-session-token': sessionToken ?? '',
+  };
+
+  /* ── Carga inicial: el editor queda bloqueado hasta tener el cuerpo real ── */
+  const cargar = useCallback(async () => {
+    if (!docId) return;
+    setEstado('cargando');
+    setError('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/documentos/${docId}/borrador`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'No se pudo cargar el documento');
+      }
+      const json = await res.json();
+      setDocumento(json.documento);
+      setCuerpo(json.cuerpo ?? '');
+      setEstado('guardado');
+    } catch (err: any) {
+      setError(err.message);
+      setEstado('error');
+    }
+  }, [docId, sessionToken]);
+
+  useEffect(() => {
+    cargar();
+    // Al cambiar de documento (o desmontar), un timer pendiente del documento
+    // ANTERIOR escribiría el cuerpo del nuevo en el borrador equivocado.
+    return () => cancelarAutosave();
+  }, [cargar]);
+
+  /* ── Autosave debounced a borrador único ── */
+  const guardar = useCallback(async (): Promise<boolean> => {
+    // Guardas anti-pérdida: sin documento cargado NO se guarda (un PUT con el
+    // editor vacío pisaría el borrador real del servidor).
+    if (!docId || !documentoRef.current) return false;
+    // Single-flight: esperar el PUT en vuelo y luego guardar lo más reciente.
+    if (saveEnVuelo.current) await saveEnVuelo.current.catch(() => {});
+
+    const vuelo = (async () => {
+      setEstado('guardando');
+      try {
+        const res = await fetch(`${API_BASE}/admin/documentos/${docId}/borrador`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ cuerpo: cuerpoRef.current }),
+        });
+        if (!res.ok) throw new Error();
+        setEstado('guardado');
+        return true;
+      } catch {
+        setEstado('error');
+        setError('No se pudo guardar el borrador. Reintenta (⌘S).');
+        return false;
+      }
+    })();
+    saveEnVuelo.current = vuelo;
+    try {
+      return await vuelo;
+    } finally {
+      saveEnVuelo.current = null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docId, sessionToken]);
+
+  function onCambio(valor: string) {
+    setCuerpo(valor);
+    setEstado('dirty');
+    setError('');
+    cancelarAutosave();
+    autosaveTimer.current = setTimeout(() => { guardar(); }, AUTOSAVE_MS);
+  }
+
+  // Aviso al salir con cambios sin guardar.
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (estadoRef.current === 'dirty' || estadoRef.current === 'guardando') e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
+
+  /* ── Preview en vivo (solo Markdown; el HTML crudo se sirve sandboxeado en US-5) ── */
+  const esMd = documento?.tipo === 'md';
+  useEffect(() => {
+    if (!esMd) return;
+    const timer = setTimeout(() => {
+      renderMarkdown(cuerpo).then(setPreviewHtml).catch(() => {});
+    }, PREVIEW_MS);
+    return () => clearTimeout(timer);
+  }, [cuerpo, esMd]);
+
+  /* ── Atajos: ⌘S guardar · ⌘⇧P publicar ──
+     Mismas guardas que los botones: sin documento cargado (o cargando/error
+     de carga) NO se guarda ni publica — un PUT con el editor vacío pisaría
+     el borrador real. */
+  function onKeyDown(e: React.KeyboardEvent) {
+    const mod = e.metaKey || e.ctrlKey;
+    if (!mod) return;
+    if (e.key.toLowerCase() === 's' && !e.shiftKey) {
+      e.preventDefault();
+      if (!documento || estado === 'cargando') return;
+      cancelarAutosave();
+      guardar();
+    }
+    if (e.key.toLowerCase() === 'p' && e.shiftKey) {
+      e.preventDefault();
+      if (!documento || estado === 'cargando' || estado === 'error') return;
+      abrirPublicar();
+    }
+  }
+
+  /* ── Toolbar: insertar snippets en el cursor ── */
+  function insertar(antes: string, despues = '', relleno = '') {
+    const view = editorRef.current?.view;
+    if (!view) return;
+    const { from, to } = view.state.selection.main;
+    const seleccion = view.state.sliceDoc(from, to) || relleno;
+    const texto = `${antes}${seleccion}${despues}`;
+    view.dispatch({
+      changes: { from, to, insert: texto },
+      selection: { anchor: from + antes.length, head: from + antes.length + seleccion.length },
+    });
+    view.focus();
+  }
+
+  const SNIPPET_TABLA = '\n| Columna | Columna |\n| ------- | ------- |\n|         |         |\n';
+  const SNIPPET_ADMONITION = '\n:::note Título\nContenido.\n:::\n';
+  const SNIPPET_CODIGO = '\n```js\n// código\n```\n';
+
+  /* ── Publicar ── */
+  function abrirPublicar() {
+    setMensajePublicar('');
+    setPublicarError('');
+    setPublicarOpen(true);
+  }
+
+  async function publicar() {
+    if (!docId || !documento) return;
+    setPublicando(true);
+    setPublicarError('');
+    try {
+      // Asegurar que lo visible en pantalla es lo que se publica. `guardar`
+      // es single-flight: si hay un autosave en vuelo, espera y reenvía lo último.
+      if (estadoRef.current !== 'guardado') {
+        cancelarAutosave();
+        const ok = await guardar();
+        if (!ok) throw new Error('No se pudo guardar el borrador antes de publicar');
+      }
+      const res = await fetch(`${API_BASE}/admin/documentos/${docId}/publicar`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ mensaje: mensajePublicar.trim() || undefined }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Error al publicar');
+      }
+      const json = await res.json();
+      setDocumento(json.documento);
+      setPublicarOpen(false);
+    } catch (err: any) {
+      setPublicarError(err.message);
+    } finally {
+      setPublicando(false);
+    }
+  }
+
+  /* ── Historial ── */
+  async function abrirHistorial() {
+    setHistorialError('');
+    setVerCuerpo(null);
+    setHistorialOpen(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/documentos/${docId}/versiones`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) throw new Error('No se pudo cargar el historial');
+      const json = await res.json();
+      setVersiones(json.versiones ?? []);
+    } catch (err: any) {
+      setHistorialError(err.message);
+    }
+  }
+
+  async function verVersion(v: VersionInfo) {
+    setHistorialError('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/documentos/${docId}/versiones/${v.id}`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) throw new Error('No se pudo cargar la versión');
+      const json = await res.json();
+      setVerCuerpo({ numero: v.numero, cuerpo: json.version?.cuerpo ?? '' });
+    } catch (err: any) {
+      setHistorialError(err.message);
+    }
+  }
+
+  async function restaurarVersion(v: VersionInfo) {
+    if (!confirm(`¿Restaurar la v${v.numero} al borrador? El contenido actual del borrador se reemplaza.`)) return;
+    // Un autosave pendiente (timer) o en vuelo (PUT) aterrizaría DESPUÉS del
+    // restore y pisaría el borrador restaurado.
+    cancelarAutosave();
+    if (saveEnVuelo.current) await saveEnVuelo.current.catch(() => {});
+    setHistorialError('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/documentos/${docId}/versiones/${v.id}/restaurar`, {
+        method: 'POST',
+        headers,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'No se pudo restaurar');
+      }
+      const json = await res.json();
+      setCuerpo(json.cuerpo ?? '');
+      setEstado('guardado'); // el borrador restaurado YA está en el servidor
+      setHistorialOpen(false);
+    } catch (err: any) {
+      setHistorialError(err.message);
+    }
+  }
+
+  const ESTADO_LABEL: Record<EstadoGuardado, string> = {
+    cargando: 'Cargando…',
+    guardado: 'Borrador guardado',
+    dirty: 'Cambios sin guardar',
+    guardando: 'Guardando…',
+    error: 'Error al guardar',
+  };
+
+  function formatFecha(iso: string): string {
+    return new Date(iso).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  return (
+    <div className={styles.page} onKeyDown={onKeyDown}>
+      <div className={styles.header}>
+        <Link to={`/admin/contenidos/${id}`} className={styles.volver}>
+          <Icon name="arrow_back" size="sm" />
+        </Link>
+        <div className={styles.tituloWrap}>
+          <span className={styles.titulo} title={documento?.titulo}>{documento?.titulo ?? '…'}</span>
+          <span className={styles.subtitulo}>
+            {documento?.tipo === 'html' ? 'HTML crudo' : 'Markdown'}
+            {documento?.publicado ? ' · publicada' : ' · sin publicar'}
+          </span>
+        </div>
+        <span className={`${styles.estado} ${estado === 'error' ? styles.estadoError : ''}`}>
+          <span className={`${styles.dot} ${styles[`dot-${estado}`]}`} />
+          {ESTADO_LABEL[estado]}
+        </span>
+        <DashButton variant="outline" onClick={abrirHistorial}>🕘 Historial</DashButton>
+        <DashButton onClick={abrirPublicar} disabled={estado === 'cargando' || estado === 'error'}>
+          Publicar
+        </DashButton>
+      </div>
+
+      {error && (
+        <div className={styles.error}>
+          {error}
+          {estado === 'error' && !documento && (
+            <DashButton variant="outline" onClick={cargar}>Reintentar</DashButton>
+          )}
+        </div>
+      )}
+
+      {esMd && (
+        <div className={styles.toolbar}>
+          <button type="button" title="Negritas" onClick={() => insertar('**', '**', 'texto')}><b>B</b></button>
+          <button type="button" title="Cursivas" onClick={() => insertar('*', '*', 'texto')}><i>I</i></button>
+          <button type="button" title="Encabezado" onClick={() => insertar('\n## ', '', 'Encabezado')}>H2</button>
+          <span className={styles.sep} />
+          <button type="button" title="Código en línea" onClick={() => insertar('`', '`', 'código')}>{'</>'}</button>
+          <button type="button" title="Bloque de código" onClick={() => insertar(SNIPPET_CODIGO)}>{ '```' }</button>
+          <button type="button" title="Enlace" onClick={() => insertar('[', '](https://)', 'texto')}>🔗</button>
+          <button type="button" title="Tabla" onClick={() => insertar(SNIPPET_TABLA)}>▦ Tabla</button>
+          <button type="button" title="Admonition" onClick={() => insertar(SNIPPET_ADMONITION)}>💡 Nota</button>
+          <span className={styles.atajos}>⌘S guardar · ⌘⇧P publicar</span>
+        </div>
+      )}
+
+      <div className={styles.split}>
+        <div className={styles.fuente}>
+          <CodeMirror
+            ref={editorRef}
+            value={cuerpo}
+            onChange={onCambio}
+            editable={documento !== null && estado !== 'cargando'}
+            theme={oneDark}
+            extensions={[esMd ? markdown() : html(), EditorView.lineWrapping]}
+            basicSetup={{ foldGutter: true, highlightActiveLine: true }}
+            className={styles.codemirror}
+          />
+        </div>
+        {esMd ? (
+          <div className={styles.preview}>
+            {/* Seguro: previewHtml SIEMPRE sale de renderMarkdown(), cuyo pipeline
+                aplica rehype-sanitize (allowlist) — scripts/handlers/iframes se
+                eliminan. Es el mismo HTML que servirá producción (design §3). */}
+            <div className={styles.previewCuerpo} dangerouslySetInnerHTML={{ __html: previewHtml }} />
+          </div>
+        ) : (
+          <div className={styles.preview}>
+            <p className={styles.hint}>
+              Las páginas HTML se muestran sandboxeadas en el visor (iframe aislado, US-5) — sin preview en vivo aquí.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ── Modal publicar ── */}
+      <Modal isOpen={publicarOpen} onClose={() => setPublicarOpen(false)} title="Publicar versión">
+        <div className={styles.modalCuerpo}>
+          {publicarError && <div className={styles.error}>{publicarError}</div>}
+          <p className={styles.hint}>
+            Se congela el borrador como la nueva versión publicada (los alumnos con acceso la verán en el visor).
+          </p>
+          <label className={styles.campo}>
+            <span>¿Qué cambió? (opcional)</span>
+            <input
+              className={styles.input}
+              value={mensajePublicar}
+              onChange={(e) => setMensajePublicar(e.target.value)}
+              placeholder="p. ej. nuevo ejercicio de flexbox"
+              disabled={publicando}
+            />
+          </label>
+          <div className={styles.modalAcciones}>
+            <DashButton variant="outline" onClick={() => setPublicarOpen(false)} disabled={publicando}>
+              Cancelar
+            </DashButton>
+            <DashButton onClick={publicar} disabled={publicando}>
+              {publicando ? 'Publicando…' : 'Publicar'}
+            </DashButton>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Modal historial ── */}
+      <Modal isOpen={historialOpen} onClose={() => setHistorialOpen(false)} title="Historial de versiones">
+        <div className={styles.modalCuerpo}>
+          {historialError && <div className={styles.error}>{historialError}</div>}
+          {verCuerpo ? (
+            <>
+              <div className={styles.verBarra}>
+                <b>v{verCuerpo.numero}</b>
+                <DashButton variant="outline" onClick={() => setVerCuerpo(null)}>← Volver al historial</DashButton>
+              </div>
+              <pre className={styles.verCuerpo}>{verCuerpo.cuerpo}</pre>
+            </>
+          ) : versiones.length === 0 ? (
+            <p className={styles.hint}>Sin versiones todavía.</p>
+          ) : (
+            <div className={styles.versiones}>
+              {versiones.map((v) => (
+                <div key={v.id} className={styles.version}>
+                  <div className={styles.versionInfo}>
+                    <b>v{v.numero}</b>
+                    {v.esBorrador && <span className={`${styles.pill} ${styles.pillBorr}`}>borrador</span>}
+                    {v.esPublicada && <span className={`${styles.pill} ${styles.pillPub}`}>publicada</span>}
+                    <span className={styles.versionMeta}>
+                      {v.autor?.name ?? '—'} · {formatFecha(v.createdAt)}
+                      {v.mensaje ? ` · "${v.mensaje}"` : ''}
+                    </span>
+                  </div>
+                  <div className={styles.versionAcciones}>
+                    <DashButton variant="outline" onClick={() => verVersion(v)}>Ver</DashButton>
+                    {!v.esBorrador && (
+                      <DashButton variant="outline" onClick={() => restaurarVersion(v)}>Restaurar</DashButton>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
+    </div>
+  );
+}

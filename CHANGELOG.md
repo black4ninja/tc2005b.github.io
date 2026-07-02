@@ -22,6 +22,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   Se removieron los workflows de GitHub Pages, `.nojekyll` y el hack SPA `?/`.
 
 ### Added
+- **CMS "Contenidos" (US-2)**: editor CodeMirror 6 con preview en vivo
+  (`/admin/contenidos/:id/editar/:docId`), autosave a borrador único,
+  publicar con versionado (`cuerpoHtml` renderizado en servidor), historial
+  con restaurar, y el pipeline compartido `@tc2005b/contenido-pipeline`
+  (GFM, admonitions estilo Docusaurus, sanitización allowlist, highlight).
+- **CMS "Contenidos" (US-1)**: modelos Parse `Coleccion`, `Documento`,
+  `DocumentoVersion` y `Recurso`; CRUD admin y sección `/admin/contenidos`
+  con árbol de páginas (según `design/cms-contenidos.html`).
 - Redirects de las URLs viejas `/docs/docs/...` hacia las nuevas
   (`@docusaurus/plugin-client-redirects`).
 - `CONTRIBUTING.md`, plantilla de PR y este `CHANGELOG.md`.

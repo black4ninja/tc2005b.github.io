@@ -1,0 +1,20 @@
+{
+  "name": "@tc2005b/contenido-pipeline",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "description": "Pipeline unified compartido del CMS Contenidos: renderiza Markdown a HTML sanitizado (GFM, admonitions, highlight). Lo usan el API (al publicar) y el editor web (preview) para que lo editado y lo servido sean idénticos.",
+  "dependencies": {
+    "rehype-highlight": "^7.0.0",
+    "rehype-sanitize": "^6.0.0",
+    "rehype-stringify": "^10.0.0",
+    "remark-directive": "^3.0.0",
+    "remark-gfm": "^4.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.0.0",
+    "unified": "^11.0.0",
+    "unist-util-visit": "^5.0.0"
+  }
+}

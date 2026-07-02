@@ -52,7 +52,7 @@ async function getColeccionActiva(id: string): Promise<Coleccion | null> {
  * `exists` (no `active`): el admin gestiona también documentos desactivados
  * — el flag `active` gobierna visibilidad en el visor (US-3), no la edición.
  */
-async function buscarDocumento(docId: string): Promise<{ documento: Documento; coleccion: Coleccion } | null> {
+export async function buscarDocumento(docId: string): Promise<{ documento: Documento; coleccion: Coleccion } | null> {
   try {
     const q = new Parse.Query<Documento>('Documento');
     q.equalTo('exists' as any, true as any);
@@ -64,6 +64,48 @@ async function buscarDocumento(docId: string): Promise<{ documento: Documento; c
   } catch {
     return null;
   }
+}
+
+/**
+ * Devuelve el borrador único del documento, creándolo si no existe.
+ * Único punto donde se crean borradores (numeración, autor y enlace a
+ * Documento.borrador viven aquí) — lo usan saveBorrador y restaurarVersion.
+ *
+ * Mitigación de carreras (dos autosaves simultáneos, o autosave vs publicar):
+ * tras crear la versión se RE-LEE el documento; si otro request enlazó un
+ * borrador entre tanto, descartamos el nuestro y usamos el suyo. La ventana
+ * restante es de milisegundos y el peor caso es un autosave perdido (el
+ * siguiente lo corrige), nunca una versión publicada mutada.
+ */
+export async function asegurarBorrador(
+  docId: string,
+  autor?: AppUser,
+): Promise<{ documento: Documento; borrador: DocumentoVersion } | null> {
+  const encontrado = await buscarDocumento(docId);
+  if (!encontrado) return null;
+  let { documento } = encontrado;
+
+  const existente = documento.getBorrador();
+  if (existente) return { documento, borrador: existente };
+
+  const nuevo = new DocumentoVersion().initDefaults();
+  nuevo.setDocumento(documento);
+  nuevo.setNumero((documento.getVersion()?.getNumero() ?? 0) + 1);
+  if (autor) nuevo.setAutor(autor);
+  await nuevo.save(null, { useMasterKey: true });
+
+  // Re-check: ¿alguien más creó y enlazó un borrador mientras guardábamos?
+  const recheck = await buscarDocumento(docId);
+  const ajeno = recheck?.documento.getBorrador();
+  if (recheck && ajeno && ajeno.id !== nuevo.id) {
+    await nuevo.destroy({ useMasterKey: true });
+    return { documento: recheck.documento, borrador: ajeno };
+  }
+
+  documento = recheck?.documento ?? documento;
+  documento.setBorrador(nuevo);
+  await documento.save(null, { useMasterKey: true });
+  return { documento, borrador: nuevo };
 }
 
 /** Query base de documentos existentes de una colección. */
@@ -405,33 +447,21 @@ export async function saveBorrador(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    const encontrado = await buscarDocumento(docId);
-    if (!encontrado) {
+    const autor = req.appUser as AppUser | undefined;
+    const resultado = await asegurarBorrador(docId, autor);
+    if (!resultado) {
       res.status(404).json({ status: 'error', message: 'Documento no encontrado' });
       return;
     }
-    const { documento } = encontrado;
+    const { documento, borrador } = resultado;
     if (documento.getTipo() === 'categoria') {
       res.status(400).json({ status: 'error', message: 'Las categorías no tienen cuerpo' });
       return;
     }
 
-    let borrador = documento.getBorrador();
-    const esNuevo = !borrador;
-    if (!borrador) {
-      borrador = new DocumentoVersion().initDefaults();
-      borrador.setDocumento(documento);
-      borrador.setNumero((documento.getVersion()?.getNumero() ?? 0) + 1);
-    }
     borrador.setCuerpo(cuerpo);
-    const autor = req.appUser as AppUser | undefined;
     if (autor) borrador.setAutor(autor);
     await borrador.save(null, { useMasterKey: true });
-
-    if (esNuevo) {
-      documento.setBorrador(borrador);
-      await documento.save(null, { useMasterKey: true });
-    }
 
     res.json({ status: 'ok', esBorrador: true });
   } catch (error) {

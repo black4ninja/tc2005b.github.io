@@ -16,6 +16,12 @@ import {
   getBorrador,
   saveBorrador,
 } from '../controllers/cms-documentos.controller.js';
+import {
+  publicarDocumento,
+  listVersiones,
+  getVersion,
+  restaurarVersion,
+} from '../controllers/cms-versiones.controller.js';
 
 // Rutas admin del CMS "Contenidos" (design/cms-contenidos.html §7).
 // Los endpoints de lectura del visor (US-3) irán en un router aparte.
@@ -37,8 +43,14 @@ router.put('/admin/documentos/:docId', updateDocumento);
 router.put('/admin/documentos/:docId/mover', moveDocumento);
 router.delete('/admin/documentos/:docId', deleteDocumento);
 
-// Borrador provisional (editor rico en US-2)
+// Borrador (autosave del editor)
 router.get('/admin/documentos/:docId/borrador', getBorrador);
 router.put('/admin/documentos/:docId/borrador', saveBorrador);
+
+// Publicar + historial de versiones (US-2)
+router.post('/admin/documentos/:docId/publicar', publicarDocumento);
+router.get('/admin/documentos/:docId/versiones', listVersiones);
+router.get('/admin/documentos/:docId/versiones/:versionId', getVersion);
+router.post('/admin/documentos/:docId/versiones/:versionId/restaurar', restaurarVersion);
 
 export default router;
