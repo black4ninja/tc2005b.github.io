@@ -22,6 +22,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   Se removieron los workflows de GitHub Pages, `.nojekyll` y el hack SPA `?/`.
 
 ### Added
+- **CMS "Contenidos" (US-6)**: importador Docusaurus→Contenidos con
+  `--dry-run` y reporte de paridad (verificado: tc2005b y tc2007b, 0 y 1
+  enlaces sin resolver, preexistentes); asignación de colecciones a grupos
+  (multi-select en el editor y submenú del grupo); redirects 301
+  `/docs/*→/contenidos/*` con mapa generado, apagados hasta el corte (US-7).
 - **CMS "Contenidos" (US-5)**: búsqueda full-text con scope por permisos
   (imposible sugerir contenido ajeno; índice de texto Mongo con degradación
   a regex) con buscador en el visor; y páginas HTML crudas servidas con CSP

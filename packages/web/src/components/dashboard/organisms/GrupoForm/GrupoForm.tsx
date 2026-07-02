@@ -3,6 +3,7 @@ import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
 import styles from './GrupoForm.module.css';
 import type { MateriaRef } from '../../../../types/materia';
+import type { ColeccionRef } from '../../../../types/contenidos';
 
 interface GrupoData {
   id?: string;
@@ -11,6 +12,7 @@ interface GrupoData {
   fechaFin?: string;
   materia?: MateriaRef | null;
   docusaurus?: string[];
+  colecciones?: ColeccionRef[];
 }
 
 interface GrupoSavePayload {
@@ -19,11 +21,14 @@ interface GrupoSavePayload {
   fechaFin?: string;
   materiaId?: string | null;
   docusaurus?: string[];
+  colecciones?: string[];
 }
 
 interface GrupoFormProps {
   grupo?: GrupoData;
   materias?: MateriaRef[];
+  /** Colecciones del CMS Contenidos disponibles para asignar (US-6). */
+  colecciones?: ColeccionRef[];
   onSave: (data: GrupoSavePayload) => void;
   onCancel: () => void;
   loading?: boolean;
@@ -36,17 +41,26 @@ function toDateString(value?: string | Date): string {
   return d.toISOString().split('T')[0];
 }
 
-export default function GrupoForm({ grupo, materias = [], onSave, onCancel, loading }: GrupoFormProps) {
+export default function GrupoForm({ grupo, materias = [], colecciones = [], onSave, onCancel, loading }: GrupoFormProps) {
   const [name, setName] = useState(grupo?.name ?? '');
   const [fechaInicio, setFechaInicio] = useState(toDateString(grupo?.fechaInicio));
   const [fechaFin, setFechaFin] = useState(toDateString(grupo?.fechaFin));
   const [materiaId, setMateriaId] = useState(grupo?.materia?.id ?? '');
   const [docusaurus, setDocusaurus] = useState<string[]>(grupo?.docusaurus ?? []);
+  const [coleccionesSel, setColeccionesSel] = useState<string[]>(
+    (grupo?.colecciones ?? []).map((c) => c.id),
+  );
   const [error, setError] = useState('');
 
   function toggleDocusaurus(slug: string) {
     setDocusaurus((prev) =>
       prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug],
+    );
+  }
+
+  function toggleColeccion(id: string) {
+    setColeccionesSel((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
     );
   }
 
@@ -62,6 +76,7 @@ export default function GrupoForm({ grupo, materias = [], onSave, onCancel, load
       fechaFin: fechaFin || undefined,
       materiaId: materiaId || null,
       docusaurus,
+      colecciones: coleccionesSel,
     });
   }
 
@@ -110,6 +125,29 @@ export default function GrupoForm({ grupo, materias = [], onSave, onCancel, load
                   type="checkbox"
                   checked={docusaurus.includes(m.slug)}
                   onChange={() => toggleDocusaurus(m.slug)}
+                  disabled={loading}
+                />
+                <span className={styles.checkboxLabel} title={label}>{label}</span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+      <div className={styles.field}>
+        <label className={styles.label}>Colecciones de Contenidos con acceso</label>
+        <div className={styles.checkboxList}>
+          {colecciones.length === 0 && (
+            <span className={styles.hint}>No hay colecciones disponibles.</span>
+          )}
+          {colecciones.map((c) => {
+            const clave = c.clave || c.slug.toUpperCase();
+            const label = `${clave} — ${c.nombre}`;
+            return (
+              <label key={c.id} className={styles.checkboxItem}>
+                <input
+                  type="checkbox"
+                  checked={coleccionesSel.includes(c.id)}
+                  onChange={() => toggleColeccion(c.id)}
                   disabled={loading}
                 />
                 <span className={styles.checkboxLabel} title={label}>{label}</span>

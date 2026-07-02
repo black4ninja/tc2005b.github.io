@@ -107,6 +107,15 @@ export class Grupo extends BaseModel {
         ? { id: materiaActiva.id, nombre: materiaActiva.get('nombre') ?? null, slug: materiaActiva.get('slug') ?? null }
         : null,
       docusaurus: this.getDocusaurus(),
+      // Requiere query.include('colecciones'); las soft-deleted no se exponen.
+      colecciones: this.getColecciones()
+        .filter((c) => c && c.get('exists') !== false)
+        .map((c) => ({
+          id: c.id,
+          nombre: c.get('nombre') ?? null,
+          slug: c.get('slug') ?? null,
+          clave: c.get('clave') ?? null,
+        })),
       active: this.get('active'),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,

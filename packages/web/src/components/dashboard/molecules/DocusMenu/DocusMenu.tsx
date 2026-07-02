@@ -2,10 +2,14 @@ import { useState } from 'react';
 import Icon from '../../atoms/Icon/Icon';
 import styles from './DocusMenu.module.css';
 
-/** Un Docusaurus habilitado para el grupo: slug + etiqueta "CLAVE — Nombre". */
+/**
+ * Una documentación habilitada para el grupo: destino + etiqueta
+ * "CLAVE — Nombre" (Docusaurus /docs/<slug>/ o colección /contenidos/<slug>/).
+ */
 export interface DocusLink {
   slug: string;
   label: string;
+  href: string;
 }
 
 interface DocusMenuProps {
@@ -17,8 +21,8 @@ interface DocusMenuProps {
 
 /**
  * Ítem "Docusaurus" del sidebar con submenú colapsable (colapsado por
- * defecto) que lista los Docusaurus habilitados del grupo. Cada enlace abre
- * `/docs/<slug>/` en una pestaña nueva; la etiqueta se trunca a una sola línea.
+ * defecto) que lista la documentación habilitada del grupo (Docusaurus y
+ * colecciones del CMS). Abre en pestaña nueva; etiqueta a una sola línea.
  */
 export default function DocusMenu({ items, collapsed, defaultOpen = false }: DocusMenuProps) {
   const [open, setOpen] = useState(defaultOpen);
@@ -52,7 +56,7 @@ export default function DocusMenu({ items, collapsed, defaultOpen = false }: Doc
             items.map((it) => (
               <a
                 key={it.slug}
-                href={`/docs/${it.slug}/`}
+                href={it.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={styles.link}
