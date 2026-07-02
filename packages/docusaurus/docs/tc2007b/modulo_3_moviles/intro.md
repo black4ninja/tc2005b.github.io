@@ -14,23 +14,23 @@ sidebar_position: 1
 ## Laboratorios Android
 | Laboratorio | Tema                          | Android                                                                                     |
 | ----------- | ----------------------------- | ------------------------------------------------------------------------------------------- |
-| 1           | Introducción a Kotlin         | [Laboratorio](modulo_3_moviles/android/tutorials/intro_compose/1_intro_kotlin.md)           |
-| 2           | Interfaces en Jetpack Compose | [Laboratorio](modulo_3_moviles/android/tutorials/intro_compose/3_ui_compose.md)             |
-| 3           | Modelos y Listas              | [Laboratorio](modulo_3_moviles/android/tutorials/intro_compose/4_modelos_y_listas.md)       |
-| 4           | Consumiendo APIs              | [Laboratorio](modulo_3_moviles/android/tutorials/intro_compose/5_consumiendo_apis.md)       |
-| 5           | Desarrollo Avanzado y UI      | [Laboratorio](modulo_3_moviles/android/tutorials/intro_compose/6_desarrollo_avanzado_ui.md) |
-| 6           | Sistema de caché              | [Laboratorio](modulo_3_moviles/android/tutorials/intro_compose/7_sistema_cache.md)          |
+| 1           | Introducción a Kotlin         | [Laboratorio](android/tutorials/intro_compose/1_intro_kotlin.md)           |
+| 2           | Interfaces en Jetpack Compose | [Laboratorio](android/tutorials/intro_compose/3_ui_compose.md)             |
+| 3           | Modelos y Listas              | [Laboratorio](android/tutorials/intro_compose/4_modelos_y_listas.md)       |
+| 4           | Consumiendo APIs              | [Laboratorio](android/tutorials/intro_compose/5_consumiendo_apis.md)       |
+| 5           | Desarrollo Avanzado y UI      | [Laboratorio](android/tutorials/intro_compose/6_desarrollo_avanzado_ui.md) |
+| 6           | Sistema de caché              | [Laboratorio](android/tutorials/intro_compose/7_sistema_cache.md)          |
 
 ## Laboratorios iOS
 | Laboratorio | Tema                      | iOS                                                                            |
 | ----------- | ------------------------- | ------------------------------------------------------------------------------ |
-| 1           | Introducción a Swift      | [Laboratorio](modulo_3_moviles/ios/tutorials/intro_ios/1_intro_swift.md)       |
+| 1           | Introducción a Swift      | [Laboratorio](ios/tutorials/intro_ios/1_intro_swift.md)       |
 | 2           | Primera App en Swift      | [Storyboard](/ios/storyboard.zip) / [SwiftUI](/ios/swiftui.zip)                |
-| 2.5         | Interfaces en SwiftUI     | [Laboratorio](modulo_3_moviles/ios/tutorials/intro_ios/1.5_intro_swiftui.md)   |
-| 3           | Modelos y Listas          | [Laboratorio](modulo_3_moviles/ios/tutorials/intro_ios/2_modelos_y_listas.md)  |
-| 4           | Consumiendo APIs          | [Laboratorio](modulo_3_moviles/ios/tutorials/intro_ios/4_consumiendo_apis.md)  |
-| 5           | Arquitectura de Proyectos | [Laboratorio](modulo_3_moviles/ios/tutorials/intro_ios/5_arquitectura_mvvm.md) |
-| 6           | Desarrollo Avanzado y UI  | [Laboratorio](modulo_3_moviles/ios/tutorials/intro_ios/6_advanced_ui.md)       |
+| 2.5         | Interfaces en SwiftUI     | [Laboratorio](ios/tutorials/intro_ios/1.5_intro_swiftui.md)   |
+| 3           | Modelos y Listas          | [Laboratorio](ios/tutorials/intro_ios/2_modelos_y_listas.md)  |
+| 4           | Consumiendo APIs          | [Laboratorio](ios/tutorials/intro_ios/4_consumiendo_apis.md)  |
+| 5           | Arquitectura de Proyectos | [Laboratorio](ios/tutorials/intro_ios/5_arquitectura_mvvm.md) |
+| 6           | Desarrollo Avanzado y UI  | [Laboratorio](ios/tutorials/intro_ios/6_advanced_ui.md)       |
 
 ## Materiales No SQL
 | Material | Tema                                          | Laboratorio                                                                               | Recurso                                                                                                              |
@@ -95,11 +95,11 @@ sidebar_position: 1
 ## Laboratorios Legacy
 | Laboratorio | Tema                        | Android                                                                                       | iOS                                                                            |
 | ----------- | --------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| 1           | Introducción a Kotlin/Swift | [Laboratorio](modulo_3_moviles/android/tutorials/intro_xml/1_intro_kotlin.md)                 | [Laboratorio](modulo_3_moviles/ios/tutorials/intro_ios/1_intro_swift.md)       |
+| 1           | Introducción a Kotlin/Swift | [Laboratorio](android/tutorials/intro_xml/1_intro_kotlin.md)                 | [Laboratorio](ios/tutorials/intro_ios/1_intro_swift.md)       |
 | 2           | Primera App en Kotlin/Swift |                                                                                               | [Storyboad](/ios/storyboard.zip) / [SwiftUI](/ios/swiftui.zip)                 |
-| 2.5         | Interfaces en SwiftUI       |                                                                                               | [Laboratorio](modulo_3_moviles/ios/tutorials/intro_ios/1.5_intro_swiftui.md)   |
-| 3           | Modelos y Listas            | [Laboratorio](modulo_3_moviles/android/tutorials/intro_xml/3_data_classes_y_recyclerview.md)  | [Laboratorio](modulo_3_moviles/ios/tutorials/intro_ios/2_modelos_y_listas.md)  |
-| 4           | Consumiendo APIs            | [Laboratorio](modulo_3_moviles/android/tutorials/intro_xml/4_consumiendo_apis.md)             | [Laboratorio](modulo_3_moviles/ios/tutorials/intro_ios/4_consumiendo_apis.md)  |
-| 5           | Arquitectura de Proyectos   | [Laboratorio](modulo_3_moviles/android/tutorials/intro_xml/5_arquitectura_mvvm.md)            | [Laboratorio](modulo_3_moviles/ios/tutorials/intro_ios/5_arquitectura_mvvm.md) |
-| 6           | Desarrollo Avanzado y UI    | [Laboratorio](modulo_3_moviles/android/tutorials/intro_xml/6_fragmentos_y_material_design.md) | [Laboratorio](modulo_3_moviles/ios/tutorials/intro_ios/6_advanced_ui.md)       |
+| 2.5         | Interfaces en SwiftUI       |                                                                                               | [Laboratorio](ios/tutorials/intro_ios/1.5_intro_swiftui.md)   |
+| 3           | Modelos y Listas            | [Laboratorio](android/tutorials/intro_xml/3_data_classes_y_recyclerview.md)  | [Laboratorio](ios/tutorials/intro_ios/2_modelos_y_listas.md)  |
+| 4           | Consumiendo APIs            | [Laboratorio](android/tutorials/intro_xml/4_consumiendo_apis.md)             | [Laboratorio](ios/tutorials/intro_ios/4_consumiendo_apis.md)  |
+| 5           | Arquitectura de Proyectos   | [Laboratorio](android/tutorials/intro_xml/5_arquitectura_mvvm.md)            | [Laboratorio](ios/tutorials/intro_ios/5_arquitectura_mvvm.md) |
+| 6           | Desarrollo Avanzado y UI    | [Laboratorio](android/tutorials/intro_xml/6_fragmentos_y_material_design.md) | [Laboratorio](ios/tutorials/intro_ios/6_advanced_ui.md)       |
 -->
