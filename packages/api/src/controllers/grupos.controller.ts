@@ -3,6 +3,7 @@ import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { Grupo } from '../models/Grupo.js';
 import { invalidateAllowedCache } from '../services/materia.service.js';
+import { invalidateColeccionesPermitidas } from '../services/contenidos.service.js';
 
 export async function listGrupos(_req: Request, res: Response): Promise<void> {
   try {
@@ -125,6 +126,8 @@ export async function archiveGrupo(req: Request, res: Response): Promise<void> {
       grupo.activate();
     }
     await grupo.save(null, { useMasterKey: true });
+    // Archivar/reactivar cambia el acceso de todos sus alumnos al CMS.
+    invalidateColeccionesPermitidas();
 
     res.json({ status: 'ok', grupo: grupo.toSafeJSON() });
   } catch (error: any) {

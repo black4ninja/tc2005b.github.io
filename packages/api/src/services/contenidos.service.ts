@@ -2,13 +2,14 @@ import Parse from 'parse/node';
 import { AppUser } from '../models/AppUser.js';
 import { Coleccion } from '../models/Coleccion.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
+import { TtlValue, TtlMap } from '../utils/ttl-cache.js';
 
 /**
  * Permisos de lectura del CMS "Contenidos" (design §2) — patrón calcado de
  * materia.service: cache global corto del mapa de slugs + cache por usuario
  * de colecciones permitidas, ambos con invalidación explícita.
  * Regla: admin ⇒ todas las colecciones; alumno ⇒ SOLO las publicadas
- * asignadas a sus grupos activos (Grupo.colecciones). Denegado ⇒ 404.
+ * asignadas a sus grupos ACTIVOS (Grupo.colecciones). Denegado ⇒ 404.
  */
 
 export interface ColeccionInfo {
@@ -19,16 +20,15 @@ export interface ColeccionInfo {
 }
 
 /* ── Cache global: slug → info de TODAS las colecciones existentes (5 min) ── */
-let slugsCache: { value: Map<string, ColeccionInfo & { publicada: boolean }>; expires: number } | null = null;
-const SLUGS_TTL_MS = 5 * 60 * 1000;
+const slugsCache = new TtlValue<Map<string, ColeccionInfo & { publicada: boolean }>>(5 * 60 * 1000);
 
 export function invalidateColeccionSlugsCache(): void {
-  slugsCache = null;
+  slugsCache.invalidate();
 }
 
 export async function getColeccionesPorSlug(): Promise<Map<string, ColeccionInfo & { publicada: boolean }>> {
-  const now = Date.now();
-  if (slugsCache && slugsCache.expires > now) return slugsCache.value;
+  const cached = slugsCache.get();
+  if (cached) return cached;
 
   const q = new Parse.Query<Coleccion>('Coleccion');
   q.equalTo('exists' as any, true as any);
@@ -47,7 +47,7 @@ export async function getColeccionesPorSlug(): Promise<Map<string, ColeccionInfo
       publicada: c.getPublicada(),
     });
   }
-  slugsCache = { value: map, expires: now + SLUGS_TTL_MS };
+  slugsCache.set(map);
   return map;
 }
 
@@ -62,7 +62,7 @@ export async function getColeccionesPermitidas(user: AppUser): Promise<Coleccion
       .sort((a, b) => a.nombre.localeCompare(b.nombre));
   }
 
-  // Alumno: unión de Grupo.colecciones de sus grupos activos, solo publicadas.
+  // Alumno: unión de Grupo.colecciones de sus grupos ACTIVOS, solo publicadas.
   const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(user.id);
   const q = new Parse.Query<GrupoAlumno>('GrupoAlumno');
   q.equalTo('exists' as any, true as any);
@@ -75,7 +75,8 @@ export async function getColeccionesPermitidas(user: AppUser): Promise<Coleccion
   const permitidas = new Map<string, ColeccionInfo>();
   for (const link of links) {
     const grupo = link.get('grupo');
-    if (!grupo || grupo.get('exists') === false) continue;
+    // Un grupo archivado (active=false) deja de dar acceso: fin de semestre.
+    if (!grupo || grupo.get('exists') === false || grupo.get('active') === false) continue;
     const colecciones: Parse.Object[] = grupo.get('colecciones') ?? [];
     for (const c of colecciones) {
       if (!c || c.get('exists') === false) continue;
@@ -95,21 +96,18 @@ export async function getColeccionesPermitidas(user: AppUser): Promise<Coleccion
 }
 
 /* ── Cache corto por-usuario de slugs permitidos (60 s) ── */
-const allowedCache = new Map<string, { value: Set<string>; expires: number }>();
-const ALLOWED_TTL_MS = 60 * 1000;
+const allowedCache = new TtlMap<Set<string>>(60 * 1000);
 
 export async function getSlugsPermitidos(user: AppUser): Promise<Set<string>> {
-  const now = Date.now();
   const cached = allowedCache.get(user.id);
-  if (cached && cached.expires > now) return cached.value;
+  if (cached) return cached;
 
   const colecciones = await getColeccionesPermitidas(user);
   const set = new Set(colecciones.map((c) => c.slug));
-  allowedCache.set(user.id, { value: set, expires: now + ALLOWED_TTL_MS });
+  allowedCache.set(user.id, set);
   return set;
 }
 
 export function invalidateColeccionesPermitidas(userId?: string): void {
-  if (userId) allowedCache.delete(userId);
-  else allowedCache.clear();
+  allowedCache.invalidate(userId);
 }

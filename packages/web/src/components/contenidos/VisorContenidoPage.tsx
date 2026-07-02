@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
+import type { TocEntry } from '@tc2005b/contenido-pipeline';
 import { useAuth } from '../../context/AuthContext';
 import Icon from '../dashboard/atoms/Icon/Icon';
 import '../../styles/contenido-render.css';
@@ -20,7 +21,7 @@ interface PaginaVisor {
   titulo: string;
   tipo: string;
   cuerpoHtml: string;
-  toc: { id: string; titulo: string; nivel: number }[];
+  toc: TocEntry[];
   breadcrumb: { titulo: string; slug: string }[];
   prev: { titulo: string; path: string } | null;
   next: { titulo: string; path: string } | null;
@@ -45,18 +46,23 @@ function primeraPagina(arbol: NodoVisor[], prefijo = ''): string | null {
 export default function VisorContenidoPage() {
   const { slug, '*': pathParam } = useParams<{ slug: string; '*': string }>();
   const navigate = useNavigate();
-  const { sessionToken } = useAuth();
+  const { sessionToken, user } = useAuth();
 
   const [coleccion, setColeccion] = useState<{ slug: string; nombre: string; clave: string | null } | null>(null);
+  const [misColecciones, setMisColecciones] = useState<{ slug: string; nombre: string; clave: string | null }[]>([]);
   const [arbol, setArbol] = useState<NodoVisor[]>([]);
   const [pagina, setPagina] = useState<PaginaVisor | null>(null);
   const [noEncontrado, setNoEncontrado] = useState(false);
+  // Un 500/red caída NO es un 404: el usuario tiene derecho a reintentar.
+  const [errorCarga, setErrorCarga] = useState(false);
   const [paginaNoEncontrada, setPaginaNoEncontrada] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
   const [oscuro, setOscuro] = useState(() => localStorage.getItem(TEMA_KEY) === 'oscuro');
+  const [reintento, setReintento] = useState(0);
 
   const path = (pathParam ?? '').replace(/\/+$/, '');
+  const rutaPanel = user?.userType === 'admin' ? '/admin' : '/alumno';
 
   function toggleTema() {
     setOscuro((v) => {
@@ -71,13 +77,18 @@ export default function VisorContenidoPage() {
     let cancelado = false;
     setCargando(true);
     setNoEncontrado(false);
+    setErrorCarga(false);
     fetch(`${API_BASE}/contenidos/${slug}/arbol`, {
       headers: { 'x-session-token': sessionToken ?? '' },
     })
       .then(async (r) => {
         if (cancelado) return;
-        if (!r.ok) {
+        if (r.status === 404 || r.status === 401) {
           setNoEncontrado(true);
+          return;
+        }
+        if (!r.ok) {
+          setErrorCarga(true); // 500/transitorio: NO es "no existe"
           return;
         }
         const json = await r.json();
@@ -87,10 +98,19 @@ export default function VisorContenidoPage() {
         // Categorías del primer nivel abiertas por defecto.
         setExpandidos(new Set((json.arbol ?? []).filter((n: NodoVisor) => n.tipo === 'categoria').map((n: NodoVisor) => n.id)));
       })
-      .catch(() => { if (!cancelado) setNoEncontrado(true); })
+      .catch(() => { if (!cancelado) setErrorCarga(true); })
       .finally(() => { if (!cancelado) setCargando(false); });
     return () => { cancelado = true; };
-  }, [slug, sessionToken]);
+  }, [slug, sessionToken, reintento]);
+
+  /* ── Mis colecciones (switcher del topbar cuando hay más de una) ── */
+  useEffect(() => {
+    if (!sessionToken) return;
+    fetch(`${API_BASE}/me/colecciones`, { headers: { 'x-session-token': sessionToken } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => { if (json) setMisColecciones(json.colecciones ?? []); })
+      .catch(() => {});
+  }, [sessionToken]);
 
   /* ── Sin path: ir a la primera página del árbol ── */
   useEffect(() => {
@@ -191,17 +211,48 @@ export default function VisorContenidoPage() {
     );
   }
 
+  /* ── Error transitorio (500/red): distinto de 404, con reintento ── */
+  if (!cargando && errorCarga) {
+    return (
+      <div className={`${styles.visor} ${oscuro ? `${styles.oscuro} tema-oscuro` : ''}`}>
+        <div className={styles.notFound}>
+          <h1>😵</h1>
+          <p>No se pudo cargar el contenido. Puede ser un problema temporal.</p>
+          <button type="button" className={styles.reintentar} onClick={() => setReintento((n) => n + 1)}>
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const arbolVacio = !cargando && !noEncontrado && !errorCarga && arbol.length === 0;
+
   return (
     <div className={`${styles.visor} ${oscuro ? `${styles.oscuro} tema-oscuro` : ''}`}>
       <header className={styles.topbar}>
         <span className={styles.brand} title={coleccion?.nombre}>
           📘 {coleccion ? `${coleccion.clave ? `${coleccion.clave} — ` : ''}${coleccion.nombre}` : '…'}
         </span>
+        {misColecciones.length > 1 && (
+          <select
+            className={styles.switcher}
+            value={slug}
+            onChange={(e) => navigate(`/contenidos/${e.target.value}/`)}
+            title="Cambiar de colección"
+          >
+            {misColecciones.map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.clave ? `${c.clave} — ${c.nombre}` : c.nombre}
+              </option>
+            ))}
+          </select>
+        )}
         <span style={{ flex: 1 }} />
         <button type="button" className={styles.temaBtn} onClick={toggleTema} title="Cambiar tema">
           {oscuro ? '☀️' : '🌙'}
         </button>
-        <Link to="/alumno" className={styles.panelLink}>Mi panel</Link>
+        <Link to={rutaPanel} className={styles.panelLink}>Mi panel</Link>
       </header>
 
       <div className={styles.cuerpo}>
@@ -211,7 +262,12 @@ export default function VisorContenidoPage() {
         </nav>
 
         <main className={styles.main}>
-          {paginaNoEncontrada ? (
+          {arbolVacio ? (
+            <div className={styles.notFound}>
+              <h1>📭</h1>
+              <p>Esta colección aún no tiene contenido publicado.</p>
+            </div>
+          ) : paginaNoEncontrada ? (
             <div className={styles.notFound}>
               <h1>404</h1>
               <p>Página no encontrada.</p>

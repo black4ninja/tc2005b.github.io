@@ -1,11 +1,12 @@
 import type { Request, Response } from 'express';
 import Parse from 'parse/node';
-import { Coleccion } from '../models/Coleccion.js';
+import { renderMarkdown, extraerToc } from '@tc2005b/contenido-pipeline';
 import { Documento } from '../models/Documento.js';
 import {
   getColeccionesPermitidas,
   getColeccionesPorSlug,
   getSlugsPermitidos,
+  type ColeccionInfo,
 } from '../services/contenidos.service.js';
 import {
   construirArbolVisible,
@@ -20,8 +21,12 @@ import {
  * idéntico — no se filtra existencia. Anónimo ⇒ 401 uniforme del middleware.
  */
 
-/** 404 si el slug no existe O no está permitido (mismo mensaje: sin fugas). */
-async function autorizarColeccion(req: Request, res: Response): Promise<Coleccion | null> {
+/**
+ * 404 si el slug no existe O no está permitido (mismo mensaje: sin fugas).
+ * Devuelve la info del cache de slugs — sin round-trip extra a Parse: es el
+ * camino más caliente del visor y el cache se invalida en el CRUD.
+ */
+async function autorizarColeccion(req: Request, res: Response): Promise<ColeccionInfo | null> {
   const user = req.appUser;
   const { slug } = req.params;
   if (!user) {
@@ -35,22 +40,16 @@ async function autorizarColeccion(req: Request, res: Response): Promise<Coleccio
     res.status(404).json({ status: 'error', message: 'No encontrado' });
     return null;
   }
-  const q = new Parse.Query<Coleccion>('Coleccion');
-  q.equalTo('exists' as any, true as any);
-  const coleccion = await q.get(info.id, { useMasterKey: true }).catch(() => null);
-  if (!coleccion) {
-    res.status(404).json({ status: 'error', message: 'No encontrado' });
-    return null;
-  }
-  return coleccion;
+  return info;
 }
 
 /** Documentos vivos de la colección, aplanados para la lógica pura del árbol. */
-async function getDocumentosPlanos(coleccion: Coleccion): Promise<DocPlano[]> {
+async function getDocumentosPlanos(coleccionId: string): Promise<DocPlano[]> {
+  const puntero = Parse.Object.extend('Coleccion').createWithoutData(coleccionId);
   const q = new Parse.Query<Documento>('Documento');
   q.equalTo('exists' as any, true as any);
   q.equalTo('active' as any, true as any);
-  q.equalTo('coleccion' as any, coleccion as any);
+  q.equalTo('coleccion' as any, puntero as any);
   q.ascending('orden');
   q.limit(10000);
   const documentos = await q.find({ useMasterKey: true });
@@ -83,14 +82,14 @@ export async function getMisColecciones(req: Request, res: Response): Promise<vo
 /** GET /api/contenidos/:slug/arbol — árbol de navegación calculado por usuario. */
 export async function getArbolColeccion(req: Request, res: Response): Promise<void> {
   try {
-    const coleccion = await autorizarColeccion(req, res);
-    if (!coleccion) return;
+    const info = await autorizarColeccion(req, res);
+    if (!info) return;
 
-    const arbol = construirArbolVisible(await getDocumentosPlanos(coleccion));
+    const arbol = construirArbolVisible(await getDocumentosPlanos(info.id));
 
     res.json({
       status: 'ok',
-      coleccion: { slug: coleccion.getSlug(), nombre: coleccion.getNombre(), clave: coleccion.getClave() ?? null },
+      coleccion: { slug: info.slug, nombre: info.nombre, clave: info.clave },
       arbol,
     });
   } catch {
@@ -104,15 +103,15 @@ export async function getArbolColeccion(req: Request, res: Response): Promise<vo
  */
 export async function getPagina(req: Request, res: Response): Promise<void> {
   try {
-    const coleccion = await autorizarColeccion(req, res);
-    if (!coleccion) return;
+    const info = await autorizarColeccion(req, res);
+    if (!info) return;
 
     const path = String((req.params as Record<string, string>)[0] ?? '')
       .split('/')
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const arbol = construirArbolVisible(await getDocumentosPlanos(coleccion));
+    const arbol = construirArbolVisible(await getDocumentosPlanos(info.id));
 
     // Resolver SOBRE el árbol visible: lo no publicado no existe para el visor.
     const resuelto = resolverPath(arbol, path);
@@ -131,6 +130,17 @@ export async function getPagina(req: Request, res: Response): Promise<void> {
     if (!documento || !version) {
       res.status(404).json({ status: 'error', message: 'No encontrado' });
       return;
+    }
+
+    // Curación perezosa: versiones publicadas ANTES de que el pipeline
+    // generara ids/TOC (toc === undefined) se re-renderizan una vez con el
+    // MISMO cuerpo fuente y se persisten — no es mutar el pasado, es
+    // completar el render cacheado de ese mismo contenido.
+    if (documento.getTipo() === 'md' && version.get('toc') === undefined) {
+      const cuerpoHtml = await renderMarkdown(version.getCuerpo());
+      version.setCuerpoHtml(cuerpoHtml);
+      version.setToc(extraerToc(cuerpoHtml));
+      await version.save(null, { useMasterKey: true });
     }
 
     // prev/next sobre el orden de lectura (DFS de páginas visibles).

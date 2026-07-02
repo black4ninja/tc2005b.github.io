@@ -219,3 +219,28 @@
   color: var(--text-muted);
   padding: 0 10px;
 }
+
+.switcher {
+  padding: 5px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-family: inherit;
+  max-width: 260px;
+  cursor: pointer;
+}
+
+.reintentar {
+  margin-top: 10px;
+  padding: 8px 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}

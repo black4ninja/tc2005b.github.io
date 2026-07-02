@@ -55,4 +55,11 @@ describe('TOC', () => {
       { id: 'entrega', titulo: 'Entrega', nivel: 2 },
     ]);
   });
+
+  it('decodifica entidades HTML en los títulos (&, <, >, comillas)', async () => {
+    const html = await renderMarkdown('## Preguntas & Respuestas\n\n## Uso de `<div>`');
+    const toc = extraerToc(html);
+    expect(toc[0].titulo).toBe('Preguntas & Respuestas');
+    expect(toc[1].titulo).toBe('Uso de <div>');
+  });
 });

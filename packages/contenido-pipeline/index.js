@@ -141,17 +141,32 @@ export async function renderMarkdown(cuerpo) {
 
 const RE_HEADING = /<h([23]) id="([^"]+)"[^>]*>([\s\S]*?)<\/h\1>/g;
 const RE_TAGS = /<[^>]+>/g;
+const RE_ENTIDAD = /&(#x?[0-9a-f]+|[a-z]+);/gi;
+const ENTIDADES_NOMBRADAS = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+
+/** Decodifica las entidades que emite rehype-stringify (&#x26;, &amp;, …). */
+function decodeEntidades(texto) {
+  return texto.replace(RE_ENTIDAD, (m, ent) => {
+    if (ent[0] === '#') {
+      const hex = ent[1]?.toLowerCase() === 'x';
+      const code = parseInt(ent.slice(hex ? 2 : 1), hex ? 16 : 10);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : m;
+    }
+    return ENTIDADES_NOMBRADAS[ent.toLowerCase()] ?? m;
+  });
+}
 
 /**
  * Extrae el TOC (h2/h3 con id) del HTML ya renderizado por este pipeline.
  * Se calcula al PUBLICAR y viaja en el JSON de página — el cliente no parsea.
+ * Los títulos se devuelven decodificados (el visor los renderiza como texto).
  * @param {string} html
  * @returns {{ id: string, titulo: string, nivel: number }[]}
  */
 export function extraerToc(html) {
   const toc = [];
   for (const m of (html ?? '').matchAll(RE_HEADING)) {
-    const titulo = m[3].replace(RE_TAGS, '').trim();
+    const titulo = decodeEntidades(m[3].replace(RE_TAGS, '')).trim();
     if (titulo) toc.push({ id: m[2], titulo, nivel: Number(m[1]) });
   }
   return toc;
