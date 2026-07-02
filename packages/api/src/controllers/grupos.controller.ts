@@ -23,7 +23,10 @@ export async function listGrupos(_req: Request, res: Response): Promise<void> {
 
 function normalizeSlugs(value: unknown): string[] | null {
   if (!Array.isArray(value)) return null;
-  return value.filter((s): s is string => typeof s === 'string' && s.trim() !== '');
+  const slugs = value
+    .filter((s): s is string => typeof s === 'string' && s.trim() !== '')
+    .map((s) => s.trim());
+  return [...new Set(slugs)];
 }
 
 export async function createGrupo(req: Request, res: Response): Promise<void> {
@@ -89,13 +92,14 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
         grupo.setMateria(Parse.Object.extend('Materia').createWithoutData(materiaId));
       }
     }
-    if (docusaurus !== undefined) {
-      grupo.setDocusaurus(normalizeSlugs(docusaurus) ?? []);
-    }
+    // Solo se aplica si es un array válido (incl. [] para limpiar); un valor
+    // no-array se ignora para no borrar las asignaciones existentes por error.
+    const docusSlugs = docusaurus !== undefined ? normalizeSlugs(docusaurus) : null;
+    if (docusSlugs) grupo.setDocusaurus(docusSlugs);
 
     await grupo.save(null, { useMasterKey: true });
     // Si cambió la materia o los docusaurus del grupo, cambió el acceso de sus alumnos.
-    if (materiaId !== undefined || docusaurus !== undefined) invalidateAllowedCache();
+    if (materiaId !== undefined || docusSlugs) invalidateAllowedCache();
 
     res.json({ status: 'ok', grupo: grupo.toSafeJSON() });
   } catch (error: any) {
