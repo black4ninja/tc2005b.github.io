@@ -12,6 +12,26 @@ import { FILES_INTERNAL_KEY, FILES_INTERNAL_HEADER } from '../middlewares/files-
 export const RECURSO_MAX_BYTES = 50 * 1024 * 1024;
 
 /**
+ * Mimes que pueden servirse INLINE sin riesgo de ejecutar script en el
+ * origen de la app. El mime lo declara el cliente al subir (no es
+ * confiable): todo lo demás baja como attachment octet-stream.
+ * SVG excluido a propósito: puede contener <script>.
+ */
+const MIME_INLINE_SEGURO = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+  'image/avif',
+  'application/pdf',
+  'video/mp4',
+  'video/webm',
+  'audio/mpeg',
+  'audio/wav',
+  'text/plain',
+]);
+
+/**
  * Nombre de archivo seguro y "markdown-friendly": minúsculas, sin espacios
  * ni caracteres raros, conservando la extensión. Las referencias
  * `recurso:<id>/<nombre>` viajan dentro de Markdown — sin espacios.
@@ -201,8 +221,17 @@ export async function streamRecurso(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    res.setHeader('Content-Type', recurso.getMime());
-    res.setHeader('Content-Disposition', `inline; filename="${recurso.getNombre()}"`);
+    // El mime almacenado lo declaró el cliente: solo los tipos de la
+    // allowlist se sirven inline con su mime real; el resto baja como
+    // attachment octet-stream (un text/html inline sería XSS en el origen).
+    // El nombre viene sanitizado desde la subida (sin comillas ni saltos).
+    const inlineSeguro = MIME_INLINE_SEGURO.has(recurso.getMime());
+    res.setHeader('Content-Type', inlineSeguro ? recurso.getMime() : 'application/octet-stream');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader(
+      'Content-Disposition',
+      `${inlineSeguro ? 'inline' : 'attachment'}; filename="${recurso.getNombre()}"`,
+    );
     if (recurso.getBytes() > 0) res.setHeader('Content-Length', String(recurso.getBytes()));
     // Privado: puede cachearlo el navegador del usuario, jamás un proxy.
     res.setHeader('Cache-Control', 'private, max-age=3600');
