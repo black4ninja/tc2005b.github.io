@@ -14,6 +14,7 @@ import remarkGfm from 'remark-gfm';
 import remarkDirective from 'remark-directive';
 import remarkRehype from 'remark-rehype';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+import rehypeSlug from 'rehype-slug';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeStringify from 'rehype-stringify';
 import { visit } from 'unist-util-visit';
@@ -67,6 +68,9 @@ function remarkAdmonitions() {
 // aquí: se sirve aparte, sandboxeado (US-5).
 const ESQUEMA_SANITIZE = {
   ...defaultSchema,
+  // Sin prefijo de clobbering: los ids de headings los genera rehype-slug
+  // DESPUÉS de sanitizar (contenido ya confiable) y el TOC ancla contra ellos.
+  clobberPrefix: '',
   attributes: {
     ...defaultSchema.attributes,
     div: [...(defaultSchema.attributes?.div ?? []), ['className', 'admonition', /^admonition-/]],
@@ -82,6 +86,7 @@ const procesador = unified()
   .use(remarkAdmonitions)
   .use(remarkRehype)
   .use(rehypeSanitize, ESQUEMA_SANITIZE)
+  .use(rehypeSlug)
   .use(rehypeHighlight, { detect: false })
   .use(rehypeStringify);
 
@@ -124,11 +129,45 @@ function normalizarAdmonitions(cuerpo) {
 }
 
 /**
- * Renderiza Markdown (GFM + admonitions) a HTML sanitizado con highlight.
+ * Renderiza Markdown (GFM + admonitions) a HTML sanitizado con highlight
+ * e ids en los headings (anclas del TOC).
  * @param {string} cuerpo - fuente Markdown
  * @returns {Promise<string>} HTML listo para servir/mostrar
  */
 export async function renderMarkdown(cuerpo) {
   const archivo = await procesador.process(normalizarAdmonitions(cuerpo ?? ''));
   return String(archivo);
+}
+
+const RE_HEADING = /<h([23]) id="([^"]+)"[^>]*>([\s\S]*?)<\/h\1>/g;
+const RE_TAGS = /<[^>]+>/g;
+const RE_ENTIDAD = /&(#x?[0-9a-f]+|[a-z]+);/gi;
+const ENTIDADES_NOMBRADAS = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+
+/** Decodifica las entidades que emite rehype-stringify (&#x26;, &amp;, …). */
+function decodeEntidades(texto) {
+  return texto.replace(RE_ENTIDAD, (m, ent) => {
+    if (ent[0] === '#') {
+      const hex = ent[1]?.toLowerCase() === 'x';
+      const code = parseInt(ent.slice(hex ? 2 : 1), hex ? 16 : 10);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : m;
+    }
+    return ENTIDADES_NOMBRADAS[ent.toLowerCase()] ?? m;
+  });
+}
+
+/**
+ * Extrae el TOC (h2/h3 con id) del HTML ya renderizado por este pipeline.
+ * Se calcula al PUBLICAR y viaja en el JSON de página — el cliente no parsea.
+ * Los títulos se devuelven decodificados (el visor los renderiza como texto).
+ * @param {string} html
+ * @returns {{ id: string, titulo: string, nivel: number }[]}
+ */
+export function extraerToc(html) {
+  const toc = [];
+  for (const m of (html ?? '').matchAll(RE_HEADING)) {
+    const titulo = decodeEntidades(m[3].replace(RE_TAGS, '')).trim();
+    if (titulo) toc.push({ id: m[2], titulo, nivel: Number(m[1]) });
+  }
+  return toc;
 }

@@ -1,4 +1,5 @@
 import Parse from 'parse/node';
+import type { TocEntry } from '@tc2005b/contenido-pipeline';
 import { BaseModel } from './BaseModel.js';
 import type { Documento } from './Documento.js';
 import type { AppUser } from './AppUser.js';
@@ -45,6 +46,14 @@ export class DocumentoVersion extends BaseModel {
   }
   setCuerpoHtml(cuerpoHtml: string): void {
     this.set('cuerpoHtml', cuerpoHtml);
+  }
+
+  /** TOC (h2/h3 con ancla) extraído al publicar — el visor no parsea HTML. */
+  getToc(): TocEntry[] {
+    return this.get('toc') ?? [];
+  }
+  setToc(toc: TocEntry[]): void {
+    this.set('toc', toc);
   }
 
   getAutor(): AppUser | undefined {

@@ -11,6 +11,7 @@ import Modal from '../../atoms/Modal/Modal';
 import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
 import type { DocumentoData } from '../../../../types/contenidos';
+import '../../../../styles/contenido-render.css';
 import styles from './EditorContenidoPage.module.css';
 
 const API_BASE = '/api';
@@ -379,7 +380,7 @@ export default function EditorContenidoPage() {
             {/* Seguro: previewHtml SIEMPRE sale de renderMarkdown(), cuyo pipeline
                 aplica rehype-sanitize (allowlist) — scripts/handlers/iframes se
                 eliminan. Es el mismo HTML que servirá producción (design §3). */}
-            <div className={styles.previewCuerpo} dangerouslySetInnerHTML={{ __html: previewHtml }} />
+            <div className="contenido-render" dangerouslySetInnerHTML={{ __html: previewHtml }} />
           </div>
         ) : (
           <div className={styles.preview}>

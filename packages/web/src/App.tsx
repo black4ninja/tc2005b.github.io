@@ -36,6 +36,12 @@ const EditorContenidoPage = lazy(
   () => import('./components/dashboard/pages/EditorContenidoPage/EditorContenidoPage'),
 );
 
+// Visor del CMS (US-3): página completa con su propio chrome, fuera de los
+// layouts; todo su contenido llega por API autorizada por request.
+const VisorContenidoPage = lazy(
+  () => import('./components/contenidos/VisorContenidoPage'),
+);
+
 export default function App() {
   // Título del navegador como fuente única de verdad (el <title> de index.html
   // es solo un fallback pre-hidratación).
@@ -57,6 +63,16 @@ export default function App() {
       {/* Auth */}
       <Route path="login" element={<LoginPage />} />
       <Route path="auth/verify" element={<VerifyPage />} />
+
+      {/* Visor de Contenidos (CMS) */}
+      <Route
+        path="contenidos/:slug/*"
+        element={
+          <Suspense fallback={<p style={{ padding: 24 }}>Cargando…</p>}>
+            <VisorContenidoPage />
+          </Suspense>
+        }
+      />
 
       {/* Admin dashboard */}
       <Route element={<DashboardLayout role="admin" />}>

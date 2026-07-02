@@ -75,6 +75,19 @@ export class Grupo extends BaseModel {
     this.set('docusaurus', slugs);
   }
 
+  /**
+   * Colecciones del CMS "Contenidos" asignadas al grupo (array de pointers —
+   * corrige la deuda de docusaurus[] con strings). El acceso del alumno =
+   * unión de las colecciones de sus grupos activos. La UI de asignación y la
+   * migración llegan en la US-6; el visor (US-3) ya lee este campo.
+   */
+  getColecciones(): Parse.Object[] {
+    return this.get('colecciones') ?? [];
+  }
+  setColecciones(colecciones: Parse.Object[]): void {
+    this.set('colecciones', colecciones);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     const materia = this.getMateria();
     // Si la materia (incluida) fue soft-deleted, no la exponemos.

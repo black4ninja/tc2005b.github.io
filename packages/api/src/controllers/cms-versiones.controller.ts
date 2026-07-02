@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import Parse from 'parse/node';
-import { renderMarkdown } from '@tc2005b/contenido-pipeline';
+import { renderMarkdown, extraerToc } from '@tc2005b/contenido-pipeline';
 import { DocumentoVersion } from '../models/DocumentoVersion.js';
 import type { Documento } from '../models/Documento.js';
 import type { AppUser } from '../models/AppUser.js';
@@ -57,10 +57,14 @@ export async function publicarDocumento(req: Request, res: Response): Promise<vo
     const numeroNuevo = (documento.getVersion()?.getNumero() ?? 0) + 1;
     borrador.setNumero(numeroNuevo);
     if (documento.getTipo() === 'md') {
-      borrador.setCuerpoHtml(await renderMarkdown(borrador.getCuerpo()));
+      const cuerpoHtml = await renderMarkdown(borrador.getCuerpo());
+      borrador.setCuerpoHtml(cuerpoHtml);
+      // El TOC se congela junto con el render: el visor lo recibe en el JSON.
+      borrador.setToc(extraerToc(cuerpoHtml));
     } else {
       // Páginas html: el cuerpo crudo se sirve por su endpoint sandboxeado (US-5).
       borrador.setCuerpoHtml('');
+      borrador.setToc([]);
     }
     if (typeof mensaje === 'string' && mensaje.trim()) borrador.setMensaje(mensaje.trim());
     const autor = req.appUser as AppUser | undefined;

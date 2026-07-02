@@ -1,0 +1,96 @@
+/*
+ * Tipografía del contenido renderizado por @tc2005b/contenido-pipeline.
+ * Compartida por el preview del editor y el visor (US-3): una sola fuente
+ * de estilos para el mismo HTML. Ámbito: .contenido-render (+ .tema-oscuro).
+ */
+
+.contenido-render {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+.contenido-render h1 { font-size: 24px; margin: 0 0 12px; }
+.contenido-render h2 { font-size: 19px; margin: 22px 0 8px; }
+.contenido-render h3 { font-size: 16px; margin: 18px 0 6px; }
+.contenido-render p { margin: 10px 0; }
+.contenido-render a { color: var(--sidebar-active-color); }
+.contenido-render img { max-width: 100%; border-radius: 8px; }
+.contenido-render table {
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+.contenido-render th,
+.contenido-render td {
+  border: 1px solid var(--border-color);
+  padding: 6px 12px;
+  text-align: left;
+}
+.contenido-render th { background: var(--bg-page); }
+.contenido-render code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  background: var(--bg-page);
+  padding: 1px 6px;
+  border-radius: 5px;
+}
+.contenido-render pre {
+  background: #0f172a;
+  color: #dbe4f0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  overflow-x: auto;
+}
+.contenido-render pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+.contenido-render blockquote {
+  margin: 12px 0;
+  padding: 4px 14px;
+  border-left: 3px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+/* ── Admonitions (clases que emite el pipeline) ── */
+.contenido-render .admonition {
+  border-left: 4px solid var(--dash-info);
+  background: #eff6ff;
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  margin: 12px 0;
+}
+.contenido-render .admonition-titulo {
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+.contenido-render .admonition-note { border-color: var(--dash-info); background: #eff6ff; }
+.contenido-render .admonition-tip,
+.contenido-render .admonition-info { border-color: var(--dash-success); background: #ecfdf5; }
+.contenido-render .admonition-warning,
+.contenido-render .admonition-caution { border-color: var(--dash-warning); background: #fffbeb; }
+.contenido-render .admonition-danger { border-color: var(--dash-danger); background: #fef2f2; }
+
+/* ── Highlight (clases hljs; tema para el pre oscuro) ── */
+.contenido-render .hljs-keyword { color: #7dd3fc; }
+.contenido-render .hljs-string { color: #86efac; }
+.contenido-render .hljs-number { color: #fbbf24; }
+.contenido-render .hljs-comment { color: #64748b; font-style: italic; }
+.contenido-render .hljs-title { color: #c4b5fd; }
+.contenido-render .hljs-attr,
+.contenido-render .hljs-attribute { color: #fda4af; }
+.contenido-render .hljs-built_in,
+.contenido-render .hljs-literal { color: #fbbf24; }
+.contenido-render .hljs-tag { color: #94a3b8; }
+.contenido-render .hljs-name { color: #7dd3fc; }
+
+/* ── Tema oscuro del visor: hereda variables redefinidas por el contenedor ── */
+.tema-oscuro .contenido-render code { background: #1e293b; }
+.tema-oscuro .contenido-render th { background: #1e293b; }
+.tema-oscuro .contenido-render .admonition-note { background: #172554; }
+.tema-oscuro .contenido-render .admonition-tip,
+.tema-oscuro .contenido-render .admonition-info { background: #052e2b; }
+.tema-oscuro .contenido-render .admonition-warning,
+.tema-oscuro .contenido-render .admonition-caution { background: #422006; }
+.tema-oscuro .contenido-render .admonition-danger { background: #450a0a; }
