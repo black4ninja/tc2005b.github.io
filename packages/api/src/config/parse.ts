@@ -11,18 +11,36 @@ import { config } from './index.js';
  *   S3_BUCKET, S3_REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY
  */
 async function crearFilesAdapter(): Promise<unknown | undefined> {
-  const { S3_BUCKET, S3_REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY } = process.env;
-  if (!S3_BUCKET || !S3_ACCESS_KEY_ID || !S3_SECRET_ACCESS_KEY) return undefined;
+  const vars = {
+    S3_BUCKET: process.env.S3_BUCKET,
+    S3_REGION: process.env.S3_REGION,
+    S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
+    S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
+  };
+  const faltantes = Object.entries(vars).filter(([, v]) => !v).map(([k]) => k);
+
+  // Sin ninguna variable: GridFS a propósito (dev). Con ALGUNA definida, la
+  // intención era S3: degradar en silencio subiría archivos a GridFS que el
+  // adapter S3 nunca podría leer — mejor no arrancar. La región también es
+  // obligatoria: un default equivocado falla en runtime (301 de AWS), no al
+  // arrancar.
+  if (faltantes.length === 4) return undefined;
+  if (faltantes.length > 0) {
+    throw new Error(
+      `Configuración S3 incompleta (faltan: ${faltantes.join(', ')}). ` +
+        'Define las 4 variables S3_* o ninguna (GridFS).',
+    );
+  }
 
   const { default: S3Adapter } = (await import('@parse/s3-files-adapter')) as any;
   return new S3Adapter({
-    bucket: S3_BUCKET,
-    region: S3_REGION || 'us-east-1',
+    bucket: vars.S3_BUCKET,
+    region: vars.S3_REGION,
     directAccess: false,
     s3overrides: {
       credentials: {
-        accessKeyId: S3_ACCESS_KEY_ID,
-        secretAccessKey: S3_SECRET_ACCESS_KEY,
+        accessKeyId: vars.S3_ACCESS_KEY_ID,
+        secretAccessKey: vars.S3_SECRET_ACCESS_KEY,
       },
     },
   });
