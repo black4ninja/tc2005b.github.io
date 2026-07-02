@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contenidos — Diseño del CMS autoadministrable</title>
+<style>
+  /* ── Tokens (mismos de packages/web/src/styles/variables.css) ── */
+  :root {
+    --bg-page: #f8fafc;
+    --bg-card: #ffffff;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --border-color: #e2e8f0;
+    --radius: 12px;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -2px rgba(0,0,0,.05);
+    --sidebar-bg: #ffffff;
+    --sidebar-active-bg: #e8f0fe;
+    --sidebar-active-color: #2563eb;
+    --dash-primary: #5d87ff;
+    --dash-success: #13deb9;
+    --dash-warning: #ffae1f;
+    --dash-danger: #fa896b;
+    --accent: #2563eb;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+  body {
+    margin: 0; background: var(--bg-page); color: var(--text-primary);
+    font: 15px/1.65 Inter, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  /* ── Navegación del documento ── */
+  .docnav {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 260px; overflow-y: auto;
+    background: var(--sidebar-bg); border-right: 1px solid var(--border-color); padding: 20px 12px;
+  }
+  .docnav h1 { font-size: 17px; margin: 4px 8px 2px; color: var(--accent); }
+  .docnav p  { font-size: 12px; margin: 0 8px 14px; color: var(--text-muted); }
+  .docnav a {
+    display: block; padding: 7px 10px; margin: 1px 0; border-radius: 8px;
+    color: var(--text-secondary); text-decoration: none; font-size: 13.5px; font-weight: 500;
+  }
+  .docnav a:hover { background: var(--bg-page); color: var(--text-primary); }
+  .docnav a.active { background: var(--sidebar-active-bg); color: var(--sidebar-active-color); }
+  .docnav .sub { padding-left: 24px; font-weight: 400; font-size: 13px; }
+  main { margin-left: 260px; padding: 36px 44px 90px; max-width: 1120px; }
+  @media (max-width: 900px) { .docnav { display: none; } main { margin: 0; padding: 20px; } }
+
+  /* ── Tipografía y bloques ── */
+  section { margin-bottom: 64px; }
+  h2 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  h2 .num { color: var(--accent); margin-right: 8px; }
+  h3 { font-size: 18px; margin: 30px 0 10px; }
+  h4 { font-size: 15px; margin: 22px 0 8px; }
+  .lead { color: var(--text-secondary); margin: 0 0 18px; max-width: 78ch; }
+  p, li { max-width: 84ch; }
+  code { font-family: var(--mono); font-size: 13px; background: #eef2f7; padding: 1px 6px; border-radius: 5px; }
+  pre { background: #0f172a; color: #dbe4f0; padding: 14px 16px; border-radius: 10px; overflow-x: auto; font-size: 13px; line-height: 1.55; }
+  pre code { background: none; color: inherit; padding: 0; }
+
+  .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 18px 22px; margin: 14px 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 1000px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+
+  .callout { border-left: 4px solid var(--accent); background: #eff6ff; padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 14px 0; }
+  .callout.warn { border-color: var(--dash-warning); background: #fffbeb; }
+  .callout.ok   { border-color: var(--dash-success); background: #ecfdf5; }
+  .callout b:first-child { display: block; margin-bottom: 2px; }
+
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; background: var(--bg-card); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow-sm); font-size: 14px; }
+  th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--border-color); vertical-align: top; }
+  th { background: #f1f5f9; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); }
+  tr:last-child td { border-bottom: none; }
+
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .pill.ok    { background: #d1fae5; color: #065f46; }
+  .pill.warn  { background: #fef3c7; color: #92400e; }
+  .pill.bad   { background: #fee2e2; color: #991b1b; }
+  .pill.info  { background: #e0e7ff; color: #3730a3; }
+  .pill.muted { background: #f1f5f9; color: #475569; }
+
+  /* ── Entidades del modelo ── */
+  .entity { background: var(--bg-card); border: 1px solid var(--border-color); border-top: 4px solid var(--accent); border-radius: 10px; box-shadow: var(--shadow-sm); overflow: hidden; }
+  .entity h5 { margin: 0; padding: 10px 14px; font-size: 14.5px; background: #f8fafc; border-bottom: 1px solid var(--border-color); }
+  .entity h5 small { color: var(--text-muted); font-weight: 400; }
+  .entity ul { list-style: none; margin: 0; padding: 8px 0; }
+  .entity li { padding: 3px 14px; font-family: var(--mono); font-size: 12.5px; color: var(--text-secondary); }
+  .entity li b { color: var(--text-primary); font-weight: 600; }
+  .entity li .t { color: #7c3aed; }
+  .entity li .ptr { color: #059669; font-weight: 600; }
+
+  /* ── Wireframes ── */
+  .wf { border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-md); margin: 16px 0; background: var(--bg-card); }
+  .wf-bar { display: flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 8px 12px; border-bottom: 1px solid var(--border-color); }
+  .wf-bar i { width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; }
+  .wf-bar i:nth-child(1){ background:#fa896b } .wf-bar i:nth-child(2){ background:#ffae1f } .wf-bar i:nth-child(3){ background:#13deb9 }
+  .wf-bar span { margin-left: 8px; font-size: 12px; color: var(--text-muted); font-family: var(--mono); }
+  .wf-body { display: flex; min-height: 300px; }
+  .wf-caption { font-size: 13px; color: var(--text-muted); margin: -8px 0 20px 4px; }
+
+  .wf .side { width: 220px; flex-shrink: 0; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); padding: 12px 8px; font-size: 13px; }
+  .wf .side .hd { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); padding: 4px 10px; }
+  .wf .side .it { padding: 7px 10px; border-radius: 8px; color: var(--text-secondary); cursor: default; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wf .side .it.on { background: var(--sidebar-active-bg); color: var(--sidebar-active-color); font-weight: 600; }
+  .wf .main { flex: 1; padding: 18px 22px; min-width: 0; }
+
+  .btn { display: inline-block; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: default; }
+  .btn.pri { background: var(--dash-primary); color: #fff; }
+  .btn.out { border: 1px solid var(--border-color); color: var(--text-secondary); background: var(--bg-card); }
+  .btn.sm  { padding: 4px 10px; font-size: 12px; }
+
+  /* Árbol de páginas */
+  .tree { list-style: none; margin: 0; padding: 0; font-size: 13.5px; }
+  .tree li { padding: 5px 8px; border-radius: 7px; display: flex; align-items: center; gap: 7px; color: var(--text-secondary); }
+  .tree li:hover { background: var(--bg-page); }
+  .tree li.on { background: var(--sidebar-active-bg); color: var(--sidebar-active-color); font-weight: 600; }
+  .tree .drag { color: #cbd5e1; cursor: grab; font-family: var(--mono); }
+  .tree .cat { font-weight: 600; color: var(--text-primary); }
+  .tree .lvl1 { padding-left: 26px; } .tree .lvl2 { padding-left: 46px; }
+  .tree .tag { margin-left: auto; }
+
+  /* Editor */
+  .ed-toolbar { display: flex; align-items: center; gap: 4px; padding: 7px 10px; border-bottom: 1px solid var(--border-color); background: #f8fafc; flex-wrap: wrap; }
+  .ed-toolbar b { padding: 4px 9px; border-radius: 6px; font-size: 12.5px; color: var(--text-secondary); font-weight: 600; cursor: default; }
+  .ed-toolbar b:hover { background: #e2e8f0; }
+  .ed-toolbar .sep { width: 1px; height: 18px; background: var(--border-color); margin: 0 4px; }
+  .ed-split { display: flex; min-height: 340px; }
+  .ed-src { flex: 1; background: #0f172a; color: #dbe4f0; font-family: var(--mono); font-size: 12.5px; line-height: 1.7; padding: 14px 16px; white-space: pre-wrap; border-right: 1px solid var(--border-color); }
+  .ed-src .k { color: #7dd3fc; } .ed-src .h { color: #fbbf24; font-weight: 700; } .ed-src .c { color: #64748b; } .ed-src .s { color: #86efac; }
+  .ed-prev { flex: 1; padding: 16px 22px; font-size: 14px; overflow: hidden; }
+  .ed-prev h1 { font-size: 21px; margin: 0 0 10px; }
+  .ed-prev .adm { border-left: 4px solid var(--dash-success); background: #ecfdf5; border-radius: 0 8px 8px 0; padding: 8px 12px; margin: 10px 0; font-size: 13.5px; }
+  .ed-prev .adm b { color: #065f46; }
+  .ed-prev pre { margin: 10px 0; padding: 10px 12px; font-size: 12px; }
+  .ed-status { display: flex; align-items: center; gap: 12px; padding: 7px 12px; border-top: 1px solid var(--border-color); background: #f8fafc; font-size: 12px; color: var(--text-muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dash-success); display: inline-block; margin-right: 4px; }
+
+  /* Visor */
+  .vw { background: var(--bg-card); }
+  .vw.dark { background: #0f172a; color: #cbd5e1; }
+  .vw.dark .side, .vw.dark .vw-top { background: #1e293b; border-color: #334155; }
+  .vw.dark .side .it { color: #94a3b8; }
+  .vw.dark .side .it.on { background: #1e3a8a33; color: #7dd3fc; }
+  .vw.dark .toc { border-color: #334155; color: #94a3b8; }
+  .vw.dark h1, .vw.dark .cat { color: #f1f5f9; }
+  .vw-top { display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-bottom: 1px solid var(--border-color); background: var(--bg-card); font-size: 13.5px; }
+  .vw-top .brand { font-weight: 700; color: var(--accent); }
+  .vw-top .search { flex: 1; max-width: 300px; border: 1px solid var(--border-color); border-radius: 8px; padding: 5px 12px; color: var(--text-muted); font-size: 12.5px; background: var(--bg-page); }
+  .vw .toc { width: 170px; flex-shrink: 0; border-left: 1px solid var(--border-color); padding: 14px; font-size: 12px; color: var(--text-muted); }
+  .vw .toc div { padding: 3px 0; } .vw .toc .on { color: var(--accent); font-weight: 600; }
+  .pn { display: flex; justify-content: space-between; margin-top: 22px; gap: 10px; }
+  .pn a { flex: 1; border: 1px solid var(--border-color); border-radius: 10px; padding: 9px 13px; font-size: 12.5px; text-decoration: none; color: var(--text-secondary); }
+  .pn a b { display: block; color: var(--accent); font-size: 13px; }
+  .pn a:last-child { text-align: right; }
+
+  /* Diagrama de arquitectura */
+  .arch { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+  .arch .row { display: flex; gap: 10px; }
+  .arch .box { flex: 1; border: 1.5px solid var(--border-color); border-radius: 10px; padding: 10px 14px; background: var(--bg-card); font-size: 13px; text-align: center; }
+  .arch .box b { display: block; font-size: 13.5px; }
+  .arch .box small { color: var(--text-muted); font-size: 11.5px; }
+  .arch .box.hl { border-color: var(--accent); background: #eff6ff; }
+  .arch .flow { text-align: center; color: var(--text-muted); font-size: 18px; line-height: 1; }
+
+  .toggle-demo { float: right; }
+  footer { color: var(--text-muted); font-size: 12.5px; border-top: 1px solid var(--border-color); padding-top: 16px; }
+</style>
+</head>
+<body>
+
+<nav class="docnav" id="docnav">
+  <h1>Contenidos</h1>
+  <p>Diseño del CMS · v1 · para validación</p>
+  <a href="#resumen">0 · Resumen ejecutivo</a>
+  <a href="#modelo">1 · Modelo de contenido</a>
+  <a href="#seguridad">2 · Seguridad por diseño</a>
+  <a href="#editor">3 · Editor</a>
+  <a href="#visor">4 · Visor</a>
+  <a href="#adminux">5 · Admin — UI/UX</a>
+  <a href="#migracion">6 · Migración</a>
+  <a href="#arquitectura">7 · Arquitectura y API</a>
+  <a href="#roadmap">8 · Roadmap por USs</a>
+  <a href="#validacion">9 · Decisiones a validar</a>
+</nav>
+
+<main>
+
+<!-- ══════════════════ 0 · RESUMEN ══════════════════ -->
+<section id="resumen">
+  <h2><span class="num">0</span>Resumen ejecutivo</h2>
+  <p class="lead"><b>Contenidos</b> es el módulo CMS autoadministrable que reemplaza a Docusaurus en la
+  plataforma. Conserva lo que Docusaurus hace bien —árbol de navegación, experiencia de lectura,
+  Markdown de primera— y corrige lo que no puede dar: <b>control de acceso real por request</b>,
+  edición desde la web y contenido vivo en base de datos.</p>
+
+  <div class="grid3">
+    <div class="card"><b>🔒 Seguro por diseño</b><br><span style="color:var(--text-secondary);font-size:13.5px">
+      El contenido nunca viaja en un bundle estático. Cada página, índice, búsqueda y asset se entrega
+      desde el servidor con autorización por request. Acceso denegado = 404.</span></div>
+    <div class="card"><b>✏️ Editable desde web</b><br><span style="color:var(--text-secondary);font-size:13.5px">
+      Editor tipo VS Code (CodeMirror 6): Markdown con resaltado, preview en vivo, pegado de imágenes,
+      admonitions, tablas… y modo HTML crudo para demos interactivas.</span></div>
+    <div class="card"><b>🗄️ BD única fuente de verdad</b><br><span style="color:var(--text-secondary);font-size:13.5px">
+      Parse/MongoDB con versionado por página (historial y restaurar). Sin sync con archivos:
+      la migración importa el contenido Docusaurus una sola vez, al 100%.</span></div>
+  </div>
+
+  <h3>Por qué reemplazar Docusaurus</h3>
+  <table>
+    <tr><th>Fuga actual (Docusaurus estático + gate)</th><th>Cómo la cierra Contenidos</th></tr>
+    <tr><td>El navbar muestra <b>todas</b> las materias a cualquier usuario (revela estructura ajena).</td>
+        <td>La navegación se <b>calcula por usuario en el servidor</b>: solo ve colecciones permitidas.</td></tr>
+    <tr><td>El SPA precarga bundles/JSON de páginas de otras materias desde el cliente.</td>
+        <td>No hay bundle de contenido: cada página llega por API autorizada; lo no permitido no existe (404).</td></tr>
+    <tr><td>La búsqueda indexa globalmente y sugiere títulos/contenido de otras materias.</td>
+        <td>Búsqueda <b>server-side con scope por permisos</b>: consulta solo colecciones del usuario.</td></tr>
+    <tr><td>Assets (PDF/ZIP/img) en <code>/docs/img</code>, <code>/docs/ppts</code>… son públicos con URL directa.</td>
+        <td>Assets en storage referenciado desde BD, servidos por <b>endpoint gated</b> con la misma autorización.</td></tr>
+  </table>
+
+  <h3>Decisiones clave (resueltas con el usuario)</h3>
+  <ul>
+    <li><b>Migración total:</b> Docusaurus se depreca. El importador preserva el 100% del contenido y la navegación por índice; el chrome (sidebar/topbar/footer) se rediseña.</li>
+    <li><b>Edición solo web:</b> sin sync con archivos — la BD manda. A cambio, el editor debe estar a la altura de VS Code.</li>
+    <li><b>Administración fuera de los grupos:</b> el CMS es una sección propia del admin; los grupos solo <i>consumen</i> vía asignación de colecciones (hereda el patrón <code>Grupo→materia/docusaurus[]</code>).</li>
+    <li><b>Página = <code>.md</code> o <code>.html</code> crudo:</b> el HTML se sirve sandboxeado para demos interactivas.</li>
+  </ul>
+</section>
+
+<!-- ══════════════════ 1 · MODELO ══════════════════ -->
+<section id="modelo">
+  <h2><span class="num">1</span>Modelo de contenido</h2>
+  <p class="lead">Cuatro clases Parse nuevas siguiendo las convenciones del sistema: subclases de
+  <code>Parse.Object</code> vía <code>BaseModel</code>, <b>pointers para toda relación</b> (nunca strings),
+  soft-delete con <code>exists</code>/<code>active</code>, y <code>toSafeJSON()</code> para exponer al cliente.</p>
+
+  <div class="grid2">
+    <div class="entity">
+      <h5>Coleccion <small>— equivale a una instancia Docusaurus</small></h5>
+      <ul>
+        <li><b>nombre</b> <span class="t">string</span> — "Construcción de software…"</li>
+        <li><b>slug</b> <span class="t">string único</span> — "tc2005b" (kebab, ruta)</li>
+        <li><b>clave</b> <span class="t">string</span> — "TC2005B" (nomenclatura CLAVE — Nombre)</li>
+        <li><b>descripcion</b> <span class="t">string?</span></li>
+        <li><b>icono</b> <span class="t">string</span> — Material Icon</li>
+        <li><b>materia</b> <span class="ptr">→ Pointer&lt;Materia&gt;?</span> — vínculo opcional</li>
+        <li><b>publicada</b> <span class="t">boolean</span> — borrador vs visible</li>
+        <li><b>active / exists</b> <span class="t">boolean</span> — patrón BaseModel</li>
+      </ul>
+    </div>
+    <div class="entity">
+      <h5>Documento <small>— una página del árbol</small></h5>
+      <ul>
+        <li><b>coleccion</b> <span class="ptr">→ Pointer&lt;Coleccion&gt;</span></li>
+        <li><b>padre</b> <span class="ptr">→ Pointer&lt;Documento&gt;?</span> — null = raíz</li>
+        <li><b>titulo</b> <span class="t">string</span></li>
+        <li><b>slug</b> <span class="t">string</span> — único por (coleccion, padre)</li>
+        <li><b>tipo</b> <span class="t">'md' | 'html' | 'categoria'</span></li>
+        <li><b>orden</b> <span class="t">number</span> — = sidebar_position</li>
+        <li><b>plantilla</b> <span class="t">'laboratorio'|'lectura'|'temario'|null</span></li>
+        <li><b>version</b> <span class="ptr">→ Pointer&lt;DocumentoVersion&gt;</span> — la publicada</li>
+        <li><b>borrador</b> <span class="ptr">→ Pointer&lt;DocumentoVersion&gt;?</span> — si difiere</li>
+        <li><b>publicado</b> <span class="t">boolean</span></li>
+      </ul>
+    </div>
+    <div class="entity">
+      <h5>DocumentoVersion <small>— historial inmutable</small></h5>
+      <ul>
+        <li><b>documento</b> <span class="ptr">→ Pointer&lt;Documento&gt;</span></li>
+        <li><b>numero</b> <span class="t">number</span> — incremental por documento</li>
+        <li><b>cuerpo</b> <span class="t">string</span> — fuente MD o HTML</li>
+        <li><b>cuerpoHtml</b> <span class="t">string</span> — render cacheado (pipeline unified)</li>
+        <li><b>autor</b> <span class="ptr">→ Pointer&lt;AppUser&gt;</span></li>
+        <li><b>mensaje</b> <span class="t">string?</span> — "qué cambió" (opcional)</li>
+      </ul>
+    </div>
+    <div class="entity">
+      <h5>Recurso <small>— asset adjunto (img/pdf/zip)</small></h5>
+      <ul>
+        <li><b>coleccion</b> <span class="ptr">→ Pointer&lt;Coleccion&gt;</span></li>
+        <li><b>documento</b> <span class="ptr">→ Pointer&lt;Documento&gt;?</span> — o global de colección</li>
+        <li><b>nombre</b> <span class="t">string</span> — nombre de archivo visible</li>
+        <li><b>archivo</b> <span class="t">Parse.File</span> — storage vía files adapter</li>
+        <li><b>mime / bytes</b> <span class="t">string / number</span></li>
+        <li><b>subidoPor</b> <span class="ptr">→ Pointer&lt;AppUser&gt;</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>Asignación a grupos — extiende el modelo actual</b>
+    <code>Grupo</code> gana <code>colecciones: Pointer&lt;Coleccion&gt;[]</code> (array de pointers, no
+    slugs — corrige la deuda del actual <code>docusaurus: string[]</code>). El acceso de un alumno =
+    unión de las colecciones de sus grupos activos, igual que hoy con materia + docusaurus. Durante la
+    transición conviven ambos campos; al deprecar Docusaurus, <code>docusaurus[]</code> se elimina.
+  </div>
+
+  <h3>El árbol reemplaza al sidebar autogenerado</h3>
+  <p>Docusaurus deriva el sidebar de carpetas + <code>_category_.json</code> + <code>sidebar_position</code>.
+  Aquí el árbol <b>es</b> el dato: <code>Documento.padre</code> + <code>orden</code>. Una
+  <code>categoria</code> es un <code>Documento</code> sin cuerpo que agrupa hijos (equivalente a carpeta
+  con <code>_category_.json</code>); si se le da cuerpo, actúa como su página índice
+  (<code>intro.md</code>). Reordenar = drag &amp; drop que reescribe <code>orden</code> — sin renombrar
+  prefijos <code>1_</code>, <code>2_</code>… como hoy.</p>
+
+  <h3>Versionado</h3>
+  <ul>
+    <li>Cada guardado publica o acumula en <b>borrador</b>; "Publicar" congela una <code>DocumentoVersion</code> nueva e incrementa <code>numero</code>.</li>
+    <li>El historial lista versiones con autor/fecha/mensaje; <b>restaurar</b> = crear una versión nueva con el cuerpo de la vieja (nunca se muta el pasado).</li>
+    <li><code>cuerpoHtml</code> se renderiza al publicar (server-side, pipeline de la §3) — servir una página es leer un campo, no re-renderizar.</li>
+  </ul>
+
+  <div class="callout warn">
+    <b>Relación con la clase <code>Pagina</code> existente</b>
+    La actual <code>Pagina</code> (bloques tipados <code>encabezado/objetivos/…</code>, scoped a un grupo)
+    resuelve otro problema: páginas operativas del grupo. <b>Se mantiene intacta.</b> Contenidos es
+    documentación de estudio por colección. Si a futuro conviene converger, una plantilla de Documento
+    puede absorber esos bloques — decisión explícitamente fuera de este alcance.
+  </div>
+</section>
+
+<!-- ══════════════════ 2 · SEGURIDAD ══════════════════ -->
+<section id="seguridad">
+  <h2><span class="num">2</span>Seguridad por diseño</h2>
+  <p class="lead">La regla es una sola: <b>ningún byte de contenido sale del servidor sin pasar por
+  autorización de ese request</b>. El shell de la aplicación (React) es público; el contenido, nunca.</p>
+
+  <h3>Flujo de un request de lectura</h3>
+  <div class="arch">
+    <div class="row">
+      <div class="box"><b>GET /api/contenidos/tc2005b/backend/lab1</b><small>cookie httpOnly ó header x-session-token (getSessionToken ya existente)</small></div>
+    </div>
+    <div class="flow">↓</div>
+    <div class="row">
+      <div class="box"><b>identifyUser</b><small>AppSession → AppUser (middleware actual)</small></div>
+      <div class="box"><b>resolver permisos</b><small>coleccionesPermitidas(user) — cache 60s por usuario, patrón materia.service</small></div>
+    </div>
+    <div class="flow">↓</div>
+    <div class="row">
+      <div class="box hl"><b>¿slug ∈ permitidas?</b><small>NO → 404 (sin filtrar existencia) · SÍ → query Documento publicado</small></div>
+    </div>
+    <div class="flow">↓</div>
+    <div class="row">
+      <div class="box"><b>respuesta JSON</b><small>{ titulo, cuerpoHtml, toc, prev, next, breadcrumb } — solo lo de ESTA página</small></div>
+    </div>
+  </div>
+
+  <h3>Superficies y su gate</h3>
+  <table>
+    <tr><th>Superficie</th><th>Endpoint</th><th>Qué autoriza</th></tr>
+    <tr><td>Índice / navegación</td><td><code>GET /api/contenidos/:col/arbol</code></td><td>Devuelve el árbol <b>solo si</b> la colección está permitida; el "navbar" del visor lista únicamente <code>GET /api/me/colecciones</code>.</td></tr>
+    <tr><td>Página</td><td><code>GET /api/contenidos/:col/pagina/*path</code></td><td>Colección permitida + documento publicado. 404 en cualquier otro caso.</td></tr>
+    <tr><td>Búsqueda</td><td><code>GET /api/contenidos/busqueda?q=…</code></td><td>Índice de texto MongoDB filtrado por <code>coleccion ∈ permitidas</code> — imposible sugerir contenido ajeno.</td></tr>
+    <tr><td>Assets</td><td><code>GET /api/contenidos/recursos/:id/:nombre</code></td><td>Autorización de la colección dueña; el server hace stream del Parse.File. Sin URL pública.</td></tr>
+    <tr><td>HTML crudo</td><td><code>GET /api/contenidos/:col/html/*path</code></td><td>Misma autorización; se sirve para consumo <b>solo dentro de iframe sandbox</b> (§3).</td></tr>
+  </table>
+
+  <h3>Caches e invalidación (patrón ya probado en materia.service)</h3>
+  <ul>
+    <li><b>Por usuario (60s):</b> set de colecciones permitidas — se invalida al cambiar asignaciones de grupo, enrollment o colecciones (mismos hooks que hoy invalidan <code>allowedCache</code>).</li>
+    <li><b>Global (5min):</b> mapa slug→coleccionId publicadas — se invalida en CRUD de colecciones.</li>
+    <li><b>Render:</b> <code>cuerpoHtml</code> se cachea <b>en la versión</b> (BD), no en memoria: publicar invalida por construcción.</li>
+  </ul>
+
+  <h3>Matriz de permisos</h3>
+  <table>
+    <tr><th>Acción</th><th>Admin</th><th>Profesor*</th><th>Alumno</th><th>Anónimo</th></tr>
+    <tr><td>Administrar colecciones (CRUD, publicar)</td><td><span class="pill ok">Sí</span></td><td><span class="pill ok">Sí</span></td><td><span class="pill bad">No</span></td><td><span class="pill bad">No</span></td></tr>
+    <tr><td>Crear/editar/versionar documentos</td><td><span class="pill ok">Sí</span></td><td><span class="pill ok">Sí</span></td><td><span class="pill bad">No</span></td><td><span class="pill bad">No</span></td></tr>
+    <tr><td>Asignar colecciones a grupos</td><td><span class="pill ok">Sí</span></td><td><span class="pill ok">Sí</span></td><td><span class="pill bad">No</span></td><td><span class="pill bad">No</span></td></tr>
+    <tr><td>Leer contenido publicado</td><td><span class="pill ok">Todas</span></td><td><span class="pill ok">Todas</span></td><td><span class="pill info">Solo sus colecciones</span></td><td><span class="pill bad">404</span></td></tr>
+    <tr><td>Leer borradores / historial</td><td><span class="pill ok">Sí</span></td><td><span class="pill ok">Sí</span></td><td><span class="pill bad">No</span></td><td><span class="pill bad">No</span></td></tr>
+    <tr><td>Buscar</td><td><span class="pill ok">Global</span></td><td><span class="pill ok">Global</span></td><td><span class="pill info">Scope propio</span></td><td><span class="pill bad">Vacío</span></td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--text-muted)">* Hoy el sistema tiene <code>userType: admin | alumno</code>; "profesor" = admin. La matriz deja la columna
+  separada para que introducir un rol <code>editor</code> a futuro no requiera rediseño — solo un check adicional en los endpoints de escritura.</p>
+</section>
+
+<!-- ══════════════════ 3 · EDITOR ══════════════════ -->
+<section id="editor">
+  <h2><span class="num">3</span>Editor — potencia de VS Code, en el navegador</h2>
+  <p class="lead">La edición es <b>solo web</b>; el editor debe compensar la pérdida de VS Code.
+  Split-view: fuente con resaltado a la izquierda, preview renderizado en vivo a la derecha.</p>
+
+  <div class="wf">
+    <div class="wf-bar"><i></i><i></i><i></i><span>admin — Contenidos ▸ TC2005B ▸ Backend ▸ Lab 1 · HTML</span></div>
+    <div class="ed-toolbar">
+      <b>B</b><b><i>I</i></b><b>H1▾</b><span class="sep"></span><b>&lt;/&gt;</b><b>🔗</b><b>🖼️ Imagen</b><b>▦ Tabla</b><b>💡 Admonition▾</b><b>📄 Plantilla▾</b>
+      <span style="flex:1"></span>
+      <b title="historial">🕘 v12 ▾</b><span class="btn out sm">Guardar borrador</span><span class="btn pri sm">Publicar</span>
+    </div>
+    <div class="ed-split">
+      <div class="ed-src"><span class="c"># fuente markdown · resaltado CodeMirror 6</span>
+<span class="h"># Lab 1 — Introducción a HTML</span>
+
+En este laboratorio construirás tu primera página.
+
+<span class="k">:::note</span> <span class="s">Antes de empezar</span>
+Necesitas VS Code y la extensión Live Server.
+<span class="k">:::</span>
+
+<span class="k">```html</span>
+<span class="s">&lt;!doctype html&gt;
+&lt;html lang="es"&gt;
+  &lt;body&gt;&lt;h1&gt;Hola&lt;/h1&gt;&lt;/body&gt;
+&lt;/html&gt;</span>
+<span class="k">```</span>
+
+![estructura](recurso:estructura.png) <span class="c">← pegar imagen la sube y referencia</span></div>
+      <div class="ed-prev">
+        <h1>Lab 1 — Introducción a HTML</h1>
+        <p>En este laboratorio construirás tu primera página.</p>
+        <div class="adm"><b>📝 Antes de empezar</b><br>Necesitas VS Code y la extensión Live Server.</div>
+        <pre><code>&lt;!doctype html&gt;
+&lt;html lang="es"&gt;
+  &lt;body&gt;&lt;h1&gt;Hola&lt;/h1&gt;&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+      </div>
+    </div>
+    <div class="ed-status"><span><span class="dot"></span>Borrador guardado · 14:32</span><span>markdown · 128 líneas</span><span style="flex:1"></span><span>⌘S guardar · ⌘⇧P publicar · ⌘K enlace</span></div>
+  </div>
+  <p class="wf-caption">Wireframe del editor: toolbar de inserción, split fuente/preview, selector de versión, autosave de borrador y atajos.</p>
+
+  <h3>Capacidades comprometidas</h3>
+  <div class="grid2">
+    <div class="card"><b>Markdown de primera</b>
+      <ul style="margin:8px 0 0;font-size:13.5px">
+        <li>Resaltado de sintaxis de la fuente (CodeMirror 6)</li>
+        <li>GFM: tablas, task lists, strikethrough</li>
+        <li>Admonitions <code>:::note/tip/warning/danger</code> (remark-directive) — paridad Docusaurus</li>
+        <li>Bloques de código con highlight por lenguaje</li>
+        <li>Atajos: ⌘B/⌘I/⌘K, ⌘S guardar, ⌘⇧P publicar</li>
+      </ul></div>
+    <div class="card"><b>Flujo de trabajo</b>
+      <ul style="margin:8px 0 0;font-size:13.5px">
+        <li>Preview en vivo lado a lado (mismo pipeline que producción → WYSIWYG real)</li>
+        <li>Pegar/arrastrar imagen ⇒ sube <code>Recurso</code> y referencia <code>recurso:</code></li>
+        <li>Autosave a borrador; publicar crea versión (historial + restaurar)</li>
+        <li>Plantillas al crear: laboratorio / lectura / temario (esqueleto MD prellenado)</li>
+      </ul></div>
+  </div>
+
+  <h3>Comparativa de librerías de editor</h3>
+  <table>
+    <tr><th></th><th>CodeMirror 6 <span class="pill ok">recomendado</span></th><th>Monaco (VS Code)</th><th>TipTap / Milkdown (WYSIWYG)</th></tr>
+    <tr><td>Peso aprox.</td><td>~300 KB con extensiones MD</td><td>~3–5 MB</td><td>~500 KB–1 MB</td></tr>
+    <tr><td>Markdown fuente</td><td><span class="pill ok">Excelente</span> lang-markdown, folding</td><td><span class="pill warn">Genérico</span> (pensado para código)</td><td><span class="pill bad">Oculta la fuente</span> (WYSIWYG)</td></tr>
+    <tr><td>Móvil/tablet</td><td><span class="pill ok">Bien soportado</span></td><td><span class="pill bad">No soportado oficialmente</span></td><td><span class="pill ok">Bien</span></td></tr>
+    <tr><td>Modo HTML crudo</td><td><span class="pill ok">lang-html con autocierre</span></td><td><span class="pill ok">Excelente</span></td><td><span class="pill bad">No aplica</span></td></tr>
+    <tr><td>Extensibilidad</td><td>Modular (decoraciones, autocompletado de <code>recurso:</code> y enlaces internos)</td><td>API grande pero monolítica</td><td>Por nodos/plugins</td></tr>
+  </table>
+  <div class="callout ok"><b>Recomendación</b>
+    <b>CodeMirror 6</b> como editor de fuente (MD y HTML) + pipeline <b>unified</b> compartido cliente/servidor:
+    <code>remark-parse → remark-gfm → remark-directive (admonitions) → rehype → rehype-highlight → rehype-sanitize</code>.
+    El mismo pipeline renderiza el preview del editor y el <code>cuerpoHtml</code> publicado — cero divergencia entre lo que se edita y lo que se sirve.
+  </div>
+
+  <h3>Política del HTML crudo (tipo <code>html</code>)</h3>
+  <ul>
+    <li>El HTML de una página <code>html</code> <b>nunca se inyecta en el DOM de la app</b>: se sirve por su endpoint gated y se muestra en <code>&lt;iframe sandbox="allow-scripts"&gt;</code> — sin <code>allow-same-origin</code>, el iframe corre en origen opaco: no ve cookies (que además son httpOnly), ni localStorage, ni la sesión.</li>
+    <li>El endpoint lo entrega con CSP propia (<code>default-src 'self' 'unsafe-inline'; frame-ancestors groups.meeplab.com</code>) para impedir que cargue recursos de terceros no deseados o sea embebido fuera.</li>
+    <li>El Markdown, en cambio, pasa por <code>rehype-sanitize</code> (allowlist) — el HTML inline peligroso se elimina en el render.</li>
+    <li>Solo admin/profesor crean páginas <code>html</code>; el riesgo residual (XSS dentro del iframe aislado) queda confinado a contenido que el propio docente autoría.</li>
+  </ul>
+</section>
+
+<!-- ══════════════════ 4 · VISOR ══════════════════ -->
+<section id="visor">
+  <h2><span class="num">4</span>Visor — leer como en Docusaurus, servido por el servidor</h2>
+  <p class="lead">La experiencia de lectura conserva los patrones que funcionan: árbol lateral, prev/next,
+  TOC de página, tema claro/oscuro, código con highlight. La diferencia es invisible para el alumno:
+  todo lo que ve llegó autorizado por request.
+  <button class="btn out sm toggle-demo" onclick="document.getElementById('vwdemo').classList.toggle('dark')">🌓 Probar tema oscuro</button></p>
+
+  <div class="wf vw" id="vwdemo">
+    <div class="wf-bar"><i></i><i></i><i></i><span>groups.meeplab.com/contenidos/tc2005b/backend/intro-web/lab1-html</span></div>
+    <div class="vw-top">
+      <span class="brand">📘 TC2005B — Construcción de software</span>
+      <span class="search">🔍 Buscar en tus contenidos…</span>
+      <span style="flex:1"></span><span>🌓</span><span>a00889204</span>
+    </div>
+    <div class="wf-body">
+      <div class="side">
+        <div class="hd">Contenido</div>
+        <div class="it">Introducción</div>
+        <div class="it cat">▾ Backend</div>
+        <div class="it" style="padding-left:22px">▾ Introducción Web</div>
+        <div class="it on" style="padding-left:34px">Lab 1 — HTML</div>
+        <div class="it" style="padding-left:34px">Lab 2 — Git</div>
+        <div class="it" style="padding-left:34px">Lab 3 — CSS</div>
+        <div class="it" style="padding-left:22px">▸ Node</div>
+        <div class="it cat">▸ Frontend</div>
+      </div>
+      <div class="main">
+        <div style="font-size:12px;color:var(--text-muted)">Backend / Introducción Web / <b>Lab 1 — HTML</b></div>
+        <h1 style="font-size:22px;margin:8px 0 10px">Lab 1 — Introducción a HTML</h1>
+        <p style="font-size:14px">En este laboratorio construirás tu primera página web y entenderás la anatomía de un documento HTML.</p>
+        <div class="adm" style="border-left:4px solid var(--dash-success);background:#ecfdf5;border-radius:0 8px 8px 0;padding:8px 12px;font-size:13.5px"><b style="color:#065f46">📝 Antes de empezar</b><br>Necesitas VS Code y la extensión Live Server.</div>
+        <pre style="font-size:12px"><code>&lt;!doctype html&gt;
+&lt;html lang="es"&gt; … &lt;/html&gt;</code></pre>
+        <div class="pn">
+          <a href="#visor">← Anterior<b>Introducción</b></a>
+          <a href="#visor">Siguiente →<b>Lab 2 — Git</b></a>
+        </div>
+      </div>
+      <div class="toc">
+        <div class="hd" style="padding:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.05em">En esta página</div>
+        <div class="on">Objetivo</div><div>Anatomía HTML</div><div>Ejercicio</div><div>Entrega</div>
+      </div>
+    </div>
+  </div>
+  <p class="wf-caption">Wireframe del visor (alumno). El árbol lateral solo contiene SUS colecciones; la búsqueda solo consulta su scope. El botón 🌓 de arriba alterna el tema en este mockup.</p>
+
+  <ul>
+    <li><b>Ruta pública:</b> <code>/contenidos/&lt;coleccion&gt;/&lt;path&gt;</code> dentro del SPA existente (React Router). El shell carga sin contenido; el contenido lo trae la API autorizada.</li>
+    <li><b>TOC:</b> se extrae de los headings al publicar y viaja en el JSON de página (no se parsea en cliente).</li>
+    <li><b>Prev/next y breadcrumb:</b> derivados del árbol en servidor — consistentes con lo que el usuario puede ver.</li>
+    <li><b>Código:</b> highlight ya aplicado en <code>cuerpoHtml</code> (rehype-highlight); el visor solo inyecta CSS del tema.</li>
+    <li><b>Página <code>html</code>:</b> el visor muestra el iframe sandbox a pantalla del área de contenido, con el mismo árbol/branding alrededor.</li>
+  </ul>
+</section>
+
+<!-- ══════════════════ 5 · ADMIN UX ══════════════════ -->
+<section id="adminux">
+  <h2><span class="num">5</span>Admin — UI/UX del módulo administrable</h2>
+  <p class="lead">Sección propia <b>"Contenidos"</b> en el sidebar del admin (fuera de los grupos), con la
+  estética del dashboard actual (cards, tokens, AdminTable). Tres niveles: colecciones → árbol → editor.</p>
+
+  <h3>5.1 · Lista de colecciones</h3>
+  <div class="wf">
+    <div class="wf-bar"><i></i><i></i><i></i><span>admin — Contenidos</span></div>
+    <div class="wf-body">
+      <div class="side">
+        <div class="it">Dashboard</div><div class="it">Grupos</div><div class="it">Competencias</div>
+        <div class="it">Actividades</div><div class="it">Páginas</div><div class="it on">Contenidos</div>
+      </div>
+      <div class="main">
+        <div style="display:flex;align-items:center;margin-bottom:12px">
+          <b style="font-size:17px">Colecciones</b><span style="flex:1"></span>
+          <span class="btn out sm">Importar de Docusaurus</span>&nbsp;<span class="btn pri sm">+ Nueva colección</span>
+        </div>
+        <table style="margin:0">
+          <tr><th>Clave</th><th>Nombre</th><th>Páginas</th><th>Grupos</th><th>Estado</th><th></th></tr>
+          <tr><td><b>TC2005B</b></td><td>Construcción de software y toma de decisiones</td><td>540</td><td>2</td><td><span class="pill ok">Publicada</span></td><td>✏️ 👁 🗑</td></tr>
+          <tr><td><b>TC2007B</b></td><td>Integración de seguridad informática en redes y…</td><td>42</td><td>1</td><td><span class="pill ok">Publicada</span></td><td>✏️ 👁 🗑</td></tr>
+          <tr><td><b>TC1004B</b></td><td>Modelación de sistemas con IA</td><td>3</td><td>0</td><td><span class="pill warn">Borrador</span></td><td>✏️ 👁 🗑</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <p class="wf-caption">Colecciones con su clave, conteo de páginas y grupos asignados. "Importar de Docusaurus" ejecuta el importador (§6) hacia una colección nueva.</p>
+
+  <h3>5.2 · Detalle de colección: árbol de páginas</h3>
+  <div class="wf">
+    <div class="wf-bar"><i></i><i></i><i></i><span>admin — Contenidos ▸ TC2005B</span></div>
+    <div class="wf-body">
+      <div class="main" style="max-width:56%">
+        <div style="display:flex;align-items:center;margin-bottom:10px">
+          <b>Árbol de páginas</b><span style="flex:1"></span>
+          <span class="btn out sm">+ Categoría</span>&nbsp;<span class="btn pri sm">+ Página</span>
+        </div>
+        <ul class="tree">
+          <li><span class="drag">⋮⋮</span> 📄 Introducción <span class="tag pill ok">publicada</span></li>
+          <li><span class="drag">⋮⋮</span> <span class="cat">📁 Backend</span></li>
+          <li class="lvl1"><span class="drag">⋮⋮</span> <span class="cat">📁 Introducción Web</span></li>
+          <li class="lvl2 on"><span class="drag">⋮⋮</span> 📄 Lab 1 — HTML <span class="tag pill warn">borrador v13</span></li>
+          <li class="lvl2"><span class="drag">⋮⋮</span> 📄 Lab 2 — Git <span class="tag pill ok">publicada</span></li>
+          <li class="lvl2"><span class="drag">⋮⋮</span> 🧪 Demo Flexbox (HTML) <span class="tag pill ok">publicada</span></li>
+          <li class="lvl1"><span class="drag">⋮⋮</span> <span class="cat">📁 Node</span></li>
+          <li><span class="drag">⋮⋮</span> <span class="cat">📁 Frontend</span></li>
+        </ul>
+      </div>
+      <div class="main" style="border-left:1px solid var(--border-color)">
+        <b style="font-size:14px">Lab 1 — HTML</b>
+        <div style="font-size:13px;color:var(--text-secondary);margin-top:10px;display:grid;gap:8px">
+          <div>Slug &nbsp;<code>lab1-html</code></div>
+          <div>Tipo &nbsp;<span class="pill info">markdown</span></div>
+          <div>Plantilla &nbsp;<span class="pill muted">laboratorio</span></div>
+          <div>Publicada &nbsp;v12 · borrador v13 sin publicar</div>
+          <div>Recursos &nbsp;🖼 estructura.png · 📦 starter.zip</div>
+          <div style="margin-top:6px"><span class="btn pri sm">Abrir editor</span> &nbsp;<span class="btn out sm">🕘 Historial</span> &nbsp;<span class="btn out sm">👁 Ver como alumno</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="wf-caption">Árbol con drag &amp; drop (⋮⋮ reescribe <code>orden</code>/<code>padre</code>), estado por página y panel de metadatos con acceso al editor, historial y vista previa "como alumno".</p>
+
+  <h3>5.3 · Asignación a grupos</h3>
+  <p>Sin pantalla nueva: el <b>editor de grupo actual</b> cambia su multi-select "Docusaurus con acceso"
+  por <b>"Colecciones con acceso"</b> — misma nomenclatura <code>CLAVE — Nombre</code> truncada a una línea,
+  mismo patrón de checkboxes. El submenú del sidebar de detalle de grupo (US reciente) pasa a listar
+  colecciones y enlaza a <code>/contenidos/&lt;slug&gt;/</code>.</p>
+
+  <h3>5.4 · Historial de versiones</h3>
+  <div class="card" style="max-width:640px">
+    <b style="font-size:14px">🕘 Historial — Lab 1 — HTML</b>
+    <table style="margin:10px 0 0;box-shadow:none">
+      <tr><td><b>v13</b> <span class="pill warn">borrador</span></td><td>afdez · hoy 14:32</td><td>"nuevo ejercicio flexbox"</td><td><span class="btn out sm">Ver</span></td></tr>
+      <tr><td><b>v12</b> <span class="pill ok">publicada</span></td><td>afdez · 28 jun</td><td>"fix enlaces rotos"</td><td><span class="btn out sm">Ver</span></td></tr>
+      <tr><td><b>v11</b></td><td>afdez · 20 jun</td><td>"importado de Docusaurus"</td><td><span class="btn out sm">Ver</span> <span class="btn out sm">Restaurar</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════ 6 · MIGRACIÓN ══════════════════ -->
+<section id="migracion">
+  <h2><span class="num">6</span>Migración desde Docusaurus</h2>
+  <p class="lead">Importador CLI (patrón de los scripts de migración existentes, con <code>--dry-run</code>)
+  que traduce cada instancia a una colección <b>preservando el 100% del contenido y la navegación por índice</b>.</p>
+
+  <h3>Mapeo Docusaurus → Contenidos</h3>
+  <table>
+    <tr><th>Docusaurus</th><th>Contenidos</th></tr>
+    <tr><td>Instancia (<code>docs/tc2005b</code>, plugin <code>tc2007b</code>)</td><td><code>Coleccion</code> (slug = routeBasePath)</td></tr>
+    <tr><td>Carpeta + <code>_category_.json</code> (label, position)</td><td><code>Documento tipo categoria</code> (titulo = label, orden = position)</td></tr>
+    <tr><td>Archivo <code>.md</code> + frontmatter <code>sidebar_position</code></td><td><code>Documento tipo md</code> (orden = sidebar_position, v1 = "importado de Docusaurus")</td></tr>
+    <tr><td>Imágenes relativas junto al .md</td><td><code>Recurso</code> del documento; enlace reescrito a <code>recurso:</code></td></tr>
+    <tr><td>Assets de <code>static/</code> (img/ppts/ios/mongo…)</td><td><code>Recurso</code> de colección; enlaces absolutos <code>/img/…</code> reescritos</td></tr>
+    <tr><td>Enlaces internos entre páginas (relativos y absolutos)</td><td>Reescritos a rutas de colección; el importador reporta los que no resuelven</td></tr>
+    <tr><td>Admonitions, tablas GFM, code blocks</td><td>Idénticos — el pipeline soporta la misma sintaxis</td></tr>
+    <tr><td>Páginas <code>.html</code> sueltas (p. ej. <code>tacticas-arqui.html</code>)</td><td><code>Documento tipo html</code> (sandbox)</td></tr>
+  </table>
+
+  <h3>Redirects</h3>
+  <ul>
+    <li><code>/docs/&lt;slug&gt;/&lt;path&gt;</code> → <code>/contenidos/&lt;slug&gt;/&lt;path&gt;</code> — 301 en Express (tabla generada por el importador, incluye los redirects legacy que hoy resuelve el plugin client-redirects).</li>
+    <li>Los enlaces en BD (<code>Pagina</code> registradas) y en datos (<code>data/labs/*</code>) se migran con un script tipo <code>migrate-paginas-docs-url.ts</code>, como en la US de simplificación de URLs.</li>
+  </ul>
+
+  <h3>Plan de deprecación de <code>packages/docusaurus</code></h3>
+  <table>
+    <tr><th>Fase</th><th>Estado</th><th>Salida</th></tr>
+    <tr><td><b>1 · Paralelo</b></td><td>CMS activo con contenido importado; Docusaurus sigue sirviendo <code>/docs</code>.</td><td>Validación de paridad página por página (checklist del importador).</td></tr>
+    <tr><td><b>2 · Corte</b></td><td>Freeze de edición en Docusaurus; 301 <code>/docs/* → /contenidos/*</code>; links de la plataforma actualizados.</td><td>Docusaurus ya no recibe tráfico directo.</td></tr>
+    <tr><td><b>3 · Retiro</b></td><td>Se elimina <code>packages/docusaurus</code>, su paso de build y el middleware <code>docs-gate</code>; <code>Grupo.docusaurus[]</code> se elimina tras migrar asignaciones a <code>colecciones[]</code>.</td><td>Un solo sistema de contenido.</td></tr>
+  </table>
+  <div class="callout warn"><b>Regla de la fase 1</b>
+  No se depreca nada hasta comprobar en producción que cada página importada abre, navega y descarga sus
+  recursos igual que su original. El importador emite un reporte de paridad (páginas, enlaces reescritos,
+  enlaces rotos preexistentes, assets migrados).</div>
+</section>
+
+<!-- ══════════════════ 7 · ARQUITECTURA ══════════════════ -->
+<section id="arquitectura">
+  <h2><span class="num">7</span>Arquitectura y API</h2>
+
+  <div class="arch">
+    <div class="row">
+      <div class="box"><b>SPA React (packages/web)</b><small>Admin: Contenidos (árbol + editor CodeMirror 6) · Visor /contenidos/* · shell público sin contenido</small></div>
+    </div>
+    <div class="flow">↕ JSON autorizado (cookie httpOnly / x-session-token)</div>
+    <div class="row">
+      <div class="box hl"><b>API Express (packages/api)</b><small>identifyUser → permisos (cache 60s) → controllers contenidos · pipeline unified server-side · búsqueda con scope</small></div>
+    </div>
+    <div class="flow">↕ Parse SDK (masterKey en server)</div>
+    <div class="row">
+      <div class="box"><b>Parse Server + MongoDB Atlas</b><small>Coleccion · Documento · DocumentoVersion · Recurso · índice de texto (titulo, cuerpo)</small></div>
+      <div class="box"><b>Storage de archivos</b><small>Parse.File (files adapter GridFS/S3) — nunca expuesto directo: stream vía endpoint gated</small></div>
+    </div>
+  </div>
+
+  <h3>Rutas API propuestas</h3>
+  <table>
+    <tr><th>Método · Ruta</th><th>Auth</th><th>Descripción</th></tr>
+    <tr><td><code>GET /api/me/colecciones</code></td><td>usuario</td><td>Colecciones permitidas (reemplaza <code>/api/me/materias</code> del gate actual)</td></tr>
+    <tr><td><code>GET /api/contenidos/:col/arbol</code></td><td>usuario</td><td>Árbol de navegación de la colección (404 si no permitida)</td></tr>
+    <tr><td><code>GET /api/contenidos/:col/pagina/*path</code></td><td>usuario</td><td>Página publicada: cuerpoHtml, toc, prev/next, breadcrumb</td></tr>
+    <tr><td><code>GET /api/contenidos/:col/html/*path</code></td><td>usuario</td><td>Documento html crudo (para iframe sandbox, con CSP)</td></tr>
+    <tr><td><code>GET /api/contenidos/busqueda?q=</code></td><td>usuario</td><td>Búsqueda full-text con scope por permisos</td></tr>
+    <tr><td><code>GET /api/contenidos/recursos/:id/:nombre</code></td><td>usuario</td><td>Stream del asset si su colección está permitida</td></tr>
+    <tr><td><code>CRUD /api/admin/colecciones[/:id]</code></td><td>admin</td><td>Colecciones + publicar/despublicar</td></tr>
+    <tr><td><code>CRUD /api/admin/colecciones/:id/documentos[/:docId]</code></td><td>admin</td><td>Documentos: crear (con plantilla), meta, mover/reordenar (padre+orden), borrar (soft)</td></tr>
+    <tr><td><code>PUT /api/admin/documentos/:id/borrador</code> · <code>POST …/publicar</code></td><td>admin</td><td>Autosave de borrador · publicar (crea DocumentoVersion, renderiza cuerpoHtml)</td></tr>
+    <tr><td><code>GET /api/admin/documentos/:id/versiones</code> · <code>POST …/versiones/:n/restaurar</code></td><td>admin</td><td>Historial · restaurar como versión nueva</td></tr>
+    <tr><td><code>POST /api/admin/recursos</code> (multipart)</td><td>admin</td><td>Subida de asset (pegado de imagen del editor incluido)</td></tr>
+  </table>
+
+  <p><b>Rutas de UI (React Router):</b> <code>/admin/contenidos</code>, <code>/admin/contenidos/:col</code>,
+  <code>/admin/contenidos/:col/editar/*path</code> y el visor <code>/contenidos/:col/*path</code>.</p>
+</section>
+
+<!-- ══════════════════ 8 · ROADMAP ══════════════════ -->
+<section id="roadmap">
+  <h2><span class="num">8</span>Roadmap por USs / PRs</h2>
+  <p class="lead">Cada US = rama + PR + code review inline (Conventional Branch/Commits, CONTRIBUTING.md).
+  El orden minimiza riesgo: primero el esqueleto seguro, al final el corte de Docusaurus.</p>
+  <table>
+    <tr><th>US</th><th>Rama</th><th>Alcance</th><th>Depende de</th></tr>
+    <tr><td><b>US-0</b></td><td><code>docs/cms-contenidos-design</code></td><td>Este documento. Validación del diseño.</td><td>—</td></tr>
+    <tr><td><b>US-1</b> Modelo + admin base</td><td><code>feature/cms-modelo</code></td><td>Clases Parse (Coleccion, Documento, DocumentoVersion, Recurso), CRUD API admin, páginas admin: lista de colecciones y árbol (sin editor rico aún, textarea provisional).</td><td>US-0 aprobado</td></tr>
+    <tr><td><b>US-2</b> Editor</td><td><code>feature/cms-editor</code></td><td>CodeMirror 6 + pipeline unified compartido, preview vivo, autosave borrador, publicar, versionado + historial/restaurar, plantillas.</td><td>US-1</td></tr>
+    <tr><td><b>US-3</b> Visor + gate</td><td><code>feature/cms-visor</code></td><td>Endpoints de lectura con permisos + caches, visor (árbol, TOC, prev/next, temas), 404, sidebar dinámico de la plataforma.</td><td>US-1</td></tr>
+    <tr><td><b>US-4</b> Recursos</td><td><code>feature/cms-recursos</code></td><td>Subida/stream gated de assets, pegado de imágenes en el editor, gestor de recursos por página/colección.</td><td>US-2, US-3</td></tr>
+    <tr><td><b>US-5</b> Búsqueda + HTML crudo</td><td><code>feature/cms-busqueda-html</code></td><td>Índice de texto + endpoint con scope; tipo <code>html</code> end-to-end (editor, endpoint CSP, iframe sandbox).</td><td>US-3</td></tr>
+    <tr><td><b>US-6</b> Importador + asignación</td><td><code>feature/cms-importador</code></td><td>Importador Docusaurus (dry-run + reporte de paridad), <code>Grupo.colecciones[]</code>, GrupoForm y submenú de grupo actualizados, redirects 301.</td><td>US-4, US-5</td></tr>
+    <tr><td><b>US-7</b> Deprecación</td><td><code>chore/docusaurus-retiro</code></td><td>Fase 2 y 3 del plan §6: freeze, corte de tráfico, retiro de packages/docusaurus, docs-gate y <code>docusaurus[]</code>.</td><td>US-6 validada en prod</td></tr>
+  </table>
+</section>
+
+<!-- ══════════════════ 9 · VALIDACIÓN ══════════════════ -->
+<section id="validacion">
+  <h2><span class="num">9</span>Decisiones a validar antes de implementar</h2>
+  <table>
+    <tr><th>#</th><th>Decisión propuesta</th><th>Alternativa</th></tr>
+    <tr><td>1</td><td>Ruta pública <code>/contenidos/&lt;slug&gt;/…</code> y nombre del módulo "Contenidos".</td><td>Mantener <code>/docs/…</code> (evita redirects pero mezcla mundos durante la transición).</td></tr>
+    <tr><td>2</td><td>Editor CodeMirror 6 (fuente visible, ligero, móvil).</td><td>Monaco si se prioriza fidelidad VS Code sobre peso/móvil.</td></tr>
+    <tr><td>3</td><td>Nombres de clases en español: <code>Coleccion / Documento / DocumentoVersion / Recurso</code>.</td><td>Otra nomenclatura (p. ej. reutilizar "Materia" como colección 1:1).</td></tr>
+    <tr><td>4</td><td>Borrador único por documento (autosave sobre el mismo borrador hasta publicar).</td><td>Draft por autor (necesario solo si editan varios a la vez).</td></tr>
+    <tr><td>5</td><td>Storage vía Parse.File con el files adapter actual (GridFS).</td><td>S3/Backblaze si el volumen de assets crece (hoy ~140 MB en tc2007b).</td></tr>
+    <tr><td>6</td><td>La clase <code>Pagina</code> (bloques por grupo) se mantiene aparte.</td><td>Absorberla como plantilla de Documento (fuera de alcance propuesto).</td></tr>
+    <tr><td>7</td><td>Límite de subida de assets: 50 MB/archivo (cubre los ZIP/PDF actuales).</td><td>Otro límite / bloquear ciertos tipos.</td></tr>
+  </table>
+  <div class="callout ok"><b>Criterio de éxito de esta fase</b>
+  Con este documento se puede validar: modelo de datos (§1), flujo y matriz de permisos (§2),
+  editor y su librería (§3), visor (§4), UI/UX del admin (§5), estrategia de migración (§6),
+  arquitectura/API (§7) y roadmap (§8). Nada de código de producción hasta aprobarlo.</div>
+  <footer>Contenidos — documento de diseño v1 · plataforma groups.meeplab.com · generado para validación previa a implementación.</footer>
+</section>
+
+</main>
+
+<script>
+  // Resaltar la sección activa en la navegación del documento.
+  const links = [...document.querySelectorAll('#docnav a')];
+  const sections = links.map(a => document.querySelector(a.getAttribute('href')));
+  const onScroll = () => {
+    let idx = sections.findLastIndex(s => s && s.getBoundingClientRect().top < 120);
+    if (idx < 0) idx = 0;
+    links.forEach((a, i) => a.classList.toggle('active', i === idx));
+  };
+  document.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+</script>
+</body>
+</html>
