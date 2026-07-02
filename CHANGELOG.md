@@ -22,6 +22,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   Se removieron los workflows de GitHub Pages, `.nojekyll` y el hack SPA `?/`.
 
 ### Added
+- **CMS "Contenidos" (US-3)**: visor de lectura `/contenidos/<slug>/...` con
+  autorización por request (árbol, TOC, breadcrumb y prev/next calculados en
+  servidor; no permitido = 404), caches de permisos con invalidación y tema
+  claro/oscuro. Tests unitarios de la poda de seguridad y la sanitización.
 - **CMS "Contenidos" (US-2)**: editor CodeMirror 6 con preview en vivo
   (`/admin/contenidos/:id/editar/:docId`), autosave a borrador único,
   publicar con versionado (`cuerpoHtml` renderizado en servidor), historial

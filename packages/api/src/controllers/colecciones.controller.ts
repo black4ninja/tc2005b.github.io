@@ -1,6 +1,16 @@
 import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { Coleccion } from '../models/Coleccion.js';
+import {
+  invalidateColeccionSlugsCache,
+  invalidateColeccionesPermitidas,
+} from '../services/contenidos.service.js';
+
+/** El conjunto/estado de colecciones cambió: invalidar caches del visor. */
+function invalidarCachesVisor(): void {
+  invalidateColeccionSlugsCache();
+  invalidateColeccionesPermitidas();
+}
 
 const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -60,6 +70,7 @@ export async function createColeccion(req: Request, res: Response): Promise<void
     coleccion.setPublicada(false); // nace como borrador
 
     await coleccion.save(null, { useMasterKey: true });
+    invalidarCachesVisor();
 
     res.status(201).json({ status: 'ok', coleccion: coleccion.toSafeJSON() });
   } catch (error) {
@@ -112,6 +123,8 @@ export async function updateColeccion(req: Request, res: Response): Promise<void
     if (publicada !== undefined) coleccion.setPublicada(publicada === true);
 
     await coleccion.save(null, { useMasterKey: true });
+    // slug/publicada pudieron cambiar → el gate del visor debe verlo ya.
+    invalidarCachesVisor();
 
     res.json({ status: 'ok', coleccion: coleccion.toSafeJSON() });
   } catch (error: any) {
@@ -135,6 +148,7 @@ export async function deleteColeccion(req: Request, res: Response): Promise<void
     // porque todo acceso pasa por la existencia de la colección).
     coleccion.softDelete();
     await coleccion.save(null, { useMasterKey: true });
+    invalidarCachesVisor();
 
     res.json({ status: 'ok', message: 'Colección eliminada' });
   } catch (error: any) {

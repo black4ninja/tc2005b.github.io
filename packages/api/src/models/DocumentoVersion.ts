@@ -47,6 +47,14 @@ export class DocumentoVersion extends BaseModel {
     this.set('cuerpoHtml', cuerpoHtml);
   }
 
+  /** TOC (h2/h3 con ancla) extraído al publicar — el visor no parsea HTML. */
+  getToc(): { id: string; titulo: string; nivel: number }[] {
+    return this.get('toc') ?? [];
+  }
+  setToc(toc: { id: string; titulo: string; nivel: number }[]): void {
+    this.set('toc', toc);
+  }
+
   getAutor(): AppUser | undefined {
     return this.get('autor');
   }

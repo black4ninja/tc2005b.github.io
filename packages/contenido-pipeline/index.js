@@ -14,6 +14,7 @@ import remarkGfm from 'remark-gfm';
 import remarkDirective from 'remark-directive';
 import remarkRehype from 'remark-rehype';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+import rehypeSlug from 'rehype-slug';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeStringify from 'rehype-stringify';
 import { visit } from 'unist-util-visit';
@@ -67,6 +68,9 @@ function remarkAdmonitions() {
 // aquí: se sirve aparte, sandboxeado (US-5).
 const ESQUEMA_SANITIZE = {
   ...defaultSchema,
+  // Sin prefijo de clobbering: los ids de headings los genera rehype-slug
+  // DESPUÉS de sanitizar (contenido ya confiable) y el TOC ancla contra ellos.
+  clobberPrefix: '',
   attributes: {
     ...defaultSchema.attributes,
     div: [...(defaultSchema.attributes?.div ?? []), ['className', 'admonition', /^admonition-/]],
@@ -82,6 +86,7 @@ const procesador = unified()
   .use(remarkAdmonitions)
   .use(remarkRehype)
   .use(rehypeSanitize, ESQUEMA_SANITIZE)
+  .use(rehypeSlug)
   .use(rehypeHighlight, { detect: false })
   .use(rehypeStringify);
 
@@ -124,11 +129,30 @@ function normalizarAdmonitions(cuerpo) {
 }
 
 /**
- * Renderiza Markdown (GFM + admonitions) a HTML sanitizado con highlight.
+ * Renderiza Markdown (GFM + admonitions) a HTML sanitizado con highlight
+ * e ids en los headings (anclas del TOC).
  * @param {string} cuerpo - fuente Markdown
  * @returns {Promise<string>} HTML listo para servir/mostrar
  */
 export async function renderMarkdown(cuerpo) {
   const archivo = await procesador.process(normalizarAdmonitions(cuerpo ?? ''));
   return String(archivo);
+}
+
+const RE_HEADING = /<h([23]) id="([^"]+)"[^>]*>([\s\S]*?)<\/h\1>/g;
+const RE_TAGS = /<[^>]+>/g;
+
+/**
+ * Extrae el TOC (h2/h3 con id) del HTML ya renderizado por este pipeline.
+ * Se calcula al PUBLICAR y viaja en el JSON de página — el cliente no parsea.
+ * @param {string} html
+ * @returns {{ id: string, titulo: string, nivel: number }[]}
+ */
+export function extraerToc(html) {
+  const toc = [];
+  for (const m of (html ?? '').matchAll(RE_HEADING)) {
+    const titulo = m[3].replace(RE_TAGS, '').trim();
+    if (titulo) toc.push({ id: m[2], titulo, nivel: Number(m[1]) });
+  }
+  return toc;
 }

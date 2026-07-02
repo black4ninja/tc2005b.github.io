@@ -34,18 +34,38 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
     }
   }, [role, user?.grupos]);
 
-  // Link a la documentación del usuario: si tiene una sola materia, enlaza
-  // directo a /docs/<slug>/; si tiene varias (o ninguna), a la landing /docs/.
+  // Link "Documentación" del usuario. Para ALUMNOS con colecciones del CMS
+  // asignadas (US-6), apunta al visor /contenidos/<slug>/; si no, aplica el
+  // esquema Docusaurus actual (materia única → /docs/<slug>/, si no la
+  // landing). El admin conserva /docs/ mientras Docusaurus siga operativo
+  // (US-7) — su acceso al CMS es la sección "Contenidos".
   useEffect(() => {
     if (!sessionToken) return;
-    fetch('/api/me/materias', { headers: { 'x-session-token': sessionToken } })
+    const headers = { 'x-session-token': sessionToken };
+    const porMaterias = () =>
+      fetch('/api/me/materias', { headers })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((json) => {
+          const materias: { slug: string }[] = json?.materias ?? [];
+          setDocsHref(materias.length === 1 ? `/docs/${materias[0].slug}/` : '/docs/');
+        });
+
+    if (role !== 'alumno') {
+      porMaterias().catch(() => {});
+      return;
+    }
+    fetch('/api/me/colecciones', { headers })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
-        const materias: { slug: string }[] = json?.materias ?? [];
-        setDocsHref(materias.length === 1 ? `/docs/${materias[0].slug}/` : '/docs/');
+        const colecciones: { slug: string }[] = json?.colecciones ?? [];
+        if (colecciones.length > 0) {
+          setDocsHref(`/contenidos/${colecciones[0].slug}/`);
+          return;
+        }
+        return porMaterias();
       })
       .catch(() => {});
-  }, [sessionToken]);
+  }, [sessionToken, role]);
 
   useEffect(() => {
     if (role !== 'alumno' || !selectedGrupoId || !sessionToken) return;
