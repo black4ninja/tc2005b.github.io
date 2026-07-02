@@ -94,7 +94,9 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
 
   try {
     const query = BaseModel.queryActive<Grupo>('Grupo');
-    query.include('materia' as any);
+    // colecciones incluidas: toSafeJSON serializa pointers y sin fetch
+    // respondería nulls (y no podría filtrar soft-deleted).
+    query.include(['materia', 'colecciones'] as any);
     const grupo = await query.get(id, { useMasterKey: true });
 
     if (name !== undefined) {
@@ -151,6 +153,7 @@ export async function archiveGrupo(req: Request, res: Response): Promise<void> {
   try {
     const query = new Parse.Query<Grupo>('Grupo');
     query.equalTo('exists' as any, true as any);
+    query.include(['materia', 'colecciones'] as any);
     const grupo = await query.get(id, { useMasterKey: true });
 
     if (grupo.get('active')) {

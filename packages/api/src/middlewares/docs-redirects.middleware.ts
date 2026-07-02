@@ -10,14 +10,19 @@ import { fileURLToPath } from 'url';
  * corte de la US-7. Se enciende con REDIRECT_DOCS_A_CONTENIDOS=true en el
  * .env del servidor (fase 2 del plan de deprecación).
  *
- * Mapa exacto: src/data/redirects-docs.json, generado por
- * scripts/importar-docusaurus.ts (viejo → nuevo por página). Fallback
- * heurístico para paths que no estén en el mapa: minúsculas + prefijos
- * numéricos fuera + separadores a guion (la convención de slugs del CMS).
+ * Se monta DESPUÉS de docsGate: la autorización corre primero — un usuario
+ * sin acceso recibe el mismo 404 de siempre y el redirect jamás le filtra
+ * slugs/estructura del CMS.
+ *
+ * Mapa exacto: data/redirects-docs.json (raíz del paquete, fuera de src/ —
+ * tsc no copia .json a dist y el runtime de producción es dist/), generado
+ * por scripts/importar-docusaurus.ts. Fallback heurístico para lo que no
+ * esté en el mapa.
  */
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const RUTA_MAPA = path.resolve(__dirname, '../data/redirects-docs.json');
+// src/middlewares → ../../data  |  dist/middlewares → ../../data (misma raíz)
+const RUTA_MAPA = path.resolve(__dirname, '../../data/redirects-docs.json');
 
 let mapa: Record<string, string> = {};
 try {
@@ -30,12 +35,16 @@ try {
 
 export const redirectsActivos = process.env.REDIRECT_DOCS_A_CONTENIDOS === 'true';
 
-/** Heurística viejo→nuevo por segmento (mismas reglas que el importador). */
-function heuristica(pathname: string): string {
-  const segmentos = pathname
+/**
+ * Heurística viejo→nuevo por segmento (mismas reglas de slug que el
+ * importador). Recibe el path SIN el prefijo /docs (montado en '/docs',
+ * express lo quita de req.path) — el primer segmento es el slug de la
+ * colección y se conserva.
+ */
+function heuristica(pathSinDocs: string): string {
+  const segmentos = pathSinDocs
     .split('/')
     .filter(Boolean)
-    .slice(1) // quita "docs"
     .map((s) =>
       decodeURIComponent(s)
         .replace(/^[\d.]+[-_]/, '')
@@ -54,7 +63,8 @@ export function docsRedirects(req: Request, res: Response, next: NextFunction): 
     next();
     return;
   }
-  const pathname = req.path.replace(/\/+$/, '');
-  const exacto = mapa[pathname];
-  res.redirect(301, exacto ?? heuristica(pathname));
+  // Montado en '/docs': req.path NO incluye el prefijo; el mapa sí lo lleva.
+  const pathSinDocs = req.path.replace(/\/+$/, '');
+  const exacto = mapa[`/docs${pathSinDocs}`];
+  res.redirect(301, exacto ?? heuristica(pathSinDocs));
 }

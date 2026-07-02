@@ -35,7 +35,9 @@ import { Recurso } from '../src/models/Recurso.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ_DOCUSAURUS = path.resolve(__dirname, '../../docusaurus');
-const RUTA_REDIRECTS = path.resolve(__dirname, '../src/data/redirects-docs.json');
+// Fuera de src/: tsc no copia .json a dist y producción corre desde dist/.
+// src/middlewares y dist/middlewares resuelven ambos a esta misma ruta.
+const RUTA_REDIRECTS = path.resolve(__dirname, '../data/redirects-docs.json');
 
 /* ── CLI ── */
 function arg(nombre: string): string | undefined {
@@ -105,6 +107,8 @@ interface NodoImport {
   orden: number;
   archivo?: string;     // ruta absoluta del .md/.html
   cuerpo?: string;
+  /** README.md: Docusaurus lo sirve en la URL de la CARPETA (índice). */
+  esReadme?: boolean;
   hijos: NodoImport[];
 }
 
@@ -183,14 +187,17 @@ function leerDirectorio(dir: string): NodoImport[] {
       const { cuerpo, sidebarPosition, title } = parseFrontmatter(src);
       const base = e.name.slice(0, -ext.length);
       const prefijo = base.match(/^([\d.]+)[-_]/);
+      // README.md = página índice de la carpeta en Docusaurus: va primero.
+      const esReadme = /^readme$/i.test(base) || /^index$/i.test(base);
       nodos.push({
         tipo: 'md',
         titulo: title ?? tituloDesdeCuerpo(cuerpo, segmentoDocusaurus(base)),
         slug: slugCms(base),
         segmentoUrl: segmentoDocusaurus(base),
-        orden: sidebarPosition ?? (prefijo ? Number(prefijo[1]) : 999),
+        orden: esReadme ? -1 : (sidebarPosition ?? (prefijo ? Number(prefijo[1]) : 999)),
         archivo: ruta,
         cuerpo,
+        esReadme,
         hijos: [],
       });
       reporte.paginas += 1;
@@ -230,7 +237,11 @@ const MIME_POR_EXT: Record<string, string> = {
   html: 'text/html', sql: 'text/plain', css: 'text/css', js: 'text/javascript',
 };
 
-async function subirRecurso(rutaAbs: string, coleccion: Coleccion | null): Promise<string | null> {
+async function subirRecurso(
+  rutaAbs: string,
+  coleccion: Coleccion | null,
+  documento: Documento | null,
+): Promise<string | null> {
   const previa = recursosSubidos.get(rutaAbs);
   if (previa) return previa;
   if (!fs.existsSync(rutaAbs) || !fs.statSync(rutaAbs).isFile()) return null;
@@ -248,6 +259,8 @@ async function subirRecurso(rutaAbs: string, coleccion: Coleccion | null): Promi
 
   const recurso = new Recurso().initDefaults();
   recurso.setColeccion(coleccion!);
+  // Dueño: el documento que lo referenció primero (los de static/ son de colección).
+  recurso.setDocumento(documento);
   recurso.setNombre(nombre);
   recurso.setArchivo(parseFile);
   recurso.setMime(mime);
@@ -271,7 +284,10 @@ function indexarPaths(nodos: NodoImport[], prefijo = ''): void {
   }
 }
 
-const RE_ENLACE_MD = /(!?)\[([^\]]*)\]\(([^)\s]+)(\s+"[^"]*")?\)/g;
+// URL con UN nivel de paréntesis balanceados: nombres reales de capturas de
+// pantalla incluyen "(s)" — con [^)\s]+ el enlace se truncaba y se ignoraba
+// en silencio.
+const RE_ENLACE_MD = /(!?)\[([^\]]*)\]\(<?([^()\s]*(?:\([^()\s]*\)[^()\s]*)*)>?(\s+"[^"]*")?\)/g;
 
 /** Rangos [inicio, fin) de comentarios HTML (contenido legacy comentado). */
 function rangosComentarios(cuerpo: string): [number, number][] {
@@ -282,66 +298,97 @@ function rangosComentarios(cuerpo: string): [number, number][] {
   return rangos;
 }
 
-async function reescribirCuerpo(cuerpo: string, dirMd: string, coleccion: Coleccion | null): Promise<string> {
-  const tareas: { original: string; nueva: string }[] = [];
+async function reescribirCuerpo(
+  cuerpo: string,
+  dirMd: string,
+  coleccion: Coleccion | null,
+  documento: Documento | null,
+): Promise<string> {
+  // Ediciones POSICIONALES [inicio, fin) — replace() de primera ocurrencia
+  // reescribía la copia comentada (o el texto del enlace) en vez del href.
+  const ediciones: { inicio: number; fin: number; texto: string }[] = [];
   const comentarios = rangosComentarios(cuerpo);
 
+  const resolverInterno = (url: string): string | null => {
+    const base = url.startsWith('/')
+      ? path.join(RAIZ_DOCUSAURUS, 'docs', slugColeccion!, decodeURIComponent(url))
+      : path.resolve(dirMd, decodeURIComponent(url));
+    // Candidatos: el archivo tal cual, .md/.mdx implícitos, o el índice de
+    // carpeta (README/readme/index — el repo usa ambos cases).
+    const candidatos = [
+      base,
+      `${base}.md`,
+      `${base}.mdx`,
+      path.join(base, 'README.md'),
+      path.join(base, 'readme.md'),
+      path.join(base, 'index.md'),
+    ];
+    for (const c of candidatos) {
+      const destino = pathCmsPorArchivo.get(c);
+      if (destino) return destino;
+    }
+    return null;
+  };
+
   for (const m of cuerpo.matchAll(RE_ENLACE_MD)) {
-    const [completo, , , urlCruda] = m;
+    const [completo, bang, textoEnlace, urlCruda, tituloOpc] = m;
     // Enlaces dentro de comentarios HTML: no se renderizan — no tocar ni reportar.
     if (comentarios.some(([a, b]) => m.index! >= a && m.index! < b)) continue;
     // pathname:// es el protocolo de Docusaurus para servir archivos de
     // static/ sin pasar por el router SPA: equivale a una ruta absoluta.
-    const url = urlCruda.split('#')[0].replace(/^pathname:\/\//, '');
+    const [urlSinAncla, ...anclaPartes] = urlCruda.split('#');
+    const url = urlSinAncla.replace(/^pathname:\/\//, '');
     if (!url || /^(https?:|mailto:|recurso:|#)/.test(urlCruda)) continue;
 
-    // 1) Asset absoluto de static/ (/img/..., /ppts/..., /ios/..., etc.)
-    if (url.startsWith('/') && EXT_ASSET.has(path.extname(url).slice(1).toLowerCase())) {
-      const enStatic = path.join(RAIZ_DOCUSAURUS, 'static', decodeURIComponent(url));
-      const ref = await subirRecurso(enStatic, coleccion);
-      if (ref) {
-        tareas.push({ original: completo, nueva: completo.replace(urlCruda, ref) });
-        reporte.assetsStatic += 1;
-        reporte.enlacesReescritos += 1;
-      } else {
-        reporte.sinResolver.push(`${url} (asset de static no encontrado)`);
-      }
-      continue;
-    }
+    const emitir = (nuevaUrl: string) => {
+      ediciones.push({
+        inicio: m.index!,
+        fin: m.index! + completo.length,
+        texto: `${bang}[${textoEnlace}](${nuevaUrl}${tituloOpc ?? ''})`,
+      });
+      reporte.enlacesReescritos += 1;
+    };
+    const ancla = anclaPartes.length ? `#${anclaPartes.join('#')}` : '';
+    const ext = path.extname(url).slice(1).toLowerCase();
 
-    // 2) Asset relativo junto al .md
-    if (!url.startsWith('/') && EXT_ASSET.has(path.extname(url).slice(1).toLowerCase())) {
-      const abs = path.resolve(dirMd, decodeURIComponent(url));
-      const ref = await subirRecurso(abs, coleccion);
-      if (ref) {
-        tareas.push({ original: completo, nueva: completo.replace(urlCruda, ref) });
-        reporte.assetsDocumento += 1;
-        reporte.enlacesReescritos += 1;
-      } else {
-        reporte.sinResolver.push(`${url} (asset relativo no encontrado, en ${dirMd})`);
-      }
-      continue;
-    }
-
-    // 3) Enlace interno a otro .md (los absolutos son relativos a la INSTANCIA)
-    if (url.endsWith('.md') || url.endsWith('.mdx')) {
+    // 1) Asset (relativo junto al .md, o absoluto de static/)
+    if (EXT_ASSET.has(ext)) {
       const abs = url.startsWith('/')
-        ? path.join(RAIZ_DOCUSAURUS, 'docs', slugColeccion!, decodeURIComponent(url))
+        ? path.join(RAIZ_DOCUSAURUS, 'static', decodeURIComponent(url))
         : path.resolve(dirMd, decodeURIComponent(url));
-      const destino = pathCmsPorArchivo.get(abs);
+      const ref = await subirRecurso(abs, coleccion, url.startsWith('/') ? null : documento);
+      if (ref) {
+        emitir(ref);
+        if (url.startsWith('/')) reporte.assetsStatic += 1;
+        else reporte.assetsDocumento += 1;
+      } else {
+        reporte.sinResolver.push(`${url} (asset no encontrado, en ${dirMd})`);
+      }
+      continue;
+    }
+
+    // 2) Enlace interno: .md/.mdx explícito, sin extensión, o carpeta (README)
+    if (ext === 'md' || ext === 'mdx' || ext === '') {
+      const destino = resolverInterno(url.replace(/\/+$/, ''));
       if (destino) {
-        const ancla = urlCruda.includes('#') ? `#${urlCruda.split('#')[1]}` : '';
-        tareas.push({ original: completo, nueva: completo.replace(urlCruda, `/contenidos/${slugColeccion}/${destino}${ancla}`) });
+        emitir(`/contenidos/${slugColeccion}/${destino}${ancla}`);
         reporte.enlacesInternos += 1;
-        reporte.enlacesReescritos += 1;
       } else {
         reporte.sinResolver.push(`${url} (enlace interno no resuelto, en ${dirMd})`);
       }
+      continue;
     }
+
+    // 3) Extensión desconocida: NUNCA en silencio — el reporte de paridad
+    // es lo que el admin usa para validar antes de publicar.
+    reporte.sinResolver.push(`${url} (extensión no manejada, en ${dirMd})`);
   }
 
+  // Aplicar de atrás hacia adelante (los rangos no se traslapan).
   let salida = cuerpo;
-  for (const t of tareas) salida = salida.replace(t.original, t.nueva);
+  for (const e of ediciones.sort((a, b) => b.inicio - a.inicio)) {
+    salida = salida.slice(0, e.inicio) + e.texto + salida.slice(e.fin);
+  }
   return salida;
 }
 
@@ -354,7 +401,9 @@ function acumularRedirects(nodos: NodoImport[], prefijoViejo: string, prefijoNue
     const nuevo = `${prefijoNuevo}/${n.slug}`;
     if (n.tipo === 'categoria') acumularRedirects(n.hijos, viejo, nuevo);
     else {
-      redirects[viejo] = nuevo;
+      // README.md: Docusaurus lo sirve en la URL de la CARPETA — el redirect
+      // real es carpeta → página readme del CMS (no /README, que nunca existió).
+      redirects[n.esReadme ? prefijoViejo : viejo] = nuevo;
       reporte.redirects += 1;
     }
   }
@@ -383,7 +432,7 @@ async function crearDocumentos(
       continue;
     }
 
-    const cuerpoFinal = await reescribirCuerpo(n.cuerpo ?? '', path.dirname(n.archivo!), coleccion);
+    const cuerpoFinal = await reescribirCuerpo(n.cuerpo ?? '', path.dirname(n.archivo!), coleccion, documento);
     const version = new DocumentoVersion().initDefaults();
     version.setDocumento(documento);
     version.setNumero(1);
@@ -407,7 +456,7 @@ async function crearDocumentos(
 async function simularCuerpos(nodos: NodoImport[]): Promise<void> {
   for (const n of nodos) {
     if (n.tipo === 'categoria') await simularCuerpos(n.hijos);
-    else await reescribirCuerpo(n.cuerpo ?? '', path.dirname(n.archivo!), null);
+    else await reescribirCuerpo(n.cuerpo ?? '', path.dirname(n.archivo!), null, null);
   }
 }
 
