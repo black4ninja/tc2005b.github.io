@@ -3,6 +3,7 @@ import type { PaginaData, ContentBlock, EtiquetaData } from '../../../../types/p
 import BlockEditor from '../BlockEditor/BlockEditor';
 import PaginaContent from '../../../paginas/PaginaContent';
 import DashButton from '../../atoms/DashButton/DashButton';
+import { slugify } from '../../../../utils/slug';
 import styles from './PaginaForm.module.css';
 
 interface PaginaFormProps {
@@ -12,15 +13,6 @@ interface PaginaFormProps {
   onCancel: () => void;
   loading?: boolean;
   previewMode?: boolean;
-}
-
-function toSlug(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 }
 
 export default function PaginaForm({ pagina, etiquetas: availableTags = [], onSave, onCancel, loading, previewMode }: PaginaFormProps) {
@@ -39,7 +31,7 @@ export default function PaginaForm({ pagina, etiquetas: availableTags = [], onSa
   // Auto-generate slug from title if not manually edited
   useEffect(() => {
     if (!slugManual && titulo) {
-      setSlug(toSlug(titulo));
+      setSlug(slugify(titulo));
     }
   }, [titulo, slugManual]);
 
