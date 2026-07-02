@@ -34,6 +34,13 @@ export async function getMateriaSlugs(): Promise<Set<string>> {
   return set;
 }
 
+/** Convierte objetos Materia en {slug, nombre} (descarta los sin slug). */
+function toMateriaInfoList(materias: Parse.Object[]): MateriaInfo[] {
+  return materias
+    .map((m) => ({ slug: m.get('slug') as string, nombre: (m.get('nombre') as string) ?? m.get('slug') }))
+    .filter((m) => !!m.slug);
+}
+
 /* ── Materias permitidas por usuario: admin ⇒ todas; alumno ⇒ las de sus grupos ── */
 export async function getAllowedMaterias(user: AppUser): Promise<MateriaInfo[]> {
   if (user.get('userType') === 'admin') {
@@ -41,13 +48,11 @@ export async function getAllowedMaterias(user: AppUser): Promise<MateriaInfo[]> 
     q.equalTo('exists' as any, true as any);
     q.ascending('nombre');
     q.limit(10000);
-    const materias = await q.find({ useMasterKey: true });
-    return materias
-      .map((m) => ({ slug: m.get('slug') as string, nombre: (m.get('nombre') as string) ?? m.get('slug') }))
-      .filter((m) => !!m.slug);
+    return toMateriaInfoList(await q.find({ useMasterKey: true }));
   }
 
-  // Alumno: GrupoAlumno activos → grupo.materia (include anidado).
+  // Alumno: acceso = unión de (materia del grupo) + (docusaurus[] del grupo),
+  // sobre todos sus GrupoAlumno activos.
   const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(user.id);
   const q = new Parse.Query<GrupoAlumno>('GrupoAlumno');
   q.equalTo('exists' as any, true as any);
@@ -57,16 +62,35 @@ export async function getAllowedMaterias(user: AppUser): Promise<MateriaInfo[]> 
   q.limit(1000);
   const links = await q.find({ useMasterKey: true });
 
-  const bySlug = new Map<string, string>();
+  // La materia se resuelve desde el include (ya confirmada existente, con nombre).
+  // Los slugs de docusaurus quedan pendientes: hay que confirmar que son Materias.
+  const resolved = new Map<string, string>(); // slug → nombre
+  const pending = new Set<string>();
   for (const link of links) {
     const grupo = link.get('grupo');
     if (!grupo || grupo.get('exists') === false) continue;
     const materia = grupo.get('materia');
-    if (!materia || materia.get('exists') === false) continue;
-    const slug = materia.get('slug');
-    if (slug) bySlug.set(slug, materia.get('nombre') ?? slug);
+    if (materia && materia.get('exists') !== false && materia.get('slug')) {
+      resolved.set(materia.get('slug'), materia.get('nombre') ?? materia.get('slug'));
+    }
+    const docs = grupo.get('docusaurus');
+    if (Array.isArray(docs)) {
+      for (const s of docs) if (typeof s === 'string' && s && !resolved.has(s)) pending.add(s);
+    }
   }
-  return [...bySlug.entries()].map(([slug, nombre]) => ({ slug, nombre }));
+
+  // Solo consultamos por los slugs de docusaurus no cubiertos ya por una materia.
+  if (pending.size > 0) {
+    const mq = new Parse.Query('Materia');
+    mq.containedIn('slug' as any, [...pending] as any);
+    mq.equalTo('exists' as any, true as any);
+    mq.limit(10000);
+    for (const info of toMateriaInfoList(await mq.find({ useMasterKey: true }))) {
+      resolved.set(info.slug, info.nombre);
+    }
+  }
+
+  return [...resolved.entries()].map(([slug, nombre]) => ({ slug, nombre }));
 }
 
 /* ── Cache corto por-usuario de slugs permitidos (evita re-query por cada asset) ── */
