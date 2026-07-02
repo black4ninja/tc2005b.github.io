@@ -16,7 +16,7 @@ const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 // Segmentos que el router del visor usa como literales bajo /contenidos/:
 // una colección con este slug quedaría inalcanzable (shadowing de rutas).
-const SLUGS_RESERVADOS = new Set(['recursos']);
+const SLUGS_RESERVADOS = new Set(['recursos', 'busqueda']);
 
 function validarSlug(slug: unknown): string | null {
   if (typeof slug !== 'string' || !SLUG_REGEX.test(slug) || SLUGS_RESERVADOS.has(slug)) return null;
