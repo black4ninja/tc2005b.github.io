@@ -23,3 +23,9 @@ export { CompetenciaAlumno } from './CompetenciaAlumno.js';
 export { Pagina } from './Pagina.js';
 export type { ContentBlock } from './Pagina.js';
 export { Etiqueta } from './Etiqueta.js';
+// CMS "Contenidos" (design/cms-contenidos.html)
+export { Coleccion } from './Coleccion.js';
+export { Documento, DOCUMENTO_TIPOS, DOCUMENTO_PLANTILLAS } from './Documento.js';
+export type { DocumentoTipo, DocumentoPlantilla } from './Documento.js';
+export { DocumentoVersion } from './DocumentoVersion.js';
+export { Recurso } from './Recurso.js';

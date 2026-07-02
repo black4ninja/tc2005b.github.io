@@ -26,6 +26,8 @@ import AlumnoCalendarioPage from './components/dashboard/pages/AlumnoCalendarioP
 import AlumnoCompetenciasPage from './components/dashboard/pages/AlumnoCompetenciasPage/AlumnoCompetenciasPage';
 import PaginaPage from './components/paginas/PaginaPage';
 import PaginasPage from './components/dashboard/pages/PaginasPage/PaginasPage';
+import ContenidosPage from './components/dashboard/pages/ContenidosPage/ContenidosPage';
+import ColeccionDetailPage from './components/dashboard/pages/ColeccionDetailPage/ColeccionDetailPage';
 import { APP_NAME, APP_TAGLINE } from './config/app';
 
 export default function App() {
@@ -67,6 +69,8 @@ export default function App() {
         <Route path="admin/competencias" element={<CompetenciasPage />} />
         <Route path="admin/actividades" element={<ActividadesPage />} />
         <Route path="admin/paginas" element={<PaginasPage />} />
+        <Route path="admin/contenidos" element={<ContenidosPage />} />
+        <Route path="admin/contenidos/:id" element={<ColeccionDetailPage />} />
       </Route>
 
       {/* Student dashboard */}

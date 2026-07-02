@@ -1,0 +1,239 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.volver {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+.volver:hover {
+  color: var(--text-primary);
+}
+
+.pageTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headerActions {
+  flex-shrink: 0;
+}
+
+.error {
+  padding: 12px 16px;
+  background: #fdecea;
+  color: var(--dash-danger);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .split { grid-template-columns: 1fr; }
+}
+
+.arbolPanel,
+.detallePanel {
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.panelTitulo {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 8px 0 0;
+}
+
+/* ── Árbol ── */
+.nodo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.nodo:hover {
+  background: var(--bg-page);
+}
+.nodoActivo {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
+  font-weight: 600;
+}
+
+.chevron {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  display: flex;
+  align-items: center;
+}
+.chevronHueco {
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.nodoTitulo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.estado {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.estadoPub {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.estadoBorr {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+/* ── Panel de detalle ── */
+.metaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+@media (max-width: 700px) {
+  .metaGrid { grid-template-columns: 1fr; }
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.input {
+  padding: 9px 11px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--sidebar-bg);
+  font-size: 14px;
+  color: var(--text-primary);
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--dash-primary);
+}
+
+.accionesFila {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.moverFila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.moverFila .input {
+  flex: 1;
+}
+.moverLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+/* ── Editor provisional ── */
+.editor {
+  border-top: 1px solid var(--border-color);
+  padding-top: 14px;
+}
+
+.editorBarra {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.editorBarra .panelTitulo {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.editorEstado {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.textarea {
+  width: 100%;
+  min-height: 320px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--sidebar-bg);
+  color: var(--text-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.textarea:focus {
+  outline: none;
+  border-color: var(--dash-primary);
+}

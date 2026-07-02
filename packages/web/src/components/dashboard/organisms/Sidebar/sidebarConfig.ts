@@ -18,6 +18,7 @@ export function getSidebarItems(
       { label: 'Competencias', icon: 'emoji_events', path: '/admin/competencias' },
       { label: 'Actividades', icon: 'assignment', path: '/admin/actividades' },
       { label: 'Páginas', icon: 'article', path: '/admin/paginas' },
+      { label: 'Contenidos', icon: 'library_books', path: '/admin/contenidos' },
       { label: 'Documentación', icon: 'menu_book', path: docsHref, external: true },
       { label: 'Agendar Entrevistas', icon: 'event_available', path: AGENDA_ENTREVISTAS_URL, external: true },
     ];
