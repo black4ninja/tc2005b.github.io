@@ -101,17 +101,21 @@ export default function GrupoForm({ grupo, materias = [], onSave, onCancel, load
           {materias.length === 0 && (
             <span className={styles.hint}>No hay Docusaurus disponibles.</span>
           )}
-          {materias.map((m) => (
-            <label key={m.slug} className={styles.checkboxItem}>
-              <input
-                type="checkbox"
-                checked={docusaurus.includes(m.slug)}
-                onChange={() => toggleDocusaurus(m.slug)}
-                disabled={loading}
-              />
-              <span>{m.nombre}</span>
-            </label>
-          ))}
+          {materias.map((m) => {
+            const clave = m.codigo || m.slug.toUpperCase();
+            const label = `${clave} — ${m.nombre}`;
+            return (
+              <label key={m.slug} className={styles.checkboxItem}>
+                <input
+                  type="checkbox"
+                  checked={docusaurus.includes(m.slug)}
+                  onChange={() => toggleDocusaurus(m.slug)}
+                  disabled={loading}
+                />
+                <span className={styles.checkboxLabel} title={label}>{label}</span>
+              </label>
+            );
+          })}
         </div>
       </div>
       <div className={styles.field}>

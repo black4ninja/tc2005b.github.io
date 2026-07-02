@@ -9,4 +9,5 @@ export interface MateriaRef {
   id: string;
   nombre: string;
   slug: string;
+  codigo?: string | null;
 }

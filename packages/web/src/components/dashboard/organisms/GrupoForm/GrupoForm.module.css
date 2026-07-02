@@ -55,6 +55,16 @@
 
 .checkboxItem input {
   cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Trunca el nombre a una sola línea con … (min-width:0 para que el flex encoja) */
+.checkboxLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hint {
