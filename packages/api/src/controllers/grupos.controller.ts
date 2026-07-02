@@ -21,8 +21,13 @@ export async function listGrupos(_req: Request, res: Response): Promise<void> {
   }
 }
 
+function normalizeSlugs(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null;
+  return value.filter((s): s is string => typeof s === 'string' && s.trim() !== '');
+}
+
 export async function createGrupo(req: Request, res: Response): Promise<void> {
-  const { name, fechaInicio, fechaFin, materiaId } = req.body;
+  const { name, fechaInicio, fechaFin, materiaId, docusaurus } = req.body;
 
   if (!name || typeof name !== 'string' || name.trim() === '') {
     res.status(400).json({ status: 'error', message: 'El nombre es requerido' });
@@ -44,6 +49,8 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
       }
       grupo.setMateria(materia);
     }
+    const docusSlugs = normalizeSlugs(docusaurus);
+    if (docusSlugs) grupo.setDocusaurus(docusSlugs);
 
     await grupo.save(null, { useMasterKey: true });
 
@@ -55,7 +62,7 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
 
 export async function updateGrupo(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { name, fechaInicio, fechaFin, materiaId } = req.body;
+  const { name, fechaInicio, fechaFin, materiaId, docusaurus } = req.body;
 
   try {
     const query = BaseModel.queryActive<Grupo>('Grupo');
@@ -82,10 +89,13 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
         grupo.setMateria(Parse.Object.extend('Materia').createWithoutData(materiaId));
       }
     }
+    if (docusaurus !== undefined) {
+      grupo.setDocusaurus(normalizeSlugs(docusaurus) ?? []);
+    }
 
     await grupo.save(null, { useMasterKey: true });
-    // Si cambió la materia del grupo, el acceso de sus alumnos cambió.
-    if (materiaId !== undefined) invalidateAllowedCache();
+    // Si cambió la materia o los docusaurus del grupo, cambió el acceso de sus alumnos.
+    if (materiaId !== undefined || docusaurus !== undefined) invalidateAllowedCache();
 
     res.json({ status: 'ok', grupo: grupo.toSafeJSON() });
   } catch (error: any) {

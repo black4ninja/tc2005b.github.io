@@ -6,7 +6,7 @@ import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
 import GrupoForm from '../../organisms/GrupoForm/GrupoForm';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
-import type { MateriaOption, MateriaRef } from '../../../../types/materia';
+import type { MateriaRef } from '../../../../types/materia';
 import styles from './GruposPage.module.css';
 
 interface GrupoData {
@@ -16,6 +16,7 @@ interface GrupoData {
   fechaFin?: string;
   active: boolean;
   materia?: MateriaRef | null;
+  docusaurus?: string[];
 }
 
 const API_BASE = '/api';
@@ -24,7 +25,7 @@ export default function GruposPage() {
   const { sessionToken } = useAuth();
   const navigate = useNavigate();
   const [grupos, setGrupos] = useState<GrupoData[]>([]);
-  const [materias, setMaterias] = useState<MateriaOption[]>([]);
+  const [materias, setMaterias] = useState<MateriaRef[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -81,7 +82,7 @@ export default function GruposPage() {
     setEditGrupo(undefined);
   }
 
-  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; materiaId?: string | null }) {
+  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; materiaId?: string | null; docusaurus?: string[] }) {
     setSaving(true);
     setError('');
     try {

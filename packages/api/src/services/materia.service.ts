@@ -47,7 +47,8 @@ export async function getAllowedMaterias(user: AppUser): Promise<MateriaInfo[]> 
       .filter((m) => !!m.slug);
   }
 
-  // Alumno: GrupoAlumno activos → grupo.materia (include anidado).
+  // Alumno: acceso = unión de (materia del grupo) + (docusaurus[] del grupo),
+  // sobre todos sus GrupoAlumno activos.
   const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(user.id);
   const q = new Parse.Query<GrupoAlumno>('GrupoAlumno');
   q.equalTo('exists' as any, true as any);
@@ -57,16 +58,33 @@ export async function getAllowedMaterias(user: AppUser): Promise<MateriaInfo[]> 
   q.limit(1000);
   const links = await q.find({ useMasterKey: true });
 
-  const bySlug = new Map<string, string>();
+  const slugSet = new Set<string>();
   for (const link of links) {
     const grupo = link.get('grupo');
     if (!grupo || grupo.get('exists') === false) continue;
+    // Materia asignada (compatibilidad).
     const materia = grupo.get('materia');
-    if (!materia || materia.get('exists') === false) continue;
-    const slug = materia.get('slug');
-    if (slug) bySlug.set(slug, materia.get('nombre') ?? slug);
+    if (materia && materia.get('exists') !== false && materia.get('slug')) {
+      slugSet.add(materia.get('slug'));
+    }
+    // Docusaurus asignados directamente al grupo.
+    const docs = grupo.get('docusaurus');
+    if (Array.isArray(docs)) {
+      for (const s of docs) if (typeof s === 'string' && s) slugSet.add(s);
+    }
   }
-  return [...bySlug.entries()].map(([slug, nombre]) => ({ slug, nombre }));
+  if (slugSet.size === 0) return [];
+
+  // Resolver nombres desde Materia; solo los slugs con Materia existente cuentan
+  // (son los que el gate reconoce como protegidos).
+  const mq = new Parse.Query('Materia');
+  mq.containedIn('slug' as any, [...slugSet] as any);
+  mq.equalTo('exists' as any, true as any);
+  mq.limit(10000);
+  const materias = await mq.find({ useMasterKey: true });
+  return materias
+    .map((m) => ({ slug: m.get('slug') as string, nombre: (m.get('nombre') as string) ?? m.get('slug') }))
+    .filter((m) => !!m.slug);
 }
 
 /* ── Cache corto por-usuario de slugs permitidos (evita re-query por cada asset) ── */

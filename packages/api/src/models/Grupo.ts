@@ -63,6 +63,18 @@ export class Grupo extends BaseModel {
     this.set('materia', materia);
   }
 
+  /**
+   * Slugs de Docusaurus asignados directamente al grupo (acceso multi-instancia,
+   * independiente de la materia). El acceso a docs del alumno = unión de la
+   * materia del grupo + estos slugs.
+   */
+  getDocusaurus(): string[] {
+    return this.get('docusaurus') ?? [];
+  }
+  setDocusaurus(slugs: string[]): void {
+    this.set('docusaurus', slugs);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     const materia = this.getMateria();
     // Si la materia (incluida) fue soft-deleted, no la exponemos.
@@ -81,6 +93,7 @@ export class Grupo extends BaseModel {
       materia: materiaActiva
         ? { id: materiaActiva.id, nombre: materiaActiva.get('nombre') ?? null, slug: materiaActiva.get('slug') ?? null }
         : null,
+      docusaurus: this.getDocusaurus(),
       active: this.get('active'),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
