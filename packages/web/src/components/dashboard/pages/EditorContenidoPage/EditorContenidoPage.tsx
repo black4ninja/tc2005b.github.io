@@ -61,6 +61,18 @@ export default function EditorContenidoPage() {
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const estadoRef = useRef(estado);
   estadoRef.current = estado;
+  const documentoRef = useRef(documento);
+  documentoRef.current = documento;
+  // Single-flight: nunca dos PUT de borrador en paralelo (dos escrituras
+  // concurrentes sobre un documento sin borrador duplicarían versiones).
+  const saveEnVuelo = useRef<Promise<boolean> | null>(null);
+
+  function cancelarAutosave() {
+    if (autosaveTimer.current) {
+      clearTimeout(autosaveTimer.current);
+      autosaveTimer.current = null;
+    }
+  }
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -92,25 +104,41 @@ export default function EditorContenidoPage() {
 
   useEffect(() => {
     cargar();
+    // Al cambiar de documento (o desmontar), un timer pendiente del documento
+    // ANTERIOR escribiría el cuerpo del nuevo en el borrador equivocado.
+    return () => cancelarAutosave();
   }, [cargar]);
 
   /* ── Autosave debounced a borrador único ── */
   const guardar = useCallback(async (): Promise<boolean> => {
-    if (!docId) return false;
-    setEstado('guardando');
+    // Guardas anti-pérdida: sin documento cargado NO se guarda (un PUT con el
+    // editor vacío pisaría el borrador real del servidor).
+    if (!docId || !documentoRef.current) return false;
+    // Single-flight: esperar el PUT en vuelo y luego guardar lo más reciente.
+    if (saveEnVuelo.current) await saveEnVuelo.current.catch(() => {});
+
+    const vuelo = (async () => {
+      setEstado('guardando');
+      try {
+        const res = await fetch(`${API_BASE}/admin/documentos/${docId}/borrador`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ cuerpo: cuerpoRef.current }),
+        });
+        if (!res.ok) throw new Error();
+        setEstado('guardado');
+        return true;
+      } catch {
+        setEstado('error');
+        setError('No se pudo guardar el borrador. Reintenta (⌘S).');
+        return false;
+      }
+    })();
+    saveEnVuelo.current = vuelo;
     try {
-      const res = await fetch(`${API_BASE}/admin/documentos/${docId}/borrador`, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify({ cuerpo: cuerpoRef.current }),
-      });
-      if (!res.ok) throw new Error();
-      setEstado('guardado');
-      return true;
-    } catch {
-      setEstado('error');
-      setError('No se pudo guardar el borrador. Reintenta (⌘S).');
-      return false;
+      return await vuelo;
+    } finally {
+      saveEnVuelo.current = null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docId, sessionToken]);
@@ -119,7 +147,7 @@ export default function EditorContenidoPage() {
     setCuerpo(valor);
     setEstado('dirty');
     setError('');
-    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    cancelarAutosave();
     autosaveTimer.current = setTimeout(() => { guardar(); }, AUTOSAVE_MS);
   }
 
@@ -142,17 +170,22 @@ export default function EditorContenidoPage() {
     return () => clearTimeout(timer);
   }, [cuerpo, esMd]);
 
-  /* ── Atajos: ⌘S guardar · ⌘⇧P publicar ── */
+  /* ── Atajos: ⌘S guardar · ⌘⇧P publicar ──
+     Mismas guardas que los botones: sin documento cargado (o cargando/error
+     de carga) NO se guarda ni publica — un PUT con el editor vacío pisaría
+     el borrador real. */
   function onKeyDown(e: React.KeyboardEvent) {
     const mod = e.metaKey || e.ctrlKey;
     if (!mod) return;
     if (e.key.toLowerCase() === 's' && !e.shiftKey) {
       e.preventDefault();
-      if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+      if (!documento || estado === 'cargando') return;
+      cancelarAutosave();
       guardar();
     }
     if (e.key.toLowerCase() === 'p' && e.shiftKey) {
       e.preventDefault();
+      if (!documento || estado === 'cargando' || estado === 'error') return;
       abrirPublicar();
     }
   }
@@ -183,13 +216,14 @@ export default function EditorContenidoPage() {
   }
 
   async function publicar() {
-    if (!docId) return;
+    if (!docId || !documento) return;
     setPublicando(true);
     setPublicarError('');
     try {
-      // Asegurar que lo visible en pantalla es lo que se publica.
+      // Asegurar que lo visible en pantalla es lo que se publica. `guardar`
+      // es single-flight: si hay un autosave en vuelo, espera y reenvía lo último.
       if (estadoRef.current !== 'guardado') {
-        if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+        cancelarAutosave();
         const ok = await guardar();
         if (!ok) throw new Error('No se pudo guardar el borrador antes de publicar');
       }
@@ -245,6 +279,10 @@ export default function EditorContenidoPage() {
 
   async function restaurarVersion(v: VersionInfo) {
     if (!confirm(`¿Restaurar la v${v.numero} al borrador? El contenido actual del borrador se reemplaza.`)) return;
+    // Un autosave pendiente (timer) o en vuelo (PUT) aterrizaría DESPUÉS del
+    // restore y pisaría el borrador restaurado.
+    cancelarAutosave();
+    if (saveEnVuelo.current) await saveEnVuelo.current.catch(() => {});
     setHistorialError('');
     try {
       const res = await fetch(`${API_BASE}/admin/documentos/${docId}/versiones/${v.id}/restaurar`, {

@@ -4,7 +4,7 @@ import { renderMarkdown } from '@tc2005b/contenido-pipeline';
 import { DocumentoVersion } from '../models/DocumentoVersion.js';
 import type { Documento } from '../models/Documento.js';
 import type { AppUser } from '../models/AppUser.js';
-import { buscarDocumento } from './cms-documentos.controller.js';
+import { buscarDocumento, asegurarBorrador } from './cms-documentos.controller.js';
 
 /**
  * Versionado del CMS "Contenidos" (design §1/§3): publicar congela el
@@ -94,6 +94,10 @@ export async function listVersiones(req: Request, res: Response): Promise<void> 
     q.equalTo('exists' as any, true as any);
     q.equalTo('documento' as any, documento as any);
     q.include('autor' as any);
+    // Solo metadatos: sin select, cada versión arrastraría cuerpo y
+    // cuerpoHtml completos (documentos con mucho historial = MBs por abrir
+    // el modal). createdAt/updatedAt siempre vienen.
+    q.select(['numero', 'mensaje', 'autor'] as any);
     q.descending('createdAt');
     q.limit(500);
     const versiones = await q.find({ useMasterKey: true });
@@ -173,23 +177,17 @@ export async function restaurarVersion(req: Request, res: Response): Promise<voi
       return;
     }
 
-    let borrador = documento.getBorrador();
-    const esNuevo = !borrador;
-    if (!borrador) {
-      borrador = new DocumentoVersion().initDefaults();
-      borrador.setDocumento(documento);
-      borrador.setNumero((documento.getVersion()?.getNumero() ?? 0) + 1);
+    const autor = req.appUser as AppUser | undefined;
+    const resultado = await asegurarBorrador(docId, autor);
+    if (!resultado) {
+      res.status(404).json({ status: 'error', message: 'Documento no encontrado' });
+      return;
     }
+    const { borrador } = resultado;
     borrador.setCuerpo(version.getCuerpo());
     borrador.setMensaje(`restaurado de v${version.getNumero()}`);
-    const autor = req.appUser as AppUser | undefined;
     if (autor) borrador.setAutor(autor);
     await borrador.save(null, { useMasterKey: true });
-
-    if (esNuevo) {
-      documento.setBorrador(borrador);
-      await documento.save(null, { useMasterKey: true });
-    }
 
     res.json({ status: 'ok', cuerpo: borrador.getCuerpo(), esBorrador: true });
   } catch (error) {

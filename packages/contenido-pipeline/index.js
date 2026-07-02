@@ -35,22 +35,20 @@ function remarkAdmonitions() {
       if (!ADMONITION_TIPOS.includes(node.name)) return;
 
       // El "label" de la directiva (:::note Título) llega como primer hijo
-      // marcado con directiveLabel; se convierte en el título del bloque.
-      let titulo = node.name;
+      // marcado con directiveLabel; sus children se conservan tal cual como
+      // título — así el formato inline (**negritas**, `código`) sobrevive.
       const hijos = node.children ?? [];
+      let tituloChildren = [{ type: 'text', value: node.name }];
       if (hijos[0]?.data?.directiveLabel) {
         const label = hijos.shift();
-        titulo = (label.children ?? [])
-          .map((c) => ('value' in c ? c.value : ''))
-          .join('')
-          .trim() || node.name;
+        if (label.children?.length) tituloChildren = label.children;
       }
 
       node.children = [
         {
           type: 'paragraph',
           data: { hName: 'p', hProperties: { className: ['admonition-titulo'] } },
-          children: [{ type: 'text', value: titulo }],
+          children: tituloChildren,
         },
         ...hijos,
       ];
@@ -90,15 +88,39 @@ const procesador = unified()
 // remark-directive exige el título entre corchetes (`:::note[Título]`), pero
 // Docusaurus usa `:::note Título` — y la paridad con esa sintaxis es requisito
 // de la migración (US-6). Normalizamos el estilo Docusaurus antes de parsear.
+// Sangría máx. 3 espacios: con 4+ es bloque de código indentado (CommonMark).
 const RE_ADMONITION_DOCUSAURUS = new RegExp(
-  `^([ \\t]*):::(${ADMONITION_TIPOS.join('|')})[ \\t]+([^\\[\\n{][^\\n]*)$`,
-  'gm',
+  `^( {0,3}):::(${ADMONITION_TIPOS.join('|')})[ \\t]+([^\\[\\n{][^\\n]*)$`,
 );
+const RE_FENCE = /^ {0,3}(`{3,}|~{3,})/;
 
+/**
+ * Normaliza línea por línea, SALTANDO los bloques de código cercados: un
+ * tutorial que documenta la sintaxis `:::note Título` dentro de un fence
+ * debe mostrarse tal cual, no reescribirse.
+ */
 function normalizarAdmonitions(cuerpo) {
-  return cuerpo.replace(RE_ADMONITION_DOCUSAURUS, (_m, sangria, tipo, titulo) => {
-    return `${sangria}:::${tipo}[${titulo.trim()}]`;
-  });
+  let fence = null; // { char, len } del fence abierto
+  return cuerpo
+    .split('\n')
+    .map((linea) => {
+      const marca = linea.match(RE_FENCE);
+      if (marca) {
+        const char = marca[1][0];
+        const len = marca[1].length;
+        if (!fence) {
+          fence = { char, len };
+        } else if (char === fence.char && len >= fence.len && /^ {0,3}(`{3,}|~{3,})\s*$/.test(linea)) {
+          fence = null; // cierre del fence
+        }
+        return linea;
+      }
+      if (fence) return linea;
+      return linea.replace(RE_ADMONITION_DOCUSAURUS, (_m, sangria, tipo, titulo) => {
+        return `${sangria}:::${tipo}[${titulo.trim()}]`;
+      });
+    })
+    .join('\n');
 }
 
 /**
