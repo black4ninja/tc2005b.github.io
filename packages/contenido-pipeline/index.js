@@ -22,6 +22,24 @@ import { visit } from 'unist-util-visit';
 /** Tipos de admonition con paridad Docusaurus. */
 export const ADMONITION_TIPOS = ['note', 'tip', 'info', 'warning', 'danger', 'caution'];
 
+/** Prefijo del endpoint gated que sirve los Recursos (US-4). */
+export const RECURSOS_ENDPOINT = '/api/contenidos/recursos/';
+
+/**
+ * Plugin remark: reescribe las referencias `recurso:<id>/<nombre>` de
+ * imágenes y enlaces hacia el endpoint gated. Corre ANTES de sanitize:
+ * el esquema no permite protocolos desconocidos, pero sí URLs relativas.
+ */
+function remarkRecursos() {
+  return (tree) => {
+    visit(tree, ['image', 'link'], (node) => {
+      if (typeof node.url === 'string' && node.url.startsWith('recurso:')) {
+        node.url = RECURSOS_ENDPOINT + node.url.slice('recurso:'.length);
+      }
+    });
+  };
+}
+
 /**
  * Plugin remark: convierte las directivas de contenedor `:::note Título`
  * en la estructura de admonition (equivalente a las de Docusaurus):
@@ -84,6 +102,7 @@ const procesador = unified()
   .use(remarkGfm)
   .use(remarkDirective)
   .use(remarkAdmonitions)
+  .use(remarkRecursos)
   .use(remarkRehype)
   .use(rehypeSanitize, ESQUEMA_SANITIZE)
   .use(rehypeSlug)

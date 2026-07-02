@@ -1,4 +1,5 @@
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
+import multer from 'multer';
 import { identifyUser } from '../middlewares/auth.middleware.js';
 import { requireAdmin } from '../middlewares/abac.middleware.js';
 import {
@@ -22,6 +23,30 @@ import {
   getVersion,
   restaurarVersion,
 } from '../controllers/cms-versiones.controller.js';
+import {
+  uploadRecurso,
+  listRecursos,
+  deleteRecurso,
+  RECURSO_MAX_BYTES,
+} from '../controllers/recursos.controller.js';
+
+// Subida en memoria: el binario va directo a Parse.File (sin disco temporal).
+const subida = multer({ storage: multer.memoryStorage(), limits: { fileSize: RECURSO_MAX_BYTES } });
+
+/** Envuelve a multer para responder sus errores como 4xx en español. */
+function subidaArchivo(req: Request, res: Response, next: NextFunction): void {
+  subida.single('archivo')(req, res, (err: unknown) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        res.status(413).json({ status: 'error', message: 'El archivo excede el límite de 50 MB' });
+        return;
+      }
+      res.status(400).json({ status: 'error', message: 'Archivo inválido en la subida' });
+      return;
+    }
+    next(err);
+  });
+}
 
 // Rutas admin del CMS "Contenidos" (design/cms-contenidos.html §7).
 // Los endpoints de lectura del visor (US-3) irán en un router aparte.
@@ -29,6 +54,7 @@ const router = Router();
 
 router.use('/admin/colecciones', identifyUser, requireAdmin);
 router.use('/admin/documentos', identifyUser, requireAdmin);
+router.use('/admin/recursos', identifyUser, requireAdmin);
 
 // Colecciones
 router.get('/admin/colecciones', listColecciones);
@@ -52,5 +78,10 @@ router.post('/admin/documentos/:docId/publicar', publicarDocumento);
 router.get('/admin/documentos/:docId/versiones', listVersiones);
 router.get('/admin/documentos/:docId/versiones/:versionId', getVersion);
 router.post('/admin/documentos/:docId/versiones/:versionId/restaurar', restaurarVersion);
+
+// Recursos (US-4): subida multipart (límite 50 MB), listado y borrado
+router.post('/admin/recursos', subidaArchivo, uploadRecurso);
+router.get('/admin/colecciones/:id/recursos', listRecursos);
+router.delete('/admin/recursos/:id', deleteRecurso);
 
 export default router;

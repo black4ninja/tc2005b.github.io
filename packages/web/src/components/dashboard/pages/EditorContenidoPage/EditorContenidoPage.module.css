@@ -243,3 +243,11 @@
   line-height: 1.6;
   white-space: pre-wrap;
 }
+
+.recursoNombre {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}

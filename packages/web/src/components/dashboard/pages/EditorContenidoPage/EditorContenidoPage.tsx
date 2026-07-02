@@ -30,6 +30,20 @@ interface VersionInfo {
   createdAt: string;
 }
 
+interface RecursoInfo {
+  id: string;
+  nombre: string;
+  mime: string;
+  bytes: number;
+  referencia: string;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${bytes} B`;
+}
+
 /**
  * Editor del CMS "Contenidos" (design §3): CodeMirror + preview en vivo con
  * el MISMO pipeline unified que renderiza al publicar — WYSIWYG real.
@@ -55,6 +69,16 @@ export default function EditorContenidoPage() {
   const [versiones, setVersiones] = useState<VersionInfo[]>([]);
   const [historialError, setHistorialError] = useState('');
   const [verCuerpo, setVerCuerpo] = useState<{ numero: number; cuerpo: string } | null>(null);
+
+  const [recursosOpen, setRecursosOpen] = useState(false);
+  const [recursos, setRecursos] = useState<RecursoInfo[]>([]);
+  const [recursosCargando, setRecursosCargando] = useState(false);
+  const [recursosError, setRecursosError] = useState('');
+  // Contador (no booleano): varios pegados concurrentes no deben apagar el
+  // indicador cuando termina solo el primero.
+  const [subidasActivas, setSubidasActivas] = useState(0);
+  const subiendo = subidasActivas > 0;
+  const archivoInputRef = useRef<HTMLInputElement>(null);
 
   // El autosave usa refs para leer el estado más reciente sin recrear timers.
   const cuerpoRef = useRef(cuerpo);
@@ -209,6 +233,81 @@ export default function EditorContenidoPage() {
   const SNIPPET_ADMONITION = '\n:::note Título\nContenido.\n:::\n';
   const SNIPPET_CODIGO = '\n```js\n// código\n```\n';
 
+  /* ── Recursos: subir e insertar referencia `recurso:` (US-4) ── */
+  async function subirArchivo(file: File): Promise<void> {
+    if (!documento?.coleccionId || !docId) return;
+    setSubidasActivas((n) => n + 1);
+    setError('');
+    try {
+      const form = new FormData();
+      form.append('archivo', file);
+      form.append('coleccionId', documento.coleccionId);
+      form.append('documentoId', docId);
+      const res = await fetch(`${API_BASE}/admin/recursos`, {
+        method: 'POST',
+        headers: { 'x-session-token': sessionToken ?? '' }, // sin Content-Type: FormData pone el boundary
+        body: form,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Error al subir el archivo (límite: 50 MB)');
+      }
+      const json = await res.json();
+      const esImagen = (json.recurso?.mime ?? '').startsWith('image/');
+      const nombre = json.recurso?.nombre ?? file.name;
+      insertar(`\n${esImagen ? '!' : ''}[${nombre}](${json.referencia})\n`);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSubidasActivas((n) => n - 1);
+    }
+  }
+
+  /**
+   * Solo pegados DENTRO del panel de fuente: a nivel de página secuestraría
+   * el paste de los inputs de los modales (publicar/historial/recursos).
+   * Secuencial: el orden de inserción respeta el orden de los archivos.
+   */
+  async function onPasteFuente(e: React.ClipboardEvent) {
+    const archivos = [...(e.clipboardData?.files ?? [])];
+    if (!archivos.length || !documento) return;
+    e.preventDefault();
+    for (const f of archivos) await subirArchivo(f);
+  }
+
+  async function abrirRecursos() {
+    if (!documento?.coleccionId) return;
+    setRecursosError('');
+    setRecursos([]); // sin lista vieja: otro admin pudo borrar/subir entre aperturas
+    setRecursosCargando(true);
+    setRecursosOpen(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/admin/colecciones/${documento.coleccionId}/recursos?documentoId=${docId}`,
+        { headers: { 'x-session-token': sessionToken ?? '' } },
+      );
+      if (!res.ok) throw new Error('No se pudieron cargar los recursos');
+      const json = await res.json();
+      setRecursos(json.recursos ?? []);
+    } catch (err: any) {
+      setRecursosError(err.message);
+    } finally {
+      setRecursosCargando(false);
+    }
+  }
+
+  async function eliminarRecurso(r: RecursoInfo) {
+    if (!confirm(`¿Eliminar "${r.nombre}"? Las páginas que lo referencien mostrarán un enlace roto.`)) return;
+    setRecursosError('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/recursos/${r.id}`, { method: 'DELETE', headers });
+      if (!res.ok) throw new Error('No se pudo eliminar');
+      setRecursos((prev) => prev.filter((x) => x.id !== r.id));
+    } catch (err: any) {
+      setRecursosError(err.message);
+    }
+  }
+
   /* ── Publicar ── */
   function abrirPublicar() {
     setMensajePublicar('');
@@ -358,12 +457,27 @@ export default function EditorContenidoPage() {
           <button type="button" title="Enlace" onClick={() => insertar('[', '](https://)', 'texto')}>🔗</button>
           <button type="button" title="Tabla" onClick={() => insertar(SNIPPET_TABLA)}>▦ Tabla</button>
           <button type="button" title="Admonition" onClick={() => insertar(SNIPPET_ADMONITION)}>💡 Nota</button>
+          <span className={styles.sep} />
+          <button type="button" title="Subir imagen o archivo (o pega una imagen)" onClick={() => archivoInputRef.current?.click()} disabled={subiendo}>
+            {subiendo ? '⏳ Subiendo…' : '🖼️ Subir'}
+          </button>
+          <button type="button" title="Recursos del documento" onClick={abrirRecursos}>📎 Recursos</button>
           <span className={styles.atajos}>⌘S guardar · ⌘⇧P publicar</span>
         </div>
       )}
+      <input
+        ref={archivoInputRef}
+        type="file"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) subirArchivo(f);
+          e.target.value = '';
+        }}
+      />
 
       <div className={styles.split}>
-        <div className={styles.fuente}>
+        <div className={styles.fuente} onPaste={onPasteFuente}>
           <CodeMirror
             ref={editorRef}
             value={cuerpo}
@@ -416,6 +530,42 @@ export default function EditorContenidoPage() {
               {publicando ? 'Publicando…' : 'Publicar'}
             </DashButton>
           </div>
+        </div>
+      </Modal>
+
+      {/* ── Modal recursos ── */}
+      <Modal isOpen={recursosOpen} onClose={() => setRecursosOpen(false)} title="Recursos del documento">
+        <div className={styles.modalCuerpo}>
+          {recursosError && <div className={styles.error}>{recursosError}</div>}
+          {recursosCargando ? (
+            <p className={styles.hint}>Cargando…</p>
+          ) : recursos.length === 0 ? (
+            <p className={styles.hint}>Sin recursos. Sube uno con 🖼️ o pega una imagen en el editor.</p>
+          ) : (
+            <div className={styles.versiones}>
+              {recursos.map((r) => (
+                <div key={r.id} className={styles.version}>
+                  <div className={styles.versionInfo}>
+                    <span>{r.mime.startsWith('image/') ? '🖼️' : '📦'}</span>
+                    <b className={styles.recursoNombre} title={r.nombre}>{r.nombre}</b>
+                    <span className={styles.versionMeta}>{formatBytes(r.bytes)}</span>
+                  </div>
+                  <div className={styles.versionAcciones}>
+                    <DashButton
+                      variant="outline"
+                      onClick={() => {
+                        insertar(`\n${r.mime.startsWith('image/') ? '!' : ''}[${r.nombre}](${r.referencia})\n`);
+                        setRecursosOpen(false);
+                      }}
+                    >
+                      Insertar
+                    </DashButton>
+                    <DashButton variant="outline" onClick={() => eliminarRecurso(r)}>Eliminar</DashButton>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </Modal>
 

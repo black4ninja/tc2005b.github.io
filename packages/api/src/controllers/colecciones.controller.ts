@@ -14,6 +14,15 @@ function invalidarCachesVisor(): void {
 
 const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+// Segmentos que el router del visor usa como literales bajo /contenidos/:
+// una colección con este slug quedaría inalcanzable (shadowing de rutas).
+const SLUGS_RESERVADOS = new Set(['recursos']);
+
+function validarSlug(slug: unknown): string | null {
+  if (typeof slug !== 'string' || !SLUG_REGEX.test(slug) || SLUGS_RESERVADOS.has(slug)) return null;
+  return slug;
+}
+
 /** Duplicado de slug/clave entre colecciones existentes (excluyendo excludeId). */
 async function existeDuplicado(campo: 'slug' | 'clave', valor: string, excludeId?: string): Promise<boolean> {
   const q = new Parse.Query<Coleccion>('Coleccion');
@@ -44,13 +53,14 @@ export async function createColeccion(req: Request, res: Response): Promise<void
     res.status(400).json({ status: 'error', message: 'El nombre es requerido' });
     return;
   }
-  if (!slug || typeof slug !== 'string' || !SLUG_REGEX.test(slug)) {
-    res.status(400).json({ status: 'error', message: 'El slug es requerido y debe contener solo letras minúsculas, números y guiones' });
+  const slugValido = validarSlug(slug);
+  if (!slugValido) {
+    res.status(400).json({ status: 'error', message: 'El slug es requerido, debe contener solo letras minúsculas, números y guiones, y no puede ser una palabra reservada' });
     return;
   }
 
   try {
-    if (await existeDuplicado('slug', slug)) {
+    if (await existeDuplicado('slug', slugValido)) {
       res.status(409).json({ status: 'error', message: 'Ya existe una colección con ese slug' });
       return;
     }
@@ -63,7 +73,7 @@ export async function createColeccion(req: Request, res: Response): Promise<void
 
     const coleccion = new Coleccion().initDefaults();
     coleccion.setNombre(nombre.trim());
-    coleccion.setSlug(slug);
+    coleccion.setSlug(slugValido);
     if (claveCanonica) coleccion.setClave(claveCanonica);
     if (typeof descripcion === 'string' && descripcion.trim()) coleccion.setDescripcion(descripcion.trim());
     if (typeof icono === 'string' && icono.trim()) coleccion.setIcono(icono.trim());
@@ -98,15 +108,16 @@ export async function updateColeccion(req: Request, res: Response): Promise<void
     }
 
     if (slug !== undefined) {
-      if (typeof slug !== 'string' || !SLUG_REGEX.test(slug)) {
-        res.status(400).json({ status: 'error', message: 'El slug debe contener solo letras minúsculas, números y guiones' });
+      const slugValido = validarSlug(slug);
+      if (!slugValido) {
+        res.status(400).json({ status: 'error', message: 'El slug debe contener solo letras minúsculas, números y guiones, y no puede ser una palabra reservada' });
         return;
       }
-      if (slug !== coleccion.getSlug() && (await existeDuplicado('slug', slug, id))) {
+      if (slugValido !== coleccion.getSlug() && (await existeDuplicado('slug', slugValido, id))) {
         res.status(409).json({ status: 'error', message: 'Ya existe una colección con ese slug' });
         return;
       }
-      coleccion.setSlug(slug);
+      coleccion.setSlug(slugValido);
     }
 
     if (clave !== undefined) {
