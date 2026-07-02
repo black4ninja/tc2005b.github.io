@@ -184,7 +184,7 @@
   <a href="#migracion">6 · Migración</a>
   <a href="#arquitectura">7 · Arquitectura y API</a>
   <a href="#roadmap">8 · Roadmap por USs</a>
-  <a href="#validacion">9 · Decisiones a validar</a>
+  <a href="#validacion">9 · Decisiones (resueltas)</a>
 </nav>
 
 <main>
@@ -659,7 +659,7 @@ Necesitas VS Code y la extensión Live Server.
     <div class="flow">↕ Parse SDK (masterKey en server)</div>
     <div class="row">
       <div class="box"><b>Parse Server + MongoDB Atlas</b><small>Coleccion · Documento · DocumentoVersion · Recurso · índice de texto (titulo, cuerpo)</small></div>
-      <div class="box"><b>Storage de archivos</b><small>Parse.File (files adapter GridFS/S3) — nunca expuesto directo: stream vía endpoint gated</small></div>
+      <div class="box"><b>Storage: AWS S3</b><small>Bucket privado <code>groups-meeplab-contenidos</code> (us-east-1) vía @parse/s3-files-adapter — nunca expuesto directo: stream vía endpoint gated. GridFS interino hasta la US-8.</small></div>
     </div>
   </div>
 
@@ -698,27 +698,33 @@ Necesitas VS Code y la extensión Live Server.
     <tr><td><b>US-5</b> Búsqueda + HTML crudo</td><td><code>feature/cms-busqueda-html</code></td><td>Índice de texto + endpoint con scope; tipo <code>html</code> end-to-end (editor, endpoint CSP, iframe sandbox).</td><td>US-3</td></tr>
     <tr><td><b>US-6</b> Importador + asignación</td><td><code>feature/cms-importador</code></td><td>Importador Docusaurus (dry-run + reporte de paridad), <code>Grupo.colecciones[]</code>, GrupoForm y submenú de grupo actualizados, redirects 301.</td><td>US-4, US-5</td></tr>
     <tr><td><b>US-7</b> Deprecación</td><td><code>chore/docusaurus-retiro</code></td><td>Fase 2 y 3 del plan §6: freeze, corte de tráfico, retiro de packages/docusaurus, docs-gate y <code>docusaurus[]</code>.</td><td>US-6 validada en prod</td></tr>
+    <tr><td><b>US-8</b> Storage S3</td><td><code>feature/cms-storage-s3</code></td><td>Cambiar el files adapter a S3 (<code>@parse/s3-files-adapter</code>) y migrar los archivos existentes de GridFS al bucket. Solo config + migración: el código usa <code>Parse.File</code> desde US-4, así que nada más cambia.</td><td>US-7 (al final, para no detener el avance)</td></tr>
   </table>
+  <div class="callout"><b>Nota de storage (decisión validada)</b>
+  El destino final es <b>AWS S3</b>. La infraestructura ya está aprovisionada: bucket privado
+  <code>groups-meeplab-contenidos</code> (us-east-1, acceso público bloqueado, cifrado SSE-S3), política IAM de
+  mínimo privilegio <code>parse-contenidos-s3</code> y usuario dedicado con llaves (guardadas fuera del repo,
+  listas para el <code>.env</code> del servidor). Las US-4→7 corren sobre el adapter GridFS actual detrás de
+  <code>Parse.File</code>; la US-8 solo cambia configuración y migra archivos.</div>
 </section>
 
 <!-- ══════════════════ 9 · VALIDACIÓN ══════════════════ -->
 <section id="validacion">
-  <h2><span class="num">9</span>Decisiones a validar antes de implementar</h2>
+  <h2><span class="num">9</span>Decisiones — resueltas (validadas 2/jul/2026)</h2>
   <table>
-    <tr><th>#</th><th>Decisión propuesta</th><th>Alternativa</th></tr>
-    <tr><td>1</td><td>Ruta pública <code>/contenidos/&lt;slug&gt;/…</code> y nombre del módulo "Contenidos".</td><td>Mantener <code>/docs/…</code> (evita redirects pero mezcla mundos durante la transición).</td></tr>
-    <tr><td>2</td><td>Editor CodeMirror 6 (fuente visible, ligero, móvil).</td><td>Monaco si se prioriza fidelidad VS Code sobre peso/móvil.</td></tr>
-    <tr><td>3</td><td>Nombres de clases en español: <code>Coleccion / Documento / DocumentoVersion / Recurso</code>.</td><td>Otra nomenclatura (p. ej. reutilizar "Materia" como colección 1:1).</td></tr>
-    <tr><td>4</td><td>Borrador único por documento (autosave sobre el mismo borrador hasta publicar).</td><td>Draft por autor (necesario solo si editan varios a la vez).</td></tr>
-    <tr><td>5</td><td>Storage vía Parse.File con el files adapter actual (GridFS).</td><td>S3/Backblaze si el volumen de assets crece (hoy ~140 MB en tc2007b).</td></tr>
-    <tr><td>6</td><td>La clase <code>Pagina</code> (bloques por grupo) se mantiene aparte.</td><td>Absorberla como plantilla de Documento (fuera de alcance propuesto).</td></tr>
-    <tr><td>7</td><td>Límite de subida de assets: 50 MB/archivo (cubre los ZIP/PDF actuales).</td><td>Otro límite / bloquear ciertos tipos.</td></tr>
+    <tr><th>#</th><th>Decisión</th><th>Resolución</th></tr>
+    <tr><td>1</td><td>Ruta pública <code>/contenidos/&lt;slug&gt;/…</code> y nombre del módulo "Contenidos".</td><td><span class="pill ok">Aprobada</span></td></tr>
+    <tr><td>2</td><td>Editor CodeMirror 6 (fuente visible, ligero, móvil).</td><td><span class="pill ok">Aprobada</span></td></tr>
+    <tr><td>3</td><td>Nombres de clases en español: <code>Coleccion / Documento / DocumentoVersion / Recurso</code>.</td><td><span class="pill ok">Aprobada</span></td></tr>
+    <tr><td>4</td><td>Borrador único por documento (autosave sobre el mismo borrador hasta publicar).</td><td><span class="pill ok">Aprobada</span></td></tr>
+    <tr><td>5</td><td>Storage definitivo: <b>AWS S3</b> — bucket privado <code>groups-meeplab-contenidos</code> (infra ya creada: §8). GridFS interino tras <code>Parse.File</code> hasta la US-8, al final del roadmap para no detener el avance.</td><td><span class="pill info">Ajustada por el usuario</span></td></tr>
+    <tr><td>6</td><td>La clase <code>Pagina</code> (bloques por grupo) se mantiene aparte.</td><td><span class="pill ok">Aprobada</span></td></tr>
+    <tr><td>7</td><td>Límite de subida de assets: 50 MB/archivo (cubre los ZIP/PDF actuales).</td><td><span class="pill ok">Aprobada</span></td></tr>
   </table>
-  <div class="callout ok"><b>Criterio de éxito de esta fase</b>
-  Con este documento se puede validar: modelo de datos (§1), flujo y matriz de permisos (§2),
-  editor y su librería (§3), visor (§4), UI/UX del admin (§5), estrategia de migración (§6),
-  arquitectura/API (§7) y roadmap (§8). Nada de código de producción hasta aprobarlo.</div>
-  <footer>Contenidos — documento de diseño v1 · plataforma groups.meeplab.com · generado para validación previa a implementación.</footer>
+  <div class="callout ok"><b>Diseño validado — listo para implementar</b>
+  El usuario aprobó el 2/jul/2026 las decisiones propuestas (con el ajuste de storage a S3, #5).
+  Este documento queda como referencia de diseño; la implementación arranca con la US-1 del roadmap (§8).</div>
+  <footer>Contenidos — documento de diseño v1.1 (validado) · plataforma groups.meeplab.com.</footer>
 </section>
 
 </main>
