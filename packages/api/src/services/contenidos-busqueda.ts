@@ -3,12 +3,17 @@
  * El scope por permisos vive en el controller; aquí solo el snippet.
  */
 
+const RE_HTML_TAGS = /<[^>]*>/g;
 const RE_MD_RUIDO = /[#*_`>|[\]()!:-]+/g;
 const RE_ESPACIOS = /\s+/g;
 
-/** Markdown → texto plano aproximado para snippets. */
-export function aTextoPlano(markdown: string): string {
-  return markdown.replace(RE_MD_RUIDO, ' ').replace(RE_ESPACIOS, ' ').trim();
+/**
+ * Markdown u HTML crudo → texto plano aproximado para snippets. Los tags se
+ * quitan primero: los cuerpos de páginas tipo `html` mostrarían sopa de
+ * etiquetas en los resultados.
+ */
+export function aTextoPlano(cuerpo: string): string {
+  return cuerpo.replace(RE_HTML_TAGS, ' ').replace(RE_MD_RUIDO, ' ').replace(RE_ESPACIOS, ' ').trim();
 }
 
 /**

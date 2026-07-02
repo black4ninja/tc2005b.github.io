@@ -100,6 +100,42 @@ export async function getArbolColeccion(req: Request, res: Response): Promise<vo
 }
 
 /**
+ * Resolución compartida de una página publicada: path → árbol visible →
+ * documento con su versión publicada. null = 404 (no visible/no publicada).
+ * La usan getPagina y getHtmlCrudo (misma semántica de visibilidad).
+ */
+async function resolverPaginaPublicada(
+  coleccionId: string,
+  rawPath: string,
+): Promise<{
+  arbol: ReturnType<typeof construirArbolVisible>;
+  nodo: NonNullable<ReturnType<typeof resolverPath>>['nodo'];
+  breadcrumb: { titulo: string; slug: string }[];
+  documento: Documento;
+  version: DocumentoVersion;
+} | null> {
+  const path = String(rawPath ?? '')
+    .split('/')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const arbol = construirArbolVisible(await getDocumentosPlanos(coleccionId));
+
+  // Resolver SOBRE el árbol visible: lo no publicado no existe para el visor.
+  const resuelto = resolverPath(arbol, path);
+  if (!resuelto) return null;
+
+  const q = new Parse.Query<Documento>('Documento');
+  q.equalTo('exists' as any, true as any);
+  q.include('version' as any);
+  const documento = await q.get(resuelto.nodo.id, { useMasterKey: true }).catch(() => null);
+  const version = documento?.getVersion();
+  if (!documento || !version) return null;
+
+  return { arbol, nodo: resuelto.nodo, breadcrumb: resuelto.breadcrumb, documento, version };
+}
+
+/**
  * GET /api/contenidos/:slug/pagina/*path — la página publicada con todo lo
  * que el visor necesita: cuerpoHtml, toc, breadcrumb, prev/next.
  */
@@ -108,31 +144,12 @@ export async function getPagina(req: Request, res: Response): Promise<void> {
     const info = await autorizarColeccion(req, res);
     if (!info) return;
 
-    const path = String((req.params as Record<string, string>)[0] ?? '')
-      .split('/')
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    const arbol = construirArbolVisible(await getDocumentosPlanos(info.id));
-
-    // Resolver SOBRE el árbol visible: lo no publicado no existe para el visor.
-    const resuelto = resolverPath(arbol, path);
+    const resuelto = await resolverPaginaPublicada(info.id, (req.params as Record<string, string>)[0]);
     if (!resuelto) {
       res.status(404).json({ status: 'error', message: 'No encontrado' });
       return;
     }
-    const { nodo, breadcrumb } = resuelto;
-
-    // Versión publicada (incluida) del documento resuelto.
-    const q = new Parse.Query<Documento>('Documento');
-    q.equalTo('exists' as any, true as any);
-    q.include('version' as any);
-    const documento = await q.get(nodo.id, { useMasterKey: true }).catch(() => null);
-    const version = documento?.getVersion();
-    if (!documento || !version) {
-      res.status(404).json({ status: 'error', message: 'No encontrado' });
-      return;
-    }
+    const { arbol, nodo, breadcrumb, documento, version } = resuelto;
 
     // Curación perezosa: versiones publicadas ANTES de que el pipeline
     // generara ids/TOC (toc === undefined) se re-renderizan una vez con el
@@ -182,43 +199,64 @@ export async function getHtmlCrudo(req: Request, res: Response): Promise<void> {
     const info = await autorizarColeccion(req, res);
     if (!info) return;
 
-    const path = String((req.params as Record<string, string>)[0] ?? '')
-      .split('/')
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    const arbol = construirArbolVisible(await getDocumentosPlanos(info.id));
-    const resuelto = resolverPath(arbol, path);
+    const resuelto = await resolverPaginaPublicada(info.id, (req.params as Record<string, string>)[0]);
     if (!resuelto || resuelto.nodo.tipo !== 'html') {
       res.status(404).json({ status: 'error', message: 'No encontrado' });
       return;
     }
 
-    const q = new Parse.Query<Documento>('Documento');
-    q.equalTo('exists' as any, true as any);
-    q.include('version' as any);
-    const documento = await q.get(resuelto.nodo.id, { useMasterKey: true }).catch(() => null);
-    const version = documento?.getVersion();
-    if (!documento || !version) {
-      res.status(404).json({ status: 'error', message: 'No encontrado' });
-      return;
-    }
-
-    // CSP del documento embebido: inline sí (es una demo autocontenida),
-    // recursos externos no; solo embebible desde este mismo sitio.
+    // CSP del documento: inline sí (demo autocontenida), recursos externos
+    // no. La directiva `sandbox` fuerza el origen opaco EN EL SERVIDOR:
+    // incluso abierto top-level (link directo, fuera del iframe) el
+    // documento corre sandboxeado — sin cookies, sin same-origin, sin forms.
     res.setHeader(
       'Content-Security-Policy',
-      "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; frame-ancestors 'self'",
+      "sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; media-src data: blob:; form-action 'none'; frame-ancestors 'self'",
     );
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Cache-Control', 'private, max-age=300');
-    res.type('text/html; charset=utf-8').send(version.getCuerpo());
+    // Sin cache: el cuerpo depende de la autorización de ESTE request
+    // (despublicar o revocar acceso debe surtir efecto de inmediato).
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.type('text/html; charset=utf-8').send(resuelto.version.getCuerpo());
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al servir la página' });
   }
 }
 
 const BUSQUEDA_MAX = 20;
+
+// Disponibilidad del índice de texto, memoizada por campo: sin esto, un
+// entorno sin índices pagaría DOS $text fallidos por cada tecleo, siempre.
+const indiceTexto = new Map<string, boolean>();
+
+function escaparRegex(q: string): string {
+  return q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** fullText si el índice existe (memoizado); si no, regex contains. */
+async function buscarConIndice<T extends Parse.Object>(
+  crearQuery: () => Parse.Query<T>,
+  campo: string,
+  q: string,
+  configurar: (query: Parse.Query<T>) => void,
+): Promise<T[]> {
+  if (indiceTexto.get(campo) !== false) {
+    try {
+      const query = crearQuery();
+      (query as any).fullText(campo, q);
+      configurar(query);
+      const out = await query.find({ useMasterKey: true });
+      indiceTexto.set(campo, true);
+      return out;
+    } catch {
+      indiceTexto.set(campo, false); // sin índice: regex de aquí en adelante
+    }
+  }
+  const query = crearQuery();
+  query.matches(campo as any, new RegExp(escaparRegex(q), 'i') as any);
+  configurar(query);
+  return query.find({ useMasterKey: true });
+}
 
 /**
  * GET /api/contenidos/busqueda?q=… — búsqueda full-text con SCOPE por
@@ -248,10 +286,13 @@ export async function buscarContenidos(req: Request, res: Response): Promise<voi
       return;
     }
 
-    // Mapa documentoId → {path, coleccion} de TODO lo visible del usuario.
-    const paginaPorId = new Map<string, { path: string; coleccion: string; clave: string | null; titulo: string }>();
-    for (const info of infos) {
-      const arbol = construirArbolVisible(await getDocumentosPlanos(info.id));
+    // Mapa documentoId → {path, coleccion} de TODO lo visible del usuario
+    // (árboles en paralelo: una espera por colección secuencial sumaría).
+    const paginaPorId = new Map<string, { path: string; coleccion: string; clave: string | null; titulo: string; tipo?: string }>();
+    const arboles = await Promise.all(
+      infos.map(async (info) => ({ info, arbol: construirArbolVisible(await getDocumentosPlanos(info.id)) })),
+    );
+    for (const { info, arbol } of arboles) {
       for (const p of paginasEnOrden(arbol)) {
         paginaPorId.set(p.id, { path: p.path, coleccion: info.slug, clave: info.clave, titulo: p.titulo });
       }
@@ -269,42 +310,30 @@ export async function buscarContenidos(req: Request, res: Response): Promise<voi
       return dq;
     };
 
-    // 1) Títulos que matchean (fullText → fallback regex sin índice).
-    let docsTitulo: Documento[] = [];
-    try {
-      const dq = baseDocs();
-      (dq as any).fullText('titulo', q);
-      dq.include('version' as any);
-      dq.limit(BUSQUEDA_MAX);
-      docsTitulo = await dq.find({ useMasterKey: true });
-    } catch {
-      const dq = baseDocs();
-      dq.matches('titulo' as any, new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') as any);
-      dq.include('version' as any);
-      dq.limit(BUSQUEDA_MAX);
-      docsTitulo = await dq.find({ useMasterKey: true });
-    }
-
-    // 2) Cuerpos publicados que matchean: DocumentoVersion + verificación de
-    //    que ES la versión publicada de un documento visible del scope.
-    let versionesCuerpo: DocumentoVersion[] = [];
-    const baseVersiones = () => {
-      const vq = new Parse.Query<DocumentoVersion>('DocumentoVersion');
-      vq.equalTo('exists' as any, true as any);
-      vq.matchesQuery('documento' as any, baseDocs() as any);
-      vq.include('documento' as any);
-      vq.limit(BUSQUEDA_MAX * 3); // margen: se filtran borradores/versiones viejas
-      return vq;
-    };
-    try {
-      const vq = baseVersiones();
-      (vq as any).fullText('cuerpo', q);
-      versionesCuerpo = await vq.find({ useMasterKey: true });
-    } catch {
-      const vq = baseVersiones();
-      vq.matches('cuerpo' as any, new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') as any);
-      versionesCuerpo = await vq.find({ useMasterKey: true });
-    }
+    // 1) Títulos que matchean y 2) cuerpos cuya versión ES la publicada de
+    // un documento del scope (matchesKeyInQuery contra Documento.version:
+    // sin ventanas post-filtradas que dejarían fuera publicadas cuando el
+    // historial/borradores dominan los matches). En paralelo.
+    const [docsTitulo, versionesCuerpo] = await Promise.all([
+      buscarConIndice<Documento>(baseDocs, 'titulo', q, (query) => {
+        query.include('version' as any);
+        query.limit(BUSQUEDA_MAX);
+      }),
+      buscarConIndice<DocumentoVersion>(
+        () => {
+          const vq = new Parse.Query<DocumentoVersion>('DocumentoVersion');
+          vq.equalTo('exists' as any, true as any);
+          (vq as any).matchesKeyInQuery('objectId', 'version.objectId', baseDocs());
+          return vq;
+        },
+        'cuerpo',
+        q,
+        (query) => {
+          query.include('documento' as any);
+          query.limit(BUSQUEDA_MAX);
+        },
+      ),
+    ]);
 
     const resultados: { titulo: string; coleccion: string; clave: string | null; path: string; snippet: string }[] = [];
     const vistos = new Set<string>();

@@ -12,6 +12,12 @@ describe('aTextoPlano', () => {
       'Título negritas y código link recurso x/y.png',
     );
   });
+
+  it('quita tags de HTML crudo (las páginas tipo html no muestran sopa de etiquetas)', () => {
+    expect(aTextoPlano('<!doctype html><html><body><h1>Demo Flexbox</h1><p>Un ejemplo</p></body></html>')).toBe(
+      'Demo Flexbox Un ejemplo',
+    );
+  });
 });
 
 describe('extraerSnippet', () => {

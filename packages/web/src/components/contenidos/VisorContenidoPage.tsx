@@ -67,6 +67,13 @@ export default function VisorContenidoPage() {
     { titulo: string; coleccion: string; clave: string | null; path: string; snippet: string }[]
   >([]);
   const [buscando, setBuscando] = useState(false);
+  const [errorBusqueda, setErrorBusqueda] = useState(false);
+
+  // Páginas html: se descargan con el MISMO auth que el resto del visor
+  // (header x-session-token) y se montan como blob en el iframe sandboxeado
+  // — un src directo solo podría autenticarse por cookie.
+  const [htmlBlobUrl, setHtmlBlobUrl] = useState<string | null>(null);
+  const [htmlError, setHtmlError] = useState(false);
 
   const path = (pathParam ?? '').replace(/\/+$/, '');
   const rutaPanel = user?.userType === 'admin' ? '/admin' : '/alumno';
@@ -129,17 +136,54 @@ export default function VisorContenidoPage() {
     }
     let cancelado = false;
     setBuscando(true);
+    setErrorBusqueda(false);
     const timer = setTimeout(() => {
       fetch(`${API_BASE}/contenidos/busqueda?q=${encodeURIComponent(q)}`, {
         headers: { 'x-session-token': sessionToken ?? '' },
       })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((json) => { if (!cancelado) setResultados(json?.resultados ?? []); })
-        .catch(() => {})
+        .then(async (r) => {
+          if (cancelado) return;
+          if (!r.ok) {
+            // 401/500 NO son "sin resultados": el usuario debe distinguirlo.
+            setResultados([]);
+            setErrorBusqueda(true);
+            return;
+          }
+          const json = await r.json();
+          if (!cancelado) setResultados(json?.resultados ?? []);
+        })
+        .catch(() => { if (!cancelado) { setResultados([]); setErrorBusqueda(true); } })
         .finally(() => { if (!cancelado) setBuscando(false); });
     }, 300);
     return () => { cancelado = true; clearTimeout(timer); };
   }, [consulta, sessionToken]);
+
+  /* ── Página html: descargar autenticado y montar como blob sandboxeado ── */
+  useEffect(() => {
+    if (!pagina || pagina.tipo !== 'html' || !slug || !path) {
+      setHtmlBlobUrl(null);
+      setHtmlError(false);
+      return;
+    }
+    let cancelado = false;
+    let blobUrl: string | null = null;
+    setHtmlError(false);
+    fetch(`${API_BASE}/contenidos/${slug}/html/${path}`, {
+      headers: { 'x-session-token': sessionToken ?? '' },
+    })
+      .then(async (r) => {
+        if (cancelado) return;
+        if (!r.ok) throw new Error();
+        const html = await r.text();
+        blobUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+        if (!cancelado) setHtmlBlobUrl(blobUrl);
+      })
+      .catch(() => { if (!cancelado) setHtmlError(true); });
+    return () => {
+      cancelado = true;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [pagina, slug, path, sessionToken]);
 
   /* ── Sin path: ir a la primera página del árbol ── */
   useEffect(() => {
@@ -289,6 +333,8 @@ export default function VisorContenidoPage() {
             <div className={styles.buscadorPanel}>
               {buscando ? (
                 <div className={styles.buscadorVacio}>Buscando…</div>
+              ) : errorBusqueda ? (
+                <div className={styles.buscadorVacio}>Error al buscar — reintenta</div>
               ) : resultados.length === 0 ? (
                 <div className={styles.buscadorVacio}>Sin resultados</div>
               ) : (
@@ -351,13 +397,20 @@ export default function VisorContenidoPage() {
               {pagina.tipo === 'html' ? (
                 /* HTML crudo SIEMPRE sandboxeado: sin allow-same-origin el
                    iframe corre en origen opaco — sus scripts no ven cookies
-                   ni pueden llamar al API con credenciales (design §3). */
-                <iframe
-                  src={`${API_BASE}/contenidos/${slug}/html/${path}`}
-                  sandbox="allow-scripts"
-                  className={styles.htmlFrame}
-                  title={pagina.titulo}
-                />
+                   ni pueden llamar al API con credenciales (design §3). El
+                   server además manda CSP con `sandbox` (defensa doble). */
+                htmlError ? (
+                  <div className={styles.notFound}><h1>😵</h1><p>No se pudo cargar la demo.</p></div>
+                ) : !htmlBlobUrl ? (
+                  <p className={styles.hint}>Cargando…</p>
+                ) : (
+                  <iframe
+                    src={htmlBlobUrl}
+                    sandbox="allow-scripts"
+                    className={styles.htmlFrame}
+                    title={pagina.titulo}
+                  />
+                )
               ) : (
                 /* Seguro: cuerpoHtml lo renderizó el SERVIDOR al publicar con el
                    pipeline compartido (rehype-sanitize, allowlist) — scripts,
