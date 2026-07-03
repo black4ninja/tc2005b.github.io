@@ -62,6 +62,10 @@ export async function initializeParseServer() {
     publicServerURL: config.serverURL,
     masterKeyIps: ['0.0.0.0/0', '::/0'],
     allowClientClassCreation: config.environment === 'development',
+    // El CMS permite recursos de 50 MB (US-4). Parse.File los envía en base64
+    // (~+33%), así que el body puede rondar 67 MB; el default de parse-server
+    // (20 MB) los rechazaba con "request entity too large". 80 MB da margen.
+    maxUploadSize: '80mb',
     ...(filesAdapter ? { filesAdapter } : {}),
   });
 
