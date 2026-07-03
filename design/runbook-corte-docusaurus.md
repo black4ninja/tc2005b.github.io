@@ -43,6 +43,10 @@ abre, navega y descarga sus recursos igual que su original.**
    paso de build de Docusaurus.
 3. Verificar: 3–4 URLs viejas de marcadores reales → redirigen a la página
    correcta del CMS.
+4. Nota: los ~19 enlaces `/docs/...` en `packages/web/src/data/labs/*` se
+   sirven vía el 301 (varios son carpetas→readme que SOLO el mapa exacto
+   resuelve — no reescribirlos a mano con heurística). Limpieza opcional
+   posterior: reescribirlos leyendo `packages/api/data/redirects-docs.json`.
 
 ## Activación de S3 (US-8, después del corte)
 

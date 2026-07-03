@@ -4,7 +4,7 @@ import styles from './DocusMenu.module.css';
 
 /**
  * Una documentación habilitada para el grupo: destino + etiqueta
- * "CLAVE — Nombre" (Docusaurus /docs/<slug>/ o colección /contenidos/<slug>/).
+ * "CLAVE — Nombre" (colecciones del CMS: /contenidos/<slug>/).
  */
 export interface DocusLink {
   slug: string;
