@@ -4,6 +4,8 @@ import {
   getMisColecciones,
   getArbolColeccion,
   getPagina,
+  getHtmlCrudo,
+  buscarContenidos,
 } from '../controllers/contenidos-lectura.controller.js';
 import { streamRecurso } from '../controllers/recursos.controller.js';
 
@@ -13,9 +15,11 @@ import { streamRecurso } from '../controllers/recursos.controller.js';
 const router = Router();
 
 router.get('/me/colecciones', identifyUser, getMisColecciones);
-// Antes de :slug/... para que "recursos" nunca se interprete como slug.
+// Literales antes de :slug/... ("recursos"/"busqueda" son slugs reservados).
 router.get('/contenidos/recursos/:id/:nombre', identifyUser, streamRecurso);
+router.get('/contenidos/busqueda', identifyUser, buscarContenidos);
 router.get('/contenidos/:slug/arbol', identifyUser, getArbolColeccion);
 router.get('/contenidos/:slug/pagina/*', identifyUser, getPagina);
+router.get('/contenidos/:slug/html/*', identifyUser, getHtmlCrudo);
 
 export default router;

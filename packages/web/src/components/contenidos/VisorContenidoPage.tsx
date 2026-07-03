@@ -61,6 +61,20 @@ export default function VisorContenidoPage() {
   const [oscuro, setOscuro] = useState(() => localStorage.getItem(TEMA_KEY) === 'oscuro');
   const [reintento, setReintento] = useState(0);
 
+  // Búsqueda (US-5): server-side, con scope por permisos.
+  const [consulta, setConsulta] = useState('');
+  const [resultados, setResultados] = useState<
+    { titulo: string; coleccion: string; clave: string | null; path: string; snippet: string }[]
+  >([]);
+  const [buscando, setBuscando] = useState(false);
+  const [errorBusqueda, setErrorBusqueda] = useState(false);
+
+  // Páginas html: se descargan con el MISMO auth que el resto del visor
+  // (header x-session-token) y se montan como blob en el iframe sandboxeado
+  // — un src directo solo podría autenticarse por cookie.
+  const [htmlBlobUrl, setHtmlBlobUrl] = useState<string | null>(null);
+  const [htmlError, setHtmlError] = useState(false);
+
   const path = (pathParam ?? '').replace(/\/+$/, '');
   const rutaPanel = user?.userType === 'admin' ? '/admin' : '/alumno';
 
@@ -111,6 +125,65 @@ export default function VisorContenidoPage() {
       .then((json) => { if (json) setMisColecciones(json.colecciones ?? []); })
       .catch(() => {});
   }, [sessionToken]);
+
+  /* ── Búsqueda debounced (el server aplica el scope de permisos) ── */
+  useEffect(() => {
+    const q = consulta.trim();
+    if (q.length < 2) {
+      setResultados([]);
+      setBuscando(false);
+      return;
+    }
+    let cancelado = false;
+    setBuscando(true);
+    setErrorBusqueda(false);
+    const timer = setTimeout(() => {
+      fetch(`${API_BASE}/contenidos/busqueda?q=${encodeURIComponent(q)}`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      })
+        .then(async (r) => {
+          if (cancelado) return;
+          if (!r.ok) {
+            // 401/500 NO son "sin resultados": el usuario debe distinguirlo.
+            setResultados([]);
+            setErrorBusqueda(true);
+            return;
+          }
+          const json = await r.json();
+          if (!cancelado) setResultados(json?.resultados ?? []);
+        })
+        .catch(() => { if (!cancelado) { setResultados([]); setErrorBusqueda(true); } })
+        .finally(() => { if (!cancelado) setBuscando(false); });
+    }, 300);
+    return () => { cancelado = true; clearTimeout(timer); };
+  }, [consulta, sessionToken]);
+
+  /* ── Página html: descargar autenticado y montar como blob sandboxeado ── */
+  useEffect(() => {
+    if (!pagina || pagina.tipo !== 'html' || !slug || !path) {
+      setHtmlBlobUrl(null);
+      setHtmlError(false);
+      return;
+    }
+    let cancelado = false;
+    let blobUrl: string | null = null;
+    setHtmlError(false);
+    fetch(`${API_BASE}/contenidos/${slug}/html/${path}`, {
+      headers: { 'x-session-token': sessionToken ?? '' },
+    })
+      .then(async (r) => {
+        if (cancelado) return;
+        if (!r.ok) throw new Error();
+        const html = await r.text();
+        blobUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+        if (!cancelado) setHtmlBlobUrl(blobUrl);
+      })
+      .catch(() => { if (!cancelado) setHtmlError(true); });
+    return () => {
+      cancelado = true;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [pagina, slug, path, sessionToken]);
 
   /* ── Sin path: ir a la primera página del árbol ── */
   useEffect(() => {
@@ -248,6 +321,43 @@ export default function VisorContenidoPage() {
             ))}
           </select>
         )}
+        <div className={styles.buscador}>
+          <input
+            className={styles.buscadorInput}
+            type="search"
+            placeholder="🔍 Buscar en tus contenidos…"
+            value={consulta}
+            onChange={(e) => setConsulta(e.target.value)}
+          />
+          {consulta.trim().length >= 2 && (
+            <div className={styles.buscadorPanel}>
+              {buscando ? (
+                <div className={styles.buscadorVacio}>Buscando…</div>
+              ) : errorBusqueda ? (
+                <div className={styles.buscadorVacio}>Error al buscar — reintenta</div>
+              ) : resultados.length === 0 ? (
+                <div className={styles.buscadorVacio}>Sin resultados</div>
+              ) : (
+                resultados.map((r, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className={styles.buscadorItem}
+                    onClick={() => {
+                      setConsulta('');
+                      navigate(`/contenidos/${r.coleccion}/${r.path}`);
+                    }}
+                  >
+                    <span className={styles.buscadorTitulo}>
+                      {r.clave ? `${r.clave} · ` : ''}{r.titulo}
+                    </span>
+                    <span className={styles.buscadorSnippet}>{r.snippet}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
         <span style={{ flex: 1 }} />
         <button type="button" className={styles.temaBtn} onClick={toggleTema} title="Cambiar tema">
           {oscuro ? '☀️' : '🌙'}
@@ -285,10 +395,22 @@ export default function VisorContenidoPage() {
                 ))}
               </div>
               {pagina.tipo === 'html' ? (
-                <div className={styles.htmlAviso}>
-                  <h1>{pagina.titulo}</h1>
-                  <p>Esta página es una demo HTML interactiva — se habilita con el visor sandboxeado (próxima iteración).</p>
-                </div>
+                /* HTML crudo SIEMPRE sandboxeado: sin allow-same-origin el
+                   iframe corre en origen opaco — sus scripts no ven cookies
+                   ni pueden llamar al API con credenciales (design §3). El
+                   server además manda CSP con `sandbox` (defensa doble). */
+                htmlError ? (
+                  <div className={styles.notFound}><h1>😵</h1><p>No se pudo cargar la demo.</p></div>
+                ) : !htmlBlobUrl ? (
+                  <p className={styles.hint}>Cargando…</p>
+                ) : (
+                  <iframe
+                    src={htmlBlobUrl}
+                    sandbox="allow-scripts"
+                    className={styles.htmlFrame}
+                    title={pagina.titulo}
+                  />
+                )
               ) : (
                 /* Seguro: cuerpoHtml lo renderizó el SERVIDOR al publicar con el
                    pipeline compartido (rehype-sanitize, allowlist) — scripts,

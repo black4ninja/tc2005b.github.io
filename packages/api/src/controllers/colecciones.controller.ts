@@ -16,7 +16,7 @@ const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 // Segmentos que el router del visor usa como literales bajo /contenidos/:
 // una colección con este slug quedaría inalcanzable (shadowing de rutas).
-const SLUGS_RESERVADOS = new Set(['recursos']);
+const SLUGS_RESERVADOS = new Set(['recursos', 'busqueda']);
 
 function validarSlug(slug: unknown): string | null {
   if (typeof slug !== 'string' || !SLUG_REGEX.test(slug) || SLUGS_RESERVADOS.has(slug)) return null;
@@ -108,7 +108,13 @@ export async function updateColeccion(req: Request, res: Response): Promise<void
     }
 
     if (slug !== undefined) {
-      const slugValido = validarSlug(slug);
+      // Conservar el slug ACTUAL siempre es válido, aunque después se haya
+      // reservado: si no, una colección preexistente con ese slug quedaría
+      // ineditable (los clientes reenvían el objeto completo).
+      const slugValido =
+        slug === coleccion.getSlug() && typeof slug === 'string' && SLUG_REGEX.test(slug)
+          ? slug
+          : validarSlug(slug);
       if (!slugValido) {
         res.status(400).json({ status: 'error', message: 'El slug debe contener solo letras minúsculas, números y guiones, y no puede ser una palabra reservada' });
         return;

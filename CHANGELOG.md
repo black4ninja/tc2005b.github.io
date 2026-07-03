@@ -22,6 +22,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   Se removieron los workflows de GitHub Pages, `.nojekyll` y el hack SPA `?/`.
 
 ### Added
+- **CMS "Contenidos" (US-5)**: búsqueda full-text con scope por permisos
+  (imposible sugerir contenido ajeno; índice de texto Mongo con degradación
+  a regex) con buscador en el visor; y páginas HTML crudas servidas con CSP
+  propia dentro de iframe sandbox (origen opaco, sin cookies).
 - **CMS "Contenidos" (US-4)**: recursos adjuntos — subida (límite 50 MB) y
   pegado de imágenes en el editor con referencia `recurso:`, gestor por
   documento, y stream vía endpoint gated por colección; los archivos de
