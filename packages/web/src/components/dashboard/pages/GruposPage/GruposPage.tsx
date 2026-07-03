@@ -7,6 +7,7 @@ import Modal from '../../atoms/Modal/Modal';
 import GrupoForm from '../../organisms/GrupoForm/GrupoForm';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import type { MateriaRef } from '../../../../types/materia';
+import type { ColeccionRef } from '../../../../types/contenidos';
 import styles from './GruposPage.module.css';
 
 interface GrupoData {
@@ -17,6 +18,7 @@ interface GrupoData {
   active: boolean;
   materia?: MateriaRef | null;
   docusaurus?: string[];
+  colecciones?: ColeccionRef[];
 }
 
 const API_BASE = '/api';
@@ -26,6 +28,7 @@ export default function GruposPage() {
   const navigate = useNavigate();
   const [grupos, setGrupos] = useState<GrupoData[]>([]);
   const [materias, setMaterias] = useState<MateriaRef[]>([]);
+  const [colecciones, setColecciones] = useState<ColeccionRef[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -62,10 +65,22 @@ export default function GruposPage() {
     }
   }, [sessionToken]);
 
+  const fetchColecciones = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/colecciones`, { headers: { 'x-session-token': sessionToken ?? '' } });
+      if (!res.ok) return;
+      const data = await res.json();
+      setColecciones(data.colecciones ?? []);
+    } catch {
+      // opcional en el form; ignorar error de carga
+    }
+  }, [sessionToken]);
+
   useEffect(() => {
     fetchGrupos();
     fetchMaterias();
-  }, [fetchGrupos, fetchMaterias]);
+    fetchColecciones();
+  }, [fetchGrupos, fetchMaterias, fetchColecciones]);
 
   function openCreate() {
     setEditGrupo(undefined);
@@ -82,7 +97,7 @@ export default function GruposPage() {
     setEditGrupo(undefined);
   }
 
-  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; materiaId?: string | null; docusaurus?: string[] }) {
+  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; materiaId?: string | null; docusaurus?: string[]; colecciones?: string[] }) {
     setSaving(true);
     setError('');
     try {
@@ -196,6 +211,7 @@ export default function GruposPage() {
         <GrupoForm
           grupo={editGrupo}
           materias={materias}
+          colecciones={colecciones}
           onSave={handleSave}
           onCancel={closeModal}
           loading={saving}

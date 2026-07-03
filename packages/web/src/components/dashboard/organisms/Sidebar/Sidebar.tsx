@@ -91,8 +91,13 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       .then(([gruposJson, materiasJson]) => {
         const grupos = gruposJson?.grupos ?? [];
         const found = grupos.find(
-          (g: { id: string; name?: string; materia?: { slug?: string | null } | null; docusaurus?: string[] }) =>
-            g.id === grupoId,
+          (g: {
+            id: string;
+            name?: string;
+            materia?: { slug?: string | null } | null;
+            docusaurus?: string[];
+            colecciones?: { slug: string; nombre: string; clave: string | null }[];
+          }) => g.id === grupoId,
         );
         if (found?.name) setGrupoName(found.name);
 
@@ -110,8 +115,13 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
           const m = bySlug.get(slug);
           const clave = m?.codigo || slug.toUpperCase();
           const nombre = m?.nombre || slug;
-          return { slug, label: `${clave} — ${nombre}` };
+          return { slug, label: `${clave} — ${nombre}`, href: `/docs/${slug}/` };
         });
+        // + Colecciones del CMS Contenidos asignadas al grupo (US-6).
+        for (const c of found?.colecciones ?? []) {
+          const clave = c.clave || c.slug.toUpperCase();
+          links.push({ slug: `cms-${c.slug}`, label: `${clave} — ${c.nombre}`, href: `/contenidos/${c.slug}/` });
+        }
         setDocusLinks(links);
       })
       .catch(() => {});

@@ -3,6 +3,14 @@
 export type DocumentoTipo = 'md' | 'html' | 'categoria';
 export type DocumentoPlantilla = 'laboratorio' | 'lectura' | 'temario';
 
+/** Referencia mínima de colección (asignación a grupos, submenús). */
+export interface ColeccionRef {
+  id: string;
+  nombre: string;
+  slug: string;
+  clave: string | null;
+}
+
 export interface ColeccionData {
   id: string;
   nombre: string;

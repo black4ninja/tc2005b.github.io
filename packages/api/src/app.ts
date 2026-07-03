@@ -16,6 +16,7 @@ import contenidosVisorRoutes from './routes/contenidos-visor.routes.js';
 import meRoutes from './routes/me.routes.js';
 import { docsGate } from './middlewares/docs-gate.middleware.js';
 import { filesGate } from './middlewares/files-gate.middleware.js';
+import { docsRedirects } from './middlewares/docs-redirects.middleware.js';
 import alumnosRoutes from './routes/alumnos.routes.js';
 import calendarioRoutes from './routes/calendario.routes.js';
 import indicacionesMallaRoutes from './routes/indicaciones-malla.routes.js';
@@ -95,8 +96,14 @@ export function finalize() {
     const __dirname = path.dirname(__filename);
     const distPath = path.resolve(__dirname, '../../../dist');
 
-    // Docusaurus en /docs — gate de acceso por materia ANTES del estático.
+    // Docusaurus en /docs — el gate de acceso por materia corre PRIMERO:
+    // un usuario sin acceso recibe el 404 de siempre; el redirect (abajo)
+    // jamás le filtra slugs/estructura del CMS.
     app.use('/docs', docsGate);
+    // Redirects /docs→/contenidos (US-6): apagados hasta el corte de la
+    // US-7 (REDIRECT_DOCS_A_CONTENIDOS=true). Cuando se enciendan, /docs
+    // deja de servir el estático (solo para usuarios ya autorizados).
+    app.use('/docs', docsRedirects);
     app.use('/docs', express.static(path.join(distPath, 'docs')));
 
     // Contenido legacy

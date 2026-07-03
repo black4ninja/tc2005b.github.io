@@ -9,7 +9,7 @@ export async function listGrupos(_req: Request, res: Response): Promise<void> {
   try {
     const query = new Parse.Query<Grupo>('Grupo');
     query.equalTo('exists' as any, true as any);
-    query.include('materia' as any);
+    query.include(['materia', 'colecciones'] as any);
     query.descending('createdAt');
     const grupos = await query.find({ useMasterKey: true });
 
@@ -30,8 +30,24 @@ function normalizeSlugs(value: unknown): string[] | null {
   return [...new Set(slugs)];
 }
 
+/**
+ * ids de colecciones → pointers VALIDADOS (existentes). null = payload no-array
+ * (se ignora); un id inexistente es error del cliente (400).
+ */
+async function resolverColecciones(value: unknown): Promise<Parse.Object[] | 'invalido' | null> {
+  if (!Array.isArray(value)) return null;
+  const ids = [...new Set(value.filter((s): s is string => typeof s === 'string' && s.trim() !== ''))];
+  if (ids.length === 0) return [];
+  const q = new Parse.Query('Coleccion');
+  q.equalTo('exists' as any, true as any);
+  q.containedIn('objectId' as any, ids as any);
+  const encontradas = await q.find({ useMasterKey: true });
+  if (encontradas.length !== ids.length) return 'invalido';
+  return encontradas;
+}
+
 export async function createGrupo(req: Request, res: Response): Promise<void> {
-  const { name, fechaInicio, fechaFin, materiaId, docusaurus } = req.body;
+  const { name, fechaInicio, fechaFin, materiaId, docusaurus, colecciones } = req.body;
 
   if (!name || typeof name !== 'string' || name.trim() === '') {
     res.status(400).json({ status: 'error', message: 'El nombre es requerido' });
@@ -56,7 +72,15 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
     const docusSlugs = normalizeSlugs(docusaurus);
     if (docusSlugs) grupo.setDocusaurus(docusSlugs);
 
+    const coleccionesPtrs = await resolverColecciones(colecciones);
+    if (coleccionesPtrs === 'invalido') {
+      res.status(400).json({ status: 'error', message: 'Alguna colección indicada no existe' });
+      return;
+    }
+    if (coleccionesPtrs) grupo.setColecciones(coleccionesPtrs);
+
     await grupo.save(null, { useMasterKey: true });
+    if (coleccionesPtrs?.length) invalidateColeccionesPermitidas();
 
     res.status(201).json({ status: 'ok', grupo: grupo.toSafeJSON() });
   } catch (error) {
@@ -66,11 +90,13 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
 
 export async function updateGrupo(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { name, fechaInicio, fechaFin, materiaId, docusaurus } = req.body;
+  const { name, fechaInicio, fechaFin, materiaId, docusaurus, colecciones } = req.body;
 
   try {
     const query = BaseModel.queryActive<Grupo>('Grupo');
-    query.include('materia' as any);
+    // colecciones incluidas: toSafeJSON serializa pointers y sin fetch
+    // respondería nulls (y no podría filtrar soft-deleted).
+    query.include(['materia', 'colecciones'] as any);
     const grupo = await query.get(id, { useMasterKey: true });
 
     if (name !== undefined) {
@@ -98,9 +124,18 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
     const docusSlugs = docusaurus !== undefined ? normalizeSlugs(docusaurus) : null;
     if (docusSlugs) grupo.setDocusaurus(docusSlugs);
 
+    // Misma regla que docusaurus: solo un array válido aplica ([] limpia).
+    const coleccionesPtrs = colecciones !== undefined ? await resolverColecciones(colecciones) : null;
+    if (coleccionesPtrs === 'invalido') {
+      res.status(400).json({ status: 'error', message: 'Alguna colección indicada no existe' });
+      return;
+    }
+    if (coleccionesPtrs) grupo.setColecciones(coleccionesPtrs);
+
     await grupo.save(null, { useMasterKey: true });
     // Si cambió la materia o los docusaurus del grupo, cambió el acceso de sus alumnos.
     if (materiaId !== undefined || docusSlugs) invalidateAllowedCache();
+    if (coleccionesPtrs) invalidateColeccionesPermitidas();
 
     res.json({ status: 'ok', grupo: grupo.toSafeJSON() });
   } catch (error: any) {
@@ -118,6 +153,7 @@ export async function archiveGrupo(req: Request, res: Response): Promise<void> {
   try {
     const query = new Parse.Query<Grupo>('Grupo');
     query.equalTo('exists' as any, true as any);
+    query.include(['materia', 'colecciones'] as any);
     const grupo = await query.get(id, { useMasterKey: true });
 
     if (grupo.get('active')) {
