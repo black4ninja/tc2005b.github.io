@@ -7,9 +7,9 @@ import { describe, it, expect } from 'vitest';
 import { aTextoPlano, extraerSnippet } from '../src/services/contenidos-busqueda.js';
 
 describe('aTextoPlano', () => {
-  it('quita el ruido de Markdown', () => {
+  it('quita el ruido de Markdown (sin comerse guiones/dos-puntos internos)', () => {
     expect(aTextoPlano('# Título\n\n**negritas** y `código` [link](recurso:x/y.png)')).toBe(
-      'Título negritas y código link recurso x/y.png',
+      'Título negritas y código link recurso:x/y.png',
     );
   });
 
@@ -29,6 +29,12 @@ describe('extraerSnippet', () => {
     expect(s.startsWith('…')).toBe(true);
     expect(s.endsWith('…')).toBe(true);
     expect(s.length).toBeLessThan(220);
+  });
+
+  it('centra correctamente términos con guion (no los parte al limpiar)', () => {
+    const conGuion = `# Título\n\n${'x '.repeat(50)}el término flexbox-magico va aquí${' y'.repeat(50)}`;
+    const s = extraerSnippet(conGuion, 'flexbox-magico');
+    expect(s).toContain('flexbox-magico');
   });
 
   it('sin aparición devuelve el inicio del texto', () => {
