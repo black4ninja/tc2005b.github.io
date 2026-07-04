@@ -124,8 +124,8 @@ const lab17: Lab = {
   entrega: 'A trav\u00e9s de tu repositorio personal (Bitbucket o GitHub).',
   practica: {
     titulo: "Pr\u00e1ctica: Interacci\u00f3n con Base de Datos",
-    enlace: "/docs/tc2005b/backend/node/tutorials/intro_web/Lab17BD/",
-    descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en el Docusaurus del curso"
+    enlace: "/contenidos/tc2005b/backend/node/tutorials/intro-web/lab17bd/readme",
+    descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en la documentaci\u00f3n del curso"
   }
 };
 

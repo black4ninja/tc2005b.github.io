@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import type { TocEntry } from '@tc2005b/contenido-pipeline';
 import { useAuth } from '../../context/AuthContext';
@@ -8,6 +8,7 @@ import styles from './VisorContenidoPage.module.css';
 
 const API_BASE = '/api';
 const TEMA_KEY = 'contenidos-tema';
+const ARBOL_KEY = 'contenidos-arbol-oculto';
 
 interface NodoVisor {
   id: string;
@@ -59,7 +60,10 @@ export default function VisorContenidoPage() {
   const [cargando, setCargando] = useState(true);
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
   const [oscuro, setOscuro] = useState(() => localStorage.getItem(TEMA_KEY) === 'oscuro');
+  // Árbol lateral colapsable: útil al presentar contenido con alumnos (estorba).
+  const [arbolOculto, setArbolOculto] = useState(() => localStorage.getItem(ARBOL_KEY) === '1');
   const [reintento, setReintento] = useState(0);
+  const articleRef = useRef<HTMLElement>(null);
 
   // Búsqueda (US-5): server-side, con scope por permisos.
   const [consulta, setConsulta] = useState('');
@@ -84,6 +88,66 @@ export default function VisorContenidoPage() {
       return !v;
     });
   }
+
+  function toggleArbol() {
+    setArbolOculto((v) => {
+      localStorage.setItem(ARBOL_KEY, v ? '0' : '1');
+      return !v;
+    });
+  }
+
+  // Botón "copiar" en cada bloque de código. El cuerpo se inserta como HTML
+  // (dangerouslySetInnerHTML), así que enriquecemos los <pre> tras el render;
+  // al cambiar de página React reemplaza el HTML y el efecto vuelve a correr.
+  useEffect(() => {
+    const article = articleRef.current;
+    if (!article) return;
+    // Icono Material como texto (ligadura) — sin innerHTML, sin riesgo de XSS.
+    const icono = (nombre: string) => {
+      const s = document.createElement('span');
+      s.className = 'material-icons';
+      s.textContent = nombre;
+      return s;
+    };
+    article.querySelectorAll('pre').forEach((pre) => {
+      if (pre.querySelector('.contenido-copy-btn')) return; // idempotente
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'contenido-copy-btn';
+      btn.setAttribute('aria-label', 'Copiar código');
+      btn.appendChild(icono('content_copy'));
+      const confirmar = () => {
+        btn.classList.add('copiado');
+        btn.replaceChildren(icono('check'));
+        window.setTimeout(() => {
+          btn.classList.remove('copiado');
+          btn.replaceChildren(icono('content_copy'));
+        }, 1500);
+      };
+      btn.addEventListener('click', () => {
+        const codigo = (pre.querySelector('code')?.textContent ?? '').replace(/\n$/, '');
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(codigo).then(confirmar).catch(() => {});
+        } else {
+          // Contextos no seguros (http) o sin Clipboard API: fallback clásico.
+          const ta = document.createElement('textarea');
+          ta.value = codigo;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand('copy');
+            confirmar();
+          } catch {
+            /* sin portapapeles disponible */
+          }
+          document.body.removeChild(ta);
+        }
+      });
+      pre.appendChild(btn);
+    });
+  }, [pagina]);
 
   /* ── Árbol de la colección (autorizado por request) ── */
   useEffect(() => {
@@ -304,6 +368,16 @@ export default function VisorContenidoPage() {
   return (
     <div className={`${styles.visor} ${oscuro ? `${styles.oscuro} tema-oscuro` : ''}`}>
       <header className={styles.topbar}>
+        <button
+          type="button"
+          className={styles.arbolToggle}
+          onClick={toggleArbol}
+          title={arbolOculto ? 'Mostrar menú de contenido' : 'Ocultar menú de contenido'}
+          aria-label={arbolOculto ? 'Mostrar menú de contenido' : 'Ocultar menú de contenido'}
+          aria-pressed={!arbolOculto}
+        >
+          <span className="material-icons">{arbolOculto ? 'menu' : 'menu_open'}</span>
+        </button>
         <span className={styles.brand} title={coleccion?.nombre}>
           📘 {coleccion ? `${coleccion.clave ? `${coleccion.clave} — ` : ''}${coleccion.nombre}` : '…'}
         </span>
@@ -365,7 +439,7 @@ export default function VisorContenidoPage() {
         <Link to={rutaPanel} className={styles.panelLink}>Mi panel</Link>
       </header>
 
-      <div className={styles.cuerpo}>
+      <div className={`${styles.cuerpo} ${arbolOculto ? styles.cuerpoSinArbol : ''}`}>
         <nav className={styles.arbol}>
           <div className={styles.arbolTitulo}>Contenido</div>
           {cargando ? <p className={styles.hint}>Cargando…</p> : arbol.map((n) => renderNodo(n, '', 0))}
@@ -416,7 +490,7 @@ export default function VisorContenidoPage() {
                    pipeline compartido (rehype-sanitize, allowlist) — scripts,
                    handlers e iframes se eliminan (design §3). El HTML crudo de
                    páginas tipo `html` NUNCA pasa por aquí (iframe sandbox, US-5). */
-                <article className="contenido-render" dangerouslySetInnerHTML={{ __html: pagina.cuerpoHtml }} />
+                <article ref={articleRef} className="contenido-render" dangerouslySetInnerHTML={{ __html: pagina.cuerpoHtml }} />
               )}
               <div className={styles.prevNext}>
                 {pagina.prev ? (

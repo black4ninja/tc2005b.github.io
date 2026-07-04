@@ -87,8 +87,8 @@ const lab13: Lab = {
   entrega: 'A trav\u00e9s de tu repositorio personal.',
   practica: {
     titulo: "Pr\u00e1ctica: MVC",
-    enlace: "/docs/tc2005b/backend/node/tutorials/intro_web/LAB13MVC/",
-    descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en el Docusaurus del curso"
+    enlace: "/contenidos/tc2005b/backend/node/tutorials/intro-web/lab13mvc/readme",
+    descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en la documentaci\u00f3n del curso"
   }
 };
 

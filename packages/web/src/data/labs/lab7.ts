@@ -54,8 +54,8 @@ const lab7: Lab = {
   entrega: 'En el canal de discord del equipo',
   practica: {
     titulo: "Pr\u00e1ctica: Ramas en Git",
-    enlace: "/docs/tc2005b/backend/node/tutorials/intro_web/Lab7Branches/",
-    descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en el Docusaurus del curso"
+    enlace: "/contenidos/tc2005b/backend/node/tutorials/intro-web/lab7branches/readme",
+    descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en la documentaci\u00f3n del curso"
   }
 };
 

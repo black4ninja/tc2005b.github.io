@@ -75,8 +75,8 @@ const lab1: Lab = {
   entrega: 'Una vez que termines, registra la actividad en tu plan de aprendizaje. Guarda tu trabajo en tu computadora personal. En el laboratorio 2 se dar\u00e1n las instrucciones para la entrega de este laboratorio y de todos los siguientes.',
   practica: {
     titulo: "Pr\u00e1ctica: Intro a Desarrollo Web con HTML",
-    enlace: "/docs/tc2005b/backend/node/tutorials/intro_web/Lab1HTML/",
-    descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en el Docusaurus del curso"
+    enlace: "/contenidos/tc2005b/backend/node/tutorials/intro-web/lab1html/readme",
+    descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en la documentaci\u00f3n del curso"
   }
 };
 

@@ -91,7 +91,7 @@ const lab11: Lab = {
         '<ul>' +
           '<li>La aplicacion debe poder responder al menos a 5 rutas diferentes, distribuidas en al menos 2 modulos, y mandar una respuesta HTTP 404 cuando la ruta no existe.</li>' +
           '<li>En alguna de las rutas, la aplicacion debe contener al menos 1 forma que debe enviar datos al servidor por POST. El servidor debe reaccionar ante este envio y guardar los datos en un archivo de texto dentro del mismo servidor.</li>' +
-          '<li>Deberas separar las rutas creadas en un archivo diferente y seguir lo visto en la practica del <a href="https://meeplab2015.github.io/tc2005b-docusaurus/docs/backend/node/tutorials/intro_web/Lab11Express/#separando-en-clases">Docusaurus.</a> La seccion que dice separando en clases.</li>' +
+          '<li>Deberas separar las rutas creadas en un archivo diferente y seguir lo visto en la practica de la <a href="/contenidos/tc2005b/backend/node/tutorials/intro-web/lab11express/readme#separando-en-clases">documentaci\u00f3n.</a> La seccion que dice separando en clases.</li>' +
         '</ul>' +
       '</li>' +
     '</ol>',
@@ -108,8 +108,8 @@ const lab11: Lab = {
   entrega: 'A traves de tu repositorio personal.',
   practica: {
     titulo: "Pr\u00e1ctica: Express",
-    enlace: "/docs/tc2005b/backend/node/tutorials/intro_web/Lab11Express/",
-    descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en el Docusaurus del curso"
+    enlace: "/contenidos/tc2005b/backend/node/tutorials/intro-web/lab11express/readme",
+    descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en la documentaci\u00f3n del curso"
   }
 };
 
