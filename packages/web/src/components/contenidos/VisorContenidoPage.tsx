@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import type { TocEntry } from '@tc2005b/contenido-pipeline';
 import { useAuth } from '../../context/AuthContext';
@@ -63,6 +63,7 @@ export default function VisorContenidoPage() {
   // Árbol lateral colapsable: útil al presentar contenido con alumnos (estorba).
   const [arbolOculto, setArbolOculto] = useState(() => localStorage.getItem(ARBOL_KEY) === '1');
   const [reintento, setReintento] = useState(0);
+  const articleRef = useRef<HTMLElement>(null);
 
   // Búsqueda (US-5): server-side, con scope por permisos.
   const [consulta, setConsulta] = useState('');
@@ -94,6 +95,41 @@ export default function VisorContenidoPage() {
       return !v;
     });
   }
+
+  // Botón "copiar" en cada bloque de código. El cuerpo se inserta como HTML
+  // (dangerouslySetInnerHTML), así que enriquecemos los <pre> tras el render;
+  // al cambiar de página React reemplaza el HTML y el efecto vuelve a correr.
+  useEffect(() => {
+    const article = articleRef.current;
+    if (!article) return;
+    // Icono Material como texto (ligadura) — sin innerHTML, sin riesgo de XSS.
+    const icono = (nombre: string) => {
+      const s = document.createElement('span');
+      s.className = 'material-icons';
+      s.textContent = nombre;
+      return s;
+    };
+    article.querySelectorAll('pre').forEach((pre) => {
+      if (pre.querySelector('.contenido-copy-btn')) return; // idempotente
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'contenido-copy-btn';
+      btn.setAttribute('aria-label', 'Copiar código');
+      btn.appendChild(icono('content_copy'));
+      btn.addEventListener('click', () => {
+        const codigo = pre.querySelector('code')?.textContent ?? '';
+        navigator.clipboard?.writeText(codigo.replace(/\n$/, '')).then(() => {
+          btn.classList.add('copiado');
+          btn.replaceChildren(icono('check'));
+          window.setTimeout(() => {
+            btn.classList.remove('copiado');
+            btn.replaceChildren(icono('content_copy'));
+          }, 1500);
+        });
+      });
+      pre.appendChild(btn);
+    });
+  }, [pagina]);
 
   /* ── Árbol de la colección (autorizado por request) ── */
   useEffect(() => {
@@ -436,7 +472,7 @@ export default function VisorContenidoPage() {
                    pipeline compartido (rehype-sanitize, allowlist) — scripts,
                    handlers e iframes se eliminan (design §3). El HTML crudo de
                    páginas tipo `html` NUNCA pasa por aquí (iframe sandbox, US-5). */
-                <article className="contenido-render" dangerouslySetInnerHTML={{ __html: pagina.cuerpoHtml }} />
+                <article ref={articleRef} className="contenido-render" dangerouslySetInnerHTML={{ __html: pagina.cuerpoHtml }} />
               )}
               <div className={styles.prevNext}>
                 {pagina.prev ? (
