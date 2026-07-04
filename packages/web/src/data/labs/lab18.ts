@@ -116,7 +116,7 @@ const lab18: Lab = {
   entrega: 'A trav\u00e9s de tu repositorio personal (Bitbucket o GitHub).',
   practica: {
     titulo: "Pr\u00e1ctica: Autenticaci\u00f3n",
-    enlace: "/docs/tc2005b/backend/node/tutorials/intro_web/Lab18AutenticacionSupabase/",
+    enlace: "/contenidos/tc2005b/backend/node/tutorials/intro-web/lab18autenticacionsupabase/readme",
     descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en la documentaci\u00f3n del curso"
   }
 };
