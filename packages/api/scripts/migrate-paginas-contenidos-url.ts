@@ -28,7 +28,12 @@ const MAPA: Record<string, string> = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, '../data/redirects-docs.json'), 'utf8'),
 );
 
-const RE_DOCS = /\/docs\/[A-Za-z0-9_\-/]+\/?(?:#[A-Za-z0-9_-]+)?/g;
+// Solo enlaces ROOT-RELATIVE: un `/docs/` que NO venga precedido por caracteres
+// de host/ruta (`\w`, `.`, `:`, `/`, `-`). Así los `/docs/...` embebidos en URLs
+// absolutas externas (p. ej. `https://host/.../docs/...` o incluso un Docusaurus
+// autoalojado que comparte nuestra estructura de rutas) se IGNORAN y no se
+// corrompen. El `.` en las clases evita truncar rutas/anclas con puntos.
+const RE_DOCS = /(?<![\w.:/-])\/docs\/[A-Za-z0-9_.\-/]+\/?(?:#[A-Za-z0-9_.-]+)?/g;
 
 interface Reporte { mapeados: number; sinResolver: Set<string>; }
 
@@ -36,10 +41,12 @@ function reescribirString(s: string, rep: Reporte): string {
   return s.replace(RE_DOCS, (full) => {
     const [rutaCruda, ancla] = full.split('#');
     const limpia = rutaCruda.replace(/\/+$/, '');
-    // 1) match directo; 2) fallback formato viejo sin `/tc2005b` (p. ej.
-    //    `/docs/backend/...`): probamos con el prefijo insertado. Ambos casos
-    //    dependen de que la clave EXISTA en el mapa, así que los `/docs/...`
-    //    externos (MDN, Node, Tailwind…) nunca colisionan y quedan intactos.
+    // 1) match directo; 2) fallback formato viejo sin `/tc2005b` (p. ej. un
+    //    link root-relative `/docs/backend/...`): probamos con el prefijo
+    //    insertado. El fallback es SEGURO solo porque RE_DOCS ya descartó los
+    //    `/docs/...` embebidos en URLs absolutas (lookbehind): sin ese guard,
+    //    una URL externa de un Docusaurus autoalojado que comparte nuestra
+    //    estructura de rutas SÍ colisionaría con el mapa y se corrompería.
     const destino = MAPA[limpia] ?? MAPA[`/docs/tc2005b${limpia.slice('/docs'.length)}`];
     if (destino) {
       rep.mapeados += 1;
@@ -75,6 +82,9 @@ async function main() {
   q.limit(10000);
   const paginas = await q.find({ useMasterKey: true });
   console.log(`Cargadas ${paginas.length} páginas.\n`);
+  if (paginas.length === 10000) {
+    console.warn('⚠️ Se alcanzó el límite de 10000; podrían faltar páginas. Reejecuta con paginación (Query.each).\n');
+  }
 
   const rep: Reporte = { mapeados: 0, sinResolver: new Set() };
   let cambiadas = 0;
