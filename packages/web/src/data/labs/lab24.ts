@@ -90,7 +90,7 @@ const lab24: Lab = {
   practica: {
     titulo: "Pr\u00e1ctica: AJAX",
     enlace: "/docs/tc2005b/backend/node/tutorials/intro_web/Lab24AJAX/",
-    descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en el Docusaurus del curso"
+    descripcion: "Consulta la gu\u00eda pr\u00e1ctica completa en la documentaci\u00f3n del curso"
   }
 };
 
