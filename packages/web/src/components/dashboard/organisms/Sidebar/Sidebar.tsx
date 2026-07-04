@@ -25,7 +25,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const { sessionToken, user, updateUser } = useAuth();
   const [grupoName, setGrupoName] = useState('');
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
-  const [docsHref, setDocsHref] = useState('/docs/');
+  const [docsHref, setDocsHref] = useState<string | null>(null);
   const [docusLinks, setDocusLinks] = useState<DocusLink[]>([]);
 
   useEffect(() => {
@@ -34,35 +34,16 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
     }
   }, [role, user?.grupos]);
 
-  // Link "Documentación" del usuario. Para ALUMNOS con colecciones del CMS
-  // asignadas (US-6), apunta al visor /contenidos/<slug>/; si no, aplica el
-  // esquema Docusaurus actual (materia única → /docs/<slug>/, si no la
-  // landing). El admin conserva /docs/ mientras Docusaurus siga operativo
-  // (US-7) — su acceso al CMS es la sección "Contenidos".
+  // Link "Documentación" del alumno: el visor de su primera colección del
+  // CMS; sin colecciones asignadas, el ítem se oculta (docsHref = null).
+  // El admin no lleva este ítem — su acceso es la sección "Contenidos".
   useEffect(() => {
-    if (!sessionToken) return;
-    const headers = { 'x-session-token': sessionToken };
-    const porMaterias = () =>
-      fetch('/api/me/materias', { headers })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((json) => {
-          const materias: { slug: string }[] = json?.materias ?? [];
-          setDocsHref(materias.length === 1 ? `/docs/${materias[0].slug}/` : '/docs/');
-        });
-
-    if (role !== 'alumno') {
-      porMaterias().catch(() => {});
-      return;
-    }
-    fetch('/api/me/colecciones', { headers })
+    if (!sessionToken || role !== 'alumno') return;
+    fetch('/api/me/colecciones', { headers: { 'x-session-token': sessionToken } })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
         const colecciones: { slug: string }[] = json?.colecciones ?? [];
-        if (colecciones.length > 0) {
-          setDocsHref(`/contenidos/${colecciones[0].slug}/`);
-          return;
-        }
-        return porMaterias();
+        setDocsHref(colecciones.length > 0 ? `/contenidos/${colecciones[0].slug}/` : null);
       })
       .catch(() => {});
   }, [sessionToken, role]);
@@ -83,45 +64,27 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
 
   useEffect(() => {
     if (!grupoId || !sessionToken) return;
-    const headers = { 'x-session-token': sessionToken };
-    Promise.all([
-      fetch('/api/admin/grupos', { headers }).then((r) => (r.ok ? r.json() : null)),
-      fetch('/api/admin/materias', { headers }).then((r) => (r.ok ? r.json() : null)),
-    ])
-      .then(([gruposJson, materiasJson]) => {
-        const grupos = gruposJson?.grupos ?? [];
+    fetch('/api/admin/grupos', { headers: { 'x-session-token': sessionToken } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        const grupos = json?.grupos ?? [];
         const found = grupos.find(
           (g: {
             id: string;
             name?: string;
-            materia?: { slug?: string | null } | null;
-            docusaurus?: string[];
             colecciones?: { slug: string; nombre: string; clave: string | null }[];
           }) => g.id === grupoId,
         );
         if (found?.name) setGrupoName(found.name);
 
-        // Etiquetas "CLAVE — Nombre" resueltas desde la lista de materias
-        // (la del grupo trae slug pero no código).
-        const materias: { slug: string; nombre: string; codigo?: string | null }[] = materiasJson?.materias ?? [];
-        const bySlug = new Map(materias.map((m) => [m.slug, m]));
-
-        // Docusaurus del grupo = unión de (materia del grupo) + (docusaurus[]),
-        // deduplicada, en el orden materia → asignados.
-        const slugs = [found?.materia?.slug, ...(found?.docusaurus ?? [])].filter(
-          (s): s is string => typeof s === 'string' && s.length > 0,
+        // Documentación del grupo = sus colecciones del CMS Contenidos.
+        const links: DocusLink[] = (found?.colecciones ?? []).map(
+          (c: { slug: string; nombre: string; clave: string | null }) => ({
+            slug: c.slug,
+            label: `${c.clave || c.slug.toUpperCase()} — ${c.nombre}`,
+            href: `/contenidos/${c.slug}/`,
+          }),
         );
-        const links: DocusLink[] = [...new Set(slugs)].map((slug) => {
-          const m = bySlug.get(slug);
-          const clave = m?.codigo || slug.toUpperCase();
-          const nombre = m?.nombre || slug;
-          return { slug, label: `${clave} — ${nombre}`, href: `/docs/${slug}/` };
-        });
-        // + Colecciones del CMS Contenidos asignadas al grupo (US-6).
-        for (const c of found?.colecciones ?? []) {
-          const clave = c.clave || c.slug.toUpperCase();
-          links.push({ slug: `cms-${c.slug}`, label: `${clave} — ${c.nombre}`, href: `/contenidos/${c.slug}/` });
-        }
         setDocusLinks(links);
       })
       .catch(() => {});

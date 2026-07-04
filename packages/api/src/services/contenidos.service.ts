@@ -6,7 +6,7 @@ import { TtlValue, TtlMap } from '../utils/ttl-cache.js';
 
 /**
  * Permisos de lectura del CMS "Contenidos" (design §2) — patrón calcado de
- * materia.service: cache global corto del mapa de slugs + cache por usuario
+ * cache global corto del mapa de slugs + cache por usuario
  * de colecciones permitidas, ambos con invalidación explícita.
  * Regla: admin ⇒ todas las colecciones; alumno ⇒ SOLO las publicadas
  * asignadas a sus grupos ACTIVOS (Grupo.colecciones). Denegado ⇒ 404.

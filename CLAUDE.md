@@ -8,17 +8,18 @@ Course website for **TC2005B - Construcción de Software y Toma de Decisiones** 
 
 ## Architecture
 
-**Monorepo** with npm workspaces containing two packages:
+**Monorepo** with npm workspaces containing three packages:
 
-- `packages/web/` — React 19 + Vite 6 + TypeScript SPA (main site: calendar, labs, avances, policies)
-- `packages/docusaurus/` — Docusaurus 3.9.2 documentation site (served under `/docs/`)
+- `packages/web/` — React 19 + Vite 6 + TypeScript SPA (main site: calendar, labs, avances, policies, CMS "Contenidos")
+- `packages/api/` — Express + Parse Server API (incluye el CMS "Contenidos": colecciones, documentos, recursos, visor gated en `/contenidos/`)
+- `packages/contenido-pipeline/` — pipeline unified compartido (render Markdown del CMS)
 
 Legacy static HTML content (ejercicios, laboratorios, lecturas, documentos) lives in `static-legacy/` and is copied to the build output.
 
 ## Commands
 
-- **Dev servers:** `npm run dev` — starts Vite (port 5173) and Docusaurus (port 3001) concurrently
-- **Build:** `npm run build` — builds web + docs + merges into `dist/`
+- **Dev servers:** `npm run dev` — starts Vite (port 5173) and the API concurrently
+- **Build:** `npm run build` — builds web + api + merges into `dist/`
 - **Preview:** `npm run preview` — serves the built `dist/` directory
 - **Run tests:** `npm test` (uses Vitest with `--globals` flag)
 - **Type check:** `cd packages/web && npx tsc --noEmit`

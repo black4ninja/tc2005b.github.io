@@ -13,8 +13,6 @@ import gruposRoutes from './routes/grupos.routes.js';
 import materiasRoutes from './routes/materias.routes.js';
 import contenidosRoutes from './routes/contenidos.routes.js';
 import contenidosVisorRoutes from './routes/contenidos-visor.routes.js';
-import meRoutes from './routes/me.routes.js';
-import { docsGate } from './middlewares/docs-gate.middleware.js';
 import { filesGate } from './middlewares/files-gate.middleware.js';
 import { docsRedirects } from './middlewares/docs-redirects.middleware.js';
 import alumnosRoutes from './routes/alumnos.routes.js';
@@ -64,7 +62,6 @@ app.use('/api', gruposRoutes);
 app.use('/api', materiasRoutes);
 app.use('/api', contenidosRoutes);
 app.use('/api', contenidosVisorRoutes);
-app.use('/api', meRoutes);
 app.use('/api', alumnosRoutes);
 app.use('/api', calendarioRoutes);
 app.use('/api', indicacionesMallaRoutes);
@@ -96,15 +93,10 @@ export function finalize() {
     const __dirname = path.dirname(__filename);
     const distPath = path.resolve(__dirname, '../../../dist');
 
-    // Docusaurus en /docs — el gate de acceso por materia corre PRIMERO:
-    // un usuario sin acceso recibe el 404 de siempre; el redirect (abajo)
-    // jamás le filtra slugs/estructura del CMS.
-    app.use('/docs', docsGate);
-    // Redirects /docs→/contenidos (US-6): apagados hasta el corte de la
-    // US-7 (REDIRECT_DOCS_A_CONTENIDOS=true). Cuando se enciendan, /docs
-    // deja de servir el estático (solo para usuarios ya autorizados).
+    // Docusaurus retirado (US-7): /docs solo redirige 301 → /contenidos.
+    // Sin gate: la autorización real vive en los endpoints del CMS — el
+    // destino del redirect responde 404 a quien no tiene acceso.
     app.use('/docs', docsRedirects);
-    app.use('/docs', express.static(path.join(distPath, 'docs')));
 
     // Contenido legacy
     const legacyDirs = ['ejercicios', 'laboratorios', 'lecturas', 'documentos', 'imagenes', 'css', 'js'];

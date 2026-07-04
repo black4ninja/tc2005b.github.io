@@ -63,21 +63,10 @@ export class Grupo extends BaseModel {
     this.set('materia', materia);
   }
 
-  /**
-   * Slugs de Docusaurus asignados directamente al grupo (acceso multi-instancia,
-   * independiente de la materia). El acceso a docs del alumno = unión de la
-   * materia del grupo + estos slugs.
-   */
-  getDocusaurus(): string[] {
-    return this.get('docusaurus') ?? [];
-  }
-  setDocusaurus(slugs: string[]): void {
-    this.set('docusaurus', slugs);
-  }
 
   /**
    * Colecciones del CMS "Contenidos" asignadas al grupo (array de pointers —
-   * corrige la deuda de docusaurus[] con strings). El acceso del alumno =
+   * pointers, nunca strings). El acceso del alumno =
    * unión de las colecciones de sus grupos activos. La UI de asignación y la
    * migración llegan en la US-6; el visor (US-3) ya lee este campo.
    */
@@ -106,7 +95,6 @@ export class Grupo extends BaseModel {
       materia: materiaActiva
         ? { id: materiaActiva.id, nombre: materiaActiva.get('nombre') ?? null, slug: materiaActiva.get('slug') ?? null }
         : null,
-      docusaurus: this.getDocusaurus(),
       // Requiere query.include('colecciones'); las soft-deleted no se exponen.
       colecciones: this.getColecciones()
         .filter((c) => c && c.get('exists') !== false)

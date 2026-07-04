@@ -3,13 +3,14 @@ import type { SidebarItem, DashboardRole } from '../../../../types/dashboard';
 const AGENDA_ENTREVISTAS_URL =
   'https://docs.google.com/spreadsheets/d/1U1fbfaBWMp4Nje13qi2C3mhjhW0B8NxC-JXD0ff6fNQ/edit?gid=32307462#gid=32307462';
 
-// `docsHref` es el link a la documentación (Docusaurus) del usuario: por defecto
-// la landing `/docs/`, o `/docs/<slug>/` de su materia cuando se conoce.
+// `docsHref` es el link del alumno al visor de Contenidos
+// (/contenidos/<slug>/ de su primera colección); null = sin colecciones,
+// el ítem no se muestra. El admin usa la sección "Contenidos".
 export function getSidebarItems(
   role: DashboardRole,
   selectedGrupoId?: string,
   perfilCompleto?: boolean,
-  docsHref: string = '/docs/',
+  docsHref: string | null = null,
 ): SidebarItem[] {
   if (role === 'admin') {
     return [
@@ -19,7 +20,6 @@ export function getSidebarItems(
       { label: 'Actividades', icon: 'assignment', path: '/admin/actividades' },
       { label: 'Páginas', icon: 'article', path: '/admin/paginas' },
       { label: 'Contenidos', icon: 'library_books', path: '/admin/contenidos' },
-      { label: 'Documentación', icon: 'menu_book', path: docsHref, external: true },
       { label: 'Agendar Entrevistas', icon: 'event_available', path: AGENDA_ENTREVISTAS_URL, external: true },
     ];
   }
@@ -48,8 +48,11 @@ export function getSidebarItems(
       disabled: !perfilCompleto,
     });
   }
+  // Sin colecciones asignadas no hay documentación que enlazar.
+  if (docsHref) {
+    items.push({ label: 'Documentación', icon: 'menu_book', path: docsHref, external: true, disabled: !perfilCompleto });
+  }
   items.push(
-    { label: 'Documentación', icon: 'menu_book', path: docsHref, external: true, disabled: !perfilCompleto },
     { label: 'Agendar Entrevistas', icon: 'event_available', path: AGENDA_ENTREVISTAS_URL, external: true, disabled: !perfilCompleto },
   );
   return items;

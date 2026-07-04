@@ -17,7 +17,6 @@ interface GrupoData {
   fechaFin?: string;
   active: boolean;
   materia?: MateriaRef | null;
-  docusaurus?: string[];
   colecciones?: ColeccionRef[];
 }
 
@@ -97,7 +96,7 @@ export default function GruposPage() {
     setEditGrupo(undefined);
   }
 
-  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; materiaId?: string | null; docusaurus?: string[]; colecciones?: string[] }) {
+  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; materiaId?: string | null; colecciones?: string[] }) {
     setSaving(true);
     setError('');
     try {

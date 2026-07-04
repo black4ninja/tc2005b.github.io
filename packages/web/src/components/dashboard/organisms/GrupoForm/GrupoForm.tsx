@@ -11,7 +11,6 @@ interface GrupoData {
   fechaInicio?: string;
   fechaFin?: string;
   materia?: MateriaRef | null;
-  docusaurus?: string[];
   colecciones?: ColeccionRef[];
 }
 
@@ -20,7 +19,6 @@ interface GrupoSavePayload {
   fechaInicio?: string;
   fechaFin?: string;
   materiaId?: string | null;
-  docusaurus?: string[];
   colecciones?: string[];
 }
 
@@ -46,17 +44,11 @@ export default function GrupoForm({ grupo, materias = [], colecciones = [], onSa
   const [fechaInicio, setFechaInicio] = useState(toDateString(grupo?.fechaInicio));
   const [fechaFin, setFechaFin] = useState(toDateString(grupo?.fechaFin));
   const [materiaId, setMateriaId] = useState(grupo?.materia?.id ?? '');
-  const [docusaurus, setDocusaurus] = useState<string[]>(grupo?.docusaurus ?? []);
   const [coleccionesSel, setColeccionesSel] = useState<string[]>(
     (grupo?.colecciones ?? []).map((c) => c.id),
   );
   const [error, setError] = useState('');
 
-  function toggleDocusaurus(slug: string) {
-    setDocusaurus((prev) =>
-      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug],
-    );
-  }
 
   function toggleColeccion(id: string) {
     setColeccionesSel((prev) =>
@@ -75,7 +67,6 @@ export default function GrupoForm({ grupo, materias = [], colecciones = [], onSa
       fechaInicio: fechaInicio || undefined,
       fechaFin: fechaFin || undefined,
       materiaId: materiaId || null,
-      docusaurus,
       colecciones: coleccionesSel,
     });
   }
@@ -109,29 +100,6 @@ export default function GrupoForm({ grupo, materias = [], colecciones = [], onSa
             <option key={m.id} value={m.id}>{m.nombre}</option>
           ))}
         </select>
-      </div>
-      <div className={styles.field}>
-        <label className={styles.label}>Docusaurus con acceso</label>
-        <div className={styles.checkboxList}>
-          {materias.length === 0 && (
-            <span className={styles.hint}>No hay Docusaurus disponibles.</span>
-          )}
-          {materias.map((m) => {
-            const clave = m.codigo || m.slug.toUpperCase();
-            const label = `${clave} — ${m.nombre}`;
-            return (
-              <label key={m.slug} className={styles.checkboxItem}>
-                <input
-                  type="checkbox"
-                  checked={docusaurus.includes(m.slug)}
-                  onChange={() => toggleDocusaurus(m.slug)}
-                  disabled={loading}
-                />
-                <span className={styles.checkboxLabel} title={label}>{label}</span>
-              </label>
-            );
-          })}
-        </div>
       </div>
       <div className={styles.field}>
         <label className={styles.label}>Colecciones de Contenidos con acceso</label>
