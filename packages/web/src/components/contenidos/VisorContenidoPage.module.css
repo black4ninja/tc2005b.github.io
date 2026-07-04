@@ -50,6 +50,26 @@
   cursor: pointer;
   font-size: 14px;
 }
+/* Botón show/hide del árbol lateral. */
+.arbolToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 4px 7px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.arbolToggle:hover {
+  color: var(--text-primary);
+  background: var(--bg-page, rgba(0, 0, 0, 0.03));
+}
+.arbolToggle .material-icons {
+  font-size: 20px;
+}
 .panelLink {
   color: var(--text-secondary);
   text-decoration: none;
@@ -65,8 +85,16 @@
   flex: 1;
   min-height: 0;
 }
+/* Árbol colapsado: la columna del menú desaparece y el contenido se expande. */
+.cuerpo.cuerpoSinArbol {
+  grid-template-columns: minmax(0, 1fr) 190px;
+}
+.cuerpoSinArbol .arbol {
+  display: none;
+}
 @media (max-width: 1100px) {
   .cuerpo { grid-template-columns: 250px minmax(0, 1fr); }
+  .cuerpo.cuerpoSinArbol { grid-template-columns: minmax(0, 1fr); }
   .toc { display: none; }
 }
 @media (max-width: 768px) {
@@ -83,6 +111,18 @@
   position: sticky;
   top: 53px;
   height: calc(100vh - 53px);
+}
+/* Scroll sin barras visibles (estorban al presentar); el scroll sigue activo. */
+.arbol,
+.toc {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Edge/IE */
+}
+.arbol::-webkit-scrollbar,
+.toc::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none; /* WebKit */
 }
 .arbolTitulo {
   font-size: 11px;

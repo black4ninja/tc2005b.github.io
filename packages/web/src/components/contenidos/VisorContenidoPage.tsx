@@ -8,6 +8,7 @@ import styles from './VisorContenidoPage.module.css';
 
 const API_BASE = '/api';
 const TEMA_KEY = 'contenidos-tema';
+const ARBOL_KEY = 'contenidos-arbol-oculto';
 
 interface NodoVisor {
   id: string;
@@ -59,6 +60,8 @@ export default function VisorContenidoPage() {
   const [cargando, setCargando] = useState(true);
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
   const [oscuro, setOscuro] = useState(() => localStorage.getItem(TEMA_KEY) === 'oscuro');
+  // Árbol lateral colapsable: útil al presentar contenido con alumnos (estorba).
+  const [arbolOculto, setArbolOculto] = useState(() => localStorage.getItem(ARBOL_KEY) === '1');
   const [reintento, setReintento] = useState(0);
 
   // Búsqueda (US-5): server-side, con scope por permisos.
@@ -81,6 +84,13 @@ export default function VisorContenidoPage() {
   function toggleTema() {
     setOscuro((v) => {
       localStorage.setItem(TEMA_KEY, v ? 'claro' : 'oscuro');
+      return !v;
+    });
+  }
+
+  function toggleArbol() {
+    setArbolOculto((v) => {
+      localStorage.setItem(ARBOL_KEY, v ? '0' : '1');
       return !v;
     });
   }
@@ -304,6 +314,16 @@ export default function VisorContenidoPage() {
   return (
     <div className={`${styles.visor} ${oscuro ? `${styles.oscuro} tema-oscuro` : ''}`}>
       <header className={styles.topbar}>
+        <button
+          type="button"
+          className={styles.arbolToggle}
+          onClick={toggleArbol}
+          title={arbolOculto ? 'Mostrar menú de contenido' : 'Ocultar menú de contenido'}
+          aria-label={arbolOculto ? 'Mostrar menú de contenido' : 'Ocultar menú de contenido'}
+          aria-pressed={!arbolOculto}
+        >
+          <span className="material-icons">{arbolOculto ? 'menu' : 'menu_open'}</span>
+        </button>
         <span className={styles.brand} title={coleccion?.nombre}>
           📘 {coleccion ? `${coleccion.clave ? `${coleccion.clave} — ` : ''}${coleccion.nombre}` : '…'}
         </span>
@@ -365,7 +385,7 @@ export default function VisorContenidoPage() {
         <Link to={rutaPanel} className={styles.panelLink}>Mi panel</Link>
       </header>
 
-      <div className={styles.cuerpo}>
+      <div className={`${styles.cuerpo} ${arbolOculto ? styles.cuerpoSinArbol : ''}`}>
         <nav className={styles.arbol}>
           <div className={styles.arbolTitulo}>Contenido</div>
           {cargando ? <p className={styles.hint}>Cargando…</p> : arbol.map((n) => renderNodo(n, '', 0))}
