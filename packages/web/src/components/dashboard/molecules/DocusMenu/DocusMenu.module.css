@@ -3,7 +3,7 @@
   flex-direction: column;
 }
 
-/* Cabecera "Docusaurus": mismo look que un NavItem, pero es un botón toggle. */
+/* Cabecera "Contenidos": mismo look que un NavItem, pero es un botón toggle. */
 .header {
   display: flex;
   align-items: center;
@@ -44,7 +44,7 @@
   padding: 2px 0 2px 20px;
 }
 
-/* Cada Docusaurus: enlace truncado a una sola línea con … */
+/* Cada colección: enlace truncado a una sola línea con … */
 .link {
   display: block;
   padding: 8px 12px;

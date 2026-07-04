@@ -20,9 +20,9 @@ interface DocusMenuProps {
 }
 
 /**
- * Ítem "Docusaurus" del sidebar con submenú colapsable (colapsado por
- * defecto) que lista la documentación habilitada del grupo (Docusaurus y
- * colecciones del CMS). Abre en pestaña nueva; etiqueta a una sola línea.
+ * Ítem "Contenidos" del sidebar con submenú colapsable (colapsado por
+ * defecto) que lista las colecciones del CMS habilitadas para el grupo.
+ * Abre en pestaña nueva; etiqueta a una sola línea.
  */
 export default function DocusMenu({ items, collapsed, defaultOpen = false }: DocusMenuProps) {
   const [open, setOpen] = useState(defaultOpen);
@@ -30,7 +30,7 @@ export default function DocusMenu({ items, collapsed, defaultOpen = false }: Doc
   // Rail colapsado: solo el icono como afordancia (sin submenú expandible).
   if (collapsed) {
     return (
-      <div className={`${styles.header} ${styles.collapsed}`} title="Docusaurus">
+      <div className={`${styles.header} ${styles.collapsed}`} title="Contenidos">
         <Icon name="menu_book" size="sm" />
       </div>
     );
@@ -45,13 +45,13 @@ export default function DocusMenu({ items, collapsed, defaultOpen = false }: Doc
         aria-expanded={open}
       >
         <Icon name="menu_book" size="sm" />
-        <span className={styles.headerLabel}>Docusaurus</span>
+        <span className={styles.headerLabel}>Contenidos</span>
         <Icon name={open ? 'expand_less' : 'expand_more'} size="sm" />
       </button>
       {open && (
         <div className={styles.list}>
           {items.length === 0 ? (
-            <span className={styles.hint}>Sin Docusaurus asignados</span>
+            <span className={styles.hint}>Sin contenidos asignados</span>
           ) : (
             items.map((it) => (
               <a
