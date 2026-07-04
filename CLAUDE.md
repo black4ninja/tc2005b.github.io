@@ -60,6 +60,17 @@ Legacy static HTML content (ejercicios, laboratorios, lecturas, documentos) live
 - **Data pattern:** Each lab/avance is a separate TS file with typed `export default`. Barrel exports use dynamic imports for code splitting.
 - **Links:** Internal links use React Router paths (`/labs/lab1`, `/avances/av1`). External links use full URLs.
 
+## Generación de contenido (CMS "Contenidos")
+
+La documentación por materia vive en la **BD** (colecciones/documentos/versiones/recursos en Parse), **no en archivos del repo**. Para escribir tutoriales con agentes de IA o a mano y subirlos, sigue el flujo documentado en [`AUTHORING.md`](./AUTHORING.md). Loop corto:
+
+1. Escribe `.md` en una carpeta (frontmatter `title`/`slug` estables, admonitions `:::note/tip/...`, imágenes relativas). El pipeline es `@tc2005b/contenido-pipeline` (mismo que el visor).
+2. **Previsualiza** sin servidor: `cd packages/api && ./node_modules/.bin/tsx scripts/preview-contenido.ts <carpeta>`.
+3. **Importa como BORRADOR** (idempotente por `slug`): `./node_modules/.bin/tsx scripts/importar-markdown.ts --coleccion <slug> [--padre <ruta>] [--dry-run] <carpeta>`. Requiere el API corriendo.
+4. Revisa en `/admin/contenidos` y **publica** ahí (o `--publish`).
+
+⚠️ **Dev comparte la BD de PRODUCCIÓN.** Corre `--dry-run` primero, deja todo como borrador y **no publiques sin visto bueno humano**. No crear colecciones por este flujo (solo agrega a `tc2005b`/`tc2007b` existentes).
+
 ## Development workflow
 
 Full rules in [`CONTRIBUTING.md`](./CONTRIBUTING.md). Key points (mandatory):

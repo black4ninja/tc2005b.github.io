@@ -28,6 +28,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   Se removieron los workflows de GitHub Pages, `.nojekyll` y el hack SPA `?/`.
 
 ### Added
+- **CMS "Contenidos" — flujo de autoría de contenido**: par de scripts para
+  escribir y probar contenido antes de publicar, recuperando lo que daba
+  Docusaurus pero contra la BD. `preview-contenido.ts` renderiza `.md` con el
+  pipeline real y los estilos del visor a un HTML autocontenido (sin servidor
+  ni BD); `importar-markdown.ts` sube una carpeta de `.md` a una colección
+  existente como **borrador** (o `--publish`), idempotente por
+  `(colección, padre, slug)`, con `--padre`, `--dry-run` y subida de imágenes
+  relativas como Recurso. Documentado en `AUTHORING.md` y `CLAUDE.md`.
 - **CMS "Contenidos" (US-8)**: storage en AWS S3 — el files adapter cambia a
   `@parse/s3-files-adapter` cuando el `.env` trae credenciales (bucket
   privado `groups-meeplab-contenidos`; `directAccess` desactivado: S3 jamás
