@@ -14,6 +14,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   La documentación vive ahora en el CMS "Contenidos".
 
 ### Changed
+- **CMS "Contenidos" — retoques de nombre y enlaces tras el retiro de
+  Docusaurus**: el menú del sidebar del grupo pasa de "Docusaurus" a
+  "Contenidos"; las descripciones/enlaces de los labs que decían "Docusaurus
+  del curso" ahora apuntan a la documentación del CMS (incluye reponer un
+  enlace muerto de lab11). En la BD, los enlaces `/docs/...` de las Páginas se
+  migran al visor `/contenidos/...` (21 páginas, 22 enlaces) con un script
+  idempotente que respeta los `/docs/...` externos (MDN, Node, Tailwind…).
 - El Docusaurus se sirve ahora en `/docs/...` en lugar de `/docs/docs/...`
   (`routeBasePath: '/'`). Las páginas registradas en BD y los enlaces de los
   labs se migraron al nuevo esquema.
@@ -28,6 +35,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   Se removieron los workflows de GitHub Pages, `.nojekyll` y el hack SPA `?/`.
 
 ### Added
+- **CMS "Contenidos" — mejoras de autoría y lectura**: en el editor de Páginas,
+  el bloque "Práctica" incluye un selector "Seleccionar del CMS" que enlaza a una
+  página publicada (colección → página, con búsqueda) sin teclear la ruta. En el
+  visor: el árbol lateral se puede colapsar/mostrar con un botón (útil al
+  presentar con alumnos; se recuerda en `localStorage`), las barras de scroll del
+  árbol y del TOC se ocultan (el scroll sigue activo), y cada bloque de código
+  tiene un botón para copiarlo al portapapeles.
 - **CMS "Contenidos" — flujo de autoría de contenido**: par de scripts para
   escribir y probar contenido antes de publicar, recuperando lo que daba
   Docusaurus pero contra la BD. `preview-contenido.ts` renderiza `.md` con el
