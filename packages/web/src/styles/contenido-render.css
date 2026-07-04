@@ -65,6 +65,12 @@
 .contenido-copy-btn:focus-visible {
   opacity: 1;
 }
+/* En dispositivos táctiles (sin hover) el botón queda siempre visible. */
+@media (hover: none) {
+  .contenido-copy-btn {
+    opacity: 1;
+  }
+}
 .contenido-copy-btn:hover {
   background: rgba(255, 255, 255, 0.16);
 }
