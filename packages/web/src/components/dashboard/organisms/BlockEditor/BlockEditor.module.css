@@ -195,6 +195,42 @@
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 
+/* Campo de enlace con botón "Seleccionar del CMS" al lado. */
+.inputWithButton {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.inputWithButton input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.pickerBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  padding: 8px 12px;
+  border: 1px solid var(--dash-primary);
+  border-radius: 6px;
+  background: white;
+  color: var(--dash-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pickerBtn:hover {
+  background: rgba(37, 99, 235, 0.06);
+}
+.pickerBtn .material-icons {
+  font-size: 16px;
+}
+.fieldHint {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
 .htmlTextarea {
   font-family: 'Courier New', Consolas, monospace;
   font-size: 12px !important;
