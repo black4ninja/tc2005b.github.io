@@ -4,14 +4,6 @@ import type { Calendario } from '@/types/calendario';
 const calendario: Calendario = {
   grupo: "501",
   salon: "4205",
-  enlaces: {
-    asesoriaDenisse: "https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0glSuRv-Qk1CwD4IJ1nBDWu2LSplGiPrW0Eo0DdEYxakViDvjwVkBsWBgh4U3wYpsD8GP9TRqd",
-    asesoriaAlex: "https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0glSuRv-Qk1CwD4IJ1nBDWu2LSplGiPrW0Eo0DdEYxakViDvjwVkBsWBgh4U3wYpsD8GP9TRqd",
-    politicasEquipo: "/politicas",
-    integridadMIT: "https://integrity.mit.edu/handbook/writing-code",
-    mallaEvaluacion: "https://docs.google.com/spreadsheets/d/1DzGDdW9kCbSaVki8JP3T85q9jfWLOmCUv7tRsYMLYLE/edit?usp=sharing",
-    agendaEntrevistas: "https://docs.google.com/spreadsheets/d/1U1fbfaBWMp4Nje13qi2C3mhjhW0B8NxC-JXD0ff6fNQ/edit?gid=32307462#gid=32307462"
-  },
   semanas: [
     // ==================== SEMANA 1 ====================
     {

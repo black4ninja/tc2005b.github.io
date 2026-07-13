@@ -114,7 +114,6 @@ export async function getCalendarioByGrupo(req: Request, res: Response): Promise
         grupoId: grupo.id,
         grupo: grupo.getName(),
         salon: grupo.getSalon(),
-        enlaces: grupo.getEnlaces(),
         semanas: semanasJSON,
       },
     });
