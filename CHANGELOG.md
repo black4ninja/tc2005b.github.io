@@ -7,6 +7,30 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **La agenda de entrevistas es ahora un campo del grupo**
+  (`Grupo.urlAgendaEntrevistas`, opcional, editable en el form del grupo). Antes
+  era una URL **hardcodeada en tres sitios** (el sidebar, el navbar público y el
+  mock del calendario que lee el pie), la misma hoja para todos. Ahora cada grupo
+  tiene la suya: el ítem "Agendar Entrevistas" desaparece del menú global del
+  admin y aparece **dentro del grupo**, y el alumno ve la de **su** grupo. Sin
+  URL, el ítem no se muestra (mismo criterio que "Documentación" sin colecciones).
+  - **La URL se valida en el SERVIDOR: solo `http`/`https`.** Se renderiza como
+    `<a href>`, así que un `javascript:` guardado ahí sería XSS en la sesión de
+    quien pulsara el enlace. La validación vive en `utils/url.ts`, con 20 tests.
+  - `scripts/migrate-agenda-entrevistas.ts` — pone en los grupos existentes la URL
+    que estaba activa, para que nadie pierda el enlace (idempotente, `--dry-run`).
+  - Los enlaces del **sitio público** (navbar y pie), que no tienen contexto de
+    grupo, se consolidan en `config/enlaces.ts` en vez de estar copiados en dos
+    componentes.
+
+### Removed
+- **`Grupo.enlaces`**: el `Record<string,string>` del modelo. Estaba **vacío en
+  los 3 grupos** de producción y no lo consumía nadie — el pie del sitio, que
+  parecía leerlo, lee en realidad el mock estático. Se va del modelo, del payload
+  del calendario, del seed y del tipo del front. Es el quinto campo muerto que se
+  retira de `Grupo`.
+
 ### Changed
 - **CMS "Contenidos" — el editor a un clic.** El árbol de páginas se muda al
   sidebar (modo contextual, como `/admin/grupos/:id`) y seleccionar una página

@@ -10,6 +10,7 @@ interface GrupoData {
   fechaInicio?: string;
   fechaFin?: string;
   colecciones?: ColeccionRef[];
+  urlAgendaEntrevistas?: string | null;
 }
 
 interface GrupoSavePayload {
@@ -17,6 +18,7 @@ interface GrupoSavePayload {
   fechaInicio?: string;
   fechaFin?: string;
   colecciones?: string[];
+  urlAgendaEntrevistas?: string;
 }
 
 interface GrupoFormProps {
@@ -47,7 +49,9 @@ export default function GrupoForm({ grupo, colecciones = [], onSave, onCancel, l
   const [coleccionesSel, setColeccionesSel] = useState<string[]>(
     (grupo?.colecciones ?? []).map((c) => c.id),
   );
+  const [agendaUrl, setAgendaUrl] = useState(grupo?.urlAgendaEntrevistas ?? '');
   const [error, setError] = useState('');
+  const [errorAgenda, setErrorAgenda] = useState('');
 
 
   function toggleColeccion(id: string) {
@@ -61,12 +65,22 @@ export default function GrupoForm({ grupo, colecciones = [], onSave, onCancel, l
       setError('El nombre es requerido');
       return;
     }
+    // El servidor vuelve a validar esto (es el que manda); aquí es solo para no
+    // hacer un viaje de ida y vuelta por una URL obviamente mal escrita.
+    const url = agendaUrl.trim();
+    if (url && !/^https?:\/\//i.test(url)) {
+      setErrorAgenda('La URL debe empezar por http:// o https://');
+      return;
+    }
     setError('');
+    setErrorAgenda('');
     onSave({
       name: name.trim(),
       fechaInicio: fechaInicio || undefined,
       fechaFin: fechaFin || undefined,
       colecciones: coleccionesSel,
+      // Cadena vacía = quitar el enlace del grupo.
+      urlAgendaEntrevistas: url,
     });
   }
 
@@ -109,6 +123,19 @@ export default function GrupoForm({ grupo, colecciones = [], onSave, onCancel, l
           })}
         </div>
       </div>
+      <TextInput
+        label="URL de la agenda de entrevistas (opcional)"
+        placeholder="https://docs.google.com/spreadsheets/…"
+        icon="event_available"
+        value={agendaUrl}
+        onChange={(v) => { setAgendaUrl(v); setErrorAgenda(''); }}
+        error={errorAgenda}
+        disabled={loading}
+      />
+      <p className={styles.hint}>
+        Aparece como “Agendar Entrevistas” en el menú del grupo y en el de sus alumnos.
+        Déjala vacía para no mostrar el enlace.
+      </p>
       <div className={styles.field}>
         <label className={styles.label}>Fecha de inicio</label>
         <input

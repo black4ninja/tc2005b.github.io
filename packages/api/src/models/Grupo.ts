@@ -34,13 +34,20 @@ export class Grupo extends BaseModel {
     this.set('salon', salon);
   }
 
-  getEnlaces(): Record<string, string> | undefined {
-    return this.get('enlaces');
+  /**
+   * URL de la agenda de entrevistas del grupo (p. ej. una hoja de cálculo).
+   * Opcional: sin ella, el ítem "Agendar Entrevistas" no aparece en el menú.
+   *
+   * ⚠️ Se renderiza como `<a href>`, así que el controlador SOLO acepta
+   * `http`/`https`. Un `javascript:` aquí sería XSS en la sesión del admin o del
+   * alumno. Ver `sanitizarUrl()` en grupos.controller.
+   */
+  getUrlAgendaEntrevistas(): string | undefined {
+    return this.get('urlAgendaEntrevistas');
   }
-  setEnlaces(enlaces: Record<string, string>): void {
-    this.set('enlaces', enlaces);
+  setUrlAgendaEntrevistas(url: string): void {
+    this.set('urlAgendaEntrevistas', url);
   }
-
 
   /**
    * Colecciones del CMS "Contenidos" asignadas al grupo (array de pointers —
@@ -62,7 +69,7 @@ export class Grupo extends BaseModel {
       fechaInicio: this.getFechaInicio(),
       fechaFin: this.getFechaFin(),
       salon: this.getSalon(),
-      enlaces: this.getEnlaces(),
+      urlAgendaEntrevistas: this.getUrlAgendaEntrevistas() ?? null,
       // Requiere query.include('colecciones'); las soft-deleted no se exponen.
       colecciones: this.getColecciones()
         .filter((c) => c && c.get('exists') !== false)

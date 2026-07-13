@@ -1,9 +1,7 @@
 import { Link } from 'react-router';
 import styles from './Navbar.module.css';
 import { APP_NAME, APP_TAGLINE } from '../../config/app';
-
-const AGENDA_ENTREVISTAS_URL =
-  'https://docs.google.com/spreadsheets/d/1U1fbfaBWMp4Nje13qi2C3mhjhW0B8NxC-JXD0ff6fNQ/edit?gid=32307462#gid=32307462';
+import { ENLACES_SITIO } from '../../config/enlaces';
 
 export default function Navbar() {
   return (
@@ -16,7 +14,7 @@ export default function Navbar() {
       </span>
       <div className={styles.navLinks}>
         <a
-          href={AGENDA_ENTREVISTAS_URL}
+          href={ENLACES_SITIO.agendaEntrevistas}
           className={styles.agendaBtn}
           target="_blank"
           rel="noopener noreferrer"

@@ -3,6 +3,7 @@ import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { Grupo } from '../models/Grupo.js';
 import { invalidateColeccionesPermitidas } from '../services/contenidos.service.js';
+import { sanitizarUrlHref } from '../utils/url.js';
 
 export async function listGrupos(_req: Request, res: Response): Promise<void> {
   try {
@@ -38,10 +39,16 @@ async function resolverColecciones(value: unknown): Promise<Parse.Object[] | 'in
 }
 
 export async function createGrupo(req: Request, res: Response): Promise<void> {
-  const { name, fechaInicio, fechaFin, colecciones } = req.body;
+  const { name, fechaInicio, fechaFin, colecciones, urlAgendaEntrevistas } = req.body;
 
   if (!name || typeof name !== 'string' || name.trim() === '') {
     res.status(400).json({ status: 'error', message: 'El nombre es requerido' });
+    return;
+  }
+
+  const url = sanitizarUrlHref(urlAgendaEntrevistas);
+  if (url === null) {
+    res.status(400).json({ status: 'error', message: 'La URL de la agenda debe empezar por http:// o https://' });
     return;
   }
 
@@ -50,6 +57,7 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
     grupo.setName(name.trim());
     if (fechaInicio) grupo.setFechaInicio(new Date(fechaInicio));
     if (fechaFin) grupo.setFechaFin(new Date(fechaFin));
+    if (url) grupo.setUrlAgendaEntrevistas(url);
 
     const coleccionesPtrs = await resolverColecciones(colecciones);
     if (coleccionesPtrs === 'invalido') {
@@ -69,7 +77,7 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
 
 export async function updateGrupo(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { name, fechaInicio, fechaFin, colecciones } = req.body;
+  const { name, fechaInicio, fechaFin, colecciones, urlAgendaEntrevistas } = req.body;
 
   try {
     const query = BaseModel.queryActive<Grupo>('Grupo');
@@ -90,6 +98,16 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
     }
     if (fechaFin !== undefined) {
       grupo.setFechaFin(fechaFin ? new Date(fechaFin) : undefined!);
+    }
+    if (urlAgendaEntrevistas !== undefined) {
+      const url = sanitizarUrlHref(urlAgendaEntrevistas);
+      if (url === null) {
+        res.status(400).json({ status: 'error', message: 'La URL de la agenda debe empezar por http:// o https://' });
+        return;
+      }
+      // '' limpia el campo: así se puede quitar el enlace de un grupo.
+      if (url) grupo.setUrlAgendaEntrevistas(url);
+      else grupo.unset('urlAgendaEntrevistas');
     }
     // Solo un array válido aplica ([] limpia); no-array se ignora.
     const coleccionesPtrs = colecciones !== undefined ? await resolverColecciones(colecciones) : null;

@@ -17,6 +17,7 @@ interface GrupoData {
   fechaFin?: string;
   active: boolean;
   colecciones?: ColeccionRef[];
+  urlAgendaEntrevistas?: string | null;
 }
 
 const API_BASE = '/api';
@@ -82,7 +83,7 @@ export default function GruposPage() {
     setEditGrupo(undefined);
   }
 
-  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; colecciones?: string[] }) {
+  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; colecciones?: string[]; urlAgendaEntrevistas?: string }) {
     setSaving(true);
     setError('');
     try {

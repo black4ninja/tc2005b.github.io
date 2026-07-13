@@ -36,6 +36,9 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
   const [docsHref, setDocsHref] = useState<string | null>(null);
   const [docusLinks, setDocusLinks] = useState<DocusLink[]>([]);
+  // Agenda de entrevistas del grupo abierto (admin). La del alumno sale del
+  // payload de sesión (user.grupos), no requiere fetch.
+  const [agendaGrupoHref, setAgendaGrupoHref] = useState<string | null>(null);
 
   useEffect(() => {
     if (role === 'alumno' && user?.grupos?.length) {
@@ -81,10 +84,12 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
           (g: {
             id: string;
             name?: string;
+            urlAgendaEntrevistas?: string | null;
             colecciones?: { slug: string; nombre: string; clave: string | null }[];
           }) => g.id === grupoId,
         );
         if (found?.name) setGrupoName(found.name);
+        setAgendaGrupoHref(found?.urlAgendaEntrevistas ?? null);
 
         // Documentación del grupo = sus colecciones del CMS Contenidos.
         const links: DocusLink[] = (found?.colecciones ?? []).map(
@@ -99,9 +104,22 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       .catch(() => {});
   }, [grupoId, sessionToken]);
 
+  // La agenda del alumno es la de SU grupo seleccionado; viaja en el payload de
+  // sesión, así que no hace falta pedirla.
+  const agendaAlumnoHref =
+    role === 'alumno'
+      ? user?.grupos?.find((g) => g.id === selectedGrupoId)?.urlAgendaEntrevistas ?? null
+      : null;
+
   const items = isGrupoDetail
-    ? getGrupoDetailItems(grupoId!)
-    : getSidebarItems(role, role === 'alumno' ? selectedGrupoId : undefined, user?.perfilCompleto, docsHref);
+    ? getGrupoDetailItems(grupoId!, agendaGrupoHref)
+    : getSidebarItems(
+        role,
+        role === 'alumno' ? selectedGrupoId : undefined,
+        user?.perfilCompleto,
+        docsHref,
+        agendaAlumnoHref,
+      );
 
   return (
     <>

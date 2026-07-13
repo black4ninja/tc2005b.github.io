@@ -53,19 +53,9 @@ export interface SemanaEspecial {
 
 export type Semana = SemanaNormal | SemanaEspecial;
 
-export interface CalendarioEnlaces {
-  asesoriaDenisse: string;
-  asesoriaAlex: string;
-  politicasEquipo: string;
-  integridadMIT: string;
-  mallaEvaluacion: string;
-  agendaEntrevistas: string;
-}
-
 export interface Calendario {
   grupoId?: string;
   grupo: string;
   salon: string;
-  enlaces: CalendarioEnlaces;
   semanas: Semana[];
 }

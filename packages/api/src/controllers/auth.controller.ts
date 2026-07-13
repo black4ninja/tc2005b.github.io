@@ -3,11 +3,19 @@ import { AppUser } from '../models/index.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { getGruposDeAlumno } from '../services/grupo-alumno.service.js';
 
-async function buildGruposExtras(user: AppUser): Promise<{ grupos: { id: string; name: string }[] }> {
+async function buildGruposExtras(
+  user: AppUser,
+): Promise<{ grupos: { id: string; name: string; urlAgendaEntrevistas: string | null }[] }> {
   if (!user.isAlumno()) return { grupos: [] };
   const grupos = await getGruposDeAlumno(user.id);
   return {
-    grupos: grupos.map((g) => ({ id: g.id, name: g.get('name') ?? '' })),
+    grupos: grupos.map((g) => ({
+      id: g.id,
+      name: g.get('name') ?? '',
+      // El menú del alumno enlaza a la agenda de SU grupo; sin URL, el ítem no
+      // se muestra (mismo criterio que "Documentación" sin colecciones).
+      urlAgendaEntrevistas: g.get('urlAgendaEntrevistas') ?? null,
+    })),
   };
 }
 

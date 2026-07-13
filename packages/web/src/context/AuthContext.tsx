@@ -7,7 +7,7 @@ interface AppUserData {
   name: string;
   userType: string;
   grupo: string;
-  grupos: { id: string; name: string }[];
+  grupos: { id: string; name: string; urlAgendaEntrevistas?: string | null }[];
   attributes: Record<string, unknown>;
   lastLogin?: string;
   perfilCompleto?: boolean;
