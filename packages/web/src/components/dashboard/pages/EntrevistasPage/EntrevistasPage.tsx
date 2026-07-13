@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { confirmar } from '../../../../utils/dialogos';
 import { useParams, useNavigate } from 'react-router';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
@@ -164,7 +165,7 @@ export default function EntrevistasPage() {
   }
 
   async function handleDelete(entrevista: EntrevistaData) {
-    if (!confirm(`¿Eliminar la entrevista del equipo "${entrevista.equipo.nombre}"? Esta acción no se puede deshacer.`)) return;
+    if (!(await confirmar({ titulo: `¿Eliminar la entrevista del equipo "${entrevista.equipo.nombre}"?`, texto: `Esta acción no se puede deshacer.`, confirmar: 'Eliminar', peligro: true }))) return;
     try {
       const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/entrevistas/${entrevista.id}`, {
         method: 'DELETE',

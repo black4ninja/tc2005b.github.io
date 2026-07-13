@@ -29,3 +29,174 @@ a:hover {
 }
 
 ul, ol { list-style: none; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SweetAlert2 — tema de la app (ver utils/dialogos.ts).
+   Sustituye a confirm()/prompt() nativos, que bloquean el hilo del navegador.
+   ───────────────────────────────────────────────────────────────────────── */
+.swal-popup {
+  border-radius: 14px;
+  padding: 24px;
+  font-family: inherit;
+}
+
+.swal-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.swal-texto {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* Aviso destacado dentro del diálogo (p. ej. "esto cambia la URL pública"). */
+.swal-aviso {
+  display: block;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #fff3e0;
+  color: #8a4b00;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.swal-input {
+  font-family: inherit;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+}
+.swal-input:focus {
+  border-color: var(--dash-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+}
+
+.swal-validacion {
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+
+.swal-btn {
+  padding: 9px 18px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s, background 0.15s;
+}
+.swal-btn:hover {
+  filter: brightness(0.95);
+}
+
+.swal-btn-confirmar {
+  background: var(--dash-primary);
+  color: #fff;
+}
+
+.swal-btn-peligro {
+  background: var(--dash-danger, #c0392b);
+  color: #fff;
+}
+
+.swal-btn-cancelar {
+  background: transparent;
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+.swal-btn-cancelar:hover {
+  background: var(--bg-page);
+}
+
+/* Código destacado dentro de un diálogo (p. ej. una contraseña generada). */
+.swal-codigo {
+  display: inline-block;
+  margin: 8px 0 0;
+  padding: 6px 12px;
+  background: var(--bg-page);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  user-select: all;
+}
+
+/* Vista previa en vivo bajo el campo de un diálogo (utils/dialogos.ts →
+   `vistaPrevia`). Se usa para enseñar la consecuencia del valor ANTES de
+   guardarlo: p. ej. cómo queda la URL al cambiar un slug. */
+.swal-preview {
+  margin-top: 12px;
+  text-align: left;
+}
+
+.swal-ruta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--bg-page);
+  border: 1px solid var(--border-color);
+}
+.swal-ruta + .swal-ruta {
+  margin-top: 6px;
+}
+
+.swal-ruta code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+
+.swal-ruta-label {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* El segmento que cambia, resaltado dentro de la ruta. */
+.swal-seg {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.07);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* La ruta resultante: verde, para leerla de un vistazo como "el después". */
+.swal-ruta-nueva {
+  background: #e8f5e9;
+  border-color: #a5d6a7;
+}
+.swal-ruta-nueva .swal-ruta-label,
+.swal-ruta-nueva code {
+  color: #1b5e20;
+}
+.swal-ruta-nueva .swal-seg {
+  background: #a5d6a7;
+  color: #10371a;
+}
+
+/* "/…" al final: recuerda que las páginas hijas también se mueven. */
+.swal-ruta-cola {
+  opacity: 0.55;
+}
+
+.swal-ruta-nota {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}

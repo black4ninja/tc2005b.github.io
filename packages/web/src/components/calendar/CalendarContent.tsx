@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useLayoutEffect } from 'react';
+import { confirmar } from '@/utils/dialogos';
 import {
   DndContext,
   PointerSensor,
@@ -279,7 +280,13 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
   }, [editModalState, updateActividad]);
 
   const handleDeleteActivity = useCallback(async (semanaId: string, actividadId: string) => {
-    if (!window.confirm('¿Eliminar esta actividad?')) return;
+    const confirmado = await confirmar({
+      titulo: '¿Eliminar esta actividad?',
+      texto: 'Esta acción no se puede deshacer.',
+      confirmar: 'Eliminar',
+      peligro: true,
+    });
+    if (!confirmado) return;
     const ok = await deleteActividad(actividadId);
     if (!ok) return;
 

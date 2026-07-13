@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { confirmar } from '../../../../utils/dialogos';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
@@ -139,7 +140,7 @@ export default function ActividadesPage() {
   }
 
   async function handleDelete(item: ActividadEvaluacionData) {
-    if (!confirm(`¿Eliminar "${item.nombre}"? Esta acción no se puede deshacer.`)) return;
+    if (!(await confirmar({ titulo: `¿Eliminar "${item.nombre}"?`, texto: `Esta acción no se puede deshacer.`, confirmar: 'Eliminar', peligro: true }))) return;
     try {
       const res = await fetch(`${API_BASE}/admin/actividades-evaluacion/${item.id}`, {
         method: 'DELETE',

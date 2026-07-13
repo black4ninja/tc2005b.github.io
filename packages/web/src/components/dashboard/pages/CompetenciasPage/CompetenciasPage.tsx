@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { confirmar } from '../../../../utils/dialogos';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
@@ -132,7 +133,7 @@ export default function CompetenciasPage() {
   }
 
   async function handleDeleteInd(ind: IndicacionData) {
-    if (!confirm(`¿Eliminar esta indicación? Esta acción no se puede deshacer.`)) return;
+    if (!(await confirmar({ titulo: `¿Eliminar esta indicación?`, texto: `Esta acción no se puede deshacer.`, confirmar: 'Eliminar', peligro: true }))) return;
     try {
       const res = await fetch(`${API_BASE}/admin/indicaciones-malla/${ind.id}`, { method: 'DELETE', headers });
       if (!res.ok) throw new Error('Error al eliminar');
@@ -184,7 +185,7 @@ export default function CompetenciasPage() {
   }
 
   async function handleDeleteComp(comp: CompetenciaData) {
-    if (!confirm(`¿Eliminar la competencia "${comp.competencia}"? Esta acción no se puede deshacer.`)) return;
+    if (!(await confirmar({ titulo: `¿Eliminar la competencia "${comp.competencia}"?`, texto: `Esta acción no se puede deshacer.`, confirmar: 'Eliminar', peligro: true }))) return;
     try {
       const res = await fetch(`${API_BASE}/admin/competencias/${comp.id}`, { method: 'DELETE', headers });
       if (!res.ok) throw new Error('Error al eliminar');

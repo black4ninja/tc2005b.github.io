@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { confirmar } from '../../../../utils/dialogos';
 import { useNavigate } from 'react-router';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
@@ -106,7 +107,7 @@ export default function GruposPage() {
 
   async function handleToggleActive(grupo: GrupoData) {
     const action = grupo.active ? 'Desactivar' : 'Activar';
-    if (!confirm(`¿${action} el grupo "${grupo.name}"?`)) return;
+    if (!(await confirmar({ titulo: `¿${action} el grupo "${grupo.name}"?` }))) return;
     try {
       const res = await fetch(`${API_BASE}/admin/grupos/${grupo.id}/archive`, { method: 'PATCH', headers });
       if (!res.ok) throw new Error(`Error al ${action.toLowerCase()}`);
@@ -117,7 +118,7 @@ export default function GruposPage() {
   }
 
   async function handleDelete(grupo: GrupoData) {
-    if (!confirm(`¿Eliminar el grupo "${grupo.name}"? Esta acción no se puede deshacer.`)) return;
+    if (!(await confirmar({ titulo: `¿Eliminar el grupo "${grupo.name}"?`, texto: `Esta acción no se puede deshacer.`, confirmar: 'Eliminar', peligro: true }))) return;
     try {
       const res = await fetch(`${API_BASE}/admin/grupos/${grupo.id}`, { method: 'DELETE', headers });
       if (!res.ok) throw new Error('Error al eliminar');

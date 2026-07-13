@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { confirmar } from '../../../../utils/dialogos';
 import { useNavigate } from 'react-router';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
@@ -87,7 +88,7 @@ export default function ContenidosPage() {
   }
 
   async function handleDelete(coleccion: ColeccionData) {
-    if (!confirm(`¿Eliminar la colección "${coleccion.nombre}"? Sus páginas dejarán de ser accesibles.`)) return;
+    if (!(await confirmar({ titulo: `¿Eliminar la colección "${coleccion.nombre}"?`, texto: `Sus páginas dejarán de ser accesibles.`, confirmar: 'Eliminar', peligro: true }))) return;
     try {
       const res = await fetch(`${API_BASE}/admin/colecciones/${coleccion.id}`, { method: 'DELETE', headers });
       if (!res.ok) throw new Error('Error al eliminar');
