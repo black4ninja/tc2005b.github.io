@@ -40,11 +40,18 @@ export class Pagina extends BaseModel {
     this.set('icono', icono);
   }
 
-  getGrupo(): Parse.Object | undefined {
-    return this.get('grupo');
+  /**
+   * Colección del CMS "Contenidos" a la que pertenece la página (pointer, nunca
+   * string). Determina de qué materia es la página: el picker del calendario
+   * solo ofrece las páginas de las colecciones asignadas al grupo
+   * (`Grupo.colecciones`). No restringe el acceso — `/paginas/:slug` sigue
+   * siendo público.
+   */
+  getColeccion(): Parse.Object | undefined {
+    return this.get('coleccion');
   }
-  setGrupo(grupo: Parse.Object): void {
-    this.set('grupo', grupo);
+  setColeccion(coleccion: Parse.Object): void {
+    this.set('coleccion', coleccion);
   }
 
   getBloques(): ContentBlock[] {
@@ -76,13 +83,25 @@ export class Pagina extends BaseModel {
   }
 
   toSafeJSON(): Record<string, unknown> {
+    const coleccion = this.getColeccion();
+    // Si la colección (incluida) fue soft-deleted, no la exponemos.
+    const coleccionActiva = coleccion && coleccion.get('exists') !== false ? coleccion : null;
     return {
       id: this.id,
       titulo: this.getTitulo(),
       slug: this.getSlug(),
       descripcion: this.getDescripcion(),
       icono: this.getIcono(),
-      grupoId: this.getGrupo()?.id ?? null,
+      coleccionId: coleccionActiva?.id ?? null,
+      // Requiere query.include('coleccion') para traer nombre/slug/clave.
+      coleccion: coleccionActiva
+        ? {
+            id: coleccionActiva.id,
+            nombre: coleccionActiva.get('nombre') ?? null,
+            slug: coleccionActiva.get('slug') ?? null,
+            clave: coleccionActiva.get('clave') ?? null,
+          }
+        : null,
       bloques: this.getBloques(),
       publicado: this.getPublicado(),
       orden: this.getOrden(),

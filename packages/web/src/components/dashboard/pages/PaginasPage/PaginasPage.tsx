@@ -5,7 +5,7 @@ import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
 import PaginaForm from '../../organisms/PaginaForm/PaginaForm';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
-import type { PaginaData, EtiquetaData } from '../../../../types/pagina';
+import type { PaginaData, EtiquetaData, ColeccionRef } from '../../../../types/pagina';
 import { randomUUID } from '../../../../utils/uuid';
 import styles from './PaginasPage.module.css';
 
@@ -27,6 +27,7 @@ export default function PaginasPage() {
 
   const [paginas, setPaginas] = useState<PaginaData[]>([]);
   const [etiquetas, setEtiquetas] = useState<EtiquetaData[]>([]);
+  const [colecciones, setColecciones] = useState<ColeccionRef[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -35,6 +36,7 @@ export default function PaginasPage() {
   const [editPagina, setEditPagina] = useState<PaginaData | undefined>();
   const [previewPagina, setPreviewPagina] = useState<PaginaData | undefined>();
   const [filtroEtiqueta, setFiltroEtiqueta] = useState<string | null>(null);
+  const [filtroColeccion, setFiltroColeccion] = useState<string>('');
 
   // Etiquetas CRUD state
   const [etiquetasOpen, setEtiquetasOpen] = useState(false);
@@ -51,9 +53,19 @@ export default function PaginasPage() {
   }, [etiquetas]);
 
   const paginasFiltradas = useMemo(() => {
-    if (!filtroEtiqueta) return paginas;
-    return paginas.filter((p) => p.etiquetas?.includes(filtroEtiqueta));
-  }, [paginas, filtroEtiqueta]);
+    let out = paginas;
+    if (filtroColeccion === 'sin-coleccion') {
+      out = out.filter((p) => !p.coleccionId);
+    } else if (filtroColeccion) {
+      out = out.filter((p) => p.coleccionId === filtroColeccion);
+    }
+    if (filtroEtiqueta) {
+      out = out.filter((p) => p.etiquetas?.includes(filtroEtiqueta));
+    }
+    return out;
+  }, [paginas, filtroEtiqueta, filtroColeccion]);
+
+  const sinColeccion = useMemo(() => paginas.filter((p) => !p.coleccionId).length, [paginas]);
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -89,10 +101,24 @@ export default function PaginasPage() {
     }
   }, [sessionToken]);
 
+  const fetchColecciones = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/colecciones`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) throw new Error('Error al cargar colecciones');
+      const data = await res.json();
+      setColecciones(data.colecciones);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }, [sessionToken]);
+
   useEffect(() => {
     fetchPaginas();
     fetchEtiquetas();
-  }, [fetchPaginas, fetchEtiquetas]);
+    fetchColecciones();
+  }, [fetchPaginas, fetchEtiquetas, fetchColecciones]);
 
   // ── Page handlers ──────────────────────────────────────────────
 
@@ -176,7 +202,7 @@ export default function PaginasPage() {
           slug: newSlug,
           descripcion: pagina.descripcion ?? '',
           icono: pagina.icono ?? 'article',
-          grupoId: pagina.grupoId ?? null,
+          coleccionId: pagina.coleccionId ?? null,
           bloques: newBloques,
           publicado: false,
           etiquetas: pagina.etiquetas ?? [],
@@ -289,11 +315,15 @@ export default function PaginasPage() {
         ? <span className={`${styles.badge} ${styles.badgePublicado}`}>Publicado</span>
         : <span className={`${styles.badge} ${styles.badgeBorrador}`}>Borrador</span>,
     }),
-    columnHelper.accessor('grupoId', {
-      header: 'Alcance',
-      cell: (info) => info.getValue()
-        ? <span>Grupo</span>
-        : <span className={`${styles.badge} ${styles.badgeGlobal}`}>Global</span>,
+    columnHelper.accessor('coleccion', {
+      header: 'Colección',
+      cell: (info) => {
+        const col = info.getValue();
+        if (!col) {
+          return <span className={`${styles.badge} ${styles.badgeBorrador}`}>Sin asignar</span>;
+        }
+        return <span className={`${styles.badge} ${styles.badgeGlobal}`}>{col.clave ?? col.slug}</span>;
+      },
     }),
     columnHelper.accessor('etiquetas', {
       header: 'Etiquetas',
@@ -447,6 +477,31 @@ export default function PaginasPage() {
         )}
       </div>
 
+      {/* ── Colección filter ── */}
+      {colecciones.length > 0 && (
+        <div className={styles.tagFilter}>
+          <span className={styles.tagFilterLabel}>
+            <span className="material-icons">menu_book</span>
+            Colección:
+          </span>
+          <select
+            value={filtroColeccion}
+            onChange={(e) => setFiltroColeccion(e.target.value)}
+            className={styles.tagInput}
+          >
+            <option value="">Todas</option>
+            {colecciones.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.clave ? `${c.clave} — ${c.nombre}` : c.nombre}
+              </option>
+            ))}
+            {sinColeccion > 0 && (
+              <option value="sin-coleccion">Sin asignar ({sinColeccion})</option>
+            )}
+          </select>
+        </div>
+      )}
+
       {/* ── Tag filter bar ── */}
       {etiquetas.length > 0 && (
         <div className={styles.tagFilter}>
@@ -511,6 +566,7 @@ export default function PaginasPage() {
         <PaginaForm
           pagina={editPagina ?? previewPagina}
           etiquetas={etiquetas}
+          colecciones={colecciones}
           onSave={handleSave}
           onCancel={closeModal}
           loading={saving}

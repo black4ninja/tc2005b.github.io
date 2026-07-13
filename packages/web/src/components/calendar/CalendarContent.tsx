@@ -593,6 +593,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
             onSave={handleSaveActivity}
             onCancel={() => setAddModalState(null)}
             loading={isCreating}
+            grupoId={calendario?.grupoId}
           />
         </Modal>
       )}
@@ -605,6 +606,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
             loading={isUpdating}
             initialData={editModalState.initialData}
             mode="edit"
+            grupoId={calendario?.grupoId}
           />
         </Modal>
       )}

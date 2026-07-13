@@ -14,13 +14,24 @@ export interface ContentBlock {
   datos: Record<string, unknown>;
 }
 
+/** Colección del CMS "Contenidos" tal como la expone `Pagina.toSafeJSON()`. */
+export interface ColeccionRef {
+  id: string;
+  nombre: string | null;
+  slug: string | null;
+  clave: string | null;
+}
+
 export interface PaginaData {
   id: string;
   titulo: string;
   slug: string;
   descripcion?: string;
   icono?: string;
-  grupoId?: string | null;
+  /** Colección (materia) a la que pertenece. `null` = sin asignar. */
+  coleccionId?: string | null;
+  /** Datos de la colección; solo viene en los endpoints admin (con include). */
+  coleccion?: ColeccionRef | null;
   bloques: ContentBlock[];
   publicado: boolean;
   orden?: number;

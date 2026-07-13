@@ -5,6 +5,11 @@
  * Uso: cd packages/api && npx tsx scripts/seed-paginas.ts
  *      cd packages/api && npx tsx scripts/seed-paginas.ts --dry-run
  *      cd packages/api && npx tsx scripts/seed-paginas.ts --file avances-data.json
+ *      cd packages/api && npx tsx scripts/seed-paginas.ts --coleccion tc2005b
+ *
+ * Sin --coleccion las páginas nacen sin colección y NO aparecen en el picker del
+ * calendario (que filtra por las colecciones del grupo). Pásala salvo que quieras
+ * asignarlas después con migrate-paginas-coleccion.ts.
  */
 
 import { readFileSync } from 'fs';
@@ -23,6 +28,8 @@ const fileArgIndex = process.argv.indexOf('--file');
 const dataFilename = fileArgIndex !== -1 && process.argv[fileArgIndex + 1]
   ? process.argv[fileArgIndex + 1]
   : 'paginas-data.json';
+const coleccionArgIndex = process.argv.indexOf('--coleccion');
+const coleccionSlug = coleccionArgIndex !== -1 ? process.argv[coleccionArgIndex + 1] : undefined;
 
 interface ContentBlock {
   id: string;
@@ -35,7 +42,6 @@ interface PaginaInput {
   slug: string;
   descripcion?: string;
   icono: string;
-  grupoId: null;
   bloques: ContentBlock[];
   publicado: boolean;
   orden: number;
@@ -52,6 +58,21 @@ async function main() {
   }
 
   console.log(`Connecting to Parse Server at ${config.serverURL}...`);
+
+  let coleccion: Parse.Object | undefined;
+  if (coleccionSlug) {
+    const q = new Parse.Query('Coleccion');
+    q.equalTo('slug', coleccionSlug);
+    q.equalTo('exists', true);
+    coleccion = await q.first({ useMasterKey: true });
+    if (!coleccion) {
+      console.error(`✗ No existe la colección con slug "${coleccionSlug}". Abortado.`);
+      process.exit(1);
+    }
+    console.log(`Colección destino: ${coleccion.get('nombre')} (${coleccion.get('clave')})`);
+  } else {
+    console.warn('⚠ Sin --coleccion: las páginas quedarán sin colección y no saldrán en el picker del calendario.');
+  }
 
   // Read the generated JSON
   const dataPath = resolve(__dirname, dataFilename);
@@ -90,7 +111,7 @@ async function main() {
     pagina.setBloques(data.bloques);
     pagina.setPublicado(data.publicado);
     pagina.setOrden(data.orden);
-    // No grupo = global page
+    if (coleccion) pagina.setColeccion(coleccion);
 
     await pagina.save(null, { useMasterKey: true });
     console.log(`  ✓ ${data.slug}: "${data.titulo}" (${data.bloques.length} bloques) → id: ${pagina.id}`);
