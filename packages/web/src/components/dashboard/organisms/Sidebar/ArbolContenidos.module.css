@@ -1,0 +1,185 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+/* Scroll propio: con 120 páginas no puede empujar al footer ni crecer sin fin. */
+.arbol {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 6px 12px;
+  scrollbar-width: thin;
+}
+.arbol::-webkit-scrollbar {
+  width: 6px;
+}
+.arbol::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 3px;
+}
+
+.nodo {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--sidebar-color, #334155);
+  font-size: 0.82rem;
+  line-height: 1.2;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.nodo:hover {
+  background: var(--sidebar-hover-bg, rgba(0, 0, 0, 0.04));
+}
+
+.nodoActivo,
+.nodoActivo:hover {
+  background: var(--sidebar-active-bg, #eef2ff);
+  color: var(--sidebar-active-color, #4f46e5);
+  font-weight: 600;
+}
+
+/* El nodo que se arrastra se atenúa: el que "viaja" es el DragOverlay. */
+.nodoArrastrando {
+  opacity: 0.35;
+}
+
+.overlay {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--dash-primary, #4f46e5);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: grabbing;
+}
+
+.chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.chevron:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.chevronHueco {
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.titulo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Renombrar en línea (doble clic) ── */
+.renameInput {
+  flex: 1;
+  min-width: 0;
+  padding: 1px 4px;
+  border: 1px solid var(--dash-primary, #4f46e5);
+  border-radius: 4px;
+  font: inherit;
+  font-weight: 400;
+  color: var(--text-primary);
+  background: var(--bg-card, #fff);
+  outline: none;
+}
+
+/* ── Acciones (aparecen al pasar el cursor) ── */
+.acciones {
+  display: none;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.nodo:hover .acciones {
+  display: flex;
+}
+
+.accion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.accion:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--text-primary);
+}
+.accionPeligro:hover {
+  background: #fdecea;
+  color: var(--dash-danger, #c0392b);
+}
+
+/* El punto de estado cede el sitio a las acciones al hacer hover: en 270px no
+   caben los dos sin comerse el título. */
+.dotPub,
+.dotBorr {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.nodo:hover .dotPub,
+.nodo:hover .dotBorr {
+  display: none;
+}
+
+.dotPub {
+  background: #2e7d32;
+}
+.dotBorr {
+  background: #e65100;
+}
+
+.error {
+  margin: 6px 8px;
+  padding: 8px 10px;
+  background: #fdecea;
+  color: var(--dash-danger, #c0392b);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.vacio {
+  padding: 12px 14px;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, #64748b);
+}

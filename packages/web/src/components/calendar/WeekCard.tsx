@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { confirmar } from '@/utils/dialogos';
 import {
   DndContext,
   DragOverlay,
@@ -456,11 +457,15 @@ export default function WeekCard({
           <span
             className={styles.weekDeleteBtn}
             title="Eliminar semana vacía"
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
-              if (window.confirm('¿Eliminar esta semana?')) {
-                onDeleteWeek(semana.id!);
-              }
+              const ok = await confirmar({
+                titulo: '¿Eliminar esta semana?',
+                texto: 'La semana está vacía; esta acción no se puede deshacer.',
+                confirmar: 'Eliminar',
+                peligro: true,
+              });
+              if (ok) onDeleteWeek(semana.id!);
             }}
           >
             <i className="material-icons">delete_outline</i>

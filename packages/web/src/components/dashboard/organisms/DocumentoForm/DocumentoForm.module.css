@@ -46,3 +46,16 @@
   border-radius: 8px;
   font-size: 13.5px;
 }
+
+/* Vista previa del slug generado (no editable: cambiarlo después es la acción
+   del árbol, que avisa de que mueve la URL pública). */
+.slugPreview {
+  margin: -4px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.slugPreview code {
+  background: var(--bg-page);
+  padding: 1px 5px;
+  border-radius: 4px;
+}

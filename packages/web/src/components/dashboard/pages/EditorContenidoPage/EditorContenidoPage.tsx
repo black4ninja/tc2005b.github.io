@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { confirmar } from '../../../../utils/dialogos';
 import { useParams, Link } from 'react-router';
 import CodeMirror, { type ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { markdown } from '@codemirror/lang-markdown';
@@ -19,6 +20,15 @@ const AUTOSAVE_MS = 1500;
 const PREVIEW_MS = 300;
 
 type EstadoGuardado = 'cargando' | 'guardado' | 'dirty' | 'guardando' | 'error';
+
+/** Qué mitades del split se ven. 'ambos' es el comportamiento de siempre. */
+type Vista = 'codigo' | 'ambos' | 'preview';
+const VISTA_KEY = 'cms:editor:vista';
+
+function leerVista(): Vista {
+  const v = localStorage.getItem(VISTA_KEY);
+  return v === 'codigo' || v === 'preview' ? v : 'ambos';
+}
 
 interface VersionInfo {
   id: string;
@@ -44,13 +54,31 @@ function formatBytes(bytes: number): string {
   return `${bytes} B`;
 }
 
+interface EditorProps {
+  /**
+   * Cuando el editor va embebido (dentro de la página de la colección) recibe
+   * los ids por props; como ruta propia los saca de useParams. Embebido, además,
+   * no pinta su cabecera de página completa ni calcula su alto contra el
+   * viewport: se adapta al contenedor.
+   */
+  coleccionId?: string;
+  docId?: string;
+  embebido?: boolean;
+}
+
 /**
  * Editor del CMS "Contenidos" (design §3): CodeMirror + preview en vivo con
  * el MISMO pipeline unified que renderiza al publicar — WYSIWYG real.
  * Autosave a borrador único; publicar congela una versión; historial/restaurar.
  */
-export default function EditorContenidoPage() {
-  const { id, docId } = useParams<{ id: string; docId: string }>();
+export default function EditorContenidoPage({
+  coleccionId: propColeccionId,
+  docId: propDocId,
+  embebido = false,
+}: EditorProps = {}) {
+  const params = useParams<{ id: string; docId: string }>();
+  const id = propColeccionId ?? params.id;
+  const docId = propDocId ?? params.docId;
   const { sessionToken } = useAuth();
   const editorRef = useRef<ReactCodeMirrorRef>(null);
 
@@ -59,6 +87,14 @@ export default function EditorContenidoPage() {
   const [estado, setEstado] = useState<EstadoGuardado>('cargando');
   const [error, setError] = useState('');
   const [previewHtml, setPreviewHtml] = useState('');
+  // Se recuerda entre sesiones: quien escribe en una pantalla chica no quiere
+  // volver a colapsar el preview cada vez que entra.
+  const [vista, setVistaState] = useState<Vista>(leerVista);
+
+  function setVista(v: Vista) {
+    setVistaState(v);
+    localStorage.setItem(VISTA_KEY, v);
+  }
 
   const [publicarOpen, setPublicarOpen] = useState(false);
   const [mensajePublicar, setMensajePublicar] = useState('');
@@ -129,10 +165,37 @@ export default function EditorContenidoPage() {
 
   useEffect(() => {
     cargar();
-    // Al cambiar de documento (o desmontar), un timer pendiente del documento
-    // ANTERIOR escribiría el cuerpo del nuevo en el borrador equivocado.
-    return () => cancelarAutosave();
-  }, [cargar]);
+    // Al cambiar de documento (o desmontar) hay que resolver un autosave que
+    // siga en el debounce. Cancelarlo a secas —como se hacía— PERDÍA hasta
+    // AUTOSAVE_MS de escritura. Pero dejar correr el timer tampoco vale: para
+    // cuando dispare, `cuerpoRef` ya apunta al cuerpo del documento NUEVO y lo
+    // escribiría en el borrador del viejo.
+    //
+    // Así que se vacía a mano, con los valores del documento que dejamos: el
+    // cleanup cierra sobre el `docId` de este efecto, y `cuerpoRef.current`
+    // todavía no ha sido reemplazado (`cargar()` del nuevo documento es async y
+    // corre después). Se encadena al PUT en vuelo para no romper el
+    // single-flight.
+    return () => {
+      const habiaPendiente = autosaveTimer.current !== null;
+      cancelarAutosave();
+      if (!habiaPendiente || !docId || !documentoRef.current) return;
+
+      const cuerpoPendiente = cuerpoRef.current;
+      const enVuelo = saveEnVuelo.current;
+      const flush = (enVuelo ? enVuelo.catch(() => {}) : Promise.resolve()).then(() =>
+        fetch(`${API_BASE}/admin/documentos/${docId}/borrador`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'x-session-token': sessionToken ?? '' },
+          body: JSON.stringify({ cuerpo: cuerpoPendiente }),
+        }).then(() => undefined),
+      );
+      // No se puede await en un cleanup: se deja en vuelo, pero registrado, para
+      // que el siguiente guardado del MISMO documento no adelante a éste.
+      saveEnVuelo.current = flush.then(() => true).catch(() => false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cargar, docId, sessionToken]);
 
   /* ── Autosave debounced a borrador único ── */
   const guardar = useCallback(async (): Promise<boolean> => {
@@ -184,6 +247,27 @@ export default function EditorContenidoPage() {
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, []);
+
+  /* ── Plantilla ──
+     Vive en la toolbar (y no en un panel de metadatos aparte) porque es una
+     propiedad del contenido: se decide mientras se escribe. */
+  async function cambiarPlantilla(valor: string) {
+    if (!docId || !documento) return;
+    const plantilla = (valor || null) as DocumentoData['plantilla'];
+    const previo = documento.plantilla;
+    setDocumento({ ...documento, plantilla }); // optimista
+    try {
+      const res = await fetch(`${API_BASE}/admin/documentos/${docId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ plantilla }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setDocumento((d) => (d ? { ...d, plantilla: previo } : d)); // revertir
+      setError('No se pudo cambiar la plantilla.');
+    }
+  }
 
   /* ── Preview en vivo (solo Markdown; el HTML crudo se sirve sandboxeado en US-5) ── */
   const esMd = documento?.tipo === 'md';
@@ -297,7 +381,7 @@ export default function EditorContenidoPage() {
   }
 
   async function eliminarRecurso(r: RecursoInfo) {
-    if (!confirm(`¿Eliminar "${r.nombre}"? Las páginas que lo referencien mostrarán un enlace roto.`)) return;
+    if (!(await confirmar({ titulo: `¿Eliminar "${r.nombre}"?`, texto: `Las páginas que lo referencien mostrarán un enlace roto.`, confirmar: 'Eliminar', peligro: true }))) return;
     setRecursosError('');
     try {
       const res = await fetch(`${API_BASE}/admin/recursos/${r.id}`, { method: 'DELETE', headers });
@@ -378,7 +462,7 @@ export default function EditorContenidoPage() {
   }
 
   async function restaurarVersion(v: VersionInfo) {
-    if (!confirm(`¿Restaurar la v${v.numero} al borrador? El contenido actual del borrador se reemplaza.`)) return;
+    if (!(await confirmar({ titulo: `¿Restaurar la v${v.numero} al borrador?`, texto: `El contenido actual del borrador se reemplaza.` }))) return;
     // Un autosave pendiente (timer) o en vuelo (PUT) aterrizaría DESPUÉS del
     // restore y pisaría el borrador restaurado.
     cancelarAutosave();
@@ -415,11 +499,21 @@ export default function EditorContenidoPage() {
   }
 
   return (
-    <div className={styles.page} onKeyDown={onKeyDown}>
+    <div className={`${styles.page} ${embebido ? styles.embebido : ''}`} onKeyDown={onKeyDown}>
       <div className={styles.header}>
-        <Link to={`/admin/contenidos/${id}`} className={styles.volver}>
-          <Icon name="arrow_back" size="sm" />
-        </Link>
+        {embebido ? (
+          <Link
+            to={`/admin/contenidos/${id}/editar/${docId}`}
+            className={styles.volver}
+            title="Abrir a pantalla completa"
+          >
+            <Icon name="open_in_full" size="sm" />
+          </Link>
+        ) : (
+          <Link to={`/admin/contenidos/${id}`} className={styles.volver} title="Volver a la colección">
+            <Icon name="arrow_back" size="sm" />
+          </Link>
+        )}
         <div className={styles.tituloWrap}>
           <span className={styles.titulo} title={documento?.titulo}>{documento?.titulo ?? '…'}</span>
           <span className={styles.subtitulo}>
@@ -462,6 +556,53 @@ export default function EditorContenidoPage() {
             {subiendo ? '⏳ Subiendo…' : '🖼️ Subir'}
           </button>
           <button type="button" title="Recursos del documento" onClick={abrirRecursos}>📎 Recursos</button>
+
+          <span className={styles.sep} />
+          <select
+            className={styles.plantillaSelect}
+            value={documento?.plantilla ?? ''}
+            onChange={(e) => cambiarPlantilla(e.target.value)}
+            disabled={!documento}
+            title="Plantilla de la página"
+          >
+            <option value="">Sin plantilla</option>
+            <option value="laboratorio">Laboratorio</option>
+            <option value="lectura">Lectura</option>
+            <option value="temario">Temario</option>
+          </select>
+
+          {/* Colapsar código o preview. Solo en Markdown: el HTML crudo no tiene
+              preview en vivo, así que no hay nada entre lo que elegir. */}
+          <div className={styles.vistaGrupo} role="group" aria-label="Vista del editor">
+            <button
+              type="button"
+              className={vista === 'codigo' ? styles.vistaActiva : ''}
+              onClick={() => setVista('codigo')}
+              title="Solo código"
+              aria-pressed={vista === 'codigo'}
+            >
+              <Icon name="code" size="sm" />
+            </button>
+            <button
+              type="button"
+              className={vista === 'ambos' ? styles.vistaActiva : ''}
+              onClick={() => setVista('ambos')}
+              title="Código y vista previa"
+              aria-pressed={vista === 'ambos'}
+            >
+              <Icon name="vertical_split" size="sm" />
+            </button>
+            <button
+              type="button"
+              className={vista === 'preview' ? styles.vistaActiva : ''}
+              onClick={() => setVista('preview')}
+              title="Solo vista previa"
+              aria-pressed={vista === 'preview'}
+            >
+              <Icon name="visibility" size="sm" />
+            </button>
+          </div>
+
           <span className={styles.atajos}>⌘S guardar · ⌘⇧P publicar</span>
         </div>
       )}
@@ -476,34 +617,51 @@ export default function EditorContenidoPage() {
         }}
       />
 
-      <div className={styles.split}>
-        <div className={styles.fuente} onPaste={onPasteFuente}>
-          <CodeMirror
-            ref={editorRef}
-            value={cuerpo}
-            onChange={onCambio}
-            editable={documento !== null && estado !== 'cargando'}
-            theme={oneDark}
-            extensions={[esMd ? markdown() : html(), EditorView.lineWrapping]}
-            basicSetup={{ foldGutter: true, highlightActiveLine: true }}
-            className={styles.codemirror}
-          />
-        </div>
-        {esMd ? (
-          <div className={styles.preview}>
-            {/* Seguro: previewHtml SIEMPRE sale de renderMarkdown(), cuyo pipeline
-                aplica rehype-sanitize (allowlist) — scripts/handlers/iframes se
-                eliminan. Es el mismo HTML que servirá producción (design §3). */}
-            <div className="contenido-render" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+      {/* El HTML crudo no tiene preview: se fuerza 'ambos' para que el hint siga
+          apareciendo y el usuario no acabe con un panel vacío por una preferencia
+          que eligió en un documento Markdown. */}
+      {(() => {
+        const vistaEfectiva: Vista = esMd ? vista : 'ambos';
+        const verCodigo = vistaEfectiva !== 'preview';
+        const verPreview = vistaEfectiva !== 'codigo';
+        return (
+          <div className={`${styles.split} ${styles[`split-${vistaEfectiva}`]}`}>
+            {/* El editor se mantiene MONTADO aunque esté oculto: desmontarlo
+                tiraría el historial de deshacer de CodeMirror y la posición del
+                cursor cada vez que alternas de vista. */}
+            <div
+              className={`${styles.fuente} ${!verCodigo ? styles.oculto : ''}`}
+              onPaste={onPasteFuente}
+              aria-hidden={!verCodigo}
+            >
+              <CodeMirror
+                ref={editorRef}
+                value={cuerpo}
+                onChange={onCambio}
+                editable={documento !== null && estado !== 'cargando'}
+                theme={oneDark}
+                extensions={[esMd ? markdown() : html(), EditorView.lineWrapping]}
+                basicSetup={{ foldGutter: true, highlightActiveLine: true }}
+                className={styles.codemirror}
+              />
+            </div>
+            {esMd ? (
+              <div className={`${styles.preview} ${!verPreview ? styles.oculto : ''}`} aria-hidden={!verPreview}>
+                {/* Seguro: previewHtml SIEMPRE sale de renderMarkdown(), cuyo pipeline
+                    aplica rehype-sanitize (allowlist) — scripts/handlers/iframes se
+                    eliminan. Es el mismo HTML que servirá producción (design §3). */}
+                <div className="contenido-render" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+              </div>
+            ) : (
+              <div className={styles.preview}>
+                <p className={styles.hint}>
+                  Las páginas HTML se muestran sandboxeadas en el visor (iframe aislado, US-5) — sin preview en vivo aquí.
+                </p>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className={styles.preview}>
-            <p className={styles.hint}>
-              Las páginas HTML se muestran sandboxeadas en el visor (iframe aislado, US-5) — sin preview en vivo aquí.
-            </p>
-          </div>
-        )}
-      </div>
+        );
+      })()}
 
       {/* ── Modal publicar ── */}
       <Modal isOpen={publicarOpen} onClose={() => setPublicarOpen(false)} title="Publicar versión">

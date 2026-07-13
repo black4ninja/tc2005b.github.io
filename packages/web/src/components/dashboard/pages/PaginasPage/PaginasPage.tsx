@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { confirmar } from '../../../../utils/dialogos';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
@@ -164,7 +165,7 @@ export default function PaginasPage() {
   }
 
   async function handleDelete(pagina: PaginaData) {
-    if (!confirm(`¿Eliminar la página "${pagina.titulo}"? Esta acción no se puede deshacer.`)) return;
+    if (!(await confirmar({ titulo: `¿Eliminar la página "${pagina.titulo}"?`, texto: `Esta acción no se puede deshacer.`, confirmar: 'Eliminar', peligro: true }))) return;
     try {
       const res = await fetch(`${API_BASE}/admin/paginas/${pagina.id}`, { method: 'DELETE', headers });
       if (!res.ok) throw new Error('Error al eliminar');
@@ -282,7 +283,7 @@ export default function PaginasPage() {
   }
 
   async function handleDeleteTag(tag: EtiquetaData) {
-    if (!confirm(`¿Eliminar la etiqueta "${tag.nombre}"?`)) return;
+    if (!(await confirmar({ titulo: `¿Eliminar la etiqueta "${tag.nombre}"?`, confirmar: 'Eliminar', peligro: true }))) return;
     try {
       const res = await fetch(`${API_BASE}/admin/etiquetas/${tag.id}`, { method: 'DELETE', headers });
       if (!res.ok) throw new Error('Error al eliminar etiqueta');

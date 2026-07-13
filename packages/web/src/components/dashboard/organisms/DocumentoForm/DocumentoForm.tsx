@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
-import { slugify, slugifyInput } from '../../../../utils/slug';
+import { slugify } from '../../../../utils/slug';
 import styles from './DocumentoForm.module.css';
 import type { DocumentoNodo, DocumentoTipo, DocumentoPlantilla } from '../../../../types/contenidos';
 
@@ -38,33 +38,35 @@ export function aplanarCategorias(nodos: DocumentoNodo[], nivel = 0): { id: stri
 
 export default function DocumentoForm({ categorias, padreInicial, errorExterno, onSave, onCancel, loading }: DocumentoFormProps) {
   const [titulo, setTitulo] = useState('');
-  const [slug, setSlug] = useState('');
-  const [slugTocado, setSlugTocado] = useState(false);
   const [tipo, setTipo] = useState<DocumentoTipo>('md');
   const [plantilla, setPlantilla] = useState<'' | DocumentoPlantilla>('');
   const [padreId, setPadreId] = useState(padreInicial ?? '');
   const [error, setError] = useState('');
 
+  // El slug se deriva del título y ya no se edita aquí: al crear no hay nada
+  // que apunte a la página todavía, así que generarlo es gratis. Cambiarlo
+  // después sí mueve la URL pública, y para eso está la acción del árbol
+  // (con su aviso).
+  const slug = slugify(titulo);
+
   function handleTitulo(v: string) {
     setTitulo(v);
-    if (!slugTocado) setSlug(slugify(v));
     setError('');
   }
 
   function doSave() {
-    const slugFinal = slugify(slug);
     if (!titulo.trim()) {
       setError('El título es requerido');
       return;
     }
-    if (!slugFinal) {
-      setError('El slug es requerido');
+    if (!slug) {
+      setError('El título debe tener al menos una letra o número');
       return;
     }
     setError('');
     onSave({
       titulo: titulo.trim(),
-      slug: slugFinal,
+      slug,
       tipo,
       plantilla: tipo === 'md' && plantilla ? plantilla : undefined,
       padreId: padreId || undefined,
@@ -88,14 +90,10 @@ export default function DocumentoForm({ categorias, padreInicial, errorExterno, 
         error={error}
         disabled={loading}
       />
-      <TextInput
-        label="Slug"
-        placeholder="lab1-html"
-        icon="link"
-        value={slug}
-        onChange={(v) => { setSlug(slugifyInput(v)); setSlugTocado(true); setError(''); }}
-        disabled={loading}
-      />
+      {/* El slug no se edita: se muestra para que se vea qué URL va a quedar. */}
+      <p className={styles.slugPreview}>
+        URL: <code>/{slug || '…'}</code>
+      </p>
       <div className={styles.field}>
         <label className={styles.label}>Tipo</label>
         <select className={styles.select} value={tipo} onChange={(e) => setTipo(e.target.value as DocumentoTipo)} disabled={loading}>

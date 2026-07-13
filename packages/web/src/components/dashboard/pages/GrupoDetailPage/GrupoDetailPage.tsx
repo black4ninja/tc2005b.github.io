@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { confirmar, avisar, escapar } from '../../../../utils/dialogos';
 import { useParams, useNavigate } from 'react-router';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
@@ -257,7 +258,7 @@ export default function GrupoDetailPage() {
   }, [fetchCalificaciones]);
 
   async function handleCrearCompetencias() {
-    if (!confirm('¿Crear competencias para los alumnos pendientes?')) return;
+    if (!(await confirmar({ titulo: '¿Crear competencias para los alumnos pendientes?', confirmar: 'Crear' }))) return;
     setCreatingCompetencias(true);
     setError('');
     try {
@@ -325,7 +326,7 @@ export default function GrupoDetailPage() {
   }
 
   async function handleCrearMallas() {
-    if (!confirm('¿Crear mallas de evaluación para los alumnos pendientes?')) return;
+    if (!(await confirmar({ titulo: '¿Crear mallas de evaluación para los alumnos pendientes?', confirmar: 'Crear' }))) return;
     setCreatingMallas(true);
     setError('');
     try {
@@ -380,7 +381,14 @@ export default function GrupoDetailPage() {
 
       if (!editAlumno && result.generatedPassword) {
         setCreatedPassword(result.generatedPassword);
-        alert(`Alumno creado. Contraseña generada: ${result.generatedPassword}`);
+        await avisar({
+          titulo: 'Alumno creado',
+          html:
+            'Contraseña generada:<br><code class="swal-codigo">' +
+            escapar(result.generatedPassword) +
+            '</code><span class="swal-aviso">Cópiala ahora: no vuelve a mostrarse.</span>',
+          icono: 'success',
+        });
       }
 
       closeAlumnoModal();
@@ -396,7 +404,7 @@ export default function GrupoDetailPage() {
 
   async function handleToggleActive(alumno: AlumnoData) {
     const action = alumno.active ? 'Desactivar' : 'Activar';
-    if (!confirm(`¿${action} al alumno "${alumno.name}"?`)) return;
+    if (!(await confirmar({ titulo: `¿${action} al alumno "${alumno.name}"?` }))) return;
     try {
       const res = await fetch(`${API_BASE}/admin/grupos/${id}/alumnos/${alumno.id}/archive`, { method: 'PATCH', headers });
       if (!res.ok) throw new Error(`Error al ${action.toLowerCase()}`);
@@ -409,7 +417,7 @@ export default function GrupoDetailPage() {
   }
 
   async function handleDeleteAlumno(alumno: AlumnoData) {
-    if (!confirm(`¿Eliminar al alumno "${alumno.name}"? Esta acción no se puede deshacer.`)) return;
+    if (!(await confirmar({ titulo: `¿Eliminar al alumno "${alumno.name}"?`, texto: `Esta acción no se puede deshacer.`, confirmar: 'Eliminar', peligro: true }))) return;
     try {
       const res = await fetch(`${API_BASE}/admin/grupos/${id}/alumnos/${alumno.id}`, { method: 'DELETE', headers });
       if (!res.ok) throw new Error('Error al eliminar');
@@ -473,7 +481,7 @@ export default function GrupoDetailPage() {
       setTimeout(() => setToast(''), 3000);
       return;
     }
-    if (!confirm(`¿Exportar la malla de evaluación de ${targets.length} alumno(s) en un ZIP?`)) return;
+    if (!(await confirmar({ titulo: `¿Exportar la malla de evaluación de ${targets.length} alumno(s) en un ZIP?` }))) return;
 
     setExportingMallas(true);
     setExportProgress(`0/${targets.length}`);

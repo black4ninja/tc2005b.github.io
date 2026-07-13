@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router';
+import { confirmar } from '../../../../utils/dialogos';
 import { useAuth } from '../../../../context/AuthContext';
 import DashButton from '../../atoms/DashButton/DashButton';
 import styles from './PlanEvaluacionPage.module.css';
@@ -318,15 +319,14 @@ export default function PlanEvaluacionPage() {
     }
     const accion = congelada ? 'congelar' : 'descongelar';
     const nombrePeriodo = periodo.nombre || `Periodo ${periodoIdx + 1}`;
-    if (!confirm(
-      `¿${accion.charAt(0).toUpperCase() + accion.slice(1)} ${ids.length} actividad(es) ` +
-      `seleccionadas en "${nombrePeriodo}"?\n\n` +
-      (congelada
+    const ok = await confirmar({
+      titulo: `¿${accion.charAt(0).toUpperCase() + accion.slice(1)} ${ids.length} actividad(es) seleccionadas en "${nombrePeriodo}"?`,
+      texto: congelada
         ? 'Los alumnos NO podrán modificar la "Semana completada" de estas actividades.'
-        : 'Los alumnos PODRÁN modificar nuevamente la "Semana completada" de estas actividades.')
-    )) {
-      return;
-    }
+        : 'Los alumnos PODRÁN modificar nuevamente la "Semana completada" de estas actividades.',
+      confirmar: accion.charAt(0).toUpperCase() + accion.slice(1),
+    });
+    if (!ok) return;
 
     setBulkBusy((prev) => ({ ...prev, [periodoIdx]: true }));
     setError('');

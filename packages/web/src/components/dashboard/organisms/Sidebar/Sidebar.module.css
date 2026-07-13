@@ -98,6 +98,15 @@
   gap: 4px;
   overflow-y: auto;
 }
+
+/* Con el árbol dentro, el scroll lo gestiona el propio árbol (necesita
+   min-height:0 para que su overflow funcione dentro del flex). El padding
+   lateral se reduce: cada nivel de indentación cuesta ancho. */
+.navArbol {
+  padding: 8px 4px;
+  overflow: hidden;
+  min-height: 0;
+}
 .footer {
   padding: 16px;
   border-top: 1px solid var(--sidebar-border);
