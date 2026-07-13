@@ -6,6 +6,11 @@
  *   2. Enlaza `grupo.materia`.
  * El slug de la materia se deriva del curso en minúsculas (kebab).
  *
+ * Los campos `curso`/`nombreCurso` ya se retiraron del modelo `Grupo` (nadie los
+ * leía), así que este script lee las columnas crudas con `.get()`. Sigue aquí
+ * para entornos cuya BD todavía tenga los strings legacy sin migrar; contra una
+ * BD ya migrada es un no-op.
+ *
  * Uso:
  *   cd packages/api && npx tsx scripts/migrate-grupo-curso-to-materia.ts --dry-run
  *   cd packages/api && npx tsx scripts/migrate-grupo-curso-to-materia.ts
@@ -89,13 +94,13 @@ async function main() {
       already++;
       continue;
     }
-    const curso = grupo.getCurso().trim();
+    const curso = ((grupo.get('curso') as string) ?? '').trim();
     if (!curso) {
       sinCurso++;
       continue;
     }
 
-    const materia = await findOrCreateMateria(curso, grupo.getNombreCurso(), materiaCache);
+    const materia = await findOrCreateMateria(curso, (grupo.get('nombreCurso') as string) ?? '', materiaCache);
 
     if (dryRun) {
       console.log(`  ENLAZARÍA grupo "${grupo.getName()}" → materia ${curso}`);

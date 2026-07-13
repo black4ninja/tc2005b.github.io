@@ -43,6 +43,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   derivada de él. No filtraba nada en ninguna capa —toda página publicada era
   visible para cualquiera con el slug— y ninguna de las 47 páginas en producción
   lo tenía asignado.
+- **`Grupo.curso` y `Grupo.nombreCurso`**: strings legacy que duplicaban a
+  `Grupo.materia`. `createGrupo`/`updateGrupo` dejaron de escribirlos al migrar
+  a `Grupo.materia` (pointer), pero el payload de `GET /api/calendario/:grupo` y
+  la interfaz `Calendario` del front seguían declarándolos — **y ningún
+  componente los renderizaba**. Se retiran del modelo, del payload, del tipo, del
+  seed y del mock. Sin cambio visible: el calendario nunca los mostró.
+  `migrate-grupo-curso-to-materia.ts` sigue disponible para BDs sin migrar (lee
+  las columnas crudas).
 - **Docusaurus retirado (US-7)**: se elimina `packages/docusaurus`, el gate
   `/docs` por materia y el campo `Grupo.docusaurus[]`. `/docs/*` responde
   301 permanente hacia `/contenidos/*` (mapa del importador + heurística).

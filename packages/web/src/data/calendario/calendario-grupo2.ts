@@ -2,8 +2,6 @@
 import type { Calendario } from '@/types/calendario';
 
 const calendario: Calendario = {
-  curso: "TC2005B",
-  nombreCurso: "Construcción de Software y Toma de Decisiones",
   grupo: "501",
   salon: "4205",
   enlaces: {
