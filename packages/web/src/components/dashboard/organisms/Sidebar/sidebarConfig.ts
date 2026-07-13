@@ -20,7 +20,10 @@ export function getSidebarItems(
       { label: 'Grupos', icon: 'groups', path: '/admin/grupos' },
       { label: 'Competencias', icon: 'emoji_events', path: '/admin/competencias' },
       { label: 'Actividades', icon: 'assignment', path: '/admin/actividades' },
-      { label: 'Páginas', icon: 'article', path: '/admin/paginas' },
+      // "Páginas" ya no es una entrada propia: se llega desde Contenidos, que es
+      // donde viven (cada Pagina pertenece a una Coleccion). La acción "Páginas"
+      // de cada colección abre las suyas ya filtradas, y el botón "Ver todas las
+      // páginas" de esa pantalla conserva la vista de conjunto.
       { label: 'Contenidos', icon: 'library_books', path: '/admin/contenidos' },
     ];
   }

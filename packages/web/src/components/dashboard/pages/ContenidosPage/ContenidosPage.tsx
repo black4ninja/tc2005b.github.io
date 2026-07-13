@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { confirmar } from '../../../../utils/dialogos';
-import { useNavigate } from 'react-router';
+import { useNavigate, Link } from 'react-router';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
+import Icon from '../../atoms/Icon/Icon';
 import Modal from '../../atoms/Modal/Modal';
 import ColeccionForm from '../../organisms/ColeccionForm/ColeccionForm';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
@@ -121,14 +122,28 @@ export default function ContenidosPage() {
   ];
 
   const getActions = (coleccion: ColeccionData): ActionItem[] => [
-    { label: 'Abrir', icon: 'account_tree', onClick: () => navigate(`/admin/contenidos/${coleccion.id}`) },
+    // "Abrir" = el árbol de documentación (Documento). "Páginas" = las páginas de
+    // bloques (Pagina) que se sirven en /paginas/:slug. Son dos contenidos
+    // distintos de la misma colección; de ahí las dos acciones.
+    { label: 'Abrir documentación', icon: 'account_tree', onClick: () => navigate(`/admin/contenidos/${coleccion.id}`) },
+    { label: 'Páginas', icon: 'article', onClick: () => navigate(`/admin/paginas?coleccion=${coleccion.id}`) },
     { label: 'Editar', icon: 'edit', onClick: () => openEdit(coleccion) },
     { label: 'Eliminar', icon: 'delete', onClick: () => handleDelete(coleccion), variant: 'danger' },
   ];
 
   return (
     <div className={styles.page}>
-      <h1 className={styles.pageTitle}>Contenidos</h1>
+      <div className={styles.header}>
+        <h1 className={styles.pageTitle}>Contenidos</h1>
+        {/* Sin esto, al quitar "Páginas" del menú lateral solo se llegaría a las
+            páginas YA filtradas por colección: se perdería la vista de conjunto
+            (todas, filtro por etiqueta) y las páginas sin colección quedarían
+            inalcanzables. */}
+        <Link to="/admin/paginas" className={styles.verTodas}>
+          <Icon name="article" size="sm" />
+          <span>Ver todas las páginas</span>
+        </Link>
+      </div>
 
       {error && <div className={styles.error}>{error}</div>}
 
