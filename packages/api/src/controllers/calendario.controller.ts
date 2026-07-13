@@ -112,8 +112,6 @@ export async function getCalendarioByGrupo(req: Request, res: Response): Promise
     res.json({
       calendario: {
         grupoId: grupo.id,
-        curso: grupo.getCurso(),
-        nombreCurso: grupo.getNombreCurso(),
         grupo: grupo.getName(),
         salon: grupo.getSalon(),
         enlaces: grupo.getEnlaces(),

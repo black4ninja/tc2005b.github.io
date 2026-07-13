@@ -64,8 +64,6 @@ export interface CalendarioEnlaces {
 
 export interface Calendario {
   grupoId?: string;
-  curso: string;
-  nombreCurso: string;
   grupo: string;
   salon: string;
   enlaces: CalendarioEnlaces;

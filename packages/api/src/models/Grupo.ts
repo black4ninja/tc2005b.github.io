@@ -27,20 +27,6 @@ export class Grupo extends BaseModel {
     this.set('fechaFin', date);
   }
 
-  getCurso(): string {
-    return this.get('curso') ?? '';
-  }
-  setCurso(curso: string): void {
-    this.set('curso', curso);
-  }
-
-  getNombreCurso(): string {
-    return this.get('nombreCurso') ?? '';
-  }
-  setNombreCurso(nombreCurso: string): void {
-    this.set('nombreCurso', nombreCurso);
-  }
-
   getSalon(): string {
     return this.get('salon') ?? '';
   }
@@ -86,8 +72,6 @@ export class Grupo extends BaseModel {
       name: this.getName(),
       fechaInicio: this.getFechaInicio(),
       fechaFin: this.getFechaFin(),
-      curso: this.getCurso(),
-      nombreCurso: this.getNombreCurso(),
       salon: this.getSalon(),
       enlaces: this.getEnlaces(),
       // Requiere query.include('materia') para traer nombre/slug; si no,

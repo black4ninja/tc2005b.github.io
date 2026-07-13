@@ -47,8 +47,6 @@ type SemanaData = SemanaNormalData | SemanaEspecialData;
 
 interface GrupoData {
   name: string;
-  curso: string;
-  nombreCurso: string;
   salon: string;
   enlaces: Record<string, string>;
 }
@@ -56,8 +54,6 @@ interface GrupoData {
 const GRUPOS_DATA: GrupoData[] = [
   {
     name: '501',
-    curso: 'TC2005B',
-    nombreCurso: 'Construcción de Software y Toma de Decisiones',
     salon: '4205',
     enlaces: {
       asesoriaDenisse: 'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0glSuRv-Qk1CwD4IJ1nBDWu2LSplGiPrW0Eo0DdEYxakViDvjwVkBsWBgh4U3wYpsD8GP9TRqd',
@@ -542,8 +538,6 @@ async function findOrCreateGrupo(grupoData: GrupoData, dryRun: boolean): Promise
   }
 
   if (!dryRun && grupo) {
-    grupo.setCurso(grupoData.curso);
-    grupo.setNombreCurso(grupoData.nombreCurso);
     grupo.setSalon(grupoData.salon);
     grupo.setEnlaces(grupoData.enlaces);
     await grupo.save(null, { useMasterKey: true });
