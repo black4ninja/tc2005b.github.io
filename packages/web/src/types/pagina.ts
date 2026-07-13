@@ -35,10 +35,19 @@ export interface PaginaData {
   bloques: ContentBlock[];
   publicado: boolean;
   orden?: number;
-  etiquetas?: string[];
+  /**
+   * Etiquetas ya hidratadas (el API las resuelve y omite las borradas). Al
+   * guardar, en cambio, se mandan solo los ids: ver `PaginaSavePayload`.
+   */
+  etiquetas?: EtiquetaData[];
   createdAt?: string;
   updatedAt?: string;
 }
+
+/** Lo que el form manda al API: las etiquetas viajan como ids. */
+export type PaginaSavePayload = Omit<PaginaData, 'id' | 'coleccion' | 'etiquetas' | 'createdAt' | 'updatedAt'> & {
+  etiquetas?: string[];
+};
 
 export interface PaginaResumen {
   id: string;

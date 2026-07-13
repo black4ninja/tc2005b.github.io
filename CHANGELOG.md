@@ -7,6 +7,24 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **Etiquetas de páginas que no se veían ni filtraban.** `Pagina.etiquetas`
+  guardaba objectIds como **strings sueltos**, sin validar nada, así que se
+  colaron NOMBRES de etiqueta (`"eval"`) donde debía ir el id. El render los
+  descartaba en silencio (`if (!tag) return null`), de modo que **av2 y av3
+  estaban etiquetadas como `eval` y aun así salían sin chip y no aparecían al
+  filtrar** por esa etiqueta; av1 tenía la etiqueta duplicada (el nombre y el id).
+  - `Pagina.etiquetas` pasa a ser un **array de pointers** a `Etiqueta`. Un
+    pointer no admite un nombre suelto: la clase de bug queda cerrada de raíz.
+  - El API **valida** los ids contra `Etiqueta` (400 si alguno no existe) y
+    devuelve las etiquetas **hidratadas** (`{id, nombre, color, textColor}`),
+    omitiendo las borradas. El cliente ya no resuelve ids contra un mapa, así que
+    no puede volver a descartar referencias sin avisar.
+  - `scripts/migrate-paginas-etiquetas-pointers.ts` — migración idempotente con
+    `--dry-run`: convierte strings→pointers, **repara** las entradas que eran
+    nombres (busca la `Etiqueta` por nombre) y deduplica. Ejecutada: 3 páginas,
+    3 referencias reparadas, 0 descartadas.
+
 ### Added
 - **Páginas por colección (materia)**: `Pagina` ahora apunta a una `Coleccion`
   del CMS "Contenidos" (pointer `Pagina.coleccion`), de modo que cada página

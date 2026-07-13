@@ -75,10 +75,18 @@ export class Pagina extends BaseModel {
     this.set('orden', orden);
   }
 
-  getEtiquetas(): string[] {
+  /**
+   * Etiquetas de la página (array de pointers a `Etiqueta`, nunca strings).
+   *
+   * Antes esto guardaba objectIds sueltos como strings, y nada impedía escribir
+   * cualquier cosa: en producción había páginas con el literal `"eval"` (el
+   * NOMBRE de la etiqueta) en vez del id, que el visor descartaba en silencio.
+   * Un pointer no admite eso.
+   */
+  getEtiquetas(): Parse.Object[] {
     return this.get('etiquetas') ?? [];
   }
-  setEtiquetas(etiquetas: string[]): void {
+  setEtiquetas(etiquetas: Parse.Object[]): void {
     this.set('etiquetas', etiquetas);
   }
 
@@ -105,7 +113,18 @@ export class Pagina extends BaseModel {
       bloques: this.getBloques(),
       publicado: this.getPublicado(),
       orden: this.getOrden(),
-      etiquetas: this.getEtiquetas(),
+      // Requiere query.include('etiquetas'). Se devuelven hidratadas —no ids
+      // sueltos— para que el cliente no tenga que resolverlas contra un mapa y
+      // acabe descartando en silencio las que no encuentre. Las soft-deleted no
+      // se exponen.
+      etiquetas: this.getEtiquetas()
+        .filter((e) => e && e.get('exists') !== false && e.get('active') !== false)
+        .map((e) => ({
+          id: e.id,
+          nombre: e.get('nombre') ?? null,
+          color: e.get('color') ?? null,
+          textColor: e.get('textColor') ?? null,
+        })),
       active: this.get('active'),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,

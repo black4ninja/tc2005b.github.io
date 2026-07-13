@@ -37,6 +37,25 @@ async function resolverColeccion(coleccionId: string): Promise<Parse.Object | nu
 }
 
 /**
+ * ids de etiquetas → pointers VALIDADOS. `null` = payload no-array (se ignora);
+ * `'invalido'` = algún id no corresponde a una Etiqueta viva (400).
+ *
+ * Antes se guardaba el array de strings tal cual, sin comprobar nada: por eso en
+ * producción acabaron páginas con el literal `"eval"` (el nombre de la etiqueta)
+ * en vez de su objectId, y el visor las descartaba en silencio.
+ */
+async function resolverEtiquetas(value: unknown): Promise<Parse.Object[] | 'invalido' | null> {
+  if (!Array.isArray(value)) return null;
+  const ids = [...new Set(value.filter((s): s is string => typeof s === 'string' && s.trim() !== ''))];
+  if (ids.length === 0) return [];
+  const q = BaseModel.queryActive('Etiqueta');
+  q.containedIn('objectId' as any, ids as any);
+  const encontradas = await q.find({ useMasterKey: true });
+  if (encontradas.length !== ids.length) return 'invalido';
+  return encontradas;
+}
+
+/**
  * Colecciones (pointers) asignadas a un grupo. Vacío si el grupo no existe o no
  * tiene ninguna: el llamador decide qué hacer con ese caso.
  */
@@ -62,7 +81,7 @@ export async function listPaginas(req: Request, res: Response): Promise<void> {
     const query = new Parse.Query<Pagina>('Pagina');
     query.equalTo('exists' as any, true as any);
     query.ascending('slug');
-    query.include('coleccion' as any);
+    query.include(['coleccion', 'etiquetas'] as any);
     query.limit(1000);
 
     if (typeof coleccionId === 'string' && coleccionId) {
@@ -94,7 +113,7 @@ export async function getPagina(req: Request, res: Response): Promise<void> {
 
   try {
     const query = BaseModel.queryActive<Pagina>('Pagina');
-    query.include('coleccion' as any);
+    query.include(['coleccion', 'etiquetas'] as any);
     const pagina = await query.get(id, { useMasterKey: true });
 
     res.json({ status: 'ok', pagina: pagina.toSafeJSON() });
@@ -150,9 +169,12 @@ export async function createPagina(req: Request, res: Response): Promise<void> {
     }
     pagina.setPublicado(publicado === true);
     if (orden !== undefined) pagina.setOrden(Number(orden));
-    if (Array.isArray(etiquetas) && etiquetas.every((e: any) => typeof e === 'string')) {
-      pagina.setEtiquetas(etiquetas);
+    const etiquetasPtrs = await resolverEtiquetas(etiquetas);
+    if (etiquetasPtrs === 'invalido') {
+      res.status(400).json({ status: 'error', message: 'Alguna etiqueta indicada no existe' });
+      return;
     }
+    if (etiquetasPtrs) pagina.setEtiquetas(etiquetasPtrs);
 
     await pagina.save(null, { useMasterKey: true });
 
@@ -170,7 +192,7 @@ export async function updatePagina(req: Request, res: Response): Promise<void> {
     const query = BaseModel.queryActive<Pagina>('Pagina');
     // include: sin esto, una página que no cambia de colección devolvería el
     // pointer sin datos y `toSafeJSON()` la expondría con nombre/slug en null.
-    query.include('coleccion' as any);
+    query.include(['coleccion', 'etiquetas'] as any);
     const pagina = await query.get(id, { useMasterKey: true });
 
     if (titulo !== undefined) {
@@ -229,9 +251,12 @@ export async function updatePagina(req: Request, res: Response): Promise<void> {
     if (publicado !== undefined) pagina.setPublicado(publicado === true);
     if (orden !== undefined) pagina.setOrden(Number(orden));
     if (etiquetas !== undefined) {
-      if (Array.isArray(etiquetas) && etiquetas.every((e: any) => typeof e === 'string')) {
-        pagina.setEtiquetas(etiquetas);
+      const etiquetasPtrs = await resolverEtiquetas(etiquetas);
+      if (etiquetasPtrs === 'invalido') {
+        res.status(400).json({ status: 'error', message: 'Alguna etiqueta indicada no existe' });
+        return;
       }
+      if (etiquetasPtrs) pagina.setEtiquetas(etiquetasPtrs);
     }
 
     await pagina.save(null, { useMasterKey: true });
@@ -278,7 +303,7 @@ export async function getPaginaPublica(req: Request, res: Response): Promise<voi
     query.equalTo('publicado' as any, true as any);
     // Sin include, el pointer llega sin datos y `toSafeJSON()` expondría la
     // colección con nombre/slug/clave en null.
-    query.include('coleccion' as any);
+    query.include(['coleccion', 'etiquetas'] as any);
     const pagina = await query.first({ useMasterKey: true });
 
     if (!pagina) {

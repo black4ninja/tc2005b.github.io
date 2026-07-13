@@ -5,7 +5,7 @@ import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
 import PaginaForm from '../../organisms/PaginaForm/PaginaForm';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
-import type { PaginaData, EtiquetaData, ColeccionRef } from '../../../../types/pagina';
+import type { PaginaData, PaginaSavePayload, EtiquetaData, ColeccionRef } from '../../../../types/pagina';
 import { randomUUID } from '../../../../utils/uuid';
 import styles from './PaginasPage.module.css';
 
@@ -46,11 +46,6 @@ export default function PaginasPage() {
   const [editTagNombre, setEditTagNombre] = useState('');
   const [editTagColorIdx, setEditTagColorIdx] = useState(0);
 
-  const etiquetaMap = useMemo(() => {
-    const map = new Map<string, EtiquetaData>();
-    etiquetas.forEach((e) => map.set(e.id, e));
-    return map;
-  }, [etiquetas]);
 
   const paginasFiltradas = useMemo(() => {
     let out = paginas;
@@ -60,7 +55,7 @@ export default function PaginasPage() {
       out = out.filter((p) => p.coleccionId === filtroColeccion);
     }
     if (filtroEtiqueta) {
-      out = out.filter((p) => p.etiquetas?.includes(filtroEtiqueta));
+      out = out.filter((p) => p.etiquetas?.some((e) => e.id === filtroEtiqueta));
     }
     return out;
   }, [paginas, filtroEtiqueta, filtroColeccion]);
@@ -146,7 +141,7 @@ export default function PaginasPage() {
     setPreviewPagina(undefined);
   }
 
-  async function handleSave(data: Omit<PaginaData, 'id' | 'createdAt' | 'updatedAt'>) {
+  async function handleSave(data: PaginaSavePayload) {
     setSaving(true);
     setError('');
     try {
@@ -205,7 +200,8 @@ export default function PaginasPage() {
           coleccionId: pagina.coleccionId ?? null,
           bloques: newBloques,
           publicado: false,
-          etiquetas: pagina.etiquetas ?? [],
+          // El API recibe ids, aunque las devuelva hidratadas.
+          etiquetas: (pagina.etiquetas ?? []).map((e) => e.id),
         }),
       });
       if (!res.ok) {
@@ -327,24 +323,23 @@ export default function PaginasPage() {
     }),
     columnHelper.accessor('etiquetas', {
       header: 'Etiquetas',
+      // El API ya las manda resueltas (y sin las borradas), así que no hay nada
+      // que buscar en un mapa ni referencias que descartar en silencio: si el
+      // array viene vacío es que la página no tiene etiquetas, punto.
       cell: (info) => {
-        const tagIds = info.getValue() ?? [];
-        if (tagIds.length === 0) return <span style={{ color: 'var(--text-muted)' }}>—</span>;
+        const tags = info.getValue() ?? [];
+        if (tags.length === 0) return <span style={{ color: 'var(--text-muted)' }}>—</span>;
         return (
           <div className={styles.tagCell}>
-            {tagIds.map((tagId) => {
-              const tag = etiquetaMap.get(tagId);
-              if (!tag) return null;
-              return (
-                <span
-                  key={tagId}
-                  className={styles.tagBadge}
-                  style={{ background: tag.color, color: tag.textColor }}
-                >
-                  {tag.nombre}
-                </span>
-              );
-            })}
+            {tags.map((tag) => (
+              <span
+                key={tag.id}
+                className={styles.tagBadge}
+                style={{ background: tag.color, color: tag.textColor }}
+              >
+                {tag.nombre}
+              </span>
+            ))}
           </div>
         );
       },
