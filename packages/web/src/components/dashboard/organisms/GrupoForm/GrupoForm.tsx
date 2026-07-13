@@ -2,7 +2,6 @@ import { useState } from 'react';
 import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
 import styles from './GrupoForm.module.css';
-import type { MateriaRef } from '../../../../types/materia';
 import type { ColeccionRef } from '../../../../types/contenidos';
 
 interface GrupoData {
@@ -10,7 +9,6 @@ interface GrupoData {
   name: string;
   fechaInicio?: string;
   fechaFin?: string;
-  materia?: MateriaRef | null;
   colecciones?: ColeccionRef[];
 }
 
@@ -18,14 +16,17 @@ interface GrupoSavePayload {
   name: string;
   fechaInicio?: string;
   fechaFin?: string;
-  materiaId?: string | null;
   colecciones?: string[];
 }
 
 interface GrupoFormProps {
   grupo?: GrupoData;
-  materias?: MateriaRef[];
-  /** Colecciones del CMS Contenidos disponibles para asignar (US-6). */
+  /**
+   * Colecciones del CMS Contenidos asignadas al grupo. Determinan tanto el
+   * acceso del alumno a la documentación como la materia del grupo: son la
+   * fuente única (antes había además un select de "Materia" que no hacía nada y
+   * podía contradecir a este campo).
+   */
   colecciones?: ColeccionRef[];
   onSave: (data: GrupoSavePayload) => void;
   onCancel: () => void;
@@ -39,11 +40,10 @@ function toDateString(value?: string | Date): string {
   return d.toISOString().split('T')[0];
 }
 
-export default function GrupoForm({ grupo, materias = [], colecciones = [], onSave, onCancel, loading }: GrupoFormProps) {
+export default function GrupoForm({ grupo, colecciones = [], onSave, onCancel, loading }: GrupoFormProps) {
   const [name, setName] = useState(grupo?.name ?? '');
   const [fechaInicio, setFechaInicio] = useState(toDateString(grupo?.fechaInicio));
   const [fechaFin, setFechaFin] = useState(toDateString(grupo?.fechaFin));
-  const [materiaId, setMateriaId] = useState(grupo?.materia?.id ?? '');
   const [coleccionesSel, setColeccionesSel] = useState<string[]>(
     (grupo?.colecciones ?? []).map((c) => c.id),
   );
@@ -66,7 +66,6 @@ export default function GrupoForm({ grupo, materias = [], colecciones = [], onSa
       name: name.trim(),
       fechaInicio: fechaInicio || undefined,
       fechaFin: fechaFin || undefined,
-      materiaId: materiaId || null,
       colecciones: coleccionesSel,
     });
   }
@@ -87,20 +86,6 @@ export default function GrupoForm({ grupo, materias = [], colecciones = [], onSa
         error={error}
         disabled={loading}
       />
-      <div className={styles.field}>
-        <label className={styles.label}>Materia</label>
-        <select
-          className={styles.dateInput}
-          value={materiaId}
-          onChange={(e) => setMateriaId(e.target.value)}
-          disabled={loading}
-        >
-          <option value="">Sin materia</option>
-          {materias.map((m) => (
-            <option key={m.id} value={m.id}>{m.nombre}</option>
-          ))}
-        </select>
-      </div>
       <div className={styles.field}>
         <label className={styles.label}>Colecciones de Contenidos con acceso</label>
         <div className={styles.checkboxList}>

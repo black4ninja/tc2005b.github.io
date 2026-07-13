@@ -41,14 +41,6 @@ export class Grupo extends BaseModel {
     this.set('enlaces', enlaces);
   }
 
-  /** Materia (asignatura) a la que pertenece el grupo. */
-  getMateria(): Parse.Object | undefined {
-    return this.get('materia');
-  }
-  setMateria(materia: Parse.Object): void {
-    this.set('materia', materia);
-  }
-
 
   /**
    * Colecciones del CMS "Contenidos" asignadas al grupo (array de pointers —
@@ -64,9 +56,6 @@ export class Grupo extends BaseModel {
   }
 
   toSafeJSON(): Record<string, unknown> {
-    const materia = this.getMateria();
-    // Si la materia (incluida) fue soft-deleted, no la exponemos.
-    const materiaActiva = materia && materia.get('exists') !== false ? materia : null;
     return {
       id: this.id,
       name: this.getName(),
@@ -74,11 +63,6 @@ export class Grupo extends BaseModel {
       fechaFin: this.getFechaFin(),
       salon: this.getSalon(),
       enlaces: this.getEnlaces(),
-      // Requiere query.include('materia') para traer nombre/slug; si no,
-      // solo el id queda disponible.
-      materia: materiaActiva
-        ? { id: materiaActiva.id, nombre: materiaActiva.get('nombre') ?? null, slug: materiaActiva.get('slug') ?? null }
-        : null,
       // Requiere query.include('colecciones'); las soft-deleted no se exponen.
       colecciones: this.getColecciones()
         .filter((c) => c && c.get('exists') !== false)

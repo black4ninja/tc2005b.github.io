@@ -1,8 +1,6 @@
 /**
  * Caches TTL mínimos del patrón de permisos (valor global + mapa por clave).
  * Extraído para no copiar el andamiaje {value, expires} en cada servicio.
- * (materia.service conserva su copia original: se retira junto con el gate
- * de Docusaurus en la US-7 — no vale la pena migrarlo.)
  */
 
 /** Un único valor cacheado con TTL (p. ej. el mapa global de slugs). */

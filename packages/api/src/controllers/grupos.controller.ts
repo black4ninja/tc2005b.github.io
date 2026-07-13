@@ -8,7 +8,7 @@ export async function listGrupos(_req: Request, res: Response): Promise<void> {
   try {
     const query = new Parse.Query<Grupo>('Grupo');
     query.equalTo('exists' as any, true as any);
-    query.include(['materia', 'colecciones'] as any);
+    query.include('colecciones' as any);
     query.descending('createdAt');
     const grupos = await query.find({ useMasterKey: true });
 
@@ -38,7 +38,7 @@ async function resolverColecciones(value: unknown): Promise<Parse.Object[] | 'in
 }
 
 export async function createGrupo(req: Request, res: Response): Promise<void> {
-  const { name, fechaInicio, fechaFin, materiaId, colecciones } = req.body;
+  const { name, fechaInicio, fechaFin, colecciones } = req.body;
 
   if (!name || typeof name !== 'string' || name.trim() === '') {
     res.status(400).json({ status: 'error', message: 'El nombre es requerido' });
@@ -50,16 +50,6 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
     grupo.setName(name.trim());
     if (fechaInicio) grupo.setFechaInicio(new Date(fechaInicio));
     if (fechaFin) grupo.setFechaFin(new Date(fechaFin));
-    if (materiaId) {
-      const materia = await BaseModel.queryActive('Materia')
-        .get(materiaId, { useMasterKey: true })
-        .catch(() => null);
-      if (!materia) {
-        res.status(400).json({ status: 'error', message: 'Materia no encontrada' });
-        return;
-      }
-      grupo.setMateria(materia);
-    }
 
     const coleccionesPtrs = await resolverColecciones(colecciones);
     if (coleccionesPtrs === 'invalido') {
@@ -79,13 +69,13 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
 
 export async function updateGrupo(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { name, fechaInicio, fechaFin, materiaId, colecciones } = req.body;
+  const { name, fechaInicio, fechaFin, colecciones } = req.body;
 
   try {
     const query = BaseModel.queryActive<Grupo>('Grupo');
     // colecciones incluidas: toSafeJSON serializa pointers y sin fetch
     // respondería nulls (y no podría filtrar soft-deleted).
-    query.include(['materia', 'colecciones'] as any);
+    query.include('colecciones' as any);
     const grupo = await query.get(id, { useMasterKey: true });
 
     if (name !== undefined) {
@@ -100,13 +90,6 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
     }
     if (fechaFin !== undefined) {
       grupo.setFechaFin(fechaFin ? new Date(fechaFin) : undefined!);
-    }
-    if (materiaId !== undefined) {
-      if (materiaId === null || materiaId === '') {
-        grupo.unset('materia');
-      } else {
-        grupo.setMateria(Parse.Object.extend('Materia').createWithoutData(materiaId));
-      }
     }
     // Solo un array válido aplica ([] limpia); no-array se ignora.
     const coleccionesPtrs = colecciones !== undefined ? await resolverColecciones(colecciones) : null;
@@ -135,7 +118,7 @@ export async function archiveGrupo(req: Request, res: Response): Promise<void> {
   try {
     const query = new Parse.Query<Grupo>('Grupo');
     query.equalTo('exists' as any, true as any);
-    query.include(['materia', 'colecciones'] as any);
+    query.include('colecciones' as any);
     const grupo = await query.get(id, { useMasterKey: true });
 
     if (grupo.get('active')) {

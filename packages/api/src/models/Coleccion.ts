@@ -1,6 +1,5 @@
 import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
-import type { Materia } from './Materia.js';
 
 /**
  * Colección del CMS "Contenidos" — equivale a una instancia Docusaurus.
@@ -47,15 +46,6 @@ export class Coleccion extends BaseModel {
   }
   setIcono(icono: string): void {
     this.set('icono', icono);
-  }
-
-  /** Vínculo opcional a la Materia equivalente (para la migración). */
-  getMateria(): Materia | undefined {
-    return this.get('materia');
-  }
-  setMateria(materia: Materia | null): void {
-    if (materia) this.set('materia', materia);
-    else this.unset('materia');
   }
 
   /** Borrador (false) vs visible para alumnos con acceso (true). */

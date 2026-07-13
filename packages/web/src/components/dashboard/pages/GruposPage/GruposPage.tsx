@@ -6,7 +6,6 @@ import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
 import GrupoForm from '../../organisms/GrupoForm/GrupoForm';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
-import type { MateriaRef } from '../../../../types/materia';
 import type { ColeccionRef } from '../../../../types/contenidos';
 import styles from './GruposPage.module.css';
 
@@ -16,7 +15,6 @@ interface GrupoData {
   fechaInicio?: string;
   fechaFin?: string;
   active: boolean;
-  materia?: MateriaRef | null;
   colecciones?: ColeccionRef[];
 }
 
@@ -26,7 +24,6 @@ export default function GruposPage() {
   const { sessionToken } = useAuth();
   const navigate = useNavigate();
   const [grupos, setGrupos] = useState<GrupoData[]>([]);
-  const [materias, setMaterias] = useState<MateriaRef[]>([]);
   const [colecciones, setColecciones] = useState<ColeccionRef[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,17 +50,6 @@ export default function GruposPage() {
     }
   }, [sessionToken]);
 
-  const fetchMaterias = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_BASE}/admin/materias`, { headers: { 'x-session-token': sessionToken ?? '' } });
-      if (!res.ok) return;
-      const data = await res.json();
-      setMaterias(data.materias ?? []);
-    } catch {
-      // materias es opcional en el form; ignorar error de carga
-    }
-  }, [sessionToken]);
-
   const fetchColecciones = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/admin/colecciones`, { headers: { 'x-session-token': sessionToken ?? '' } });
@@ -77,9 +63,8 @@ export default function GruposPage() {
 
   useEffect(() => {
     fetchGrupos();
-    fetchMaterias();
     fetchColecciones();
-  }, [fetchGrupos, fetchMaterias, fetchColecciones]);
+  }, [fetchGrupos, fetchColecciones]);
 
   function openCreate() {
     setEditGrupo(undefined);
@@ -96,7 +81,7 @@ export default function GruposPage() {
     setEditGrupo(undefined);
   }
 
-  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; materiaId?: string | null; colecciones?: string[] }) {
+  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; colecciones?: string[] }) {
     setSaving(true);
     setError('');
     try {
@@ -151,9 +136,9 @@ export default function GruposPage() {
 
   const columns = [
     columnHelper.accessor('name', { header: 'Nombre' }),
-    columnHelper.accessor((row) => row.materia?.nombre ?? '', {
-      id: 'materia',
-      header: 'Materia',
+    columnHelper.accessor((row) => (row.colecciones ?? []).map((c) => c.clave ?? c.slug).join(', '), {
+      id: 'colecciones',
+      header: 'Colecciones',
       cell: (info) => info.getValue() || '—',
     }),
     columnHelper.accessor('fechaInicio', {
@@ -209,7 +194,6 @@ export default function GruposPage() {
       <Modal isOpen={modalOpen} onClose={closeModal} title={editGrupo ? 'Editar Grupo' : 'Nuevo Grupo'}>
         <GrupoForm
           grupo={editGrupo}
-          materias={materias}
           colecciones={colecciones}
           onSave={handleSave}
           onCancel={closeModal}

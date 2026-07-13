@@ -46,3 +46,6 @@ deprecated/backup/
 # Playwright MCP artifacts (snapshots/screenshots de pruebas)
 .playwright-mcp/
 /gate-*.png
+
+# Respaldo del script cleanup-materia.ts
+packages/api/scripts/materia-backup.json
