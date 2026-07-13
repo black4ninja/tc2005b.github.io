@@ -331,3 +331,36 @@
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* Cabecera: vuelta a Contenidos + de qué colección son las páginas que se ven. */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+.volver:hover {
+  color: var(--text-primary);
+}
+.volver .material-icons {
+  font-size: 18px;
+}
+
+/* El nombre de la colección activa, junto al título: sin esto no se sabe si la
+   lista está filtrada o son todas. */
+.pageTitleSub {
+  margin-left: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams, Link } from 'react-router';
 import { confirmar } from '../../../../utils/dialogos';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
@@ -37,7 +38,16 @@ export default function PaginasPage() {
   const [editPagina, setEditPagina] = useState<PaginaData | undefined>();
   const [previewPagina, setPreviewPagina] = useState<PaginaData | undefined>();
   const [filtroEtiqueta, setFiltroEtiqueta] = useState<string | null>(null);
-  const [filtroColeccion, setFiltroColeccion] = useState<string>('');
+
+  // El filtro de colección vive en la URL (`?coleccion=<id>`): así la acción
+  // "Páginas" de la tabla de Contenidos puede llegar aquí ya filtrada, y el
+  // enlace se puede compartir o recargar sin perder el filtro.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filtroColeccion = searchParams.get('coleccion') ?? '';
+
+  function setFiltroColeccion(valor: string) {
+    setSearchParams(valor ? { coleccion: valor } : {}, { replace: true });
+  }
 
   // Etiquetas CRUD state
   const [etiquetasOpen, setEtiquetasOpen] = useState(false);
@@ -62,6 +72,12 @@ export default function PaginasPage() {
   }, [paginas, filtroEtiqueta, filtroColeccion]);
 
   const sinColeccion = useMemo(() => paginas.filter((p) => !p.coleccionId).length, [paginas]);
+
+  /** La colección del filtro, para dar contexto en el título. */
+  const coleccionActiva = useMemo(
+    () => colecciones.find((c) => c.id === filtroColeccion) ?? null,
+    [colecciones, filtroColeccion],
+  );
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -365,7 +381,20 @@ export default function PaginasPage() {
 
   return (
     <div className={styles.page}>
-      <h1 className={styles.pageTitle}>Páginas</h1>
+      <div className={styles.header}>
+        <Link to="/admin/contenidos" className={styles.volver}>
+          <span className="material-icons">arrow_back</span>
+          <span>Contenidos</span>
+        </Link>
+        <h1 className={styles.pageTitle}>
+          Páginas
+          {coleccionActiva && (
+            <span className={styles.pageTitleSub}>
+              {coleccionActiva.clave ?? coleccionActiva.slug} — {coleccionActiva.nombre}
+            </span>
+          )}
+        </h1>
+      </div>
 
       {error && <div className={styles.error}>{error}</div>}
 

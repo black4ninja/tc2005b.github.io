@@ -7,6 +7,16 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **Las Páginas se alcanzan desde Contenidos**, que es donde viven (cada `Pagina`
+  pertenece a una `Coleccion`). Cada colección gana una acción **"Páginas"** que
+  abre las suyas **ya filtradas**; el filtro vive ahora en la URL
+  (`/admin/paginas?coleccion=<id>`), así que el enlace se puede compartir y
+  recargar sin perderlo. "Páginas" se retira del menú lateral, pero la pantalla de
+  Contenidos conserva un **"Ver todas las páginas"**: sin él solo se llegaría a
+  listas ya filtradas, y se perderían la vista de conjunto (filtro por etiqueta
+  entre colecciones) y el acceso a las páginas **sin colección**.
+
 ### Added
 - **La agenda de entrevistas es ahora un campo del grupo**
   (`Grupo.urlAgendaEntrevistas`, opcional, editable en el form del grupo). Antes
