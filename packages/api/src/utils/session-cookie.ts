@@ -4,10 +4,11 @@ import { config } from '../config/index.js';
 /**
  * Helpers de la cookie de sesión.
  *
- * La cookie existe para que las navegaciones top-level del navegador (p. ej. a
- * `/docs/<materia>/…`, que NO mandan el header `x-session-token`) lleven la
- * sesión y el gate de docs pueda identificar al usuario. El SPA sigue usando
- * localStorage + header para sus llamadas al API; la cookie es aditiva.
+ * La cookie existe para que las navegaciones top-level del navegador (que NO
+ * mandan el header `x-session-token`) lleven la sesión y el servidor pueda
+ * identificar al usuario — p. ej. al descargar un recurso del CMS desde
+ * `/api/contenidos/recursos/…`. El SPA sigue usando localStorage + header para
+ * sus llamadas al API; la cookie es aditiva.
  */
 
 const MAX_AGE_MS = config.auth.sessionExpiryDays * 24 * 60 * 60 * 1000;

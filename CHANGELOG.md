@@ -43,6 +43,25 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   derivada de él. No filtraba nada en ninguna capa —toda página publicada era
   visible para cualquiera con el slug— y ninguna de las 47 páginas en producción
   lo tenía asignado.
+- **La entidad `Materia` completa**: modelo, CRUD (`/api/admin/materias`), seed,
+  `Grupo.materia`, `Coleccion.materia`, `types/materia.ts` y su UI (el `<select>`
+  del form de grupos y la columna de la tabla). `Materia` nació como el mecanismo
+  de gating de Docusaurus; al retirarse Docusaurus (US-7) el gate murió y
+  `Coleccion` ocupó su lugar, pero la entidad sobrevivió sin función: ninguna
+  query, gate ni filtro dependía de ella. `Coleccion` era además un superconjunto
+  estricto (`nombre`/`slug`/`codigo` → `nombre`/`slug`/`clave`, más `descripcion`,
+  `icono` y `publicada`).
+  - **`Grupo.colecciones` queda como fuente única.** Antes el form permitía
+    guardar un grupo con `materia = TC2005B` y `colecciones = [TC2007B]`: el
+    primero no hacía nada y el segundo decidía el acceso real. Esa contradicción
+    ya no es representable.
+  - La columna "Materia" de `/admin/grupos` pasa a ser **"Colecciones"**.
+  - **Cambio de contrato:** el JSON de `Grupo` ya no incluye la clave `materia`.
+  - `Coleccion.materia` nunca se escribió: la columna no existía en ningún
+    documento de la BD.
+  - `scripts/cleanup-materia.ts` limpia los datos huérfanos que quedan en Mongo
+    (idempotente, con `--dry-run` y respaldo JSON). **Correrlo después del
+    deploy**, no antes.
 - **`Grupo.curso` y `Grupo.nombreCurso`**: strings legacy que duplicaban a
   `Grupo.materia`. `createGrupo`/`updateGrupo` dejaron de escribirlos al migrar
   a `Grupo.materia` (pointer), pero el payload de `GET /api/calendario/:grupo` y
