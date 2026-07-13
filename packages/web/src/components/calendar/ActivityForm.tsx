@@ -51,9 +51,15 @@ interface ActivityFormProps {
   loading?: boolean;
   initialData?: Partial<ActivityFormData>;
   mode?: 'create' | 'edit';
+  /**
+   * Grupo del calendario que se está editando. Acota el picker de páginas a las
+   * colecciones asignadas a ese grupo (su materia). Sin él, el picker ofrece
+   * todas las páginas publicadas del sitio.
+   */
+  grupoId?: string;
 }
 
-export default function ActivityForm({ onSave, onCancel, loading, initialData, mode = 'create' }: ActivityFormProps) {
+export default function ActivityForm({ onSave, onCancel, loading, initialData, mode = 'create', grupoId }: ActivityFormProps) {
   const [tipo, setTipo] = useState<ActividadTipo>(initialData?.tipo ?? 'lab');
   const [titulo, setTitulo] = useState(initialData?.titulo ?? '');
   const [descripcion, setDescripcion] = useState(initialData?.descripcion ?? '');
@@ -67,6 +73,9 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
   const [showPicker, setShowPicker] = useState(false);
   const [pickerFilter, setPickerFilter] = useState('');
   const [paginasLoaded, setPaginasLoaded] = useState(false);
+  // false = el grupo no tiene colecciones asignadas y el API devolvió todas las
+  // páginas del sitio en vez de dejar el picker vacío.
+  const [paginasFiltradas, setPaginasFiltradas] = useState(true);
   const pickerRef = useRef<HTMLDivElement>(null);
 
   // Document picker state
@@ -125,10 +134,14 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/paginas`);
+      const url = grupoId
+        ? `${API_BASE}/paginas?grupoId=${encodeURIComponent(grupoId)}`
+        : `${API_BASE}/paginas`;
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setPaginas(data.paginas ?? []);
+        setPaginasFiltradas(data.filtrado !== false);
         setPaginasLoaded(true);
       }
     } catch {
@@ -402,9 +415,21 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
                 placeholder="Buscar página..."
                 autoFocus
               />
+              {/* Solo si pedimos acotar y el API no pudo: sin grupoId el API
+                  responde filtrado:false sin que eso sea una anomalía. */}
+              {grupoId && !paginasFiltradas && (
+                <div className={styles.pickerNotice}>
+                  Este grupo no tiene colecciones asignadas: se muestran todas las
+                  páginas del sitio.
+                </div>
+              )}
               {filteredPaginas.length === 0 ? (
                 <div className={styles.pickerEmpty}>
-                  {paginas.length === 0 ? 'No hay páginas publicadas' : 'Sin resultados'}
+                  {paginas.length > 0
+                    ? 'Sin resultados'
+                    : paginasFiltradas
+                      ? 'No hay páginas publicadas en las colecciones de este grupo'
+                      : 'No hay páginas publicadas'}
                 </div>
               ) : (
                 <ul className={styles.pickerList}>

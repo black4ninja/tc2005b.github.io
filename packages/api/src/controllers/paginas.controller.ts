@@ -22,15 +22,62 @@ function validateBloques(bloques: unknown): boolean {
   );
 }
 
+/**
+ * Resuelve un coleccionId a un pointer, verificando que la colección exista y
+ * no esté soft-deleted. Devuelve `null` si el id no corresponde a ninguna.
+ */
+async function resolverColeccion(coleccionId: string): Promise<Parse.Object | null> {
+  const query = new Parse.Query('Coleccion');
+  query.equalTo('exists' as any, true as any);
+  try {
+    return await query.get(coleccionId, { useMasterKey: true });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Colecciones (pointers) asignadas a un grupo. Vacío si el grupo no existe o no
+ * tiene ninguna: el llamador decide qué hacer con ese caso.
+ */
+async function coleccionesDeGrupo(grupoId: string): Promise<Parse.Object[]> {
+  const query = new Parse.Query('Grupo');
+  query.equalTo('exists' as any, true as any);
+  query.include('colecciones' as any);
+  try {
+    const grupo = await query.get(grupoId, { useMasterKey: true });
+    const colecciones = (grupo.get('colecciones') ?? []) as Parse.Object[];
+    return colecciones.filter((c) => c && c.get('exists') !== false);
+  } catch {
+    return [];
+  }
+}
+
 // ─── Admin endpoints ────────────────────────────────────────────
 
-export async function listPaginas(_req: Request, res: Response): Promise<void> {
+export async function listPaginas(req: Request, res: Response): Promise<void> {
+  const { coleccionId } = req.query;
+
   try {
     const query = new Parse.Query<Pagina>('Pagina');
     query.equalTo('exists' as any, true as any);
     query.ascending('slug');
-    query.include('grupo' as any);
+    query.include('coleccion' as any);
     query.limit(1000);
+
+    if (typeof coleccionId === 'string' && coleccionId) {
+      if (coleccionId === 'sin-coleccion') {
+        query.doesNotExist('coleccion' as any);
+      } else {
+        const coleccion = await resolverColeccion(coleccionId);
+        if (!coleccion) {
+          res.status(404).json({ status: 'error', message: 'Colección no encontrada' });
+          return;
+        }
+        query.equalTo('coleccion' as any, coleccion as any);
+      }
+    }
+
     const paginas = await query.find({ useMasterKey: true });
 
     res.json({
@@ -47,7 +94,7 @@ export async function getPagina(req: Request, res: Response): Promise<void> {
 
   try {
     const query = BaseModel.queryActive<Pagina>('Pagina');
-    query.include('grupo' as any);
+    query.include('coleccion' as any);
     const pagina = await query.get(id, { useMasterKey: true });
 
     res.json({ status: 'ok', pagina: pagina.toSafeJSON() });
@@ -61,7 +108,7 @@ export async function getPagina(req: Request, res: Response): Promise<void> {
 }
 
 export async function createPagina(req: Request, res: Response): Promise<void> {
-  const { titulo, slug, descripcion, icono, grupoId, bloques, publicado, orden, etiquetas } = req.body;
+  const { titulo, slug, descripcion, icono, coleccionId, bloques, publicado, orden, etiquetas } = req.body;
 
   if (!titulo || typeof titulo !== 'string' || titulo.trim() === '') {
     res.status(400).json({ status: 'error', message: 'El título es requerido' });
@@ -88,9 +135,13 @@ export async function createPagina(req: Request, res: Response): Promise<void> {
     pagina.setSlug(slug);
     if (descripcion) pagina.setDescripcion(descripcion.trim());
     if (icono) pagina.setIcono(icono.trim());
-    if (grupoId) {
-      const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId);
-      pagina.setGrupo(grupoPointer);
+    if (coleccionId) {
+      const coleccion = await resolverColeccion(coleccionId);
+      if (!coleccion) {
+        res.status(400).json({ status: 'error', message: 'La colección indicada no existe' });
+        return;
+      }
+      pagina.setColeccion(coleccion);
     }
     if (bloques && validateBloques(bloques)) {
       pagina.setBloques(bloques);
@@ -113,10 +164,13 @@ export async function createPagina(req: Request, res: Response): Promise<void> {
 
 export async function updatePagina(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { titulo, slug, descripcion, icono, grupoId, bloques, publicado, orden, etiquetas } = req.body;
+  const { titulo, slug, descripcion, icono, coleccionId, bloques, publicado, orden, etiquetas } = req.body;
 
   try {
     const query = BaseModel.queryActive<Pagina>('Pagina');
+    // include: sin esto, una página que no cambia de colección devolvería el
+    // pointer sin datos y `toSafeJSON()` la expondría con nombre/slug en null.
+    query.include('coleccion' as any);
     const pagina = await query.get(id, { useMasterKey: true });
 
     if (titulo !== undefined) {
@@ -150,12 +204,16 @@ export async function updatePagina(req: Request, res: Response): Promise<void> {
     if (descripcion !== undefined) pagina.setDescripcion((descripcion ?? '').trim());
     if (icono !== undefined) pagina.setIcono((icono ?? 'article').trim());
 
-    if (grupoId !== undefined) {
-      if (grupoId === null || grupoId === '') {
-        pagina.unset('grupo');
+    if (coleccionId !== undefined) {
+      if (coleccionId === null || coleccionId === '') {
+        pagina.unset('coleccion');
       } else {
-        const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId);
-        pagina.setGrupo(grupoPointer);
+        const coleccion = await resolverColeccion(coleccionId);
+        if (!coleccion) {
+          res.status(400).json({ status: 'error', message: 'La colección indicada no existe' });
+          return;
+        }
+        pagina.setColeccion(coleccion);
       }
     }
 
@@ -218,6 +276,9 @@ export async function getPaginaPublica(req: Request, res: Response): Promise<voi
     const query = BaseModel.queryActive<Pagina>('Pagina');
     query.equalTo('slug' as any, slug as any);
     query.equalTo('publicado' as any, true as any);
+    // Sin include, el pointer llega sin datos y `toSafeJSON()` expondría la
+    // colección con nombre/slug/clave en null.
+    query.include('coleccion' as any);
     const pagina = await query.first({ useMasterKey: true });
 
     if (!pagina) {
@@ -231,16 +292,40 @@ export async function getPaginaPublica(req: Request, res: Response): Promise<voi
   }
 }
 
-export async function listPaginasPublicas(_req: Request, res: Response): Promise<void> {
+/**
+ * Listado público de páginas publicadas.
+ *
+ * Con `?grupoId=`, acota a las páginas de las colecciones asignadas a ese grupo
+ * (`Grupo.colecciones`) — es lo que consume el picker del calendario, para que
+ * al armar una actividad solo se ofrezcan páginas de la materia del grupo. Si el
+ * grupo no tiene colecciones asignadas, se devuelven **todas** y se avisa con
+ * `filtrado: false`, para no dejar el picker vacío sin explicación.
+ *
+ * Sin `grupoId` el comportamiento es el de siempre: todas las publicadas.
+ */
+export async function listPaginasPublicas(req: Request, res: Response): Promise<void> {
+  const { grupoId } = req.query;
+
   try {
     const query = BaseModel.queryActive<Pagina>('Pagina');
     query.equalTo('publicado' as any, true as any);
     query.ascending('orden');
     query.select('titulo' as any, 'slug' as any);
+
+    let filtrado = false;
+    if (typeof grupoId === 'string' && grupoId) {
+      const colecciones = await coleccionesDeGrupo(grupoId);
+      if (colecciones.length > 0) {
+        query.containedIn('coleccion' as any, colecciones as any);
+        filtrado = true;
+      }
+    }
+
     const paginas = await query.find({ useMasterKey: true });
 
     res.json({
       status: 'ok',
+      filtrado,
       paginas: paginas.map((p) => ({
         id: p.id,
         slug: p.getSlug(),

@@ -7,7 +7,42 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Páginas por colección (materia)**: `Pagina` ahora apunta a una `Coleccion`
+  del CMS "Contenidos" (pointer `Pagina.coleccion`), de modo que cada página
+  pertenece a una materia. Al agregar una actividad al calendario, el picker de
+  páginas solo ofrece las de las colecciones asignadas al grupo
+  (`Grupo.colecciones`); si el grupo tiene varias, ofrece las de todas. Si no
+  tiene ninguna, muestra todas con un aviso en lugar de quedarse vacío.
+  - `GET /api/paginas?grupoId=` — listado público acotado a las colecciones del
+    grupo; responde `filtrado: false` cuando no pudo acotar. Sin el parámetro, el
+    comportamiento es el de siempre.
+  - `GET /api/admin/paginas?coleccionId=` — filtro para la tabla del admin
+    (`sin-coleccion` lista las que no tienen colección asignada).
+  - `scripts/migrate-paginas-coleccion.ts` — backfill idempotente de las páginas
+    existentes hacia una colección (`--coleccion <slug>`, `--dry-run`).
+  - `scripts/seed-paginas.ts` acepta `--coleccion <slug>` para no volver a crear
+    páginas huérfanas.
+
+### Changed
+- **La URL pública de las páginas no cambia** (`/paginas/:slug`) y el slug sigue
+  siendo único global: las actividades del calendario enlazan a las páginas por
+  string (`Actividad.enlace`), sin integridad referencial, y cambiar la forma de
+  la URL las habría roto en silencio.
+- Las páginas **siguen siendo públicas**: la colección organiza y filtra, no
+  restringe el acceso. El gating del CMS "Contenidos" no se extiende a `/paginas`.
+- `PaginaForm`: el campo "Grupo", que era un input de texto donde se tecleaba a
+  mano el objectId del grupo, se sustituye por un `<select>` de colecciones. El
+  admin ya no puede escribir un id inexistente: el API valida que la colección
+  exista (antes creaba el pointer a ciegas con `createWithoutData`).
+- `PaginasPage`: la columna "Alcance" (que solo derivaba de si había grupo o no)
+  se sustituye por "Colección", con filtro por colección.
+
 ### Removed
+- **`Pagina.grupo`**: el pointer a `Grupo` y la noción de "alcance Global/Grupo"
+  derivada de él. No filtraba nada en ninguna capa —toda página publicada era
+  visible para cualquiera con el slug— y ninguna de las 47 páginas en producción
+  lo tenía asignado.
 - **Docusaurus retirado (US-7)**: se elimina `packages/docusaurus`, el gate
   `/docs` por materia y el campo `Grupo.docusaurus[]`. `/docs/*` responde
   301 permanente hacia `/contenidos/*` (mapa del importador + heurística).

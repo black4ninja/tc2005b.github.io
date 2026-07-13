@@ -53,7 +53,6 @@ interface PaginaExport {
   slug: string;
   descripcion?: string;
   icono: string;
-  grupoId: null;
   bloques: ContentBlock[];
   publicado: boolean;
   orden: number;
@@ -152,7 +151,6 @@ function labToPagina(lab: Lab, orden: number): PaginaExport {
     slug: lab.id,
     descripcion: lab.descripcion,
     icono: 'science',
-    grupoId: null,
     bloques,
     publicado: true,
     orden,

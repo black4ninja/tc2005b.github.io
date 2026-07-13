@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { PaginaData, ContentBlock, EtiquetaData } from '../../../../types/pagina';
+import type { PaginaData, ContentBlock, EtiquetaData, ColeccionRef } from '../../../../types/pagina';
 import BlockEditor from '../BlockEditor/BlockEditor';
 import PaginaContent from '../../../paginas/PaginaContent';
 import DashButton from '../../atoms/DashButton/DashButton';
@@ -9,13 +9,14 @@ import styles from './PaginaForm.module.css';
 interface PaginaFormProps {
   pagina?: PaginaData;
   etiquetas?: EtiquetaData[];
+  colecciones?: ColeccionRef[];
   onSave: (data: Omit<PaginaData, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onCancel: () => void;
   loading?: boolean;
   previewMode?: boolean;
 }
 
-export default function PaginaForm({ pagina, etiquetas: availableTags = [], onSave, onCancel, loading, previewMode }: PaginaFormProps) {
+export default function PaginaForm({ pagina, etiquetas: availableTags = [], colecciones = [], onSave, onCancel, loading, previewMode }: PaginaFormProps) {
   const [activeTab, setActiveTab] = useState<'editar' | 'preview'>(previewMode ? 'preview' : 'editar');
 
   const [titulo, setTitulo] = useState(pagina?.titulo ?? '');
@@ -23,7 +24,7 @@ export default function PaginaForm({ pagina, etiquetas: availableTags = [], onSa
   const [slugManual, setSlugManual] = useState(!!pagina?.slug);
   const [descripcion, setDescripcion] = useState(pagina?.descripcion ?? '');
   const [icono, setIcono] = useState(pagina?.icono ?? 'article');
-  const [grupoId, setGrupoId] = useState(pagina?.grupoId ?? '');
+  const [coleccionId, setColeccionId] = useState(pagina?.coleccionId ?? '');
   const [publicado, setPublicado] = useState(pagina?.publicado ?? false);
   const [bloques, setBloques] = useState<ContentBlock[]>(pagina?.bloques ?? []);
   const [selectedTags, setSelectedTags] = useState<string[]>(pagina?.etiquetas ?? []);
@@ -53,7 +54,7 @@ export default function PaginaForm({ pagina, etiquetas: availableTags = [], onSa
       slug: slug.trim(),
       descripcion: descripcion.trim() || undefined,
       icono: icono.trim() || 'article',
-      grupoId: grupoId || null,
+      coleccionId: coleccionId || null,
       bloques,
       publicado,
       etiquetas: selectedTags,
@@ -66,7 +67,7 @@ export default function PaginaForm({ pagina, etiquetas: availableTags = [], onSa
     slug,
     descripcion: descripcion || undefined,
     icono,
-    grupoId: grupoId || null,
+    coleccionId: coleccionId || null,
     bloques,
     publicado,
   };
@@ -160,15 +161,20 @@ export default function PaginaForm({ pagina, etiquetas: availableTags = [], onSa
             </div>
 
             <div className={styles.field}>
-              <label>Grupo (opcional)</label>
-              <input
-                type="text"
-                value={grupoId}
-                onChange={(e) => setGrupoId(e.target.value)}
-                placeholder="Dejar vacío = Global"
-              />
+              <label>Colección (materia)</label>
+              <select
+                value={coleccionId ?? ''}
+                onChange={(e) => setColeccionId(e.target.value)}
+              >
+                <option value="">Sin asignar</option>
+                {colecciones.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.clave ? `${c.clave} — ${c.nombre}` : c.nombre}
+                  </option>
+                ))}
+              </select>
               <span className={styles.slugPreview}>
-                ID del grupo o vacío para página global
+                Sin asignar, la página no aparece al agregar actividades al calendario
               </span>
             </div>
 
