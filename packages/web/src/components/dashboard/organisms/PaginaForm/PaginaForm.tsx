@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { PaginaData, ContentBlock, EtiquetaData, ColeccionRef } from '../../../../types/pagina';
+import type { PaginaData, PaginaSavePayload, ContentBlock, EtiquetaData, ColeccionRef } from '../../../../types/pagina';
 import BlockEditor from '../BlockEditor/BlockEditor';
 import PaginaContent from '../../../paginas/PaginaContent';
 import DashButton from '../../atoms/DashButton/DashButton';
@@ -10,7 +10,7 @@ interface PaginaFormProps {
   pagina?: PaginaData;
   etiquetas?: EtiquetaData[];
   colecciones?: ColeccionRef[];
-  onSave: (data: Omit<PaginaData, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onSave: (data: PaginaSavePayload) => void;
   onCancel: () => void;
   loading?: boolean;
   previewMode?: boolean;
@@ -27,7 +27,10 @@ export default function PaginaForm({ pagina, etiquetas: availableTags = [], cole
   const [coleccionId, setColeccionId] = useState(pagina?.coleccionId ?? '');
   const [publicado, setPublicado] = useState(pagina?.publicado ?? false);
   const [bloques, setBloques] = useState<ContentBlock[]>(pagina?.bloques ?? []);
-  const [selectedTags, setSelectedTags] = useState<string[]>(pagina?.etiquetas ?? []);
+  // El API devuelve las etiquetas hidratadas; el form trabaja con sus ids.
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    (pagina?.etiquetas ?? []).map((e) => e.id),
+  );
 
   // Auto-generate slug from title if not manually edited
   useEffect(() => {
