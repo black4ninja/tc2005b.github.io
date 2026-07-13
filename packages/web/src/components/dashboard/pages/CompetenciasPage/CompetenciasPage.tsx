@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams, Link } from 'react-router';
 import { confirmar } from '../../../../utils/dialogos';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
+import type { ColeccionRef } from '../../../../types/contenidos';
 import IndicacionMallaForm from '../../organisms/IndicacionMallaForm/IndicacionMallaForm';
 import CompetenciaForm from '../../organisms/CompetenciaForm/CompetenciaForm';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
@@ -34,6 +36,8 @@ interface CompetenciaData {
   fechaIdealEvaluacion?: string;
   esCalculada?: boolean;
   dependencias?: DependenciaRef[];
+  coleccionId?: string | null;
+  coleccion?: { id: string; nombre: string | null; slug: string | null; clave: string | null } | null;
 }
 
 const API_BASE = '/api';
@@ -43,6 +47,22 @@ export default function CompetenciasPage() {
 
   const [indicaciones, setIndicaciones] = useState<IndicacionData[]>([]);
   const [competencias, setCompetencias] = useState<CompetenciaData[]>([]);
+  const [colecciones, setColecciones] = useState<ColeccionRef[]>([]);
+
+  // El filtro por colección vive en la URL: la acción "Competencias" de la tabla
+  // de Contenidos llega aquí ya filtrada, y el enlace se puede compartir.
+  const [searchParams] = useSearchParams();
+  const filtroColeccion = searchParams.get('coleccion') ?? '';
+
+  const coleccionActiva = useMemo(
+    () => colecciones.find((c) => c.id === filtroColeccion) ?? null,
+    [colecciones, filtroColeccion],
+  );
+
+  const competenciasFiltradas = useMemo(
+    () => (filtroColeccion ? competencias.filter((c) => c.coleccionId === filtroColeccion) : competencias),
+    [competencias, filtroColeccion],
+  );
   const [loadingInd, setLoadingInd] = useState(true);
   const [loadingComp, setLoadingComp] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -75,6 +95,9 @@ export default function CompetenciasPage() {
     }
   }, [sessionToken]);
 
+  // Siempre se piden TODAS: el filtro por colección se aplica en cliente porque
+  // el formulario necesita la lista completa para el picker de dependencias (que
+  // luego acota a la colección elegida).
   const fetchCompetencias = useCallback(async () => {
     try {
       setLoadingComp(true);
@@ -91,10 +114,24 @@ export default function CompetenciasPage() {
     }
   }, [sessionToken]);
 
+  const fetchColecciones = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/colecciones`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setColecciones(data.colecciones ?? []);
+    } catch {
+      // no crítico: sin colecciones el form no deja crear, que es lo correcto
+    }
+  }, [sessionToken]);
+
   useEffect(() => {
     fetchIndicaciones();
     fetchCompetencias();
-  }, [fetchIndicaciones, fetchCompetencias]);
+    fetchColecciones();
+  }, [fetchIndicaciones, fetchCompetencias, fetchColecciones]);
 
   // --- Indicaciones CRUD ---
   function openCreateInd() {
@@ -205,6 +242,20 @@ export default function CompetenciasPage() {
   const compColumns = [
     compColumnHelper.accessor('orden', { header: 'Orden', cell: (info) => info.getValue() ?? '—' }),
     compColumnHelper.accessor('competencia', { header: 'Competencia' }),
+    // Solo en la vista global: filtrando, la colección ya está en el título y la
+    // columna sería la misma palabra repetida en todas las filas.
+    ...(coleccionActiva
+      ? []
+      : [
+          compColumnHelper.accessor('coleccion', {
+            header: 'Colección',
+            cell: (info) => {
+              const col = info.getValue();
+              if (!col) return <span style={{ color: 'var(--dash-danger)' }}>Sin asignar</span>;
+              return <span>{col.clave ?? col.slug}</span>;
+            },
+          }),
+        ]),
     compColumnHelper.accessor('nivel', { header: 'Nivel' }),
     compColumnHelper.accessor('esCalculada', {
       header: 'Tipo',
@@ -270,32 +321,52 @@ export default function CompetenciasPage() {
 
   return (
     <div className={styles.page}>
-      <h1 className={styles.pageTitle}>Competencias</h1>
+      <div className={styles.header}>
+        {coleccionActiva && (
+          <Link to="/admin/contenidos" className={styles.volver}>
+            <span className="material-icons">arrow_back</span>
+            <span>Contenidos</span>
+          </Link>
+        )}
+        <h1 className={styles.pageTitle}>
+          Competencias
+          {coleccionActiva && (
+            <span className={styles.pageTitleSub}>
+              {coleccionActiva.clave ?? coleccionActiva.slug} — {coleccionActiva.nombre}
+            </span>
+          )}
+        </h1>
+      </div>
 
       {error && <div className={styles.error}>{error}</div>}
 
-      <details className={styles.panel}>
-        <summary className={styles.panelSummary}>
-          <span className="material-icons">chevron_right</span>
-          Indicaciones para Malla de Competencias
-        </summary>
-        <div className={styles.panelContent}>
-          {loadingInd ? (
-            <p>Cargando...</p>
-          ) : (
-            <AdminTable
-              title="Indicaciones"
-              columns={indColumns}
-              data={indicaciones}
-              actions={getIndActions}
-              onAdd={openCreateInd}
-              addLabel="Agregar Indicación"
-              emptyMessage="No hay indicaciones registradas"
-              searchPlaceholder="Buscar indicación..."
-            />
-          )}
-        </div>
-      </details>
+      {/* Las Indicaciones de Malla NO tienen colección: son globales. Mostrarlas
+          bajo el título de una colección haría creer que son suyas, así que solo
+          aparecen en la vista sin filtrar. */}
+      {!coleccionActiva && (
+        <details className={styles.panel}>
+          <summary className={styles.panelSummary}>
+            <span className="material-icons">chevron_right</span>
+            Indicaciones para Malla de Competencias
+          </summary>
+          <div className={styles.panelContent}>
+            {loadingInd ? (
+              <p>Cargando...</p>
+            ) : (
+              <AdminTable
+                title="Indicaciones"
+                columns={indColumns}
+                data={indicaciones}
+                actions={getIndActions}
+                onAdd={openCreateInd}
+                addLabel="Agregar Indicación"
+                emptyMessage="No hay indicaciones registradas"
+                searchPlaceholder="Buscar indicación..."
+              />
+            )}
+          </div>
+        </details>
+      )}
 
       <details open className={styles.panel}>
         <summary className={styles.panelSummary}>
@@ -309,7 +380,7 @@ export default function CompetenciasPage() {
             <AdminTable
               title="Competencias registradas"
               columns={compColumns}
-              data={competencias}
+              data={competenciasFiltradas}
               actions={getCompActions}
               onAdd={openCreateComp}
               addLabel="Agregar Competencia"
@@ -334,6 +405,8 @@ export default function CompetenciasPage() {
         <CompetenciaForm
           competencia={editCompetencia}
           allCompetencias={competencias}
+          colecciones={colecciones}
+          coleccionInicial={filtroColeccion || undefined}
           onSave={handleSaveComp}
           onCancel={closeCompModal}
           loading={saving}

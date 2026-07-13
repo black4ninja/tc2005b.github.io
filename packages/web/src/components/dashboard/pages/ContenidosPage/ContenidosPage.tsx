@@ -127,6 +127,7 @@ export default function ContenidosPage() {
     // distintos de la misma colección; de ahí las dos acciones.
     { label: 'Abrir documentación', icon: 'account_tree', onClick: () => navigate(`/admin/contenidos/${coleccion.id}`) },
     { label: 'Páginas', icon: 'article', onClick: () => navigate(`/admin/paginas?coleccion=${coleccion.id}`) },
+    { label: 'Competencias', icon: 'emoji_events', onClick: () => navigate(`/admin/competencias?coleccion=${coleccion.id}`) },
     { label: 'Editar', icon: 'edit', onClick: () => openEdit(coleccion) },
     { label: 'Eliminar', icon: 'delete', onClick: () => handleDelete(coleccion), variant: 'danger' },
   ];

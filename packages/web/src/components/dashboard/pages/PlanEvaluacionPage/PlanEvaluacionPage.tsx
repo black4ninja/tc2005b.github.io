@@ -82,7 +82,7 @@ export default function PlanEvaluacionPage() {
 
       const [planRes, compRes, actRes] = await Promise.all([
         fetch(`${API_BASE}/admin/grupos/${grupoId}/plan-evaluacion`, { headers: authHeaders }),
-        fetch(`${API_BASE}/admin/competencias`, { headers: authHeaders }),
+        fetch(`${API_BASE}/admin/competencias?grupoId=${grupoId}`, { headers: authHeaders }),
         fetch(`${API_BASE}/admin/grupos/${grupoId}/actividades-evaluacion`, { headers: authHeaders }),
       ]);
 

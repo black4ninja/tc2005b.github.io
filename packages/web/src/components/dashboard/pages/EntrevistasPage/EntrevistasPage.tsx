@@ -82,7 +82,7 @@ export default function EntrevistasPage() {
         fetch(`${API_BASE}/admin/grupos/${grupoId}/entrevistas`, { headers: authHeaders }),
         fetch(`${API_BASE}/admin/grupos/${grupoId}/equipos`, { headers: authHeaders }),
         fetch(`${API_BASE}/admin/profesores`, { headers: authHeaders }),
-        fetch(`${API_BASE}/admin/competencias`, { headers: authHeaders }),
+        fetch(`${API_BASE}/admin/competencias?grupoId=${grupoId}`, { headers: authHeaders }),
         fetch(`${API_BASE}/admin/grupos/${grupoId}/entrevistas/progress`, { headers: authHeaders }),
       ]);
 
