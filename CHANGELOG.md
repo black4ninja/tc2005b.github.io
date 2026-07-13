@@ -7,7 +7,46 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **CMS "Contenidos" — el editor a un clic.** El árbol de páginas se muda al
+  sidebar (modo contextual, como `/admin/grupos/:id`) y seleccionar una página
+  abre el editor **inline**, sin el paso intermedio de "Abrir editor". La página
+  seleccionada viaja en la URL (`?doc=<id>`), así que recargar o compartir el
+  enlace conserva lo que estabas editando. La ruta a pantalla completa
+  (`/admin/contenidos/:id/editar/:docId`) sigue viva como modo enfocado.
+  - **El árbol se maneja como un explorador de archivos**: arrastrar mueve
+    (vertical reordena, horizontal cambia de nivel), doble clic renombra en
+    línea, y al pasar el cursor aparecen las acciones de cambiar slug y eliminar.
+  - **Renombrar cambia SOLO el título; el slug (la URL) no se toca.** 82 de los
+    120 documentos tienen un slug que no deriva de su título (`readme`, herencia
+    de Docusaurus) y hay ~59 enlaces internos apuntando a esas rutas sin ningún
+    redirect: regenerar el slug al renombrar los habría roto en silencio. Al
+    **crear**, en cambio, el slug sí se genera del título (nada apunta aún a la
+    página), y el campo desaparece del formulario.
+  - Cambiar el slug a propósito es una acción aparte, con un diálogo que muestra
+    **la ruta actual y cómo quedará** antes de guardar.
+  - Desaparece el panel de metadatos: todo se movió a donde se usa (la plantilla
+    baja a la toolbar del editor).
+  - El editor puede **colapsar el código o la vista previa** (código / ambos /
+    preview; por defecto ambos, y se recuerda). El panel oculto no se desmonta,
+    para no perder el historial de deshacer de CodeMirror.
+- **Los diálogos del admin usan SweetAlert2** (`utils/dialogos.ts`). Se
+  sustituyen los **25 `confirm()`/`prompt()`/`alert()` nativos** de todo el web:
+  además de verse mejor, los nativos **bloquean el hilo del navegador** mientras
+  están abiertos. Los borrados van en rojo y con el botón etiquetado ("Eliminar"),
+  no con un "OK" genérico; la contraseña generada de un alumno se muestra en un
+  diálogo copiable en vez de un `alert()` del sistema.
+
 ### Fixed
+- **Pérdida de borrador al cambiar de página en el editor.** El autosave
+  (debounce de 1.5 s) se **cancelaba** al cambiar de documento o desmontar, así
+  que lo escrito en el último segundo y medio se perdía sin aviso. Ahora se
+  vuelca antes de salir, con los valores del documento que se deja, encadenado al
+  PUT en vuelo para no romper el single-flight.
+- **El sidebar se colapsaba solo y no se dejaba abrir** en pantallas ≤1024 px: el
+  handler de `resize` forzaba el colapso en **cada evento**, no solo al cruzar el
+  umbral, y nunca lo revertía al ensanchar. Con el árbol dentro, eso dejaba al
+  admin sin navegación.
 - **Etiquetas de páginas que no se veían ni filtraban.** `Pagina.etiquetas`
   guardaba objectIds como **strings sueltos**, sin validar nada, así que se
   colaron NOMBRES de etiqueta (`"eval"`) donde debía ir el id. El render los

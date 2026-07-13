@@ -1,256 +1,76 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, Link } from 'react-router';
+import { useState, useMemo, Suspense, lazy } from 'react';
+import { useParams, useSearchParams, Link } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
+import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import Modal from '../../atoms/Modal/Modal';
 import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
 import DocumentoForm, { aplanarCategorias, type DocumentoSavePayload } from '../../organisms/DocumentoForm/DocumentoForm';
-import { slugify, slugifyInput } from '../../../../utils/slug';
-import { buildArbol } from '../../../../types/contenidos';
-import type { ColeccionData, DocumentoData, DocumentoNodo, DocumentoPlantilla } from '../../../../types/contenidos';
 import styles from './ColeccionDetailPage.module.css';
+
+// CodeMirror + el pipeline de render pesan: solo se cargan cuando hay una página
+// seleccionada (al mirar una categoría no se descarga nada).
+const EditorContenido = lazy(() => import('../EditorContenidoPage/EditorContenidoPage'));
 
 const API_BASE = '/api';
 
-const ICONO_TIPO: Record<string, string> = {
-  md: 'article',
-  html: 'code',
-  categoria: 'folder',
-};
-
-/** Admin del CMS "Contenidos": árbol de páginas de una colección (design §5.2). */
+/**
+ * Admin del CMS "Contenidos": el editor de la página seleccionada.
+ *
+ * Aquí ya no hay panel de metadatos. Todo lo que había se movió a donde se usa:
+ * el título se renombra con doble clic en el árbol, el orden y el padre se
+ * cambian arrastrando, el slug y el borrado son acciones del nodo, y la
+ * plantilla vive en la toolbar del editor. El árbol lo pinta el sidebar
+ * (ArbolContenidos) y comparte datos con esta página vía ColeccionArbolContext.
+ *
+ * La selección viaja en la URL (`?doc=<id>`).
+ */
 export default function ColeccionDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const { sessionToken } = useAuth();
+  const { coleccion, documentos, arbol, cargando, refetch } = useColeccionArbol();
 
-  const [coleccion, setColeccion] = useState<ColeccionData | null>(null);
-  const [documentos, setDocumentos] = useState<DocumentoData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const seleccionadoId = searchParams.get('doc');
+
   const [error, setError] = useState('');
-  const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
-  const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
   const [modalError, setModalError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Metadatos del documento seleccionado (edición en panel)
-  const [metaTitulo, setMetaTitulo] = useState('');
-  const [metaSlug, setMetaSlug] = useState('');
-  const [metaPlantilla, setMetaPlantilla] = useState<'' | DocumentoPlantilla>('');
-  const [moverA, setMoverA] = useState('');
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'x-session-token': sessionToken ?? '',
-  };
-
-  const fetchDatos = useCallback(async () => {
-    if (!id) return;
-    try {
-      setLoading(true);
-      const auth = { 'x-session-token': sessionToken ?? '' };
-      const [colRes, docsRes] = await Promise.all([
-        fetch(`${API_BASE}/admin/colecciones`, { headers: auth }),
-        fetch(`${API_BASE}/admin/colecciones/${id}/documentos`, { headers: auth }),
-      ]);
-      if (!colRes.ok || !docsRes.ok) throw new Error('Error al cargar la colección');
-      const colJson = await colRes.json();
-      const docsJson = await docsRes.json();
-      const encontrada = (colJson.colecciones ?? []).find((c: ColeccionData) => c.id === id) ?? null;
-      if (!encontrada) throw new Error('Colección no encontrada');
-      setColeccion(encontrada);
-      setDocumentos(docsJson.documentos ?? []);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [id, sessionToken]);
-
-  useEffect(() => {
-    fetchDatos();
-  }, [fetchDatos]);
-
-  const arbol = useMemo(() => buildArbol(documentos), [documentos]);
   const categorias = useMemo(() => aplanarCategorias(arbol), [arbol]);
   const seleccionado = useMemo(
     () => documentos.find((d) => d.id === seleccionadoId) ?? null,
     [documentos, seleccionadoId],
   );
 
-  // Descendientes del seleccionado: destinos inválidos de "Mover a"
-  // (el server los rechazaría con el anti-ciclo; mejor ni ofrecerlos).
-  const descendientesSeleccionado = useMemo(() => {
-    const out = new Set<string>();
-    if (!seleccionadoId) return out;
-    const hijosPor = new Map<string | null, DocumentoData[]>();
-    for (const d of documentos) {
-      const key = d.padreId ?? null;
-      if (!hijosPor.has(key)) hijosPor.set(key, []);
-      hijosPor.get(key)!.push(d);
-    }
-    const pila = [seleccionadoId];
-    while (pila.length) {
-      const actual = pila.pop()!;
-      for (const hijo of hijosPor.get(actual) ?? []) {
-        if (!out.has(hijo.id)) {
-          out.add(hijo.id);
-          pila.push(hijo.id);
-        }
-      }
-    }
-    return out;
-  }, [documentos, seleccionadoId]);
-
-  // Sincronizar el panel de metadatos al seleccionar (el cuerpo se edita en
-  // la página del editor: /admin/contenidos/:id/editar/:docId).
-  useEffect(() => {
-    if (!seleccionado) return;
-    setMetaTitulo(seleccionado.titulo);
-    setMetaSlug(seleccionado.slug);
-    setMetaPlantilla(seleccionado.plantilla ?? '');
-    setMoverA(seleccionado.padreId ?? '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seleccionadoId]);
-
-  function toggleExpandido(docId: string) {
-    setExpandidos((prev) => {
-      const next = new Set(prev);
-      if (next.has(docId)) next.delete(docId);
-      else next.add(docId);
-      return next;
-    });
-  }
-
-  /** Ejecuta la petición y devuelve el mensaje de error (o null si fue bien). */
-  async function llamada(url: string, method: string, body?: unknown): Promise<string | null> {
-    try {
-      const res = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        return err.message || 'Error en la operación';
-      }
-      return null;
-    } catch (err: any) {
-      return err.message || 'Error en la operación';
-    }
-  }
-
   async function handleCrear(data: DocumentoSavePayload) {
     setSaving(true);
-    const err = await llamada(`${API_BASE}/admin/colecciones/${id}/documentos`, 'POST', data);
-    setSaving(false);
-    if (err) {
-      // Dentro del modal: un error en la página quedaría oculto tras el overlay.
-      setModalError(err);
-      return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/colecciones/${id}/documentos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-session-token': sessionToken ?? '' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        // Dentro del modal: un error en la página quedaría oculto tras el overlay.
+        setModalError(err.message || 'Error al crear');
+        return;
+      }
+      setModalError('');
+      setModalOpen(false);
+      await refetch();
+    } catch (err: any) {
+      setModalError(err.message || 'Error al crear');
+    } finally {
+      setSaving(false);
     }
-    setModalError('');
-    setModalOpen(false);
-    if (data.padreId) setExpandidos((prev) => new Set(prev).add(data.padreId!));
-    await fetchDatos();
   }
 
-  async function handleGuardarMeta() {
-    if (!seleccionado) return;
-    setError('');
-    const err = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}`, 'PUT', {
-      titulo: metaTitulo,
-      slug: slugify(metaSlug),
-      plantilla: metaPlantilla || null,
-    });
-    if (err) setError(err);
-    else await fetchDatos();
+  if (cargando && documentos.length === 0) {
+    return <div className={styles.page}><p>Cargando...</p></div>;
   }
-
-  /** Hermanos del seleccionado (mismo padre), ordenados. */
-  function hermanosDe(doc: DocumentoData): DocumentoData[] {
-    return documentos
-      .filter((d) => (d.padreId ?? null) === (doc.padreId ?? null))
-      .sort((a, b) => a.orden - b.orden);
-  }
-
-  async function handleReordenar(direccion: -1 | 1) {
-    if (!seleccionado) return;
-    const hermanos = hermanosDe(seleccionado);
-    const idx = hermanos.findIndex((h) => h.id === seleccionado.id);
-    const destino = idx + direccion;
-    if (destino < 0 || destino >= hermanos.length) return;
-    setError('');
-    const err = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}/mover`, 'PUT', {
-      padreId: seleccionado.padreId,
-      orden: destino,
-    });
-    if (err) setError(err);
-    else await fetchDatos();
-  }
-
-  async function handleMoverA() {
-    if (!seleccionado) return;
-    const nuevoPadre = moverA || null;
-    if ((seleccionado.padreId ?? null) === nuevoPadre) return;
-    setError('');
-    const err = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}/mover`, 'PUT', {
-      padreId: nuevoPadre,
-      orden: documentos.length, // al final; el server lo acota a los hermanos reales
-    });
-    if (err) {
-      setError(err);
-      return;
-    }
-    if (nuevoPadre) setExpandidos((prev) => new Set(prev).add(nuevoPadre));
-    await fetchDatos();
-  }
-
-  async function handleEliminar() {
-    if (!seleccionado) return;
-    if (!confirm(`¿Eliminar "${seleccionado.titulo}"? Esta acción no se puede deshacer.`)) return;
-    setError('');
-    const err = await llamada(`${API_BASE}/admin/documentos/${seleccionado.id}`, 'DELETE');
-    if (err) {
-      setError(err);
-      return;
-    }
-    setSeleccionadoId(null);
-    await fetchDatos();
-  }
-
-  function renderNodo(nodo: DocumentoNodo, nivel: number) {
-    const esCategoria = nodo.tipo === 'categoria';
-    const abierto = expandidos.has(nodo.id);
-    return (
-      <div key={nodo.id}>
-        <div
-          className={`${styles.nodo} ${seleccionadoId === nodo.id ? styles.nodoActivo : ''}`}
-          style={{ paddingLeft: 8 + nivel * 18 }}
-          onClick={() => setSeleccionadoId(nodo.id)}
-        >
-          {esCategoria ? (
-            <button
-              type="button"
-              className={styles.chevron}
-              onClick={(e) => { e.stopPropagation(); toggleExpandido(nodo.id); }}
-              aria-label={abierto ? 'Colapsar' : 'Expandir'}
-            >
-              <Icon name={abierto ? 'expand_more' : 'chevron_right'} size="sm" />
-            </button>
-          ) : (
-            <span className={styles.chevronHueco} />
-          )}
-          <Icon name={ICONO_TIPO[nodo.tipo]} size="sm" />
-          <span className={styles.nodoTitulo} title={nodo.titulo}>{nodo.titulo}</span>
-          {!esCategoria && (
-            <span className={`${styles.estado} ${nodo.publicado ? styles.estadoPub : styles.estadoBorr}`}>
-              {nodo.publicado ? 'publicada' : 'borrador'}
-            </span>
-          )}
-        </div>
-        {esCategoria && abierto && nodo.hijos.map((h) => renderNodo(h, nivel + 1))}
-      </div>
-    );
-  }
-
-  if (loading) return <div className={styles.page}><p>Cargando...</p></div>;
 
   return (
     <div className={styles.page}>
@@ -267,92 +87,39 @@ export default function ColeccionDetailPage() {
         </div>
       </div>
 
-      {error && <div className={styles.error}>{error}</div>}
+      {error && <div className={styles.error} onClick={() => setError('')}>{error}</div>}
 
-      <div className={styles.split}>
-        <div className={styles.arbolPanel}>
-          <div className={styles.panelTitulo}>Árbol de páginas</div>
-          {arbol.length === 0 ? (
-            <p className={styles.hint}>Aún no hay páginas. Crea la primera con "+ Página / Categoría".</p>
-          ) : (
-            arbol.map((n) => renderNodo(n, 0))
-          )}
+      {!seleccionado ? (
+        <div className={styles.vacio}>
+          <Icon name="menu_book" size="lg" />
+          <p>Selecciona una página en el árbol para editarla.</p>
+          <p className={styles.hint}>
+            {documentos.length === 0
+              ? 'Esta colección aún no tiene páginas. Crea la primera con "+ Página / Categoría".'
+              : 'Doble clic para renombrar · arrastra para mover o cambiar de nivel.'}
+          </p>
         </div>
-
-        <div className={styles.detallePanel}>
-          {!seleccionado ? (
-            <p className={styles.hint}>Selecciona una página del árbol para editarla.</p>
-          ) : (
-            <>
-              <div className={styles.panelTitulo}>
-                {seleccionado.tipo === 'categoria' ? 'Categoría' : `Página (${seleccionado.tipo})`}
-              </div>
-
-              <div className={styles.metaGrid}>
-                <label className={styles.campo}>
-                  <span>Título</span>
-                  <input className={styles.input} value={metaTitulo} onChange={(e) => setMetaTitulo(e.target.value)} />
-                </label>
-                <label className={styles.campo}>
-                  <span>Slug</span>
-                  <input className={styles.input} value={metaSlug} onChange={(e) => setMetaSlug(slugifyInput(e.target.value))} />
-                </label>
-                {seleccionado.tipo === 'md' && (
-                  <label className={styles.campo}>
-                    <span>Plantilla</span>
-                    <select className={styles.input} value={metaPlantilla} onChange={(e) => setMetaPlantilla(e.target.value as '' | DocumentoPlantilla)}>
-                      <option value="">Sin plantilla</option>
-                      <option value="laboratorio">Laboratorio</option>
-                      <option value="lectura">Lectura</option>
-                      <option value="temario">Temario</option>
-                    </select>
-                  </label>
-                )}
-              </div>
-
-              <div className={styles.accionesFila}>
-                <DashButton variant="outline" onClick={handleGuardarMeta}>Guardar cambios</DashButton>
-                <DashButton variant="outline" onClick={() => handleReordenar(-1)}>↑ Subir</DashButton>
-                <DashButton variant="outline" onClick={() => handleReordenar(1)}>↓ Bajar</DashButton>
-                <DashButton variant="outline" onClick={handleEliminar}>Eliminar</DashButton>
-              </div>
-
-              <div className={styles.moverFila}>
-                <span className={styles.moverLabel}>Mover a</span>
-                <select className={styles.input} value={moverA} onChange={(e) => setMoverA(e.target.value)}>
-                  <option value="">Raíz de la colección</option>
-                  {categorias
-                    .filter((c) => c.id !== seleccionado.id && !descendientesSeleccionado.has(c.id))
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>{c.label}</option>
-                    ))}
-                </select>
-                <DashButton variant="outline" onClick={handleMoverA}>Mover</DashButton>
-              </div>
-
-              {seleccionado.tipo !== 'categoria' && (
-                <div className={styles.editor}>
-                  <div className={styles.editorBarra}>
-                    <span className={styles.panelTitulo}>
-                      Cuerpo ({seleccionado.tipo === 'md' ? 'Markdown' : 'HTML'})
-                    </span>
-                    <span className={styles.editorEstado}>
-                      {seleccionado.borradorId ? 'Borrador en curso' : seleccionado.publicado ? 'Publicada' : 'Sin contenido publicado'}
-                    </span>
-                    <Link to={`/admin/contenidos/${id}/editar/${seleccionado.id}`} className={styles.abrirEditor}>
-                      <Icon name="edit_note" size="sm" />
-                      <span>Abrir editor</span>
-                    </Link>
-                  </div>
-                  <p className={styles.hint}>
-                    El contenido se edita en el editor (resaltado, preview en vivo, publicar e historial).
-                  </p>
-                </div>
-              )}
-            </>
-          )}
+      ) : seleccionado.tipo === 'categoria' ? (
+        <div className={styles.vacio}>
+          <Icon name="folder" size="lg" />
+          <p>«{seleccionado.titulo}» es una categoría: solo agrupa páginas, no tiene contenido.</p>
+          <p className={styles.hint}>Doble clic en el árbol para renombrarla · arrástrala para moverla.</p>
         </div>
-      </div>
+      ) : (
+        <div className={styles.editorWrap}>
+          <Suspense fallback={<p className={styles.hint}>Cargando editor…</p>}>
+            {/* key: al cambiar de página se remonta el editor. Sin esto, su estado
+                interno (cuerpo, historial de deshacer) se arrastraría de un
+                documento al siguiente. El desmontaje vacía el autosave pendiente. */}
+            <EditorContenido
+              key={seleccionado.id}
+              coleccionId={id}
+              docId={seleccionado.id}
+              embebido
+            />
+          </Suspense>
+        </div>
+      )}
 
       <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); setModalError(''); }} title="Nueva página o categoría">
         <DocumentoForm

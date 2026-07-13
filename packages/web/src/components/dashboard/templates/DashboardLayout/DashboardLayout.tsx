@@ -3,6 +3,7 @@ import Sidebar from '../../organisms/Sidebar/Sidebar';
 import DashboardHeader from '../../organisms/DashboardHeader/DashboardHeader';
 import { useSidebarCollapse } from '../../../../hooks/useSidebarCollapse';
 import { useAuth } from '../../../../context/AuthContext';
+import { ColeccionArbolProvider } from '../../../../context/ColeccionArbolContext';
 import styles from './DashboardLayout.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
 
@@ -23,15 +24,19 @@ export default function DashboardLayout({ role }: DashboardLayoutProps) {
   }
 
   return (
-    <div className={styles.layout}>
-      <Sidebar role={role} collapsed={collapsed} mobileOpen={mobileOpen} onCloseMobile={closeMobile} />
-      <DashboardHeader role={role} collapsed={collapsed} onToggleSidebar={toggle} />
-      <main
-        className={styles.content}
-        style={{ marginLeft: collapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)' }}
-      >
-        <Outlet />
-      </main>
-    </div>
+    // El provider envuelve Sidebar y Outlet: el árbol de la colección abierta lo
+    // pinta el sidebar y lo muta la página, así que ambos comparten una fuente.
+    <ColeccionArbolProvider>
+      <div className={styles.layout}>
+        <Sidebar role={role} collapsed={collapsed} mobileOpen={mobileOpen} onCloseMobile={closeMobile} />
+        <DashboardHeader role={role} collapsed={collapsed} onToggleSidebar={toggle} />
+        <main
+          className={styles.content}
+          style={{ marginLeft: collapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)' }}
+        >
+          <Outlet />
+        </main>
+      </div>
+    </ColeccionArbolProvider>
   );
 }

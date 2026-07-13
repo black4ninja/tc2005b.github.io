@@ -3,10 +3,12 @@ import { Link, useMatch } from 'react-router';
 import NavItem from '../../molecules/NavItem/NavItem';
 import DocusMenu, { type DocusLink } from '../../molecules/DocusMenu/DocusMenu';
 import Icon from '../../atoms/Icon/Icon';
+import ArbolContenidos from './ArbolContenidos';
 import { getSidebarItems, getGrupoDetailItems } from './sidebarConfig';
 import styles from './Sidebar.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
 import { useAuth } from '../../../../context/AuthContext';
+import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import { APP_NAME } from '../../../../config/app';
 
 interface SidebarProps {
@@ -22,6 +24,13 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const grupoMatch = grupoMatchExact || grupoMatchSub;
   const isGrupoDetail = !!grupoMatch;
   const grupoId = grupoMatch?.params.id;
+
+  // Colección abierta: el sidebar se vuelve el árbol de páginas (mismo patrón
+  // contextual que el detalle de grupo). Los datos vienen del provider, que los
+  // comparte con la página para que una mutación se refleje aquí.
+  const { coleccionId, coleccion } = useColeccionArbol();
+  const isColeccionDetail = !!coleccionId;
+
   const { sessionToken, user, updateUser } = useAuth();
   const [grupoName, setGrupoName] = useState('');
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
@@ -100,7 +109,19 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       <aside
         className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''} ${mobileOpen ? styles.mobileOpen : ''}`}
       >
-        {isGrupoDetail ? (
+        {isColeccionDetail ? (
+          <div className={styles.backHeader}>
+            <Link to="/admin/contenidos" className={styles.backButton} onClick={onCloseMobile}>
+              <Icon name="arrow_back" size="sm" />
+              {!collapsed && <span>Volver a Contenidos</span>}
+            </Link>
+            {!collapsed && (
+              <span className={styles.grupoLabel} title={coleccion?.nombre ?? ''}>
+                {coleccion?.clave ?? coleccion?.slug ?? '…'}
+              </span>
+            )}
+          </div>
+        ) : isGrupoDetail ? (
           <div className={styles.backHeader}>
             <Link to="/admin/grupos" className={styles.backButton} onClick={onCloseMobile}>
               <Icon name="arrow_back" size="sm" />
@@ -134,21 +155,29 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             </select>
           </div>
         )}
-        <nav className={styles.nav}>
-          {items.map(item => (
-            <NavItem
-              key={item.path}
-              icon={item.icon}
-              label={item.label}
-              path={item.path}
-              badge={item.badge}
-              disabled={item.disabled}
-              external={item.external}
-              collapsed={collapsed}
-              onClick={onCloseMobile}
-            />
-          ))}
-          {isGrupoDetail && <DocusMenu items={docusLinks} collapsed={collapsed} />}
+        <nav className={`${styles.nav} ${isColeccionDetail && !collapsed ? styles.navArbol : ''}`}>
+          {isColeccionDetail ? (
+            // Colapsado (70px) el árbol es ilegible: se oculta y queda solo el
+            // botón de volver, que es la salida.
+            !collapsed && <ArbolContenidos coleccionId={coleccionId} />
+          ) : (
+            <>
+              {items.map(item => (
+                <NavItem
+                  key={item.path}
+                  icon={item.icon}
+                  label={item.label}
+                  path={item.path}
+                  badge={item.badge}
+                  disabled={item.disabled}
+                  external={item.external}
+                  collapsed={collapsed}
+                  onClick={onCloseMobile}
+                />
+              ))}
+              {isGrupoDetail && <DocusMenu items={docusLinks} collapsed={collapsed} />}
+            </>
+          )}
         </nav>
         <div className={styles.footer}>
           {!collapsed && (
