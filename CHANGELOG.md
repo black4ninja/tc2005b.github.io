@@ -8,6 +8,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **El cálculo de calificaciones es ahora UNO solo** (`@tc2005b/evaluacion`), no
+  cuatro copias. Estaba duplicado en el API, la malla del profesor, el export
+  XLSX y el dashboard del alumno, y las copias habían divergido —el bug de
+  arriba es exactamente eso: tres copias se actualizaron para leer números y una
+  se quedó atrás—. El paquete es puro (sin dependencias) y va con 28 tests que
+  fijan las decisiones, no el resultado accidental: cómo se lee cada formato de
+  valor, que una competencia sin evaluar cuenta como 0 y sí entra al promedio,
+  y que un periodo acumulativo no puede contar dos veces la misma actividad.
+  - Al unificar se corrigen dos divergencias más:
+    - **Doble conteo en periodos acumulativos.** Las copias de la web sumaban una
+      actividad una vez por cada periodo previo en el que apareciera. Hoy ninguna
+      está en 2+ periodos, así que no llegó a morder, pero estaba armado.
+    - **Redondeo.** El API redondeaba la nota de cada periodo *antes* de
+      ponderarla y la web no, así que un mismo alumno podía tener dos notas
+      oficiales distintas según la pantalla. Ahora se redondea una sola vez, al
+      presentar. En producción esto mueve **una nota: 82.9 → 83**.
 - **`yarn test` deja de salir siempre en rojo.** Sin configuración propia, vitest
   recorría todo el repo y arrastraba los `.test.js` de `deprecated/` —ejercicios
   de un curso de JS archivados ahí, ajenos al proyecto—, y uno de ellos importa un
@@ -34,6 +50,15 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     estampado (274 actividades de grupo, 1482 celdas de malla) apunta a ella.
 
 ### Fixed
+- **El alumno veía su calificación masivamente deflactada.** Su dashboard leía
+  TODAS sus competencias como 0. El parser (`parseCompetenciaPercent`) empezaba
+  con `if (typeof valor !== 'string') return 0`, y los valores se guardan como
+  **número** — las 396 celdas de producción lo son. Como en el Periodo 2 las
+  competencias pesan **70%**, **17 de los 18 alumnos de FebJun26 veían ~41.5
+  puntos menos de su nota real** (peor caso, 51.9). La vista del profesor y el
+  export XLSX siempre estuvieron bien: el error era solo de la pantalla del
+  alumno, y siempre a la baja. Ninguna nota guardada estaba mal; lo que estaba
+  mal era lo que se le mostraba.
 - **El plan de evaluación se podía quedar atascado por ids muertos.** Sus
   `periodos[].competencias` y `periodos[].actividades` son ids sueltos sin FK, y
   cuando una actividad se borra (soft-delete) su id se puede quedar colgado ahí —

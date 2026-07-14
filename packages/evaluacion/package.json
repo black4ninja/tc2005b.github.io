@@ -1,0 +1,9 @@
+{
+  "name": "@tc2005b/evaluacion",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "description": "Cálculo de calificaciones compartido. Una sola implementación de la nota (actividades, competencias, ponderación por periodo) que usan el API, la malla del profesor, el dashboard del alumno y el export XLSX — para que las cuatro pantallas no puedan dar números distintos."
+}

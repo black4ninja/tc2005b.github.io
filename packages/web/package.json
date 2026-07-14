@@ -18,6 +18,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@tanstack/react-table": "^8.21.3",
     "@tc2005b/contenido-pipeline": "0.1.0",
+    "@tc2005b/evaluacion": "0.1.0",
     "@uiw/react-codemirror": "^4.23.0",
     "apexcharts": "^5.10.4",
     "exceljs": "^4.4.0",

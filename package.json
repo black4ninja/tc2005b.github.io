@@ -4,7 +4,8 @@
   "workspaces": [
     "packages/web",
     "packages/api",
-    "packages/contenido-pipeline"
+    "packages/contenido-pipeline",
+    "packages/evaluacion"
   ],
   "scripts": {
     "dev": "concurrently -n web,api -c cyan,yellow \"yarn workspace @tc2005b/web dev\" \"yarn workspace @tc2005b/api dev\"",
