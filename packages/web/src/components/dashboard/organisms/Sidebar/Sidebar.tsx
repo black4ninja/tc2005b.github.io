@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useMatch, useSearchParams } from 'react-router';
 import NavItem from '../../molecules/NavItem/NavItem';
-import DocusMenu, { type DocusLink } from '../../molecules/DocusMenu/DocusMenu';
+import SeccionColecciones, { type EnlaceColeccion } from '../../molecules/SeccionColecciones/SeccionColecciones';
 import Icon from '../../atoms/Icon/Icon';
 import ArbolContenidos from './ArbolContenidos';
 import { getSidebarItems, getGrupoDetailItems } from './sidebarConfig';
@@ -10,6 +10,14 @@ import type { DashboardRole } from '../../../../types/dashboard';
 import { useAuth } from '../../../../context/AuthContext';
 import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import { APP_NAME } from '../../../../config/app';
+
+/** Colección asignada al grupo, como la devuelve /api/admin/grupos. */
+interface ColeccionGrupo {
+  id: string;
+  slug: string;
+  nombre: string;
+  clave: string | null;
+}
 
 interface SidebarProps {
   role: DashboardRole;
@@ -45,7 +53,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const [grupoName, setGrupoName] = useState('');
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
   const [docsHref, setDocsHref] = useState<string | null>(null);
-  const [docusLinks, setDocusLinks] = useState<DocusLink[]>([]);
+  const [colecciones, setColecciones] = useState<ColeccionGrupo[]>([]);
   // Agenda de entrevistas del grupo abierto (admin). La del alumno sale del
   // payload de sesión (user.grupos), no requiere fetch.
   const [agendaGrupoHref, setAgendaGrupoHref] = useState<string | null>(null);
@@ -100,52 +108,66 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         );
         if (found?.name) setGrupoName(found.name);
         setAgendaGrupoHref(found?.urlAgendaEntrevistas ?? null);
-
-        // Por cada colección del grupo, sus tres contenidos: la documentación
-        // (el visor, externo) y sus Páginas y Competencias (pantallas del admin,
-        // ya filtradas por esa colección).
-        //
-        // La etiqueta lleva la clave delante — "TC2005B — Páginas" — porque con
-        // más de una colección asignada, "Páginas" a secas no dice de cuál.
-        const links: DocusLink[] = (found?.colecciones ?? []).flatMap(
-          (c: { id: string; slug: string; nombre: string; clave: string | null }) => {
-            const clave = c.clave || c.slug.toUpperCase();
-            return [
-              {
-                key: `${c.slug}-doc`,
-                label: `${clave} — Documentación`,
-                href: `/contenidos/${c.slug}/`,
-                externo: true,
-                icono: 'menu_book',
-              },
-              // `grupo=` no filtra nada: mantiene el contexto. Sin él, al salir
-              // a /admin/paginas el sidebar dejaría de estar en modo grupo y
-              // perderías su navegación justo al usarla.
-              {
-                key: `${c.slug}-paginas`,
-                label: `${clave} — Páginas`,
-                href: `/admin/paginas?coleccion=${c.id}&grupo=${grupoId}`,
-                icono: 'article',
-              },
-              {
-                key: `${c.slug}-competencias`,
-                label: `${clave} — Competencias`,
-                href: `/admin/competencias?coleccion=${c.id}&grupo=${grupoId}`,
-                icono: 'emoji_events',
-              },
-              {
-                key: `${c.slug}-actividades`,
-                label: `${clave} — Actividades`,
-                href: `/admin/actividades?coleccion=${c.id}&grupo=${grupoId}`,
-                icono: 'assignment',
-              },
-            ];
-          },
-        );
-        setDocusLinks(links);
+        setColecciones(found?.colecciones ?? []);
       })
       .catch(() => {});
   }, [grupoId, sessionToken]);
+
+  /**
+   * El menú del grupo se agrupa por ACCIÓN, no por colección: cuatro secciones
+   * (Contenido, Páginas, Competencias, Actividades) y dentro de cada una, las
+   * colecciones del grupo. Al revés —una entrada por colección y acción— un
+   * grupo con 3 materias daba una lista plana de 12 enlaces.
+   *
+   * Dentro de la sección la etiqueta es solo la clave ("TC2005B"): la cabecera
+   * ya dice qué acción es, repetirlo sería "Páginas → TC2005B — Páginas".
+   */
+  const secciones = useMemo(() => {
+    const enlaces = (
+      hacerHref: (c: ColeccionGrupo) => string,
+      sufijo: string,
+      externo?: boolean,
+    ): EnlaceColeccion[] =>
+      colecciones.map((c) => ({
+        key: `${c.slug}-${sufijo}`,
+        label: c.clave || c.slug.toUpperCase(),
+        href: hacerHref(c),
+        externo,
+      }));
+
+    // `grupo=` no filtra nada: mantiene el contexto. Sin él, al salir a
+    // /admin/paginas el sidebar dejaría de estar en modo grupo y perderías su
+    // navegación justo al usarla.
+    const ctx = (ruta: string, c: ColeccionGrupo) =>
+      `/admin/${ruta}?coleccion=${c.id}&grupo=${grupoId}`;
+
+    return [
+      {
+        key: 'contenido',
+        titulo: 'Contenido',
+        icono: 'menu_book',
+        items: enlaces((c) => `/contenidos/${c.slug}/`, 'doc', true),
+      },
+      {
+        key: 'paginas',
+        titulo: 'Páginas',
+        icono: 'article',
+        items: enlaces((c) => ctx('paginas', c), 'paginas'),
+      },
+      {
+        key: 'competencias',
+        titulo: 'Competencias',
+        icono: 'emoji_events',
+        items: enlaces((c) => ctx('competencias', c), 'competencias'),
+      },
+      {
+        key: 'actividades',
+        titulo: 'Actividades',
+        icono: 'assignment',
+        items: enlaces((c) => ctx('actividades', c), 'actividades'),
+      },
+    ];
+  }, [colecciones, grupoId]);
 
   // La agenda del alumno es la de SU grupo seleccionado; viaja en el payload de
   // sesión, así que no hace falta pedirla.
@@ -236,7 +258,22 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
                   onClick={onCloseMobile}
                 />
               ))}
-              {isGrupoDetail && <DocusMenu items={docusLinks} collapsed={collapsed} />}
+              {isGrupoDetail &&
+                (colecciones.length === 0 ? (
+                  // Sin materia asignada no hay nada que separar en cuatro: una
+                  // sola entrada que lo diga, en vez de cuatro secciones vacías.
+                  <SeccionColecciones titulo="Contenido" icono="menu_book" items={[]} collapsed={collapsed} />
+                ) : (
+                  secciones.map((s) => (
+                    <SeccionColecciones
+                      key={s.key}
+                      titulo={s.titulo}
+                      icono={s.icono}
+                      items={s.items}
+                      collapsed={collapsed}
+                    />
+                  ))
+                ))}
             </>
           )}
         </nav>
