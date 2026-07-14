@@ -9,22 +9,13 @@ import {
   Tooltip,
   Legend,
 } from 'recharts';
+import { calcCalificacion, type PeriodoConfig } from '@tc2005b/evaluacion';
 import { useAuth } from '../../../../context/AuthContext';
 import styles from './AlumnoDashboard.module.css';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
-
-interface PeriodoConfig {
-  nombre: string;
-  pesoFinal: number;
-  pesoCompetencias: number;
-  pesoActividades: number;
-  competencias: string[];
-  actividades: string[];
-  acumulativo: boolean;
-}
 
 interface ActividadAlumnoData {
   id: string;
@@ -71,63 +62,6 @@ const API_BASE = '/api';
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
-
-function parseCompetenciaPercent(valor: unknown): number {
-  if (typeof valor !== 'string') return 0;
-  const match = valor.match(/\((\d+)%\)/);
-  return match ? Number(match[1]) : 0;
-}
-
-function calcPeriodoScore(
-  periodo: PeriodoConfig,
-  periodoIdx: number,
-  periodos: PeriodoConfig[],
-  actividades: ActividadAlumnoData[],
-  competencias: CompetenciaAlumnoData[],
-) {
-  const ownIds = new Set(periodo.actividades);
-  let totalPlaneado = 0;
-  let totalGanado = 0;
-
-  for (const act of actividades) {
-    if (ownIds.has(act.actividadGrupoId)) {
-      totalPlaneado += act.aprendizajePlaneado;
-      totalGanado += act.aprendizajeGanado;
-    }
-  }
-
-  if (periodo.acumulativo && periodoIdx > 0) {
-    for (let pi = 0; pi < periodoIdx; pi++) {
-      const prevIds = new Set(periodos[pi].actividades);
-      for (const act of actividades) {
-        if (prevIds.has(act.actividadGrupoId) && !ownIds.has(act.actividadGrupoId)) {
-          totalPlaneado += act.aprendizajePlaneado;
-          totalGanado += act.aprendizajeGanado;
-        }
-      }
-    }
-  }
-
-  const actScore = totalPlaneado > 0 ? (totalGanado / totalPlaneado) * 100 : 0;
-
-  const compIds = new Set(periodo.competencias);
-  let compSum = 0;
-  let compCount = 0;
-  const valorField = periodoIdx === 0 ? 'valorPeriodo1' : 'valorPeriodo2';
-  for (const comp of competencias) {
-    if (compIds.has(comp.competenciaId)) {
-      const pct = parseCompetenciaPercent(comp[valorField]);
-      compSum += pct;
-      compCount++;
-    }
-  }
-  const compScore = compCount > 0 ? compSum / compCount : 0;
-
-  const periodoScore =
-    (actScore * periodo.pesoActividades + compScore * periodo.pesoCompetencias) / 100;
-
-  return { actScore, compScore, periodoScore, totalPlaneado, totalGanado };
-}
 
 function buildChartData(actividades: ActividadAlumnoData[]): ChartPoint[] {
   if (actividades.length === 0) return [];
@@ -298,19 +232,9 @@ export default function AlumnoDashboard() {
 
   /* ---------- Computed ---------- */
 
-  const periodoScores = useMemo(
-    () =>
-      periodos.map((p, i) => ({
-        ...calcPeriodoScore(p, i, periodos, actividades, competencias),
-        nombre: p.nombre || `Periodo ${i + 1}`,
-        pesoFinal: p.pesoFinal,
-      })),
+  const { periodos: periodoScores, calificacionActual } = useMemo(
+    () => calcCalificacion(periodos, actividades, competencias),
     [periodos, actividades, competencias],
-  );
-
-  const calificacionActual = useMemo(
-    () => periodoScores.reduce((sum, ps) => sum + (ps.periodoScore * ps.pesoFinal) / 100, 0),
-    [periodoScores],
   );
 
   const chartData = useMemo(() => buildChartData(actividades), [actividades]);

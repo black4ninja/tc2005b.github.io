@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import Parse from 'parse/node';
+import { calcCalificacion, round1 } from '@tc2005b/evaluacion';
 import { PlanEvaluacion, type PeriodoConfig } from '../models/PlanEvaluacion.js';
 import { ActividadEvaluacionAlumno } from '../models/ActividadEvaluacionAlumno.js';
 import { CompetenciaAlumno } from '../models/CompetenciaAlumno.js';
@@ -7,52 +8,24 @@ import { Grupo } from '../models/Grupo.js';
 import { AppUser } from '../models/AppUser.js';
 import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
 
-function parseValorCompetencia(valor: unknown): number {
-  // Los valores se guardan como number (0, 15, 70, 85, 100) en el flujo nuevo,
-  // pero hay datos legacy guardados como string tipo "Básico (70%)".
-  if (valor === null || valor === undefined || valor === '') return 0;
-  if (typeof valor === 'number') return Number.isFinite(valor) ? valor : 0;
-  if (typeof valor === 'string') {
-    const trimmed = valor.trim();
-    if (trimmed === '') return 0;
-    // Caso "70" o "70.5" — string puramente numérico
-    const asNumber = Number(trimmed);
-    if (Number.isFinite(asNumber)) return asNumber;
-    // Caso legacy "Básico (70%)" — extraer dígitos antes de %
-    const match = trimmed.match(/(\d+)%/);
-    return match ? parseInt(match[1], 10) : 0;
-  }
-  return 0;
+/* El cálculo vive en `@tc2005b/evaluacion`, compartido con la malla del
+ * profesor, el dashboard del alumno y el export XLSX. Aquí solo se traducen los
+ * `Parse.Object` a las formas planas que espera. */
+
+function aActividadCalc(rec: Parse.Object) {
+  return {
+    actividadGrupoId: rec.get('actividadGrupo')?.id ?? '',
+    aprendizajePlaneado: rec.get('aprendizajePlaneado') ?? 0,
+    aprendizajeGanado: rec.get('aprendizajeGanado') ?? 0,
+  };
 }
 
-function computeActividadesScore(
-  records: Parse.Object[],
-  actividadIds: Set<string>,
-): number {
-  let planeado = 0;
-  let ganado = 0;
-  for (const rec of records) {
-    const actGrupo = rec.get('actividadGrupo');
-    if (!actGrupo || !actividadIds.has(actGrupo.id)) continue;
-    planeado += rec.get('aprendizajePlaneado') ?? 0;
-    ganado += rec.get('aprendizajeGanado') ?? 0;
-  }
-  return planeado === 0 ? 0 : (ganado / planeado) * 100;
-}
-
-function computeCompetenciasScore(
-  records: Parse.Object[],
-  competenciaIds: Set<string>,
-  periodoIndex: number,
-): number {
-  const field = periodoIndex === 0 ? 'valorPeriodo1' : 'valorPeriodo2';
-  const values: number[] = [];
-  for (const rec of records) {
-    const comp = rec.get('competencia');
-    if (!comp || !competenciaIds.has(comp.id)) continue;
-    values.push(parseValorCompetencia(rec.get(field) ?? ''));
-  }
-  return values.length === 0 ? 0 : values.reduce((a, b) => a + b, 0) / values.length;
+function aCompetenciaCalc(rec: Parse.Object) {
+  return {
+    competenciaId: rec.get('competencia')?.id ?? '',
+    valorPeriodo1: rec.get('valorPeriodo1') ?? '',
+    valorPeriodo2: rec.get('valorPeriodo2') ?? '',
+  };
 }
 
 export async function getCalificacionesGrupo(req: Request, res: Response) {
@@ -114,47 +87,23 @@ export async function getCalificacionesGrupo(req: Request, res: Response) {
 
     // 5. Compute scores
     const calificaciones = alumnos.map((item) => {
-      const alumno = item.alumno;
-      const alumnoId = alumno.id;
-      const alumnoActs = actByAlumno.get(alumnoId) ?? [];
-      const alumnoComps = compByAlumno.get(alumnoId) ?? [];
+      const alumnoId = item.alumno.id;
+      const alumnoActs = (actByAlumno.get(alumnoId) ?? []).map(aActividadCalc);
+      const alumnoComps = (compByAlumno.get(alumnoId) ?? []).map(aCompetenciaCalc);
 
-      const periodoScores: number[] = [];
+      const { periodos: scores, calificacionActual } = calcCalificacion(
+        periodos,
+        alumnoActs,
+        alumnoComps,
+      );
 
-      for (let i = 0; i < periodos.length; i++) {
-        const periodo = periodos[i];
-
-        // Build activity IDs set (with acumulativo support)
-        const actIdSet = new Set<string>();
-        if (periodo.acumulativo) {
-          for (let j = 0; j <= i; j++) {
-            for (const aid of periodos[j].actividades) actIdSet.add(aid);
-          }
-        } else {
-          for (const aid of periodo.actividades) actIdSet.add(aid);
-        }
-
-        const actScore = computeActividadesScore(alumnoActs, actIdSet);
-
-        // Competencias
-        const compIdSet = new Set<string>(periodo.competencias);
-        const compScore = computeCompetenciasScore(alumnoComps, compIdSet, i);
-
-        const calif =
-          (compScore * periodo.pesoCompetencias) / 100 +
-          (actScore * periodo.pesoActividades) / 100;
-
-        periodoScores.push(Math.round(calif * 10) / 10);
-      }
-
-      // Final grade
-      let final = 0;
-      for (let i = 0; i < periodos.length; i++) {
-        final += (periodoScores[i] * periodos[i].pesoFinal) / 100;
-      }
-      final = Math.round(final * 10) / 10;
-
-      return { alumnoId, periodos: periodoScores, final };
+      // El redondeo es SOLO de presentación: la nota final se pondera con los
+      // valores exactos, no con los periodos ya redondeados.
+      return {
+        alumnoId,
+        periodos: scores.map((p) => round1(p.periodoScore)),
+        final: round1(calificacionActual),
+      };
     });
 
     // 6. Response

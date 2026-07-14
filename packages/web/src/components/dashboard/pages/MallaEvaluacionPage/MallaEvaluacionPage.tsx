@@ -9,21 +9,12 @@ import TruncatedText from '../../atoms/TruncatedText/TruncatedText';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import type { ActividadTipo } from '@/types/calendario';
 import { exportMallaAlumnoXlsx } from '../../../../utils/mallaExport';
+import { calcCalificacion, type PeriodoConfig } from '@tc2005b/evaluacion';
 import styles from './MallaEvaluacionPage.module.css';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
-
-interface PeriodoConfig {
-  nombre: string;
-  pesoFinal: number;
-  pesoCompetencias: number;
-  pesoActividades: number;
-  competencias: string[];
-  actividades: string[];
-  acumulativo: boolean;
-}
 
 interface ActividadData {
   id: string;
@@ -1214,70 +1205,25 @@ export default function MallaEvaluacionPage() {
 
   /* ---------- Calificación acumulada actual ---------- */
 
-  function parseCompetenciaPercent(valor: string | number): number {
-    if (typeof valor === 'number') return valor;
-    if (!valor) return 0;
-    const match = valor.match(/\((\d+)%\)/);
-    return match ? Number(match[1]) : 0;
-  }
+  // El cálculo es el compartido (`@tc2005b/evaluacion`); aquí solo se derivan
+  // las actividades faltantes de las que el propio cálculo contó.
+  const { periodos: scores, calificacionActual } = calcCalificacion(
+    periodos,
+    hasAlumnoData ? actividadesAlumno : [],
+    hasAlumnoData ? competenciasAlumno : [],
+  );
 
-  function calcPeriodoScore(periodo: PeriodoConfig, periodoIdx: number) {
-    // Actividades: ganado / planeado
-    const ownIds = new Set(periodo.actividades);
-    let totalPlaneado = 0;
-    let totalGanado = 0;
-    const actSource = hasAlumnoData ? actividadesAlumno : [];
-    const faltantes: { nombre: string; tipo: string; ganado: number; planeado: number }[] = [];
-
-    for (const act of actSource) {
-      if (ownIds.has(act.actividadGrupoId)) {
-        totalPlaneado += act.aprendizajePlaneado;
-        totalGanado += act.aprendizajeGanado;
-        if (act.semanaCompletada === 0) {
-          faltantes.push({ nombre: act.nombre, tipo: act.tipo, ganado: act.aprendizajeGanado, planeado: act.aprendizajePlaneado });
-        }
-      }
-    }
-    // Acumulativo: sumar periodos anteriores
-    if (periodo.acumulativo && periodoIdx > 0) {
-      for (let pi = 0; pi < periodoIdx; pi++) {
-        const prevIds = new Set(periodos[pi].actividades);
-        for (const act of actSource) {
-          if (prevIds.has(act.actividadGrupoId) && !ownIds.has(act.actividadGrupoId)) {
-            totalPlaneado += act.aprendizajePlaneado;
-            totalGanado += act.aprendizajeGanado;
-            if (act.semanaCompletada === 0) {
-              faltantes.push({ nombre: act.nombre, tipo: act.tipo, ganado: act.aprendizajeGanado, planeado: act.aprendizajePlaneado });
-            }
-          }
-        }
-      }
-    }
-    const actScore = totalPlaneado > 0 ? (totalGanado / totalPlaneado) * 100 : 0;
-
-    // Competencias: promedio de valores del periodo
-    const compIds = new Set(periodo.competencias);
-    const compSource = hasAlumnoData ? competenciasAlumno : [];
-    let compSum = 0;
-    let compCount = 0;
-    const valorField = periodoIdx === 0 ? 'valorPeriodo1' : 'valorPeriodo2';
-    for (const comp of compSource) {
-      if (compIds.has(comp.competenciaId)) {
-        const pct = parseCompetenciaPercent(comp[valorField]);
-        compSum += pct;
-        compCount++;
-      }
-    }
-    const compScore = compCount > 0 ? compSum / compCount : 0;
-
-    // Ponderado del periodo
-    const periodoScore = (actScore * periodo.pesoActividades + compScore * periodo.pesoCompetencias) / 100;
-
-    return { actScore, compScore, periodoScore, totalPlaneado, totalGanado, faltantes };
-  }
-
-  const periodoScores = periodos.map((p, i) => ({ ...calcPeriodoScore(p, i), nombre: p.nombre || `P${i + 1}`, pesoFinal: p.pesoFinal }));
-  const calificacionActual = periodoScores.reduce((sum, ps) => sum + (ps.periodoScore * ps.pesoFinal) / 100, 0);
+  const periodoScores = scores.map((p) => ({
+    ...p,
+    faltantes: p.actividadesContadas
+      .filter((act) => act.semanaCompletada === 0)
+      .map((act) => ({
+        nombre: act.nombre,
+        tipo: act.tipo,
+        ganado: act.aprendizajeGanado,
+        planeado: act.aprendizajePlaneado,
+      })),
+  }));
 
   /* ---------- Render ---------- */
 

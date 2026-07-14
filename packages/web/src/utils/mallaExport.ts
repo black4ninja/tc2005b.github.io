@@ -7,6 +7,7 @@
  * import dinámico para no engordar el bundle principal.
  */
 import type * as ExcelJS from 'exceljs';
+import { calcCalificacion, parseValorCompetencia, round1, type PeriodoConfig } from '@tc2005b/evaluacion';
 import { APP_NAME } from '../config/app';
 
 const API_BASE = '/api';
@@ -15,15 +16,7 @@ const API_BASE = '/api';
 /*  Tipos                                                              */
 /* ------------------------------------------------------------------ */
 
-export interface ExportPeriodoConfig {
-  nombre: string;
-  pesoFinal: number;
-  pesoCompetencias: number;
-  pesoActividades: number;
-  competencias: string[];
-  actividades: string[];
-  acumulativo: boolean;
-}
+export type ExportPeriodoConfig = PeriodoConfig;
 
 export interface ExportActividad {
   id: string;
@@ -127,92 +120,44 @@ const BORDER: Partial<ExcelJS.Borders> = { top: THIN, left: THIN, bottom: THIN, 
 /* ------------------------------------------------------------------ */
 
 /**
- * Normaliza el valor guardado de una competencia ('85', 85 o 'Sólido (85%)')
- * a una etiqueta legible y su porcentaje.
+ * Valor guardado de una competencia → etiqueta legible + porcentaje, SOLO para
+ * presentación (la etiqueta de la celda y su color de relleno).
+ *
+ * `pct: null` distingue "sin evaluar" de un 0 real, que se pintan distinto. Para
+ * la NOTA no se usa esto: se usa `parseValorCompetencia` del paquete compartido,
+ * donde sin evaluar y 0 valen lo mismo.
  */
 export function evalDisplay(val: string | number | null | undefined): { label: string; pct: number | null } {
   if (val === null || val === undefined || val === '') return { label: 'Sin evaluar', pct: null };
-  if (typeof val === 'number') return { label: NUMBER_TO_LABEL[val] ?? `${val}%`, pct: val };
+  const pct = parseValorCompetencia(val);
+  if (typeof val === 'number') return { label: NUMBER_TO_LABEL[val] ?? `${val}%`, pct };
   const direct = Number(val);
   if (!isNaN(direct) && val.trim() !== '') {
-    return { label: NUMBER_TO_LABEL[direct] ?? `${direct}%`, pct: direct };
+    return { label: NUMBER_TO_LABEL[direct] ?? `${direct}%`, pct };
   }
   const m = val.match(/\((\d+)\s*%\)/);
   return { label: val, pct: m ? Number(m[1]) : null };
 }
 
-interface PeriodoResumen {
-  nombre: string;
-  actScore: number;
-  compScore: number;
-  periodoScore: number;
-  totalPlaneado: number;
-  totalGanado: number;
-  pesoFinal: number;
-  pesoActividades: number;
-  pesoCompetencias: number;
-  contribucion: number;
-}
-
-/** Réplica del cálculo de calificación acumulada de MallaEvaluacionPage. */
+/** Resumen de calificación del alumno. El cálculo es el compartido. */
 function calcResumen(
   periodos: ExportPeriodoConfig[],
   actividades: ExportActividad[],
   competencias: ExportCompetencia[],
-): { periodos: PeriodoResumen[]; calificacionActual: number } {
-  const res = periodos.map((periodo, periodoIdx) => {
-    const ownIds = new Set(periodo.actividades);
-    let totalPlaneado = 0;
-    let totalGanado = 0;
-    for (const act of actividades) {
-      if (ownIds.has(act.actividadGrupoId)) {
-        totalPlaneado += act.aprendizajePlaneado;
-        totalGanado += act.aprendizajeGanado;
-      }
-    }
-    if (periodo.acumulativo && periodoIdx > 0) {
-      for (let pi = 0; pi < periodoIdx; pi++) {
-        const prevIds = new Set(periodos[pi].actividades);
-        for (const act of actividades) {
-          if (prevIds.has(act.actividadGrupoId) && !ownIds.has(act.actividadGrupoId)) {
-            totalPlaneado += act.aprendizajePlaneado;
-            totalGanado += act.aprendizajeGanado;
-          }
-        }
-      }
-    }
-    const actScore = totalPlaneado > 0 ? (totalGanado / totalPlaneado) * 100 : 0;
-
-    const compIds = new Set(periodo.competencias);
-    let compSum = 0;
-    let compCount = 0;
-    const valorField = periodoIdx === 0 ? 'valorPeriodo1' : 'valorPeriodo2';
-    for (const comp of competencias) {
-      if (compIds.has(comp.competenciaId)) {
-        compSum += evalDisplay(comp[valorField]).pct ?? 0;
-        compCount++;
-      }
-    }
-    const compScore = compCount > 0 ? compSum / compCount : 0;
-    const periodoScore = (actScore * periodo.pesoActividades + compScore * periodo.pesoCompetencias) / 100;
-
-    return {
-      nombre: periodo.nombre || `P${periodoIdx + 1}`,
-      actScore,
-      compScore,
-      periodoScore,
-      totalPlaneado,
-      totalGanado,
-      pesoFinal: periodo.pesoFinal,
-      pesoActividades: periodo.pesoActividades,
-      pesoCompetencias: periodo.pesoCompetencias,
-      contribucion: (periodoScore * periodo.pesoFinal) / 100,
-    };
-  });
-  return { periodos: res, calificacionActual: res.reduce((s, p) => s + p.contribucion, 0) };
+) {
+  const { periodos: scores, calificacionActual } = calcCalificacion(
+    periodos,
+    actividades,
+    competencias,
+  );
+  return {
+    periodos: scores.map((p) => ({
+      ...p,
+      contribucion: (p.periodoScore * p.pesoFinal) / 100,
+    })),
+    calificacionActual,
+  };
 }
-
-const round1 = (n: number) => Math.round(n * 10) / 10;
 
 function gradeFill(pct: number): string {
   return pct < 50 ? COLORS.gradeRed : pct < 70 ? COLORS.gradeOrange : COLORS.gradeGreen;
