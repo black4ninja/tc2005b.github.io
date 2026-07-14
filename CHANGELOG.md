@@ -7,7 +7,30 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **TC2008B entra al CMS** como colección `tc2008b` (Modelación de sistemas
+  multiagentes con gráficas computacionales), importada desde su Docusaurus:
+  15 páginas, 4 categorías, 379 recursos y 393 enlaces reescritos, con **0 sin
+  resolver** en el reporte de paridad. De paso se corrigieron en el origen tres
+  enlaces del README de medio término que apuntaban a `4_half_term/…` desde
+  *dentro* de `4_half_term/`: estaban rotos también en el sitio publicado.
+
 ### Changed
+- **El importador de Docusaurus dejó de depender de `packages/docusaurus`.** El
+  corte de US-7 retiró ese paquete del repo, pero el script seguía leyendo su
+  ruta hardcodeada: quedaba inservible para cualquier instancia nueva. Ahora
+  recibe `--raiz <ruta>` —la carpeta con `docs/` y `static/`, viva donde viva— y
+  resuelve solo el layout: `<raiz>/docs/<slug>` si existe (el viejo monorepo
+  multi-instancia) y si no `<raiz>/docs` (un sitio por materia, que es como está
+  armado el resto); `--docs <subruta>` lo fuerza. Dos ajustes que salieron de
+  importar un sitio suelto:
+  - Los **enlaces absolutos** se prueban con y sin el prefijo del `routeBasePath`
+    (`/docs`) y del slug, porque ahí la instancia cuelga de la raíz de la URL y no
+    de una subcarpeta.
+  - Si **no hay `static/`** se avisa una vez, en vez de listar los assets
+    absolutos uno por uno en `SIN RESOLVER` sin decir por qué.
+- **`--publicar`** deja la colección publicada al importarla. El default sigue
+  siendo **borrador**: publicar es la decisión que quiere un humano enfrente.
 - **El cálculo de calificaciones es ahora UNO solo** (`@tc2005b/evaluacion`), no
   cuatro copias. Estaba duplicado en el API, la malla del profesor, el export
   XLSX y el dashboard del alumno, y las copias habían divergido —el bug de
