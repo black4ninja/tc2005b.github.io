@@ -46,7 +46,9 @@
 
 /* Cada colección: enlace truncado a una sola línea con … */
 .link {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   padding: 8px 12px;
   border-radius: 8px;
   color: var(--text-secondary);
@@ -66,4 +68,21 @@
   padding: 8px 12px;
   font-size: 13px;
   color: var(--text-secondary);
+}
+
+/* El texto trunca; el icono no. */
+.linkLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Enlace interno activo (Páginas/Competencias de la colección que se está viendo). */
+.linkActive,
+.linkActive:hover {
+  background: var(--sidebar-active-bg, #eef2ff);
+  color: var(--sidebar-active-color, #4f46e5);
+  font-weight: 600;
 }

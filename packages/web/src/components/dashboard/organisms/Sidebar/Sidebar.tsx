@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useMatch } from 'react-router';
+import { Link, useMatch, useSearchParams } from 'react-router';
 import NavItem from '../../molecules/NavItem/NavItem';
 import DocusMenu, { type DocusLink } from '../../molecules/DocusMenu/DocusMenu';
 import Icon from '../../atoms/Icon/Icon';
@@ -22,8 +22,18 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const grupoMatchExact = useMatch('/admin/grupos/:id');
   const grupoMatchSub = useMatch('/admin/grupos/:id/*');
   const grupoMatch = grupoMatchExact || grupoMatchSub;
-  const isGrupoDetail = !!grupoMatch;
-  const grupoId = grupoMatch?.params.id;
+
+  // Las Páginas y Competencias de un grupo viven en pantallas globales
+  // (/admin/paginas, /admin/competencias) filtradas por colección. Sin esto, al
+  // entrar ahí desde el menú del grupo el sidebar volvería al menú admin y se
+  // perdería la navegación del grupo. `?grupo=` conserva el contexto.
+  const [params] = useSearchParams();
+  // Solo para el admin: el menú del alumno no tiene modo "detalle de grupo", y un
+  // `?grupo=` en su URL no debe cambiarle el sidebar.
+  const grupoDeQuery = role === 'admin' ? params.get('grupo') : null;
+
+  const grupoId = grupoMatch?.params.id ?? grupoDeQuery ?? undefined;
+  const isGrupoDetail = !!grupoId;
 
   // Colección abierta: el sidebar se vuelve el árbol de páginas (mismo patrón
   // contextual que el detalle de grupo). Los datos vienen del provider, que los
@@ -85,19 +95,46 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             id: string;
             name?: string;
             urlAgendaEntrevistas?: string | null;
-            colecciones?: { slug: string; nombre: string; clave: string | null }[];
+            colecciones?: { id: string; slug: string; nombre: string; clave: string | null }[];
           }) => g.id === grupoId,
         );
         if (found?.name) setGrupoName(found.name);
         setAgendaGrupoHref(found?.urlAgendaEntrevistas ?? null);
 
-        // Documentación del grupo = sus colecciones del CMS Contenidos.
-        const links: DocusLink[] = (found?.colecciones ?? []).map(
-          (c: { slug: string; nombre: string; clave: string | null }) => ({
-            slug: c.slug,
-            label: `${c.clave || c.slug.toUpperCase()} — ${c.nombre}`,
-            href: `/contenidos/${c.slug}/`,
-          }),
+        // Por cada colección del grupo, sus tres contenidos: la documentación
+        // (el visor, externo) y sus Páginas y Competencias (pantallas del admin,
+        // ya filtradas por esa colección).
+        //
+        // La etiqueta lleva la clave delante — "TC2005B — Páginas" — porque con
+        // más de una colección asignada, "Páginas" a secas no dice de cuál.
+        const links: DocusLink[] = (found?.colecciones ?? []).flatMap(
+          (c: { id: string; slug: string; nombre: string; clave: string | null }) => {
+            const clave = c.clave || c.slug.toUpperCase();
+            return [
+              {
+                key: `${c.slug}-doc`,
+                label: `${clave} — Documentación`,
+                href: `/contenidos/${c.slug}/`,
+                externo: true,
+                icono: 'menu_book',
+              },
+              // `grupo=` no filtra nada: mantiene el contexto. Sin él, al salir
+              // a /admin/paginas el sidebar dejaría de estar en modo grupo y
+              // perderías su navegación justo al usarla.
+              {
+                key: `${c.slug}-paginas`,
+                label: `${clave} — Páginas`,
+                href: `/admin/paginas?coleccion=${c.id}&grupo=${grupoId}`,
+                icono: 'article',
+              },
+              {
+                key: `${c.slug}-competencias`,
+                label: `${clave} — Competencias`,
+                href: `/admin/competencias?coleccion=${c.id}&grupo=${grupoId}`,
+                icono: 'emoji_events',
+              },
+            ];
+          },
         );
         setDocusLinks(links);
       })

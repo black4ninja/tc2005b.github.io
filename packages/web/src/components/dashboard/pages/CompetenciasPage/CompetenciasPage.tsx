@@ -53,6 +53,10 @@ export default function CompetenciasPage() {
   // de Contenidos llega aquí ya filtrada, y el enlace se puede compartir.
   const [searchParams] = useSearchParams();
   const filtroColeccion = searchParams.get('coleccion') ?? '';
+  // Igual que en Páginas: si se llegó desde un grupo, volver devuelve al grupo.
+  const grupoOrigen = searchParams.get('grupo');
+  const volverA = grupoOrigen ? `/admin/grupos/${grupoOrigen}` : '/admin/contenidos';
+  const volverLabel = grupoOrigen ? 'Grupo' : 'Contenidos';
 
   const coleccionActiva = useMemo(
     () => colecciones.find((c) => c.id === filtroColeccion) ?? null,
@@ -323,9 +327,9 @@ export default function CompetenciasPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         {coleccionActiva && (
-          <Link to="/admin/contenidos" className={styles.volver}>
+          <Link to={volverA} className={styles.volver}>
             <span className="material-icons">arrow_back</span>
-            <span>Contenidos</span>
+            <span>{volverLabel}</span>
           </Link>
         )}
         <h1 className={styles.pageTitle}>

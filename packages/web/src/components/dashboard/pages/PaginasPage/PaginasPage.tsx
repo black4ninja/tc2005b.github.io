@@ -44,6 +44,11 @@ export default function PaginasPage() {
   // enlace se puede compartir o recargar sin perder el filtro.
   const [searchParams, setSearchParams] = useSearchParams();
   const filtroColeccion = searchParams.get('coleccion') ?? '';
+  // Si se llegó desde el menú de un grupo, volver debe devolver AL GRUPO, no a
+  // Contenidos: si no, se sale del contexto en el que estabas trabajando.
+  const grupoOrigen = searchParams.get('grupo');
+  const volverA = grupoOrigen ? `/admin/grupos/${grupoOrigen}` : '/admin/contenidos';
+  const volverLabel = grupoOrigen ? 'Grupo' : 'Contenidos';
 
   function setFiltroColeccion(valor: string) {
     setSearchParams(valor ? { coleccion: valor } : {}, { replace: true });
@@ -382,9 +387,9 @@ export default function PaginasPage() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <Link to="/admin/contenidos" className={styles.volver}>
+        <Link to={volverA} className={styles.volver}>
           <span className="material-icons">arrow_back</span>
-          <span>Contenidos</span>
+          <span>{volverLabel}</span>
         </Link>
         <h1 className={styles.pageTitle}>
           Páginas
