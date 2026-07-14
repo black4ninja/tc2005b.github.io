@@ -8,6 +8,15 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **`yarn test` deja de salir siempre en rojo.** Sin configuración propia, vitest
+  recorría todo el repo y arrastraba los `.test.js` de `deprecated/` —ejercicios
+  de un curso de JS archivados ahí, ajenos al proyecto—, y uno de ellos importa un
+  archivo que no existe. La suite terminaba en rojo aunque los tests reales
+  pasaran, con lo que dejaba de servir como señal: cuando algo se rompiera de
+  verdad, el rojo se habría visto igual. `vitest.config.ts` acota la búsqueda a
+  `packages/`. De paso, los conteos que se venían reportando estaban inflados: de
+  los 195 tests, **139 eran del curso archivado**; la suite real son **56** en 5
+  archivos.
 - **Las Actividades de Evaluación (la plantilla) pertenecen a una colección** y
   dejan de ser una lista global. `copiarPlantilla` estampaba la plantilla ENTERA
   en cualquier grupo, fuera de su materia o no; ahora copia solo las de las
