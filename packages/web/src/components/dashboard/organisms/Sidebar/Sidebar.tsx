@@ -133,6 +133,12 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
                 href: `/admin/competencias?coleccion=${c.id}&grupo=${grupoId}`,
                 icono: 'emoji_events',
               },
+              {
+                key: `${c.slug}-actividades`,
+                label: `${clave} — Actividades`,
+                href: `/admin/actividades?coleccion=${c.id}&grupo=${grupoId}`,
+                icono: 'assignment',
+              },
             ];
           },
         );

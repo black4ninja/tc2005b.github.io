@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams, Link } from 'react-router';
 import { confirmar } from '../../../../utils/dialogos';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
@@ -7,6 +8,7 @@ import Modal from '../../atoms/Modal/Modal';
 import DashButton from '../../atoms/DashButton/DashButton';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import type { ActividadTipo } from '@/types/calendario';
+import type { ColeccionRef } from '../../../../types/contenidos';
 import styles from './ActividadesPage.module.css';
 
 interface ActividadEvaluacionData {
@@ -16,6 +18,8 @@ interface ActividadEvaluacionData {
   aprendizajePlaneado: number;
   semanaPlaneada: number;
   orden: number;
+  coleccionId?: string | null;
+  coleccion?: { id: string; nombre: string | null; slug: string | null; clave: string | null } | null;
 }
 
 const API_BASE = '/api';
@@ -44,6 +48,7 @@ interface FormData {
   tipo: ActividadTipo;
   aprendizajePlaneado: number;
   semanaPlaneada: number;
+  coleccionId: string;
 }
 
 const EMPTY_FORM: FormData = {
@@ -51,12 +56,33 @@ const EMPTY_FORM: FormData = {
   tipo: 'actividad',
   aprendizajePlaneado: 0,
   semanaPlaneada: 0,
+  coleccionId: '',
 };
 
 export default function ActividadesPage() {
   const { sessionToken } = useAuth();
 
   const [data, setData] = useState<ActividadEvaluacionData[]>([]);
+  const [colecciones, setColecciones] = useState<ColeccionRef[]>([]);
+
+  // El filtro por colección vive en la URL: la acción "Actividades" de la tabla
+  // de Contenidos llega aquí ya filtrada, y el enlace se puede compartir.
+  const [searchParams] = useSearchParams();
+  const filtroColeccion = searchParams.get('coleccion') ?? '';
+  // Si se llegó desde el menú de un grupo, volver debe devolver AL GRUPO.
+  const grupoOrigen = searchParams.get('grupo');
+  const volverA = grupoOrigen ? `/admin/grupos/${grupoOrigen}` : '/admin/contenidos';
+  const volverLabel = grupoOrigen ? 'Grupo' : 'Contenidos';
+
+  const coleccionActiva = useMemo(
+    () => colecciones.find((c) => c.id === filtroColeccion) ?? null,
+    [colecciones, filtroColeccion],
+  );
+  const dataFiltrada = useMemo(
+    () => (filtroColeccion ? data.filter((a) => a.coleccionId === filtroColeccion) : data),
+    [data, filtroColeccion],
+  );
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -69,6 +95,19 @@ export default function ActividadesPage() {
     'Content-Type': 'application/json',
     'x-session-token': sessionToken ?? '',
   };
+
+  const fetchColecciones = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/colecciones`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) return;
+      const json = await res.json();
+      setColecciones(json.colecciones ?? []);
+    } catch {
+      // no crítico: sin colecciones el form no deja crear, que es lo correcto
+    }
+  }, [sessionToken]);
 
   const fetchActividades = useCallback(async () => {
     try {
@@ -88,11 +127,14 @@ export default function ActividadesPage() {
 
   useEffect(() => {
     fetchActividades();
-  }, [fetchActividades]);
+    fetchColecciones();
+  }, [fetchActividades, fetchColecciones]);
 
   function openCreate() {
     setEditItem(undefined);
-    setForm({ ...EMPTY_FORM });
+    // Si se entró filtrando por una colección, se preselecciona: es la que se
+    // quiere el 99% de las veces.
+    setForm({ ...EMPTY_FORM, coleccionId: filtroColeccion });
     setShowModal(true);
   }
 
@@ -103,6 +145,7 @@ export default function ActividadesPage() {
       tipo: item.tipo,
       aprendizajePlaneado: item.aprendizajePlaneado,
       semanaPlaneada: item.semanaPlaneada,
+      coleccionId: item.coleccionId ?? '',
     });
     setShowModal(true);
   }
@@ -114,6 +157,10 @@ export default function ActividadesPage() {
 
   async function handleSave() {
     if (!form.nombre.trim()) return;
+    if (!form.coleccionId) {
+      setError('La colección es requerida: sin ella la actividad no se copia a ningún grupo');
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -181,6 +228,19 @@ export default function ActividadesPage() {
         );
       },
     }),
+    // Solo en la vista global: filtrando, la colección ya está en el título.
+    ...(coleccionActiva
+      ? []
+      : [
+          columnHelper.accessor('coleccion', {
+            header: 'Colección',
+            cell: (info) => {
+              const col = info.getValue();
+              if (!col) return <span style={{ color: 'var(--dash-danger)' }}>Sin asignar</span>;
+              return <span>{col.clave ?? col.slug}</span>;
+            },
+          }),
+        ]),
     columnHelper.accessor('nombre', {
       header: 'Actividad',
       cell: (info) => <span className={styles.nombreCell}>{info.getValue()}</span>,
@@ -202,7 +262,22 @@ export default function ActividadesPage() {
 
   return (
     <div className={styles.page}>
-      <h1 className={styles.pageTitle}>Actividades de Evaluación</h1>
+      <div className={styles.header}>
+        {coleccionActiva && (
+          <Link to={volverA} className={styles.volver}>
+            <span className="material-icons">arrow_back</span>
+            <span>{volverLabel}</span>
+          </Link>
+        )}
+        <h1 className={styles.pageTitle}>
+          Actividades de Evaluación
+          {coleccionActiva && (
+            <span className={styles.pageTitleSub}>
+              {coleccionActiva.clave ?? coleccionActiva.slug} — {coleccionActiva.nombre}
+            </span>
+          )}
+        </h1>
+      </div>
 
       {error && <div className={styles.error}>{error}</div>}
 
@@ -212,7 +287,7 @@ export default function ActividadesPage() {
         <AdminTable
           title="Plantilla de Malla de Evaluación"
           columns={columns}
-          data={data}
+          data={dataFiltrada}
           onAdd={openCreate}
           addLabel="Agregar actividad"
           searchPlaceholder="Buscar actividad..."
@@ -228,6 +303,21 @@ export default function ActividadesPage() {
         title={editItem ? 'Editar actividad' : 'Agregar actividad'}
       >
         <div className={styles.form}>
+          <label className={styles.formLabel}>
+            Colección (materia) *
+            <select
+              className={styles.formInput}
+              value={form.coleccionId}
+              onChange={(e) => { setForm((f) => ({ ...f, coleccionId: e.target.value })); setError(''); }}
+            >
+              <option value="">Selecciona una colección…</option>
+              {colecciones.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.clave ? `${c.clave} — ${c.nombre}` : c.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className={styles.formLabel}>
             Nombre
             <input

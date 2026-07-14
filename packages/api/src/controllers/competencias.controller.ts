@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { Competencia } from '../models/Competencia.js';
-import { coleccionesDeGrupo } from '../services/competencias.service.js';
+import { coleccionesDeGrupo } from '../services/grupo-colecciones.service.js';
 
 /** Resuelve un coleccionId a un pointer VALIDADO. `null` si no existe. */
 async function resolverColeccion(coleccionId: string): Promise<Parse.Object | null> {

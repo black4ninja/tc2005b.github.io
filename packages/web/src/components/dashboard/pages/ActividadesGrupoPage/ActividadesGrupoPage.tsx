@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { confirmar } from '../../../../utils/dialogos';
+import { confirmar, avisar } from '../../../../utils/dialogos';
 import { useParams, useNavigate } from 'react-router';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
@@ -166,9 +166,18 @@ export default function ActividadesGrupoPage() {
         method: 'POST',
         headers,
       });
+      const json = await res.json();
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || 'Error al copiar plantilla');
+        throw new Error(json.message || 'Error al copiar plantilla');
+      }
+      // Copiar es ahora incremental (antes daba 409 si el grupo ya tenía algo).
+      // Sin este aviso, volver a copiar cuando ya está todo no daría ninguna
+      // señal: parecería que el botón no hizo nada.
+      if (json.copiadas === 0) {
+        await avisar({
+          titulo: 'No había nada nuevo que copiar',
+          texto: `Las ${json.omitidas} actividades de la plantilla de este grupo ya estaban.`,
+        });
       }
       await fetchActividades();
     } catch (err: any) {
