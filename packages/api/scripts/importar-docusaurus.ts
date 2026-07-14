@@ -1,8 +1,8 @@
 /**
  * Importador Docusaurus → CMS "Contenidos" (US-6, design §6).
  *
- * Traduce una instancia (packages/docusaurus/docs/<slug>) a una Coleccion
- * preservando el contenido y la navegación por índice:
+ * Traduce una instancia de Docusaurus a una Coleccion nueva, preservando el
+ * contenido y la navegación por índice:
  *   carpeta + _category_.json → Documento tipo categoria (label, position)
  *   archivo .md + sidebar_position → Documento md PUBLICADO (v1, render+toc)
  *   imágenes relativas junto al .md → Recurso del documento (recurso:)
@@ -15,11 +15,17 @@
  *
  * Uso (requiere el API corriendo, como los demás scripts):
  *   cd packages/api
- *   ./node_modules/.bin/tsx scripts/importar-docusaurus.ts --slug tc2005b --clave TC2005B \
- *       --nombre "Construcción de software y toma de decisiones" [--dry-run]
+ *   ./node_modules/.bin/tsx scripts/importar-docusaurus.ts --raiz ~/ruta/al/sitio \
+ *       --slug tc2008b --clave TC2008B --nombre "Modelación de sistemas…" [--dry-run]
+ *
+ * --raiz es la raíz del sitio Docusaurus (la carpeta con docs/ y static/): ya
+ * no vive en este repo, el corte de US-7 retiró packages/docusaurus. La
+ * instancia se busca en <raiz>/docs/<slug> y, si no está, en <raiz>/docs
+ * (sitio de una sola materia); --docs <subruta> lo fuerza.
  *
  * La colección NO debe existir (idempotencia simple: bórrala del admin para
  * reintentar). --dry-run no escribe nada y imprime el reporte de paridad.
+ * --publicar la deja publicada en vez de borrador.
  */
 import fs from 'fs';
 import path from 'path';
@@ -34,7 +40,6 @@ import { DocumentoVersion } from '../src/models/DocumentoVersion.js';
 import { Recurso } from '../src/models/Recurso.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const RAIZ_DOCUSAURUS = path.resolve(__dirname, '../../docusaurus');
 // Fuera de src/: tsc no copia .json a dist y producción corre desde dist/.
 // src/middlewares y dist/middlewares resuelven ambos a esta misma ruta.
 const RUTA_REDIRECTS = path.resolve(__dirname, '../data/redirects-docs.json');
@@ -45,14 +50,38 @@ function arg(nombre: string): string | undefined {
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 const dryRun = process.argv.includes('--dry-run');
+// Por defecto la colección queda en BORRADOR: el admin valida la paridad y la
+// publica. --publicar la deja visible de una (sigue sin verla nadie hasta que
+// se asigne a un grupo).
+const publicar = process.argv.includes('--publicar');
 const slugColeccion = arg('slug');
 const claveColeccion = (arg('clave') ?? slugColeccion ?? '').toUpperCase();
 const nombreColeccion = arg('nombre') ?? claveColeccion;
+const raizArg = arg('raiz');
 
 if (!slugColeccion) {
   console.error('Falta --slug <instancia> (p. ej. tc2005b)');
   process.exit(1);
 }
+if (!raizArg) {
+  console.error('Falta --raiz <ruta>: la raíz del sitio Docusaurus (la carpeta con docs/ y static/).');
+  process.exit(1);
+}
+
+/** Raíz del sitio Docusaurus. Ya no vive en el repo — el corte de US-7 la retiró. */
+const RAIZ_DOCUSAURUS = path.resolve(process.cwd(), raizArg);
+/**
+ * Carpeta de la instancia. Hay dos layouts en la práctica:
+ *   multi-instancia (el viejo packages/docusaurus) → <raiz>/docs/<slug>
+ *   sitio suelto (un repo por materia)             → <raiz>/docs
+ * Se detecta cuál aplica; --docs <subruta> fuerza la carpeta si hiciera falta.
+ */
+const DIR_DOCS = arg('docs')
+  ? path.resolve(RAIZ_DOCUSAURUS, arg('docs')!)
+  : fs.existsSync(path.join(RAIZ_DOCUSAURUS, 'docs', slugColeccion))
+    ? path.join(RAIZ_DOCUSAURUS, 'docs', slugColeccion)
+    : path.join(RAIZ_DOCUSAURUS, 'docs');
+const DIR_STATIC = path.join(RAIZ_DOCUSAURUS, 'static');
 
 /* ── Utilidades de nombres ── */
 const EXT_ASSET = new Set([
@@ -310,22 +339,33 @@ async function reescribirCuerpo(
   const comentarios = rangosComentarios(cuerpo);
 
   const resolverInterno = (url: string): string | null => {
-    const base = url.startsWith('/')
-      ? path.join(RAIZ_DOCUSAURUS, 'docs', slugColeccion!, decodeURIComponent(url))
-      : path.resolve(dirMd, decodeURIComponent(url));
+    const decodificada = decodeURIComponent(url);
+    // Las absolutas son rutas de URL, no de disco: la instancia puede colgar
+    // del routeBasePath (/docs) y/o del slug, así que probamos con y sin.
+    const bases = (
+      url.startsWith('/')
+        ? [
+            decodificada,
+            decodificada.replace(/^\/docs(?=\/|$)/, ''),
+            decodificada.replace(new RegExp(`^/${slugColeccion}(?=/|$)`), ''),
+          ].map((u) => path.join(DIR_DOCS, u))
+        : [path.resolve(dirMd, decodificada)]
+    );
     // Candidatos: el archivo tal cual, .md/.mdx implícitos, o el índice de
     // carpeta (README/readme/index — el repo usa ambos cases).
-    const candidatos = [
-      base,
-      `${base}.md`,
-      `${base}.mdx`,
-      path.join(base, 'README.md'),
-      path.join(base, 'readme.md'),
-      path.join(base, 'index.md'),
-    ];
-    for (const c of candidatos) {
-      const destino = pathCmsPorArchivo.get(c);
-      if (destino) return destino;
+    for (const base of bases) {
+      const candidatos = [
+        base,
+        `${base}.md`,
+        `${base}.mdx`,
+        path.join(base, 'README.md'),
+        path.join(base, 'readme.md'),
+        path.join(base, 'index.md'),
+      ];
+      for (const c of candidatos) {
+        const destino = pathCmsPorArchivo.get(c);
+        if (destino) return destino;
+      }
     }
     return null;
   };
@@ -354,7 +394,7 @@ async function reescribirCuerpo(
     // 1) Asset (relativo junto al .md, o absoluto de static/)
     if (EXT_ASSET.has(ext)) {
       const abs = url.startsWith('/')
-        ? path.join(RAIZ_DOCUSAURUS, 'static', decodeURIComponent(url))
+        ? path.join(DIR_STATIC, decodeURIComponent(url))
         : path.resolve(dirMd, decodeURIComponent(url));
       const ref = await subirRecurso(abs, coleccion, url.startsWith('/') ? null : documento);
       if (ref) {
@@ -462,14 +502,22 @@ async function simularCuerpos(nodos: NodoImport[]): Promise<void> {
 
 /* ── Main ── */
 async function main() {
-  const dirInstancia = path.join(RAIZ_DOCUSAURUS, 'docs', slugColeccion!);
+  const dirInstancia = DIR_DOCS;
   if (!fs.existsSync(dirInstancia)) {
     console.error(`No existe la instancia: ${dirInstancia}`);
+    console.error('Revisa --raiz (raíz del sitio) o pasa --docs <subruta> si la instancia no está en docs/.');
     process.exit(1);
+  }
+  // Sin static/ los assets absolutos (/img/…) no resuelven: se listarían de a
+  // uno en SIN RESOLVER sin decir por qué. Mejor avisar una vez, aquí.
+  if (!fs.existsSync(DIR_STATIC)) {
+    console.warn(`⚠️  No existe ${DIR_STATIC}: los assets absolutos (/img/…) no van a resolver.\n`);
   }
 
   if (dryRun) console.log('=== DRY RUN — no se escribirá nada (no requiere servidor) ===\n');
+  console.log(`Raíz:       ${RAIZ_DOCUSAURUS}`);
   console.log(`Instancia:  ${dirInstancia}`);
+  console.log(`Static:     ${DIR_STATIC}`);
   console.log(`Colección:  ${slugColeccion} (${claveColeccion} — ${nombreColeccion})\n`);
 
   if (!dryRun) {
@@ -499,7 +547,7 @@ async function main() {
     coleccion.setNombre(nombreColeccion);
     coleccion.setSlug(slugColeccion!);
     coleccion.setClave(claveColeccion);
-    coleccion.setPublicada(false); // el admin la publica al validar la paridad
+    coleccion.setPublicada(publicar); // sin --publicar: el admin la publica al validar la paridad
     await coleccion.save(null, { useMasterKey: true });
 
     await crearDocumentos(arbol, coleccion, null);
@@ -528,7 +576,13 @@ async function main() {
   console.log(`SIN RESOLVER:          ${reporte.sinResolver.length}`);
   for (const x of reporte.sinResolver) console.log(`  ✗ ${x}`);
   console.log('==============================\n');
-  console.log(dryRun ? 'Dry-run terminado.' : `Importación terminada: la colección "${slugColeccion}" quedó como BORRADOR (publícala tras validar).`);
+  console.log(
+    dryRun
+      ? 'Dry-run terminado.'
+      : publicar
+        ? `Importación terminada: la colección "${slugColeccion}" quedó PUBLICADA (solo la ven los grupos que la tengan asignada).`
+        : `Importación terminada: la colección "${slugColeccion}" quedó como BORRADOR (publícala tras validar).`,
+  );
   process.exit(0);
 }
 
