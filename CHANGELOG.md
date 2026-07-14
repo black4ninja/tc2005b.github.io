@@ -8,6 +8,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Vista "Administradores"** en el menú del admin: una tabla con los usuarios
+  administradores dados de alta (nombre, correo, último acceso, fecha de alta).
+  Solo lectura por ahora. El endpoint `GET /admin/administradores` filtra por
+  `userType: 'admin'` y solo activos, así que **no incluye alumnos** — el censo
+  de producción son 3 admins frente a 20 alumnos, y la tabla trae solo los 3.
 - **Las páginas y las carpetas del CMS se pueden ocultar y volver a mostrar**, para
   escribir el curso completo de antemano e irlo liberando conforme avanza. El ojo
   aparece en las acciones de cada nodo del árbol, y las páginas además tienen un

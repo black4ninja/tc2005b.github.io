@@ -1,0 +1,20 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pageTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.error {
+  padding: 12px 16px;
+  background: #fdecea;
+  color: var(--dash-danger);
+  border-radius: 8px;
+  font-size: 14px;
+}

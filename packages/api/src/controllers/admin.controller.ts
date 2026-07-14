@@ -1,7 +1,38 @@
 import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import bcrypt from 'bcryptjs';
+import { BaseModel } from '../models/BaseModel.js';
 import { AppUser } from '../models/AppUser.js';
+
+/**
+ * GET /admin/administradores — lista los usuarios administradores dados de alta.
+ *
+ * Solo `userType: 'admin'` y solo activos (`queryActive`): la vista es el censo
+ * de administradores, no incluye alumnos. Sin matrícula ni grupos, que son del
+ * alumno; sí el último acceso, útil para saber quién sigue entrando.
+ */
+export async function listAdmins(_req: Request, res: Response): Promise<void> {
+  try {
+    const query = BaseModel.queryActive<AppUser>('AppUser');
+    query.equalTo('userType', 'admin');
+    query.ascending('name');
+    query.limit(1000);
+    const admins = await query.find({ useMasterKey: true });
+
+    res.json({
+      status: 'ok',
+      administradores: admins.map((a) => ({
+        id: a.id,
+        name: a.getName(),
+        email: a.getEmail(),
+        lastLogin: a.getLastLogin() ?? null,
+        createdAt: a.createdAt,
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Error al obtener administradores' });
+  }
+}
 
 export async function changeAdminPassword(req: Request, res: Response): Promise<void> {
   try {
