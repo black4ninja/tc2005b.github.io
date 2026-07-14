@@ -3,7 +3,8 @@
   flex-direction: column;
 }
 
-/* Cabecera "Contenidos": mismo look que un NavItem, pero es un botón toggle. */
+/* Cabecera de la sección: mismo look que un NavItem. Es un botón toggle, salvo
+   cuando hay una sola colección — ahí es directamente el enlace. */
 .header {
   display: flex;
   align-items: center;
@@ -18,6 +19,7 @@
   border: none;
   cursor: pointer;
   text-align: left;
+  text-decoration: none;
   transition: background 0.2s, color 0.2s;
 }
 .header:hover {
@@ -27,6 +29,14 @@
 .header.collapsed {
   justify-content: center;
   padding: 10px;
+}
+
+/* Sección aplanada a enlace directo: se marca como cualquier NavItem activo. */
+.headerActive,
+.headerActive:hover {
+  background: var(--sidebar-active-bg, #eef2ff);
+  color: var(--sidebar-active-color, #4f46e5);
+  font-weight: 600;
 }
 
 /* La etiqueta empuja el chevron al extremo derecho. */
@@ -79,7 +89,7 @@
   white-space: nowrap;
 }
 
-/* Enlace interno activo (Páginas/Competencias de la colección que se está viendo). */
+/* Enlace interno activo (la colección que se está viendo). */
 .linkActive,
 .linkActive:hover {
   background: var(--sidebar-active-bg, #eef2ff);

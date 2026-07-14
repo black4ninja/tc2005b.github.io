@@ -16,6 +16,20 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   *dentro* de `4_half_term/`: estaban rotos también en el sitio publicado.
 
 ### Changed
+- **El menú del grupo se agrupa por acción, no por colección.** "Contenidos" era
+  una sola sección con una entrada por colección **y** acción: un grupo con tres
+  materias daba una lista plana de **12 enlaces** ("TC2005B — Páginas", "TC2007B —
+  Páginas", …) que no cabía en la pantalla. Ahora son cuatro secciones —
+  **Contenido, Páginas, Competencias y Actividades**— y dentro de cada una, las
+  colecciones del grupo, etiquetadas solo con su clave (la cabecera ya dice qué
+  acción es; repetirla daba "Páginas → TC2005B — Páginas").
+  - **Con una sola colección no hay submenú:** la sección se aplana a un enlace
+    directo con el nombre de la acción. Un desplegable de un elemento es un clic
+    de más, y es el caso normal — la mayoría de los grupos tienen una materia.
+  - Sin colecciones asignadas se muestra **una** entrada que lo dice, en vez de
+    cuatro secciones vacías.
+  - `DocusMenu` pasa a llamarse `SeccionColecciones`: el nombre era herencia de
+    Docusaurus, que se retiró hace tiempo, y el componente ya no tiene nada que ver.
 - **El importador de Docusaurus dejó de depender de `packages/docusaurus`.** El
   corte de US-7 retiró ese paquete del repo, pero el script seguía leyendo su
   ruta hardcodeada: quedaba inservible para cualquier instancia nueva. Ahora
