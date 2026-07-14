@@ -128,6 +128,7 @@ export default function ContenidosPage() {
     { label: 'Abrir documentación', icon: 'account_tree', onClick: () => navigate(`/admin/contenidos/${coleccion.id}`) },
     { label: 'Páginas', icon: 'article', onClick: () => navigate(`/admin/paginas?coleccion=${coleccion.id}`) },
     { label: 'Competencias', icon: 'emoji_events', onClick: () => navigate(`/admin/competencias?coleccion=${coleccion.id}`) },
+    { label: 'Actividades', icon: 'assignment', onClick: () => navigate(`/admin/actividades?coleccion=${coleccion.id}`) },
     { label: 'Editar', icon: 'edit', onClick: () => openEdit(coleccion) },
     { label: 'Eliminar', icon: 'delete', onClick: () => handleDelete(coleccion), variant: 'danger' },
   ];
@@ -151,6 +152,10 @@ export default function ContenidosPage() {
           <Link to="/admin/competencias" className={styles.verTodas}>
             <Icon name="emoji_events" size="sm" />
             <span>Ver todas las competencias</span>
+          </Link>
+          <Link to="/admin/actividades" className={styles.verTodas}>
+            <Icon name="assignment" size="sm" />
+            <span>Ver todas las actividades</span>
           </Link>
         </div>
       </div>

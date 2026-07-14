@@ -5,7 +5,7 @@ import { Competencia } from '../models/Competencia.js';
 import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
 import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
-import { competenciasDeGrupo } from '../services/competencias.service.js';
+import { competenciasDeGrupo } from '../services/grupo-colecciones.service.js';
 
 export async function crearCompetenciasAlumno(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;

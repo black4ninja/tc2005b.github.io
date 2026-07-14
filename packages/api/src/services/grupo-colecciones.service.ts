@@ -1,12 +1,15 @@
 import Parse from 'parse/node';
 
 /**
- * Resolución de "qué competencias le tocan a un grupo".
+ * Resolución de "qué le toca a un grupo" a partir de sus colecciones.
  *
- * La cadena es: `Grupo.colecciones[]` → `Competencia.coleccion`. Vive aquí y no
- * en un controller porque la necesitan varios (crear la malla del alumno,
- * validar el plan de evaluación, poblar los selectores del admin) y si cada uno
- * la reimplementa, divergen — que es exactamente lo que ya pasó con
+ * La cadena es `Grupo.colecciones[]` → `<Entidad>.coleccion`, y hoy la recorren
+ * dos entidades: `Competencia` (de la que cuelga la malla del alumno) y
+ * `ActividadEvaluacion` (la plantilla que se estampa en el grupo).
+ *
+ * Vive aquí y no en cada controller porque la necesitan varios —crear la malla,
+ * copiar la plantilla, validar el plan, poblar los selectores del admin— y si
+ * cada uno la reimplementa, divergen: que es exactamente lo que ya pasó con
  * `recalcularCalculadas`, duplicada en dos archivos.
  */
 
@@ -58,4 +61,32 @@ export async function competenciasDeGrupo(grupoId: string): Promise<Competencias
   const competencias = await query.find({ useMasterKey: true });
 
   return { competencias, sinColecciones: false };
+}
+
+export interface PlantillasDeGrupo {
+  plantillas: Parse.Object[];
+  sinColecciones: boolean;
+}
+
+/**
+ * Plantillas de actividades de evaluación (`ActividadEvaluacion`) de las
+ * colecciones del grupo, ordenadas.
+ *
+ * Es el troquel: de aquí sale lo que `copiarPlantilla` estampa como
+ * `ActividadEvaluacionGrupo`. Nada de lo ya estampado depende de esto.
+ */
+export async function plantillasDeGrupo(grupoId: string): Promise<PlantillasDeGrupo> {
+  const colecciones = await coleccionesDeGrupo(grupoId);
+  if (colecciones.length === 0) {
+    return { plantillas: [], sinColecciones: true };
+  }
+
+  const query = new Parse.Query('ActividadEvaluacion');
+  query.equalTo('exists' as any, true as any);
+  query.containedIn('coleccion' as any, colecciones as any);
+  query.ascending('orden');
+  query.limit(1000);
+  const plantillas = await query.find({ useMasterKey: true });
+
+  return { plantillas, sinColecciones: false };
 }

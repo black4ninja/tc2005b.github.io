@@ -3,7 +3,7 @@ import Parse from 'parse/node';
 import { PlanEvaluacion } from '../models/PlanEvaluacion.js';
 import { Grupo } from '../models/Grupo.js';
 import { Competencia } from '../models/Competencia.js';
-import { competenciasDeGrupo } from '../services/competencias.service.js';
+import { competenciasDeGrupo } from '../services/grupo-colecciones.service.js';
 import { ActividadEvaluacionGrupo } from '../models/ActividadEvaluacionGrupo.js';
 import { BaseModel } from '../models/BaseModel.js';
 import type { PeriodoConfig } from '../models/PlanEvaluacion.js';
@@ -82,15 +82,28 @@ export async function createOrUpdatePlanEvaluacion(req: Request, res: Response):
       }
     }
 
-    // Validate actividad IDs exist
+    // Validar que las actividades existan Y que sean DE ESTE GRUPO.
+    //
+    // Antes solo se comprobaba la existencia: un plan podía referenciar la
+    // actividad de OTRO grupo y `computeActividadesScore` la omitiría del
+    // denominador — la nota cambiaría sin error ni log. Es el mismo agujero que
+    // ya se tapó arriba para las competencias; a las actividades no se les había
+    // aplicado el mismo razonamiento.
     const allActIds = [...new Set(periodos.flatMap((p: PeriodoConfig) => p.actividades))];
     if (allActIds.length > 0) {
       const actQuery = new Parse.Query<ActividadEvaluacionGrupo>('ActividadEvaluacionGrupo');
       actQuery.equalTo('exists' as any, true as any);
+      actQuery.equalTo('grupo' as any, grupo as any);
       actQuery.containedIn('objectId' as any, allActIds as any);
+      actQuery.limit(1000);
       const found = await actQuery.find({ useMasterKey: true });
       if (found.length !== allActIds.length) {
-        res.status(400).json({ status: 'error', message: 'Algunas actividades no existen' });
+        const encontrados = new Set(found.map((a) => a.id));
+        const fuera = allActIds.filter((id: string) => !encontrados.has(id));
+        res.status(400).json({
+          status: 'error',
+          message: `${fuera.length} actividad(es) del plan no existen o no son de este grupo.`,
+        });
         return;
       }
     }

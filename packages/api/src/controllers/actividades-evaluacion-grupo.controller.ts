@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { ActividadEvaluacionGrupo } from '../models/ActividadEvaluacionGrupo.js';
-import { ActividadEvaluacion } from '../models/ActividadEvaluacion.js';
+import { plantillasDeGrupo } from '../services/grupo-colecciones.service.js';
 import { ActividadEvaluacionAlumno } from '../models/ActividadEvaluacionAlumno.js';
 import { PlanEvaluacion } from '../models/PlanEvaluacion.js';
 import { Grupo } from '../models/Grupo.js';
@@ -334,42 +334,67 @@ export async function bulkCongelarActividades(req: Request, res: Response): Prom
   }
 }
 
+/**
+ * Estampa las plantillas de las colecciones del grupo como actividades suyas.
+ *
+ * Antes copiaba la lista GLOBAL de plantillas: todos los grupos recibían todas
+ * las actividades, fueran de su materia o no. Ahora copia solo las de sus
+ * colecciones.
+ *
+ * Y ahora es INCREMENTAL. Antes devolvía 409 si el grupo ya tenía cualquier
+ * actividad, lo que dejaba a un grupo con dos materias sin poder traer la
+ * segunda: copiaba las de la primera y quedaba bloqueado para siempre. Se
+ * deduplica por nombre —que es lo único que hay, porque la copia es por valor y
+ * no guarda referencia a su plantilla— y se informa de cuántas se omitieron.
+ */
 export async function copiarPlantilla(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
 
   try {
     const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
 
-    // Verify grupo doesn't already have actividades
+    const { plantillas, sinColecciones } = await plantillasDeGrupo(grupoId);
+
+    // Los dos vacíos se distinguen: "el grupo no tiene materia" y "la materia no
+    // tiene plantilla" son problemas distintos y se arreglan en sitios distintos.
+    if (sinColecciones) {
+      res.status(400).json({
+        status: 'error',
+        message: 'El grupo no tiene colecciones asignadas: asígnale una materia en Editar Grupo.',
+      });
+      return;
+    }
+    if (plantillas.length === 0) {
+      res.status(404).json({
+        status: 'error',
+        message: 'Las colecciones de este grupo no tienen actividades en su plantilla.',
+      });
+      return;
+    }
+
+    // Lo que el grupo ya tiene, para no duplicarlo al volver a copiar.
     const existQuery = new Parse.Query<ActividadEvaluacionGrupo>('ActividadEvaluacionGrupo');
     existQuery.equalTo('exists' as any, true as any);
     existQuery.equalTo('grupo' as any, grupoPointer as any);
-    const existCount = await existQuery.count({ useMasterKey: true });
-    if (existCount > 0) {
-      res.status(409).json({ status: 'error', message: 'El grupo ya tiene actividades de evaluación' });
+    existQuery.limit(1000);
+    const yaTiene = await existQuery.find({ useMasterKey: true });
+    const nombresExistentes = new Set(yaTiene.map((a) => a.getNombre()));
+
+    const nuevas = plantillas.filter((p) => !nombresExistentes.has(p.get('nombre')));
+    const omitidas = plantillas.length - nuevas.length;
+
+    if (nuevas.length === 0) {
+      res.json({ status: 'ok', copiadas: 0, omitidas, actividades: [] });
       return;
     }
 
-    // Get all global template actividades
-    const plantillaQuery = new Parse.Query<ActividadEvaluacion>('ActividadEvaluacion');
-    plantillaQuery.equalTo('exists' as any, true as any);
-    plantillaQuery.ascending('orden');
-    plantillaQuery.limit(1000);
-    const plantilla = await plantillaQuery.find({ useMasterKey: true });
-
-    if (plantilla.length === 0) {
-      res.status(404).json({ status: 'error', message: 'No hay actividades de evaluación en la plantilla global' });
-      return;
-    }
-
-    // Create copies for this grupo
-    const copies = plantilla.map((original) => {
+    const copies = nuevas.map((original) => {
       const copy = new ActividadEvaluacionGrupo().initDefaults();
-      copy.setNombre(original.getNombre());
-      copy.setTipo(original.getTipo());
-      copy.setAprendizajePlaneado(original.getAprendizajePlaneado());
-      copy.setSemanaPlaneada(original.getSemanaPlaneada());
-      copy.setOrden(original.getOrden());
+      copy.setNombre(original.get('nombre') ?? '');
+      copy.setTipo(original.get('tipo') ?? 'actividad');
+      copy.setAprendizajePlaneado(original.get('aprendizajePlaneado') ?? 0);
+      copy.setSemanaPlaneada(original.get('semanaPlaneada') ?? 0);
+      copy.setOrden(original.get('orden') ?? 0);
       copy.setGrupo(grupoPointer);
       return copy;
     });
@@ -378,6 +403,8 @@ export async function copiarPlantilla(req: Request, res: Response): Promise<void
 
     res.status(201).json({
       status: 'ok',
+      copiadas: copies.length,
+      omitidas,
       actividades: copies.map((a) => a.toSafeJSON()),
     });
   } catch (error) {

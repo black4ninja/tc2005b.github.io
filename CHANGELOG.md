@@ -8,6 +8,28 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **Las Actividades de Evaluación (la plantilla) pertenecen a una colección** y
+  dejan de ser una lista global. `copiarPlantilla` estampaba la plantilla ENTERA
+  en cualquier grupo, fuera de su materia o no; ahora copia solo las de las
+  colecciones del grupo. Cada colección gana una acción **"Actividades"** en la
+  tabla de Contenidos (`/admin/actividades?coleccion=<id>`), aparece en el menú
+  del grupo como "TC2005B — Actividades", y **"Actividades" se retira del menú
+  lateral**. La pantalla de Contenidos conserva "Ver todas las actividades".
+  - **Copiar la plantilla es ahora INCREMENTAL.** Antes devolvía 409 si el grupo
+    ya tenía cualquier actividad, lo que dejaba a un grupo con dos materias sin
+    poder traer la segunda: copiaba las de la primera y quedaba bloqueado para
+    siempre. Ahora deduplica por nombre y avisa de cuántas omitió.
+  - `scripts/migrate-actividades-coleccion.ts` — backfill idempotente con
+    `--dry-run`. **No toca ninguna calificación**, y esta vez es literal: la
+    plantilla es un troquel de un solo uso, se copia POR VALOR y nada de lo ya
+    estampado (274 actividades de grupo, 1482 celdas de malla) apunta a ella.
+
+### Fixed
+- **El plan de evaluación no validaba que sus actividades fueran del grupo**, solo
+  que existieran. Un plan podía referenciar la actividad de OTRO grupo y
+  `computeActividadesScore` la omitiría del denominador: **la nota cambiaría sin
+  error ni log**. Es el mismo agujero que ya se tapó para las competencias; a las
+  actividades no se les había aplicado el mismo razonamiento.
 - **Las Competencias pertenecen a una colección (materia)** y dejan de ser una
   lista global. Antes, la malla de un alumno se materializaba con **todas** las
   competencias del sistema, sin importar la materia de su grupo. Ahora se arma

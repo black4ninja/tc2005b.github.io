@@ -101,3 +101,34 @@
   gap: 8px;
   padding-top: 8px;
 }
+
+/* Cabecera: vuelta (a Contenidos o al grupo) + de qué colección son. */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+.volver:hover {
+  color: var(--text-primary);
+}
+.volver .material-icons {
+  font-size: 18px;
+}
+
+.pageTitleSub {
+  margin-left: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
