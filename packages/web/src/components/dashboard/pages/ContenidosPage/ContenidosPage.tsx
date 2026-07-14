@@ -136,14 +136,23 @@ export default function ContenidosPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.pageTitle}>Contenidos</h1>
-        {/* Sin esto, al quitar "Páginas" del menú lateral solo se llegaría a las
-            páginas YA filtradas por colección: se perdería la vista de conjunto
-            (todas, filtro por etiqueta) y las páginas sin colección quedarían
-            inalcanzables. */}
-        <Link to="/admin/paginas" className={styles.verTodas}>
-          <Icon name="article" size="sm" />
-          <span>Ver todas las páginas</span>
-        </Link>
+        {/* Páginas y Competencias salieron del menú lateral: sin estas salidas
+            solo se llegaría a listas YA filtradas por colección, y se perderían
+            tres cosas.
+              · La vista de conjunto (filtro por etiqueta cruzando colecciones).
+              · Las páginas/competencias SIN colección, que quedarían inalcanzables.
+              · Las "Indicaciones para Malla", que son GLOBALES (no tienen
+                colección) y por eso solo se muestran en la vista sin filtrar. */}
+        <div className={styles.headerLinks}>
+          <Link to="/admin/paginas" className={styles.verTodas}>
+            <Icon name="article" size="sm" />
+            <span>Ver todas las páginas</span>
+          </Link>
+          <Link to="/admin/competencias" className={styles.verTodas}>
+            <Icon name="emoji_events" size="sm" />
+            <span>Ver todas las competencias</span>
+          </Link>
+        </div>
       </div>
 
       {error && <div className={styles.error}>{error}</div>}
