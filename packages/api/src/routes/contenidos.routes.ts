@@ -19,6 +19,7 @@ import {
 } from '../controllers/cms-documentos.controller.js';
 import {
   publicarDocumento,
+  setPublicacionDocumento,
   listVersiones,
   getVersion,
   restaurarVersion,
@@ -75,6 +76,8 @@ router.put('/admin/documentos/:docId/borrador', saveBorrador);
 
 // Publicar + historial de versiones (US-2)
 router.post('/admin/documentos/:docId/publicar', publicarDocumento);
+// Visibilidad (publicar/ocultar sin tocar versiones): liberar contenido por etapas.
+router.put('/admin/documentos/:docId/publicacion', setPublicacionDocumento);
 router.get('/admin/documentos/:docId/versiones', listVersiones);
 router.get('/admin/documentos/:docId/versiones/:versionId', getVersion);
 router.post('/admin/documentos/:docId/versiones/:versionId/restaurar', restaurarVersion);

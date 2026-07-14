@@ -42,12 +42,13 @@ interface NodoProps {
   onCancelarRename: () => void;
   onCambiarSlug: (nodo: NodoPlano) => void;
   onEliminar: (nodo: NodoPlano) => void;
+  onTogglePublicacion: (nodo: NodoPlano) => void;
 }
 
 function Nodo({
   nodo, activo, expandido, profundidadProyectada, editando,
   onSeleccionar, onToggle, onEmpezarRename, onRenombrar, onCancelarRename,
-  onCambiarSlug, onEliminar,
+  onCambiarSlug, onEliminar, onTogglePublicacion,
 }: NodoProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: nodo.id,
@@ -118,6 +119,23 @@ function Nodo({
           <span className={styles.titulo}>{nodo.titulo}</span>
 
           <span className={styles.acciones}>
+            {/* Las categorías no se publican: se ven si tienen alguna página
+                publicada debajo. Darles un ojo prometería un control que no existe. */}
+            {!nodo.esCategoria && (
+              <button
+                type="button"
+                className={styles.accion}
+                title={
+                  nodo.publicado
+                    ? 'Ocultar a los alumnos (conserva el contenido)'
+                    : 'Mostrar a los alumnos'
+                }
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); onTogglePublicacion(nodo); }}
+              >
+                <Icon name={nodo.publicado ? 'visibility' : 'visibility_off'} size="sm" />
+              </button>
+            )}
             <button
               type="button"
               className={styles.accion}
@@ -141,7 +159,9 @@ function Nodo({
           {!nodo.esCategoria && (
             <span
               className={nodo.publicado ? styles.dotPub : styles.dotBorr}
-              title={nodo.publicado ? 'Publicada' : 'Borrador'}
+              // "Oculta", no "Borrador": el borrador es OTRA cosa (los cambios
+              // sin publicar de una versión). Confundirlos aquí sería fatal.
+              title={nodo.publicado ? 'Publicada — la ven los alumnos' : 'Oculta — no la ven los alumnos'}
             />
           )}
         </>
@@ -161,7 +181,10 @@ function Nodo({
  *   se puede colgar de una categoría.
  */
 export default function ArbolContenidos({ coleccionId }: { coleccionId: string }) {
-  const { arbol, documentos, coleccion, cargando, mover, renombrar, cambiarSlug, eliminar } = useColeccionArbol();
+  const {
+    arbol, documentos, coleccion, cargando,
+    mover, renombrar, cambiarSlug, eliminar, cambiarPublicacion,
+  } = useColeccionArbol();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const seleccionadoId = searchParams.get('doc');
@@ -283,6 +306,24 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
     if (err) setError(err);
   }
 
+  /**
+   * Mostrar/ocultar a los alumnos. Solo se confirma al OCULTAR: es la dirección
+   * que le quita algo a alguien que quizá ya lo tenía abierto.
+   */
+  async function handleTogglePublicacion(nodo: NodoPlano) {
+    if (nodo.publicado) {
+      const ok = await confirmar({
+        titulo: `¿Ocultar «${nodo.titulo}»?`,
+        texto: 'Dejará de aparecer en el árbol de los alumnos. El contenido se conserva: '
+          + 'puedes volver a mostrarla cuando quieras y quedará igual.',
+        confirmar: 'Ocultar',
+      });
+      if (!ok) return;
+    }
+    const err = await cambiarPublicacion(nodo.id, !nodo.publicado);
+    if (err) setError(err);
+  }
+
   async function handleEliminar(nodo: NodoPlano) {
     if (nodo.tieneHijos) {
       setError(`"${nodo.titulo}" tiene páginas dentro. Muévelas o elimínalas primero.`);
@@ -382,6 +423,7 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
                 onCancelarRename={() => setEditandoId(null)}
                 onCambiarSlug={handleCambiarSlug}
                 onEliminar={handleEliminar}
+                onTogglePublicacion={handleTogglePublicacion}
               />
             ))}
           </div>
