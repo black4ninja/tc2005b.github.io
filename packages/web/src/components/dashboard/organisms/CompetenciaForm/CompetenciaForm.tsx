@@ -23,23 +23,46 @@ interface CompetenciaData {
   fechaIdealEvaluacion?: string;
   esCalculada?: boolean;
   dependencias?: DependenciaRef[];
+  coleccionId?: string | null;
 }
 
 interface CompetenciaOption {
   id: string;
   competencia: string;
   esCalculada?: boolean;
+  coleccionId?: string | null;
+}
+
+interface ColeccionOption {
+  id: string;
+  nombre: string;
+  slug: string;
+  clave: string | null;
 }
 
 interface CompetenciaFormProps {
   competencia?: CompetenciaData;
   allCompetencias?: CompetenciaOption[];
+  colecciones?: ColeccionOption[];
+  /** Preselecciona la colección (p. ej. si se entró filtrando por una). */
+  coleccionInicial?: string;
   onSave: (data: Omit<CompetenciaData, 'id'>) => void;
   onCancel: () => void;
   loading?: boolean;
 }
 
-export default function CompetenciaForm({ competencia, allCompetencias = [], onSave, onCancel, loading }: CompetenciaFormProps) {
+export default function CompetenciaForm({
+  competencia,
+  allCompetencias = [],
+  colecciones = [],
+  coleccionInicial,
+  onSave,
+  onCancel,
+  loading,
+}: CompetenciaFormProps) {
+  const [coleccionId, setColeccionId] = useState(
+    competencia?.coleccionId ?? coleccionInicial ?? '',
+  );
   const [orden, setOrden] = useState<number | ''>(competencia?.orden ?? '');
   const [nombre, setNombre] = useState(competencia?.competencia ?? '');
   const [nivel, setNivel] = useState(competencia?.nivel ?? '');
@@ -57,12 +80,22 @@ export default function CompetenciaForm({ competencia, allCompetencias = [], onS
   );
   const [error, setError] = useState('');
 
-  // Filter: only show direct (non-calculated) competencias, exclude self
+  // Dependencias posibles: directas, no ella misma, y **de la misma colección**.
+  // Una calculada que dependiera de una competencia de otra materia quedaría sin
+  // evaluar para siempre: el alumno no tendría celda para esa dependencia. El
+  // servidor también lo rechaza; aquí simplemente no se ofrece.
   const availableDeps = allCompetencias.filter(
-    (c) => !c.esCalculada && c.id !== competencia?.id,
+    (c) =>
+      !c.esCalculada &&
+      c.id !== competencia?.id &&
+      (c.coleccionId ?? '') === coleccionId,
   );
 
   function handleSubmit() {
+    if (!coleccionId) {
+      setError('La colección es requerida: sin ella la competencia no aparece en ninguna malla');
+      return;
+    }
     if (!nombre.trim()) {
       setError('La competencia es requerida');
       return;
@@ -77,6 +110,7 @@ export default function CompetenciaForm({ competencia, allCompetencias = [], onS
     }
     setError('');
     onSave({
+      coleccionId,
       orden: orden !== '' ? Number(orden) : undefined,
       competencia: nombre.trim(),
       nivel: nivel.trim(),
@@ -101,6 +135,31 @@ export default function CompetenciaForm({ competencia, allCompetencias = [], onS
 
   return (
     <div className={styles.form}>
+      <div className={styles.field}>
+        <label className={styles.label}>Colección (materia) *</label>
+        <select
+          className={styles.select}
+          value={coleccionId}
+          onChange={(e) => {
+            // Al cambiar de colección, las dependencias elegidas pueden haber
+            // quedado fuera: se limpian en vez de guardarse inválidas.
+            setColeccionId(e.target.value);
+            setSelectedDeps([]);
+            setError('');
+          }}
+          disabled={loading}
+        >
+          <option value="">Selecciona una colección…</option>
+          {colecciones.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.clave ? `${c.clave} — ${c.nombre}` : c.nombre}
+            </option>
+          ))}
+        </select>
+        <span className={styles.hint}>
+          La malla de un alumno se arma con las competencias de las colecciones de su grupo.
+        </span>
+      </div>
       <TextInput
         label="Orden"
         placeholder="Ej: 0"

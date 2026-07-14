@@ -8,6 +8,29 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **Las Competencias pertenecen a una colección (materia)** y dejan de ser una
+  lista global. Antes, la malla de un alumno se materializaba con **todas** las
+  competencias del sistema, sin importar la materia de su grupo. Ahora se arma
+  con las de las colecciones de su grupo (`Grupo.colecciones` →
+  `Competencia.coleccion`), y cada colección gana una acción **"Competencias"** en
+  la tabla de Contenidos que abre las suyas ya filtradas
+  (`/admin/competencias?coleccion=<id>`).
+  - **El plan de evaluación y las entrevistas solo ofrecen —y aceptan— las
+    competencias del grupo.** `PlanEvaluacion.periodos[].competencias` son ids
+    sueltos sin FK: si un periodo referenciara una competencia de otra materia, el
+    alumno no tendría celda para ella y `computeCompetenciasScore` la omitiría del
+    promedio — **la nota cambiaría sin que nadie tocara nada**. Ahora se valida la
+    pertenencia, no solo la existencia.
+  - **Una competencia calculada solo puede depender de competencias de su misma
+    colección.** Si dependiera de una de otra materia, el alumno no tendría celda
+    para esa dependencia y la calculada quedaría sin evaluar **para siempre, sin
+    error ni log**. Se valida en el servidor y ni siquiera se ofrece en el form.
+  - **Crear una malla sin colecciones ya no falla en silencio**: si el grupo no
+    tiene materia asignada, el error lo dice y manda a Editar Grupo, en vez de
+    dejar una malla vacía.
+  - `scripts/migrate-competencias-coleccion.ts` — backfill idempotente con
+    `--dry-run`. **No toca ninguna calificación**: las 198 celdas de malla, los
+    planes y las entrevistas siguen apuntando a las mismas competencias.
 - **Las Páginas se alcanzan desde Contenidos**, que es donde viven (cada `Pagina`
   pertenece a una `Coleccion`). Cada colección gana una acción **"Páginas"** que
   abre las suyas **ya filtradas**; el filtro vive ahora en la URL

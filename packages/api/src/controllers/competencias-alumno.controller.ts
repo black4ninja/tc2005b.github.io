@@ -5,6 +5,7 @@ import { Competencia } from '../models/Competencia.js';
 import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
 import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
+import { competenciasDeGrupo } from '../services/competencias.service.js';
 
 export async function crearCompetenciasAlumno(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
@@ -12,16 +13,26 @@ export async function crearCompetenciasAlumno(req: Request, res: Response): Prom
   try {
     const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
 
-    // Fetch competencias activas
-    const compQuery = new Parse.Query<Competencia>('Competencia');
-    compQuery.equalTo('exists' as any, true as any);
-    compQuery.equalTo('active' as any, true as any);
-    compQuery.ascending('orden');
-    compQuery.limit(1000);
-    const competencias = await compQuery.find({ useMasterKey: true });
+    // La malla se materializa SOLO con las competencias de las colecciones del
+    // grupo. Antes se usaba la lista global: todos los grupos recibían todas las
+    // competencias, incluso las de otra materia.
+    const { competencias, sinColecciones } = await competenciasDeGrupo(grupoId);
 
+    // Los dos vacíos se distinguen a propósito: "el grupo no tiene materia" y
+    // "la materia no tiene competencias" son problemas distintos, y un mensaje
+    // genérico manda al admin a buscar en el sitio equivocado.
+    if (sinColecciones) {
+      res.status(400).json({
+        status: 'error',
+        message: 'El grupo no tiene colecciones asignadas: asígnale una materia en Editar Grupo para poder crear su malla.',
+      });
+      return;
+    }
     if (competencias.length === 0) {
-      res.status(404).json({ status: 'error', message: 'No hay competencias activas' });
+      res.status(404).json({
+        status: 'error',
+        message: 'Las colecciones de este grupo no tienen competencias activas.',
+      });
       return;
     }
 

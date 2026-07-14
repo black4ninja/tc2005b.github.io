@@ -97,11 +97,42 @@ export class Competencia extends BaseModel {
     this.set('dependencias', deps);
   }
 
+  /**
+   * Colección (materia) a la que pertenece la competencia — pointer, nunca string.
+   *
+   * NO es decorativo: la malla de un alumno se materializa solo con las
+   * competencias de las colecciones de su grupo (`Grupo.colecciones`). Una
+   * competencia sin colección no le llega a nadie.
+   *
+   * Una competencia CALCULADA solo puede depender de competencias de SU MISMA
+   * colección: si dependiera de una de otra, el alumno no tendría celda para esa
+   * dependencia y la calculada quedaría sin evaluar para siempre, en silencio.
+   * Lo valida `competencias.controller.ts`.
+   */
+  getColeccion(): Parse.Object | undefined {
+    return this.get('coleccion');
+  }
+  setColeccion(coleccion: Parse.Object): void {
+    this.set('coleccion', coleccion);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     const deps = this.getDependencias();
+    const coleccion = this.getColeccion();
+    const coleccionActiva = coleccion && coleccion.get('exists') !== false ? coleccion : null;
     return {
       id: this.id,
       competencia: this.getCompetencia(),
+      coleccionId: coleccionActiva?.id ?? null,
+      // Requiere query.include('coleccion') para traer nombre/clave.
+      coleccion: coleccionActiva
+        ? {
+            id: coleccionActiva.id,
+            nombre: coleccionActiva.get('nombre') ?? null,
+            slug: coleccionActiva.get('slug') ?? null,
+            clave: coleccionActiva.get('clave') ?? null,
+          }
+        : null,
       nivel: this.getNivel(),
       descripcionNivel: this.getDescripcionNivel(),
       guiaEvidencias: this.getGuiaEvidencias(),

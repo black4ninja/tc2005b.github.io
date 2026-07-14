@@ -3,6 +3,7 @@ import Parse from 'parse/node';
 import { PlanEvaluacion } from '../models/PlanEvaluacion.js';
 import { Grupo } from '../models/Grupo.js';
 import { Competencia } from '../models/Competencia.js';
+import { competenciasDeGrupo } from '../services/competencias.service.js';
 import { ActividadEvaluacionGrupo } from '../models/ActividadEvaluacionGrupo.js';
 import { BaseModel } from '../models/BaseModel.js';
 import type { PeriodoConfig } from '../models/PlanEvaluacion.js';
@@ -53,15 +54,30 @@ export async function createOrUpdatePlanEvaluacion(req: Request, res: Response):
     const grupoQuery = BaseModel.queryActive<Grupo>('Grupo');
     const grupo = await grupoQuery.get(grupoId, { useMasterKey: true });
 
-    // Validate competencia IDs exist
+    // Validar que las competencias existan Y que le toquen a ESTE grupo.
+    //
+    // `PlanEvaluacion.periodos[].competencias` son ids sueltos en un array JSON,
+    // sin FK. Si un periodo referenciara una competencia de otra materia, el
+    // alumno no tendría celda para ella: `computeCompetenciasScore` simplemente
+    // no la encontraría y la omitiría del promedio — la nota cambiaría sin que
+    // nadie tocara nada. Por eso se valida la pertenencia, no solo la existencia.
     const allCompIds = [...new Set(periodos.flatMap((p: PeriodoConfig) => p.competencias))];
     if (allCompIds.length > 0) {
-      const compQuery = new Parse.Query<Competencia>('Competencia');
-      compQuery.equalTo('exists' as any, true as any);
-      compQuery.containedIn('objectId' as any, allCompIds as any);
-      const found = await compQuery.find({ useMasterKey: true });
-      if (found.length !== allCompIds.length) {
-        res.status(400).json({ status: 'error', message: 'Algunas competencias no existen' });
+      const { competencias: permitidas, sinColecciones } = await competenciasDeGrupo(grupoId);
+      if (sinColecciones) {
+        res.status(400).json({
+          status: 'error',
+          message: 'El grupo no tiene colecciones asignadas: no puede tener competencias en su plan.',
+        });
+        return;
+      }
+      const permitidasIds = new Set(permitidas.map((c) => c.id!));
+      const fuera = allCompIds.filter((id: string) => !permitidasIds.has(id));
+      if (fuera.length > 0) {
+        res.status(400).json({
+          status: 'error',
+          message: `${fuera.length} competencia(s) del plan no pertenecen a las colecciones de este grupo.`,
+        });
         return;
       }
     }

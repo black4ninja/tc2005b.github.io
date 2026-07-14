@@ -281,7 +281,7 @@ export default function GrupoDetailPage() {
 
   async function fetchCompetenciasList() {
     try {
-      const res = await fetch(`${API_BASE}/admin/competencias`, {
+      const res = await fetch(`${API_BASE}/admin/competencias?grupoId=${id}`, {
         headers: { 'x-session-token': sessionToken ?? '' },
       });
       if (res.ok) {
