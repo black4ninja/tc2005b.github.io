@@ -8,6 +8,7 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorView } from '@codemirror/view';
 import { renderMarkdown } from '@tc2005b/contenido-pipeline';
 import { useAuth } from '../../../../context/AuthContext';
+import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import Modal from '../../atoms/Modal/Modal';
 import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
@@ -100,6 +101,9 @@ export default function EditorContenidoPage({
   const [mensajePublicar, setMensajePublicar] = useState('');
   const [publicando, setPublicando] = useState(false);
   const [publicarError, setPublicarError] = useState('');
+
+  const { cambiarPublicacion } = useColeccionArbol();
+  const [cambiandoVisibilidad, setCambiandoVisibilidad] = useState(false);
 
   const [historialOpen, setHistorialOpen] = useState(false);
   const [versiones, setVersiones] = useState<VersionInfo[]>([]);
@@ -392,6 +396,32 @@ export default function EditorContenidoPage({
     }
   }
 
+  /* ── Visibilidad (mostrar/ocultar a los alumnos) ──
+   * Distinto de Publicar: no congela el borrador en una versión, solo enciende
+   * o apaga la página en el árbol del alumno. Va por el contexto del árbol para
+   * que el punto del sidebar quede al día sin recargar. */
+  async function toggleVisibilidad() {
+    if (!docId || !documento) return;
+    const ocultar = documento.publicado;
+    if (ocultar) {
+      const ok = await confirmar({
+        titulo: `¿Ocultar «${documento.titulo}»?`,
+        texto: 'Dejará de aparecer para los alumnos. El contenido se conserva: '
+          + 'al volver a mostrarla quedará igual que ahora.',
+        confirmar: 'Ocultar',
+      });
+      if (!ok) return;
+    }
+    setCambiandoVisibilidad(true);
+    const err = await cambiarPublicacion(docId, !ocultar);
+    setCambiandoVisibilidad(false);
+    if (err) {
+      setError(err);
+      return;
+    }
+    setDocumento({ ...documento, publicado: !ocultar });
+  }
+
   /* ── Publicar ── */
   function abrirPublicar() {
     setMensajePublicar('');
@@ -518,13 +548,25 @@ export default function EditorContenidoPage({
           <span className={styles.titulo} title={documento?.titulo}>{documento?.titulo ?? '…'}</span>
           <span className={styles.subtitulo}>
             {documento?.tipo === 'html' ? 'HTML crudo' : 'Markdown'}
-            {documento?.publicado ? ' · publicada' : ' · sin publicar'}
+            {documento?.publicado ? ' · publicada' : ' · oculta'}
           </span>
         </div>
         <span className={`${styles.estado} ${estado === 'error' ? styles.estadoError : ''}`}>
           <span className={`${styles.dot} ${styles[`dot-${estado}`]}`} />
           {ESTADO_LABEL[estado]}
         </span>
+        {/* Solo con una versión publicada detrás: mostrar una página que nunca se
+            publicó no tendría nada que servirle al alumno (el API lo rechaza). */}
+        {documento?.versionId && (
+          <DashButton
+            variant="outline"
+            onClick={toggleVisibilidad}
+            disabled={cambiandoVisibilidad}
+          >
+            <Icon name={documento.publicado ? 'visibility_off' : 'visibility'} size="sm" />
+            {documento.publicado ? ' Ocultar' : ' Mostrar'}
+          </DashButton>
+        )}
         <DashButton variant="outline" onClick={abrirHistorial}>🕘 Historial</DashButton>
         <DashButton onClick={abrirPublicar} disabled={estado === 'cargando' || estado === 'error'}>
           Publicar

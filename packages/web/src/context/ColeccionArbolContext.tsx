@@ -36,6 +36,12 @@ interface ColeccionArbolValue {
   cambiarSlug: (docId: string, slug: string) => Promise<string | null>;
   mover: (docId: string, padreId: string | null, orden: number) => Promise<string | null>;
   eliminar: (docId: string) => Promise<string | null>;
+  /**
+   * Mostrar/ocultar la página a los alumnos. Es SOLO visibilidad: no congela el
+   * borrador en una versión (eso es "Publicar", en el editor), así que ocultar y
+   * volver a mostrar devuelve el mismo contenido.
+   */
+  cambiarPublicacion: (docId: string, publicado: boolean) => Promise<string | null>;
 }
 
 const Ctx = createContext<ColeccionArbolValue | null>(null);
@@ -54,6 +60,7 @@ const VACIO: ColeccionArbolValue = {
   cambiarSlug: NO_OP,
   mover: NO_OP,
   eliminar: NO_OP,
+  cambiarPublicacion: NO_OP,
 };
 
 export function useColeccionArbol(): ColeccionArbolValue {
@@ -152,12 +159,19 @@ export function ColeccionArbolProvider({ children }: { children: React.ReactNode
     [mutar],
   );
 
+  const cambiarPublicacion = useCallback(
+    (docId: string, publicado: boolean) =>
+      mutar(`/api/admin/documentos/${docId}/publicacion`, 'PUT', { publicado }),
+    [mutar],
+  );
+
   const value = useMemo<ColeccionArbolValue>(
     () => ({
       coleccionId, coleccion, documentos, arbol, cargando, error, refetch,
-      renombrar, cambiarSlug, mover, eliminar,
+      renombrar, cambiarSlug, mover, eliminar, cambiarPublicacion,
     }),
-    [coleccionId, coleccion, documentos, arbol, cargando, error, refetch, renombrar, cambiarSlug, mover, eliminar],
+    [coleccionId, coleccion, documentos, arbol, cargando, error, refetch,
+     renombrar, cambiarSlug, mover, eliminar, cambiarPublicacion],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

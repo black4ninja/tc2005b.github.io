@@ -7,6 +7,13 @@ export interface NodoPlano {
   slug: string;
   tipo: DocumentoData['tipo'];
   publicado: boolean;
+  /** Candado explícito: esconde el nodo y todo lo que cuelga de él. */
+  oculto: boolean;
+  /**
+   * Alguna carpeta por encima está candada. La página puede estar publicada y
+   * aun así no verse: sin esto, el árbol del admin afirmaría que el alumno la ve.
+   */
+  ancestroOculto: boolean;
   padreId: string | null;
   profundidad: number;
   /** Solo las categorías admiten hijos (lo valida también el servidor). */
@@ -20,23 +27,27 @@ export function aplanar(
   expandidos: Set<string>,
   profundidad = 0,
   padreId: string | null = null,
+  ancestroOculto = false,
 ): NodoPlano[] {
   const out: NodoPlano[] = [];
   for (const n of nodos) {
     const esCategoria = n.tipo === 'categoria';
+    const oculto = n.oculto === true;
     out.push({
       id: n.id,
       titulo: n.titulo,
       slug: n.slug,
       tipo: n.tipo,
       publicado: n.publicado,
+      oculto,
+      ancestroOculto,
       padreId,
       profundidad,
       esCategoria,
       tieneHijos: n.hijos.length > 0,
     });
     if (esCategoria && expandidos.has(n.id)) {
-      out.push(...aplanar(n.hijos, expandidos, profundidad + 1, n.id));
+      out.push(...aplanar(n.hijos, expandidos, profundidad + 1, n.id, ancestroOculto || oculto));
     }
   }
   return out;

@@ -32,6 +32,8 @@ export interface DocumentoData {
   orden: number;
   plantilla: DocumentoPlantilla | null;
   publicado: boolean;
+  /** Candado explícito: esconde el nodo y TODO lo que cuelga de él. */
+  oculto: boolean;
   versionId: string | null;
   borradorId: string | null;
   active: boolean;

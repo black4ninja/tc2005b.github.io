@@ -51,6 +51,38 @@ describe('construirArbolVisible (poda de seguridad)', () => {
     expect(arbol[0].hijos[0].hijos.map((n) => n.slug)).toEqual(['lab1']);
   });
 
+  it('una categoría OCULTA se lleva su subárbol, aunque sus páginas sigan publicadas', () => {
+    const arbol = construirArbolVisible([
+      doc({ id: 'cat', slug: 'unidad-3', tipo: 'categoria', oculto: true }),
+      doc({ id: 'p', slug: 'lab1', padreId: 'cat', publicado: true }),
+      doc({ id: 'sub', slug: 'tema', tipo: 'categoria', padreId: 'cat' }),
+      doc({ id: 'q', slug: 'lab2', padreId: 'sub', publicado: true }),
+      doc({ id: 'otra', slug: 'visible', publicado: true }),
+    ]);
+    expect(arbol.map((n) => n.slug)).toEqual(['visible']);
+  });
+
+  it('ocultar la carpeta NO despublica sus páginas: al quitar el candado vuelven como estaban', () => {
+    // Mismo conjunto, con la categoría ya sin candado: `publicado` de cada
+    // página no se tocó, así que el árbol vuelve exactamente al estado previo.
+    const paginas: DocPlano[] = [
+      doc({ id: 'cat', slug: 'unidad-3', tipo: 'categoria', oculto: false }),
+      doc({ id: 'p', slug: 'lab1', padreId: 'cat', publicado: true }),
+      doc({ id: 'q', slug: 'wip', padreId: 'cat', publicado: false }),
+    ];
+    const arbol = construirArbolVisible(paginas);
+    expect(arbol.map((n) => n.slug)).toEqual(['unidad-3']);
+    expect(arbol[0].hijos.map((n) => n.slug)).toEqual(['lab1']);
+  });
+
+  it('una página oculta se poda aunque esté publicada (el candado gana)', () => {
+    const arbol = construirArbolVisible([
+      doc({ id: 'a', slug: 'visible', publicado: true }),
+      doc({ id: 'b', slug: 'candada', publicado: true, oculto: true }),
+    ]);
+    expect(arbol.map((n) => n.slug)).toEqual(['visible']);
+  });
+
   it('respeta el orden de hermanos', () => {
     const arbol = construirArbolVisible([
       doc({ id: 'b', slug: 'segundo', orden: 1 }),
@@ -98,5 +130,15 @@ describe('resolverPath (404 del visor)', () => {
   it('devuelve null para una categoría (no es página navegable) y para path vacío', () => {
     expect(resolverPath(arbol, ['backend'])).toBeNull();
     expect(resolverPath(arbol, [])).toBeNull();
+  });
+
+  it('devuelve null para una página publicada dentro de una carpeta OCULTA (no basta con esconderla del árbol)', () => {
+    const conCandado = construirArbolVisible([
+      doc({ id: 'cat', slug: 'backend', tipo: 'categoria', oculto: true }),
+      doc({ id: 'lab1', slug: 'lab1', padreId: 'cat', publicado: true }),
+    ]);
+    // El enlace directo es el que de verdad importa: un alumno con la URL vieja
+    // no debe poder entrar por la puerta de atrás.
+    expect(resolverPath(conCandado, ['backend', 'lab1'])).toBeNull();
   });
 });

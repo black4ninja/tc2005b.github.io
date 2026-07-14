@@ -8,6 +8,29 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Las páginas y las carpetas del CMS se pueden ocultar y volver a mostrar**, para
+  escribir el curso completo de antemano e irlo liberando conforme avanza. El ojo
+  aparece en las acciones de cada nodo del árbol, y las páginas además tienen un
+  botón **Ocultar/Mostrar** en el encabezado del editor. Ocultar **no toca el
+  contenido**: la versión publicada queda intacta y volver a mostrar la devuelve
+  igual, sin versión nueva.
+  - **Ocultar una carpeta se lleva todo su subárbol** —incluidas sus páginas
+    publicadas— pero **no despublica ninguna**: al volver a mostrarla, cada página
+    regresa al estado en el que estaba. Ocultar la carpeta y despublicar sus páginas
+    una por una no son lo mismo, y solo lo primero es reversible sin perder el detalle.
+  - La carpeta usa un campo **propio** (`Documento.oculto`) y no `publicado`. Una
+    categoría no tiene publicación propia: se muestra si tiene alguna página publicada
+    debajo — de hecho **las 54 categorías vivas tienen `publicado: false`** y se ven
+    igual. Reusar ese campo como candado las habría **escondido todas** entre el deploy
+    y la migración. `oculto` ausente = visible, así que esto **no necesita migración**.
+  - La visibilidad es su **propio endpoint** (`PUT /admin/documentos/:id/publicacion`),
+    separado de `/publicar`. Fundirlos habría hecho que "mostrar" desde el árbol
+    publicara de rebote un borrador a medio escribir.
+  - En el árbol, el punto gris ya no dice "Borrador" sino **"Oculta"**: chocaba con
+    el *otro* borrador (los cambios sin publicar de una versión), y con esta función
+    los dos conceptos convivían en la misma pantalla. Y una página publicada **dentro
+    de una carpeta oculta** se pinta apagada: el punto dice lo que el alumno ve, no lo
+    que el flag dice.
 - **TC2008B entra al CMS** como colección `tc2008b` (Modelación de sistemas
   multiagentes con gráficas computacionales), importada desde su Docusaurus:
   15 páginas, 4 categorías, 379 recursos y 393 enlaces reescritos, con **0 sin
@@ -73,6 +96,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     estampado (274 actividades de grupo, 1482 celdas de malla) apunta a ella.
 
 ### Fixed
+- **Una página oculta se podía quedar atrapada en invisible.** `POST /publicar`
+  empezaba con `if (!borrador) → 400 'No hay cambios de borrador que publicar'`, así
+  que una página que se ocultara **sin editarle nada** no tenía forma de volver:
+  Publicar la rechazaba porque no había borrador que publicar. Ahora, sin borrador
+  pero con versión y oculta, publicar **la re-expone** con su versión actual en vez
+  de fallar. Publicar-contenido y publicar-visibilidad estaban fundidos en uno.
 - **El alumno veía su calificación masivamente deflactada.** Su dashboard leía
   TODAS sus competencias como 0. El parser (`parseCompetenciaPercent`) empezaba
   con `if (typeof valor !== 'string') return 0`, y los valores se guardan como

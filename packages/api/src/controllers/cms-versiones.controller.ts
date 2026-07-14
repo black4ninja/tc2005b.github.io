@@ -50,6 +50,21 @@ export async function publicarDocumento(req: Request, res: Response): Promise<vo
 
     const borrador = documento.getBorrador();
     if (!borrador) {
+      // Sin borrador pero oculta: es una RE-exposición, no una versión nueva.
+      // Sin esto, despublicar una página sin editarla la dejaba atrapada:
+      // "Publicar" respondía 400 y no había forma de volver a mostrarla.
+      const versionActual = documento.getVersion();
+      if (versionActual && !documento.getPublicado()) {
+        documento.setPublicado(true);
+        await documento.save(null, { useMasterKey: true });
+        res.json({
+          status: 'ok',
+          documento: documento.toSafeJSON(),
+          version: versionActual.getNumero(),
+          reexpuesta: true,
+        });
+        return;
+      }
       res.status(400).json({ status: 'error', message: 'No hay cambios de borrador que publicar' });
       return;
     }
@@ -79,6 +94,71 @@ export async function publicarDocumento(req: Request, res: Response): Promise<vo
     res.json({ status: 'ok', documento: documento.toSafeJSON(), version: numeroNuevo });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'Error al publicar documento' });
+  }
+}
+
+/**
+ * PUT /admin/documentos/:docId/publicacion — { publicado: boolean }
+ *
+ * VISIBILIDAD, no contenido: enciende o apaga el nodo en el árbol del alumno sin
+ * tocar la versión ni el borrador. Es lo que permite tener el curso escrito de
+ * antemano e irlo liberando. La versión publicada queda intacta: volver a
+ * mostrar devuelve exactamente el mismo contenido, sin versión nueva.
+ *
+ * Deliberadamente separado de /publicar: ese sí congela el borrador en una
+ * versión, y desde el árbol "mostrar" no debe publicar de rebote una edición a
+ * medio hacer.
+ *
+ * Según el tipo, el interruptor es distinto —y esto es a propósito—:
+ *   página    → `publicado` (es su estado propio de publicación).
+ *   categoría → `oculto`, un candado sobre TODO su subárbol. Una categoría no
+ *               tiene publicación propia: se ve si tiene alguna página publicada
+ *               debajo. Ocultarla NO despublica sus páginas, así que al volver a
+ *               mostrarla cada una regresa al estado en el que estaba.
+ */
+export async function setPublicacionDocumento(req: Request, res: Response): Promise<void> {
+  const { docId } = req.params;
+  const { publicado } = req.body ?? {};
+
+  if (typeof publicado !== 'boolean') {
+    res.status(400).json({ status: 'error', message: 'publicado debe ser booleano' });
+    return;
+  }
+
+  try {
+    const encontrado = await buscarDocumento(docId);
+    if (!encontrado) {
+      res.status(404).json({ status: 'error', message: 'Documento no encontrado' });
+      return;
+    }
+    const { documento } = encontrado;
+
+    if (documento.getTipo() === 'categoria') {
+      documento.setOculto(!publicado);
+      await documento.save(null, { useMasterKey: true });
+      res.json({ status: 'ok', documento: documento.toSafeJSON() });
+      return;
+    }
+
+    // Mostrar algo que nunca se publicó dejaría al visor con un documento sin
+    // versión que servir (resolverPaginaPublicada devolvería 404).
+    if (publicado && !documento.getVersion()) {
+      res.status(400).json({
+        status: 'error',
+        message: 'La página no tiene ninguna versión publicada todavía: publícala desde el editor',
+      });
+      return;
+    }
+
+    documento.setPublicado(publicado);
+    // Una página escondida por el candado y luego publicada a mano se quedaría
+    // invisible sin decir por qué: el candado de página se levanta al mostrarla.
+    if (publicado && documento.getOculto()) documento.setOculto(false);
+    await documento.save(null, { useMasterKey: true });
+
+    res.json({ status: 'ok', documento: documento.toSafeJSON() });
+  } catch {
+    res.status(500).json({ status: 'error', message: 'Error al cambiar la publicación del documento' });
   }
 }
 

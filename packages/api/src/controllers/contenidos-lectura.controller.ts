@@ -63,6 +63,7 @@ async function getDocumentosPlanos(coleccionId: string): Promise<DocPlano[]> {
     orden: d.getOrden(),
     padreId: d.getPadre()?.id ?? null,
     publicado: d.getPublicado(),
+    oculto: d.getOculto(),
   }));
 }
 
