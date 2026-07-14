@@ -45,6 +45,15 @@ interface NodoProps {
   onTogglePublicacion: (nodo: NodoPlano) => void;
 }
 
+/**
+ * ¿El alumno lo ve? Una página, si está publicada. Una carpeta, si no tiene el
+ * candado —lo otro que la esconde (no tener páginas publicadas debajo) es
+ * derivado y aquí no se puede saber sin mirar el subárbol—.
+ */
+function esVisible(nodo: NodoPlano): boolean {
+  return nodo.esCategoria ? !nodo.oculto : nodo.publicado;
+}
+
 function Nodo({
   nodo, activo, expandido, profundidadProyectada, editando,
   onSeleccionar, onToggle, onEmpezarRename, onRenombrar, onCancelarRename,
@@ -119,23 +128,26 @@ function Nodo({
           <span className={styles.titulo}>{nodo.titulo}</span>
 
           <span className={styles.acciones}>
-            {/* Las categorías no se publican: se ven si tienen alguna página
-                publicada debajo. Darles un ojo prometería un control que no existe. */}
-            {!nodo.esCategoria && (
-              <button
-                type="button"
-                className={styles.accion}
-                title={
-                  nodo.publicado
-                    ? 'Ocultar a los alumnos (conserva el contenido)'
-                    : 'Mostrar a los alumnos'
-                }
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => { e.stopPropagation(); onTogglePublicacion(nodo); }}
-              >
-                <Icon name={nodo.publicado ? 'visibility' : 'visibility_off'} size="sm" />
-              </button>
-            )}
+            {/* El interruptor es distinto según el tipo (una carpeta no tiene
+                publicación propia: se esconde con un candado sobre su subárbol),
+                pero para quien lo usa es el mismo gesto: mostrar / ocultar. */}
+            <button
+              type="button"
+              className={styles.accion}
+              title={
+                nodo.esCategoria
+                  ? (nodo.oculto
+                      ? 'Mostrar la carpeta y lo que hay dentro'
+                      : 'Ocultar la carpeta completa (con todo lo que cuelga de ella)')
+                  : (nodo.publicado
+                      ? 'Ocultar a los alumnos (conserva el contenido)'
+                      : 'Mostrar a los alumnos')
+              }
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); onTogglePublicacion(nodo); }}
+            >
+              <Icon name={esVisible(nodo) ? 'visibility' : 'visibility_off'} size="sm" />
+            </button>
             <button
               type="button"
               className={styles.accion}
@@ -158,10 +170,28 @@ function Nodo({
 
           {!nodo.esCategoria && (
             <span
-              className={nodo.publicado ? styles.dotPub : styles.dotBorr}
+              // Publicada pero con una carpeta candada encima: el alumno NO la ve.
+              // El punto dice lo que el alumno ve, no lo que el flag dice.
+              className={nodo.publicado && !nodo.ancestroOculto ? styles.dotPub : styles.dotBorr}
               // "Oculta", no "Borrador": el borrador es OTRA cosa (los cambios
               // sin publicar de una versión). Confundirlos aquí sería fatal.
-              title={nodo.publicado ? 'Publicada — la ven los alumnos' : 'Oculta — no la ven los alumnos'}
+              title={
+                !nodo.publicado
+                  ? 'Oculta — no la ven los alumnos'
+                  : nodo.ancestroOculto
+                    ? 'Publicada, pero su carpeta está oculta: los alumnos no la ven'
+                    : 'Publicada — la ven los alumnos'
+              }
+            />
+          )}
+
+          {/* A una carpeta solo se le pinta el punto cuando está candada. Un punto
+              verde prometería que se ve, y una carpeta sin páginas publicadas no se
+              ve aunque no tenga candado. */}
+          {nodo.esCategoria && nodo.oculto && (
+            <span
+              className={styles.dotBorr}
+              title="Carpeta oculta — no la ven los alumnos, ni nada de lo que hay dentro"
             />
           )}
         </>
@@ -311,16 +341,23 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
    * que le quita algo a alguien que quizá ya lo tenía abierto.
    */
   async function handleTogglePublicacion(nodo: NodoPlano) {
-    if (nodo.publicado) {
+    const visible = esVisible(nodo);
+    if (visible) {
       const ok = await confirmar({
-        titulo: `¿Ocultar «${nodo.titulo}»?`,
-        texto: 'Dejará de aparecer en el árbol de los alumnos. El contenido se conserva: '
-          + 'puedes volver a mostrarla cuando quieras y quedará igual.',
+        titulo: nodo.esCategoria ? `¿Ocultar la carpeta «${nodo.titulo}»?` : `¿Ocultar «${nodo.titulo}»?`,
+        texto: nodo.esCategoria
+          // Se dice explícitamente que arrastra el contenido: es lo único de esta
+          // acción que no se ve en pantalla al pulsarla.
+          ? 'Dejarán de aparecer para los alumnos la carpeta Y TODO lo que hay dentro, '
+            + 'incluidas sus páginas publicadas. No se despublica nada: al volver a '
+            + 'mostrarla, cada página regresa al estado en el que estaba.'
+          : 'Dejará de aparecer en el árbol de los alumnos. El contenido se conserva: '
+            + 'puedes volver a mostrarla cuando quieras y quedará igual.',
         confirmar: 'Ocultar',
       });
       if (!ok) return;
     }
-    const err = await cambiarPublicacion(nodo.id, !nodo.publicado);
+    const err = await cambiarPublicacion(nodo.id, !visible);
     if (err) setError(err);
   }
 

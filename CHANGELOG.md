@@ -8,20 +8,29 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- **Las páginas del CMS se pueden ocultar y volver a mostrar**, para escribir el
-  curso completo de antemano e irlo liberando conforme avanza. El ojo aparece en
-  las acciones de cada página del árbol y como botón **Ocultar/Mostrar** en el
-  encabezado del editor. Ocultar **no toca el contenido**: la versión publicada
-  queda intacta y volver a mostrarla la devuelve igual, sin versión nueva.
+- **Las páginas y las carpetas del CMS se pueden ocultar y volver a mostrar**, para
+  escribir el curso completo de antemano e irlo liberando conforme avanza. El ojo
+  aparece en las acciones de cada nodo del árbol, y las páginas además tienen un
+  botón **Ocultar/Mostrar** en el encabezado del editor. Ocultar **no toca el
+  contenido**: la versión publicada queda intacta y volver a mostrar la devuelve
+  igual, sin versión nueva.
+  - **Ocultar una carpeta se lleva todo su subárbol** —incluidas sus páginas
+    publicadas— pero **no despublica ninguna**: al volver a mostrarla, cada página
+    regresa al estado en el que estaba. Ocultar la carpeta y despublicar sus páginas
+    una por una no son lo mismo, y solo lo primero es reversible sin perder el detalle.
+  - La carpeta usa un campo **propio** (`Documento.oculto`) y no `publicado`. Una
+    categoría no tiene publicación propia: se muestra si tiene alguna página publicada
+    debajo — de hecho **las 54 categorías vivas tienen `publicado: false`** y se ven
+    igual. Reusar ese campo como candado las habría **escondido todas** entre el deploy
+    y la migración. `oculto` ausente = visible, así que esto **no necesita migración**.
   - La visibilidad es su **propio endpoint** (`PUT /admin/documentos/:id/publicacion`),
     separado de `/publicar`. Fundirlos habría hecho que "mostrar" desde el árbol
     publicara de rebote un borrador a medio escribir.
-  - Las **categorías no se ocultan**: ya se mostraban solo si tenían alguna página
-    publicada debajo, así que ocultar sus páginas las esconde solas. Se rechaza en
-    el API y ni siquiera se ofrece el ojo, en vez de prometer un control que no existe.
   - En el árbol, el punto gris ya no dice "Borrador" sino **"Oculta"**: chocaba con
     el *otro* borrador (los cambios sin publicar de una versión), y con esta función
-    los dos conceptos convivían en la misma pantalla.
+    los dos conceptos convivían en la misma pantalla. Y una página publicada **dentro
+    de una carpeta oculta** se pinta apagada: el punto dice lo que el alumno ve, no lo
+    que el flag dice.
 - **TC2008B entra al CMS** como colección `tc2008b` (Modelación de sistemas
   multiagentes con gráficas computacionales), importada desde su Docusaurus:
   15 páginas, 4 categorías, 379 recursos y 393 enlaces reescritos, con **0 sin

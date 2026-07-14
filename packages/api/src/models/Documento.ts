@@ -98,6 +98,25 @@ export class Documento extends BaseModel {
     this.set('publicado', publicado);
   }
 
+  /**
+   * Oculto explícitamente: el nodo Y TODO lo que cuelga de él desaparecen del
+   * visor, sin tocar el `publicado` de cada página (volver a mostrar la carpeta
+   * devuelve a cada una a su estado anterior).
+   *
+   * Campo propio y no `publicado` porque una categoría NO tiene estado propio de
+   * publicación: se muestra si tiene alguna página publicada debajo. De hecho las
+   * 54 categorías vivas tienen `publicado: false` y se ven igual — reusar ese
+   * campo como candado las habría escondido todas de golpe.
+   *
+   * Ausente = visible: por eso esto no necesita migración.
+   */
+  getOculto(): boolean {
+    return this.get('oculto') === true;
+  }
+  setOculto(oculto: boolean): void {
+    this.set('oculto', oculto);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     return {
       id: this.id,
@@ -109,6 +128,7 @@ export class Documento extends BaseModel {
       orden: this.getOrden(),
       plantilla: this.getPlantilla() ?? null,
       publicado: this.getPublicado(),
+      oculto: this.getOculto(),
       // Solo ids de versiones: el cuerpo se pide explícitamente.
       versionId: this.getVersion()?.id ?? null,
       borradorId: this.getBorrador()?.id ?? null,

@@ -100,15 +100,21 @@ export async function publicarDocumento(req: Request, res: Response): Promise<vo
 /**
  * PUT /admin/documentos/:docId/publicacion — { publicado: boolean }
  *
- * VISIBILIDAD, no contenido: enciende o apaga `Documento.publicado` sin tocar
- * la versión ni el borrador. Es lo que permite tener el curso escrito de
- * antemano e irlo liberando: al ocultar una página, `construirArbolVisible` la
- * poda del árbol del alumno, y su versión publicada queda intacta —volver a
- * mostrarla devuelve exactamente el mismo contenido, sin versión nueva—.
+ * VISIBILIDAD, no contenido: enciende o apaga el nodo en el árbol del alumno sin
+ * tocar la versión ni el borrador. Es lo que permite tener el curso escrito de
+ * antemano e irlo liberando. La versión publicada queda intacta: volver a
+ * mostrar devuelve exactamente el mismo contenido, sin versión nueva.
  *
  * Deliberadamente separado de /publicar: ese sí congela el borrador en una
  * versión, y desde el árbol "mostrar" no debe publicar de rebote una edición a
  * medio hacer.
+ *
+ * Según el tipo, el interruptor es distinto —y esto es a propósito—:
+ *   página    → `publicado` (es su estado propio de publicación).
+ *   categoría → `oculto`, un candado sobre TODO su subárbol. Una categoría no
+ *               tiene publicación propia: se ve si tiene alguna página publicada
+ *               debajo. Ocultarla NO despublica sus páginas, así que al volver a
+ *               mostrarla cada una regresa al estado en el que estaba.
  */
 export async function setPublicacionDocumento(req: Request, res: Response): Promise<void> {
   const { docId } = req.params;
@@ -127,13 +133,10 @@ export async function setPublicacionDocumento(req: Request, res: Response): Prom
     }
     const { documento } = encontrado;
 
-    // Las categorías no tienen estado propio: se ven si tienen alguna página
-    // publicada debajo. Ocultar sus páginas ya las esconde a ellas.
     if (documento.getTipo() === 'categoria') {
-      res.status(400).json({
-        status: 'error',
-        message: 'Las categorías no se publican: se muestran solo si tienen alguna página publicada debajo',
-      });
+      documento.setOculto(!publicado);
+      await documento.save(null, { useMasterKey: true });
+      res.json({ status: 'ok', documento: documento.toSafeJSON() });
       return;
     }
 
@@ -148,6 +151,9 @@ export async function setPublicacionDocumento(req: Request, res: Response): Prom
     }
 
     documento.setPublicado(publicado);
+    // Una página escondida por el candado y luego publicada a mano se quedaría
+    // invisible sin decir por qué: el candado de página se levanta al mostrarla.
+    if (publicado && documento.getOculto()) documento.setOculto(false);
     await documento.save(null, { useMasterKey: true });
 
     res.json({ status: 'ok', documento: documento.toSafeJSON() });
