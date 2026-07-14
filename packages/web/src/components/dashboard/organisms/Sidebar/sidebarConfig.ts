@@ -18,12 +18,11 @@ export function getSidebarItems(
     return [
       { label: 'Dashboard', icon: 'dashboard', path: '/admin' },
       { label: 'Grupos', icon: 'groups', path: '/admin/grupos' },
-      { label: 'Competencias', icon: 'emoji_events', path: '/admin/competencias' },
       { label: 'Actividades', icon: 'assignment', path: '/admin/actividades' },
-      // "Páginas" ya no es una entrada propia: se llega desde Contenidos, que es
-      // donde viven (cada Pagina pertenece a una Coleccion). La acción "Páginas"
-      // de cada colección abre las suyas ya filtradas, y el botón "Ver todas las
-      // páginas" de esa pantalla conserva la vista de conjunto.
+      // "Páginas" y "Competencias" ya no son entradas propias: se llega a ellas
+      // desde Contenidos, que es donde viven (ambas pertenecen a una Coleccion).
+      // Cada colección tiene su acción, que las abre ya filtradas, y esa pantalla
+      // conserva los accesos a las vistas globales.
       { label: 'Contenidos', icon: 'library_books', path: '/admin/contenidos' },
     ];
   }

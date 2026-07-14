@@ -53,11 +53,18 @@
   flex-wrap: wrap;
 }
 
+.headerLinks {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
 .verTodas {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-left: auto;
   padding: 7px 14px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
