@@ -1,15 +1,24 @@
 import { useState } from 'react';
+import { NavLink } from 'react-router';
 import Icon from '../../atoms/Icon/Icon';
 import styles from './DocusMenu.module.css';
 
 /**
- * Una documentación habilitada para el grupo: destino + etiqueta
- * "CLAVE — Nombre" (colecciones del CMS: /contenidos/<slug>/).
+ * Una entrada del submenú "Contenidos" del grupo.
+ *
+ * Cada colección asignada al grupo aporta varias: su documentación (el visor,
+ * externo) y sus Páginas y Competencias (pantallas del admin, internas). La
+ * etiqueta va prefijada con la clave —"TC2005B — Páginas"— porque con más de una
+ * colección, "Páginas" a secas no dice de cuál.
  */
 export interface DocusLink {
-  slug: string;
+  /** Clave única del ítem: varias entradas comparten el slug de la colección. */
+  key: string;
   label: string;
   href: string;
+  /** Abre en pestaña nueva (el visor). Los enlaces del admin, no. */
+  externo?: boolean;
+  icono?: string;
 }
 
 interface DocusMenuProps {
@@ -20,9 +29,7 @@ interface DocusMenuProps {
 }
 
 /**
- * Ítem "Contenidos" del sidebar con submenú colapsable (colapsado por
- * defecto) que lista las colecciones del CMS habilitadas para el grupo.
- * Abre en pestaña nueva; etiqueta a una sola línea.
+ * Ítem "Contenidos" del sidebar con submenú colapsable (colapsado por defecto).
  */
 export default function DocusMenu({ items, collapsed, defaultOpen = false }: DocusMenuProps) {
   const [open, setOpen] = useState(defaultOpen);
@@ -53,18 +60,32 @@ export default function DocusMenu({ items, collapsed, defaultOpen = false }: Doc
           {items.length === 0 ? (
             <span className={styles.hint}>Sin contenidos asignados</span>
           ) : (
-            items.map((it) => (
-              <a
-                key={it.slug}
-                href={it.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.link}
-                title={it.label}
-              >
-                {it.label}
-              </a>
-            ))
+            items.map((it) =>
+              it.externo ? (
+                <a
+                  key={it.key}
+                  href={it.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.link}
+                  title={it.label}
+                >
+                  {it.icono && <Icon name={it.icono} size="sm" />}
+                  <span className={styles.linkLabel}>{it.label}</span>
+                </a>
+              ) : (
+                // Enlaces del admin: navegación interna, sin pestaña nueva.
+                <NavLink
+                  key={it.key}
+                  to={it.href}
+                  className={({ isActive }) => `${styles.link} ${isActive ? styles.linkActive : ''}`}
+                  title={it.label}
+                >
+                  {it.icono && <Icon name={it.icono} size="sm" />}
+                  <span className={styles.linkLabel}>{it.label}</span>
+                </NavLink>
+              ),
+            )
           )}
         </div>
       )}
