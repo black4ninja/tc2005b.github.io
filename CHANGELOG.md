@@ -25,6 +25,18 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     estampado (274 actividades de grupo, 1482 celdas de malla) apunta a ella.
 
 ### Fixed
+- **El plan de evaluación se podía quedar atascado por ids muertos.** Sus
+  `periodos[].competencias` y `periodos[].actividades` son ids sueltos sin FK, y
+  cuando una actividad se borra (soft-delete) su id se puede quedar colgado ahí —
+  en producción había dos así. La validación de pertenencia (abajo) los habría
+  rechazado con un 400, dejando ese plan **imposible de guardar**: esos ids ni
+  siquiera se pintan en la UI, así que nadie podía quitarlos. Ahora se distinguen
+  dos casos: un id que apunta a algo **vivo de otro grupo/materia** es un error
+  (400), y un id **muerto** se poda en silencio al guardar. `podados` viaja en la
+  respuesta para que la UI pueda decirlo. `scripts/limpiar-plan-ids-huerfanos.ts`
+  saca la basura ya existente. **No cambia ninguna nota**: esos ids no sumaban al
+  numerador ni al denominador, porque al borrarse la actividad se borraron también
+  las celdas de los alumnos.
 - **El plan de evaluación no validaba que sus actividades fueran del grupo**, solo
   que existieran. Un plan podía referenciar la actividad de OTRO grupo y
   `computeActividadesScore` la omitiría del denominador: **la nota cambiaría sin
