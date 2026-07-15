@@ -154,6 +154,15 @@
   color: #dc2626;
 }
 
+/* Acción sin icono: botón de texto (ancho automático en vez del cuadro 32px). */
+.actionText {
+  width: auto;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+}
+
 .pagination {
   display: flex;
   align-items: center;

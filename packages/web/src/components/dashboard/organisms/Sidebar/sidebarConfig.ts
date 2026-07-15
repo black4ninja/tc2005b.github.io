@@ -18,6 +18,7 @@ export function getSidebarItems(
     return [
       { label: 'Dashboard', icon: 'dashboard', path: '/admin' },
       { label: 'Grupos', icon: 'groups', path: '/admin/grupos' },
+      { label: 'Administradores', icon: 'admin_panel_settings', path: '/admin/administradores' },
       // "Páginas", "Competencias" y "Actividades" ya no son entradas propias: se
       // llega a ellas desde Contenidos, que es donde viven (las tres pertenecen a
       // una Coleccion). Cada colección tiene su acción, que las abre ya filtradas,

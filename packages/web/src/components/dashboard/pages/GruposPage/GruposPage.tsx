@@ -5,7 +5,7 @@ import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
-import GrupoForm from '../../organisms/GrupoForm/GrupoForm';
+import GrupoForm, { type AdminRef } from '../../organisms/GrupoForm/GrupoForm';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import type { ColeccionRef } from '../../../../types/contenidos';
 import styles from './GruposPage.module.css';
@@ -17,6 +17,7 @@ interface GrupoData {
   fechaFin?: string;
   active: boolean;
   colecciones?: ColeccionRef[];
+  admins?: AdminRef[];
   urlAgendaEntrevistas?: string | null;
 }
 
@@ -27,6 +28,7 @@ export default function GruposPage() {
   const navigate = useNavigate();
   const [grupos, setGrupos] = useState<GrupoData[]>([]);
   const [colecciones, setColecciones] = useState<ColeccionRef[]>([]);
+  const [admins, setAdmins] = useState<AdminRef[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -63,10 +65,22 @@ export default function GruposPage() {
     }
   }, [sessionToken]);
 
+  const fetchAdmins = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/administradores`, { headers: { 'x-session-token': sessionToken ?? '' } });
+      if (!res.ok) return;
+      const data = await res.json();
+      setAdmins(data.administradores ?? []);
+    } catch {
+      // opcional en el form; ignorar error de carga
+    }
+  }, [sessionToken]);
+
   useEffect(() => {
     fetchGrupos();
     fetchColecciones();
-  }, [fetchGrupos, fetchColecciones]);
+    fetchAdmins();
+  }, [fetchGrupos, fetchColecciones, fetchAdmins]);
 
   function openCreate() {
     setEditGrupo(undefined);
@@ -83,7 +97,7 @@ export default function GruposPage() {
     setEditGrupo(undefined);
   }
 
-  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; colecciones?: string[]; urlAgendaEntrevistas?: string }) {
+  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; colecciones?: string[]; admins?: string[]; urlAgendaEntrevistas?: string }) {
     setSaving(true);
     setError('');
     try {
@@ -143,6 +157,11 @@ export default function GruposPage() {
       header: 'Colecciones',
       cell: (info) => info.getValue() || '—',
     }),
+    columnHelper.accessor((row) => (row.admins ?? []).map((a) => a.name || a.email).join(', '), {
+      id: 'admins',
+      header: 'Administradores',
+      cell: (info) => info.getValue() || '—',
+    }),
     columnHelper.accessor('fechaInicio', {
       header: 'Fecha Inicio',
       cell: (info) => formatDate(info.getValue()),
@@ -197,6 +216,7 @@ export default function GruposPage() {
         <GrupoForm
           grupo={editGrupo}
           colecciones={colecciones}
+          admins={admins}
           onSave={handleSave}
           onCancel={closeModal}
           loading={saving}

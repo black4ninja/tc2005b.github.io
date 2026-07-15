@@ -11,6 +11,7 @@ import AlumnoDashboard from './components/dashboard/pages/AlumnoDashboard/Alumno
 import LoginPage from './components/dashboard/pages/LoginPage/LoginPage';
 import VerifyPage from './components/dashboard/pages/VerifyPage/VerifyPage';
 import GruposPage from './components/dashboard/pages/GruposPage/GruposPage';
+import AdministradoresPage from './components/dashboard/pages/AdministradoresPage/AdministradoresPage';
 import GrupoDetailPage from './components/dashboard/pages/GrupoDetailPage/GrupoDetailPage';
 import AdminCalendarioPage from './components/dashboard/pages/AdminCalendarioPage/AdminCalendarioPage';
 import CompetenciasPage from './components/dashboard/pages/CompetenciasPage/CompetenciasPage';
@@ -78,6 +79,7 @@ export default function App() {
       <Route element={<DashboardLayout role="admin" />}>
         <Route path="admin" element={<AdminDashboard />} />
         <Route path="admin/grupos" element={<GruposPage />} />
+        <Route path="admin/administradores" element={<AdministradoresPage />} />
         <Route path="admin/grupos/:id" element={<GrupoDetailPage />} />
         <Route path="admin/grupos/:id/alumnos/:alumnoId/malla" element={<MallaEvaluacionPage />} />
         <Route path="admin/grupos/:id/actividades-evaluacion" element={<ActividadesGrupoPage />} />
