@@ -5,7 +5,7 @@ import { reorderActividades } from '../controllers/calendario-reorder.controller
 import { createActividad } from '../controllers/calendario-create.controller.js';
 import { updateActividad, deleteActividad } from '../controllers/calendario-update.controller.js';
 import { createSemana, reorderSemanas, deleteSemana } from '../controllers/semana.controller.js';
-import { changeAdminPassword, listAdmins } from '../controllers/admin.controller.js';
+import { changeAdminPassword, listAdmins, setGruposDeAdmin } from '../controllers/admin.controller.js';
 import { copyCalendario } from '../controllers/calendario-copy.controller.js';
 
 const router = Router();
@@ -26,5 +26,6 @@ router.delete('/admin/calendario/semana/:semanaId', deleteSemana);
 router.post('/admin/calendario/copy', copyCalendario);
 router.put('/admin/cambiar-password', changeAdminPassword);
 router.get('/admin/administradores', listAdmins);
+router.put('/admin/administradores/:id/grupos', setGruposDeAdmin);
 
 export default router;

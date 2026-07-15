@@ -4,12 +4,20 @@ import DashButton from '../../atoms/DashButton/DashButton';
 import styles from './GrupoForm.module.css';
 import type { ColeccionRef } from '../../../../types/contenidos';
 
+/** Administrador asignable a un grupo (subconjunto de lo que expone el API). */
+export interface AdminRef {
+  id: string;
+  name: string;
+  email: string;
+}
+
 interface GrupoData {
   id?: string;
   name: string;
   fechaInicio?: string;
   fechaFin?: string;
   colecciones?: ColeccionRef[];
+  admins?: AdminRef[];
   urlAgendaEntrevistas?: string | null;
 }
 
@@ -18,6 +26,7 @@ interface GrupoSavePayload {
   fechaInicio?: string;
   fechaFin?: string;
   colecciones?: string[];
+  admins?: string[];
   urlAgendaEntrevistas?: string;
 }
 
@@ -30,6 +39,8 @@ interface GrupoFormProps {
    * podía contradecir a este campo).
    */
   colecciones?: ColeccionRef[];
+  /** Administradores dados de alta, para asignarlos al grupo (asociación). */
+  admins?: AdminRef[];
   onSave: (data: GrupoSavePayload) => void;
   onCancel: () => void;
   loading?: boolean;
@@ -42,12 +53,15 @@ function toDateString(value?: string | Date): string {
   return d.toISOString().split('T')[0];
 }
 
-export default function GrupoForm({ grupo, colecciones = [], onSave, onCancel, loading }: GrupoFormProps) {
+export default function GrupoForm({ grupo, colecciones = [], admins = [], onSave, onCancel, loading }: GrupoFormProps) {
   const [name, setName] = useState(grupo?.name ?? '');
   const [fechaInicio, setFechaInicio] = useState(toDateString(grupo?.fechaInicio));
   const [fechaFin, setFechaFin] = useState(toDateString(grupo?.fechaFin));
   const [coleccionesSel, setColeccionesSel] = useState<string[]>(
     (grupo?.colecciones ?? []).map((c) => c.id),
+  );
+  const [adminsSel, setAdminsSel] = useState<string[]>(
+    (grupo?.admins ?? []).map((a) => a.id),
   );
   const [agendaUrl, setAgendaUrl] = useState(grupo?.urlAgendaEntrevistas ?? '');
   const [error, setError] = useState('');
@@ -57,6 +71,12 @@ export default function GrupoForm({ grupo, colecciones = [], onSave, onCancel, l
   function toggleColeccion(id: string) {
     setColeccionesSel((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
+    );
+  }
+
+  function toggleAdmin(id: string) {
+    setAdminsSel((prev) =>
+      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
     );
   }
 
@@ -79,6 +99,7 @@ export default function GrupoForm({ grupo, colecciones = [], onSave, onCancel, l
       fechaInicio: fechaInicio || undefined,
       fechaFin: fechaFin || undefined,
       colecciones: coleccionesSel,
+      admins: adminsSel,
       // Cadena vacía = quitar el enlace del grupo.
       urlAgendaEntrevistas: url,
     });
@@ -115,6 +136,28 @@ export default function GrupoForm({ grupo, colecciones = [], onSave, onCancel, l
                   type="checkbox"
                   checked={coleccionesSel.includes(c.id)}
                   onChange={() => toggleColeccion(c.id)}
+                  disabled={loading}
+                />
+                <span className={styles.checkboxLabel} title={label}>{label}</span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+      <div className={styles.field}>
+        <label className={styles.label}>Administradores del grupo</label>
+        <div className={styles.checkboxList}>
+          {admins.length === 0 && (
+            <span className={styles.hint}>No hay administradores dados de alta.</span>
+          )}
+          {admins.map((a) => {
+            const label = a.name ? `${a.name} (${a.email})` : a.email;
+            return (
+              <label key={a.id} className={styles.checkboxItem}>
+                <input
+                  type="checkbox"
+                  checked={adminsSel.includes(a.id)}
+                  onChange={() => toggleAdmin(a.id)}
                   disabled={loading}
                 />
                 <span className={styles.checkboxLabel} title={label}>{label}</span>
