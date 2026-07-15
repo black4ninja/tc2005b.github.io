@@ -8,6 +8,19 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Administradores asignables a grupos, de forma bidireccional.** Desde el
+  **grupo** (form de crear/editar, junto a las colecciones) se marcan sus
+  administradores; desde **Administradores** cada fila tiene una acción "Grupos"
+  que abre un modal con los grupos del admin. Ambos lados escriben la misma
+  relación (`Grupo.admins`, array de pointers, como `colecciones`).
+  - Es una **asociación organizativa**: registra quién está a cargo de qué grupo.
+    **No cambia el acceso** — todo admin sigue viendo y gestionando todos los
+    grupos, como hasta ahora.
+  - El campo se ve como columna en las tablas de Grupos y de Administradores.
+  - `GET /admin/administradores` gana un uso más; se agrega
+    `PUT /admin/administradores/:id/grupos` (reconcilia los grupos de un admin
+    sin tocar los que no cambian). El servidor valida que cada id asignado sea un
+    admin activo: un alumno no puede colarse por el payload.
 - **Vista "Administradores"** en el menú del admin: una tabla con los usuarios
   administradores dados de alta (nombre, correo, último acceso, fecha de alta).
   Solo lectura por ahora. El endpoint `GET /admin/administradores` filtra por

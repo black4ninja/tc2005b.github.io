@@ -62,6 +62,19 @@ export class Grupo extends BaseModel {
     this.set('colecciones', colecciones);
   }
 
+  /**
+   * Administradores (AppUser userType='admin') asignados al grupo — array de
+   * pointers, como `colecciones`. Es una asociación ORGANIZATIVA: no cambia el
+   * acceso (todo admin ve todos los grupos), solo registra quién está a cargo.
+   * Se gestiona de forma bidireccional: desde el grupo y desde el admin.
+   */
+  getAdmins(): Parse.Object[] {
+    return this.get('admins') ?? [];
+  }
+  setAdmins(admins: Parse.Object[]): void {
+    this.set('admins', admins);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     return {
       id: this.id,
@@ -78,6 +91,14 @@ export class Grupo extends BaseModel {
           nombre: c.get('nombre') ?? null,
           slug: c.get('slug') ?? null,
           clave: c.get('clave') ?? null,
+        })),
+      // Requiere query.include('admins'); los soft-deleted no se exponen.
+      admins: this.getAdmins()
+        .filter((a) => a && a.get('exists') !== false)
+        .map((a) => ({
+          id: a.id,
+          name: a.get('name') ?? null,
+          email: a.get('email') ?? null,
         })),
       active: this.get('active'),
       createdAt: this.createdAt,

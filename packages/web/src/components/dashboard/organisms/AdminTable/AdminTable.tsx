@@ -164,12 +164,16 @@ export default function AdminTable<T>({
                 {items.map((action) => (
                   <button
                     key={action.label}
-                    className={`${styles.actionBtn} ${action.variant === 'danger' ? styles.actionDanger : ''}`}
+                    className={`${styles.actionBtn} ${action.icon ? '' : styles.actionText} ${action.variant === 'danger' ? styles.actionDanger : ''}`}
                     onClick={action.onClick}
                     title={action.label}
                   >
-                    {action.icon && (
+                    {action.icon ? (
                       <span className="material-icons" style={{ fontSize: 18 }}>{action.icon}</span>
+                    ) : (
+                      // Sin icono: se muestra el texto del label (si no, el botón
+                      // quedaría vacío e invisible).
+                      action.label
                     )}
                   </button>
                 ))}

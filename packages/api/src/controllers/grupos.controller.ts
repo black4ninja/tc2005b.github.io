@@ -10,6 +10,7 @@ export async function listGrupos(_req: Request, res: Response): Promise<void> {
     const query = new Parse.Query<Grupo>('Grupo');
     query.equalTo('exists' as any, true as any);
     query.include('colecciones' as any);
+    query.include('admins' as any);
     query.descending('createdAt');
     const grupos = await query.find({ useMasterKey: true });
 
@@ -36,6 +37,24 @@ async function resolverColecciones(value: unknown): Promise<Parse.Object[] | 'in
   const encontradas = await q.find({ useMasterKey: true });
   if (encontradas.length !== ids.length) return 'invalido';
   return encontradas;
+}
+
+/**
+ * ids de administradores → pointers VALIDADOS. Igual que resolverColecciones,
+ * pero además exige que cada id sea un AppUser activo con userType='admin': así
+ * un alumno no puede colarse como admin de un grupo por manipular el payload.
+ * null = no-array (se ignora); 'invalido' = algún id no es un admin (400).
+ */
+async function resolverAdmins(value: unknown): Promise<Parse.Object[] | 'invalido' | null> {
+  if (!Array.isArray(value)) return null;
+  const ids = [...new Set(value.filter((s): s is string => typeof s === 'string' && s.trim() !== ''))];
+  if (ids.length === 0) return [];
+  const q = BaseModel.queryActive('AppUser');
+  q.equalTo('userType' as any, 'admin' as any);
+  q.containedIn('objectId' as any, ids as any);
+  const encontrados = await q.find({ useMasterKey: true });
+  if (encontrados.length !== ids.length) return 'invalido';
+  return encontrados;
 }
 
 export async function createGrupo(req: Request, res: Response): Promise<void> {
@@ -66,6 +85,13 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
     }
     if (coleccionesPtrs) grupo.setColecciones(coleccionesPtrs);
 
+    const adminsPtrs = await resolverAdmins(req.body.admins);
+    if (adminsPtrs === 'invalido') {
+      res.status(400).json({ status: 'error', message: 'Alguno de los administradores indicados no existe o no es admin' });
+      return;
+    }
+    if (adminsPtrs) grupo.setAdmins(adminsPtrs);
+
     await grupo.save(null, { useMasterKey: true });
     if (coleccionesPtrs?.length) invalidateColeccionesPermitidas();
 
@@ -81,9 +107,10 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
 
   try {
     const query = BaseModel.queryActive<Grupo>('Grupo');
-    // colecciones incluidas: toSafeJSON serializa pointers y sin fetch
+    // colecciones/admins incluidos: toSafeJSON serializa pointers y sin fetch
     // respondería nulls (y no podría filtrar soft-deleted).
     query.include('colecciones' as any);
+    query.include('admins' as any);
     const grupo = await query.get(id, { useMasterKey: true });
 
     if (name !== undefined) {
@@ -116,6 +143,14 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
       return;
     }
     if (coleccionesPtrs) grupo.setColecciones(coleccionesPtrs);
+
+    // Solo un array válido aplica ([] limpia); no-array (undefined) se ignora.
+    const adminsPtrs = await resolverAdmins(req.body.admins);
+    if (adminsPtrs === 'invalido') {
+      res.status(400).json({ status: 'error', message: 'Alguno de los administradores indicados no existe o no es admin' });
+      return;
+    }
+    if (adminsPtrs) grupo.setAdmins(adminsPtrs);
 
     await grupo.save(null, { useMasterKey: true });
     if (coleccionesPtrs) invalidateColeccionesPermitidas();
