@@ -3,10 +3,19 @@ import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { Grupo } from '../models/Grupo.js';
 import { invalidateColeccionesPermitidas } from '../services/contenidos.service.js';
+import { getGruposDeStaff } from '../services/grupo-admin.service.js';
 import { sanitizarUrlHref } from '../utils/url.js';
 
-export async function listGrupos(_req: Request, res: Response): Promise<void> {
+export async function listGrupos(req: Request, res: Response): Promise<void> {
   try {
+    // El profesor solo ve SUS grupos (donde figura en Grupo.admins); el admin,
+    // todos. Es lo que hace que su vista de grupo funcione sin exponerle el resto.
+    if (req.appUser?.isProfesor()) {
+      const grupos = await getGruposDeStaff(req.appUser.id);
+      res.json({ status: 'ok', grupos: grupos.map((g) => g.toSafeJSON()) });
+      return;
+    }
+
     const query = new Parse.Query<Grupo>('Grupo');
     query.equalTo('exists' as any, true as any);
     query.include('colecciones' as any);
@@ -40,17 +49,18 @@ async function resolverColecciones(value: unknown): Promise<Parse.Object[] | 'in
 }
 
 /**
- * ids de administradores → pointers VALIDADOS. Igual que resolverColecciones,
- * pero además exige que cada id sea un AppUser activo con userType='admin': así
- * un alumno no puede colarse como admin de un grupo por manipular el payload.
- * null = no-array (se ignora); 'invalido' = algún id no es un admin (400).
+ * ids de personal → pointers VALIDADOS. Igual que resolverColecciones, pero
+ * además exige que cada id sea un AppUser activo de tipo STAFF (admin o
+ * profesor): así un alumno no puede colarse como admin de un grupo por
+ * manipular el payload. null = no-array (se ignora); 'invalido' = algún id no
+ * es staff (400).
  */
 async function resolverAdmins(value: unknown): Promise<Parse.Object[] | 'invalido' | null> {
   if (!Array.isArray(value)) return null;
   const ids = [...new Set(value.filter((s): s is string => typeof s === 'string' && s.trim() !== ''))];
   if (ids.length === 0) return [];
   const q = BaseModel.queryActive('AppUser');
-  q.equalTo('userType' as any, 'admin' as any);
+  q.containedIn('userType' as any, ['admin', 'profesor'] as any);
   q.containedIn('objectId' as any, ids as any);
   const encontrados = await q.find({ useMasterKey: true });
   if (encontrados.length !== ids.length) return 'invalido';

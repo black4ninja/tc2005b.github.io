@@ -5,6 +5,7 @@ import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Icon from '../../atoms/Icon/Icon';
 import { useAuth } from '../../../../context/AuthContext';
+import { rutaPostLogin } from '../../../../utils/postLogin';
 
 type FormState = 'idle' | 'sending' | 'error';
 
@@ -28,11 +29,7 @@ export default function LoginForm() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      if (user.userType === 'alumno' && user.grupos?.length > 0) {
-        navigate(`/alumno/grupos/${user.grupos[0].id}/calendario`, { replace: true });
-      } else {
-        navigate(user.userType === 'admin' ? '/admin' : '/alumno', { replace: true });
-      }
+      navigate(rutaPostLogin(user), { replace: true });
     }
   }, [isLoading, isAuthenticated, user, navigate]);
 
@@ -59,13 +56,7 @@ export default function LoginForm() {
       }
 
       login(data.sessionToken, data.user);
-
-      const userType = data.user.userType;
-      if (userType === 'alumno' && data.user.grupos?.length > 0) {
-        navigate(`/alumno/grupos/${data.user.grupos[0].id}/calendario`, { replace: true });
-      } else {
-        navigate(userType === 'admin' ? '/admin' : '/alumno', { replace: true });
-      }
+      navigate(rutaPostLogin(data.user), { replace: true });
     } catch {
       setState('error');
       setErrorMsg('Error de conexión. Intenta de nuevo.');

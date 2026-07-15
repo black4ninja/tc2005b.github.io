@@ -26,7 +26,7 @@ export class AppUser extends BaseModel {
     return this.get('userType') ?? '';
   }
 
-  setUserType(userType: 'alumno' | 'admin'): void {
+  setUserType(userType: 'alumno' | 'admin' | 'profesor'): void {
     this.set('userType', userType);
   }
 
@@ -68,6 +68,15 @@ export class AppUser extends BaseModel {
 
   isAlumno(): boolean {
     return this.getUserType() === 'alumno';
+  }
+
+  isProfesor(): boolean {
+    return this.getUserType() === 'profesor';
+  }
+
+  /** Personal del panel (no alumno): admin o profesor. */
+  isStaff(): boolean {
+    return this.isAdmin() || this.isProfesor();
   }
 
   toSafeJSON(extras?: { grupos?: { id: string; name: string }[] }): Record<string, unknown> {

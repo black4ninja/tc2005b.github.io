@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link, useMatch, useSearchParams } from 'react-router';
+import { Link, useMatch, useSearchParams, useNavigate } from 'react-router';
 import NavItem from '../../molecules/NavItem/NavItem';
 import SeccionColecciones, { type EnlaceColeccion } from '../../molecules/SeccionColecciones/SeccionColecciones';
 import Icon from '../../atoms/Icon/Icon';
@@ -27,6 +27,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: SidebarProps) {
+  const navigate = useNavigate();
   const grupoMatchExact = useMatch('/admin/grupos/:id');
   const grupoMatchSub = useMatch('/admin/grupos/:id/*');
   const grupoMatch = grupoMatchExact || grupoMatchSub;
@@ -40,7 +41,14 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   // `?grupo=` en su URL no debe cambiarle el sidebar.
   const grupoDeQuery = role === 'admin' ? params.get('grupo') : null;
 
-  const grupoId = grupoMatch?.params.id ?? grupoDeQuery ?? undefined;
+  const { sessionToken, user, updateUser } = useAuth();
+
+  // El profesor SIEMPRE está en modo grupo: su único contexto es su grupo
+  // asignado. Aunque caiga en una ruta sin :id, se ancla a su primer grupo.
+  const esProfesor = role === 'profesor';
+  const profesorGrupoId = esProfesor ? user?.grupos?.[0]?.id : undefined;
+
+  const grupoId = grupoMatch?.params.id ?? grupoDeQuery ?? profesorGrupoId ?? undefined;
   const isGrupoDetail = !!grupoId;
 
   // Colección abierta: el sidebar se vuelve el árbol de páginas (mismo patrón
@@ -49,7 +57,6 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const { coleccionId, coleccion } = useColeccionArbol();
   const isColeccionDetail = !!coleccionId;
 
-  const { sessionToken, user, updateUser } = useAuth();
   const [grupoName, setGrupoName] = useState('');
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
   const [docsHref, setDocsHref] = useState<string | null>(null);
@@ -206,14 +213,29 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
           </div>
         ) : isGrupoDetail ? (
           <div className={styles.backHeader}>
-            <Link to="/admin/grupos" className={styles.backButton} onClick={onCloseMobile}>
-              <Icon name="arrow_back" size="sm" />
-              {!collapsed && <span>Volver a Grupos</span>}
-            </Link>
-            {!collapsed && (
-              <span className={styles.grupoLabel}>
-                {grupoName ? `Grupo: ${grupoName}` : `Grupo: ${grupoId}`}
-              </span>
+            {/* El profesor no tiene "todos los grupos" que ver: su contexto ES su
+                grupo. En vez de "Volver a Grupos", solo la etiqueta del grupo. */}
+            {esProfesor ? (
+              <div className={styles.logo}>
+                <Icon name="school" size="lg" />
+                {!collapsed && (
+                  <span className={styles.grupoLabel}>
+                    {grupoName ? `Grupo: ${grupoName}` : 'Mi grupo'}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link to="/admin/grupos" className={styles.backButton} onClick={onCloseMobile}>
+                  <Icon name="arrow_back" size="sm" />
+                  {!collapsed && <span>Volver a Grupos</span>}
+                </Link>
+                {!collapsed && (
+                  <span className={styles.grupoLabel}>
+                    {grupoName ? `Grupo: ${grupoName}` : `Grupo: ${grupoId}`}
+                  </span>
+                )}
+              </>
             )}
           </div>
         ) : (
@@ -231,6 +253,21 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
               className={styles.grupoSelect}
               value={selectedGrupoId}
               onChange={(e) => setSelectedGrupoId(e.target.value)}
+            >
+              {user.grupos.map((g) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {esProfesor && user?.grupos && user.grupos.length > 1 && !collapsed && (
+          // Profesor con varios grupos: cambiar de grupo = navegar a su detalle.
+          <div className={styles.grupoSelector}>
+            <label className={styles.grupoSelectorLabel}>Grupo</label>
+            <select
+              className={styles.grupoSelect}
+              value={grupoId ?? ''}
+              onChange={(e) => navigate(`/admin/grupos/${e.target.value}`)}
             >
               {user.grupos.map((g) => (
                 <option key={g.id} value={g.id}>{g.name}</option>
@@ -258,7 +295,9 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
                   onClick={onCloseMobile}
                 />
               ))}
-              {isGrupoDetail &&
+              {/* Las secciones de colección (Páginas/Actividades) llevan a
+                  pantallas GLOBALES admin-only; el profesor no las ve. */}
+              {isGrupoDetail && !esProfesor &&
                 (colecciones.length === 0 ? (
                   // Sin materia asignada no hay nada que separar en cuatro: una
                   // sola entrada que lo diga, en vez de cuatro secciones vacías.

@@ -4,6 +4,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
 import DashButton from '../../atoms/DashButton/DashButton';
+import UsuarioForm, { type UsuarioSavePayload, type RolStaff } from '../../organisms/UsuarioForm/UsuarioForm';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import styles from './AdministradoresPage.module.css';
 
@@ -11,9 +12,12 @@ interface AdminData {
   id: string;
   name: string;
   email: string;
+  userType: RolStaff;
   lastLogin: string | null;
   createdAt: string;
 }
+
+const ROL_LABEL: Record<string, string> = { admin: 'Administrador', profesor: 'Profesor' };
 
 interface GrupoConAdmins {
   id: string;
@@ -24,9 +28,9 @@ interface GrupoConAdmins {
 const API_BASE = '/api';
 
 /**
- * Censo de administradores dados de alta. No incluye alumnos: el API filtra por
- * `userType: 'admin'`. Desde cada fila se asignan sus grupos (asociación
- * organizativa bidireccional; no cambia accesos).
+ * Personal dado de alta (admins y profesores) con su rol. No incluye alumnos
+ * (tienen su propio flujo). Desde aquí se crea/edita el usuario, se cambia su
+ * rol, y se asignan sus grupos (asociación bidireccional).
  */
 export default function AdministradoresPage() {
   const { sessionToken } = useAuth();
@@ -39,6 +43,11 @@ export default function AdministradoresPage() {
   const [modalAdmin, setModalAdmin] = useState<AdminData | null>(null);
   const [seleccion, setSeleccion] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+
+  // Modal alta/edición de usuario (personal).
+  const [usuarioModalOpen, setUsuarioModalOpen] = useState(false);
+  const [editUsuario, setEditUsuario] = useState<AdminData | undefined>();
+  const [savingUsuario, setSavingUsuario] = useState(false);
 
   const headers = { 'x-session-token': sessionToken ?? '' };
 
@@ -107,6 +116,43 @@ export default function AdministradoresPage() {
     }
   }
 
+  function openCreateUsuario() {
+    setEditUsuario(undefined);
+    setError('');
+    setUsuarioModalOpen(true);
+  }
+
+  function openEditUsuario(admin: AdminData) {
+    setEditUsuario(admin);
+    setError('');
+    setUsuarioModalOpen(true);
+  }
+
+  async function handleSaveUsuario(data: UsuarioSavePayload) {
+    setSavingUsuario(true);
+    setError('');
+    try {
+      const url = editUsuario
+        ? `${API_BASE}/admin/administradores/${editUsuario.id}`
+        : `${API_BASE}/admin/administradores`;
+      const res = await fetch(url, {
+        method: editUsuario ? 'PUT' : 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Error al guardar el usuario');
+      }
+      setUsuarioModalOpen(false);
+      await fetchAll();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSavingUsuario(false);
+    }
+  }
+
   function formatDateTime(value: string | null): string {
     if (!value) return 'Nunca';
     return new Date(value).toLocaleString('es-MX', {
@@ -123,6 +169,10 @@ export default function AdministradoresPage() {
   const columns = [
     columnHelper.accessor('name', { header: 'Nombre', cell: (info) => info.getValue() || '—' }),
     columnHelper.accessor('email', { header: 'Correo' }),
+    columnHelper.accessor('userType', {
+      header: 'Rol',
+      cell: (info) => ROL_LABEL[info.getValue()] ?? info.getValue(),
+    }),
     columnHelper.accessor((row) => gruposDe(row.id).map((g) => g.name).join(', '), {
       id: 'grupos',
       header: 'Grupos',
@@ -139,6 +189,7 @@ export default function AdministradoresPage() {
   ];
 
   const getActions = (admin: AdminData): ActionItem[] => [
+    { label: 'Editar', onClick: () => openEditUsuario(admin) },
     { label: 'Grupos', onClick: () => openGruposModal(admin) },
   ];
 
@@ -146,7 +197,7 @@ export default function AdministradoresPage() {
     <div className={styles.page}>
       <h1 className={styles.pageTitle}>Administradores</h1>
 
-      {error && !modalAdmin && <div className={styles.error}>{error}</div>}
+      {error && !modalAdmin && !usuarioModalOpen && <div className={styles.error}>{error}</div>}
 
       {loading ? (
         <p>Cargando...</p>
@@ -156,10 +207,26 @@ export default function AdministradoresPage() {
           columns={columns}
           data={admins}
           actions={getActions}
+          onAdd={openCreateUsuario}
+          addLabel="Nuevo usuario"
           emptyMessage="No hay administradores registrados"
           searchPlaceholder="Buscar administrador..."
         />
       )}
+
+      <Modal
+        isOpen={usuarioModalOpen}
+        onClose={() => setUsuarioModalOpen(false)}
+        title={editUsuario ? 'Editar usuario' : 'Nuevo usuario'}
+      >
+        {error && usuarioModalOpen && <div className={styles.error}>{error}</div>}
+        <UsuarioForm
+          usuario={editUsuario}
+          onSave={handleSaveUsuario}
+          onCancel={() => setUsuarioModalOpen(false)}
+          loading={savingUsuario}
+        />
+      </Modal>
 
       <Modal
         isOpen={modalAdmin !== null}

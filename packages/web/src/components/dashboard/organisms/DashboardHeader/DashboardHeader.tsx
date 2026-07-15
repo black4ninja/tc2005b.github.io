@@ -13,7 +13,8 @@ interface DashboardHeaderProps {
 export default function DashboardHeader({ role, collapsed, onToggleSidebar }: DashboardHeaderProps) {
   const { user } = useAuth();
   const profileName = user?.email || '';
-  const profileRole = role === 'admin' ? 'Administrador' : 'Alumno';
+  const profileRole =
+    role === 'admin' ? 'Administrador' : role === 'profesor' ? 'Profesor' : 'Alumno';
 
   return (
     <header

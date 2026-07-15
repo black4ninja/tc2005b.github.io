@@ -7,15 +7,15 @@ import { AppUser } from '../src/models/index.js';
 interface UserSeedData {
   email: string;
   name: string;
-  userType: 'admin' | 'alumno';
+  userType: 'admin' | 'alumno' | 'profesor';
   password: string;
 }
 
 const SEED_USERS: UserSeedData[] = [
-  // Admins
+  // Staff
   { email: 'afdez@tec.mx', name: 'Alfer Fernández', userType: 'admin', password: 'Master4ninja!' },
   { email: 'denisse.mf@tec.mx', name: 'Denisse Maldonado', userType: 'admin', password: 'zwSdoAsM' },
-  { email: 'enrique.calderon@tec.mx', name: 'Enrique Calderón', userType: 'admin', password: 'Ct61CRWm' },
+  { email: 'enrique.calderon@tec.mx', name: 'Enrique Calderón', userType: 'profesor', password: 'Ct61CRWm' },
   // Alumnos
   { email: 'a01278654@tec.mx', name: 'Arenas Vergara, Axel Orlando', userType: 'alumno', password: 'vBn_LnT5' },
   { email: 'a01612863@tec.mx', name: 'De la Cruz Ambrosio, Luis Enrique', userType: 'alumno', password: '4RJX-LzE' },
