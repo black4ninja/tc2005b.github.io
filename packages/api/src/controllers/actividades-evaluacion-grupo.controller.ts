@@ -8,6 +8,7 @@ import { PlanEvaluacion } from '../models/PlanEvaluacion.js';
 import { Grupo } from '../models/Grupo.js';
 import { AppUser } from '../models/AppUser.js';
 import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
+import { scopeGrupo } from '../services/grupo-admin.service.js';
 
 const TIPOS_VALIDOS = [
   'lab', 'lectura', 'ejercicio', 'proyecto', 'evaluacion',
@@ -76,11 +77,12 @@ export async function createActividadEvaluacionGrupo(req: Request, res: Response
 }
 
 export async function updateActividadEvaluacionGrupo(req: Request, res: Response): Promise<void> {
-  const { id } = req.params;
+  const { id, grupoId } = req.params;
   const { nombre, tipo, aprendizajePlaneado, semanaPlaneada, congelada } = req.body;
 
   try {
     const query = BaseModel.queryActive<ActividadEvaluacionGrupo>('ActividadEvaluacionGrupo');
+    scopeGrupo(query, grupoId); // la actividad debe ser DE este grupo (candado profesor)
     const act = await query.get(id, { useMasterKey: true });
 
     if (nombre !== undefined) {
@@ -120,11 +122,12 @@ export async function updateActividadEvaluacionGrupo(req: Request, res: Response
 }
 
 export async function deleteActividadEvaluacionGrupo(req: Request, res: Response): Promise<void> {
-  const { id } = req.params;
+  const { id, grupoId } = req.params;
 
   try {
     const query = new Parse.Query<ActividadEvaluacionGrupo>('ActividadEvaluacionGrupo');
     query.equalTo('exists' as any, true as any);
+    scopeGrupo(query, grupoId); // la actividad debe ser DE este grupo (candado profesor)
     query.include('grupo');
     const act = await query.get(id, { useMasterKey: true });
     const grupo = act.getGrupo();

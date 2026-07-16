@@ -8,6 +8,7 @@ import { Competencia } from '../models/Competencia.js';
 import { CompetenciaAlumno } from '../models/CompetenciaAlumno.js';
 import { PlanEvaluacion, type PeriodoConfig } from '../models/PlanEvaluacion.js';
 import { Grupo } from '../models/Grupo.js';
+import { scopeGrupo } from '../services/grupo-admin.service.js';
 
 const NUMBER_TO_VALOR: Record<number, string> = {
   0: '',
@@ -23,8 +24,9 @@ function numberToValor(num: unknown): string {
   return '';
 }
 
-async function fetchEntrevistaFull(entrevistaId: string): Promise<Entrevista> {
+async function fetchEntrevistaFull(entrevistaId: string, grupoId: string): Promise<Entrevista> {
   const query = new Parse.Query<Entrevista>('Entrevista');
+  scopeGrupo(query, grupoId); // la entrevista debe ser DE este grupo (candado profesor)
   query.include('equipo');
   query.include('equipo.miembros');
   query.include('profesores');
@@ -116,7 +118,7 @@ export async function initEvaluaciones(req: Request, res: Response): Promise<voi
   const { entrevistaId, grupoId } = req.params;
 
   try {
-    const entrevista = await fetchEntrevistaFull(entrevistaId);
+    const entrevista = await fetchEntrevistaFull(entrevistaId, grupoId);
     const { periodoMap, periodoNames } = await fetchPeriodoMapAndNames(grupoId);
 
     // Get current equipo members and competencias
@@ -239,7 +241,7 @@ export async function listEvaluaciones(req: Request, res: Response): Promise<voi
   const { entrevistaId, grupoId } = req.params;
 
   try {
-    const entrevista = await fetchEntrevistaFull(entrevistaId);
+    const entrevista = await fetchEntrevistaFull(entrevistaId, grupoId);
     const evaluaciones = await fetchEvaluaciones(entrevistaId);
     const { periodoMap, periodoNames } = await fetchPeriodoMapAndNames(grupoId);
 
@@ -264,7 +266,7 @@ export async function listEvaluaciones(req: Request, res: Response): Promise<voi
 }
 
 export async function updateEvaluacion(req: Request, res: Response): Promise<void> {
-  const { evaluacionId } = req.params;
+  const { evaluacionId, grupoId } = req.params;
   const { comentario, valorAsignado } = req.body;
 
   try {
@@ -275,8 +277,16 @@ export async function updateEvaluacion(req: Request, res: Response): Promise<voi
     query.include('entrevista');
     const evaluacion = await query.get(evaluacionId, { useMasterKey: true });
 
-    // Block editing if entrevista is liberada
+    // EvaluacionEntrevista no tiene grupo propio: se scope vía su entrevista. Un
+    // profesor con acceso al grupo A no debe editar la evaluación de una
+    // entrevista de B (candado profesor).
     const entrevista = evaluacion.getEntrevista();
+    if ((entrevista as any)?.get('grupo')?.id !== grupoId) {
+      res.status(404).json({ status: 'error', message: 'Evaluación no encontrada en este grupo' });
+      return;
+    }
+
+    // Block editing if entrevista is liberada
     if (entrevista && (entrevista as any).get('liberada') === true) {
       res.status(400).json({ status: 'error', message: 'No se puede editar una evaluación liberada' });
       return;

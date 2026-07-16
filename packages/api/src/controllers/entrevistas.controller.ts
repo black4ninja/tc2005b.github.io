@@ -8,6 +8,7 @@ import { Equipo } from '../models/Equipo.js';
 import { AppUser } from '../models/AppUser.js';
 import { Competencia } from '../models/Competencia.js';
 import { CompetenciaAlumno } from '../models/CompetenciaAlumno.js';
+import { scopeGrupo, existeEnGrupo } from '../services/grupo-admin.service.js';
 import { PlanEvaluacion, type PeriodoConfig } from '../models/PlanEvaluacion.js';
 
 function getWeekBounds(fecha: string): { monday: string; sunday: string } {
@@ -80,6 +81,13 @@ export async function createEntrevista(req: Request, res: Response): Promise<voi
   }
 
   try {
+    // El equipo debe ser DE este grupo (candado profesor): con un equipoId ajeno,
+    // el refetch con include('equipo.miembros') filtraría el roster de otro grupo.
+    if (!(await existeEnGrupo('Equipo', equipoId, grupoId))) {
+      res.status(400).json({ status: 'error', message: 'El equipo no pertenece a este grupo' });
+      return;
+    }
+
     // Weekly validation
     const conflicting = await checkWeeklyConflict(grupoId, fecha, competencias);
     if (conflicting.length > 0) {
@@ -127,6 +135,7 @@ export async function updateEntrevista(req: Request, res: Response): Promise<voi
 
   try {
     const query = BaseModel.queryActive<Entrevista>('Entrevista');
+    scopeGrupo(query, grupoId); // la entrevista debe ser DE este grupo (candado profesor)
     const entrevista = await query.get(entrevistaId, { useMasterKey: true });
 
     if (entrevista.isLiberada()) {
@@ -147,6 +156,12 @@ export async function updateEntrevista(req: Request, res: Response): Promise<voi
     }
 
     if (equipoId) {
+      // El equipo nuevo debe ser de este grupo (candado profesor): si no, el
+      // refetch con include('equipo.miembros') filtraría el roster de otro grupo.
+      if (!(await existeEnGrupo('Equipo', equipoId, grupoId))) {
+        res.status(400).json({ status: 'error', message: 'El equipo no pertenece a este grupo' });
+        return;
+      }
       entrevista.setEquipo(Parse.Object.extend('Equipo').createWithoutData(equipoId) as Equipo);
     }
     if (Array.isArray(profesores)) {
@@ -180,11 +195,12 @@ export async function updateEntrevista(req: Request, res: Response): Promise<voi
 }
 
 export async function deleteEntrevista(req: Request, res: Response): Promise<void> {
-  const { entrevistaId } = req.params;
+  const { entrevistaId, grupoId } = req.params;
 
   try {
     const query = new Parse.Query<Entrevista>('Entrevista');
     query.equalTo('exists' as any, true as any);
+    scopeGrupo(query, grupoId); // la entrevista debe ser DE este grupo (candado profesor)
     const entrevista = await query.get(entrevistaId, { useMasterKey: true });
 
     entrevista.softDelete();
@@ -224,6 +240,7 @@ export async function liberarEntrevista(req: Request, res: Response): Promise<vo
 
   try {
     const query = BaseModel.queryActive<Entrevista>('Entrevista');
+    scopeGrupo(query, grupoId); // la entrevista debe ser DE este grupo (candado profesor)
     query.include('equipo');
     query.include('equipo.miembros');
     query.include('profesores');

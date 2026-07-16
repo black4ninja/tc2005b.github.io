@@ -4,6 +4,7 @@ import { Equipo } from '../models/Equipo.js';
 import { ActividadEvaluacionGrupo } from '../models/ActividadEvaluacionGrupo.js';
 import { ActividadEvaluacionAlumno } from '../models/ActividadEvaluacionAlumno.js';
 import { Grupo } from '../models/Grupo.js';
+import { scopeGrupo } from '../services/grupo-admin.service.js';
 import { AppUser } from '../models/AppUser.js';
 import { registrarLog } from '../models/AuditLog.js';
 
@@ -11,9 +12,11 @@ export async function getAvancesEquipo(req: Request, res: Response): Promise<voi
   const { grupoId, equipoId } = req.params;
 
   try {
-    // Fetch equipo with miembros
+    // Fetch equipo with miembros — DEBE ser de este grupo (candado profesor): si
+    // no, un id de equipo ajeno filtraría su roster (nombres/emails) por este GET.
     const equipoQuery = new Parse.Query<Equipo>('Equipo');
     equipoQuery.equalTo('exists' as any, true as any);
+    scopeGrupo(equipoQuery, grupoId);
     equipoQuery.include('miembros' as any);
     const equipo = await equipoQuery.get(equipoId, { useMasterKey: true });
 
@@ -102,6 +105,7 @@ export async function calificarAvance(req: Request, res: Response): Promise<void
   try {
     const query = new Parse.Query<ActividadEvaluacionAlumno>('ActividadEvaluacionAlumno');
     query.equalTo('exists' as any, true as any);
+    scopeGrupo(query, grupoId); // el registro debe ser DE este grupo (candado profesor)
     query.include('actividadGrupo' as any);
     query.include('alumno' as any);
     const registro = await query.get(actividadAlumnoId, { useMasterKey: true });

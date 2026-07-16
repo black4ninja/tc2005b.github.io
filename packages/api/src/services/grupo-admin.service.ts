@@ -30,3 +30,28 @@ export async function isStaffDeGrupo(userId: string, grupoId: string): Promise<b
   const count = await query.count({ useMasterKey: true });
   return count > 0;
 }
+
+/**
+ * Restringe una query de un sub-recurso a los que pertenecen al grupo dado.
+ * Se aplica ANTES de `.get(subId)`: Parse respeta los constraints en `.get`, así
+ * que un sub-recurso de OTRO grupo lanza OBJECT_NOT_FOUND (→ 404) en vez de
+ * cargarse. Cierra el hueco de cruzar ids de grupos: un profesor con acceso al
+ * grupo A no puede tocar la entrevista/equipo/… de B pasando su id en la URL.
+ */
+export function scopeGrupo<T extends Parse.Object>(query: Parse.Query<T>, grupoId: string): void {
+  const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId);
+  query.equalTo('grupo' as any, grupoPointer as any);
+}
+
+/**
+ * True si existe un objeto activo `className` con ese id Y perteneciente al
+ * grupo. Para validar ids que llegan en el BODY (p. ej. el equipoId de una
+ * entrevista): que no se referencie un recurso de otro grupo.
+ */
+export async function existeEnGrupo(className: string, id: string, grupoId: string): Promise<boolean> {
+  const query = BaseModel.queryActive(className);
+  query.equalTo('objectId' as any, id as any);
+  scopeGrupo(query, grupoId);
+  const count = await query.count({ useMasterKey: true });
+  return count > 0;
+}
