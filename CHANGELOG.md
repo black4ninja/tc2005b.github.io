@@ -8,6 +8,15 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Modelos y registro del módulo "Ejercicios" (opt-in por grupo).** Segunda fase
+  del mini-juez: los modelos Parse `EjercicioProgramacion` (pertenece a una
+  colección, con enunciado, lenguajes, código inicial, límites y casos de prueba)
+  y `EnvioEjercicio` (historial de entregas por alumno con su veredicto). Se
+  registra `ejercicios` en el catálogo de módulos, pero **opt-in**: a diferencia de
+  los otros cuatro (que nacen encendidos), este **nace apagado** y se enciende
+  explícitamente por grupo. `moduloHabilitado` se generaliza para soportar ambos
+  defaults sin migración (grupos existentes lo tienen apagado por ausencia). Aún
+  **sin endpoints ni UI** — autoría y experiencia del alumno llegan después.
 - **Motor de ejecución del juez de ejercicios (Kotlin y Swift).** Primera fase del
   módulo "Ejercicios" (mini-juez estilo UVA): una librería que **compila y ejecuta
   código del alumno en el propio servidor**, aislada con **bubblewrap** (open-source,
