@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { identifyUser } from '../middlewares/auth.middleware.js';
-import { requireAdmin } from '../middlewares/abac.middleware.js';
+import { requireGrupoAccess } from '../middlewares/grupo-scope.middleware.js';
 import {
   listEquipos,
   createEquipo,
@@ -10,7 +10,7 @@ import {
 
 const router = Router();
 
-router.use('/admin/grupos/:grupoId/equipos', identifyUser, requireAdmin);
+router.use('/admin/grupos/:grupoId/equipos', identifyUser, requireGrupoAccess);
 
 router.get('/admin/grupos/:grupoId/equipos', listEquipos);
 router.post('/admin/grupos/:grupoId/equipos', createEquipo);

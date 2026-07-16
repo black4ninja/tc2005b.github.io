@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { identifyUser } from '../middlewares/auth.middleware.js';
-import { requireAdmin } from '../middlewares/abac.middleware.js';
+import { requireGrupoAccess } from '../middlewares/grupo-scope.middleware.js';
 import {
   listAlumnos,
   createAlumno,
@@ -13,7 +13,7 @@ import {
 
 const router = Router();
 
-router.use('/admin/grupos/:grupoId/alumnos', identifyUser, requireAdmin);
+router.use('/admin/grupos/:grupoId/alumnos', identifyUser, requireGrupoAccess);
 
 // Fixed paths BEFORE parameterized paths
 router.get('/admin/grupos/:grupoId/alumnos/template', downloadTemplate);

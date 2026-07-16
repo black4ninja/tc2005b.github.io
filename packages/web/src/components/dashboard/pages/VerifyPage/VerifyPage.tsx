@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
+import { rutaPostLogin } from '../../../../utils/postLogin';
 import styles from './VerifyPage.module.css';
 import Icon from '../../atoms/Icon/Icon';
 
@@ -45,7 +46,7 @@ export default function VerifyPage() {
         login(data.sessionToken, data.user);
         setState('success');
 
-        const redirectTo = data.user.userType === 'admin' ? '/admin' : '/alumno';
+        const redirectTo = rutaPostLogin(data.user);
         setTimeout(() => {
           if (!cancelled) navigate(redirectTo, { replace: true });
         }, 1500);

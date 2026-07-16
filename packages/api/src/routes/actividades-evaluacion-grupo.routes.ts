@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { identifyUser } from '../middlewares/auth.middleware.js';
-import { requireAdmin } from '../middlewares/abac.middleware.js';
+import { requireGrupoAccess } from '../middlewares/grupo-scope.middleware.js';
 import {
   listActividadesEvaluacionGrupo,
   createActividadEvaluacionGrupo,
@@ -14,7 +14,7 @@ import {
 
 const router = Router();
 
-router.use('/admin/grupos/:grupoId/actividades-evaluacion', identifyUser, requireAdmin);
+router.use('/admin/grupos/:grupoId/actividades-evaluacion', identifyUser, requireGrupoAccess);
 
 // Fixed paths BEFORE parameterized paths
 router.post('/admin/grupos/:grupoId/actividades-evaluacion/copiar-plantilla', copiarPlantilla);

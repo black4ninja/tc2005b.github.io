@@ -8,6 +8,29 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Nuevo rol "profesor"**, con acceso restringido a su grupo. Al loguear, el
+  profesor **no entra al panel admin**: cae directo en su grupo asignado (como el
+  alumno cae en su área) y gestiona ese grupo con **las mismas capacidades** que un
+  admin, pero **solo** los grupos donde figura en `Grupo.admins`. El admin sigue
+  igual. (Datos: Enrique pasa a profesor; Alfer y Denisse siguen admin.)
+  - **El candado vive en el API**, no solo en la UI (el front no protege rutas por
+    rol). Un middleware nuevo (`grupo-scope.middleware`) valida, en cada ruta
+    `/admin/grupos/:id/*`, que el profesor pertenezca a ese grupo; si no, 403.
+    `GET /admin/grupos` le devuelve **solo sus grupos**. Se le bloquean las cosas
+    globales (Administradores, crear grupos, dashboard, CMS, escritura de
+    catálogos) y se le permiten las **lecturas de referencia** que sus pantallas de
+    grupo necesitan (`GET /admin/competencias`, `GET /admin/profesores`).
+  - En **Administradores**: columna **Rol**, acción **Editar** (nombre y rol) y
+    botón **Nuevo usuario** con selección de rol (admin/profesor) y contraseña
+    inicial. La lista ahora incluye a los profesores. Guardrail: no se puede dejar
+    el sistema con **cero admins** (degradar al último admin da 400).
+  - `scripts/migrate-enrique-profesor.ts` — cambia el rol de Enrique, idempotente
+    y con `--dry-run`. Corre **después del deploy** (antes rompería su acceso en
+    producción con el código viejo).
+  - **Corrección de raíz aprovechada:** `admin.routes.ts` tenía un
+    `router.use('/admin', requireAdmin)` que —al montarse primero— interceptaba
+    **todo** `/api/admin/*`, incluidas rutas de otros routers. Se pasó a guards
+    **por ruta** para que cada router aplique el suyo.
 - **Administradores asignables a grupos, de forma bidireccional.** Desde el
   **grupo** (form de crear/editar, junto a las colecciones) se marcan sus
   administradores; desde **Administradores** cada fila tiene una acción "Grupos"

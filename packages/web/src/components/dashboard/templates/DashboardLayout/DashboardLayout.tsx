@@ -12,7 +12,7 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ role }: DashboardLayoutProps) {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated, user } = useAuth();
   const { collapsed, mobileOpen, toggle, closeMobile } = useSidebarCollapse();
 
   if (isLoading) {
@@ -23,13 +23,19 @@ export default function DashboardLayout({ role }: DashboardLayoutProps) {
     return <Navigate to="/login" replace />;
   }
 
+  // El profesor vive en el árbol de rutas admin (mismas pantallas de grupo), pero
+  // su rol EFECTIVO es 'profesor': el sidebar/header le muestran solo su grupo, no
+  // el panel global. App.tsx sigue pasando role="admin"; aquí se especializa.
+  const effectiveRole: DashboardRole =
+    role === 'admin' && user?.userType === 'profesor' ? 'profesor' : role;
+
   return (
     // El provider envuelve Sidebar y Outlet: el árbol de la colección abierta lo
     // pinta el sidebar y lo muta la página, así que ambos comparten una fuente.
     <ColeccionArbolProvider>
       <div className={styles.layout}>
-        <Sidebar role={role} collapsed={collapsed} mobileOpen={mobileOpen} onCloseMobile={closeMobile} />
-        <DashboardHeader role={role} collapsed={collapsed} onToggleSidebar={toggle} />
+        <Sidebar role={effectiveRole} collapsed={collapsed} mobileOpen={mobileOpen} onCloseMobile={closeMobile} />
+        <DashboardHeader role={effectiveRole} collapsed={collapsed} onToggleSidebar={toggle} />
         <main
           className={styles.content}
           style={{ marginLeft: collapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)' }}

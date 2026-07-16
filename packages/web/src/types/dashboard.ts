@@ -1,4 +1,4 @@
-export type DashboardRole = 'admin' | 'alumno';
+export type DashboardRole = 'admin' | 'alumno' | 'profesor';
 
 export interface SidebarItem {
   label: string;

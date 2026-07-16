@@ -26,6 +26,9 @@ export function getSidebarItems(
       { label: 'Contenidos', icon: 'library_books', path: '/admin/contenidos' },
     ];
   }
+  // El profesor nunca usa este menú global: su nav es SIEMPRE la de su grupo
+  // (getGrupoDetailItems). Solo llega aquí si no tiene grupo asignado → sin menú.
+  if (role === 'profesor') return [];
   const items: SidebarItem[] = [];
   if (selectedGrupoId) {
     items.push({

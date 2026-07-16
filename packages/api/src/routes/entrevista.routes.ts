@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { identifyUser } from '../middlewares/auth.middleware.js';
-import { requireAdmin } from '../middlewares/abac.middleware.js';
+import { requireGrupoAccess, requireStaff } from '../middlewares/grupo-scope.middleware.js';
 import {
   listProfesores,
   listEntrevistas,
@@ -13,9 +13,11 @@ import {
 
 const router = Router();
 
-router.get('/admin/profesores', identifyUser, requireAdmin, listProfesores);
+// Lectura de referencia (asignar entrevistador): la usa la página de entrevistas
+// del grupo, así que el profesor también la necesita.
+router.get('/admin/profesores', identifyUser, requireStaff, listProfesores);
 
-router.use('/admin/grupos/:grupoId/entrevistas', identifyUser, requireAdmin);
+router.use('/admin/grupos/:grupoId/entrevistas', identifyUser, requireGrupoAccess);
 
 router.get('/admin/grupos/:grupoId/entrevistas', listEntrevistas);
 router.get('/admin/grupos/:grupoId/entrevistas/progress', getEntrevistaProgress);

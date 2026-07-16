@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { identifyUser } from '../middlewares/auth.middleware.js';
-import { requireAdmin } from '../middlewares/abac.middleware.js';
+import { requireGrupoAccess } from '../middlewares/grupo-scope.middleware.js';
 import {
   initEvaluaciones,
   listEvaluaciones,
@@ -9,7 +9,7 @@ import {
 
 const router = Router();
 
-router.use('/admin/grupos/:grupoId/entrevistas/:entrevistaId/evaluaciones', identifyUser, requireAdmin);
+router.use('/admin/grupos/:grupoId/entrevistas/:entrevistaId/evaluaciones', identifyUser, requireGrupoAccess);
 
 router.post('/admin/grupos/:grupoId/entrevistas/:entrevistaId/evaluaciones/init', initEvaluaciones);
 router.get('/admin/grupos/:grupoId/entrevistas/:entrevistaId/evaluaciones', listEvaluaciones);
