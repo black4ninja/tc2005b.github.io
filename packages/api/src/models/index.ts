@@ -28,3 +28,8 @@ export { Documento, DOCUMENTO_TIPOS, DOCUMENTO_PLANTILLAS } from './Documento.js
 export type { DocumentoTipo, DocumentoPlantilla } from './Documento.js';
 export { DocumentoVersion } from './DocumentoVersion.js';
 export { Recurso } from './Recurso.js';
+// Módulo "Ejercicios" (mini-juez Kotlin/Swift)
+export { EjercicioProgramacion } from './EjercicioProgramacion.js';
+export type { CasoPrueba, CodigoInicial } from './EjercicioProgramacion.js';
+export { EnvioEjercicio } from './EnvioEjercicio.js';
+export type { DetalleCasoEnvio } from './EnvioEjercicio.js';

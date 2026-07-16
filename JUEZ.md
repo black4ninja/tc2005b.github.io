@@ -64,7 +64,7 @@ SWIFT_HOME=/opt/swift
 # JUEZ_COMPILACION_TIMEOUT_MS=30000
 # JUEZ_TRABAJO_DIR=/tmp/juez     # workdirs efímeros
 # JUEZ_SALIDA_MAX_BYTES=65536
-# JUEZ_PROCESOS=128              # ulimit -u (corta fork bombs)
+# JUEZ_PROCESOS=256              # ulimit -u (corta fork bombs; la JVM cuenta cada hilo)
 ```
 
 ## 4. Verificar
