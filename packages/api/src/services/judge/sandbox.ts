@@ -4,7 +4,7 @@
  * workdir, PID namespace propio y muere con el padre. En development sin sandbox
  * (macOS) corre directo, solo para probar la lógica localmente.
  *
- * Los límites de recursos se aplican con `ulimit` dentro de un wrapper `sh -c`
+ * Los límites de recursos se aplican con `ulimit` dentro de un wrapper `bash -c`
  * antes de `exec`. El reloj de pared lo hace este proceso (SIGKILL al grupo).
  */
 import { spawn } from 'child_process';
@@ -30,6 +30,11 @@ export interface OpcionesCorrida {
 
 /** Punto de montaje del workdir dentro del sandbox. */
 const WORK = '/work';
+
+// El wrapper de ulimits corre con bash, no con sh: en Debian/Ubuntu `sh` es dash,
+// que no implementa `ulimit -u` y aborta ese límite (el corta-fork-bombs) con un
+// "Illegal option -u" que además ensucia el stderr del alumno.
+const SHELL = '/bin/bash';
 
 function comandoUlimit(op: OpcionesCorrida): string {
   // Fuera del sandbox (dev en macOS) los ulimits son POR-USUARIO y rompen cosas
@@ -89,18 +94,18 @@ export function correrAislado(op: OpcionesCorrida): Promise<ResultadoCorrida> {
     let env: NodeJS.ProcessEnv | undefined;
 
     if (config.juez.sandbox) {
-      // bwrap ... -- /bin/sh -c '<wrapper>' sh <argv...>
+      // bwrap ... -- /bin/bash -c '<wrapper>' bash <argv...>
       const base = argvBwrap(op, op.cwdHost);
       comando = base[0];
-      args = [...base.slice(1), '--', '/bin/sh', '-c', wrapper, 'sh', ...op.argv];
+      args = [...base.slice(1), '--', SHELL, '-c', wrapper, 'bash', ...op.argv];
       cwd = undefined; // el chdir lo hace bwrap
       env = {}; // bwrap ya limpió el env con --clearenv/--setenv
     } else {
       // Sin sandbox (dev): corre en el workdir heredando el env del proceso (para
       // que el toolchain local funcione, p. ej. SDKROOT del swiftc de macOS) y
       // superponiendo el del lenguaje.
-      comando = '/bin/sh';
-      args = ['-c', wrapper, 'sh', ...op.argv];
+      comando = SHELL;
+      args = ['-c', wrapper, 'bash', ...op.argv];
       cwd = op.cwdHost;
       env = { ...process.env, HOME: op.cwdHost, ...op.env };
     }
