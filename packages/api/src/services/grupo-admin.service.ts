@@ -30,3 +30,15 @@ export async function isStaffDeGrupo(userId: string, grupoId: string): Promise<b
   const count = await query.count({ useMasterKey: true });
   return count > 0;
 }
+
+/**
+ * Restringe una query de un sub-recurso a los que pertenecen al grupo dado.
+ * Se aplica ANTES de `.get(subId)`: Parse respeta los constraints en `.get`, así
+ * que un sub-recurso de OTRO grupo lanza OBJECT_NOT_FOUND (→ 404) en vez de
+ * cargarse. Cierra el hueco de cruzar ids de grupos: un profesor con acceso al
+ * grupo A no puede tocar la entrevista/equipo/… de B pasando su id en la URL.
+ */
+export function scopeGrupo<T extends Parse.Object>(query: Parse.Query<T>, grupoId: string): void {
+  const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId);
+  query.equalTo('grupo' as any, grupoPointer as any);
+}

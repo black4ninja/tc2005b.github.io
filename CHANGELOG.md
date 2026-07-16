@@ -31,6 +31,15 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     `router.use('/admin', requireAdmin)` que —al montarse primero— interceptaba
     **todo** `/api/admin/*`, incluidas rutas de otros routers. Se pasó a guards
     **por ruta** para que cada router aplique el suyo.
+  - **Candado por sub-recurso (endurecimiento):** el guard valida el `:grupoId` de
+    la URL, pero un profesor de su grupo podía pasar el id de una entrevista/equipo/
+    actividad/malla de OTRO grupo en el mismo path. Ahora cada mutación restringe el
+    sub-recurso a su grupo (`scopeGrupo`): un id ajeno responde **404** en vez de
+    editarse. Cubre entrevistas, evaluaciones, equipos, avances, actividades de
+    evaluación, malla y competencias del alumno.
+  - **`updateGrupo` no deja al profesor reasignar `admins`/`colecciones`** de su
+    grupo (son configuración: quién da la materia, quién está a cargo). Puede editar
+    nombre/fechas/agenda; esos dos campos solo los cambia un admin.
 - **Administradores asignables a grupos, de forma bidireccional.** Desde el
   **grupo** (form de crear/editar, junto a las colecciones) se marcan sus
   administradores; desde **Administradores** cada fila tiene una acción "Grupos"

@@ -4,6 +4,7 @@ import { Equipo } from '../models/Equipo.js';
 import { ActividadEvaluacionGrupo } from '../models/ActividadEvaluacionGrupo.js';
 import { ActividadEvaluacionAlumno } from '../models/ActividadEvaluacionAlumno.js';
 import { Grupo } from '../models/Grupo.js';
+import { scopeGrupo } from '../services/grupo-admin.service.js';
 import { AppUser } from '../models/AppUser.js';
 import { registrarLog } from '../models/AuditLog.js';
 
@@ -102,6 +103,7 @@ export async function calificarAvance(req: Request, res: Response): Promise<void
   try {
     const query = new Parse.Query<ActividadEvaluacionAlumno>('ActividadEvaluacionAlumno');
     query.equalTo('exists' as any, true as any);
+    scopeGrupo(query, grupoId); // el registro debe ser DE este grupo (candado profesor)
     query.include('actividadGrupo' as any);
     query.include('alumno' as any);
     const registro = await query.get(actividadAlumnoId, { useMasterKey: true });

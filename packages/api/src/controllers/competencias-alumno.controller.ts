@@ -5,6 +5,7 @@ import { Competencia } from '../models/Competencia.js';
 import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
 import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
+import { scopeGrupo } from '../services/grupo-admin.service.js';
 import { competenciasDeGrupo } from '../services/grupo-colecciones.service.js';
 
 export async function crearCompetenciasAlumno(req: Request, res: Response): Promise<void> {
@@ -295,11 +296,12 @@ export async function propagarCompetencias(req: Request, res: Response): Promise
 }
 
 export async function updateCompetenciaAlumno(req: Request, res: Response): Promise<void> {
-  const { compAlumnoId } = req.params;
+  const { compAlumnoId, grupoId } = req.params;
 
   try {
     const query = new Parse.Query<CompetenciaAlumno>('CompetenciaAlumno');
     query.equalTo('exists' as any, true as any);
+    scopeGrupo(query, grupoId); // el registro debe ser DE este grupo (candado profesor)
     query.include('competencia' as any);
     const registro = await query.get(compAlumnoId, { useMasterKey: true });
 

@@ -8,6 +8,7 @@ import { Equipo } from '../models/Equipo.js';
 import { AppUser } from '../models/AppUser.js';
 import { Competencia } from '../models/Competencia.js';
 import { CompetenciaAlumno } from '../models/CompetenciaAlumno.js';
+import { scopeGrupo } from '../services/grupo-admin.service.js';
 import { PlanEvaluacion, type PeriodoConfig } from '../models/PlanEvaluacion.js';
 
 function getWeekBounds(fecha: string): { monday: string; sunday: string } {
@@ -127,6 +128,7 @@ export async function updateEntrevista(req: Request, res: Response): Promise<voi
 
   try {
     const query = BaseModel.queryActive<Entrevista>('Entrevista');
+    scopeGrupo(query, grupoId); // la entrevista debe ser DE este grupo (candado profesor)
     const entrevista = await query.get(entrevistaId, { useMasterKey: true });
 
     if (entrevista.isLiberada()) {
@@ -180,11 +182,12 @@ export async function updateEntrevista(req: Request, res: Response): Promise<voi
 }
 
 export async function deleteEntrevista(req: Request, res: Response): Promise<void> {
-  const { entrevistaId } = req.params;
+  const { entrevistaId, grupoId } = req.params;
 
   try {
     const query = new Parse.Query<Entrevista>('Entrevista');
     query.equalTo('exists' as any, true as any);
+    scopeGrupo(query, grupoId); // la entrevista debe ser DE este grupo (candado profesor)
     const entrevista = await query.get(entrevistaId, { useMasterKey: true });
 
     entrevista.softDelete();
@@ -224,6 +227,7 @@ export async function liberarEntrevista(req: Request, res: Response): Promise<vo
 
   try {
     const query = BaseModel.queryActive<Entrevista>('Entrevista');
+    scopeGrupo(query, grupoId); // la entrevista debe ser DE este grupo (candado profesor)
     query.include('equipo');
     query.include('equipo.miembros');
     query.include('profesores');

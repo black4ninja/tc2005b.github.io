@@ -146,24 +146,34 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
       if (url) grupo.setUrlAgendaEntrevistas(url);
       else grupo.unset('urlAgendaEntrevistas');
     }
-    // Solo un array válido aplica ([] limpia); no-array se ignora.
-    const coleccionesPtrs = colecciones !== undefined ? await resolverColecciones(colecciones) : null;
-    if (coleccionesPtrs === 'invalido') {
-      res.status(400).json({ status: 'error', message: 'Alguna colección indicada no existe' });
-      return;
-    }
-    if (coleccionesPtrs) grupo.setColecciones(coleccionesPtrs);
+    // Colecciones y administradores del grupo son CONFIGURACIÓN (quién da la
+    // materia, quién está a cargo): solo el admin las reasigna. Un profesor puede
+    // editar su grupo (nombre/fechas/agenda) pero no estos dos campos — se ignoran
+    // en silencio si los manda. El front no se los ofrece; esto es la barrera real.
+    const esAdmin = req.appUser?.isAdmin() === true;
+    let coleccionesCambiaron = false;
+    if (esAdmin) {
+      // Solo un array válido aplica ([] limpia); no-array se ignora.
+      const coleccionesPtrs = colecciones !== undefined ? await resolverColecciones(colecciones) : null;
+      if (coleccionesPtrs === 'invalido') {
+        res.status(400).json({ status: 'error', message: 'Alguna colección indicada no existe' });
+        return;
+      }
+      if (coleccionesPtrs) {
+        grupo.setColecciones(coleccionesPtrs);
+        coleccionesCambiaron = true;
+      }
 
-    // Solo un array válido aplica ([] limpia); no-array (undefined) se ignora.
-    const adminsPtrs = await resolverAdmins(req.body.admins);
-    if (adminsPtrs === 'invalido') {
-      res.status(400).json({ status: 'error', message: 'Alguno de los administradores indicados no existe o no es admin' });
-      return;
+      const adminsPtrs = await resolverAdmins(req.body.admins);
+      if (adminsPtrs === 'invalido') {
+        res.status(400).json({ status: 'error', message: 'Alguno de los administradores indicados no existe o no es staff' });
+        return;
+      }
+      if (adminsPtrs) grupo.setAdmins(adminsPtrs);
     }
-    if (adminsPtrs) grupo.setAdmins(adminsPtrs);
 
     await grupo.save(null, { useMasterKey: true });
-    if (coleccionesPtrs) invalidateColeccionesPermitidas();
+    if (coleccionesCambiaron) invalidateColeccionesPermitidas();
 
     res.json({ status: 'ok', grupo: grupo.toSafeJSON() });
   } catch (error: any) {

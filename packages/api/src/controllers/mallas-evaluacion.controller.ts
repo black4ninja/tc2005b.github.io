@@ -5,6 +5,7 @@ import { ActividadEvaluacionAlumno } from '../models/ActividadEvaluacionAlumno.j
 import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
 import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
+import { scopeGrupo } from '../services/grupo-admin.service.js';
 import { registrarLog } from '../models/AuditLog.js';
 
 export async function crearMallasEvaluacion(req: Request, res: Response): Promise<void> {
@@ -156,6 +157,7 @@ export async function updateActividadAlumno(req: Request, res: Response): Promis
     query.equalTo('exists' as any, true as any);
     query.equalTo('objectId' as any, actividadId as any);
     query.equalTo('alumno' as any, alumnoPointer as any);
+    scopeGrupo(query, grupoId); // el registro debe ser DE este grupo (candado profesor)
     query.include('actividadGrupo' as any);
     const registro = await query.first({ useMasterKey: true });
 

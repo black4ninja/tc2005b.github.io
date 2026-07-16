@@ -4,6 +4,7 @@ import { BaseModel } from '../models/BaseModel.js';
 import { Equipo } from '../models/Equipo.js';
 import { Grupo } from '../models/Grupo.js';
 import { AppUser } from '../models/AppUser.js';
+import { scopeGrupo } from '../services/grupo-admin.service.js';
 
 export async function listEquipos(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
@@ -67,11 +68,12 @@ export async function createEquipo(req: Request, res: Response): Promise<void> {
 }
 
 export async function updateEquipo(req: Request, res: Response): Promise<void> {
-  const { equipoId } = req.params;
+  const { equipoId, grupoId } = req.params;
   const { nombre, repositorio, miembros } = req.body;
 
   try {
     const query = BaseModel.queryActive<Equipo>('Equipo');
+    scopeGrupo(query, grupoId); // el equipo debe ser DE este grupo (candado profesor)
     query.include('miembros');
     const equipo = await query.get(equipoId, { useMasterKey: true });
 
@@ -102,11 +104,12 @@ export async function updateEquipo(req: Request, res: Response): Promise<void> {
 }
 
 export async function deleteEquipo(req: Request, res: Response): Promise<void> {
-  const { equipoId } = req.params;
+  const { equipoId, grupoId } = req.params;
 
   try {
     const query = new Parse.Query<Equipo>('Equipo');
     query.equalTo('exists' as any, true as any);
+    scopeGrupo(query, grupoId); // el equipo debe ser DE este grupo (candado profesor)
     const equipo = await query.get(equipoId, { useMasterKey: true });
 
     equipo.softDelete();
