@@ -5,6 +5,24 @@ import { Equipo } from '../models/Equipo.js';
 import { Grupo } from '../models/Grupo.js';
 import { AppUser } from '../models/AppUser.js';
 import { scopeGrupo } from '../services/grupo-admin.service.js';
+import { alumnoIdsDeGrupo } from '../services/grupo-alumno.service.js';
+
+/**
+ * ids de `miembros` del body → pointers VALIDADOS: cada uno debe ser alumno del
+ * grupo. Evita fugar/corromper con alumnos de otro grupo. 'invalido' = alguno no
+ * es del grupo (400); null = no-array (se ignora, no cambia miembros).
+ */
+async function resolverMiembros(
+  miembros: unknown,
+  grupoId: string,
+): Promise<AppUser[] | 'invalido' | null> {
+  if (!Array.isArray(miembros)) return null;
+  const ids = [...new Set(miembros.filter((s): s is string => typeof s === 'string' && s.trim() !== ''))];
+  if (ids.length === 0) return [];
+  const delGrupo = await alumnoIdsDeGrupo(grupoId);
+  if (ids.some((id) => !delGrupo.has(id))) return 'invalido';
+  return ids.map((id) => Parse.Object.extend('AppUser').createWithoutData(id) as AppUser);
+}
 
 export async function listEquipos(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
@@ -42,14 +60,12 @@ export async function createEquipo(req: Request, res: Response): Promise<void> {
     equipo.setRepositorio((repositorio ?? '').trim());
     equipo.setGrupo(grupoPointer);
 
-    if (Array.isArray(miembros) && miembros.length > 0) {
-      const pointers = miembros.map(
-        (id: string) => Parse.Object.extend('AppUser').createWithoutData(id) as AppUser,
-      );
-      equipo.setMiembros(pointers);
-    } else {
-      equipo.setMiembros([]);
+    const miembrosPtrs = await resolverMiembros(miembros, grupoId);
+    if (miembrosPtrs === 'invalido') {
+      res.status(400).json({ status: 'error', message: 'Algún miembro no es alumno de este grupo' });
+      return;
     }
+    equipo.setMiembros(miembrosPtrs ?? []);
 
     await equipo.save(null, { useMasterKey: true });
 
@@ -79,12 +95,12 @@ export async function updateEquipo(req: Request, res: Response): Promise<void> {
 
     if (nombre !== undefined) equipo.setNombre(nombre.trim());
     if (repositorio !== undefined) equipo.setRepositorio(repositorio.trim());
-    if (Array.isArray(miembros)) {
-      const pointers = miembros.map(
-        (id: string) => Parse.Object.extend('AppUser').createWithoutData(id) as AppUser,
-      );
-      equipo.setMiembros(pointers);
+    const miembrosPtrs = await resolverMiembros(miembros, grupoId);
+    if (miembrosPtrs === 'invalido') {
+      res.status(400).json({ status: 'error', message: 'Algún miembro no es alumno de este grupo' });
+      return;
     }
+    if (miembrosPtrs) equipo.setMiembros(miembrosPtrs);
 
     await equipo.save(null, { useMasterKey: true });
 

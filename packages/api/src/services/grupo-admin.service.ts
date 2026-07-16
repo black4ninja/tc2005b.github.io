@@ -42,3 +42,16 @@ export function scopeGrupo<T extends Parse.Object>(query: Parse.Query<T>, grupoI
   const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId);
   query.equalTo('grupo' as any, grupoPointer as any);
 }
+
+/**
+ * True si existe un objeto activo `className` con ese id Y perteneciente al
+ * grupo. Para validar ids que llegan en el BODY (p. ej. el equipoId de una
+ * entrevista): que no se referencie un recurso de otro grupo.
+ */
+export async function existeEnGrupo(className: string, id: string, grupoId: string): Promise<boolean> {
+  const query = BaseModel.queryActive(className);
+  query.equalTo('objectId' as any, id as any);
+  scopeGrupo(query, grupoId);
+  const count = await query.count({ useMasterKey: true });
+  return count > 0;
+}

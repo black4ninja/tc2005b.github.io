@@ -32,11 +32,18 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     **todo** `/api/admin/*`, incluidas rutas de otros routers. Se pasó a guards
     **por ruta** para que cada router aplique el suyo.
   - **Candado por sub-recurso (endurecimiento):** el guard valida el `:grupoId` de
-    la URL, pero un profesor de su grupo podía pasar el id de una entrevista/equipo/
-    actividad/malla de OTRO grupo en el mismo path. Ahora cada mutación restringe el
-    sub-recurso a su grupo (`scopeGrupo`): un id ajeno responde **404** en vez de
-    editarse. Cubre entrevistas, evaluaciones, equipos, avances, actividades de
-    evaluación, malla y competencias del alumno.
+    la URL, pero un profesor de su grupo podía referir un recurso de OTRO grupo en
+    el mismo path. Se cierra por tres vías:
+    - **Carga por id cruzado:** cada mutación restringe el sub-recurso a su grupo
+      (`scopeGrupo`) — un id ajeno responde **404**. Cubre entrevistas, evaluaciones,
+      equipos, avances, actividades de evaluación, malla y competencias del alumno.
+    - **Ids en el BODY:** los `miembros` de un equipo deben ser alumnos del grupo y
+      el `equipoId` de una entrevista debe ser del grupo (si no, **400**) — antes el
+      refetch con `include('…miembros')` filtraba el roster de otro grupo. Aplica a
+      crear y editar.
+    - **GET de identidad:** `getMallaAlumno`, `getCompetenciasAlumno` y
+      `getAvancesEquipo` devolvían el nombre/email del alumno o el roster del equipo
+      sin validar pertenencia; ahora exigen que el alumno/equipo sea del grupo (**404**).
   - **`updateGrupo` no deja al profesor reasignar `admins`/`colecciones`** de su
     grupo (son configuración: quién da la materia, quién está a cargo). Puede editar
     nombre/fechas/agenda; esos dos campos solo los cambia un admin.

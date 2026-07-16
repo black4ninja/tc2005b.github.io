@@ -73,6 +73,16 @@ export async function hasAnyActiveGrupoForAlumno(alumnoId: string): Promise<bool
 }
 
 /**
+ * Conjunto de ids de alumnos del grupo (incluye dados de baja: un equipo puede
+ * conservar a un alumno inactivo). Sirve para validar que los `miembros` que
+ * llegan en el body sean del grupo — que no se cuele un alumno de OTRO grupo.
+ */
+export async function alumnoIdsDeGrupo(grupoId: string): Promise<Set<string>> {
+  const alumnos = await getAlumnosDeGrupo(grupoId, { includeInactive: true });
+  return new Set(alumnos.map((a) => a.alumno.id));
+}
+
+/**
  * Busca un link GrupoAlumno existente (incluye inactivos/soft-deleted).
  */
 export async function findGrupoAlumnoLink(

@@ -4,7 +4,7 @@ import { CompetenciaAlumno } from '../models/CompetenciaAlumno.js';
 import { Competencia } from '../models/Competencia.js';
 import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
-import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
+import { getAlumnosDeGrupo, findGrupoAlumnoLink } from '../services/grupo-alumno.service.js';
 import { scopeGrupo } from '../services/grupo-admin.service.js';
 import { competenciasDeGrupo } from '../services/grupo-colecciones.service.js';
 
@@ -130,6 +130,14 @@ export async function getCompetenciasAlumno(req: Request, res: Response): Promis
   const { grupoId, alumnoId } = req.params;
 
   try {
+    // El alumno debe pertenecer a este grupo (candado profesor): si no, devolver
+    // su nombre/email sería fuga de identidad de un usuario ajeno al grupo.
+    const link = await findGrupoAlumnoLink(alumnoId, grupoId);
+    if (!link) {
+      res.status(404).json({ status: 'error', message: 'Alumno no encontrado en este grupo' });
+      return;
+    }
+
     const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
     const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId) as AppUser;
 
@@ -346,7 +354,13 @@ export async function updateCompetenciaAlumno(req: Request, res: Response): Prom
     const updated = await fetchQuery.get(registro.id, { useMasterKey: true });
 
     res.json({ status: 'ok', competencia: updated.toSafeJSON() });
-  } catch (error) {
+  } catch (error: any) {
+    // El scope por grupo hace que un id ajeno lance OBJECT_NOT_FOUND: es un 404
+    // (no encontrado en este grupo), no un 500.
+    if (error?.code === Parse.Error.OBJECT_NOT_FOUND) {
+      res.status(404).json({ status: 'error', message: 'Competencia del alumno no encontrada en este grupo' });
+      return;
+    }
     res.status(500).json({ status: 'error', message: 'Error al actualizar competencia del alumno' });
   }
 }
