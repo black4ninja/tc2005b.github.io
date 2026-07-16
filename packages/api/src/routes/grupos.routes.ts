@@ -6,6 +6,7 @@ import {
   listGrupos,
   createGrupo,
   updateGrupo,
+  setAsignacionesGrupo,
   archiveGrupo,
   deleteGrupo,
 } from '../controllers/grupos.controller.js';
@@ -20,6 +21,8 @@ router.get('/admin/grupos', requireStaff, listGrupos);
 router.post('/admin/grupos', requireAdmin, createGrupo);
 // Mutar un grupo concreto: admin, o profesor asignado a ese grupo.
 router.put('/admin/grupos/:id', requireGrupoAccess, updateGrupo);
+// Asignar colecciones + módulos es configuración de materias: solo admin.
+router.put('/admin/grupos/:id/asignaciones', requireAdmin, setAsignacionesGrupo);
 router.patch('/admin/grupos/:id/archive', requireGrupoAccess, archiveGrupo);
 router.delete('/admin/grupos/:id', requireGrupoAccess, deleteGrupo);
 

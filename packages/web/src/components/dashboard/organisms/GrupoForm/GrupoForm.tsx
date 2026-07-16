@@ -2,7 +2,6 @@ import { useState } from 'react';
 import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
 import styles from './GrupoForm.module.css';
-import type { ColeccionRef } from '../../../../types/contenidos';
 
 /** Administrador asignable a un grupo (subconjunto de lo que expone el API). */
 export interface AdminRef {
@@ -16,7 +15,6 @@ interface GrupoData {
   name: string;
   fechaInicio?: string;
   fechaFin?: string;
-  colecciones?: ColeccionRef[];
   admins?: AdminRef[];
   urlAgendaEntrevistas?: string | null;
 }
@@ -25,21 +23,14 @@ interface GrupoSavePayload {
   name: string;
   fechaInicio?: string;
   fechaFin?: string;
-  colecciones?: string[];
   admins?: string[];
   urlAgendaEntrevistas?: string;
 }
 
 interface GrupoFormProps {
   grupo?: GrupoData;
-  /**
-   * Colecciones del CMS Contenidos asignadas al grupo. Determinan tanto el
-   * acceso del alumno a la documentación como la materia del grupo: son la
-   * fuente única (antes había además un select de "Materia" que no hacía nada y
-   * podía contradecir a este campo).
-   */
-  colecciones?: ColeccionRef[];
-  /** Administradores dados de alta, para asignarlos al grupo (asociación). */
+  /** Administradores dados de alta, para asignarlos al grupo (asociación).
+   *  Las COLECCIONES se asignan aparte, en la acción "Asignaciones". */
   admins?: AdminRef[];
   onSave: (data: GrupoSavePayload) => void;
   onCancel: () => void;
@@ -53,13 +44,10 @@ function toDateString(value?: string | Date): string {
   return d.toISOString().split('T')[0];
 }
 
-export default function GrupoForm({ grupo, colecciones = [], admins = [], onSave, onCancel, loading }: GrupoFormProps) {
+export default function GrupoForm({ grupo, admins = [], onSave, onCancel, loading }: GrupoFormProps) {
   const [name, setName] = useState(grupo?.name ?? '');
   const [fechaInicio, setFechaInicio] = useState(toDateString(grupo?.fechaInicio));
   const [fechaFin, setFechaFin] = useState(toDateString(grupo?.fechaFin));
-  const [coleccionesSel, setColeccionesSel] = useState<string[]>(
-    (grupo?.colecciones ?? []).map((c) => c.id),
-  );
   const [adminsSel, setAdminsSel] = useState<string[]>(
     (grupo?.admins ?? []).map((a) => a.id),
   );
@@ -67,12 +55,6 @@ export default function GrupoForm({ grupo, colecciones = [], admins = [], onSave
   const [error, setError] = useState('');
   const [errorAgenda, setErrorAgenda] = useState('');
 
-
-  function toggleColeccion(id: string) {
-    setColeccionesSel((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
-    );
-  }
 
   function toggleAdmin(id: string) {
     setAdminsSel((prev) =>
@@ -98,7 +80,6 @@ export default function GrupoForm({ grupo, colecciones = [], admins = [], onSave
       name: name.trim(),
       fechaInicio: fechaInicio || undefined,
       fechaFin: fechaFin || undefined,
-      colecciones: coleccionesSel,
       admins: adminsSel,
       // Cadena vacía = quitar el enlace del grupo.
       urlAgendaEntrevistas: url,
@@ -121,29 +102,6 @@ export default function GrupoForm({ grupo, colecciones = [], admins = [], onSave
         error={error}
         disabled={loading}
       />
-      <div className={styles.field}>
-        <label className={styles.label}>Colecciones de Contenidos con acceso</label>
-        <div className={styles.checkboxList}>
-          {colecciones.length === 0 && (
-            <span className={styles.hint}>No hay colecciones disponibles.</span>
-          )}
-          {colecciones.map((c) => {
-            const clave = c.clave || c.slug.toUpperCase();
-            const label = `${clave} — ${c.nombre}`;
-            return (
-              <label key={c.id} className={styles.checkboxItem}>
-                <input
-                  type="checkbox"
-                  checked={coleccionesSel.includes(c.id)}
-                  onChange={() => toggleColeccion(c.id)}
-                  disabled={loading}
-                />
-                <span className={styles.checkboxLabel} title={label}>{label}</span>
-              </label>
-            );
-          })}
-        </div>
-      </div>
       <div className={styles.field}>
         <label className={styles.label}>Administradores del grupo</label>
         <div className={styles.checkboxList}>

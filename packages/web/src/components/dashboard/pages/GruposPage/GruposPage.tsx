@@ -6,6 +6,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
 import GrupoForm, { type AdminRef } from '../../organisms/GrupoForm/GrupoForm';
+import AsignacionesModal, { type Asignacion } from '../../organisms/AsignacionesModal/AsignacionesModal';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import type { ColeccionRef } from '../../../../types/contenidos';
 import styles from './GruposPage.module.css';
@@ -18,6 +19,7 @@ interface GrupoData {
   active: boolean;
   colecciones?: ColeccionRef[];
   admins?: AdminRef[];
+  modulosDeshabilitados?: Record<string, string[]>;
   urlAgendaEntrevistas?: string | null;
 }
 
@@ -34,6 +36,10 @@ export default function GruposPage() {
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editGrupo, setEditGrupo] = useState<GrupoData | undefined>();
+
+  // Modal de asignaciones (colecciones + módulos por colección).
+  const [asignGrupo, setAsignGrupo] = useState<GrupoData | null>(null);
+  const [savingAsign, setSavingAsign] = useState(false);
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -97,7 +103,7 @@ export default function GruposPage() {
     setEditGrupo(undefined);
   }
 
-  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; colecciones?: string[]; admins?: string[]; urlAgendaEntrevistas?: string }) {
+  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; admins?: string[]; urlAgendaEntrevistas?: string }) {
     setSaving(true);
     setError('');
     try {
@@ -117,6 +123,27 @@ export default function GruposPage() {
       setError(err.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSaveAsignaciones(asignaciones: Asignacion[]) {
+    if (!asignGrupo) return;
+    setSavingAsign(true);
+    setError('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${asignGrupo.id}/asignaciones`, {
+        method: 'PUT', headers, body: JSON.stringify({ asignaciones }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Error al guardar las asignaciones');
+      }
+      setAsignGrupo(null);
+      await fetchGrupos();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSavingAsign(false);
     }
   }
 
@@ -183,6 +210,7 @@ export default function GruposPage() {
   const getActions = (grupo: GrupoData): ActionItem[] => [
     { label: 'Ver', icon: 'visibility', onClick: () => navigate(`/admin/grupos/${grupo.id}`) },
     { label: 'Editar', icon: 'edit', onClick: () => openEdit(grupo) },
+    { label: 'Asignaciones', icon: 'library_books', onClick: () => setAsignGrupo(grupo) },
     {
       label: grupo.active ? 'Desactivar' : 'Activar',
       icon: grupo.active ? 'toggle_off' : 'toggle_on',
@@ -215,13 +243,22 @@ export default function GruposPage() {
       <Modal isOpen={modalOpen} onClose={closeModal} title={editGrupo ? 'Editar Grupo' : 'Nuevo Grupo'}>
         <GrupoForm
           grupo={editGrupo}
-          colecciones={colecciones}
           admins={admins}
           onSave={handleSave}
           onCancel={closeModal}
           loading={saving}
         />
       </Modal>
+
+      <AsignacionesModal
+        isOpen={asignGrupo !== null}
+        grupo={asignGrupo}
+        colecciones={colecciones}
+        onSave={handleSaveAsignaciones}
+        onCancel={() => setAsignGrupo(null)}
+        loading={savingAsign}
+        error={asignGrupo ? error : ''}
+      />
     </div>
   );
 }

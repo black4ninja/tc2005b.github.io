@@ -8,6 +8,27 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Asignación de contenido por partes (grupo × colección).** Antes, asignar una
+  colección a un grupo daba sus **4 partes** de golpe (Documentación, Páginas,
+  Competencias, Actividades). Ahora, por colección, se habilita cualquier
+  combinación. La asignación **sale del form de editar grupo** y pasa a una acción
+  propia **"Asignaciones"** con su modal: filas de colección que se **expanden** al
+  asignarlas, mostrando sus partes con todo **encendido por defecto** (compartir
+  todo = cero clics extra).
+  - **Se guarda lo APAGADO** (`Grupo.modulosDeshabilitados`), no lo encendido —
+    a propósito: los grupos actuales no tienen el campo, así que conservan las 4
+    partes (**cero migración**), y **un módulo que se agregue a futuro nace
+    habilitado en todos los grupos** y se apaga por grupo. Un solo catálogo
+    (`modulos-contenido.ts`, espejado en el front) que la UI, el sidebar y la
+    validación iteran — sumar un módulo es una entrada, no reestructurar.
+  - Cada una de las 4 partes filtra por su módulo (visor/Documentación,
+    `competenciasDeGrupo`, `plantillasDeGrupo`, filtro de Páginas), y el **menú del
+    grupo** solo muestra las secciones habilitadas. `PUT /admin/grupos/:id/asignaciones`
+    (solo admin) reemplaza al viejo campo `colecciones` de crear/editar grupo.
+  - **Comportamiento:** apagar Documentación oculta el visor de inmediato; apagar
+    Competencias/Actividades afecta la **materialización futura** (malla, plantilla)
+    y qué se ofrece, **no** borra lo ya estampado. De paso se elimina un
+    `coleccionesDeGrupo` duplicado en `paginas.controller`.
 - **Nuevo rol "profesor"**, con acceso restringido a su grupo. Al loguear, el
   profesor **no entra al panel admin**: cae directo en su grupo asignado (como el
   alumno cae en su área) y gestiona ese grupo con **las mismas capacidades** que un

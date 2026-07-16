@@ -1,4 +1,5 @@
 import Parse from 'parse/node';
+import { moduloHabilitado, type ModuloContenido } from '../models/modulos-contenido.js';
 
 /**
  * Resolución de "qué le toca a un grupo" a partir de sus colecciones.
@@ -13,15 +14,27 @@ import Parse from 'parse/node';
  * `recalcularCalculadas`, duplicada en dos archivos.
  */
 
-/** Colecciones (pointers) asignadas al grupo. Vacío si no tiene o no existe. */
-export async function coleccionesDeGrupo(grupoId: string): Promise<Parse.Object[]> {
+/**
+ * Colecciones (pointers) asignadas al grupo. Vacío si no tiene o no existe.
+ *
+ * Con `modulo`, además filtra a las colecciones donde ESE módulo está habilitado
+ * para el grupo (`Grupo.modulosDeshabilitados`): así cada parte —Documentación,
+ * Páginas, Competencias, Actividades— solo ve las colecciones que la comparten.
+ */
+export async function coleccionesDeGrupo(
+  grupoId: string,
+  modulo?: ModuloContenido,
+): Promise<Parse.Object[]> {
   const query = new Parse.Query('Grupo');
   query.equalTo('exists' as any, true as any);
   query.include('colecciones' as any);
   try {
     const grupo = await query.get(grupoId, { useMasterKey: true });
-    const cols = (grupo.get('colecciones') ?? []) as Parse.Object[];
-    return cols.filter((c) => c && c.get('exists') !== false);
+    const cols = ((grupo.get('colecciones') ?? []) as Parse.Object[])
+      .filter((c) => c && c.get('exists') !== false);
+    if (!modulo) return cols;
+    const apagados = grupo.get('modulosDeshabilitados') as Record<string, string[]> | undefined;
+    return cols.filter((c) => moduloHabilitado(apagados, c.id!, modulo));
   } catch {
     return [];
   }
@@ -46,7 +59,7 @@ export interface CompetenciasDeGrupo {
  * vea en el admin y nunca aparezca en la malla de nadie.
  */
 export async function competenciasDeGrupo(grupoId: string): Promise<CompetenciasDeGrupo> {
-  const colecciones = await coleccionesDeGrupo(grupoId);
+  const colecciones = await coleccionesDeGrupo(grupoId, 'competencias');
   if (colecciones.length === 0) {
     return { competencias: [], sinColecciones: true };
   }
@@ -76,7 +89,7 @@ export interface PlantillasDeGrupo {
  * `ActividadEvaluacionGrupo`. Nada de lo ya estampado depende de esto.
  */
 export async function plantillasDeGrupo(grupoId: string): Promise<PlantillasDeGrupo> {
-  const colecciones = await coleccionesDeGrupo(grupoId);
+  const colecciones = await coleccionesDeGrupo(grupoId, 'actividades');
   if (colecciones.length === 0) {
     return { plantillas: [], sinColecciones: true };
   }

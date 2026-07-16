@@ -10,6 +10,7 @@ import type { DashboardRole } from '../../../../types/dashboard';
 import { useAuth } from '../../../../context/AuthContext';
 import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import { APP_NAME } from '../../../../config/app';
+import { moduloHabilitado } from '../../../../config/modulosContenido';
 
 /** Colección asignada al grupo, como la devuelve /api/admin/grupos. */
 interface ColeccionGrupo {
@@ -61,6 +62,8 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
   const [docsHref, setDocsHref] = useState<string | null>(null);
   const [colecciones, setColecciones] = useState<ColeccionGrupo[]>([]);
+  // Módulos apagados por colección del grupo: filtran qué secciones aparecen.
+  const [modulosDeshabilitados, setModulosDeshabilitados] = useState<Record<string, string[]>>({});
   // Agenda de entrevistas del grupo abierto (admin). La del alumno sale del
   // payload de sesión (user.grupos), no requiere fetch.
   const [agendaGrupoHref, setAgendaGrupoHref] = useState<string | null>(null);
@@ -111,11 +114,13 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             name?: string;
             urlAgendaEntrevistas?: string | null;
             colecciones?: { id: string; slug: string; nombre: string; clave: string | null }[];
+            modulosDeshabilitados?: Record<string, string[]>;
           }) => g.id === grupoId,
         );
         if (found?.name) setGrupoName(found.name);
         setAgendaGrupoHref(found?.urlAgendaEntrevistas ?? null);
         setColecciones(found?.colecciones ?? []);
+        setModulosDeshabilitados(found?.modulosDeshabilitados ?? {});
       })
       .catch(() => {});
   }, [grupoId, sessionToken]);
@@ -130,17 +135,22 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
    * ya dice qué acción es, repetirlo sería "Páginas → TC2005B — Páginas".
    */
   const secciones = useMemo(() => {
+    // Cada sección corresponde a un MÓDULO: solo aparecen las colecciones que lo
+    // tienen habilitado para el grupo (Grupo.modulosDeshabilitados).
     const enlaces = (
+      moduloKey: string,
       hacerHref: (c: ColeccionGrupo) => string,
       sufijo: string,
       externo?: boolean,
     ): EnlaceColeccion[] =>
-      colecciones.map((c) => ({
-        key: `${c.slug}-${sufijo}`,
-        label: c.clave || c.slug.toUpperCase(),
-        href: hacerHref(c),
-        externo,
-      }));
+      colecciones
+        .filter((c) => moduloHabilitado(modulosDeshabilitados, c.id, moduloKey))
+        .map((c) => ({
+          key: `${c.slug}-${sufijo}`,
+          label: c.clave || c.slug.toUpperCase(),
+          href: hacerHref(c),
+          externo,
+        }));
 
     // `grupo=` no filtra nada: mantiene el contexto. Sin él, al salir a
     // /admin/paginas el sidebar dejaría de estar en modo grupo y perderías su
@@ -153,28 +163,28 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         key: 'contenido',
         titulo: 'Contenido',
         icono: 'menu_book',
-        items: enlaces((c) => `/contenidos/${c.slug}/`, 'doc', true),
+        items: enlaces('documentacion', (c) => `/contenidos/${c.slug}/`, 'doc', true),
       },
       {
         key: 'paginas',
         titulo: 'Páginas',
         icono: 'article',
-        items: enlaces((c) => ctx('paginas', c), 'paginas'),
+        items: enlaces('paginas', (c) => ctx('paginas', c), 'paginas'),
       },
       {
         key: 'competencias',
         titulo: 'Competencias',
         icono: 'emoji_events',
-        items: enlaces((c) => ctx('competencias', c), 'competencias'),
+        items: enlaces('competencias', (c) => ctx('competencias', c), 'competencias'),
       },
       {
         key: 'actividades',
         titulo: 'Actividades',
         icono: 'assignment',
-        items: enlaces((c) => ctx('actividades', c), 'actividades'),
+        items: enlaces('actividades', (c) => ctx('actividades', c), 'actividades'),
       },
     ];
-  }, [colecciones, grupoId]);
+  }, [colecciones, modulosDeshabilitados, grupoId]);
 
   // La agenda del alumno es la de SU grupo seleccionado; viaja en el payload de
   // sesión, así que no hace falta pedirla.
@@ -303,15 +313,19 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
                   // sola entrada que lo diga, en vez de cuatro secciones vacías.
                   <SeccionColecciones titulo="Contenido" icono="menu_book" items={[]} collapsed={collapsed} />
                 ) : (
-                  secciones.map((s) => (
-                    <SeccionColecciones
-                      key={s.key}
-                      titulo={s.titulo}
-                      icono={s.icono}
-                      items={s.items}
-                      collapsed={collapsed}
-                    />
-                  ))
+                  // Una sección sin colecciones (módulo apagado en todas) no se
+                  // muestra: el menú refleja exactamente lo asignado.
+                  secciones
+                    .filter((s) => s.items.length > 0)
+                    .map((s) => (
+                      <SeccionColecciones
+                        key={s.key}
+                        titulo={s.titulo}
+                        icono={s.icono}
+                        items={s.items}
+                        collapsed={collapsed}
+                      />
+                    ))
                 ))}
             </>
           )}
