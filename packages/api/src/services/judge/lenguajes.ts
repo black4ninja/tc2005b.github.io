@@ -6,6 +6,7 @@
  * `ulimit -v` la MATA aunque el heap real sea pequeño. Por eso Kotlin limita con
  * `-Xmx` (heap) y NO usa ulimit -v; Swift, binario nativo, sí usa ulimit -v.
  */
+import fs from 'fs';
 import path from 'path';
 import { config } from '../../config/index.js';
 import type { Lenguaje } from './tipos.js';
@@ -34,6 +35,22 @@ export interface ConfigLenguaje {
 
 const PATH_BASE = '/usr/bin:/bin';
 
+/**
+ * Debian/Ubuntu no dejan la config de la JVM dentro del JDK: `$JAVA_HOME/conf/*`
+ * son symlinks a `/etc/java-NN-openjdk`. Montar solo JAVA_HOME deja el symlink
+ * colgando dentro del sandbox y la JVM ni arranca ("Error loading java.security
+ * file"). Devuelve el directorio a montar, o nada si el JDK es autocontenido.
+ */
+function bindsConfJvm(javaHome: string): string[] {
+  try {
+    const real = fs.realpathSync(path.join(javaHome, 'conf', 'security', 'java.security'));
+    if (real.startsWith(javaHome + path.sep)) return []; // ya cubierto por el bind de JAVA_HOME
+    return [path.dirname(path.dirname(real))]; // …/security/java.security → /etc/java-NN-openjdk
+  } catch {
+    return []; // sin JDK legible aquí; el error real saldrá al compilar
+  }
+}
+
 function lenguajeKotlin(): ConfigLenguaje {
   const home = config.juez.kotlin.home;
   const javaHome = config.juez.kotlin.javaHome;
@@ -43,7 +60,7 @@ function lenguajeKotlin(): ConfigLenguaje {
   return {
     nombre: 'Kotlin',
     archivoFuente: 'Main.kt',
-    binds: [home, javaHome].filter(Boolean) as string[],
+    binds: [home, javaHome, ...(javaHome ? bindsConfJvm(javaHome) : [])].filter(Boolean) as string[],
     env: {
       PATH: [...binDirs, PATH_BASE].join(':'),
       ...(javaHome ? { JAVA_HOME: javaHome } : {}),
