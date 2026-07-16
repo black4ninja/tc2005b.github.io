@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { Pagina } from '../models/Pagina.js';
+import { coleccionesDeGrupo } from '../services/grupo-colecciones.service.js';
 
 const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -55,22 +56,6 @@ async function resolverEtiquetas(value: unknown): Promise<Parse.Object[] | 'inva
   return encontradas;
 }
 
-/**
- * Colecciones (pointers) asignadas a un grupo. Vacío si el grupo no existe o no
- * tiene ninguna: el llamador decide qué hacer con ese caso.
- */
-async function coleccionesDeGrupo(grupoId: string): Promise<Parse.Object[]> {
-  const query = new Parse.Query('Grupo');
-  query.equalTo('exists' as any, true as any);
-  query.include('colecciones' as any);
-  try {
-    const grupo = await query.get(grupoId, { useMasterKey: true });
-    const colecciones = (grupo.get('colecciones') ?? []) as Parse.Object[];
-    return colecciones.filter((c) => c && c.get('exists') !== false);
-  } catch {
-    return [];
-  }
-}
 
 // ─── Admin endpoints ────────────────────────────────────────────
 
@@ -339,7 +324,7 @@ export async function listPaginasPublicas(req: Request, res: Response): Promise<
 
     let filtrado = false;
     if (typeof grupoId === 'string' && grupoId) {
-      const colecciones = await coleccionesDeGrupo(grupoId);
+      const colecciones = await coleccionesDeGrupo(grupoId, 'paginas');
       if (colecciones.length > 0) {
         query.containedIn('coleccion' as any, colecciones as any);
         filtrado = true;

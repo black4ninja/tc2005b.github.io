@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { Grupo } from '../models/Grupo.js';
+import { esModuloValido } from '../models/modulos-contenido.js';
 import { invalidateColeccionesPermitidas } from '../services/contenidos.service.js';
 import { getGruposDeStaff } from '../services/grupo-admin.service.js';
 import { sanitizarUrlHref } from '../utils/url.js';
@@ -68,7 +69,7 @@ async function resolverAdmins(value: unknown): Promise<Parse.Object[] | 'invalid
 }
 
 export async function createGrupo(req: Request, res: Response): Promise<void> {
-  const { name, fechaInicio, fechaFin, colecciones, urlAgendaEntrevistas } = req.body;
+  const { name, fechaInicio, fechaFin, urlAgendaEntrevistas } = req.body;
 
   if (!name || typeof name !== 'string' || name.trim() === '') {
     res.status(400).json({ status: 'error', message: 'El nombre es requerido' });
@@ -88,13 +89,8 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
     if (fechaFin) grupo.setFechaFin(new Date(fechaFin));
     if (url) grupo.setUrlAgendaEntrevistas(url);
 
-    const coleccionesPtrs = await resolverColecciones(colecciones);
-    if (coleccionesPtrs === 'invalido') {
-      res.status(400).json({ status: 'error', message: 'Alguna colección indicada no existe' });
-      return;
-    }
-    if (coleccionesPtrs) grupo.setColecciones(coleccionesPtrs);
-
+    // Las colecciones (y sus módulos) NO se asignan aquí: van por la acción
+    // "Asignaciones" (PUT /admin/grupos/:id/asignaciones). Un grupo nace vacío.
     const adminsPtrs = await resolverAdmins(req.body.admins);
     if (adminsPtrs === 'invalido') {
       res.status(400).json({ status: 'error', message: 'Alguno de los administradores indicados no existe o no es admin' });
@@ -103,7 +99,6 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
     if (adminsPtrs) grupo.setAdmins(adminsPtrs);
 
     await grupo.save(null, { useMasterKey: true });
-    if (coleccionesPtrs?.length) invalidateColeccionesPermitidas();
 
     res.status(201).json({ status: 'ok', grupo: grupo.toSafeJSON() });
   } catch (error) {
@@ -113,7 +108,7 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
 
 export async function updateGrupo(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { name, fechaInicio, fechaFin, colecciones, urlAgendaEntrevistas } = req.body;
+  const { name, fechaInicio, fechaFin, urlAgendaEntrevistas } = req.body;
 
   try {
     const query = BaseModel.queryActive<Grupo>('Grupo');
@@ -146,24 +141,11 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
       if (url) grupo.setUrlAgendaEntrevistas(url);
       else grupo.unset('urlAgendaEntrevistas');
     }
-    // Colecciones y administradores del grupo son CONFIGURACIÓN (quién da la
-    // materia, quién está a cargo): solo el admin las reasigna. Un profesor puede
-    // editar su grupo (nombre/fechas/agenda) pero no estos dos campos — se ignoran
-    // en silencio si los manda. El front no se los ofrece; esto es la barrera real.
-    const esAdmin = req.appUser?.isAdmin() === true;
-    let coleccionesCambiaron = false;
-    if (esAdmin) {
-      // Solo un array válido aplica ([] limpia); no-array se ignora.
-      const coleccionesPtrs = colecciones !== undefined ? await resolverColecciones(colecciones) : null;
-      if (coleccionesPtrs === 'invalido') {
-        res.status(400).json({ status: 'error', message: 'Alguna colección indicada no existe' });
-        return;
-      }
-      if (coleccionesPtrs) {
-        grupo.setColecciones(coleccionesPtrs);
-        coleccionesCambiaron = true;
-      }
-
+    // Los administradores del grupo son CONFIGURACIÓN: solo el admin los reasigna
+    // (un profesor edita nombre/fechas/agenda, no esto — se ignora si lo manda).
+    // Las COLECCIONES y sus módulos ya no van por aquí: viven en la acción
+    // "Asignaciones" (PUT /admin/grupos/:id/asignaciones).
+    if (req.appUser?.isAdmin() === true) {
       const adminsPtrs = await resolverAdmins(req.body.admins);
       if (adminsPtrs === 'invalido') {
         res.status(400).json({ status: 'error', message: 'Alguno de los administradores indicados no existe o no es staff' });
@@ -173,7 +155,6 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
     }
 
     await grupo.save(null, { useMasterKey: true });
-    if (coleccionesCambiaron) invalidateColeccionesPermitidas();
 
     res.json({ status: 'ok', grupo: grupo.toSafeJSON() });
   } catch (error: any) {
@@ -182,6 +163,76 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
       return;
     }
     res.status(500).json({ status: 'error', message: 'Error al actualizar grupo' });
+  }
+}
+
+/**
+ * PUT /admin/grupos/:id/asignaciones — { asignaciones: [{ coleccionId, deshabilitados: string[] }] }
+ *
+ * Fija QUÉ colecciones tiene el grupo y, por colección, qué MÓDULOS quedan
+ * apagados (Documentación/Páginas/Competencias/Actividades). Reemplaza al viejo
+ * campo `colecciones` del form de editar. Guarda `colecciones` (las asignadas) y
+ * `modulosDeshabilitados` (solo entradas con algo apagado — vacío = todo on).
+ */
+export async function setAsignacionesGrupo(req: Request, res: Response): Promise<void> {
+  const { id } = req.params;
+  const { asignaciones } = req.body ?? {};
+
+  if (!Array.isArray(asignaciones)) {
+    res.status(400).json({ status: 'error', message: 'asignaciones debe ser un arreglo' });
+    return;
+  }
+
+  // Normalizar: id de colección + keys apagadas válidas (dedup, sin basura).
+  const coleccionIds: string[] = [];
+  const deshabilitadosPorColeccion: Record<string, string[]> = {};
+  for (const a of asignaciones) {
+    const coleccionId = a?.coleccionId;
+    if (typeof coleccionId !== 'string' || !coleccionId.trim()) {
+      res.status(400).json({ status: 'error', message: 'Cada asignación necesita un coleccionId' });
+      return;
+    }
+    const off = Array.isArray(a?.deshabilitados) ? a.deshabilitados : [];
+    if (off.some((k: unknown) => !esModuloValido(k))) {
+      res.status(400).json({ status: 'error', message: 'Módulo inválido en deshabilitados' });
+      return;
+    }
+    coleccionIds.push(coleccionId);
+    const unicos = [...new Set(off as string[])];
+    if (unicos.length > 0) deshabilitadosPorColeccion[coleccionId] = unicos;
+  }
+
+  try {
+    const query = BaseModel.queryActive<Grupo>('Grupo');
+    query.include('colecciones' as any);
+    query.include('admins' as any);
+    const grupo = await query.get(id, { useMasterKey: true });
+
+    const coleccionesPtrs = await resolverColecciones(coleccionIds);
+    if (coleccionesPtrs === 'invalido') {
+      res.status(400).json({ status: 'error', message: 'Alguna colección indicada no existe' });
+      return;
+    }
+    grupo.setColecciones(coleccionesPtrs ?? []);
+    // Solo se guardan las entradas de colecciones REALMENTE asignadas (ignora
+    // deshabilitados de colecciones que se quitaron).
+    const asignadas = new Set((coleccionesPtrs ?? []).map((c) => c.id));
+    const limpio: Record<string, string[]> = {};
+    for (const [cid, off] of Object.entries(deshabilitadosPorColeccion)) {
+      if (asignadas.has(cid)) limpio[cid] = off;
+    }
+    grupo.setModulosDeshabilitados(limpio);
+
+    await grupo.save(null, { useMasterKey: true });
+    invalidateColeccionesPermitidas();
+
+    res.json({ status: 'ok', grupo: grupo.toSafeJSON() });
+  } catch (error: any) {
+    if (error?.code === Parse.Error.OBJECT_NOT_FOUND) {
+      res.status(404).json({ status: 'error', message: 'Grupo no encontrado' });
+      return;
+    }
+    res.status(500).json({ status: 'error', message: 'Error al guardar las asignaciones' });
   }
 }
 

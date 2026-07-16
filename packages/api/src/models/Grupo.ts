@@ -75,6 +75,19 @@ export class Grupo extends BaseModel {
     this.set('admins', admins);
   }
 
+  /**
+   * Módulos APAGADOS por colección: `{ [coleccionId]: string[] }`. Un módulo de
+   * una colección asignada está habilitado salvo que su key esté aquí. Ausente =
+   * nada apagado = todo habilitado (compatibilidad + módulos nuevos nacen on).
+   * Ver `moduloHabilitado` y `src/models/modulos-contenido.ts`.
+   */
+  getModulosDeshabilitados(): Record<string, string[]> {
+    return this.get('modulosDeshabilitados') ?? {};
+  }
+  setModulosDeshabilitados(mapa: Record<string, string[]>): void {
+    this.set('modulosDeshabilitados', mapa);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     return {
       id: this.id,
@@ -100,6 +113,9 @@ export class Grupo extends BaseModel {
           name: a.get('name') ?? null,
           email: a.get('email') ?? null,
         })),
+      // Módulos apagados por colección (para que la UI y el sidebar sepan qué está
+      // habilitado). Vacío = todo habilitado.
+      modulosDeshabilitados: this.getModulosDeshabilitados(),
       active: this.get('active'),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,

@@ -2,6 +2,7 @@ import Parse from 'parse/node';
 import { AppUser } from '../models/AppUser.js';
 import { Coleccion } from '../models/Coleccion.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
+import { moduloHabilitado } from '../models/modulos-contenido.js';
 import { TtlValue, TtlMap } from '../utils/ttl-cache.js';
 
 /**
@@ -77,10 +78,14 @@ export async function getColeccionesPermitidas(user: AppUser): Promise<Coleccion
     const grupo = link.get('grupo');
     // Un grupo archivado (active=false) deja de dar acceso: fin de semestre.
     if (!grupo || grupo.get('exists') === false || grupo.get('active') === false) continue;
+    const apagados = grupo.get('modulosDeshabilitados') as Record<string, string[]> | undefined;
     const colecciones: Parse.Object[] = grupo.get('colecciones') ?? [];
     for (const c of colecciones) {
       if (!c || c.get('exists') === false) continue;
       if (c.get('publicada') !== true) continue; // borradores no son visibles
+      // El grupo puede haber apagado la Documentación de esta colección: entonces
+      // el alumno no la ve en el visor aunque la colección esté asignada.
+      if (!moduloHabilitado(apagados, c.id!, 'documentacion')) continue;
       const slug = c.get('slug');
       if (slug && !permitidas.has(slug)) {
         permitidas.set(slug, {
