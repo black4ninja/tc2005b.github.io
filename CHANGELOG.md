@@ -8,6 +8,19 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Motor de ejecución del juez de ejercicios (Kotlin y Swift).** Primera fase del
+  módulo "Ejercicios" (mini-juez estilo UVA): una librería que **compila y ejecuta
+  código del alumno en el propio servidor**, aislada con **bubblewrap** (open-source,
+  sin Docker ni servicios de pago), y lo evalúa contra casos entrada/salida →
+  veredicto (`aceptado`, `respuesta_incorrecta`, `tiempo_excedido`,
+  `error_compilacion`, `error_ejecucion`, `limite_memoria`).
+  - Cada corrida va sin red (`--unshare-net`), con filesystem de solo lectura salvo
+    un workdir efímero, y con límites de tiempo (reloj de pared), CPU, procesos y
+    memoria (`-Xmx` en la JVM, `ulimit -v` en binarios nativos). Corridas encoladas
+    para no saturar el servidor.
+  - Aún **sin endpoints ni UI** (llegan en fases siguientes). Se verifica con la CLI
+    `scripts/probar-juez.ts` (AC/WA/TLE/error de compilación en ambos lenguajes).
+    Provisión del servidor documentada en `JUEZ.md`.
 - **Asignación de contenido por partes (grupo × colección).** Antes, asignar una
   colección a un grupo daba sus **4 partes** de golpe (Documentación, Páginas,
   Competencias, Actividades). Ahora, por colección, se habilita cualquier
