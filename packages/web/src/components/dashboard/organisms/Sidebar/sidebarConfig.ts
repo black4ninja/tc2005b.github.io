@@ -101,7 +101,7 @@ export function getGrupoDetailItems(
   // alumno). Aparece cuando el grupo tiene el módulo 'ejercicios' encendido en
   // alguna colección — tanto para el profesor como para el admin que revisa.
   if (ejerciciosHref) {
-    items.push({ label: 'Ejercicios (vista alumno)', icon: 'terminal', path: ejerciciosHref, external: true });
+    items.push({ label: 'Ejercicios', icon: 'terminal', path: ejerciciosHref, external: true });
   }
   if (agendaHref) {
     items.push({ label: 'Agendar Entrevistas', icon: 'event_available', path: agendaHref, external: true });
