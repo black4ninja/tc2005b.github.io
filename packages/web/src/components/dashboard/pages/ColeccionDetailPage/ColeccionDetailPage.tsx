@@ -83,6 +83,10 @@ export default function ColeccionDetailPage() {
           {coleccion ? `${coleccion.clave ? `${coleccion.clave} — ` : ''}${coleccion.nombre}` : id}
         </h1>
         <div className={styles.headerActions}>
+          <Link to={`/admin/contenidos/${id}/ejercicios`} className={styles.ejerciciosLink}>
+            <Icon name="terminal" size="sm" />
+            <span>Ejercicios</span>
+          </Link>
           <DashButton onClick={() => { setModalError(''); setModalOpen(true); }}>+ Página / Categoría</DashButton>
         </div>
       </div>

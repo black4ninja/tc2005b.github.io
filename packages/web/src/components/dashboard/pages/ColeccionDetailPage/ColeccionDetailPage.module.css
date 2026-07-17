@@ -42,6 +42,21 @@
 
 .headerActions {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ejerciciosLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.ejerciciosLink:hover {
+  color: var(--text-primary);
 }
 
 .error {

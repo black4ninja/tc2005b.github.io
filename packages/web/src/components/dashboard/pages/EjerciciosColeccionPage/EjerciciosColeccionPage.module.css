@@ -1,0 +1,62 @@
+.page {
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  width: fit-content;
+}
+.volver:hover {
+  color: var(--text-primary);
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.error {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: #fdecea;
+  color: var(--dash-danger);
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.slug {
+  font-size: 13px;
+  background: var(--bg-page);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badgeActive {
+  background: #e6f4ea;
+  color: #1e7e34;
+}
+.badgeDraft {
+  background: #f1f3f4;
+  color: var(--text-secondary);
+}

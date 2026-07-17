@@ -129,6 +129,7 @@ export default function ContenidosPage() {
     { label: 'Páginas', icon: 'article', onClick: () => navigate(`/admin/paginas?coleccion=${coleccion.id}`) },
     { label: 'Competencias', icon: 'emoji_events', onClick: () => navigate(`/admin/competencias?coleccion=${coleccion.id}`) },
     { label: 'Actividades', icon: 'assignment', onClick: () => navigate(`/admin/actividades?coleccion=${coleccion.id}`) },
+    { label: 'Ejercicios', icon: 'terminal', onClick: () => navigate(`/admin/contenidos/${coleccion.id}/ejercicios`) },
     { label: 'Editar', icon: 'edit', onClick: () => openEdit(coleccion) },
     { label: 'Eliminar', icon: 'delete', onClick: () => handleDelete(coleccion), variant: 'danger' },
   ];
