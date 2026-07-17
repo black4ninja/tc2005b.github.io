@@ -13,6 +13,7 @@ export function getSidebarItems(
   perfilCompleto?: boolean,
   docsHref: string | null = null,
   agendaHref: string | null = null,
+  ejerciciosHref: string | null = null,
 ): SidebarItem[] {
   if (role === 'admin') {
     return [
@@ -58,6 +59,10 @@ export function getSidebarItems(
   if (docsHref) {
     items.push({ label: 'Documentación', icon: 'menu_book', path: docsHref, external: true, disabled: !perfilCompleto });
   }
+  // Solo si algún grupo del alumno tiene Ejercicios habilitado y con contenido.
+  if (ejerciciosHref) {
+    items.push({ label: 'Ejercicios', icon: 'terminal', path: ejerciciosHref, external: true, disabled: !perfilCompleto });
+  }
   // Sin URL en su grupo, no hay agenda que enlazar (igual que "Documentación").
   if (agendaHref) {
     items.push({
@@ -79,7 +84,11 @@ export function getSidebarItems(
  *  - "Agendar Entrevistas" → enlace EXTERNO a la agenda del grupo (una hoja de
  *    cálculo, normalmente). Solo aparece si el grupo tiene URL.
  */
-export function getGrupoDetailItems(grupoId: string, agendaHref: string | null = null): SidebarItem[] {
+export function getGrupoDetailItems(
+  grupoId: string,
+  agendaHref: string | null = null,
+  ejerciciosHref: string | null = null,
+): SidebarItem[] {
   const items: SidebarItem[] = [
     { label: 'Calendario', icon: 'calendar_month', path: `/admin/grupos/${grupoId}/calendario` },
     { label: 'Alumnos', icon: 'people', path: `/admin/grupos/${grupoId}` },
@@ -88,6 +97,12 @@ export function getGrupoDetailItems(grupoId: string, agendaHref: string | null =
     { label: 'Equipos', icon: 'group_work', path: `/admin/grupos/${grupoId}/equipos` },
     { label: 'Entrevistas', icon: 'record_voice_over', path: `/admin/grupos/${grupoId}/entrevistas` },
   ];
+  // Probar los ejercicios del grupo como los ve el alumno (enlace al visor del
+  // alumno). Aparece cuando el grupo tiene el módulo 'ejercicios' encendido en
+  // alguna colección — tanto para el profesor como para el admin que revisa.
+  if (ejerciciosHref) {
+    items.push({ label: 'Ejercicios', icon: 'terminal', path: ejerciciosHref, external: true });
+  }
   if (agendaHref) {
     items.push({ label: 'Agendar Entrevistas', icon: 'event_available', path: agendaHref, external: true });
   }

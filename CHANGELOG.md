@@ -8,6 +8,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Experiencia del alumno del mini-juez (resolver ejercicios).** Fase final: el
+  alumno ya puede **resolver ejercicios** desde el sitio. Nueva sección
+  "Ejercicios" en su menú (solo si algún grupo suyo tiene el módulo **encendido**
+  y con ejercicios publicados), con la lista de la colección y un **solver** por
+  ejercicio: enunciado + casos de ejemplo, **editor de código** (CodeMirror con
+  resaltado Kotlin/Swift), y tres acciones — **Probar** contra los casos de
+  muestra, **Ejecutar con mi entrada** (modo interactivo con stdin propio) y
+  **Enviar** (evalúa contra todos los casos, guarda el envío y da el veredicto).
+  Los casos **ocultos** nunca se revelan al alumno.
+  - Backend: endpoints de lectura gated (`/contenidos/:slug/ejercicios[...]`,
+    `identifyUser` + acceso por colección/grupo/módulo, 404 a lo no permitido) que
+    invocan el motor del juez (#56/#57). El acceso respeta el **opt-in**: la
+    colección debe estar asignada a un grupo activo con `ejercicios` encendido.
+  - El módulo `ejercicios` se completa en el front (catálogo espejo con default
+    **opt-in**, toggle en el modal de **Asignaciones**), cerrando el ciclo
+    "habilitar en Contenidos → asignar por grupo → resolver".
 - **Autoría de ejercicios en Contenidos (admin).** Tercera fase del mini-juez: el
   admin ya puede **crear, editar, publicar y borrar** ejercicios de programación
   dentro de una colección. Se llega desde Contenidos (acción "Ejercicios" de la

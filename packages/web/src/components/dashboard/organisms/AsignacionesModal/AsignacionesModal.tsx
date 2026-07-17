@@ -2,13 +2,17 @@ import { useState, useEffect } from 'react';
 import Modal from '../../atoms/Modal/Modal';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Icon from '../../atoms/Icon/Icon';
-import { MODULOS_CONTENIDO } from '../../../../config/modulosContenido';
+import { MODULOS_CONTENIDO, moduloEsOptIn } from '../../../../config/modulosContenido';
 import type { ColeccionRef } from '../../../../types/contenidos';
 import styles from './AsignacionesModal.module.css';
 
 export interface Asignacion {
   coleccionId: string;
-  /** Módulos APAGADOS de esta colección para el grupo. */
+  /**
+   * Overrides al default de cada módulo para esta colección: para los módulos
+   * default-on lista los APAGADOS; para los opt-in (Ejercicios) lista los
+   * ENCENDIDOS. Lo interpreta `moduloHabilitado`.
+   */
   deshabilitados: string[];
 }
 
@@ -31,43 +35,52 @@ interface AsignacionesModalProps {
 }
 
 /**
- * Asigna colecciones a un grupo y, por colección, qué partes comparte
- * (Documentación/Páginas/Competencias/Actividades). Filas que se expanden: al
- * asignar una colección aparecen sus módulos, todos encendidos por defecto.
- * Se guarda lo APAGADO — un módulo nuevo del catálogo nace encendido solo.
+ * Asigna colecciones a un grupo y, por colección, qué partes comparte. Filas que
+ * se expanden: al asignar una colección aparecen sus módulos. Los módulos
+ * default-on nacen encendidos; los opt-in (Ejercicios) nacen apagados. Se guarda
+ * solo lo que DIFIERE del default de cada módulo.
  */
 export default function AsignacionesModal({
   isOpen, grupo, colecciones, onSave, onCancel, loading, error,
 }: AsignacionesModalProps) {
-  // colecciones asignadas + por colección, el set de módulos apagados.
+  // colecciones asignadas + por colección, el set de overrides guardado (crudo).
   const [asignadas, setAsignadas] = useState<Set<string>>(new Set());
-  const [apagados, setApagados] = useState<Record<string, Set<string>>>({});
+  const [overrides, setOverrides] = useState<Record<string, Set<string>>>({});
 
   // Reseed cada vez que se abre para un grupo distinto.
   useEffect(() => {
     if (!grupo) return;
     setAsignadas(new Set((grupo.colecciones ?? []).map((c) => c.id)));
-    const off: Record<string, Set<string>> = {};
+    const ov: Record<string, Set<string>> = {};
     for (const [cid, keys] of Object.entries(grupo.modulosDeshabilitados ?? {})) {
-      off[cid] = new Set(keys);
+      ov[cid] = new Set(keys);
     }
-    setApagados(off);
+    setOverrides(ov);
   }, [grupo]);
+
+  /** ¿Está encendido el módulo para esta colección? (respeta el default por módulo) */
+  function estaHabilitado(coleccionId: string, moduloKey: string): boolean {
+    const presente = overrides[coleccionId]?.has(moduloKey) ?? false;
+    return moduloEsOptIn(moduloKey) ? presente : !presente;
+  }
 
   function toggleColeccion(id: string) {
     setAsignadas((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
-      else next.add(id); // al asignar: sin apagados = todos los módulos on
+      else next.add(id); // al asignar: sin overrides = cada módulo en su default
       return next;
     });
   }
 
   function toggleModulo(coleccionId: string, moduloKey: string) {
-    setApagados((prev) => {
+    const nuevoEncendido = !estaHabilitado(coleccionId, moduloKey);
+    // Se guarda la key solo si el nuevo estado DIFIERE del default del módulo.
+    const debeGuardar = moduloEsOptIn(moduloKey) ? nuevoEncendido : !nuevoEncendido;
+    setOverrides((prev) => {
       const set = new Set(prev[coleccionId] ?? []);
-      if (set.has(moduloKey)) set.delete(moduloKey);
-      else set.add(moduloKey);
+      if (debeGuardar) set.add(moduloKey);
+      else set.delete(moduloKey);
       return { ...prev, [coleccionId]: set };
     });
   }
@@ -75,7 +88,7 @@ export default function AsignacionesModal({
   function handleSave() {
     const asignaciones: Asignacion[] = [...asignadas].map((coleccionId) => ({
       coleccionId,
-      deshabilitados: [...(apagados[coleccionId] ?? [])],
+      deshabilitados: [...(overrides[coleccionId] ?? [])],
     }));
     onSave(asignaciones);
   }
@@ -116,7 +129,7 @@ export default function AsignacionesModal({
               {asignada && (
                 <div className={styles.modulos}>
                   {MODULOS_CONTENIDO.map((m) => {
-                    const habilitado = !(apagados[c.id]?.has(m.key));
+                    const habilitado = estaHabilitado(c.id, m.key);
                     return (
                       <label key={m.key} className={styles.modulo}>
                         <input

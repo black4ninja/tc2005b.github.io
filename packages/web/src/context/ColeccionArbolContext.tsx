@@ -68,10 +68,13 @@ export function useColeccionArbol(): ColeccionArbolValue {
 }
 
 export function ColeccionArbolProvider({ children }: { children: React.ReactNode }) {
-  // Cubre tanto /admin/contenidos/:id como .../editar/:docId.
+  // Solo el editor de DOCUMENTOS usa el árbol en el sidebar: el detalle de la
+  // colección y su ruta de edición. Otras sub-rutas (p. ej. /ejercicios) son
+  // pantallas separadas y NO deben abrir el árbol — si no, el sidebar mostraría
+  // el árbol de documentos encima de una pantalla que no es de documentos.
   const exact = useMatch('/admin/contenidos/:id');
-  const sub = useMatch('/admin/contenidos/:id/*');
-  const coleccionId = (exact || sub)?.params.id ?? null;
+  const editar = useMatch('/admin/contenidos/:id/editar/:docId');
+  const coleccionId = (exact || editar)?.params.id ?? null;
 
   const { sessionToken } = useAuth();
   const [coleccion, setColeccion] = useState<ColeccionData | null>(null);

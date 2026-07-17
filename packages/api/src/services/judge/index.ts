@@ -8,7 +8,7 @@ import { config } from '../../config/index.js';
 import { LENGUAJES, type Lenguaje } from './tipos.js';
 import { getLenguaje } from './lenguajes.js';
 
-export { evaluar, type OpcionesEvaluacion } from './evaluar.js';
+export { evaluar, probarPrograma, type OpcionesEvaluacion, type OpcionesPrueba, type ResultadoPrueba } from './evaluar.js';
 export { normalizarSalida, veredictoDeCorrida } from './comparacion.js';
 export { LENGUAJES, esLenguaje, type Lenguaje } from './tipos.js';
 export type {

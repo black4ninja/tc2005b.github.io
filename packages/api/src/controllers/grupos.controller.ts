@@ -4,6 +4,7 @@ import { BaseModel } from '../models/BaseModel.js';
 import { Grupo } from '../models/Grupo.js';
 import { esModuloValido } from '../models/modulos-contenido.js';
 import { invalidateColeccionesPermitidas } from '../services/contenidos.service.js';
+import { invalidateAccesoEjercicios } from '../services/ejercicios-alumno.service.js';
 import { getGruposDeStaff } from '../services/grupo-admin.service.js';
 import { sanitizarUrlHref } from '../utils/url.js';
 
@@ -225,6 +226,7 @@ export async function setAsignacionesGrupo(req: Request, res: Response): Promise
 
     await grupo.save(null, { useMasterKey: true });
     invalidateColeccionesPermitidas();
+    invalidateAccesoEjercicios(); // el mismo cambio afecta el acceso a Ejercicios
 
     res.json({ status: 'ok', grupo: grupo.toSafeJSON() });
   } catch (error: any) {
@@ -253,6 +255,7 @@ export async function archiveGrupo(req: Request, res: Response): Promise<void> {
     await grupo.save(null, { useMasterKey: true });
     // Archivar/reactivar cambia el acceso de todos sus alumnos al CMS.
     invalidateColeccionesPermitidas();
+    invalidateAccesoEjercicios(); // el mismo cambio afecta el acceso a Ejercicios
 
     res.json({ status: 'ok', grupo: grupo.toSafeJSON() });
   } catch (error: any) {
