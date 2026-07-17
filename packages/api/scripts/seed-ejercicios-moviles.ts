@@ -3,6 +3,9 @@
  * basado en las presentaciones de Kotlin/Android y Swift/iOS (tema detective).
  * Crea CATEGORÍAS y EJERCICIOS bilingües (Kotlin + Swift) de nociones básicas.
  *
+ * Cada enunciado trae **qué concepto revisa** y una sección de **teoría** con la
+ * sintaxis en ambos lenguajes, para que el alumno vaya casi copy-paste.
+ *
  * Uso:
  *   ./node_modules/.bin/tsx scripts/seed-ejercicios-moviles.ts [slugColeccion]
  * (slug por defecto: tc2007b). Re-ejecutable: hace upsert por slug, no duplica.
@@ -24,26 +27,52 @@ interface Caso { entrada: string; salidaEsperada: string; oculto: boolean }
 interface Ejercicio {
   slug: string;
   titulo: string;
-  categoria: string; // nombre de la categoría
-  enunciado: string;
+  categoria: string;
+  concepto: string;
+  teoria: string; // markdown (con bloques Kotlin/Swift)
+  tarea: string; // markdown (enunciado del problema)
   codigoInicial: { kotlin: string; swift: string };
   casos: Caso[];
 }
 
 const CATEGORIAS = ['Sintaxis básica', 'Funciones y control de flujo', 'Colecciones', 'Programación funcional'];
 
+/** Arma el enunciado final: título + concepto + teoría + tarea. */
+function enunciado(e: Ejercicio): string {
+  return [
+    `# ${e.titulo}`,
+    '',
+    `> **Concepto que practicas:** ${e.concepto}`,
+    '',
+    '## 📖 Teoría',
+    '',
+    e.teoria,
+    '',
+    '## 🎯 Tu tarea',
+    '',
+    e.tarea,
+  ].join('\n');
+}
+
 const EJERCICIOS: Ejercicio[] = [
   {
     slug: 'hola-mundo',
     titulo: 'Hola, mundo',
     categoria: 'Sintaxis básica',
-    enunciado: [
-      '# Hola, mundo',
+    concepto: 'imprimir en consola (tu primer programa).',
+    teoria: [
+      'Para mostrar texto en la consola se usa una función de impresión que además agrega un salto de línea al final.',
       '',
-      'Tu primer programa. Imprime exactamente `Hola, mundo!` (sin comillas) y un salto de línea.',
-      '',
-      'No recibe entrada.',
+      '**Kotlin**',
+      '```kotlin',
+      'println("Texto a mostrar")',
+      '```',
+      '**Swift**',
+      '```swift',
+      'print("Texto a mostrar")',
+      '```',
     ].join('\n'),
+    tarea: 'Imprime exactamente `Hola, mundo!` (sin las comillas). No recibe entrada.',
     codigoInicial: {
       kotlin: 'fun main() {\n    // Imprime exactamente: Hola, mundo!\n}\n',
       swift: '// Imprime exactamente: Hola, mundo!\n',
@@ -54,16 +83,31 @@ const EJERCICIOS: Ejercicio[] = [
     slug: 'ficha-sospechoso',
     titulo: 'Ficha del sospechoso',
     categoria: 'Sintaxis básica',
-    enunciado: [
-      '# Ficha del sospechoso',
+    concepto: 'variables, leer entrada e interpolar valores en un texto.',
+    teoria: [
+      'Se leen datos línea por línea, se convierten al tipo necesario y se **interpolan** dentro de un texto.',
       '',
-      'Lee **dos líneas**: el `nombre` (texto) y la `edad` (entero). Imprime:',
+      '**Kotlin** — `readLine()` lee una línea; `$variable` la inserta en el texto; `.toInt()` convierte a entero:',
+      '```kotlin',
+      'val nombre = readLine()!!.trim()',
+      'val edad = readLine()!!.trim().toInt()',
+      'println("Nombre: $nombre, edad: $edad")',
+      '```',
+      '**Swift** — `readLine()` lee una línea; `\\(variable)` la inserta; `Int(...)!` convierte:',
+      '```swift',
+      'let nombre = readLine()!',
+      'let edad = Int(readLine()!)!',
+      'print("Nombre: \\(nombre), edad: \\(edad)")',
+      '```',
+    ].join('\n'),
+    tarea: [
+      'Lee **dos líneas**: el `nombre` y la `edad` (entero). Imprime:',
       '',
       '```',
       'Sospechoso: <nombre> (<edad> años)',
       '```',
       '',
-      '**Ejemplo** — entrada `Juan Pérez` / `34` produce `Sospechoso: Juan Pérez (34 años)`.',
+      'Ejemplo — entrada `Juan Pérez` / `34` → `Sospechoso: Juan Pérez (34 años)`.',
     ].join('\n'),
     codigoInicial: {
       kotlin: 'fun main() {\n    val nombre = readLine()!!.trim()\n    val edad = readLine()!!.trim().toInt()\n    // Imprime la ficha con el formato pedido\n}\n',
@@ -78,9 +122,32 @@ const EJERCICIOS: Ejercicio[] = [
     slug: 'calcular-condena',
     titulo: 'Calcular la condena',
     categoria: 'Funciones y control de flujo',
-    enunciado: [
-      '# Calcular la condena',
+    concepto: 'funciones que devuelven un valor y selección múltiple (when / switch).',
+    teoria: [
+      'Una función recibe parámetros y **devuelve** un valor. Para elegir entre varios casos se usa `when` (Kotlin) o `switch` (Swift).',
       '',
+      '**Kotlin**',
+      '```kotlin',
+      'fun clasificar(x: Int): String {',
+      '    return when (x) {',
+      '        1 -> "uno"',
+      '        2 -> "dos"',
+      '        else -> "otro"',
+      '    }',
+      '}',
+      '```',
+      '**Swift**',
+      '```swift',
+      'func clasificar(_ x: Int) -> String {',
+      '    switch x {',
+      '    case 1: return "uno"',
+      '    case 2: return "dos"',
+      '    default: return "otro"',
+      '    }',
+      '}',
+      '```',
+    ].join('\n'),
+    tarea: [
       'Lee un entero con la **gravedad** del delito e imprime la condena:',
       '',
       '- `1` → `2 años`',
@@ -103,9 +170,32 @@ const EJERCICIOS: Ejercicio[] = [
     slug: 'prioridad-evidencia',
     titulo: 'Prioridad de la evidencia',
     categoria: 'Funciones y control de flujo',
-    enunciado: [
-      '# Prioridad de la evidencia',
+    concepto: 'condicionales con rangos (if / else if / else).',
+    teoria: [
+      'Con `if` / `else if` / `else` decides qué hacer según una condición. Los operadores de comparación (`<`, `<=`, `>`) son iguales en ambos lenguajes.',
       '',
+      '**Kotlin**',
+      '```kotlin',
+      'if (n < 3) {',
+      '    println("Bajo")',
+      '} else if (n <= 6) {',
+      '    println("Medio")',
+      '} else {',
+      '    println("Alto")',
+      '}',
+      '```',
+      '**Swift** (sin paréntesis en la condición)',
+      '```swift',
+      'if n < 3 {',
+      '    print("Bajo")',
+      '} else if n <= 6 {',
+      '    print("Medio")',
+      '} else {',
+      '    print("Alto")',
+      '}',
+      '```',
+    ].join('\n'),
+    tarea: [
       'Lee un entero con la **cantidad de piezas de evidencia** e imprime su prioridad:',
       '',
       '- menos de `3` → `Baja`',
@@ -127,15 +217,26 @@ const EJERCICIOS: Ejercicio[] = [
     slug: 'buscar-evidencia',
     titulo: 'Buscar evidencia',
     categoria: 'Colecciones',
-    enunciado: [
-      '# Buscar evidencia',
+    concepto: 'listas: partir un texto y buscar un elemento (contains).',
+    teoria: [
+      '`split` parte un texto en una lista usando un separador; `contains` dice si un elemento está en ella.',
       '',
-      'Primera línea: una lista de evidencias separadas por comas.',
-      'Segunda línea: la evidencia a buscar.',
-      '',
+      '**Kotlin**',
+      '```kotlin',
+      'val lista = readLine()!!.split(",")   // ["a", "b", "c"]',
+      'if (lista.contains("b")) println("sí")',
+      '```',
+      '**Swift** — `split` devuelve subcadenas; conviene mapearlas a `String`:',
+      '```swift',
+      'let lista = readLine()!.split(separator: ",").map { String($0) }',
+      'if lista.contains("b") { print("sí") }',
+      '```',
+    ].join('\n'),
+    tarea: [
+      'Primera línea: evidencias separadas por comas. Segunda línea: la evidencia a buscar.',
       'Imprime `Encontrada` si está en la lista, o `No encontrada` si no.',
       '',
-      '**Ejemplo** — `Arma,Gorra,Sangre` / `Gorra` → `Encontrada`.',
+      'Ejemplo — `Arma,Gorra,Sangre` / `Gorra` → `Encontrada`.',
     ].join('\n'),
     codigoInicial: {
       kotlin: 'fun main() {\n    val lista = readLine()!!.split(",")\n    val objetivo = readLine()!!.trim()\n    // ¿objetivo está en lista? Imprime Encontrada / No encontrada\n}\n',
@@ -151,13 +252,25 @@ const EJERCICIOS: Ejercicio[] = [
     slug: 'evidencias-unicas',
     titulo: 'Evidencias únicas',
     categoria: 'Colecciones',
-    enunciado: [
-      '# Evidencias únicas',
+    concepto: 'conjuntos (Set) para quedarte con elementos distintos.',
+    teoria: [
+      'Un **Set** guarda elementos sin repetir. Convertir una lista a Set y medir su tamaño da la cantidad de elementos distintos.',
       '',
-      'Lee una línea con evidencias separadas por espacio (pueden repetirse) e imprime',
-      '**cuántas son distintas** (un número).',
+      '**Kotlin**',
+      '```kotlin',
+      'val lista = readLine()!!.trim().split(" ")',
+      'println(lista.toSet().size)',
+      '```',
+      '**Swift**',
+      '```swift',
+      'let lista = readLine()!.split(separator: " ").map { String($0) }',
+      'print(Set(lista).count)',
+      '```',
+    ].join('\n'),
+    tarea: [
+      'Lee una línea con evidencias separadas por espacio (pueden repetirse) e imprime **cuántas son distintas**.',
       '',
-      '**Ejemplo** — `Gorra Sangre Gorra Zapatos` → `3`.',
+      'Ejemplo — `Gorra Sangre Gorra Zapatos` → `3`.',
     ].join('\n'),
     codigoInicial: {
       kotlin: 'fun main() {\n    val evidencias = readLine()!!.trim().split(" ")\n    // Imprime cuántas son distintas (pista: un Set)\n}\n',
@@ -172,13 +285,25 @@ const EJERCICIOS: Ejercicio[] = [
     slug: 'casos-pares',
     titulo: 'Celdas pares',
     categoria: 'Programación funcional',
-    enunciado: [
-      '# Celdas pares',
+    concepto: 'programación funcional: filtrar una colección con filter.',
+    teoria: [
+      '`filter` construye una nueva lista con los elementos que cumplen una condición, sin escribir un bucle a mano.',
       '',
-      'Lee una línea con enteros separados por espacio e imprime **solo los pares**,',
-      'en el mismo orden, separados por un espacio.',
+      '**Kotlin** — dentro de la lambda, `it` es cada elemento; `joinToString` une con un separador:',
+      '```kotlin',
+      'val pares = nums.filter { it % 2 == 0 }',
+      'println(pares.joinToString(" "))',
+      '```',
+      '**Swift** — `$0` es cada elemento; se mapea a `String` y se une con `joined`:',
+      '```swift',
+      'let pares = nums.filter { $0 % 2 == 0 }',
+      'print(pares.map(String.init).joined(separator: " "))',
+      '```',
+    ].join('\n'),
+    tarea: [
+      'Lee una línea con enteros separados por espacio e imprime **solo los pares**, en el mismo orden, separados por un espacio.',
       '',
-      '**Ejemplo** — `12 19 48 93 7` → `12 48`.',
+      'Ejemplo — `12 19 48 93 7` → `12 48`.',
     ].join('\n'),
     codigoInicial: {
       kotlin: 'fun main() {\n    val nums = readLine()!!.trim().split(" ").map { it.toInt() }\n    // Filtra los pares e imprímelos separados por espacio\n}\n',
@@ -193,16 +318,27 @@ const EJERCICIOS: Ejercicio[] = [
     slug: 'suma-condenas',
     titulo: 'Suma de condenas',
     categoria: 'Programación funcional',
-    enunciado: [
-      '# Suma de condenas',
+    concepto: 'agregación: reducir una colección a un solo valor (suma).',
+    teoria: [
+      'Sumar todos los elementos de una lista es una **reducción**. Ambos lenguajes lo ofrecen listo.',
       '',
+      '**Kotlin** — `sum()` sobre una lista de enteros:',
+      '```kotlin',
+      'println(nums.sum())',
+      '```',
+      '**Swift** — `reduce(0, +)` acumula desde 0 con la suma:',
+      '```swift',
+      'print(nums.reduce(0, +))',
+      '```',
+    ].join('\n'),
+    tarea: [
       'Lee una línea con enteros separados por espacio (años de cada condena) e imprime su **suma total**.',
       '',
-      '**Ejemplo** — `2 3 5` → `10`.',
+      'Ejemplo — `2 3 5` → `10`.',
     ].join('\n'),
     codigoInicial: {
-      kotlin: 'fun main() {\n    val años = readLine()!!.trim().split(" ").map { it.toInt() }\n    // Imprime la suma total\n}\n',
-      swift: 'let años = readLine()!.split(separator: " ").map { Int($0)! }\n// Imprime la suma total\n',
+      kotlin: 'fun main() {\n    val anios = readLine()!!.trim().split(" ").map { it.toInt() }\n    // Imprime la suma total\n}\n',
+      swift: 'let anios = readLine()!.split(separator: " ").map { Int($0)! }\n// Imprime la suma total\n',
     },
     casos: [
       { entrada: '2 3 5\n', salidaEsperada: '10', oculto: false },
@@ -223,7 +359,6 @@ async function main() {
   qa.equalTo('userType', 'admin'); qa.equalTo('active', true);
   const autor = await qa.first({ useMasterKey: true });
 
-  // Categorías (upsert por nombre dentro de la colección).
   const CatModel = Parse.Object.extend('CategoriaEjercicio');
   const catPorNombre = new Map<string, Parse.Object>();
   for (let i = 0; i < CATEGORIAS.length; i++) {
@@ -238,10 +373,10 @@ async function main() {
   }
   console.log(`Categorías: ${CATEGORIAS.join(', ')}`);
 
-  // Ejercicios (upsert por slug).
   const EjModel = Parse.Object.extend('EjercicioProgramacion');
   let orden = 0;
   for (const d of EJERCICIOS) {
+    const md = enunciado(d);
     const q = new Parse.Query('EjercicioProgramacion');
     q.equalTo('coleccion', col); q.equalTo('slug', d.slug); q.equalTo('exists', true);
     let ej = await q.first({ useMasterKey: true });
@@ -252,8 +387,8 @@ async function main() {
     ej!.set('titulo', d.titulo);
     ej!.set('slug', d.slug);
     ej!.set('orden', orden++);
-    ej!.set('enunciado', d.enunciado);
-    ej!.set('enunciadoHtml', await renderMarkdown(d.enunciado));
+    ej!.set('enunciado', md);
+    ej!.set('enunciadoHtml', await renderMarkdown(md));
     ej!.set('lenguajes', ['kotlin', 'swift']);
     ej!.set('codigoInicial', d.codigoInicial);
     ej!.set('modoEvaluacion', 'programa');
@@ -268,7 +403,7 @@ async function main() {
     console.log(`  ${nuevo ? 'creado ' : 'actualizado'}: [${d.categoria}] ${d.titulo} (/${d.slug})`);
   }
 
-  console.log(`\nListo: ${CATEGORIAS.length} categorías, ${EJERCICIOS.length} ejercicios (Kotlin + Swift), publicados.`);
+  console.log(`\nListo: ${CATEGORIAS.length} categorías, ${EJERCICIOS.length} ejercicios (Kotlin + Swift, con concepto + teoría), publicados.`);
   process.exit(0);
 }
 

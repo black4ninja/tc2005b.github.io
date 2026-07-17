@@ -72,7 +72,7 @@ export default function EjercicioSolverPage() {
   const codigo = codigoPorLeng[lenguaje] ?? '';
   const extensiones = useMemo(() => [extensionLenguaje(lenguaje), EditorView.lineWrapping], [lenguaje]);
 
-  const post = useCallback(async (accion: 'ejecutar' | 'enviar', body: object): Promise<{ jobId: string }> => {
+  const post = useCallback(async (accion: 'ejecutar' | 'enviar', body: object): Promise<any> => {
     const res = await fetch(`/api/contenidos/${slug}/ejercicios/${ejSlug}/${accion}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-session-token': sessionToken ?? '' },
@@ -83,14 +83,12 @@ export default function EjercicioSolverPage() {
     return json;
   }, [slug, ejSlug, sessionToken]);
 
-  /** Espera a que el trabajo termine, actualizando el estado de la cola. */
-  const esperarJob = useCallback(async (jobId: string): Promise<any> => {
+  /** Poll genérico de un endpoint de estado; actualiza el estado de la cola. */
+  const pollear = useCallback(async (url: string): Promise<any> => {
     const token = ++pollToken.current;
     for (;;) {
       if (token !== pollToken.current) throw new Error('cancelado');
-      const res = await fetch(`/api/contenidos/${slug}/ejercicios/${ejSlug}/estado/${jobId}`, {
-        headers: { 'x-session-token': sessionToken ?? '' },
-      });
+      const res = await fetch(url, { headers: { 'x-session-token': sessionToken ?? '' } });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.message || 'Error al consultar el estado');
       if (json.estado === 'listo') { setJobEstado(null); return json.resultado; }
@@ -98,15 +96,20 @@ export default function EjercicioSolverPage() {
       setJobEstado({ estado: json.estado, posicion: json.posicion });
       await new Promise((r) => setTimeout(r, 1500));
     }
-  }, [slug, ejSlug, sessionToken]);
+  }, [sessionToken]);
+
+  const esperarJob = useCallback((jobId: string) =>
+    pollear(`/api/contenidos/${slug}/ejercicios/${ejSlug}/estado/${jobId}`), [pollear, slug, ejSlug]);
+  // El envío se consulta por envioId (persistido): sobrevive a un reinicio del server.
+  const esperarEnvio = useCallback((envioId: string) =>
+    pollear(`/api/contenidos/${slug}/ejercicios/${ejSlug}/envios/${envioId}/estado`), [pollear, slug, ejSlug]);
 
   async function probarMuestra() {
     setOcupado('muestra'); setError(''); setSalidaResult(null); setEvalResult(null);
     try {
       const { jobId } = await post('ejecutar', { lenguaje, codigo });
-      const r = await esperarJob(jobId);
-      if (r.modo === 'casos') setEvalResult({ titulo: 'Casos de muestra', r: r.resultado });
-      else setSalidaResult(r.resultado);
+      const r = await esperarJob(jobId); // siempre modo 'casos' (sin entrada)
+      setEvalResult({ titulo: 'Casos de muestra', r: r.resultado });
     } catch (e: any) { if (e.message !== 'cancelado') setError(e.message); }
     finally { setOcupado(''); setJobEstado(null); }
   }
@@ -124,8 +127,8 @@ export default function EjercicioSolverPage() {
   async function enviar() {
     setOcupado('enviar'); setError(''); setSalidaResult(null); setEvalResult(null);
     try {
-      const { jobId } = await post('enviar', { lenguaje, codigo });
-      const r = await esperarJob(jobId);
+      const { envioId } = await post('enviar', { lenguaje, codigo });
+      const r = await esperarEnvio(envioId);
       setEvalResult({ titulo: 'Envío', r: r.resultado });
     } catch (e: any) { if (e.message !== 'cancelado') setError(e.message); }
     finally { setOcupado(''); setJobEstado(null); }
@@ -243,7 +246,7 @@ export default function EjercicioSolverPage() {
             <div className={styles.colaBox}>
               {jobEstado.estado === 'pendiente'
                 ? (jobEstado.posicion > 1
-                    ? `En cola — ${jobEstado.posicion} por delante. El servidor compila de a uno; espera un momento…`
+                    ? `En cola — ${jobEstado.posicion - 1} por delante. El servidor compila de a uno; espera un momento…`
                     : 'En cola — eres el siguiente…')
                 : 'Compilando y ejecutando tu código…'}
             </div>

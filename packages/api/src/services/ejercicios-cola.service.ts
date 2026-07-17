@@ -78,12 +78,53 @@ export interface EstadoConsulta {
   error?: string;
 }
 
-/** Estado de un trabajo; null si no existe (o no es del usuario). */
+const MSG_ERROR_JUEZ = 'El juez no pudo procesar tu envío. Inténtalo de nuevo.';
+
+/** Estado de un trabajo efímero (probar/ejecutar); null si no existe o no es del usuario. */
 export function estadoTrabajo(id: string, usuarioId: string): EstadoConsulta | null {
   const t = trabajos.get(id);
   if (!t || t.usuarioId !== usuarioId) return null;
   const posicion = t.estado === 'pendiente' ? pendientes.indexOf(id) + 1 : 0;
-  return { estado: t.estado, posicion, resultado: t.resultado, error: t.error };
+  // No se expone `t.error` crudo (puede traer detalle interno del juez).
+  return { estado: t.estado, posicion, resultado: t.resultado, error: t.estado === 'error' ? MSG_ERROR_JUEZ : undefined };
+}
+
+/**
+ * Estado de un ENVÍO persistido (por envioId). A diferencia de estadoTrabajo, no
+ * depende de la memoria: sobrevive a un reinicio (el envío se re-encola y el
+ * alumno sigue consultándolo por su id). null si no existe o no es del usuario.
+ */
+export async function estadoEnvio(envioId: string, usuarioId: string): Promise<EstadoConsulta | null> {
+  const envio = await new Parse.Query(EnvioEjercicio).get(envioId, { useMasterKey: true }).catch(() => null);
+  if (!envio || envio.get('alumno')?.id !== usuarioId) return null;
+  const estado = envio.getEstado();
+  if (estado === 'listo') {
+    const detalle = envio.getDetalle();
+    return {
+      estado, posicion: 0,
+      resultado: {
+        envioId: envio.id,
+        resultado: {
+          veredicto: envio.getVeredicto(),
+          casosPasados: envio.getCasosPasados(),
+          casosTotales: envio.getCasosTotales(),
+          errorCompilacion: detalle.errorCompilacion,
+          casos: detalle.casos,
+          tiempoMaxMs: envio.getTiempoMaxMs(),
+        },
+      },
+    };
+  }
+  if (estado === 'error') return { estado, posicion: 0, error: MSG_ERROR_JUEZ };
+  let posicion = 0;
+  if (estado === 'pendiente') {
+    const qp = new Parse.Query(EnvioEjercicio);
+    qp.equalTo('estado' as any, 'pendiente' as any);
+    qp.lessThan('createdAt' as any, envio.createdAt as any);
+    qp.equalTo('exists' as any, true as any);
+    posicion = (await qp.count({ useMasterKey: true }).catch(() => 0)) + 1;
+  }
+  return { estado, posicion };
 }
 
 /**
@@ -95,6 +136,19 @@ export function construirCodigo(ej: EjercicioProgramacion, lenguaje: Lenguaje, c
   const plantilla = ej.getPlantillaCodigo()[lenguaje];
   if (!plantilla) return codigoAlumno;
   return plantilla.split(MARCADOR_SOLUCION).join(codigoAlumno);
+}
+
+const MSG_COMPILACION_PLANTILLA =
+  'Tu solución no compiló. Revisa que tenga la firma (nombre, parámetros y tipos) que pide el ejercicio.';
+
+/**
+ * En modo 'plantilla', el error de compilación del programa COMBINADO incluye
+ * líneas del driver oculto (que puede contener la lógica esperada). Se reemplaza
+ * por un mensaje genérico para no filtrarlo. Muta y devuelve el mismo objeto.
+ */
+export function enmascararErrorPlantilla<T extends { errorCompilacion?: string }>(esPlantilla: boolean, r: T): T {
+  if (esPlantilla && r.errorCompilacion) r.errorCompilacion = MSG_COMPILACION_PLANTILLA;
+  return r;
 }
 
 async function cargarEnvioConEjercicio(envioId: string): Promise<EnvioEjercicio> {
@@ -118,6 +172,7 @@ async function procesarEnvio(envioId: string): Promise<{ resultado: ResultadoEva
 
   try {
     const resultado = await evaluar({ lenguaje, codigo, casos: ej.getCasos(), limites });
+    enmascararErrorPlantilla(ej.getModoEvaluacion() === 'plantilla', resultado);
     envio.setEstado('listo');
     envio.setVeredicto(resultado.veredicto);
     envio.setCasosPasados(resultado.casosPasados);

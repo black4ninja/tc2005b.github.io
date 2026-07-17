@@ -4,6 +4,7 @@ import { renderMarkdown } from '@tc2005b/contenido-pipeline';
 import { Coleccion } from '../models/Coleccion.js';
 import {
   EjercicioProgramacion,
+  MARCADOR_SOLUCION,
   type CasoPrueba,
   type CodigoInicial,
   type ModoEvaluacion,
@@ -95,6 +96,23 @@ function clamp(n: number, min: number, max: number): number {
 
 function normalizarModo(valor: unknown): ModoEvaluacion {
   return valor === 'plantilla' ? 'plantilla' : 'programa';
+}
+
+/**
+ * En modo 'plantilla', la plantilla de CADA lenguaje permitido debe contener el
+ * marcador donde se inserta el código del alumno; si no, se compilaría solo el
+ * driver y el veredicto no dependería del alumno. Devuelve el mensaje de error o null.
+ */
+function validarPlantilla(ej: EjercicioProgramacion): string | null {
+  if (ej.getModoEvaluacion() !== 'plantilla') return null;
+  const plantilla = ej.getPlantillaCodigo();
+  for (const l of ej.getLenguajes()) {
+    const p = (plantilla as Record<string, string>)[l];
+    if (!p || !p.includes(MARCADOR_SOLUCION)) {
+      return `La plantilla de ${l} debe incluir el marcador ${MARCADOR_SOLUCION} donde se inserta el código del alumno.`;
+    }
+  }
+  return null;
 }
 
 /**
@@ -199,6 +217,12 @@ export async function createEjercicio(req: Request, res: Response): Promise<void
     const autor = req.appUser as AppUser | undefined;
     if (autor) ejercicio.setAutor(autor);
 
+    const errPlantilla = validarPlantilla(ejercicio);
+    if (errPlantilla) {
+      res.status(400).json({ status: 'error', message: errPlantilla });
+      return;
+    }
+
     await ejercicio.save(null, { useMasterKey: true });
     res.status(201).json({ status: 'ok', ejercicio: ejercicio.toSafeJSON() });
   } catch (error) {
@@ -283,6 +307,12 @@ export async function updateEjercicio(req: Request, res: Response): Promise<void
         return;
       }
       ejercicio.setCasos(casosValidos);
+    }
+
+    const errPlantilla = validarPlantilla(ejercicio);
+    if (errPlantilla) {
+      res.status(400).json({ status: 'error', message: errPlantilla });
+      return;
     }
 
     await ejercicio.save(null, { useMasterKey: true });

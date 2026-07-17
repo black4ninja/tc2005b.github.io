@@ -24,6 +24,7 @@ export default function EjerciciosColeccionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [catOpen, setCatOpen] = useState(false);
+  const [categorias, setCategorias] = useState<{ id: string; nombre: string }[]>([]);
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -58,10 +59,22 @@ export default function EjerciciosColeccionPage() {
     }
   }, [id, sessionToken]);
 
+  const fetchCategorias = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/colecciones/${id}/categorias-ejercicios`, { headers: { 'x-session-token': sessionToken ?? '' } });
+      if (!res.ok) return;
+      const data = await res.json();
+      setCategorias((data.categorias ?? []).map((c: any) => ({ id: c.id, nombre: c.nombre })));
+    } catch { /* ignore */ }
+  }, [id, sessionToken]);
+
   useEffect(() => {
     fetchEjercicios();
     fetchNombre();
-  }, [fetchEjercicios, fetchNombre]);
+    fetchCategorias();
+  }, [fetchEjercicios, fetchNombre, fetchCategorias]);
+
+  const nombreCategoria = (catId: string | null) => categorias.find((c) => c.id === catId)?.nombre ?? '—';
 
   async function handleTogglePublicado(ej: EjercicioData) {
     setError('');
@@ -93,6 +106,11 @@ export default function EjerciciosColeccionPage() {
   const columnHelper = createColumnHelper<EjercicioData>();
   const columns = [
     columnHelper.accessor('titulo', { header: 'Título' }),
+    columnHelper.accessor((row) => nombreCategoria(row.categoriaId), {
+      id: 'categoria',
+      header: 'Categoría',
+      cell: (info) => info.getValue(),
+    }),
     columnHelper.accessor('slug', {
       header: 'Slug',
       cell: (info) => <code className={styles.slug}>{info.getValue()}</code>,
@@ -159,7 +177,7 @@ export default function EjerciciosColeccionPage() {
         />
       )}
 
-      {id && <CategoriasEjerciciosModal isOpen={catOpen} coleccionId={id} onClose={() => { setCatOpen(false); fetchEjercicios(); }} />}
+      {id && <CategoriasEjerciciosModal isOpen={catOpen} coleccionId={id} onClose={() => { setCatOpen(false); fetchCategorias(); fetchEjercicios(); }} />}
     </div>
   );
 }

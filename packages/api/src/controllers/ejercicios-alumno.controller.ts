@@ -16,7 +16,9 @@ import {
   encolar,
   encolarEnvio,
   estadoTrabajo,
+  estadoEnvio,
   construirCodigo,
+  enmascararErrorPlantilla,
 } from '../services/ejercicios-cola.service.js';
 import {
   evaluar,
@@ -126,14 +128,17 @@ export async function listEjerciciosAlumno(req: Request, res: Response): Promise
     q.limit(1000);
     const ejercicios = await q.find({ useMasterKey: true });
 
-    // Completitud del usuario y categorías (para agrupar).
-    const resueltos = await ejerciciosResueltos(user.id, ejercicios.map((e) => e.id!));
+    // Completitud + categorías (en paralelo). Si alguna falla, se degrada con
+    // gracia (sin palomitas / sin agrupar) en vez de tumbar toda la lista.
     const qc = new Parse.Query<CategoriaEjercicio>('CategoriaEjercicio');
     qc.equalTo('coleccion' as any, Coleccion.createWithoutData(acceso.coleccion.id) as any);
     qc.equalTo('exists' as any, true as any);
     qc.ascending('orden');
     qc.limit(1000);
-    const categorias = await qc.find({ useMasterKey: true });
+    const [resueltos, categorias] = await Promise.all([
+      ejerciciosResueltos(user.id, ejercicios.map((e) => e.id!)).catch(() => new Set<string>()),
+      qc.find({ useMasterKey: true }).catch(() => [] as CategoriaEjercicio[]),
+    ]);
 
     res.json({
       status: 'ok',
@@ -209,15 +214,16 @@ export async function ejecutarEjercicio(req: Request, res: Response): Promise<vo
     return;
   }
 
+  const esPlantilla = ej.getModoEvaluacion() === 'plantilla';
   const jobId = encolar(user.id!, async () => {
     if (entrada !== null) {
       const r = await probarPrograma({ lenguaje: v.lenguaje, codigo, stdin: entrada, limites });
-      return { modo: 'salida', resultado: r };
+      return { modo: 'salida', resultado: enmascararErrorPlantilla(esPlantilla, r) };
     }
     const resultado = await evaluar({ lenguaje: v.lenguaje, codigo, casos: visibles.map((x) => x.c), limites });
     // Índices ORIGINALES, para que "Caso N" coincida con ejemplos y con el envío.
     resultado.casos = resultado.casos.map((rc, k) => ({ ...rc, indice: visibles[k].i }));
-    return { modo: 'casos', resultado };
+    return { modo: 'casos', resultado: enmascararErrorPlantilla(esPlantilla, resultado) };
   });
   res.json({ status: 'ok', jobId });
 }
@@ -244,7 +250,12 @@ export async function enviarEjercicio(req: Request, res: Response): Promise<void
     envio.setEstado('pendiente');
     envio.setEjercicio(ejercicio);
     envio.setAlumno(user);
-    if (acceso.grupoId) envio.setGrupo(Grupo.createWithoutData(acceso.grupoId) as Grupo);
+    // Se guarda el envío de CUALQUIER usuario (historial universal), pero solo se
+    // vincula al grupo si es alumno: así el preview de un profesor/admin no ensucia
+    // las analíticas por grupo.
+    if (acceso.grupoId && user.get('userType') === 'alumno') {
+      envio.setGrupo(Grupo.createWithoutData(acceso.grupoId) as Grupo);
+    }
     envio.setLenguaje(v.lenguaje);
     envio.setCodigo(v.codigo); // se guarda el código DEL ALUMNO; el worker aplica el harness
     envio.setCasosTotales(ejercicio.getCasos().length);
@@ -256,7 +267,7 @@ export async function enviarEjercicio(req: Request, res: Response): Promise<void
   }
 }
 
-/** GET /contenidos/:slug/ejercicios/:ejSlug/estado/:jobId — estado de un trabajo. */
+/** GET /contenidos/:slug/ejercicios/:ejSlug/estado/:jobId — estado de una corrida efímera. */
 export function getEstadoJob(req: Request, res: Response): void {
   const user = req.appUser as AppUser;
   const est = estadoTrabajo(req.params.jobId, user.id!);
@@ -265,6 +276,21 @@ export function getEstadoJob(req: Request, res: Response): void {
     return;
   }
   res.json({ status: 'ok', ...est });
+}
+
+/** GET /contenidos/:slug/ejercicios/:ejSlug/envios/:envioId/estado — estado de un envío (persistido). */
+export async function getEstadoEnvio(req: Request, res: Response): Promise<void> {
+  const user = req.appUser as AppUser;
+  try {
+    const est = await estadoEnvio(req.params.envioId, user.id!);
+    if (!est) {
+      res.status(404).json({ status: 'error', message: 'Envío no encontrado' });
+      return;
+    }
+    res.json({ status: 'ok', ...est });
+  } catch {
+    res.status(500).json({ status: 'error', message: 'Error al consultar el envío' });
+  }
 }
 
 /** GET /contenidos/:slug/ejercicios/:ejSlug/envios — historial propio. */

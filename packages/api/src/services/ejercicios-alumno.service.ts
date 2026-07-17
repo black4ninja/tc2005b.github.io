@@ -130,8 +130,10 @@ export async function ejerciciosResueltos(userId: string, ejercicioIds: string[]
   const q = new Parse.Query<EnvioEjercicio>('EnvioEjercicio');
   q.equalTo('alumno' as any, AppUser.createWithoutData(userId) as any);
   q.containedIn('ejercicio' as any, pointers as any);
+  // Un veredicto 'aceptado' implica que ya se evaluó (estado listo). NO se filtra
+  // por `estado`: los envíos del flujo síncrono anterior no guardaron ese campo y
+  // una igualdad los excluiría, borrando su completitud (retrocompat).
   q.equalTo('veredicto' as any, 'aceptado' as any);
-  q.equalTo('estado' as any, 'listo' as any);
   q.equalTo('exists' as any, true as any);
   q.select('ejercicio' as any);
   q.limit(10000);
