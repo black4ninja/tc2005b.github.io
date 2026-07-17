@@ -87,8 +87,13 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         setDocsHref(colecciones.length > 0 ? `/contenidos/${colecciones[0].slug}/` : null);
       })
       .catch(() => {});
-    // Ejercicios: solo si alguna colección suya tiene el módulo habilitado y con
-    // ejercicios publicados (el backend ya aplica ambos filtros).
+  }, [sessionToken, role]);
+
+  // Ejercicios: alumno Y profesor. Solo si alguna colección suya tiene el módulo
+  // encendido y con ejercicios publicados (el backend aplica ambos filtros). El
+  // profesor lo usa para probar los ejercicios tal como los ve su alumno.
+  useEffect(() => {
+    if (!sessionToken || (role !== 'alumno' && role !== 'profesor')) return;
     fetch('/api/me/ejercicios/colecciones', { headers: { 'x-session-token': sessionToken } })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
@@ -204,7 +209,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       : null;
 
   const items = isGrupoDetail
-    ? getGrupoDetailItems(grupoId!, agendaGrupoHref)
+    ? getGrupoDetailItems(grupoId!, agendaGrupoHref, esProfesor ? ejerciciosHref : null)
     : getSidebarItems(
         role,
         role === 'alumno' ? selectedGrupoId : undefined,

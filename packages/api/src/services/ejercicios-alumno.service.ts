@@ -4,20 +4,41 @@ import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { EjercicioProgramacion } from '../models/EjercicioProgramacion.js';
 import { Coleccion } from '../models/Coleccion.js';
 import { moduloHabilitado } from '../models/modulos-contenido.js';
+import { getGruposDeStaff } from './grupo-admin.service.js';
 import { getColeccionesPorSlug, type ColeccionInfo } from './contenidos.service.js';
 
 /**
- * Acceso del alumno al módulo "Ejercicios". Regla (calcada de
- * getColeccionesPermitidas pero con el módulo 'ejercicios', que es OPT-IN):
- * el alumno accede a los ejercicios de una colección si está asignada a un grupo
- * suyo ACTIVO, la colección está publicada y el grupo tiene ENCENDIDO el módulo
- * 'ejercicios' para ella. Denegado ⇒ el handler responde 404.
+ * Acceso al módulo "Ejercicios" (opt-in). Regla base: se accede a los ejercicios
+ * de una colección si está asignada a un grupo con el módulo 'ejercicios'
+ * ENCENDIDO y la colección publicada. Quién "tiene" el grupo depende del rol:
+ *  - **admin**: todas las colecciones (preview).
+ *  - **profesor**: los grupos donde es staff (`Grupo.admins`) — así prueba los
+ *    ejercicios tal como los ve su alumno, sin ser alumno.
+ *  - **alumno**: sus grupos activos (`GrupoAlumno`).
+ * Denegado ⇒ el handler responde 404.
  */
 
 export interface AccesoEjercicios {
   coleccion: ColeccionInfo;
   /** Grupo por el que se concede el acceso (para registrar el envío). */
   grupoId: string | null;
+}
+
+/** Grupos (objetos Parse con `colecciones`) que dan acceso según el rol. */
+async function gruposDeAcceso(user: AppUser): Promise<Parse.Object[]> {
+  if (user.get('userType') === 'profesor') {
+    return getGruposDeStaff(user.id);
+  }
+  // Alumno: sus grupos vía GrupoAlumno activo.
+  const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(user.id);
+  const q = new Parse.Query<GrupoAlumno>('GrupoAlumno');
+  q.equalTo('exists' as any, true as any);
+  q.equalTo('active' as any, true as any);
+  q.equalTo('alumno' as any, alumnoPointer as any);
+  q.include('grupo.colecciones' as any);
+  q.limit(1000);
+  const links = await q.find({ useMasterKey: true });
+  return links.map((l) => l.get('grupo')).filter(Boolean) as Parse.Object[];
 }
 
 /** Mapa slug→acceso de las colecciones con ejercicios habilitados para el user. */
@@ -33,17 +54,8 @@ export async function resolverAccesoEjercicios(user: AppUser): Promise<Map<strin
     return acceso;
   }
 
-  const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(user.id);
-  const q = new Parse.Query<GrupoAlumno>('GrupoAlumno');
-  q.equalTo('exists' as any, true as any);
-  q.equalTo('active' as any, true as any);
-  q.equalTo('alumno' as any, alumnoPointer as any);
-  q.include('grupo.colecciones' as any);
-  q.limit(1000);
-  const links = await q.find({ useMasterKey: true });
-
-  for (const link of links) {
-    const grupo = link.get('grupo');
+  const grupos = await gruposDeAcceso(user);
+  for (const grupo of grupos) {
     if (!grupo || grupo.get('exists') === false || grupo.get('active') === false) continue;
     const apagados = grupo.get('modulosDeshabilitados') as Record<string, string[]> | undefined;
     const colecciones: Parse.Object[] = grupo.get('colecciones') ?? [];

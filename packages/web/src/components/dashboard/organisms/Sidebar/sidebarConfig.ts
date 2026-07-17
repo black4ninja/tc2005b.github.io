@@ -84,7 +84,11 @@ export function getSidebarItems(
  *  - "Agendar Entrevistas" → enlace EXTERNO a la agenda del grupo (una hoja de
  *    cálculo, normalmente). Solo aparece si el grupo tiene URL.
  */
-export function getGrupoDetailItems(grupoId: string, agendaHref: string | null = null): SidebarItem[] {
+export function getGrupoDetailItems(
+  grupoId: string,
+  agendaHref: string | null = null,
+  ejerciciosHref: string | null = null,
+): SidebarItem[] {
   const items: SidebarItem[] = [
     { label: 'Calendario', icon: 'calendar_month', path: `/admin/grupos/${grupoId}/calendario` },
     { label: 'Alumnos', icon: 'people', path: `/admin/grupos/${grupoId}` },
@@ -93,6 +97,11 @@ export function getGrupoDetailItems(grupoId: string, agendaHref: string | null =
     { label: 'Equipos', icon: 'group_work', path: `/admin/grupos/${grupoId}/equipos` },
     { label: 'Entrevistas', icon: 'record_voice_over', path: `/admin/grupos/${grupoId}/entrevistas` },
   ];
+  // Solo para el profesor: probar los ejercicios como los ve su alumno (enlace al
+  // visor del alumno). El admin los gestiona desde Contenidos.
+  if (ejerciciosHref) {
+    items.push({ label: 'Ejercicios (vista alumno)', icon: 'terminal', path: ejerciciosHref, external: true });
+  }
   if (agendaHref) {
     items.push({ label: 'Agendar Entrevistas', icon: 'event_available', path: agendaHref, external: true });
   }
