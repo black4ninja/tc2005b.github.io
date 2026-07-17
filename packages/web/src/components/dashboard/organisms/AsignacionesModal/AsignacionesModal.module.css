@@ -26,6 +26,10 @@
   border: 1px solid var(--border-color);
   border-radius: 10px;
   overflow: hidden;
+  /* La lista es flex column con max-height: sin esto, al desbordar, el flex
+     ENCOGE las tarjetas (flex-shrink:1) y `overflow:hidden` recorta el último
+     módulo — y no hay scroll porque nada desborda. Fijado, la lista scrollea. */
+  flex-shrink: 0;
 }
 
 .coleccion {
