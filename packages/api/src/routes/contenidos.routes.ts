@@ -30,6 +30,14 @@ import {
   deleteRecurso,
   RECURSO_MAX_BYTES,
 } from '../controllers/recursos.controller.js';
+import {
+  listEjercicios,
+  createEjercicio,
+  getEjercicio,
+  updateEjercicio,
+  setPublicacionEjercicio,
+  deleteEjercicio,
+} from '../controllers/ejercicios-programacion.controller.js';
 
 // Subida en memoria: el binario va directo a Parse.File (sin disco temporal).
 const subida = multer({ storage: multer.memoryStorage(), limits: { fileSize: RECURSO_MAX_BYTES } });
@@ -56,6 +64,7 @@ const router = Router();
 router.use('/admin/colecciones', identifyUser, requireAdmin);
 router.use('/admin/documentos', identifyUser, requireAdmin);
 router.use('/admin/recursos', identifyUser, requireAdmin);
+router.use('/admin/ejercicios', identifyUser, requireAdmin);
 
 // Colecciones
 router.get('/admin/colecciones', listColecciones);
@@ -86,5 +95,13 @@ router.post('/admin/documentos/:docId/versiones/:versionId/restaurar', restaurar
 router.post('/admin/recursos', subidaArchivo, uploadRecurso);
 router.get('/admin/colecciones/:id/recursos', listRecursos);
 router.delete('/admin/recursos/:id', deleteRecurso);
+
+// Ejercicios (módulo "Ejercicios" — mini-juez Kotlin/Swift)
+router.get('/admin/colecciones/:id/ejercicios', listEjercicios);
+router.post('/admin/colecciones/:id/ejercicios', createEjercicio);
+router.get('/admin/ejercicios/:id', getEjercicio);
+router.put('/admin/ejercicios/:id', updateEjercicio);
+router.put('/admin/ejercicios/:id/publicacion', setPublicacionEjercicio);
+router.delete('/admin/ejercicios/:id', deleteEjercicio);
 
 export default router;

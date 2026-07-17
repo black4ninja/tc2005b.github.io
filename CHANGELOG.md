@@ -8,6 +8,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Autoría de ejercicios en Contenidos (admin).** Tercera fase del mini-juez: el
+  admin ya puede **crear, editar, publicar y borrar** ejercicios de programación
+  dentro de una colección. Se llega desde Contenidos (acción "Ejercicios" de la
+  colección o botón en su detalle). El editor tiene título/slug, enunciado en
+  **Markdown** (renderizado con el mismo pipeline del CMS), lenguajes permitidos
+  (Kotlin/Swift), **código inicial** por lenguaje, límites de tiempo/memoria y un
+  **editor de casos** entrada→salida con marca de "oculto". Publicar exige al menos
+  un caso. Aún **sin experiencia de alumno** (llega en la última fase).
 - **Modelos y registro del módulo "Ejercicios" (opt-in por grupo).** Segunda fase
   del mini-juez: los modelos Parse `EjercicioProgramacion` (pertenece a una
   colección, con enunciado, lenguajes, código inicial, límites y casos de prueba)

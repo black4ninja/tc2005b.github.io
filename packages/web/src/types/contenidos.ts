@@ -44,6 +44,35 @@ export interface DocumentoNodo extends DocumentoData {
   hijos: DocumentoNodo[];
 }
 
+// --- Módulo "Ejercicios" (mini-juez Kotlin/Swift) ---
+
+export type LenguajeJuez = 'kotlin' | 'swift';
+
+export interface CasoPruebaData {
+  entrada: string;
+  salidaEsperada: string;
+  oculto: boolean;
+}
+
+export interface EjercicioData {
+  id: string;
+  coleccionId: string | null;
+  titulo: string;
+  slug: string;
+  orden: number;
+  enunciado: string;
+  enunciadoHtml: string;
+  lenguajes: LenguajeJuez[];
+  codigoInicial: { kotlin?: string; swift?: string };
+  limiteTiempoMs: number;
+  limiteMemoriaMb: number;
+  casos: CasoPruebaData[];
+  publicado: boolean;
+  oculto: boolean;
+  autorId: string | null;
+  active: boolean;
+}
+
 /** Construye el árbol (padreId + orden) desde la lista plana del API. */
 export function buildArbol(documentos: DocumentoData[]): DocumentoNodo[] {
   const nodos = new Map<string, DocumentoNodo>();

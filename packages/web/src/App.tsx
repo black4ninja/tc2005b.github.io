@@ -29,12 +29,18 @@ import PaginaPage from './components/paginas/PaginaPage';
 import PaginasPage from './components/dashboard/pages/PaginasPage/PaginasPage';
 import ContenidosPage from './components/dashboard/pages/ContenidosPage/ContenidosPage';
 import ColeccionDetailPage from './components/dashboard/pages/ColeccionDetailPage/ColeccionDetailPage';
+import EjerciciosColeccionPage from './components/dashboard/pages/EjerciciosColeccionPage/EjerciciosColeccionPage';
 import { APP_NAME, APP_TAGLINE } from './config/app';
 
 // El editor carga CodeMirror + el pipeline de render: se divide del bundle
 // principal y solo se descarga al entrar a editar.
 const EditorContenidoPage = lazy(
   () => import('./components/dashboard/pages/EditorContenidoPage/EditorContenidoPage'),
+);
+
+// El editor de ejercicios también usa CodeMirror: se carga bajo demanda.
+const EditorEjercicioPage = lazy(
+  () => import('./components/dashboard/pages/EditorEjercicioPage/EditorEjercicioPage'),
 );
 
 // Visor del CMS (US-3): página completa con su propio chrome, fuera de los
@@ -95,6 +101,15 @@ export default function App() {
         <Route path="admin/paginas" element={<PaginasPage />} />
         <Route path="admin/contenidos" element={<ContenidosPage />} />
         <Route path="admin/contenidos/:id" element={<ColeccionDetailPage />} />
+        <Route path="admin/contenidos/:id/ejercicios" element={<EjerciciosColeccionPage />} />
+        <Route
+          path="admin/contenidos/:id/ejercicios/:ejercicioId"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando editor…</p>}>
+              <EditorEjercicioPage />
+            </Suspense>
+          }
+        />
         <Route
           path="admin/contenidos/:id/editar/:docId"
           element={
