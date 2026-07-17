@@ -75,12 +75,53 @@
 .barraLlena { height: 100%; background: #4f46e5; transition: width 0.3s; }
 .progresoTexto { font-size: 13px; color: #57606a; white-space: nowrap; }
 
-.grupo { margin-top: 24px; }
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 20px 0 4px;
+}
+.filtroLabel { font-size: 13px; color: #57606a; }
+.chip {
+  font-size: 13px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid #d0d7de;
+  background: #fff;
+  color: #1f2328;
+  cursor: pointer;
+}
+.chip:hover { background: #f6f8fa; }
+.chipActivo { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+
+.grupo { margin-top: 16px; }
+.grupoHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 4px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #eaeef2;
+  cursor: pointer;
+  text-align: left;
+}
+.chevron { color: #57606a; font-size: 12px; width: 14px; }
 .grupoTitulo {
   font-size: 15px;
   font-weight: 700;
   color: #1f2328;
-  margin: 0 0 10px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  flex: 1;
 }
+.grupoConteo {
+  font-size: 13px;
+  color: #57606a;
+  background: #eaeef2;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.lista { margin-top: 10px; }

@@ -1,16 +1,17 @@
 /**
  * Seed idempotente de ejercicios básicos para el módulo "Ejercicios" (mini-juez),
- * basado en las presentaciones de Kotlin/Android y Swift/iOS (tema detective).
- * Crea CATEGORÍAS y EJERCICIOS bilingües (Kotlin + Swift) de nociones básicas.
+ * basado en las presentaciones de Kotlin/Android y Swift/iOS. Crea CATEGORÍAS y
+ * EJERCICIOS bilingües (Kotlin + Swift) de nociones básicas.
  *
- * Cada enunciado trae **qué concepto revisa** y una sección de **teoría** con la
- * sintaxis en ambos lenguajes, para que el alumno vaya casi copy-paste.
+ * Los ejercicios cuentan UNA historia progresiva (la detective Vega resuelve el
+ * homicidio de Damián Ríos): cada uno avanza un poco la narrativa y reutiliza
+ * nombres. El título viene como "Tema - Escena" para que el alumno vea el concepto.
+ * Cada enunciado trae la narrativa, el concepto y una sección de teoría con la
+ * sintaxis en ambos lenguajes (casi copy-paste).
  *
  * Uso:
  *   ./node_modules/.bin/tsx scripts/seed-ejercicios-moviles.ts [slugColeccion]
  * (slug por defecto: tc2007b). Re-ejecutable: hace upsert por slug, no duplica.
- * Los ejercicios se crean PUBLICADOS. Recuerda: solo se ven si el grupo tiene el
- * módulo 'ejercicios' encendido para esa colección (opt-in).
  */
 import Parse from 'parse/node';
 import { renderMarkdown } from '@tc2005b/contenido-pipeline';
@@ -26,21 +27,30 @@ const SLUG_COLECCION = process.argv[2] || 'tc2007b';
 interface Caso { entrada: string; salidaEsperada: string; oculto: boolean }
 interface Ejercicio {
   slug: string;
-  titulo: string;
+  titulo: string; // "Tema - Escena"
   categoria: string;
+  narrativa: string; // avanza la historia
   concepto: string;
-  teoria: string; // markdown (con bloques Kotlin/Swift)
-  tarea: string; // markdown (enunciado del problema)
-  codigoInicial: { kotlin: string; swift: string };
+  teoria: string;
+  tarea: string;
+  codigoInicial: { kotlin?: string; swift?: string };
+  lenguajes?: ('kotlin' | 'swift')[]; // ausente = ambos; presente = exclusivo
   casos: Caso[];
 }
 
-const CATEGORIAS = ['Sintaxis básica', 'Funciones y control de flujo', 'Colecciones', 'Programación funcional'];
+const CATEGORIAS = [
+  'Sintaxis básica',
+  'Funciones y control de flujo',
+  'Colecciones',
+  'Programación funcional',
+  'Nulos y opcionales',
+];
 
-/** Arma el enunciado final: título + concepto + teoría + tarea. */
 function enunciado(e: Ejercicio): string {
   return [
     `# ${e.titulo}`,
+    '',
+    `_${e.narrativa}_`,
     '',
     `> **Concepto que practicas:** ${e.concepto}`,
     '',
@@ -57,8 +67,9 @@ function enunciado(e: Ejercicio): string {
 const EJERCICIOS: Ejercicio[] = [
   {
     slug: 'hola-mundo',
-    titulo: 'Hola, mundo',
+    titulo: 'Salida en consola - El caso comienza',
     categoria: 'Sintaxis básica',
+    narrativa: 'Amanece en el muelle. El empresario **Damián Ríos** apareció sin vida en la bodega 7. La detective **Vega** abre el expediente y enciende la terminal del caso.',
     concepto: 'imprimir en consola (tu primer programa).',
     teoria: [
       'Para mostrar texto en la consola se usa una función de impresión que además agrega un salto de línea al final.',
@@ -72,22 +83,23 @@ const EJERCICIOS: Ejercicio[] = [
       'print("Texto a mostrar")',
       '```',
     ].join('\n'),
-    tarea: 'Imprime exactamente `Hola, mundo!` (sin las comillas). No recibe entrada.',
+    tarea: 'Imprime **exactamente** la línea con la que Vega abre el registro del caso:\n\n```\nCaso 0451: homicidio en la bodega 7.\n```',
     codigoInicial: {
-      kotlin: 'fun main() {\n    // Imprime exactamente: Hola, mundo!\n}\n',
-      swift: '// Imprime exactamente: Hola, mundo!\n',
+      kotlin: 'fun main() {\n    // Imprime la línea de apertura del caso\n}\n',
+      swift: '// Imprime la línea de apertura del caso\n',
     },
-    casos: [{ entrada: '', salidaEsperada: 'Hola, mundo!', oculto: false }],
+    casos: [{ entrada: '', salidaEsperada: 'Caso 0451: homicidio en la bodega 7.', oculto: false }],
   },
   {
     slug: 'ficha-sospechoso',
-    titulo: 'Ficha del sospechoso',
+    titulo: 'Variables - La ficha del sospechoso',
     categoria: 'Sintaxis básica',
+    narrativa: 'El primer sospechoso es **Marco Peña**, el vigilante nocturno que "no vio nada". Vega registra su ficha para empezar a atar cabos.',
     concepto: 'variables, leer entrada e interpolar valores en un texto.',
     teoria: [
       'Se leen datos línea por línea, se convierten al tipo necesario y se **interpolan** dentro de un texto.',
       '',
-      '**Kotlin** — `readLine()` lee una línea; `$variable` la inserta en el texto; `.toInt()` convierte a entero:',
+      '**Kotlin** — `readLine()` lee una línea; `$variable` la inserta; `.toInt()` convierte a entero:',
       '```kotlin',
       'val nombre = readLine()!!.trim()',
       'val edad = readLine()!!.trim().toInt()',
@@ -101,27 +113,28 @@ const EJERCICIOS: Ejercicio[] = [
       '```',
     ].join('\n'),
     tarea: [
-      'Lee **dos líneas**: el `nombre` y la `edad` (entero). Imprime:',
+      'Lee **dos líneas**: el `nombre` del sospechoso y su `edad` (entero). Imprime la ficha:',
       '',
       '```',
       'Sospechoso: <nombre> (<edad> años)',
       '```',
       '',
-      'Ejemplo — entrada `Juan Pérez` / `34` → `Sospechoso: Juan Pérez (34 años)`.',
+      'Ejemplo — entrada `Marco Peña` / `47` → `Sospechoso: Marco Peña (47 años)`.',
     ].join('\n'),
     codigoInicial: {
       kotlin: 'fun main() {\n    val nombre = readLine()!!.trim()\n    val edad = readLine()!!.trim().toInt()\n    // Imprime la ficha con el formato pedido\n}\n',
       swift: 'let nombre = readLine()!\nlet edad = Int(readLine()!)!\n// Imprime la ficha con el formato pedido\n',
     },
     casos: [
-      { entrada: 'Juan Pérez\n34\n', salidaEsperada: 'Sospechoso: Juan Pérez (34 años)', oculto: false },
-      { entrada: 'Ana\n28\n', salidaEsperada: 'Sospechoso: Ana (28 años)', oculto: true },
+      { entrada: 'Marco Peña\n47\n', salidaEsperada: 'Sospechoso: Marco Peña (47 años)', oculto: false },
+      { entrada: 'Elena Cruz\n35\n', salidaEsperada: 'Sospechoso: Elena Cruz (35 años)', oculto: true },
     ],
   },
   {
     slug: 'calcular-condena',
-    titulo: 'Calcular la condena',
+    titulo: 'Funciones - Calcular la condena',
     categoria: 'Funciones y control de flujo',
+    narrativa: 'Si se comprueba la culpa de Marco, habrá que fijar la condena. Vega estima la pena según la gravedad del delito.',
     concepto: 'funciones que devuelven un valor y selección múltiple (when / switch).',
     teoria: [
       'Una función recibe parámetros y **devuelve** un valor. Para elegir entre varios casos se usa `when` (Kotlin) o `switch` (Swift).',
@@ -168,8 +181,9 @@ const EJERCICIOS: Ejercicio[] = [
   },
   {
     slug: 'prioridad-evidencia',
-    titulo: 'Prioridad de la evidencia',
+    titulo: 'Condicionales - Prioridad de la evidencia',
     categoria: 'Funciones y control de flujo',
+    narrativa: 'La escena está llena de indicios. Antes de procesarlos, Vega los clasifica por prioridad según cuántos hay.',
     concepto: 'condicionales con rangos (if / else if / else).',
     teoria: [
       'Con `if` / `else if` / `else` decides qué hacer según una condición. Los operadores de comparación (`<`, `<=`, `>`) son iguales en ambos lenguajes.',
@@ -215,8 +229,9 @@ const EJERCICIOS: Ejercicio[] = [
   },
   {
     slug: 'buscar-evidencia',
-    titulo: 'Buscar evidencia',
+    titulo: 'Listas - La bolsa de evidencias',
     categoria: 'Colecciones',
+    narrativa: 'En la bolsa de evidencias podría estar el arma homicida. Vega busca el `Arma Calibre 45` entre lo recolectado.',
     concepto: 'listas: partir un texto y buscar un elemento (contains).',
     teoria: [
       '`split` parte un texto en una lista usando un separador; `contains` dice si un elemento está en ella.',
@@ -233,25 +248,26 @@ const EJERCICIOS: Ejercicio[] = [
       '```',
     ].join('\n'),
     tarea: [
-      'Primera línea: evidencias separadas por comas. Segunda línea: la evidencia a buscar.',
-      'Imprime `Encontrada` si está en la lista, o `No encontrada` si no.',
+      'Primera línea: las evidencias de la bolsa, separadas por comas. Segunda línea: la evidencia a buscar.',
+      'Imprime `Encontrada` si está en la bolsa, o `No encontrada` si no.',
       '',
-      'Ejemplo — `Arma,Gorra,Sangre` / `Gorra` → `Encontrada`.',
+      'Ejemplo — `Guante,Arma Calibre 45,Colilla` / `Arma Calibre 45` → `Encontrada`.',
     ].join('\n'),
     codigoInicial: {
-      kotlin: 'fun main() {\n    val lista = readLine()!!.split(",")\n    val objetivo = readLine()!!.trim()\n    // ¿objetivo está en lista? Imprime Encontrada / No encontrada\n}\n',
-      swift: 'let lista = readLine()!.split(separator: ",").map { String($0) }\nlet objetivo = readLine()!\n// ¿objetivo está en lista? Imprime Encontrada / No encontrada\n',
+      kotlin: 'fun main() {\n    val bolsa = readLine()!!.split(",")\n    val objetivo = readLine()!!.trim()\n    // ¿objetivo está en la bolsa? Imprime Encontrada / No encontrada\n}\n',
+      swift: 'let bolsa = readLine()!.split(separator: ",").map { String($0) }\nlet objetivo = readLine()!\n// ¿objetivo está en la bolsa? Imprime Encontrada / No encontrada\n',
     },
     casos: [
-      { entrada: 'Arma,Gorra,Sangre\nGorra\n', salidaEsperada: 'Encontrada', oculto: false },
-      { entrada: 'Arma,Gorra\nCuchillo\n', salidaEsperada: 'No encontrada', oculto: false },
-      { entrada: 'Huella,Sangre,Zapato\nZapato\n', salidaEsperada: 'Encontrada', oculto: true },
+      { entrada: 'Guante,Arma Calibre 45,Colilla\nArma Calibre 45\n', salidaEsperada: 'Encontrada', oculto: false },
+      { entrada: 'Guante,Colilla\nArma Calibre 45\n', salidaEsperada: 'No encontrada', oculto: false },
+      { entrada: 'Cabello,Sangre,Zapato\nZapato\n', salidaEsperada: 'Encontrada', oculto: true },
     ],
   },
   {
     slug: 'evidencias-unicas',
-    titulo: 'Evidencias únicas',
+    titulo: 'Conjuntos - Evidencias sin repetir',
     categoria: 'Colecciones',
+    narrativa: 'El equipo etiquetó evidencias a las prisas y hay duplicados. Vega necesita saber cuántas son **realmente distintas**.',
     concepto: 'conjuntos (Set) para quedarte con elementos distintos.',
     teoria: [
       'Un **Set** guarda elementos sin repetir. Convertir una lista a Set y medir su tamaño da la cantidad de elementos distintos.',
@@ -268,23 +284,24 @@ const EJERCICIOS: Ejercicio[] = [
       '```',
     ].join('\n'),
     tarea: [
-      'Lee una línea con evidencias separadas por espacio (pueden repetirse) e imprime **cuántas son distintas**.',
+      'Lee una línea con evidencias (una palabra cada una) separadas por espacio; pueden repetirse. Imprime **cuántas son distintas**.',
       '',
-      'Ejemplo — `Gorra Sangre Gorra Zapatos` → `3`.',
+      'Ejemplo — `Guante Colilla Guante Cabello` → `3`.',
     ].join('\n'),
     codigoInicial: {
       kotlin: 'fun main() {\n    val evidencias = readLine()!!.trim().split(" ")\n    // Imprime cuántas son distintas (pista: un Set)\n}\n',
       swift: 'let evidencias = readLine()!.split(separator: " ").map { String($0) }\n// Imprime cuántas son distintas (pista: un Set)\n',
     },
     casos: [
-      { entrada: 'Gorra Sangre Gorra Zapatos\n', salidaEsperada: '3', oculto: false },
-      { entrada: 'Arma Arma Arma\n', salidaEsperada: '1', oculto: true },
+      { entrada: 'Guante Colilla Guante Cabello\n', salidaEsperada: '3', oculto: false },
+      { entrada: 'Ceniza Ceniza Ceniza\n', salidaEsperada: '1', oculto: true },
     ],
   },
   {
     slug: 'casos-pares',
-    titulo: 'Celdas pares',
+    titulo: 'Programación funcional - Celdas disponibles',
     categoria: 'Programación funcional',
+    narrativa: 'Con varios detenidos por interrogar, Vega revisa qué celdas están libres. Por reglamento, solo las de número **par** pueden usarse esta noche.',
     concepto: 'programación funcional: filtrar una colección con filter.',
     teoria: [
       '`filter` construye una nueva lista con los elementos que cumplen una condición, sin escribir un bucle a mano.',
@@ -301,13 +318,13 @@ const EJERCICIOS: Ejercicio[] = [
       '```',
     ].join('\n'),
     tarea: [
-      'Lee una línea con enteros separados por espacio e imprime **solo los pares**, en el mismo orden, separados por un espacio.',
+      'Lee una línea con los números de celda (enteros separados por espacio) e imprime **solo las pares**, en el mismo orden, separadas por un espacio.',
       '',
       'Ejemplo — `12 19 48 93 7` → `12 48`.',
     ].join('\n'),
     codigoInicial: {
-      kotlin: 'fun main() {\n    val nums = readLine()!!.trim().split(" ").map { it.toInt() }\n    // Filtra los pares e imprímelos separados por espacio\n}\n',
-      swift: 'let nums = readLine()!.split(separator: " ").map { Int($0)! }\n// Filtra los pares e imprímelos separados por espacio\n',
+      kotlin: 'fun main() {\n    val celdas = readLine()!!.trim().split(" ").map { it.toInt() }\n    // Filtra las pares e imprímelas separadas por espacio\n}\n',
+      swift: 'let celdas = readLine()!.split(separator: " ").map { Int($0)! }\n// Filtra las pares e imprímelas separadas por espacio\n',
     },
     casos: [
       { entrada: '12 19 48 93 7\n', salidaEsperada: '12 48', oculto: false },
@@ -316,8 +333,9 @@ const EJERCICIOS: Ejercicio[] = [
   },
   {
     slug: 'suma-condenas',
-    titulo: 'Suma de condenas',
+    titulo: 'Agregación - El veredicto final',
     categoria: 'Programación funcional',
+    narrativa: 'El juicio llega a su fin. El arma y las pruebas señalan a **Marco Peña**. Vega suma los años de todos los cargos para conocer la condena total. **Caso cerrado.**',
     concepto: 'agregación: reducir una colección a un solo valor (suma).',
     teoria: [
       'Sumar todos los elementos de una lista es una **reducción**. Ambos lenguajes lo ofrecen listo.',
@@ -332,17 +350,83 @@ const EJERCICIOS: Ejercicio[] = [
       '```',
     ].join('\n'),
     tarea: [
-      'Lee una línea con enteros separados por espacio (años de cada condena) e imprime su **suma total**.',
+      'Lee una línea con los años de cada cargo (enteros separados por espacio) e imprime la **condena total**.',
       '',
       'Ejemplo — `2 3 5` → `10`.',
     ].join('\n'),
     codigoInicial: {
-      kotlin: 'fun main() {\n    val anios = readLine()!!.trim().split(" ").map { it.toInt() }\n    // Imprime la suma total\n}\n',
-      swift: 'let anios = readLine()!.split(separator: " ").map { Int($0)! }\n// Imprime la suma total\n',
+      kotlin: 'fun main() {\n    val cargos = readLine()!!.trim().split(" ").map { it.toInt() }\n    // Imprime la suma total\n}\n',
+      swift: 'let cargos = readLine()!.split(separator: " ").map { Int($0)! }\n// Imprime la suma total\n',
     },
     casos: [
       { entrada: '2 3 5\n', salidaEsperada: '10', oculto: false },
       { entrada: '100 200\n', salidaEsperada: '300', oculto: true },
+    ],
+  },
+
+  // --- Exclusivos por lenguaje: el mismo problema, sintaxis propia de cada uno ---
+  {
+    slug: 'testigo-nulo-kotlin',
+    titulo: 'Seguridad a nulo - El testigo fantasma (Kotlin)',
+    categoria: 'Nulos y opcionales',
+    lenguajes: ['kotlin'],
+    narrativa: 'Un testigo dejó una nota con su edad, pero a veces el dato falta (`?`). En **Kotlin**, Vega maneja el posible nulo sin que el programa truene.',
+    concepto: 'seguridad a nulo en Kotlin: tipos nullables y el operador Elvis (`?:`).',
+    teoria: [
+      'En Kotlin una variable **no** puede ser nula salvo que su tipo lleve `?`. Para dar un valor por defecto cuando algo es nulo se usa el **operador Elvis** `?:`.',
+      '',
+      '```kotlin',
+      'val edad: Int? = readLine()!!.trim().toIntOrNull() // null si no es número',
+      'val segura = edad ?: 0   // si es null, usa 0',
+      'println(segura)',
+      '```',
+      '',
+      'Otros: `?.` (llamada segura) y `!!` (forzar no-nulo, lanza excepción si es null — úsalo poco).',
+    ].join('\n'),
+    tarea: [
+      'Lee una línea con la edad del testigo. Si **no** es un número (dato ausente), imprime `0`; si lo es, imprime la edad.',
+      '',
+      'Ejemplo — entrada `?` → `0`; entrada `42` → `42`.',
+    ].join('\n'),
+    codigoInicial: {
+      kotlin: 'fun main() {\n    val entrada = readLine()!!.trim()\n    // Usa toIntOrNull() y el operador Elvis (?:) para imprimir la edad o 0\n}\n',
+    },
+    casos: [
+      { entrada: '42\n', salidaEsperada: '42', oculto: false },
+      { entrada: '?\n', salidaEsperada: '0', oculto: false },
+      { entrada: 'sin dato\n', salidaEsperada: '0', oculto: true },
+    ],
+  },
+  {
+    slug: 'testigo-opcional-swift',
+    titulo: 'Optionals - El testigo fantasma (Swift)',
+    categoria: 'Nulos y opcionales',
+    lenguajes: ['swift'],
+    narrativa: 'Un testigo dejó una nota con su edad, pero a veces el dato falta. En **Swift**, Vega usa un *optional* para manejar la ausencia con seguridad.',
+    concepto: 'optionals en Swift: valor opcional y el operador nil-coalescing (`??`).',
+    teoria: [
+      'En Swift un valor que puede faltar es un **optional** (tipo con `?`). `Int("texto")` devuelve `Int?` (`nil` si no es número). El operador `??` da un valor por defecto cuando es `nil`.',
+      '',
+      '```swift',
+      'let edad: Int? = Int(readLine()!)   // nil si no es número',
+      'let segura = edad ?? 0              // si es nil, usa 0',
+      'print(segura)',
+      '```',
+      '',
+      'También puedes desenvolver con `if let edad = edad { ... }` para usar el valor solo cuando existe.',
+    ].join('\n'),
+    tarea: [
+      'Lee una línea con la edad del testigo. Si **no** es un número (dato ausente), imprime `0`; si lo es, imprime la edad.',
+      '',
+      'Ejemplo — entrada `?` → `0`; entrada `42` → `42`.',
+    ].join('\n'),
+    codigoInicial: {
+      swift: 'let entrada = readLine()!\n// Usa Int(...) y el operador ?? para imprimir la edad o 0\n',
+    },
+    casos: [
+      { entrada: '42\n', salidaEsperada: '42', oculto: false },
+      { entrada: '?\n', salidaEsperada: '0', oculto: false },
+      { entrada: 'sin dato\n', salidaEsperada: '0', oculto: true },
     ],
   },
 ];
@@ -389,7 +473,7 @@ async function main() {
     ej!.set('orden', orden++);
     ej!.set('enunciado', md);
     ej!.set('enunciadoHtml', await renderMarkdown(md));
-    ej!.set('lenguajes', ['kotlin', 'swift']);
+    ej!.set('lenguajes', d.lenguajes ?? ['kotlin', 'swift']);
     ej!.set('codigoInicial', d.codigoInicial);
     ej!.set('modoEvaluacion', 'programa');
     ej!.set('plantillaCodigo', {});
@@ -400,10 +484,10 @@ async function main() {
     ej!.set('oculto', false);
     if (autor && nuevo) ej!.set('autor', autor);
     await ej!.save(null, { useMasterKey: true });
-    console.log(`  ${nuevo ? 'creado ' : 'actualizado'}: [${d.categoria}] ${d.titulo} (/${d.slug})`);
+    console.log(`  ${nuevo ? 'creado ' : 'actualizado'}: ${d.titulo} (/${d.slug})`);
   }
 
-  console.log(`\nListo: ${CATEGORIAS.length} categorías, ${EJERCICIOS.length} ejercicios (Kotlin + Swift, con concepto + teoría), publicados.`);
+  console.log(`\nListo: ${CATEGORIAS.length} categorías, ${EJERCICIOS.length} ejercicios (Kotlin + Swift), narrativa progresiva.`);
   process.exit(0);
 }
 
