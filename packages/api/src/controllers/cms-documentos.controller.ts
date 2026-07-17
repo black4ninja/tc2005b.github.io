@@ -205,6 +205,14 @@ export async function createDocumento(req: Request, res: Response): Promise<void
       }
     }
 
+    // "ejercicios" en la RAÍZ de la colección chocaría con la ruta del alumno
+    // /contenidos/:slug/ejercicios (mini-juez), dejando ese documento inalcanzable.
+    // Se reserva solo a nivel raíz (anidado no colisiona).
+    if (!padre && slugValido === 'ejercicios') {
+      res.status(409).json({ status: 'error', message: '"ejercicios" es una ruta reservada en la raíz de la colección; usa otro slug.' });
+      return;
+    }
+
     if (await slugDuplicado(coleccion, padre, slugValido)) {
       res.status(409).json({ status: 'error', message: 'Ya existe un documento con ese slug en este nivel' });
       return;

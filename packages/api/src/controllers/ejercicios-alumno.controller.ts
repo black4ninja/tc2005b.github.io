@@ -22,9 +22,12 @@ import {
 /** DTO seguro de un ejercicio para el alumno: NUNCA expone los casos ocultos. */
 function dtoEjercicio(ej: EjercicioProgramacion) {
   const casos = ej.getCasos();
+  // El `indice` es la posición en la lista COMPLETA (no la del subconjunto
+  // visible), para que "Caso N" sea el mismo número aquí, al Probar y al Enviar.
   const muestra = casos
-    .filter((c) => !c.oculto)
-    .map((c, i) => ({ indice: i, entrada: c.entrada, salidaEsperada: c.salidaEsperada }));
+    .map((c, i) => ({ c, i }))
+    .filter((x) => !x.c.oculto)
+    .map((x) => ({ indice: x.i, entrada: x.c.entrada, salidaEsperada: x.c.salidaEsperada }));
   return {
     id: ej.id,
     titulo: ej.getTitulo(),
@@ -57,6 +60,32 @@ async function cargarEjercicio(
   const ejercicio = await q.first({ useMasterKey: true });
   if (!ejercicio) return null;
   return { ejercicio, acceso };
+}
+
+/**
+ * Carga el ejercicio y, si algo falla, responde por su cuenta y devuelve null:
+ * error transitorio de BD → 500 (no dejar colgado el request, que Express 4 no
+ * atrapa en handlers async), no encontrado / sin acceso → 404. El llamador solo
+ * hace `if (!cargado) return;`.
+ */
+async function cargarOResponder(
+  user: AppUser,
+  slug: string,
+  ejSlug: string,
+  res: Response,
+): Promise<{ ejercicio: EjercicioProgramacion; acceso: AccesoEjercicios } | null> {
+  let cargado: { ejercicio: EjercicioProgramacion; acceso: AccesoEjercicios } | null;
+  try {
+    cargado = await cargarEjercicio(user, slug, ejSlug);
+  } catch {
+    res.status(500).json({ status: 'error', message: 'Error al cargar el ejercicio' });
+    return null;
+  }
+  if (!cargado) {
+    res.status(404).json({ status: 'error', message: 'Ejercicio no encontrado' });
+    return null;
+  }
+  return cargado;
 }
 
 /** GET /me/ejercicios/colecciones — colecciones del alumno con ejercicios. */
@@ -105,11 +134,8 @@ export async function listEjerciciosAlumno(req: Request, res: Response): Promise
 export async function getEjercicioAlumno(req: Request, res: Response): Promise<void> {
   const user = req.appUser as AppUser;
   const { slug, ejSlug } = req.params;
-  const cargado = await cargarEjercicio(user, slug, ejSlug);
-  if (!cargado) {
-    res.status(404).json({ status: 'error', message: 'Ejercicio no encontrado' });
-    return;
-  }
+  const cargado = await cargarOResponder(user, slug, ejSlug, res);
+  if (!cargado) return;
   res.json({ status: 'ok', ejercicio: dtoEjercicio(cargado.ejercicio) });
 }
 
@@ -138,11 +164,8 @@ function validarEnvio(ej: EjercicioProgramacion, body: any): { error: string; st
 export async function ejecutarEjercicio(req: Request, res: Response): Promise<void> {
   const user = req.appUser as AppUser;
   const { slug, ejSlug } = req.params;
-  const cargado = await cargarEjercicio(user, slug, ejSlug);
-  if (!cargado) {
-    res.status(404).json({ status: 'error', message: 'Ejercicio no encontrado' });
-    return;
-  }
+  const cargado = await cargarOResponder(user, slug, ejSlug, res);
+  if (!cargado) return;
   const v = validarEnvio(cargado.ejercicio, req.body);
   if ('error' in v) {
     res.status(v.status).json({ status: 'error', message: v.error });
@@ -156,8 +179,16 @@ export async function ejecutarEjercicio(req: Request, res: Response): Promise<vo
       res.json({ status: 'ok', modo: 'salida', resultado: r });
       return;
     }
-    const muestra = ej.getCasos().filter((c) => !c.oculto);
-    const resultado = await evaluar({ lenguaje: v.lenguaje, codigo: v.codigo, casos: muestra, limites });
+    // Casos de muestra (visibles), conservando su índice en la lista completa.
+    const visibles = ej.getCasos().map((c, i) => ({ c, i })).filter((x) => !x.c.oculto);
+    if (visibles.length === 0) {
+      res.status(400).json({ status: 'error', message: 'Este ejercicio no tiene casos de muestra para probar; usa Enviar.' });
+      return;
+    }
+    const resultado = await evaluar({ lenguaje: v.lenguaje, codigo: v.codigo, casos: visibles.map((x) => x.c), limites });
+    // Remapear el índice de cada resultado a su posición ORIGINAL, para que el
+    // "Caso N" coincida con el de los ejemplos y con el del envío.
+    resultado.casos = resultado.casos.map((rc, k) => ({ ...rc, indice: visibles[k].i }));
     res.json({ status: 'ok', modo: 'casos', resultado });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al ejecutar' });
@@ -171,11 +202,8 @@ export async function ejecutarEjercicio(req: Request, res: Response): Promise<vo
 export async function enviarEjercicio(req: Request, res: Response): Promise<void> {
   const user = req.appUser as AppUser;
   const { slug, ejSlug } = req.params;
-  const cargado = await cargarEjercicio(user, slug, ejSlug);
-  if (!cargado) {
-    res.status(404).json({ status: 'error', message: 'Ejercicio no encontrado' });
-    return;
-  }
+  const cargado = await cargarOResponder(user, slug, ejSlug, res);
+  if (!cargado) return;
   const v = validarEnvio(cargado.ejercicio, req.body);
   if ('error' in v) {
     res.status(v.status).json({ status: 'error', message: v.error });
@@ -189,6 +217,13 @@ export async function enviarEjercicio(req: Request, res: Response): Promise<void
     resultado = await evaluar({ lenguaje: v.lenguaje, codigo: v.codigo, casos: ejercicio.getCasos(), limites });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al evaluar el envío' });
+    return;
+  }
+
+  // Solo se registra el envío del ALUMNO. Un profesor/admin que previsualiza
+  // recibe el veredicto pero NO ensucia el historial del grupo.
+  if (user.get('userType') !== 'alumno') {
+    res.json({ status: 'ok', envioId: null, resultado });
     return;
   }
 
@@ -218,11 +253,8 @@ export async function enviarEjercicio(req: Request, res: Response): Promise<void
 export async function listEnviosAlumno(req: Request, res: Response): Promise<void> {
   const user = req.appUser as AppUser;
   const { slug, ejSlug } = req.params;
-  const cargado = await cargarEjercicio(user, slug, ejSlug);
-  if (!cargado) {
-    res.status(404).json({ status: 'error', message: 'Ejercicio no encontrado' });
-    return;
-  }
+  const cargado = await cargarOResponder(user, slug, ejSlug, res);
+  if (!cargado) return;
   try {
     const q = new Parse.Query<EnvioEjercicio>('EnvioEjercicio');
     q.equalTo('ejercicio' as any, cargado.ejercicio as any);

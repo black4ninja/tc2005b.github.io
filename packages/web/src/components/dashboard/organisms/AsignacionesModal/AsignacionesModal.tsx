@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Modal from '../../atoms/Modal/Modal';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Icon from '../../atoms/Icon/Icon';
-import { MODULOS_CONTENIDO, moduloEsOptIn, moduloHabilitado } from '../../../../config/modulosContenido';
+import { MODULOS_CONTENIDO, moduloEsOptIn } from '../../../../config/modulosContenido';
 import type { ColeccionRef } from '../../../../types/contenidos';
 import styles from './AsignacionesModal.module.css';
 

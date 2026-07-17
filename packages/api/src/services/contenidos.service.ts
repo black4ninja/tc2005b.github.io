@@ -2,7 +2,7 @@ import Parse from 'parse/node';
 import { AppUser } from '../models/AppUser.js';
 import { Coleccion } from '../models/Coleccion.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
-import { moduloHabilitado } from '../models/modulos-contenido.js';
+import { moduloHabilitado, type ModuloContenido } from '../models/modulos-contenido.js';
 import { TtlValue, TtlMap } from '../utils/ttl-cache.js';
 
 /**
@@ -18,6 +18,21 @@ export interface ColeccionInfo {
   slug: string;
   nombre: string;
   clave: string | null;
+}
+
+/**
+ * Regla ÚNICA de si una colección asignada es visible para un módulo dado:
+ * existe, está publicada, y el grupo tiene el módulo habilitado para ella. La
+ * comparten el visor (`documentacion`) y los ejercicios (`ejercicios`), para que
+ * endurecer la regla en un solo sitio no deje divergir los dos caminos.
+ */
+export function coleccionVisiblePorModulo(
+  c: Parse.Object,
+  modulosDeshabilitados: Record<string, string[]> | undefined,
+  moduloKey: ModuloContenido,
+): boolean {
+  if (!c || c.get('exists') === false || c.get('publicada') !== true) return false;
+  return moduloHabilitado(modulosDeshabilitados, c.id!, moduloKey);
 }
 
 /* ── Cache global: slug → info de TODAS las colecciones existentes (5 min) ── */
@@ -81,11 +96,8 @@ export async function getColeccionesPermitidas(user: AppUser): Promise<Coleccion
     const apagados = grupo.get('modulosDeshabilitados') as Record<string, string[]> | undefined;
     const colecciones: Parse.Object[] = grupo.get('colecciones') ?? [];
     for (const c of colecciones) {
-      if (!c || c.get('exists') === false) continue;
-      if (c.get('publicada') !== true) continue; // borradores no son visibles
-      // El grupo puede haber apagado la Documentación de esta colección: entonces
-      // el alumno no la ve en el visor aunque la colección esté asignada.
-      if (!moduloHabilitado(apagados, c.id!, 'documentacion')) continue;
+      // Existe + publicada + Documentación habilitada (regla compartida).
+      if (!coleccionVisiblePorModulo(c, apagados, 'documentacion')) continue;
       const slug = c.get('slug');
       if (slug && !permitidas.has(slug)) {
         permitidas.set(slug, {

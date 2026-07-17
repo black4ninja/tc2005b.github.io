@@ -3,9 +3,9 @@ import { AppUser } from '../models/AppUser.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { EjercicioProgramacion } from '../models/EjercicioProgramacion.js';
 import { Coleccion } from '../models/Coleccion.js';
-import { moduloHabilitado } from '../models/modulos-contenido.js';
 import { getGruposDeStaff } from './grupo-admin.service.js';
-import { getColeccionesPorSlug, type ColeccionInfo } from './contenidos.service.js';
+import { getColeccionesPorSlug, coleccionVisiblePorModulo, type ColeccionInfo } from './contenidos.service.js';
+import { TtlMap } from '../utils/ttl-cache.js';
 
 /**
  * Acceso al módulo "Ejercicios" (opt-in). Regla base: se accede a los ejercicios
@@ -22,6 +22,15 @@ export interface AccesoEjercicios {
   coleccion: ColeccionInfo;
   /** Grupo por el que se concede el acceso (para registrar el envío). */
   grupoId: string | null;
+}
+
+/* Caché por-usuario del acceso (60 s), como el visor con getSlugsPermitidos: el
+ * solver dispara varias peticiones (get/ejecutar/enviar) y no hace falta rehacer
+ * la query de grupos en cada una. Se invalida al cambiar asignaciones. */
+const accesoCache = new TtlMap<Map<string, AccesoEjercicios>>(60 * 1000);
+
+export function invalidateAccesoEjercicios(userId?: string): void {
+  accesoCache.invalidate(userId);
 }
 
 /** Grupos (objetos Parse con `colecciones`) que dan acceso según el rol. */
@@ -43,6 +52,9 @@ async function gruposDeAcceso(user: AppUser): Promise<Parse.Object[]> {
 
 /** Mapa slug→acceso de las colecciones con ejercicios habilitados para el user. */
 export async function resolverAccesoEjercicios(user: AppUser): Promise<Map<string, AccesoEjercicios>> {
+  const cached = accesoCache.get(user.id);
+  if (cached) return cached;
+
   const acceso = new Map<string, AccesoEjercicios>();
 
   if (user.get('userType') === 'admin') {
@@ -51,27 +63,27 @@ export async function resolverAccesoEjercicios(user: AppUser): Promise<Map<strin
     for (const c of porSlug.values()) {
       acceso.set(c.slug, { coleccion: { id: c.id, slug: c.slug, nombre: c.nombre, clave: c.clave }, grupoId: null });
     }
-    return acceso;
-  }
-
-  const grupos = await gruposDeAcceso(user);
-  for (const grupo of grupos) {
-    if (!grupo || grupo.get('exists') === false || grupo.get('active') === false) continue;
-    const apagados = grupo.get('modulosDeshabilitados') as Record<string, string[]> | undefined;
-    const colecciones: Parse.Object[] = grupo.get('colecciones') ?? [];
-    for (const c of colecciones) {
-      if (!c || c.get('exists') === false || c.get('publicada') !== true) continue;
-      // 'ejercicios' es opt-in: solo si el grupo lo ENCENDIÓ para esta colección.
-      if (!moduloHabilitado(apagados, c.id!, 'ejercicios')) continue;
-      const slug = c.get('slug');
-      if (slug && !acceso.has(slug)) {
-        acceso.set(slug, {
-          coleccion: { id: c.id, slug, nombre: c.get('nombre') ?? slug, clave: c.get('clave') ?? null },
-          grupoId: grupo.id ?? null,
-        });
+  } else {
+    const grupos = await gruposDeAcceso(user);
+    for (const grupo of grupos) {
+      if (!grupo || grupo.get('exists') === false || grupo.get('active') === false) continue;
+      const apagados = grupo.get('modulosDeshabilitados') as Record<string, string[]> | undefined;
+      const colecciones: Parse.Object[] = grupo.get('colecciones') ?? [];
+      for (const c of colecciones) {
+        // Existe + publicada + 'ejercicios' encendido (opt-in) — regla compartida.
+        if (!coleccionVisiblePorModulo(c, apagados, 'ejercicios')) continue;
+        const slug = c.get('slug');
+        if (slug && !acceso.has(slug)) {
+          acceso.set(slug, {
+            coleccion: { id: c.id, slug, nombre: c.get('nombre') ?? slug, clave: c.get('clave') ?? null },
+            grupoId: grupo.id ?? null,
+          });
+        }
       }
     }
   }
+
+  accesoCache.set(user.id, acceso);
   return acceso;
 }
 

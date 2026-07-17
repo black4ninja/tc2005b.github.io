@@ -4,6 +4,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorView } from '@codemirror/view';
 import { useAuth } from '../../context/AuthContext';
+import { useCargaGated } from '../../hooks/useCargaGated';
 import { extensionLenguaje, NOMBRE_LENGUAJE } from '../../config/codemirrorLenguaje';
 import styles from './EjercicioSolver.module.css';
 
@@ -42,11 +43,10 @@ export default function EjercicioSolverPage() {
   const { slug, ejSlug } = useParams<{ slug: string; ejSlug: string }>();
   const { sessionToken } = useAuth();
 
-  const [ej, setEj] = useState<EjercicioDTO | null>(null);
-  const [cargando, setCargando] = useState(true);
-  const [noEncontrado, setNoEncontrado] = useState(false);
-  const [errorCarga, setErrorCarga] = useState(false);
-  const [reintento, setReintento] = useState(0);
+  const { data, cargando, error: errorCarga, noEncontrado, reintentar } = useCargaGated<{ ejercicio: EjercicioDTO }>(
+    slug && ejSlug ? `/api/contenidos/${slug}/ejercicios/${ejSlug}` : null,
+  );
+  const ej = data?.ejercicio ?? null;
 
   const [lenguaje, setLenguaje] = useState('');
   const [codigoPorLeng, setCodigoPorLeng] = useState<Record<string, string>>({});
@@ -57,31 +57,14 @@ export default function EjercicioSolverPage() {
   const [evalResult, setEvalResult] = useState<{ titulo: string; r: ResultadoEval } | null>(null);
   const [salidaResult, setSalidaResult] = useState<ResultadoSalida | null>(null);
 
+  // Al llegar el ejercicio: idioma inicial y código semilla por lenguaje.
   useEffect(() => {
-    if (!slug || !ejSlug || !sessionToken) return;
-    setCargando(true);
-    setErrorCarga(false);
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 15000);
-    fetch(`/api/contenidos/${slug}/ejercicios/${ejSlug}`, { headers: { 'x-session-token': sessionToken }, signal: ctrl.signal })
-      .then((r) => {
-        if (r.status === 404) { setNoEncontrado(true); return null; }
-        if (!r.ok) { setErrorCarga(true); return null; }
-        return r.json();
-      })
-      .then((json) => {
-        if (!json?.ejercicio) return;
-        const e: EjercicioDTO = json.ejercicio;
-        setEj(e);
-        setLenguaje(e.lenguajes[0] ?? '');
-        const inicial: Record<string, string> = {};
-        for (const l of e.lenguajes) inicial[l] = e.codigoInicial?.[l] ?? '';
-        setCodigoPorLeng(inicial);
-      })
-      .catch(() => setErrorCarga(true))
-      .finally(() => { clearTimeout(t); setCargando(false); });
-    return () => { clearTimeout(t); ctrl.abort(); };
-  }, [slug, ejSlug, sessionToken, reintento]);
+    if (!ej) return;
+    setLenguaje(ej.lenguajes[0] ?? '');
+    const inicial: Record<string, string> = {};
+    for (const l of ej.lenguajes) inicial[l] = ej.codigoInicial?.[l] ?? '';
+    setCodigoPorLeng(inicial);
+  }, [ej]);
 
   const codigo = codigoPorLeng[lenguaje] ?? '';
   const extensiones = useMemo(() => [extensionLenguaje(lenguaje), EditorView.lineWrapping], [lenguaje]);
@@ -129,7 +112,7 @@ export default function EjercicioSolverPage() {
         <button
           className={styles.volver}
           style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer' }}
-          onClick={() => setReintento((n) => n + 1)}
+          onClick={reintentar}
         >
           Reintentar
         </button>
@@ -208,7 +191,12 @@ export default function EjercicioSolverPage() {
           </div>
 
           <div className={styles.acciones}>
-            <button className={styles.btnSec} onClick={probarMuestra} disabled={trabajando}>
+            <button
+              className={styles.btnSec}
+              onClick={probarMuestra}
+              disabled={trabajando || ej.casosMuestra.length === 0}
+              title={ej.casosMuestra.length === 0 ? 'Este ejercicio no tiene casos de muestra; usa Enviar.' : undefined}
+            >
               {ocupado === 'muestra' ? 'Ejecutando…' : 'Probar casos de muestra'}
             </button>
             <button className={styles.btnSec} onClick={ejecutarEntrada} disabled={trabajando || !entrada.trim()}>
