@@ -45,6 +45,8 @@ export default function EjercicioSolverPage() {
   const [ej, setEj] = useState<EjercicioDTO | null>(null);
   const [cargando, setCargando] = useState(true);
   const [noEncontrado, setNoEncontrado] = useState(false);
+  const [errorCarga, setErrorCarga] = useState(false);
+  const [reintento, setReintento] = useState(0);
 
   const [lenguaje, setLenguaje] = useState('');
   const [codigoPorLeng, setCodigoPorLeng] = useState<Record<string, string>>({});
@@ -58,8 +60,15 @@ export default function EjercicioSolverPage() {
   useEffect(() => {
     if (!slug || !ejSlug || !sessionToken) return;
     setCargando(true);
-    fetch(`/api/contenidos/${slug}/ejercicios/${ejSlug}`, { headers: { 'x-session-token': sessionToken } })
-      .then((r) => { if (r.status === 404) { setNoEncontrado(true); return null; } return r.ok ? r.json() : null; })
+    setErrorCarga(false);
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 15000);
+    fetch(`/api/contenidos/${slug}/ejercicios/${ejSlug}`, { headers: { 'x-session-token': sessionToken }, signal: ctrl.signal })
+      .then((r) => {
+        if (r.status === 404) { setNoEncontrado(true); return null; }
+        if (!r.ok) { setErrorCarga(true); return null; }
+        return r.json();
+      })
       .then((json) => {
         if (!json?.ejercicio) return;
         const e: EjercicioDTO = json.ejercicio;
@@ -69,9 +78,10 @@ export default function EjercicioSolverPage() {
         for (const l of e.lenguajes) inicial[l] = e.codigoInicial?.[l] ?? '';
         setCodigoPorLeng(inicial);
       })
-      .catch(() => {})
-      .finally(() => setCargando(false));
-  }, [slug, ejSlug, sessionToken]);
+      .catch(() => setErrorCarga(true))
+      .finally(() => { clearTimeout(t); setCargando(false); });
+    return () => { clearTimeout(t); ctrl.abort(); };
+  }, [slug, ejSlug, sessionToken, reintento]);
 
   const codigo = codigoPorLeng[lenguaje] ?? '';
   const extensiones = useMemo(() => [extensionLenguaje(lenguaje), EditorView.lineWrapping], [lenguaje]);
@@ -112,6 +122,20 @@ export default function EjercicioSolverPage() {
   }
 
   if (cargando) return <div className={styles.page}><p className={styles.info}>Cargando…</p></div>;
+  if (errorCarga) {
+    return (
+      <div className={styles.page}>
+        <p className={styles.info}>No se pudo cargar. Revisa tu conexión e inténtalo de nuevo.</p>
+        <button
+          className={styles.volver}
+          style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer' }}
+          onClick={() => setReintento((n) => n + 1)}
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
   if (noEncontrado || !ej) {
     return (
       <div className={styles.page}>

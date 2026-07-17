@@ -26,14 +26,22 @@ export default function EjerciciosAlumnoPage() {
   const [ejercicios, setEjercicios] = useState<EjercicioLista[]>([]);
   const [cargando, setCargando] = useState(true);
   const [noEncontrado, setNoEncontrado] = useState(false);
+  const [error, setError] = useState(false);
+  const [reintento, setReintento] = useState(0);
 
   useEffect(() => {
     if (!slug || !sessionToken) return;
     setCargando(true);
-    fetch(`/api/contenidos/${slug}/ejercicios`, { headers: { 'x-session-token': sessionToken } })
+    setError(false);
+    // Timeout: si el API no responde (p. ej. reiniciando en dev) no queremos un
+    // "Cargando…" eterno; se aborta y se muestra un error con reintentar.
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 15000);
+    fetch(`/api/contenidos/${slug}/ejercicios`, { headers: { 'x-session-token': sessionToken }, signal: ctrl.signal })
       .then((r) => {
         if (r.status === 404) { setNoEncontrado(true); return null; }
-        return r.ok ? r.json() : null;
+        if (!r.ok) { setError(true); return null; }
+        return r.json();
       })
       .then((json) => {
         if (json) {
@@ -41,11 +49,26 @@ export default function EjerciciosAlumnoPage() {
           setEjercicios(json.ejercicios ?? []);
         }
       })
-      .catch(() => {})
-      .finally(() => setCargando(false));
-  }, [slug, sessionToken]);
+      .catch(() => setError(true))
+      .finally(() => { clearTimeout(t); setCargando(false); });
+    return () => { clearTimeout(t); ctrl.abort(); };
+  }, [slug, sessionToken, reintento]);
 
   if (cargando) return <div className={styles.page}><p className={styles.info}>Cargando…</p></div>;
+  if (error) {
+    return (
+      <div className={styles.page}>
+        <p className={styles.info}>No se pudo cargar. Revisa tu conexión e inténtalo de nuevo.</p>
+        <button
+          className={styles.volver}
+          style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer' }}
+          onClick={() => setReintento((n) => n + 1)}
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
   if (noEncontrado) {
     return (
       <div className={styles.page}>
