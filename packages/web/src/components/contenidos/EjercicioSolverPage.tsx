@@ -28,7 +28,6 @@ interface ResultadoEval {
   veredicto: string; casosPasados: number; casosTotales: number;
   errorCompilacion?: string; casos: ResultadoCaso[]; tiempoMaxMs: number;
 }
-interface ResultadoSalida { errorCompilacion?: string; salida: string; error: string; agotoTiempo: boolean }
 
 const VEREDICTO_LABEL: Record<string, string> = {
   aceptado: 'Aceptado',
@@ -50,12 +49,10 @@ export default function EjercicioSolverPage() {
 
   const [lenguaje, setLenguaje] = useState('');
   const [codigoPorLeng, setCodigoPorLeng] = useState<Record<string, string>>({});
-  const [entrada, setEntrada] = useState('');
-  const [ocupado, setOcupado] = useState<'' | 'muestra' | 'entrada' | 'enviar'>('');
+  const [ocupado, setOcupado] = useState<'' | 'muestra' | 'enviar'>('');
   const [error, setError] = useState('');
 
   const [evalResult, setEvalResult] = useState<{ titulo: string; r: ResultadoEval } | null>(null);
-  const [salidaResult, setSalidaResult] = useState<ResultadoSalida | null>(null);
   // Estado de la cola del juez mientras se procesa (pendiente → ejecutando).
   const [jobEstado, setJobEstado] = useState<{ estado: string; posicion: number } | null>(null);
   const pollToken = useRef(0);
@@ -105,7 +102,7 @@ export default function EjercicioSolverPage() {
     pollear(`/api/contenidos/${slug}/ejercicios/${ejSlug}/envios/${envioId}/estado`), [pollear, slug, ejSlug]);
 
   async function probarMuestra() {
-    setOcupado('muestra'); setError(''); setSalidaResult(null); setEvalResult(null);
+    setOcupado('muestra'); setError(''); setEvalResult(null);
     try {
       const { jobId } = await post('ejecutar', { lenguaje, codigo });
       const r = await esperarJob(jobId); // siempre modo 'casos' (sin entrada)
@@ -114,18 +111,8 @@ export default function EjercicioSolverPage() {
     finally { setOcupado(''); setJobEstado(null); }
   }
 
-  async function ejecutarEntrada() {
-    setOcupado('entrada'); setError(''); setEvalResult(null); setSalidaResult(null);
-    try {
-      const { jobId } = await post('ejecutar', { lenguaje, codigo, entrada });
-      const r = await esperarJob(jobId);
-      setSalidaResult(r.resultado);
-    } catch (e: any) { if (e.message !== 'cancelado') setError(e.message); }
-    finally { setOcupado(''); setJobEstado(null); }
-  }
-
   async function enviar() {
-    setOcupado('enviar'); setError(''); setSalidaResult(null); setEvalResult(null);
+    setOcupado('enviar'); setError(''); setEvalResult(null);
     try {
       const { envioId } = await post('enviar', { lenguaje, codigo });
       const r = await esperarEnvio(envioId);
@@ -204,24 +191,12 @@ export default function EjercicioSolverPage() {
 
           <CodeMirror
             value={codigo}
-            height="320px"
+            height="480px"
             theme={oneDark}
             extensions={extensiones}
             onChange={(v) => setCodigoPorLeng((prev) => ({ ...prev, [lenguaje]: v }))}
             editable={!trabajando}
           />
-
-          <div className={styles.entradaBox}>
-            <label className={styles.entradaLabel}>Entrada personalizada (opcional)</label>
-            <textarea
-              className={styles.entradaArea}
-              value={entrada}
-              onChange={(e) => setEntrada(e.target.value)}
-              rows={2}
-              placeholder="Escribe una entrada para probar tu código…"
-              disabled={trabajando}
-            />
-          </div>
 
           <div className={styles.acciones}>
             <button
@@ -231,9 +206,6 @@ export default function EjercicioSolverPage() {
               title={ej.casosMuestra.length === 0 ? 'Este ejercicio no tiene casos de muestra; usa Enviar.' : undefined}
             >
               {ocupado === 'muestra' ? 'Ejecutando…' : 'Probar casos de muestra'}
-            </button>
-            <button className={styles.btnSec} onClick={ejecutarEntrada} disabled={trabajando || !entrada.trim()}>
-              {ocupado === 'entrada' ? 'Ejecutando…' : 'Ejecutar con mi entrada'}
             </button>
             <button className={styles.btnPri} onClick={enviar} disabled={trabajando}>
               {ocupado === 'enviar' ? 'Enviando…' : 'Enviar'}
@@ -249,23 +221,6 @@ export default function EjercicioSolverPage() {
                     ? `En cola — ${jobEstado.posicion - 1} por delante. El servidor compila de a uno; espera un momento…`
                     : 'En cola — eres el siguiente…')
                 : 'Compilando y ejecutando tu código…'}
-            </div>
-          )}
-
-          {salidaResult && (
-            <div className={styles.resultado}>
-              {salidaResult.errorCompilacion ? (
-                <>
-                  <span className={`${styles.badge} ${styles.badgeMal}`}>Error de compilación</span>
-                  <pre className={styles.salidaPre}>{salidaResult.errorCompilacion}</pre>
-                </>
-              ) : (
-                <>
-                  <span className={styles.resLabel}>Salida{salidaResult.agotoTiempo ? ' (tiempo excedido)' : ''}</span>
-                  <pre className={styles.salidaPre}>{salidaResult.salida || '(sin salida)'}</pre>
-                  {salidaResult.error && <pre className={styles.stderrPre}>{salidaResult.error}</pre>}
-                </>
-              )}
             </div>
           )}
 
