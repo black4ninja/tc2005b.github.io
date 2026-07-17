@@ -2,7 +2,13 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { renderMarkdown } from '@tc2005b/contenido-pipeline';
 import { Coleccion } from '../models/Coleccion.js';
-import { EjercicioProgramacion, type CasoPrueba, type CodigoInicial } from '../models/EjercicioProgramacion.js';
+import {
+  EjercicioProgramacion,
+  type CasoPrueba,
+  type CodigoInicial,
+  type ModoEvaluacion,
+} from '../models/EjercicioProgramacion.js';
+import { CategoriaEjercicio } from '../models/CategoriaEjercicio.js';
 import type { AppUser } from '../models/AppUser.js';
 import { getColeccionActiva } from './cms-documentos.controller.js';
 import { LENGUAJES, esLenguaje } from '../services/judge/index.js';
@@ -87,6 +93,27 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
+function normalizarModo(valor: unknown): ModoEvaluacion {
+  return valor === 'plantilla' ? 'plantilla' : 'programa';
+}
+
+/**
+ * Resuelve `categoriaId` a un puntero de categoría de ESTA colección.
+ * Devuelve: la categoría, `null` (sin categoría) o 'invalido' (id ajeno).
+ */
+async function resolverCategoria(
+  categoriaId: unknown,
+  coleccionId: string,
+): Promise<CategoriaEjercicio | null | 'invalido'> {
+  if (categoriaId === null || categoriaId === undefined || categoriaId === '') return null;
+  if (typeof categoriaId !== 'string') return 'invalido';
+  const q = new Parse.Query<CategoriaEjercicio>('CategoriaEjercicio');
+  q.equalTo('coleccion' as any, Coleccion.createWithoutData(coleccionId) as any);
+  q.equalTo('exists' as any, true as any);
+  const cat = await q.get(categoriaId, { useMasterKey: true }).catch(() => null);
+  return cat ?? 'invalido';
+}
+
 /** GET /admin/colecciones/:id/ejercicios */
 export async function listEjercicios(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
@@ -111,7 +138,10 @@ export async function listEjercicios(req: Request, res: Response): Promise<void>
 /** POST /admin/colecciones/:id/ejercicios */
 export async function createEjercicio(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { titulo, slug, orden, enunciado, lenguajes, codigoInicial, limiteTiempoMs, limiteMemoriaMb, casos } = req.body ?? {};
+  const {
+    titulo, slug, orden, enunciado, lenguajes, codigoInicial, limiteTiempoMs, limiteMemoriaMb, casos,
+    categoriaId, modoEvaluacion, plantillaCodigo,
+  } = req.body ?? {};
 
   if (!titulo || typeof titulo !== 'string' || !titulo.trim()) {
     res.status(400).json({ status: 'error', message: 'El título es requerido' });
@@ -143,9 +173,15 @@ export async function createEjercicio(req: Request, res: Response): Promise<void
       res.status(409).json({ status: 'error', message: 'Ya existe un ejercicio con ese slug en la colección' });
       return;
     }
+    const categoria = await resolverCategoria(categoriaId, id);
+    if (categoria === 'invalido') {
+      res.status(400).json({ status: 'error', message: 'La categoría indicada no existe en la colección' });
+      return;
+    }
 
     const ejercicio = new EjercicioProgramacion().initDefaults();
     ejercicio.setColeccion(coleccion);
+    ejercicio.setCategoria(categoria);
     ejercicio.setTitulo(titulo.trim());
     ejercicio.setSlug(slugValido);
     ejercicio.setOrden(typeof orden === 'number' ? orden : 0);
@@ -154,6 +190,8 @@ export async function createEjercicio(req: Request, res: Response): Promise<void
     ejercicio.setEnunciadoHtml(await renderMarkdown(md));
     ejercicio.setLenguajes(lenguajesValidos);
     ejercicio.setCodigoInicial(normalizarCodigoInicial(codigoInicial));
+    ejercicio.setModoEvaluacion(normalizarModo(modoEvaluacion));
+    ejercicio.setPlantillaCodigo(normalizarCodigoInicial(plantillaCodigo));
     ejercicio.setLimiteTiempoMs(clamp(Number(limiteTiempoMs) || 5000, TIEMPO_MIN_MS, TIEMPO_MAX_MS));
     ejercicio.setLimiteMemoriaMb(clamp(Number(limiteMemoriaMb) || 256, MEMORIA_MIN_MB, MEMORIA_MAX_MB));
     ejercicio.setCasos(casosValidos);
@@ -186,7 +224,10 @@ export async function updateEjercicio(req: Request, res: Response): Promise<void
     return;
   }
   const { ejercicio, coleccion } = encontrado;
-  const { titulo, slug, orden, enunciado, lenguajes, codigoInicial, limiteTiempoMs, limiteMemoriaMb, casos } = req.body ?? {};
+  const {
+    titulo, slug, orden, enunciado, lenguajes, codigoInicial, limiteTiempoMs, limiteMemoriaMb, casos,
+    categoriaId, modoEvaluacion, plantillaCodigo,
+  } = req.body ?? {};
 
   try {
     if (titulo !== undefined) {
@@ -223,6 +264,16 @@ export async function updateEjercicio(req: Request, res: Response): Promise<void
       ejercicio.setLenguajes(lenguajesValidos);
     }
     if (codigoInicial !== undefined) ejercicio.setCodigoInicial(normalizarCodigoInicial(codigoInicial));
+    if (modoEvaluacion !== undefined) ejercicio.setModoEvaluacion(normalizarModo(modoEvaluacion));
+    if (plantillaCodigo !== undefined) ejercicio.setPlantillaCodigo(normalizarCodigoInicial(plantillaCodigo));
+    if (categoriaId !== undefined) {
+      const categoria = await resolverCategoria(categoriaId, coleccion.id!);
+      if (categoria === 'invalido') {
+        res.status(400).json({ status: 'error', message: 'La categoría indicada no existe en la colección' });
+        return;
+      }
+      ejercicio.setCategoria(categoria);
+    }
     if (limiteTiempoMs !== undefined) ejercicio.setLimiteTiempoMs(clamp(Number(limiteTiempoMs) || 5000, TIEMPO_MIN_MS, TIEMPO_MAX_MS));
     if (limiteMemoriaMb !== undefined) ejercicio.setLimiteMemoriaMb(clamp(Number(limiteMemoriaMb) || 256, MEMORIA_MIN_MB, MEMORIA_MAX_MB));
     if (casos !== undefined) {

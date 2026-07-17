@@ -2,6 +2,7 @@ import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
 import type { AppUser } from './AppUser.js';
 import type { Coleccion } from './Coleccion.js';
+import type { CategoriaEjercicio } from './CategoriaEjercicio.js';
 
 /**
  * Un caso de prueba del ejercicio (juez estilo UVA): se alimenta `entrada` por
@@ -14,11 +15,27 @@ export interface CasoPrueba {
   oculto: boolean;
 }
 
-/** Código inicial que ve el alumno en el editor, por lenguaje. */
-export interface CodigoInicial {
+/** Código por lenguaje (código inicial del editor o plantilla del harness). */
+export interface CodigoPorLenguaje {
   kotlin?: string;
   swift?: string;
 }
+export type CodigoInicial = CodigoPorLenguaje;
+
+/**
+ * Cómo se evalúa el envío:
+ *  - `programa`: el alumno escribe el programa COMPLETO; se compila tal cual y se
+ *    compara su stdout (modo por defecto, retrocompatible).
+ *  - `plantilla`: el alumno escribe SOLO una parte (una función/clase); el código
+ *    se inserta en `plantillaCodigo` (que trae un driver oculto que la ejerce e
+ *    imprime resultados) y ESE programa combinado se compila. Habilita ejercicios
+ *    de POO/SOLID sin pedir el `main` completo.
+ */
+export type ModoEvaluacion = 'programa' | 'plantilla';
+export const MODOS_EVALUACION: ModoEvaluacion[] = ['programa', 'plantilla'];
+
+/** Marcador dentro de la plantilla donde se inserta el código del alumno. */
+export const MARCADOR_SOLUCION = '{{solucion}}';
 
 /**
  * Ejercicio de programación (módulo "Ejercicios" del CMS). Pertenece a una
@@ -36,6 +53,15 @@ export class EjercicioProgramacion extends BaseModel {
   }
   setColeccion(coleccion: Coleccion): void {
     this.set('coleccion', coleccion);
+  }
+
+  /** Categoría opcional (agrupa por tema). null = sin categorizar. */
+  getCategoria(): CategoriaEjercicio | undefined {
+    return this.get('categoria');
+  }
+  setCategoria(categoria: CategoriaEjercicio | null): void {
+    if (categoria) this.set('categoria', categoria);
+    else this.unset('categoria');
   }
 
   getTitulo(): string {
@@ -92,6 +118,22 @@ export class EjercicioProgramacion extends BaseModel {
     this.set('codigoInicial', codigo);
   }
 
+  /** Modo de evaluación ('programa' por defecto; 'plantilla' = harness). */
+  getModoEvaluacion(): ModoEvaluacion {
+    return this.get('modoEvaluacion') === 'plantilla' ? 'plantilla' : 'programa';
+  }
+  setModoEvaluacion(modo: ModoEvaluacion): void {
+    this.set('modoEvaluacion', modo);
+  }
+
+  /** Plantilla con el driver oculto (solo en modo 'plantilla'), por lenguaje. */
+  getPlantillaCodigo(): CodigoPorLenguaje {
+    return this.get('plantillaCodigo') ?? {};
+  }
+  setPlantillaCodigo(plantilla: CodigoPorLenguaje): void {
+    this.set('plantillaCodigo', plantilla);
+  }
+
   getLimiteTiempoMs(): number {
     return this.get('limiteTiempoMs') ?? 5000;
   }
@@ -144,6 +186,7 @@ export class EjercicioProgramacion extends BaseModel {
     return {
       id: this.id,
       coleccionId: this.getColeccion()?.id ?? null,
+      categoriaId: this.getCategoria()?.id ?? null,
       titulo: this.getTitulo(),
       slug: this.getSlug(),
       orden: this.getOrden(),
@@ -151,6 +194,8 @@ export class EjercicioProgramacion extends BaseModel {
       enunciadoHtml: this.getEnunciadoHtml(),
       lenguajes: this.getLenguajes(),
       codigoInicial: this.getCodigoInicial(),
+      modoEvaluacion: this.getModoEvaluacion(),
+      plantillaCodigo: this.getPlantillaCodigo(),
       limiteTiempoMs: this.getLimiteTiempoMs(),
       limiteMemoriaMb: this.getLimiteMemoriaMb(),
       casos: this.getCasos(),

@@ -5,6 +5,7 @@ import { confirmar } from '../../../../utils/dialogos';
 import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Icon from '../../atoms/Icon/Icon';
+import CategoriasEjerciciosModal from '../../organisms/CategoriasEjerciciosModal/CategoriasEjerciciosModal';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import type { EjercicioData } from '../../../../types/contenidos';
 import styles from './EjerciciosColeccionPage.module.css';
@@ -22,6 +23,7 @@ export default function EjerciciosColeccionPage() {
   const [nombreColeccion, setNombreColeccion] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [catOpen, setCatOpen] = useState(false);
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -132,7 +134,12 @@ export default function EjerciciosColeccionPage() {
           <Icon name="arrow_back" size="sm" />
           <span>Colección</span>
         </Link>
-        <h1 className={styles.pageTitle}>Ejercicios{nombreColeccion ? ` — ${nombreColeccion}` : ''}</h1>
+        <div className={styles.headerFila}>
+          <h1 className={styles.pageTitle}>Ejercicios{nombreColeccion ? ` — ${nombreColeccion}` : ''}</h1>
+          <button className={styles.catBtn} onClick={() => setCatOpen(true)}>
+            <Icon name="folder" size="sm" /> Categorías
+          </button>
+        </div>
       </div>
 
       {error && <div className={styles.error} onClick={() => setError('')}>{error}</div>}
@@ -151,6 +158,8 @@ export default function EjerciciosColeccionPage() {
           searchPlaceholder="Buscar ejercicio..."
         />
       )}
+
+      {id && <CategoriasEjerciciosModal isOpen={catOpen} coleccionId={id} onClose={() => { setCatOpen(false); fetchEjercicios(); }} />}
     </div>
   );
 }

@@ -38,6 +38,12 @@ import {
   setPublicacionEjercicio,
   deleteEjercicio,
 } from '../controllers/ejercicios-programacion.controller.js';
+import {
+  listCategoriasEjercicio,
+  createCategoriaEjercicio,
+  updateCategoriaEjercicio,
+  deleteCategoriaEjercicio,
+} from '../controllers/ejercicios-categorias.controller.js';
 
 // Subida en memoria: el binario va directo a Parse.File (sin disco temporal).
 const subida = multer({ storage: multer.memoryStorage(), limits: { fileSize: RECURSO_MAX_BYTES } });
@@ -65,6 +71,7 @@ router.use('/admin/colecciones', identifyUser, requireAdmin);
 router.use('/admin/documentos', identifyUser, requireAdmin);
 router.use('/admin/recursos', identifyUser, requireAdmin);
 router.use('/admin/ejercicios', identifyUser, requireAdmin);
+router.use('/admin/categorias-ejercicios', identifyUser, requireAdmin);
 
 // Colecciones
 router.get('/admin/colecciones', listColecciones);
@@ -103,5 +110,11 @@ router.get('/admin/ejercicios/:id', getEjercicio);
 router.put('/admin/ejercicios/:id', updateEjercicio);
 router.put('/admin/ejercicios/:id/publicacion', setPublicacionEjercicio);
 router.delete('/admin/ejercicios/:id', deleteEjercicio);
+
+// Categorías de ejercicios
+router.get('/admin/colecciones/:id/categorias-ejercicios', listCategoriasEjercicio);
+router.post('/admin/colecciones/:id/categorias-ejercicios', createCategoriaEjercicio);
+router.put('/admin/categorias-ejercicios/:id', updateCategoriaEjercicio);
+router.delete('/admin/categorias-ejercicios/:id', deleteCategoriaEjercicio);
 
 export default router;

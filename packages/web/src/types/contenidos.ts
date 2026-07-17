@@ -54,9 +54,12 @@ export interface CasoPruebaData {
   oculto: boolean;
 }
 
+export type ModoEvaluacion = 'programa' | 'plantilla';
+
 export interface EjercicioData {
   id: string;
   coleccionId: string | null;
+  categoriaId: string | null;
   titulo: string;
   slug: string;
   orden: number;
@@ -64,6 +67,8 @@ export interface EjercicioData {
   enunciadoHtml: string;
   lenguajes: LenguajeJuez[];
   codigoInicial: { kotlin?: string; swift?: string };
+  modoEvaluacion: ModoEvaluacion;
+  plantillaCodigo: { kotlin?: string; swift?: string };
   limiteTiempoMs: number;
   limiteMemoriaMb: number;
   casos: CasoPruebaData[];

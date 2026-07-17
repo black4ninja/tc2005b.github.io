@@ -57,3 +57,30 @@
 
 .itemTitulo { font-size: 16px; font-weight: 600; }
 .itemLeng { font-size: 13px; color: #57606a; }
+
+.itemIzq { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.check { font-size: 15px; color: #d0d7de; width: 18px; text-align: center; }
+.itemResuelto { border-color: #a7d8b4; background: #f4fbf6; }
+.itemResuelto .check { color: #1e7e34; }
+
+.progreso { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.barra {
+  flex: 1;
+  height: 8px;
+  background: #eaeef2;
+  border-radius: 999px;
+  overflow: hidden;
+  max-width: 360px;
+}
+.barraLlena { height: 100%; background: #4f46e5; transition: width 0.3s; }
+.progresoTexto { font-size: 13px; color: #57606a; white-space: nowrap; }
+
+.grupo { margin-top: 24px; }
+.grupoTitulo {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f2328;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}

@@ -49,3 +49,7 @@ deprecated/backup/
 
 # Respaldo del script cleanup-materia.ts
 packages/api/scripts/materia-backup.json
+
+# Presentaciones fuente para autorar ejercicios (no versionar)
+/IOS Introducción.pdf
+/Introducción a ANDROID.pdf

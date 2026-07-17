@@ -2,6 +2,7 @@ import Parse from 'parse/node';
 import { AppUser } from '../models/AppUser.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { EjercicioProgramacion } from '../models/EjercicioProgramacion.js';
+import { EnvioEjercicio } from '../models/EnvioEjercicio.js';
 import { Coleccion } from '../models/Coleccion.js';
 import { getGruposDeStaff } from './grupo-admin.service.js';
 import { getColeccionesPorSlug, coleccionVisiblePorModulo, type ColeccionInfo } from './contenidos.service.js';
@@ -116,4 +117,28 @@ export async function coleccionesConEjerciciosPublicados(user: AppUser): Promise
     .filter((a) => conEjercicios.has(a.coleccion.id))
     .map((a) => a.coleccion)
     .sort((x, y) => x.nombre.localeCompare(y.nombre));
+}
+
+/**
+ * De un conjunto de ejercicios, cuáles ya RESOLVIÓ el usuario: tiene al menos un
+ * envío con veredicto 'aceptado' y estado 'listo'. Base de la completitud.
+ */
+export async function ejerciciosResueltos(userId: string, ejercicioIds: string[]): Promise<Set<string>> {
+  const resueltos = new Set<string>();
+  if (ejercicioIds.length === 0) return resueltos;
+  const pointers = ejercicioIds.map((id) => EjercicioProgramacion.createWithoutData(id));
+  const q = new Parse.Query<EnvioEjercicio>('EnvioEjercicio');
+  q.equalTo('alumno' as any, AppUser.createWithoutData(userId) as any);
+  q.containedIn('ejercicio' as any, pointers as any);
+  q.equalTo('veredicto' as any, 'aceptado' as any);
+  q.equalTo('estado' as any, 'listo' as any);
+  q.equalTo('exists' as any, true as any);
+  q.select('ejercicio' as any);
+  q.limit(10000);
+  const envios = await q.find({ useMasterKey: true });
+  for (const e of envios) {
+    const eid = e.get('ejercicio')?.id;
+    if (eid) resueltos.add(eid);
+  }
+  return resueltos;
 }

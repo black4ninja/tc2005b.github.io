@@ -29,7 +29,8 @@ export type { DocumentoTipo, DocumentoPlantilla } from './Documento.js';
 export { DocumentoVersion } from './DocumentoVersion.js';
 export { Recurso } from './Recurso.js';
 // Módulo "Ejercicios" (mini-juez Kotlin/Swift)
-export { EjercicioProgramacion } from './EjercicioProgramacion.js';
-export type { CasoPrueba, CodigoInicial } from './EjercicioProgramacion.js';
+export { EjercicioProgramacion, MODOS_EVALUACION, MARCADOR_SOLUCION } from './EjercicioProgramacion.js';
+export type { CasoPrueba, CodigoInicial, CodigoPorLenguaje, ModoEvaluacion } from './EjercicioProgramacion.js';
 export { EnvioEjercicio } from './EnvioEjercicio.js';
-export type { DetalleCasoEnvio } from './EnvioEjercicio.js';
+export type { DetalleCasoEnvio, EstadoEnvio } from './EnvioEjercicio.js';
+export { CategoriaEjercicio } from './CategoriaEjercicio.js';
