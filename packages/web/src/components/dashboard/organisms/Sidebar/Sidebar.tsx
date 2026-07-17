@@ -89,11 +89,11 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       .catch(() => {});
   }, [sessionToken, role]);
 
-  // Ejercicios: alumno Y profesor. Solo si alguna colección suya tiene el módulo
-  // encendido y con ejercicios publicados (el backend aplica ambos filtros). El
-  // profesor lo usa para probar los ejercicios tal como los ve su alumno.
+  // Ejercicios del ALUMNO: solo si alguna colección suya tiene el módulo encendido
+  // y con ejercicios publicados (el backend aplica ambos filtros). El enlace del
+  // profesor/admin en modo grupo se calcula aparte, acotado al grupo abierto.
   useEffect(() => {
-    if (!sessionToken || (role !== 'alumno' && role !== 'profesor')) return;
+    if (!sessionToken || role !== 'alumno') return;
     fetch('/api/me/ejercicios/colecciones', { headers: { 'x-session-token': sessionToken } })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
@@ -208,8 +208,17 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       ? user?.grupos?.find((g) => g.id === selectedGrupoId)?.urlAgendaEntrevistas ?? null
       : null;
 
+  // Enlace "Ejercicios (vista alumno)" del grupo abierto: primera colección del
+  // grupo con el módulo 'ejercicios' ENCENDIDO. Se calcula de lo ya cargado del
+  // grupo (colecciones + modulosDeshabilitados), así queda acotado a ESE grupo —
+  // tanto para el profesor como para el admin que lo revisa.
+  const ejerciciosGrupoHref = useMemo(() => {
+    const col = colecciones.find((c) => moduloHabilitado(modulosDeshabilitados, c.id, 'ejercicios'));
+    return col ? `/contenidos/${col.slug}/ejercicios` : null;
+  }, [colecciones, modulosDeshabilitados]);
+
   const items = isGrupoDetail
-    ? getGrupoDetailItems(grupoId!, agendaGrupoHref, esProfesor ? ejerciciosHref : null)
+    ? getGrupoDetailItems(grupoId!, agendaGrupoHref, ejerciciosGrupoHref)
     : getSidebarItems(
         role,
         role === 'alumno' ? selectedGrupoId : undefined,

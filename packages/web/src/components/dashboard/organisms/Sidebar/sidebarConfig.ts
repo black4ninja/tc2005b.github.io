@@ -97,8 +97,9 @@ export function getGrupoDetailItems(
     { label: 'Equipos', icon: 'group_work', path: `/admin/grupos/${grupoId}/equipos` },
     { label: 'Entrevistas', icon: 'record_voice_over', path: `/admin/grupos/${grupoId}/entrevistas` },
   ];
-  // Solo para el profesor: probar los ejercicios como los ve su alumno (enlace al
-  // visor del alumno). El admin los gestiona desde Contenidos.
+  // Probar los ejercicios del grupo como los ve el alumno (enlace al visor del
+  // alumno). Aparece cuando el grupo tiene el módulo 'ejercicios' encendido en
+  // alguna colección — tanto para el profesor como para el admin que revisa.
   if (ejerciciosHref) {
     items.push({ label: 'Ejercicios (vista alumno)', icon: 'terminal', path: ejerciciosHref, external: true });
   }
