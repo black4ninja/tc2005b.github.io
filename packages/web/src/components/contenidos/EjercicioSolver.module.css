@@ -1,0 +1,185 @@
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.header { margin-bottom: 20px; }
+
+.volver {
+  display: inline-block;
+  font-size: 14px;
+  color: #4f46e5;
+  text-decoration: none;
+  margin-bottom: 8px;
+}
+.volver:hover { text-decoration: underline; }
+
+.titulo { margin: 0; font-size: 24px; color: #1f2328; }
+
+.info { color: #57606a; font-size: 15px; }
+
+.cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* --- Enunciado --- */
+.enunciadoCol { min-width: 0; }
+.enunciado {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #24292f;
+  word-wrap: break-word;
+}
+.enunciado :global(pre) {
+  background: #f6f8fa;
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.enunciado :global(code) { font-family: ui-monospace, Menlo, monospace; }
+
+.subtitulo { font-size: 16px; margin: 20px 0 10px; color: #1f2328; }
+
+.muestras { display: flex; flex-direction: column; gap: 12px; }
+.muestra {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.muestraLabel {
+  display: block;
+  font-size: 12px;
+  color: #57606a;
+  margin-bottom: 4px;
+}
+.pre {
+  margin: 0;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #f6f8fa;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+/* --- Editor --- */
+.editorCol { min-width: 0; }
+.editorHead { margin-bottom: 8px; }
+.select, .lengFijo {
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #d0d7de;
+}
+.lengFijo { display: inline-block; font-weight: 600; color: #1f2328; border-style: dashed; }
+
+.entradaBox { margin-top: 12px; }
+.entradaLabel { display: block; font-size: 13px; color: #57606a; margin-bottom: 4px; }
+.entradaArea {
+  width: 100%;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 13px;
+  padding: 8px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.acciones { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.btnSec, .btnPri {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid #d0d7de;
+  background: #fff;
+  color: #1f2328;
+}
+.btnPri { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+.btnSec:disabled, .btnPri:disabled { opacity: 0.55; cursor: default; }
+
+.errorBox {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: #fdecea;
+  color: #b42318;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* --- Resultados --- */
+.resultado { margin-top: 16px; }
+.veredictoRow { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.conteo { font-size: 14px; color: #57606a; }
+
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.badgeOk { background: #e6f4ea; color: #1e7e34; }
+.badgeMal { background: #fdecea; color: #b42318; }
+
+.resLabel { display: block; font-size: 13px; color: #57606a; margin-bottom: 4px; }
+.salidaPre {
+  margin: 0;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #f6f8fa;
+  padding: 10px;
+  border-radius: 6px;
+  max-height: 260px;
+  overflow: auto;
+}
+.stderrPre {
+  margin: 8px 0 0;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  color: #b42318;
+  background: #fff5f5;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.caso {
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+.casoOk { border-left: 3px solid #1e7e34; }
+.casoMal { border-left: 3px solid #b42318; }
+.casoHead {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2328;
+}
+.casoDetalle {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+
+@media (max-width: 860px) {
+  .cols { grid-template-columns: 1fr; }
+  .casoDetalle { grid-template-columns: 1fr; }
+}

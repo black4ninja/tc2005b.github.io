@@ -17,6 +17,49 @@ import { Semaforo } from './cola.js';
 
 const cola = new Semaforo(config.juez.concurrencia);
 
+/** Resultado de una corrida suelta (scratch run con stdin propio, sin veredicto). */
+export interface ResultadoPrueba {
+  errorCompilacion?: string;
+  salida: string;
+  error: string;
+  agotoTiempo: boolean;
+  duracionMs: number;
+}
+
+export interface OpcionesPrueba {
+  lenguaje: Lenguaje;
+  codigo: string;
+  stdin: string;
+  limites?: Partial<Limites>;
+}
+
+/**
+ * Compila y corre UNA vez con la entrada dada, devolviendo la salida cruda (sin
+ * comparar). Para el modo interactivo: el alumno prueba su código con su propia
+ * entrada. Encolado igual que evaluar.
+ */
+export function probarPrograma(op: OpcionesPrueba): Promise<ResultadoPrueba> {
+  const limites: Limites = { ...config.juez.limites, ...op.limites };
+  return cola.ejecutar(async () => {
+    const wd = await prepararWorkdir(op.lenguaje, op.codigo);
+    try {
+      const comp = await compilar(wd);
+      if (!comp.ok) {
+        return { errorCompilacion: comp.error, salida: '', error: '', agotoTiempo: false, duracionMs: 0 };
+      }
+      const corrida = await correrEntrada(wd, op.stdin, limites);
+      return {
+        salida: corrida.salida,
+        error: corrida.error,
+        agotoTiempo: corrida.agotoTiempo,
+        duracionMs: corrida.duracionMs,
+      };
+    } finally {
+      await limpiarWorkdir(wd);
+    }
+  });
+}
+
 export interface OpcionesEvaluacion {
   lenguaje: Lenguaje;
   codigo: string;

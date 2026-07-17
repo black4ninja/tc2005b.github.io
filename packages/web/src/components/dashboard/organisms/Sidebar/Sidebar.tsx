@@ -61,6 +61,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const [grupoName, setGrupoName] = useState('');
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
   const [docsHref, setDocsHref] = useState<string | null>(null);
+  const [ejerciciosHref, setEjerciciosHref] = useState<string | null>(null);
   const [colecciones, setColecciones] = useState<ColeccionGrupo[]>([]);
   // Módulos apagados por colección del grupo: filtran qué secciones aparecen.
   const [modulosDeshabilitados, setModulosDeshabilitados] = useState<Record<string, string[]>>({});
@@ -84,6 +85,15 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       .then((json) => {
         const colecciones: { slug: string }[] = json?.colecciones ?? [];
         setDocsHref(colecciones.length > 0 ? `/contenidos/${colecciones[0].slug}/` : null);
+      })
+      .catch(() => {});
+    // Ejercicios: solo si alguna colección suya tiene el módulo habilitado y con
+    // ejercicios publicados (el backend ya aplica ambos filtros).
+    fetch('/api/me/ejercicios/colecciones', { headers: { 'x-session-token': sessionToken } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        const cols: { slug: string }[] = json?.colecciones ?? [];
+        setEjerciciosHref(cols.length > 0 ? `/contenidos/${cols[0].slug}/ejercicios` : null);
       })
       .catch(() => {});
   }, [sessionToken, role]);
@@ -201,6 +211,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         user?.perfilCompleto,
         docsHref,
         agendaAlumnoHref,
+        ejerciciosHref,
       );
 
   return (

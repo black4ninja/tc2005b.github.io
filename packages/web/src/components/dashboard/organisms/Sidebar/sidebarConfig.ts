@@ -13,6 +13,7 @@ export function getSidebarItems(
   perfilCompleto?: boolean,
   docsHref: string | null = null,
   agendaHref: string | null = null,
+  ejerciciosHref: string | null = null,
 ): SidebarItem[] {
   if (role === 'admin') {
     return [
@@ -57,6 +58,10 @@ export function getSidebarItems(
   // Sin colecciones asignadas no hay documentación que enlazar.
   if (docsHref) {
     items.push({ label: 'Documentación', icon: 'menu_book', path: docsHref, external: true, disabled: !perfilCompleto });
+  }
+  // Solo si algún grupo del alumno tiene Ejercicios habilitado y con contenido.
+  if (ejerciciosHref) {
+    items.push({ label: 'Ejercicios', icon: 'terminal', path: ejerciciosHref, external: true, disabled: !perfilCompleto });
   }
   // Sin URL en su grupo, no hay agenda que enlazar (igual que "Documentación").
   if (agendaHref) {

@@ -49,6 +49,14 @@ const VisorContenidoPage = lazy(
   () => import('./components/contenidos/VisorContenidoPage'),
 );
 
+// Módulo "Ejercicios" del alumno: lista y solver (el solver carga CodeMirror).
+const EjerciciosAlumnoPage = lazy(
+  () => import('./components/contenidos/EjerciciosAlumnoPage'),
+);
+const EjercicioSolverPage = lazy(
+  () => import('./components/contenidos/EjercicioSolverPage'),
+);
+
 export default function App() {
   // Título del navegador como fuente única de verdad (el <title> de index.html
   // es solo un fallback pre-hidratación).
@@ -70,6 +78,25 @@ export default function App() {
       {/* Auth */}
       <Route path="login" element={<LoginPage />} />
       <Route path="auth/verify" element={<VerifyPage />} />
+
+      {/* Ejercicios del alumno (mini-juez). ANTES del catch-all :slug/* para que
+          "ejercicios" no lo capture el visor. */}
+      <Route
+        path="contenidos/:slug/ejercicios"
+        element={
+          <Suspense fallback={<p style={{ padding: 24 }}>Cargando…</p>}>
+            <EjerciciosAlumnoPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="contenidos/:slug/ejercicios/:ejSlug"
+        element={
+          <Suspense fallback={<p style={{ padding: 24 }}>Cargando…</p>}>
+            <EjercicioSolverPage />
+          </Suspense>
+        }
+      />
 
       {/* Visor de Contenidos (CMS) */}
       <Route

@@ -11,6 +11,8 @@
   "dependencies": {
     "@codemirror/lang-html": "^6.4.0",
     "@codemirror/lang-markdown": "^6.3.0",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/legacy-modes": "^6.5.3",
     "@codemirror/theme-one-dark": "^6.1.0",
     "@codemirror/view": "^6.34.0",
     "@dnd-kit/core": "^6.3.1",
