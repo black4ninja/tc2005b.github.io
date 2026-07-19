@@ -203,6 +203,9 @@ export async function recuperarEnviosPendientes(): Promise<number> {
   q.containedIn('estado', ['pendiente', 'ejecutando']);
   q.equalTo('exists' as any, true as any);
   q.include('alumno' as any);
+  // Re-encolar por antigüedad: así la posición FIFO coincide con la que estadoEnvio
+  // calcula (contando envíos 'pendiente' con createdAt menor).
+  q.ascending('createdAt');
   q.limit(1000);
   const envios = await q.find({ useMasterKey: true });
   for (const e of envios) e.setEstado('pendiente');

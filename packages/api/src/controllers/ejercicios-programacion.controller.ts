@@ -309,10 +309,15 @@ export async function updateEjercicio(req: Request, res: Response): Promise<void
       ejercicio.setCasos(casosValidos);
     }
 
-    const errPlantilla = validarPlantilla(ejercicio);
-    if (errPlantilla) {
-      res.status(400).json({ status: 'error', message: errPlantilla });
-      return;
+    // Solo revalidar la plantilla si este update toca algo que la afecta (modo,
+    // plantilla o lenguajes); así editar solo el título/casos de un ejercicio
+    // plantilla previo no se bloquea por su estado ya guardado.
+    if (modoEvaluacion !== undefined || plantillaCodigo !== undefined || lenguajes !== undefined) {
+      const errPlantilla = validarPlantilla(ejercicio);
+      if (errPlantilla) {
+        res.status(400).json({ status: 'error', message: errPlantilla });
+        return;
+      }
     }
 
     await ejercicio.save(null, { useMasterKey: true });

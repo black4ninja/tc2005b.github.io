@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router';
 import { createColumnHelper } from '@tanstack/react-table';
 import { confirmar } from '../../../../utils/dialogos';
@@ -74,7 +74,8 @@ export default function EjerciciosColeccionPage() {
     fetchCategorias();
   }, [fetchEjercicios, fetchNombre, fetchCategorias]);
 
-  const nombreCategoria = (catId: string | null) => categorias.find((c) => c.id === catId)?.nombre ?? '—';
+  const nombrePorCategoria = useMemo(() => new Map(categorias.map((c) => [c.id, c.nombre])), [categorias]);
+  const nombreCategoria = (catId: string | null) => (catId && nombrePorCategoria.get(catId)) || '—';
 
   async function handleTogglePublicado(ej: EjercicioData) {
     setError('');

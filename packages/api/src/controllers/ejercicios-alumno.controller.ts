@@ -22,7 +22,6 @@ import {
 } from '../services/ejercicios-cola.service.js';
 import {
   evaluar,
-  probarPrograma,
   esLenguaje,
   lenguajeConfigurado,
   type Lenguaje,
@@ -128,15 +127,17 @@ export async function listEjerciciosAlumno(req: Request, res: Response): Promise
     q.limit(1000);
     const ejercicios = await q.find({ useMasterKey: true });
 
-    // Completitud + categorías (en paralelo). Si alguna falla, se degrada con
-    // gracia (sin palomitas / sin agrupar) en vez de tumbar toda la lista.
+    // Completitud + categorías (en paralelo). La completitud NO se degrada: si su
+    // query falla, se propaga al catch → 500 (la vista reintenta), porque mostrar
+    // "0 resueltos" y sin palomitas haría creer al alumno que perdió su progreso.
+    // Las categorías sí se degradan (solo afectan el agrupado, no el dato).
     const qc = new Parse.Query<CategoriaEjercicio>('CategoriaEjercicio');
     qc.equalTo('coleccion' as any, Coleccion.createWithoutData(acceso.coleccion.id) as any);
     qc.equalTo('exists' as any, true as any);
     qc.ascending('orden');
     qc.limit(1000);
     const [resueltos, categorias] = await Promise.all([
-      ejerciciosResueltos(user.id, ejercicios.map((e) => e.id!)).catch(() => new Set<string>()),
+      ejerciciosResueltos(user.id, ejercicios.map((e) => e.id!)),
       qc.find({ useMasterKey: true }).catch(() => [] as CategoriaEjercicio[]),
     ]);
 
@@ -187,9 +188,8 @@ function validarEnvio(ej: EjercicioProgramacion, body: any): { error: string; st
 
 /**
  * POST /contenidos/:slug/ejercicios/:ejSlug/ejecutar
- * ENCOLA una corrida efímera (no guarda envío) y devuelve un `jobId` para
- * consultar el resultado por polling. Si el body trae `entrada`, corre una vez
- * con esa entrada (salida cruda); si no, prueba contra los casos DE MUESTRA.
+ * ENCOLA una corrida efímera (no guarda envío) contra los casos DE MUESTRA y
+ * devuelve un `jobId` para consultar el resultado por polling.
  */
 export async function ejecutarEjercicio(req: Request, res: Response): Promise<void> {
   const user = req.appUser as AppUser;
@@ -204,22 +204,15 @@ export async function ejecutarEjercicio(req: Request, res: Response): Promise<vo
   const ej = cargado.ejercicio;
   const limites = { tiempoMs: ej.getLimiteTiempoMs(), memoriaMb: ej.getLimiteMemoriaMb() };
   const codigo = construirCodigo(ej, v.lenguaje, v.codigo); // harness si aplica
-  const entrada = typeof req.body?.entrada === 'string' ? (req.body.entrada as string) : null;
 
-  const visibles = entrada === null
-    ? ej.getCasos().map((c, i) => ({ c, i })).filter((x) => !x.c.oculto)
-    : [];
-  if (entrada === null && visibles.length === 0) {
+  const visibles = ej.getCasos().map((c, i) => ({ c, i })).filter((x) => !x.c.oculto);
+  if (visibles.length === 0) {
     res.status(400).json({ status: 'error', message: 'Este ejercicio no tiene casos de muestra para probar; usa Enviar.' });
     return;
   }
 
   const esPlantilla = ej.getModoEvaluacion() === 'plantilla';
   const jobId = encolar(user.id!, async () => {
-    if (entrada !== null) {
-      const r = await probarPrograma({ lenguaje: v.lenguaje, codigo, stdin: entrada, limites });
-      return { modo: 'salida', resultado: enmascararErrorPlantilla(esPlantilla, r) };
-    }
     const resultado = await evaluar({ lenguaje: v.lenguaje, codigo, casos: visibles.map((x) => x.c), limites });
     // Índices ORIGINALES, para que "Caso N" coincida con ejemplos y con el envío.
     resultado.casos = resultado.casos.map((rc, k) => ({ ...rc, indice: visibles[k].i }));
@@ -253,7 +246,7 @@ export async function enviarEjercicio(req: Request, res: Response): Promise<void
     // Se guarda el envío de CUALQUIER usuario (historial universal), pero solo se
     // vincula al grupo si es alumno: así el preview de un profesor/admin no ensucia
     // las analíticas por grupo.
-    if (acceso.grupoId && user.get('userType') === 'alumno') {
+    if (acceso.grupoId && user.isAlumno()) {
       envio.setGrupo(Grupo.createWithoutData(acceso.grupoId) as Grupo);
     }
     envio.setLenguaje(v.lenguaje);
