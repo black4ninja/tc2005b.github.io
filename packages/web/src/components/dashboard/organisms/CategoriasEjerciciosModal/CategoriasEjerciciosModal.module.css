@@ -1,0 +1,31 @@
+.intro { margin: 0 0 16px; font-size: 14px; color: var(--text-secondary); }
+.error { padding: 10px 12px; margin-bottom: 12px; background: #fdecea; color: var(--dash-danger); border-radius: 8px; font-size: 14px; }
+.hint { font-size: 13px; color: var(--text-secondary); }
+
+.lista { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.fila { display: flex; align-items: center; gap: 8px; }
+.orden {
+  width: 56px;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+}
+.nombre {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+}
+.borrar {
+  background: none;
+  border: none;
+  color: var(--dash-danger);
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+}
+
+.agregar { display: flex; gap: 8px; align-items: center; padding-top: 12px; border-top: 1px solid var(--border-color); }
+.actions { display: flex; justify-content: flex-end; margin-top: 20px; }

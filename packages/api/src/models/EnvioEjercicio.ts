@@ -19,13 +19,31 @@ export interface DetalleCasoEnvio {
 }
 
 /**
- * Un envío del alumno a un ejercicio: el código enviado, el lenguaje y el
- * resultado de correrlo contra los casos (veredicto + detalle). Da al profesor
- * el historial de entregas por alumno.
+ * Estado del envío en la cola del juez:
+ *  - `pendiente`: en espera de compilar (se procesa 1×1).
+ *  - `ejecutando`: el worker lo está compilando/corriendo.
+ *  - `listo`: evaluado; `veredicto`/detalle disponibles.
+ *  - `error`: falló el juez (no el código del alumno).
+ * Ausente = 'listo' (retrocompat con envíos ya guardados síncronamente).
+ */
+export type EstadoEnvio = 'pendiente' | 'ejecutando' | 'listo' | 'error';
+
+/**
+ * Un envío a un ejercicio (de CUALQUIER usuario): código, lenguaje y resultado
+ * de correrlo contra los casos. Es a la vez el registro de historial y el trabajo
+ * en la cola del juez (estado). Alimenta la completitud (¿tiene algún envío
+ * aceptado?).
  */
 export class EnvioEjercicio extends BaseModel {
   constructor(attributes?: Parse.Attributes) {
     super('EnvioEjercicio', attributes);
+  }
+
+  getEstado(): EstadoEnvio {
+    return (this.get('estado') as EstadoEnvio) ?? 'listo';
+  }
+  setEstado(estado: EstadoEnvio): void {
+    this.set('estado', estado);
   }
 
   getEjercicio(): EjercicioProgramacion | undefined {
@@ -105,6 +123,7 @@ export class EnvioEjercicio extends BaseModel {
       ejercicioId: this.getEjercicio()?.id ?? null,
       alumnoId: this.getAlumno()?.id ?? null,
       grupoId: this.getGrupo()?.id ?? null,
+      estado: this.getEstado(),
       lenguaje: this.getLenguaje(),
       codigo: this.getCodigo(),
       veredicto: this.getVeredicto(),

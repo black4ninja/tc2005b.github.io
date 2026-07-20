@@ -64,8 +64,19 @@
   color: var(--text-secondary);
 }
 
+.select {
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-input, #fff);
+  color: var(--text-primary);
+  min-width: 240px;
+}
+
 .checkboxRow {
   display: flex;
+  flex-wrap: wrap;
   gap: 20px;
 }
 .checkboxItem {

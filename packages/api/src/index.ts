@@ -3,6 +3,7 @@ import { config } from './config/index.js';
 import { initializeParseServer } from './config/parse.js';
 import Parse from 'parse/node';
 import './models/index.js';
+import { recuperarEnviosPendientes } from './services/ejercicios-cola.service.js';
 
 async function main() {
   const parseServer = await initializeParseServer();
@@ -19,6 +20,10 @@ async function main() {
     console.log(`[api] Health check: http://localhost:${config.port}/api/health`);
     console.log(`[api] Parse Server: http://localhost:${config.port}${config.parseMount}`);
     console.log(`[api] Test GameScore: http://localhost:${config.port}/api/test/gamescore`);
+    // Re-encola los envíos del juez que quedaron a medias por un reinicio.
+    recuperarEnviosPendientes()
+      .then((n) => { if (n) console.log(`[api] Juez: ${n} envío(s) pendiente(s) re-encolado(s)`); })
+      .catch((e) => console.error('[api] Juez: no se pudo recuperar la cola:', e));
   });
 }
 

@@ -14,6 +14,8 @@ import {
   getEjercicioAlumno,
   ejecutarEjercicio,
   enviarEjercicio,
+  getEstadoJob,
+  getEstadoEnvio,
   listEnviosAlumno,
 } from '../controllers/ejercicios-alumno.controller.js';
 
@@ -32,6 +34,8 @@ router.get('/contenidos/:slug/ejercicios', identifyUser, listEjerciciosAlumno);
 router.get('/contenidos/:slug/ejercicios/:ejSlug', identifyUser, getEjercicioAlumno);
 router.post('/contenidos/:slug/ejercicios/:ejSlug/ejecutar', identifyUser, ejecutarEjercicio);
 router.post('/contenidos/:slug/ejercicios/:ejSlug/enviar', identifyUser, enviarEjercicio);
+router.get('/contenidos/:slug/ejercicios/:ejSlug/estado/:jobId', identifyUser, getEstadoJob);
+router.get('/contenidos/:slug/ejercicios/:ejSlug/envios/:envioId/estado', identifyUser, getEstadoEnvio);
 router.get('/contenidos/:slug/ejercicios/:ejSlug/envios', identifyUser, listEnviosAlumno);
 router.get('/contenidos/:slug/arbol', identifyUser, getArbolColeccion);
 router.get('/contenidos/:slug/pagina/*', identifyUser, getPagina);

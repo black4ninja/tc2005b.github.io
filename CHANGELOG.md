@@ -8,6 +8,26 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Ejercicios avanzados del mini-juez: cola, categorías, harness y completitud.**
+  Expansión grande del módulo Ejercicios (todo en un PR):
+  - **Cola asíncrona.** Con recursos reducidos (y Kotlin lento de compilar), las
+    corridas ya no bloquean el request ni compilan en paralelo: cada envío se
+    **encola** y un worker las procesa **1×1**. El alumno ve el estado en vivo
+    (*en cola → posición → ejecutando → veredicto*) por polling. Los envíos se
+    persisten (historial de **cualquier** usuario) y **sobreviven a un reinicio**
+    (se re-encolan al arrancar).
+  - **Categorías administrables.** Los ejercicios se agrupan por tema (p. ej.
+    "Sintaxis básica", "POO", "SOLID"), gestionables desde Contenidos; el alumno
+    los ve por secciones.
+  - **Verificación con plantilla (harness).** Un ejercicio puede pedir que el
+    alumno escriba **solo una función/clase**: su código se inserta en una
+    plantilla con un driver oculto (`{{solucion}}`) y ese programa combinado se
+    compila. Habilita ejercicios de POO/SOLID sin exigir el `main` completo.
+  - **Completitud.** Cada ejercicio muestra si el usuario ya lo **resolvió**
+    (tiene un envío aceptado) y una barra de progreso por colección.
+  - **Contenido:** seed `seed-ejercicios-moviles.ts` con ejercicios básicos
+    bilingües (Kotlin + Swift) por categoría, basados en las presentaciones de
+    Android/iOS.
 - **Experiencia del alumno del mini-juez (resolver ejercicios).** Fase final: el
   alumno ya puede **resolver ejercicios** desde el sitio. Nueva sección
   "Ejercicios" en su menú (solo si algún grupo suyo tiene el módulo **encendido**

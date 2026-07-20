@@ -31,12 +31,16 @@ export default function EditorEjercicioPage() {
   const [titulo, setTitulo] = useState('');
   const [slug, setSlug] = useState('');
   const [orden, setOrden] = useState('0');
+  const [categoriaId, setCategoriaId] = useState<string>('');
   const [enunciado, setEnunciado] = useState('');
   const [lenguajes, setLenguajes] = useState<LenguajeJuez[]>(['kotlin']);
   const [codigoInicial, setCodigoInicial] = useState<{ kotlin?: string; swift?: string }>({});
+  const [modoEvaluacion, setModoEvaluacion] = useState<'programa' | 'plantilla'>('programa');
+  const [plantillaCodigo, setPlantillaCodigo] = useState<{ kotlin?: string; swift?: string }>({});
   const [tiempoMs, setTiempoMs] = useState('5000');
   const [memoriaMb, setMemoriaMb] = useState('256');
   const [casos, setCasos] = useState<CasoPruebaData[]>([{ entrada: '', salidaEsperada: '', oculto: false }]);
+  const [categorias, setCategorias] = useState<{ id: string; nombre: string }[]>([]);
 
   const [cargando, setCargando] = useState(!esNuevo);
   const [guardando, setGuardando] = useState(false);
@@ -53,9 +57,12 @@ export default function EditorEjercicioPage() {
       setTitulo(ejercicio.titulo);
       setSlug(ejercicio.slug);
       setOrden(String(ejercicio.orden));
+      setCategoriaId(ejercicio.categoriaId ?? '');
       setEnunciado(ejercicio.enunciado);
       setLenguajes(ejercicio.lenguajes.length ? ejercicio.lenguajes : ['kotlin']);
       setCodigoInicial(ejercicio.codigoInicial ?? {});
+      setModoEvaluacion(ejercicio.modoEvaluacion === 'plantilla' ? 'plantilla' : 'programa');
+      setPlantillaCodigo(ejercicio.plantillaCodigo ?? {});
       setTiempoMs(String(ejercicio.limiteTiempoMs));
       setMemoriaMb(String(ejercicio.limiteMemoriaMb));
       setCasos(ejercicio.casos.length ? ejercicio.casos : [{ entrada: '', salidaEsperada: '', oculto: false }]);
@@ -67,6 +74,17 @@ export default function EditorEjercicioPage() {
   }, [esNuevo, ejercicioId, sessionToken]);
 
   useEffect(() => { cargar(); }, [cargar]);
+
+  // Categorías de la colección (para el selector).
+  useEffect(() => {
+    if (!coleccionId || !sessionToken) return;
+    fetch(`${API_BASE}/admin/colecciones/${coleccionId}/categorias-ejercicios`, {
+      headers: { 'x-session-token': sessionToken },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setCategorias((j?.categorias ?? []).map((c: any) => ({ id: c.id, nombre: c.nombre }))))
+      .catch(() => {});
+  }, [coleccionId, sessionToken]);
 
   function toggleLenguaje(l: LenguajeJuez) {
     setLenguajes((prev) => (prev.includes(l) ? prev.filter((x) => x !== l) : [...prev, l]));
@@ -89,17 +107,24 @@ export default function EditorEjercicioPage() {
 
     setGuardando(true);
     setError('');
-    // Solo el código inicial de los lenguajes seleccionados.
+    // Solo el código de los lenguajes seleccionados.
     const codigoFiltrado: { kotlin?: string; swift?: string } = {};
-    for (const l of lenguajes) if (codigoInicial[l]) codigoFiltrado[l] = codigoInicial[l];
+    const plantillaFiltrada: { kotlin?: string; swift?: string } = {};
+    for (const l of lenguajes) {
+      if (codigoInicial[l]) codigoFiltrado[l] = codigoInicial[l];
+      if (plantillaCodigo[l]) plantillaFiltrada[l] = plantillaCodigo[l];
+    }
 
     const payload = {
       titulo: titulo.trim(),
       slug,
       orden: Number(orden) || 0,
+      categoriaId: categoriaId || null,
       enunciado,
       lenguajes,
       codigoInicial: codigoFiltrado,
+      modoEvaluacion,
+      plantillaCodigo: modoEvaluacion === 'plantilla' ? plantillaFiltrada : {},
       limiteTiempoMs: Number(tiempoMs) || 5000,
       limiteMemoriaMb: Number(memoriaMb) || 256,
       casos,
@@ -146,6 +171,20 @@ export default function EditorEjercicioPage() {
       </div>
 
       <div className={styles.field}>
+        <label className={styles.label}>Categoría</label>
+        <select
+          className={styles.select}
+          value={categoriaId}
+          onChange={(e) => setCategoriaId(e.target.value)}
+          disabled={guardando}
+        >
+          <option value="">Sin categoría</option>
+          {categorias.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+        </select>
+        <p className={styles.hint}>Las categorías se administran desde la lista de ejercicios de la colección.</p>
+      </div>
+
+      <div className={styles.field}>
         <label className={styles.label}>Lenguajes permitidos</label>
         <div className={styles.checkboxRow}>
           {LENGUAJES.map((l) => (
@@ -178,6 +217,38 @@ export default function EditorEjercicioPage() {
             theme={oneDark}
             extensions={CODIGO_INICIAL_EXT}
             onChange={(v) => setCodigoInicial((prev) => ({ ...prev, [l]: v }))}
+            editable={!guardando}
+          />
+        </div>
+      ))}
+
+      <div className={styles.field}>
+        <label className={styles.label}>Modo de evaluación</label>
+        <div className={styles.checkboxRow}>
+          <label className={styles.checkboxItem}>
+            <input type="radio" name="modo" checked={modoEvaluacion === 'programa'} onChange={() => setModoEvaluacion('programa')} disabled={guardando} />
+            <span>Programa completo (el alumno escribe todo el <code>main</code>)</span>
+          </label>
+          <label className={styles.checkboxItem}>
+            <input type="radio" name="modo" checked={modoEvaluacion === 'plantilla'} onChange={() => setModoEvaluacion('plantilla')} disabled={guardando} />
+            <span>Plantilla / harness (el alumno escribe solo una parte)</span>
+          </label>
+        </div>
+      </div>
+
+      {modoEvaluacion === 'plantilla' && lenguajes.map((l) => (
+        <div key={`pl-${l}`} className={styles.field}>
+          <label className={styles.label}>Plantilla — {LENGUAJES.find((x) => x.key === l)?.label}</label>
+          <p className={styles.hint}>
+            El código del alumno se inserta donde pongas <code>{'{{solucion}}'}</code>. Escribe aquí el
+            driver que ejerce su solución e imprime la salida a comparar contra los casos.
+          </p>
+          <CodeMirror
+            value={plantillaCodigo[l] ?? ''}
+            height="160px"
+            theme={oneDark}
+            extensions={CODIGO_INICIAL_EXT}
+            onChange={(v) => setPlantillaCodigo((prev) => ({ ...prev, [l]: v }))}
             editable={!guardando}
           />
         </div>

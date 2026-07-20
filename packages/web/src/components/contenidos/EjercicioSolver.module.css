@@ -118,6 +118,18 @@
   font-size: 14px;
 }
 
+.colaBox {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: #eef2ff;
+  color: #3730a3;
+  border-radius: 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* --- Resultados --- */
 .resultado { margin-top: 16px; }
 .veredictoRow { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
