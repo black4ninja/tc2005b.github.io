@@ -82,19 +82,6 @@
 }
 .lengFijo { display: inline-block; font-weight: 600; color: #1f2328; border-style: dashed; }
 
-.entradaBox { margin-top: 12px; }
-.entradaLabel { display: block; font-size: 13px; color: #57606a; margin-bottom: 4px; }
-.entradaArea {
-  width: 100%;
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 13px;
-  padding: 8px;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  resize: vertical;
-  box-sizing: border-box;
-}
-
 .acciones { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .btnSec, .btnPri {
   font-size: 14px;
@@ -145,7 +132,6 @@
 .badgeOk { background: #e6f4ea; color: #1e7e34; }
 .badgeMal { background: #fdecea; color: #b42318; }
 
-.resLabel { display: block; font-size: 13px; color: #57606a; margin-bottom: 4px; }
 .salidaPre {
   margin: 0;
   font-family: ui-monospace, Menlo, monospace;
@@ -157,16 +143,6 @@
   border-radius: 6px;
   max-height: 260px;
   overflow: auto;
-}
-.stderrPre {
-  margin: 8px 0 0;
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 13px;
-  white-space: pre-wrap;
-  color: #b42318;
-  background: #fff5f5;
-  padding: 8px;
-  border-radius: 6px;
 }
 
 .caso {

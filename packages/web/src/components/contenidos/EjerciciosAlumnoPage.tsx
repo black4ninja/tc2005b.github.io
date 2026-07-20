@@ -43,7 +43,7 @@ function agrupar(categorias: CategoriaRef[], ejercicios: EjercicioLista[]): Grup
   return grupos;
 }
 
-const LENGUAJES = ['kotlin', 'swift'];
+const LENGUAJES = Object.keys(NOMBRE_LENGUAJE);
 
 export default function EjerciciosAlumnoPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -56,10 +56,13 @@ export default function EjerciciosAlumnoPage() {
   const coleccion = data?.coleccion ?? null;
   const ejercicios = data?.ejercicios ?? [];
   const categorias = data?.categorias ?? [];
-  const progreso = data?.progreso ?? { resueltos: 0, total: 0 };
 
   const filtrados = filtroLeng === 'todos' ? ejercicios : ejercicios.filter((e) => e.lenguajes.includes(filtroLeng));
   const grupos = agrupar(categorias, filtrados);
+  // El progreso se calcula sobre lo FILTRADO (no el total del servidor): así un
+  // alumno que filtra por su lenguaje llega a 100% sin que los ejercicios
+  // exclusivos del otro lenguaje —que no puede resolver— lo dejen atascado.
+  const progreso = { resueltos: filtrados.filter((e) => e.resuelto).length, total: filtrados.length };
 
   function toggle(clave: string) {
     setColapsadas((prev) => {

@@ -69,7 +69,7 @@ export default function EjercicioSolverPage() {
   const codigo = codigoPorLeng[lenguaje] ?? '';
   const extensiones = useMemo(() => [extensionLenguaje(lenguaje), EditorView.lineWrapping], [lenguaje]);
 
-  const post = useCallback(async (accion: 'ejecutar' | 'enviar', body: object): Promise<any> => {
+  const post = useCallback(async (accion: 'ejecutar' | 'enviar', body: object): Promise<{ jobId?: string; envioId?: string }> => {
     const res = await fetch(`/api/contenidos/${slug}/ejercicios/${ejSlug}/${accion}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-session-token': sessionToken ?? '' },
@@ -80,11 +80,16 @@ export default function EjercicioSolverPage() {
     return json;
   }, [slug, ejSlug, sessionToken]);
 
+  // Tope del polling: ~10 min (400 × 1.5 s). Evita el spinner infinito si el
+  // envío quedara atascado en un estado no terminal (p. ej. un guardado fallido).
+  const MAX_INTENTOS = 400;
+
   /** Poll genérico de un endpoint de estado; actualiza el estado de la cola. */
   const pollear = useCallback(async (url: string): Promise<any> => {
     const token = ++pollToken.current;
-    for (;;) {
+    for (let intento = 0; ; intento++) {
       if (token !== pollToken.current) throw new Error('cancelado');
+      if (intento >= MAX_INTENTOS) { setJobEstado(null); throw new Error('La ejecución está tardando demasiado. Inténtalo de nuevo en un momento.'); }
       const res = await fetch(url, { headers: { 'x-session-token': sessionToken ?? '' } });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.message || 'Error al consultar el estado');
@@ -105,6 +110,7 @@ export default function EjercicioSolverPage() {
     setOcupado('muestra'); setError(''); setEvalResult(null);
     try {
       const { jobId } = await post('ejecutar', { lenguaje, codigo });
+      if (!jobId) throw new Error('No se pudo encolar la ejecución');
       const r = await esperarJob(jobId); // siempre modo 'casos' (sin entrada)
       setEvalResult({ titulo: 'Casos de muestra', r: r.resultado });
     } catch (e: any) { if (e.message !== 'cancelado') setError(e.message); }
@@ -115,6 +121,7 @@ export default function EjercicioSolverPage() {
     setOcupado('enviar'); setError(''); setEvalResult(null);
     try {
       const { envioId } = await post('enviar', { lenguaje, codigo });
+      if (!envioId) throw new Error('No se pudo encolar el envío');
       const r = await esperarEnvio(envioId);
       setEvalResult({ titulo: 'Envío', r: r.resultado });
     } catch (e: any) { if (e.message !== 'cancelado') setError(e.message); }
