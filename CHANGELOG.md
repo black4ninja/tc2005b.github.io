@@ -8,6 +8,17 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Soluciones de referencia de los 10 ejercicios de `tc2007b`.** Script
+  `seed-soluciones-referencia.ts` (idempotente, con `--dry-run`) que carga **dos
+  soluciones por lenguaje**, de estrategia deliberadamente distinta —`sum()`
+  contra bucle, `Set` contra recorrido, `when` contra tabla—, porque dos
+  soluciones parecidas no detectan casos sobreajustados. **Verifica antes de
+  escribir** y solo guarda lo que queda limpio: una solución que no pasa es peor
+  que ninguna, ya que el verificador la daría por buena a futuro.
+  - Resultado: **los 10 ejercicios quedan verificados como resolubles**, 0
+    errores, en ambos lenguajes. Ningún caso resultó sobreajustado y ningún
+    código inicial venía roto ni ya resuelto. Queda 1 aviso: `hola-mundo` no
+    tiene ningún caso oculto.
 - **Verificación automática de ejercicios (autoría en lote).** Los ejercicios
   pueden llevar **soluciones de referencia** —una **lista** por lenguaje, no una
   sola— y un verificador las usa como puerta de calidad antes de publicar:
