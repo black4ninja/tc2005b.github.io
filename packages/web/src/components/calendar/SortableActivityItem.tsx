@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Actividad, ActividadTipo } from '@/types/calendario';
+import type { Actividad } from '@/types/calendario';
 import ActivityItem from './ActivityItem';
 import styles from './SortableActivityItem.module.css';
 

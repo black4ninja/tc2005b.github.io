@@ -9,7 +9,7 @@ import {
   closestCorners,
 } from '@dnd-kit/core';
 import type { DragStartEvent, DragEndEvent, DragOverEvent } from '@dnd-kit/core';
-import type { Semana, SemanaNormal, Actividad, ActividadTipo } from '@/types/calendario';
+import type { Semana, SemanaNormal, ActividadTipo } from '@/types/calendario';
 import type { ReorderUpdate } from '@/hooks/useCalendarReorder';
 import DayColumn from './DayColumn';
 import DaySummaryCell from './DaySummaryCell';
@@ -123,14 +123,6 @@ function findContainer(semana: SemanaNormal, activeId: string): string | null {
     if (day.actividades?.some((a) => a.id === activeId)) return `${dayKey}-actividades`;
   }
   return null;
-}
-
-function getActivitiesForContainer(semana: SemanaNormal, containerId: string): Actividad[] {
-  const parsed = parseContainerId(containerId);
-  if (!parsed) return [];
-  const day = semana.dias[parsed.dia];
-  if (!day) return [];
-  return parsed.isPrevio ? (day.previo ?? []) : (day.actividades ?? []);
 }
 
 export default function WeekCard({

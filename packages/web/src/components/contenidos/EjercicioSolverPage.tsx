@@ -60,7 +60,12 @@ export default function EjercicioSolverPage() {
   // Estado de la cola del juez mientras se procesa (pendiente → ejecutando).
   const [jobEstado, setJobEstado] = useState<{ estado: string; posicion: number } | null>(null);
   const pollToken = useRef(0);
+
+  // Diagramas del enunciado. La dependencia es el HTML y no el ejercicio entero:
+  // es lo único que puede traerlos, y así no se reevalúa en cada cambio de
+  // estado del solver, que al enviar son muchos.
   const enunciadoRef = useRef<HTMLDivElement>(null);
+  useDiagramas(enunciadoRef, [ej?.enunciadoHtml]);
 
   // Al llegar el ejercicio: idioma inicial y código semilla por lenguaje.
   useEffect(() => {

@@ -53,7 +53,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
 
   const [apiCalendario, setApiCalendario] = useState<Calendario | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
 
   // Copy calendar state
   const [showCopyModal, setShowCopyModal] = useState(false);

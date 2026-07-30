@@ -8,6 +8,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- **Los diagramas no se dibujaban en el enunciado de un ejercicio.** Al cablear el
+  hook en el solver se añadieron el `import` y el `ref`, pero **nunca la llamada**,
+  así que el bloque se quedaba como código. El visor y el editor sí la tenían.
+  - Se activa `noUnusedLocals` en el type-check del web, que es el guardarraíl que
+    lo habría cazado: con la llamada ausente, el import queda sin usar y `tsc`
+    falla. Comprobado reintroduciendo el bug a propósito. De paso se retiran las
+    7 variables e imports muertos que impedían encender el flag.
 - **Los diagramas con salto de línea en una etiqueta no se dibujaban.** `svgSeguro`
   parseaba el SVG como `image/svg+xml`, que es **XML estricto**, y Mermaid mete
   HTML dentro de `foreignObject` en cuanto una etiqueta lleva `<br/>`. El parser
