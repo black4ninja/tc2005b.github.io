@@ -8,6 +8,7 @@ import {
   type CasoPrueba,
   type CodigoInicial,
   type ModoEvaluacion,
+  type SolucionesPorLenguaje,
 } from '../models/EjercicioProgramacion.js';
 import { CategoriaEjercicio } from '../models/CategoriaEjercicio.js';
 import type { AppUser } from '../models/AppUser.js';
@@ -90,6 +91,24 @@ function normalizarCodigoInicial(valor: unknown): CodigoInicial {
   return out;
 }
 
+/**
+ * Soluciones de referencia: lista de strings por lenguaje, descartando vacías
+ * (una solución en blanco no verifica nada y ensuciaría el reporte). Acepta
+ * también un string suelto por comodidad de los scripts de autoría.
+ */
+function normalizarSoluciones(valor: unknown): SolucionesPorLenguaje {
+  const out: SolucionesPorLenguaje = {};
+  if (valor && typeof valor === 'object') {
+    for (const l of LENGUAJES) {
+      const v = (valor as any)[l];
+      const lista = typeof v === 'string' ? [v] : Array.isArray(v) ? v : [];
+      const limpias = lista.filter((s): s is string => typeof s === 'string' && s.trim() !== '');
+      if (limpias.length) out[l] = limpias;
+    }
+  }
+  return out;
+}
+
 function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
@@ -158,7 +177,7 @@ export async function createEjercicio(req: Request, res: Response): Promise<void
   const { id } = req.params;
   const {
     titulo, slug, orden, enunciado, lenguajes, codigoInicial, limiteTiempoMs, limiteMemoriaMb, casos,
-    categoriaId, modoEvaluacion, plantillaCodigo,
+    categoriaId, modoEvaluacion, plantillaCodigo, solucionesReferencia,
   } = req.body ?? {};
 
   if (!titulo || typeof titulo !== 'string' || !titulo.trim()) {
@@ -210,6 +229,7 @@ export async function createEjercicio(req: Request, res: Response): Promise<void
     ejercicio.setCodigoInicial(normalizarCodigoInicial(codigoInicial));
     ejercicio.setModoEvaluacion(normalizarModo(modoEvaluacion));
     ejercicio.setPlantillaCodigo(normalizarCodigoInicial(plantillaCodigo));
+    ejercicio.setSolucionesReferencia(normalizarSoluciones(solucionesReferencia));
     ejercicio.setLimiteTiempoMs(clamp(Number(limiteTiempoMs) || 5000, TIEMPO_MIN_MS, TIEMPO_MAX_MS));
     ejercicio.setLimiteMemoriaMb(clamp(Number(limiteMemoriaMb) || 256, MEMORIA_MIN_MB, MEMORIA_MAX_MB));
     ejercicio.setCasos(casosValidos);
@@ -250,7 +270,7 @@ export async function updateEjercicio(req: Request, res: Response): Promise<void
   const { ejercicio, coleccion } = encontrado;
   const {
     titulo, slug, orden, enunciado, lenguajes, codigoInicial, limiteTiempoMs, limiteMemoriaMb, casos,
-    categoriaId, modoEvaluacion, plantillaCodigo,
+    categoriaId, modoEvaluacion, plantillaCodigo, solucionesReferencia,
   } = req.body ?? {};
 
   try {
@@ -290,6 +310,9 @@ export async function updateEjercicio(req: Request, res: Response): Promise<void
     if (codigoInicial !== undefined) ejercicio.setCodigoInicial(normalizarCodigoInicial(codigoInicial));
     if (modoEvaluacion !== undefined) ejercicio.setModoEvaluacion(normalizarModo(modoEvaluacion));
     if (plantillaCodigo !== undefined) ejercicio.setPlantillaCodigo(normalizarCodigoInicial(plantillaCodigo));
+    if (solucionesReferencia !== undefined) {
+      ejercicio.setSolucionesReferencia(normalizarSoluciones(solucionesReferencia));
+    }
     if (categoriaId !== undefined) {
       const categoria = await resolverCategoria(categoriaId, coleccion.id!);
       if (categoria === 'invalido') {

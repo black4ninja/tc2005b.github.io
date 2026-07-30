@@ -163,3 +163,74 @@ Dos consecuencias prácticas:
 - Swift compila contra el **SDK de macOS**, no contra glibc. Para ejercicios de
   consola (stdin/stdout, colecciones, POO) es equivalente; si algún día uno usa
   API específicas de plataforma, valídalo en el servidor.
+
+## 7. Verificar ejercicios (autoría)
+
+Para generar material en lote sin resolver cada ejercicio a mano, cada ejercicio
+puede llevar **soluciones de referencia**, y un verificador las usa como puerta
+de calidad.
+
+```bash
+cd packages/api
+./node_modules/.bin/tsx scripts/verificar-ejercicios.ts [slugColeccion] \
+    [--slug <ejSlug>] [--lenguaje kotlin|swift] [--publicados] [--rapido] [--json]
+```
+
+Solo **lee** de la BD, y **sale con código 1 si hay errores** (los avisos no
+rompen), así que sirve de puerta antes de publicar. `--rapido` salta todo lo que
+compila: útil para pasar por el catálogo entero en segundos.
+
+### 7.1 Soluciones de referencia: por qué son VARIAS
+
+`EjercicioProgramacion.solucionesReferencia` guarda una **lista** por lenguaje,
+no una sola. No es por comodidad:
+
+- Con **una** solución compruebas que el ejercicio es resoluble.
+- Con **dos o más** compruebas algo que no se ve leyendo los casos: que no estén
+  **sobreajustados**. Si dos soluciones igual de legítimas dan veredictos
+  distintos, el defecto está en los **casos**, no en el código — típicamente
+  porque fijan un orden de iteración o un formato que el enunciado no pide.
+
+Esa segunda comprobación no es heurística, y es la razón de que el campo sea una
+lista. Escribe al menos dos soluciones con **estrategias distintas** (p. ej. una
+con `Set` y otra ordenando) para que el contraste sirva de algo.
+
+Nunca se exponen al alumno: viven en `toSafeJSON()`, que es la representación de
+**admin**; el DTO del alumno es una whitelist aparte que no las incluye.
+
+### 7.2 Qué revisa
+
+| Chequeo | Nivel | Qué significa |
+|---|---|---|
+| `sin-casos` | error | No hay nada que evaluar |
+| `plantilla-sin-marcador` | error | En modo plantilla, sin `{{solucion}}` se compilaría solo el driver |
+| `solucion-rechazada` | error | Una solución de referencia no es `aceptado`: o no es resoluble así, o los casos están mal |
+| `casos-sobreajustados` | error | Dos soluciones válidas discrepan (ver 7.1) |
+| `inicial-no-compila` | error | El alumno arrancaría con un error que no es suyo |
+| `inicial-aceptado` | error | El ejercicio viene resuelto, o los casos no discriminan |
+| `sin-solucion` | aviso | Sin solución de referencia no se puede verificar |
+| `sin-casos-ocultos` | aviso | El alumno ve todas las salidas esperadas |
+| `salida-vacia` | aviso | La salida esperada queda vacía al normalizar: la pasa cualquier programa mudo |
+| `entrada-repetida` | aviso | Dos casos con la misma entrada; uno no aporta |
+
+El **código inicial** hace de "solución incorrecta" para el test de
+discriminación, en vez de inventar un programa trivial: así funciona igual en
+modo plantilla, donde un programa vacío ni compilaría y el chequeo no probaría
+nada.
+
+> **No** se marcan CRLF ni espacios al final de línea: `normalizarSalida` ya los
+> absorbe al comparar, así que no hacen frágil a un caso y avisar de ellos sería
+> ruido.
+
+### 7.3 Dónde vive
+
+- Lógica: `src/services/ejercicios-verificacion.service.ts` (pura, sobre un objeto
+  plano — no depende de Parse).
+- CLI: `scripts/verificar-ejercicios.ts`.
+- Pruebas: `tests/ejercicios-verificacion.test.ts` (estructura, corre siempre) y
+  `tests/ejercicios-verificacion-ejecucion.test.ts` (compila de verdad; se
+  **omite** sin toolchain, igual que `idor.test.ts` sin API).
+
+La composición del harness la comparten el juez y el verificador
+(`componerCodigo`): si fueran dos implementaciones, el verificador podría dar por
+bueno algo que al alumno le falla.

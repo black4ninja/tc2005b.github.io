@@ -23,6 +23,21 @@ export interface CodigoPorLenguaje {
 export type CodigoInicial = CodigoPorLenguaje;
 
 /**
+ * Soluciones de referencia por lenguaje. Son VARIAS a propósito, no una: un
+ * ejercicio rara vez tiene una única solución válida, y esa pluralidad es justo
+ * lo que delata los casos SOBREAJUSTADOS. Si dos soluciones legítimas discrepan
+ * en el veredicto, el problema no está en el código sino en los casos (dependen
+ * del orden de iteración, de un formato accidental, de un detalle no pedido…).
+ *
+ * NUNCA se exponen al alumno: viven en `toSafeJSON`, que es la representación de
+ * ADMIN; el DTO del alumno es una whitelist aparte que no las incluye.
+ */
+export interface SolucionesPorLenguaje {
+  kotlin?: string[];
+  swift?: string[];
+}
+
+/**
  * Cómo se evalúa el envío:
  *  - `programa`: el alumno escribe el programa COMPLETO; se compila tal cual y se
  *    compara su stdout (modo por defecto, retrocompatible).
@@ -36,6 +51,22 @@ export const MODOS_EVALUACION: ModoEvaluacion[] = ['programa', 'plantilla'];
 
 /** Marcador dentro de la plantilla donde se inserta el código del alumno. */
 export const MARCADOR_SOLUCION = '{{solucion}}';
+
+/**
+ * Compone el programa que se compila de verdad: en modo 'plantilla' inserta el
+ * código en el marcador; si no, lo devuelve tal cual. Pura y sin Parse para que
+ * la comparta el juez (lo que corre el alumno) con el verificador de autoría —
+ * si fueran dos implementaciones, el verificador podría dar por bueno algo que
+ * al alumno le falla.
+ */
+export function componerCodigo(
+  modo: ModoEvaluacion,
+  plantilla: string | undefined,
+  codigo: string,
+): string {
+  if (modo !== 'plantilla' || !plantilla) return codigo;
+  return plantilla.split(MARCADOR_SOLUCION).join(codigo);
+}
 
 /**
  * Ejercicio de programación (módulo "Ejercicios" del CMS). Pertenece a una
@@ -134,6 +165,18 @@ export class EjercicioProgramacion extends BaseModel {
     this.set('plantillaCodigo', plantilla);
   }
 
+  /**
+   * Soluciones de referencia (varias por lenguaje). Material de AUTORÍA: las usa
+   * `verificar-ejercicios.ts` para comprobar que el ejercicio es resoluble y que
+   * sus casos no están sobreajustados. Ausente = ejercicio sin verificar.
+   */
+  getSolucionesReferencia(): SolucionesPorLenguaje {
+    return this.get('solucionesReferencia') ?? {};
+  }
+  setSolucionesReferencia(soluciones: SolucionesPorLenguaje): void {
+    this.set('solucionesReferencia', soluciones);
+  }
+
   getLimiteTiempoMs(): number {
     return this.get('limiteTiempoMs') ?? 5000;
   }
@@ -196,6 +239,7 @@ export class EjercicioProgramacion extends BaseModel {
       codigoInicial: this.getCodigoInicial(),
       modoEvaluacion: this.getModoEvaluacion(),
       plantillaCodigo: this.getPlantillaCodigo(),
+      solucionesReferencia: this.getSolucionesReferencia(),
       limiteTiempoMs: this.getLimiteTiempoMs(),
       limiteMemoriaMb: this.getLimiteMemoriaMb(),
       casos: this.getCasos(),
