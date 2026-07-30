@@ -184,3 +184,52 @@ importador lo verá como página nueva.
 Scripts: [`packages/api/scripts/preview-contenido.ts`](./packages/api/scripts/preview-contenido.ts),
 [`packages/api/scripts/importar-markdown.ts`](./packages/api/scripts/importar-markdown.ts).
 Migración masiva desde un Docusaurus completo: [`importar-docusaurus.ts`](./packages/api/scripts/importar-docusaurus.ts).
+
+## Diagramas dentro del Markdown
+
+Puedes escribir diagramas como código en cualquier documento o enunciado; se
+dibujan en el navegador al abrir la página.
+
+### Mermaid (recomendado para material nuevo)
+
+````markdown
+```mermaid
+classDiagram
+    class HomeViewModel {
+        +cargar()
+    }
+    HomeViewModel --> GetPokemonListUseCase
+```
+````
+
+Cubre **clase, secuencia, estado, ER y flowchart**. Es lo que ya renderizan
+GitHub y Notion, así que a los alumnos les resulta familiar y hay respuestas en
+internet cuando algo no compila.
+
+### PlantUML (para lo que Mermaid no cubre, y para lo ya escrito)
+
+Un bloque que empieza por `@startuml` se detecta **aunque el fence no lleve
+etiqueta**. Por eso los diagramas que ya existen en el wiki de Android se dibujan
+sin tocar su contenido.
+
+````markdown
+```plantuml
+@startuml
+package "domain" {
+  [GetPokemonListUseCase]
+}
+@enduml
+```
+````
+
+Úsalo cuando necesites **paquete, componente, caso de uso o despliegue**, que
+Mermaid no tiene. A cambio pesa unas 8× más, así que para lo demás prefiere
+Mermaid.
+
+### Qué esperar
+
+- El código fuente es lo que se guarda; el dibujo se hace **en el cliente**. Así,
+  actualizar la librería no obliga a re-renderizar el contenido ya publicado.
+- Si un diagrama tiene un error de sintaxis, **no desaparece**: se muestra el
+  código con el motivo encima.
+- Los motores se descargan solo en las páginas que llevan diagramas.

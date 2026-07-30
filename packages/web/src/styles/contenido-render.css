@@ -135,3 +135,29 @@
 .tema-oscuro .contenido-render .admonition-warning,
 .tema-oscuro .contenido-render .admonition-caution { background: #422006; }
 .tema-oscuro .contenido-render .admonition-danger { background: #450a0a; }
+
+/* --- Diagramas-como-código -------------------------------------------------
+   El bloque ```mermaid (o el PlantUML ya escrito en el wiki) se sustituye por su
+   SVG en el cliente. Ancho propio y scroll horizontal: un diagrama de clases se
+   pasa de los ~760px de la columna de lectura, y no debe empujar la página. */
+.contenido-render .contenido-diagrama {
+  margin: 20px 0;
+  padding: 0;
+  overflow-x: auto;
+  text-align: center;
+}
+.contenido-render .contenido-diagrama svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Si el render falla, el código fuente vuelve a mostrarse y esto explica por qué:
+   un alumno con un typo tiene que ver su diagrama, no un hueco. */
+.contenido-render .contenido-diagrama-error {
+  margin: 12px 0 4px;
+  padding: 8px 12px;
+  border-left: 3px solid #d1242f;
+  background: #fff5f5;
+  color: #82071e;
+  font-size: 14px;
+}

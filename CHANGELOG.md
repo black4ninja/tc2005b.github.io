@@ -8,6 +8,29 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Diagramas-como-código en el CMS (Mermaid + PlantUML).** Los bloques de código
+  de un documento o de un enunciado pueden ser diagramas y se dibujan en el
+  navegador. Registro extensible por lenguaje de fence, con carga bajo demanda.
+  - **El pipeline no necesitó ni un cambio**: la clase `language-…` ya sobrevivía
+    al sanitizador, así que el código fuente llega intacto al DOM y solo se
+    sustituye en el cliente.
+  - **Se renderiza en el cliente a propósito.** El HTML se cachea en BD
+    (`cuerpoHtml`, `enunciadoHtml`); incrustar el SVG ahí ataría cada
+    actualización de la librería a re-renderizar todo lo ya publicado.
+  - **PlantUML se detecta por contenido**, no solo por la etiqueta del fence: un
+    bloque que empieza por `@startuml` se dibuja aunque el fence esté sin
+    etiquetar. Eso enciende los **16 diagramas que ya existían** en el wiki de
+    Android —paquete, componente, secuencia, estado— sin reescribir una línea.
+  - **Bajo demanda**: el bundle inicial no crece. Mermaid (~600 KB) y PlantUML
+    (~6 MB con Graphviz) van en chunks aparte que solo descarga quien abre una
+    página con diagramas de ese motor.
+  - **Previsualización en vivo** en el editor de Contenidos, reaprovechando su
+    debounce: se ve el diagrama mientras se escribe.
+  - **Si el render falla, el bloque no desaparece**: vuelve el código fuente con
+    el motivo encima. Un typo debe dejar ver lo que escribiste, no un hueco.
+  - El SVG se inserta parseado y con los atributos ejecutables retirados, además
+    del modo estricto de Mermaid — el plan es que también los alumnos escriban
+    diagramas, así que el código deja de ser de confianza.
 - **Ejercicios de arquitectura MVVM, capa por capa (12 ejercicios).** Nuevo bloque
   con cuatro categorías —Modelo y capa de datos, Capa de dominio, Estado y
   ViewModel, y Composición— que llevan al alumno de entender cada capa por
