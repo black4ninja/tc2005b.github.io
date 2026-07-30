@@ -76,6 +76,7 @@ La documentación por materia vive en la **BD** (colecciones/documentos/versione
 Full rules in [`CONTRIBUTING.md`](./CONTRIBUTING.md). Key points (mandatory):
 
 - **Never commit or push directly to `main`.** All changes land via reviewed PR. Branch off `main`; no `develop` branch.
+- **Parallel work uses git worktrees**, one per feature/US, via the `wt` helper (`tools/wt.zsh`): `wt new <rama>` → commits → PR → review → merge → `wt done <rama>`. Each worktree gets its own `yarn dev` on non-colliding ports (web `5173+n`, api `3006+n`). Full lifecycle in [`CONTRIBUTING.md` §8](./CONTRIBUTING.md#8-worktrees--varias-features-en-paralelo).
 - **Branch names:** [Conventional Branch](https://conventionalbranch.org/) — `feature/…`, `bugfix/…`, `hotfix/…`, `chore/…`, `docs/…`, `test/…` (lowercase kebab-case).
 - **Commits:** [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) — `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, etc.; `!`/`BREAKING CHANGE:` for major.
 - **Versioning:** [SemVer](https://semver.org/), tracked in [`CHANGELOG.md`](./CHANGELOG.md) (Keep a Changelog).

@@ -1,12 +1,19 @@
+/* El módulo vive dentro del shell del dashboard, que ya pone su propio padding
+   lateral: la página no se auto-centra ni añade márgenes horizontales, solo
+   acota el ancho de lectura del listado. */
 .page {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 32px 20px 64px;
-  font-family: 'Inter', system-ui, sans-serif;
+  max-width: 900px;
+  padding: 8px 0 32px;
 }
 
 .header {
   margin-bottom: 24px;
+}
+
+.subtitulo {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #57606a;
 }
 
 .volver {
@@ -20,8 +27,9 @@
 
 .titulo {
   margin: 0;
-  font-size: 26px;
-  color: #1f2328;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .info {

@@ -8,6 +8,16 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Política de worktrees para trabajo en paralelo.** Cada feature/US en vuelo va
+  en su propio git worktree, con su `yarn dev` y **puertos sin colisión** (web
+  `5173+n`, api `3006+n`, asignados al crearlo comprobando lo que escucha y lo ya
+  reservado por otros worktrees). Helper `wt` en `tools/wt.zsh`
+  (`new`/`ls`/`cd`/`path`/`dev`/`done`) que crea worktree + rama desde `main` al
+  día y hace el bootstrap de lo gitignored (`.env` del API con `PORT` y
+  `SERVER_URL` reescritos, `.env.local` del web, `yarn install`). Ciclo de vida
+  completo —crear → commits → PR → review → merge → cerrar y sincronizar— en
+  `CONTRIBUTING.md` §8. `vite.config.ts` pasa a leer `VITE_PORT`/`VITE_API_PORT`
+  y usa `strictPort` para no proxear en silencio al API de otra rama.
 - **Ejercicios avanzados del mini-juez: cola, categorías, harness y completitud.**
   Expansión grande del módulo Ejercicios (todo en un PR):
   - **Cola asíncrona.** Con recursos reducidos (y Kotlin lento de compilar), las
@@ -183,6 +193,16 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   *dentro* de `4_half_term/`: estaban rotos también en el sitio publicado.
 
 ### Changed
+- **Ejercicios pasa a vivir dentro del shell (topbar + sidebar).** Era una pantalla
+  suelta: el enlace del menú estaba marcado `external`, así que abría una **pestaña
+  nueva** sin topbar ni sidebar, con un "← TC2007B" que devolvía al **visor de
+  Contenidos** en vez de al sitio desde el que se entró. Ahora se monta una vez por
+  rol dentro del dashboard —`/admin/grupos/:id/ejercicios/:slug` (colgado del grupo,
+  para que el sidebar siga en modo "detalle de grupo") y `/alumno/ejercicios/:slug`—
+  y el listado **ya no lleva "volver"**, porque es sección de primer nivel del menú;
+  la colección pasa a subtítulo. El "← Ejercicios" del solver sí se conserva: ahí el
+  volver sí corresponde. Las URLs previas `/contenidos/:slug/ejercicios[...]`
+  **redirigen** al árbol del rol, así que los enlaces viejos siguen funcionando.
 - **El menú del grupo se agrupa por acción, no por colección.** "Contenidos" era
   una sola sección con una entrada por colección **y** acción: un grupo con tres
   materias daba una lista plana de **12 enlaces** ("TC2005B — Páginas", "TC2007B —
@@ -254,6 +274,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     estampado (274 actividades de grupo, 1482 celdas de malla) apunta a ella.
 
 ### Fixed
+- **"No se pudo cargar" intermitente en las pantallas del alumno.** `useCargaGated`
+  abortaba la petición anterior en el cleanup del efecto, pero el `.catch` de esa
+  petición **ya abortada** marcaba `error` sobre el estado de la petición **nueva**:
+  los datos llegaban bien y aun así se pintaba "No se pudo cargar. Revisa tu
+  conexión", y solo se recuperaba al pulsar Reintentar (que resetea el flag). Se
+  disparaba en cada remontaje —`React.StrictMode` lo provoca **siempre** en
+  desarrollo— y al cambiar `url`/`sessionToken`. Ahora un resultado superseded se
+  descarta en vez de escribir estado. Afectaba al listado de Ejercicios y al solver.
 - **Una página oculta se podía quedar atrapada en invisible.** `POST /publicar`
   empezaba con `if (!borrador) → 400 'No hay cambios de borrador que publicar'`, así
   que una página que se ocultara **sin editarle nada** no tenía forma de volver:
