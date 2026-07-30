@@ -222,7 +222,30 @@ nada.
 > absorbe al comparar, así que no hacen frágil a un caso y avisar de ellos sería
 > ruido.
 
-### 7.3 Dónde vive
+### 7.3 Cargar soluciones
+
+Mientras no haya UI, las soluciones entran por script. El de `tc2007b` (los 10
+ejercicios del caso de la detective Vega) ya existe:
+
+```bash
+cd packages/api
+./node_modules/.bin/tsx scripts/seed-soluciones-referencia.ts tc2007b --dry-run  # verifica, no escribe
+./node_modules/.bin/tsx scripts/seed-soluciones-referencia.ts tc2007b            # verifica y guarda
+```
+
+Es idempotente (upsert por slug del ejercicio) y **siempre verifica antes de
+escribir**: guarda solo los que quedan limpios, porque una solución que no pasa
+es peor que ninguna — el verificador la daría por buena a futuro. Aborta si falta
+algún toolchain, ya que sin él no puede garantizar nada.
+
+Para ejercicios nuevos, amplía el mapa `SOLUCIONES` con dos soluciones de
+**estrategia distinta** por lenguaje (ver 7.1) y vuelve a correrlo.
+
+> ⚠️ Escribe en la **BD de producción**, como todo en dev. El campo es invisible
+> para el alumno y no cambia el estado de publicación, pero corre `--dry-run`
+> primero.
+
+### 7.4 Dónde vive
 
 - Lógica: `src/services/ejercicios-verificacion.service.ts` (pura, sobre un objeto
   plano — no depende de Parse).
