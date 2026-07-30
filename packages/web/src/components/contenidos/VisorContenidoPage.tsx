@@ -4,6 +4,7 @@ import type { TocEntry } from '@tc2005b/contenido-pipeline';
 import { useAuth } from '../../context/AuthContext';
 import Icon from '../dashboard/atoms/Icon/Icon';
 import '../../styles/contenido-render.css';
+import { useDiagramas } from '../../lib/diagramas/useDiagramas';
 import styles from './VisorContenidoPage.module.css';
 
 const API_BASE = '/api';
@@ -64,6 +65,10 @@ export default function VisorContenidoPage() {
   const [arbolOculto, setArbolOculto] = useState(() => localStorage.getItem(ARBOL_KEY) === '1');
   const [reintento, setReintento] = useState(0);
   const articleRef = useRef<HTMLElement>(null);
+
+  // Diagramas-como-código: reemplaza los bloques ```mermaid (y los que ya están
+  // escritos en PlantUML) por su SVG. Mismo patrón que el botón de copiar.
+  useDiagramas(articleRef, [pagina]);
 
   // Búsqueda (US-5): server-side, con scope por permisos.
   const [consulta, setConsulta] = useState('');

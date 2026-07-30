@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useCargaGated } from '../../hooks/useCargaGated';
 import { extensionLenguaje, NOMBRE_LENGUAJE } from '../../config/codemirrorLenguaje';
 import { useEjerciciosBase } from '../../config/rutasEjercicios';
+import { useDiagramas } from '../../lib/diagramas/useDiagramas';
 import styles from './EjercicioSolver.module.css';
 
 interface CasoMuestra { indice: number; entrada: string; salidaEsperada: string }
@@ -59,6 +60,7 @@ export default function EjercicioSolverPage() {
   // Estado de la cola del juez mientras se procesa (pendiente → ejecutando).
   const [jobEstado, setJobEstado] = useState<{ estado: string; posicion: number } | null>(null);
   const pollToken = useRef(0);
+  const enunciadoRef = useRef<HTMLDivElement>(null);
 
   // Al llegar el ejercicio: idioma inicial y código semilla por lenguaje.
   useEffect(() => {
@@ -170,7 +172,7 @@ export default function EjercicioSolverPage() {
       <div className={styles.cols}>
         {/* Enunciado + casos de muestra */}
         <section className={styles.enunciadoCol}>
-          <div className={styles.enunciado} dangerouslySetInnerHTML={{ __html: ej.enunciadoHtml }} />
+          <div ref={enunciadoRef} className={styles.enunciado} dangerouslySetInnerHTML={{ __html: ej.enunciadoHtml }} />
           {ej.casosMuestra.length > 0 && (
             <div className={styles.muestras}>
               <h2 className={styles.subtitulo}>Casos de ejemplo</h2>
