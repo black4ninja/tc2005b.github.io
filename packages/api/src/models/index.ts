@@ -34,3 +34,4 @@ export type { CasoPrueba, CodigoInicial, CodigoPorLenguaje, ModoEvaluacion } fro
 export { EnvioEjercicio } from './EnvioEjercicio.js';
 export type { DetalleCasoEnvio, EstadoEnvio } from './EnvioEjercicio.js';
 export { CategoriaEjercicio } from './CategoriaEjercicio.js';
+export { BloqueEjercicios } from './BloqueEjercicios.js';

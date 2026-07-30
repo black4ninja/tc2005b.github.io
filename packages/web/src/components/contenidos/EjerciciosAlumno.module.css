@@ -103,6 +103,41 @@
 .chip:hover { background: #f6f8fa; }
 .chipActivo { background: #4f46e5; border-color: #4f46e5; color: #fff; }
 
+/* --- Bloque: el nivel por encima de la categoría ---
+   Deliberadamente distinto del header de categoría —más grande y SIN uppercase—
+   para que a simple vista se distinga cuál de los dos niveles es cuál. */
+.bloque { margin-top: 28px; }
+
+.bloqueHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 4px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid #d0d7de;
+  cursor: pointer;
+  text-align: left;
+}
+
+.bloqueTitulo {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.bloqueSub {
+  margin: 8px 0 0;
+  padding-left: 24px;
+  font-size: 14px;
+  color: #57606a;
+}
+
+/* Sangría que hace visible la jerarquía sin tocar nada del nivel inferior. */
+.bloqueBody { padding-left: 16px; }
+
 .grupo { margin-top: 16px; }
 .grupoHeader {
   display: flex;

@@ -40,7 +40,8 @@ export default function EditorEjercicioPage() {
   const [tiempoMs, setTiempoMs] = useState('5000');
   const [memoriaMb, setMemoriaMb] = useState('256');
   const [casos, setCasos] = useState<CasoPruebaData[]>([{ entrada: '', salidaEsperada: '', oculto: false }]);
-  const [categorias, setCategorias] = useState<{ id: string; nombre: string }[]>([]);
+  const [categorias, setCategorias] = useState<{ id: string; nombre: string; bloqueId: string | null }[]>([]);
+  const [bloques, setBloques] = useState<{ id: string; nombre: string }[]>([]);
 
   const [cargando, setCargando] = useState(!esNuevo);
   const [guardando, setGuardando] = useState(false);
@@ -75,14 +76,22 @@ export default function EditorEjercicioPage() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  // Categorías de la colección (para el selector).
+  // Categorías + bloques de la colección (para el selector). El bloque no se
+  // asigna aquí: solo agrupa el desplegable, porque con dos bloques un nombre
+  // de categoría suelto ("Colecciones") se vuelve ambiguo.
   useEffect(() => {
     if (!coleccionId || !sessionToken) return;
-    fetch(`${API_BASE}/admin/colecciones/${coleccionId}/categorias-ejercicios`, {
-      headers: { 'x-session-token': sessionToken },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => setCategorias((j?.categorias ?? []).map((c: any) => ({ id: c.id, nombre: c.nombre }))))
+    const cab = { 'x-session-token': sessionToken };
+    Promise.all([
+      fetch(`${API_BASE}/admin/colecciones/${coleccionId}/categorias-ejercicios`, { headers: cab })
+        .then((r) => (r.ok ? r.json() : null)),
+      fetch(`${API_BASE}/admin/colecciones/${coleccionId}/bloques-ejercicios`, { headers: cab })
+        .then((r) => (r.ok ? r.json() : null)),
+    ])
+      .then(([jc, jb]) => {
+        setCategorias((jc?.categorias ?? []).map((c: any) => ({ id: c.id, nombre: c.nombre, bloqueId: c.bloqueId ?? null })));
+        setBloques((jb?.bloques ?? []).map((b: any) => ({ id: b.id, nombre: b.nombre })));
+      })
       .catch(() => {});
   }, [coleccionId, sessionToken]);
 
@@ -179,7 +188,20 @@ export default function EditorEjercicioPage() {
           disabled={guardando}
         >
           <option value="">Sin categoría</option>
-          {categorias.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+          {/* Agrupadas por bloque; las que no tienen ninguno van sueltas al
+              final, que es también como las pinta el listado del alumno. */}
+          {bloques.map((b) => {
+            const suyas = categorias.filter((c) => c.bloqueId === b.id);
+            if (!suyas.length) return null;
+            return (
+              <optgroup key={b.id} label={b.nombre}>
+                {suyas.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+              </optgroup>
+            );
+          })}
+          {categorias
+            .filter((c) => !c.bloqueId || !bloques.some((b) => b.id === c.bloqueId))
+            .map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
         </select>
         <p className={styles.hint}>Las categorías se administran desde la lista de ejercicios de la colección.</p>
       </div>

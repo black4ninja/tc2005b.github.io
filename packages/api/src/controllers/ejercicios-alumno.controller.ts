@@ -6,6 +6,7 @@ import { Grupo } from '../models/Grupo.js';
 import { EjercicioProgramacion } from '../models/EjercicioProgramacion.js';
 import { EnvioEjercicio, type DetalleCasoEnvio } from '../models/EnvioEjercicio.js';
 import { CategoriaEjercicio } from '../models/CategoriaEjercicio.js';
+import { BloqueEjercicios } from '../models/BloqueEjercicios.js';
 import {
   resolverAccesoEjercicios,
   coleccionesConEjerciciosPublicados,
@@ -136,15 +137,37 @@ export async function listEjerciciosAlumno(req: Request, res: Response): Promise
     qc.equalTo('exists' as any, true as any);
     qc.ascending('orden');
     qc.limit(1000);
-    const [resueltos, categorias] = await Promise.all([
+    // Los bloques se degradan igual que las categorías, y por el mismo motivo:
+    // solo afectan al agrupado. Sin `.catch` aquí, un fallo transitorio de ESTA
+    // query tumbaría la pantalla entera, que es peor que verla sin agrupar.
+    const qb = new Parse.Query<BloqueEjercicios>('BloqueEjercicios');
+    qb.equalTo('coleccion' as any, Coleccion.createWithoutData(acceso.coleccion.id) as any);
+    qb.equalTo('exists' as any, true as any);
+    qb.ascending('orden');
+    qb.limit(1000);
+    const [resueltos, categorias, bloques] = await Promise.all([
       ejerciciosResueltos(user.id, ejercicios.map((e) => e.id!)),
       qc.find({ useMasterKey: true }).catch(() => [] as CategoriaEjercicio[]),
+      qb.find({ useMasterKey: true }).catch(() => [] as BloqueEjercicios[]),
     ]);
 
     res.json({
       status: 'ok',
       coleccion: acceso.coleccion,
-      categorias: categorias.map((c) => ({ id: c.id, nombre: c.getNombre(), orden: c.getOrden() })),
+      // Lista vacía = no hay bloques = el front agrupa como siempre. Así la
+      // pantalla es idéntica a la de antes mientras nadie cree un bloque.
+      bloques: bloques.map((b) => ({
+        id: b.id,
+        nombre: b.getNombre(),
+        descripcion: b.getDescripcion(),
+        orden: b.getOrden(),
+      })),
+      categorias: categorias.map((c) => ({
+        id: c.id,
+        nombre: c.getNombre(),
+        orden: c.getOrden(),
+        bloqueId: c.getBloque()?.id ?? null,
+      })),
       progreso: { resueltos: resueltos.size, total: ejercicios.length },
       ejercicios: ejercicios.map((e) => ({
         id: e.id,

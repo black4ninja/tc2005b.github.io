@@ -8,6 +8,24 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Bloques de ejercicios: un nivel de agrupación por encima de las categorías.**
+  El listado del alumno pasa a dos niveles (**bloque → categoría → ejercicios**),
+  para que los ejercicios de arquitectura no queden mezclados con los de sintaxis
+  en una lista plana. Nuevo `BloqueEjercicios` con su CRUD, y `CategoriaEjercicio`
+  gana un vínculo **opcional** a un bloque.
+  - **Sin migración, y sin cambio visible hasta que se quiera.** El vínculo es
+    opcional en ambos sentidos: mientras no exista ningún bloque, el listado se
+    pinta exactamente como antes. Hay un test que lo fija, para poder desplegar
+    esto sin tocar un solo dato y crear los bloques después, desde la UI.
+  - Es una **entidad** y no un campo en la categoría porque el nombre y el orden
+    del bloque necesitan un dueño único: repetidos en cada categoría —y con un
+    modal que guarda fila a fila— la incoherencia sería el caso normal, y su
+    síntoma es justo el desorden que este nivel viene a evitar.
+  - Borrar un bloque **desasigna** sus categorías, no las borra (misma semántica
+    que borrar una categoría con sus ejercicios).
+  - Admin: el modal administra bloques y categorías juntos, el editor de
+    ejercicios agrupa el desplegable de categoría con `optgroup`, y la tabla
+    muestra `Bloque › Categoría`.
 - **Soluciones de referencia de los 10 ejercicios de `tc2007b`.** Script
   `seed-soluciones-referencia.ts` (idempotente, con `--dry-run`) que carga **dos
   soluciones por lenguaje**, de estrategia deliberadamente distinta —`sum()`
