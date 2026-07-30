@@ -82,10 +82,14 @@ describe.skipIf(!HAY_SWIFT)('revisarEjecucion (requiere toolchain de Swift)', ()
     }))).toEqual(['inicial-aceptado']);
   }, 120_000);
 
-  it('detecta el código inicial que no compila', async () => {
-    expect(await codigos(ejercicio({
+  it('avisa (no falla) cuando el código inicial no compila', async () => {
+    // Es AVISO y no error a propósito: en los ejercicios que piden declarar un
+    // tipo o implementar una interfaz, el starter no compila por definición.
+    const h = await revisarEjecucion(ejercicio({
       solucionesReferencia: { swift: [SUMA] },
       codigoInicial: { swift: 'let x: Int = "no soy int"' },
-    }))).toEqual(['inicial-no-compila']);
+    }));
+    expect(h.map((x) => x.codigo)).toEqual(['inicial-no-compila']);
+    expect(h[0].nivel).toBe('aviso');
   }, 120_000);
 });
