@@ -8,6 +8,29 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Verificación automática de ejercicios (autoría en lote).** Los ejercicios
+  pueden llevar **soluciones de referencia** —una **lista** por lenguaje, no una
+  sola— y un verificador las usa como puerta de calidad antes de publicar:
+  `tsx scripts/verificar-ejercicios.ts [coleccion] [--slug] [--lenguaje]
+  [--publicados] [--rapido] [--json]`. Solo lee de la BD y sale con código 1 si
+  hay errores.
+  - **Por qué una lista.** Con una solución compruebas que el ejercicio es
+    resoluble; con **dos o más** compruebas que los casos no estén
+    **sobreajustados**: si dos soluciones igual de legítimas dan veredictos
+    distintos, el defecto está en los casos (fijan un orden de iteración o un
+    formato que el enunciado no pide), no en el código. No es heurístico.
+  - **Errores:** solución rechazada, casos sobreajustados, código inicial que no
+    compila o que ya viene aceptado, plantilla sin `{{solucion}}`, sin casos.
+    **Avisos:** sin solución, sin casos ocultos, salida esperada vacía al
+    normalizar, entrada repetida.
+  - El código inicial hace de "solución incorrecta" para el test de
+    discriminación: así funciona también en modo plantilla, donde un programa
+    trivial ni compilaría.
+  - Las soluciones **nunca** llegan al alumno: viven en la representación de
+    admin, y el DTO del alumno es una whitelist aparte.
+  - El juez y el verificador comparten la composición del harness
+    (`componerCodigo`), para que el verificador no pueda dar por bueno algo que
+    al alumno le falla.
 - **Política de worktrees para trabajo en paralelo.** Cada feature/US en vuelo va
   en su propio git worktree, con su `yarn dev` y **puertos sin colisión** (web
   `5173+n`, api `3006+n`, asignados al crearlo comprobando lo que escucha y lo ya

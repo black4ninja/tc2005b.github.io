@@ -1,7 +1,7 @@
 import Parse from 'parse/node';
 import { config } from '../config/index.js';
 import { EnvioEjercicio, type DetalleCasoEnvio } from '../models/EnvioEjercicio.js';
-import { EjercicioProgramacion, MARCADOR_SOLUCION } from '../models/EjercicioProgramacion.js';
+import { EjercicioProgramacion, componerCodigo } from '../models/EjercicioProgramacion.js';
 import { evaluar, type Lenguaje, type ResultadoEvaluacion } from './judge/index.js';
 
 /**
@@ -132,10 +132,7 @@ export async function estadoEnvio(envioId: string, usuarioId: string): Promise<E
  * alumno en el marcador de la plantilla del ejercicio; si no, lo devuelve tal cual.
  */
 export function construirCodigo(ej: EjercicioProgramacion, lenguaje: Lenguaje, codigoAlumno: string): string {
-  if (ej.getModoEvaluacion() !== 'plantilla') return codigoAlumno;
-  const plantilla = ej.getPlantillaCodigo()[lenguaje];
-  if (!plantilla) return codigoAlumno;
-  return plantilla.split(MARCADOR_SOLUCION).join(codigoAlumno);
+  return componerCodigo(ej.getModoEvaluacion(), ej.getPlantillaCodigo()[lenguaje], codigoAlumno);
 }
 
 const MSG_COMPILACION_PLANTILLA =
