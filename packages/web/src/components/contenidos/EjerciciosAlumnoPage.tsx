@@ -124,8 +124,8 @@ export default function EjerciciosAlumnoPage() {
                   {/* Sin título no hay cabecera: es el caso "no hay bloques",
                       donde la pantalla debe verse como antes de que existieran. */}
                   {b.titulo && (
-                    <button className={styles.bloqueHeader} onClick={() => toggle(claveBloque)}>
-                      <span className={styles.chevron}>{bloqueAbierto ? '▾' : '▸'}</span>
+                    <button className={styles.bloqueHeader} aria-expanded={bloqueAbierto} onClick={() => toggle(claveBloque)}>
+                      <span className={styles.chevron} aria-hidden>{bloqueAbierto ? '▾' : '▸'}</span>
                       <span className={styles.bloqueTitulo}>{b.titulo}</span>
                       <span className={styles.grupoConteo}>{resueltosBloque}/{items.length}</span>
                     </button>
@@ -141,8 +141,8 @@ export default function EjerciciosAlumnoPage() {
                         const resueltos = g.items.filter((e) => e.resuelto).length;
                         return (
                           <section key={claveGrupo} className={styles.grupo}>
-                            <button className={styles.grupoHeader} onClick={() => toggle(claveGrupo)}>
-                              <span className={styles.chevron}>{abierto ? '▾' : '▸'}</span>
+                            <button className={styles.grupoHeader} aria-expanded={abierto} onClick={() => toggle(claveGrupo)}>
+                              <span className={styles.chevron} aria-hidden>{abierto ? '▾' : '▸'}</span>
                               <span className={styles.grupoTitulo}>{g.titulo ?? 'Ejercicios'}</span>
                               <span className={styles.grupoConteo}>{resueltos}/{g.items.length}</span>
                             </button>

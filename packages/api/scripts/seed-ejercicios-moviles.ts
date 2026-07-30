@@ -445,13 +445,23 @@ async function main() {
 
   const CatModel = Parse.Object.extend('CategoriaEjercicio');
   const catPorNombre = new Map<string, Parse.Object>();
+  // El upsert es por NOMBRE dentro de la colección. Desde que existen bloques el
+  // nombre ya no es único de facto (podría repetirse en dos bloques distintos):
+  // si algún día se añaden categorías homónimas, esto hay que cambiarlo a un
+  // upsert por (bloque, nombre) o por slug, o reasignará los ejercicios a la
+  // categoría equivocada.
   for (let i = 0; i < CATEGORIAS.length; i++) {
     const nombre = CATEGORIAS[i];
     const q = new Parse.Query('CategoriaEjercicio');
     q.equalTo('coleccion', col); q.equalTo('nombre', nombre); q.equalTo('exists', true);
     let cat = await q.first({ useMasterKey: true });
+    const nueva = !cat;
     if (!cat) { cat = new CatModel(); cat.set('active', true); cat.set('exists', true); cat.set('coleccion', col); cat.set('nombre', nombre); }
-    cat.set('orden', i);
+    // `orden` solo al CREAR: re-correr el seed no debe pisar el orden que se
+    // haya ajustado a mano desde el modal. Con bloques eso importa más, porque
+    // reordenar por detrás es justo lo que intercala las categorías de un
+    // bloque entre las de otro.
+    if (nueva) cat.set('orden', i);
     await cat.save(null, { useMasterKey: true });
     catPorNombre.set(nombre, cat);
   }
