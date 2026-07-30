@@ -353,6 +353,10 @@ async function main(): Promise<void> {
   let guardados = 0;
   let conProblemas = 0;
   let sinSoluciones = 0;
+  // Claves del mapa que aún no han casado con ningún ejercicio. Sin esto, un
+  // typo en un slug —o renombrar el ejercicio en Contenidos— haría que esas
+  // soluciones no se cargaran nunca y el script saldría limpio igualmente.
+  const sinCasar = new Set(Object.keys(SOLUCIONES));
 
   for (const ej of ejercicios) {
     const slug = ej.getSlug();
@@ -362,6 +366,7 @@ async function main(): Promise<void> {
       sinSoluciones++;
       continue;
     }
+    sinCasar.delete(slug);
 
     const verificable = aVerificable(ej, soluciones);
     const hallazgos = [
@@ -389,11 +394,26 @@ async function main(): Promise<void> {
     }
   }
 
+  const procesados = ejercicios.length - conProblemas - sinSoluciones;
   console.log(
-    `\n${DRY_RUN ? 'Verificados' : 'Guardados'}: ${DRY_RUN ? ejercicios.length - conProblemas - sinSoluciones : guardados}` +
+    `\n${DRY_RUN ? 'Verificados' : 'Guardados'}: ${DRY_RUN ? procesados : guardados}` +
       ` · con problemas: ${conProblemas} · sin soluciones definidas: ${sinSoluciones}`,
   );
-  process.exit(conProblemas > 0 ? 1 : 0);
+
+  if (sinCasar.size) {
+    console.error(
+      `\nSoluciones que NO casaron con ningún ejercicio de '${SLUG_COLECCION}': ` +
+        `${[...sinCasar].join(', ')}.\n` +
+        '¿Slug mal escrito, ejercicio renombrado, o colección equivocada?',
+    );
+  }
+  if (procesados === 0) {
+    console.error(`\nNo se procesó ningún ejercicio de '${SLUG_COLECCION}'.`);
+  }
+
+  // Salir 0 sin haber hecho nada haría pasar por éxito una colección
+  // equivocada o un slug mal escrito. "Sin errores" no es "trabajo hecho".
+  process.exit(conProblemas > 0 || sinCasar.size > 0 || procesados === 0 ? 1 : 0);
 }
 
 main().catch((e) => {
