@@ -46,9 +46,11 @@ _wt_puerto_ocupado() { lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1 }
 
 # Puertos ya RESERVADOS por otro worktree, aunque no esté corriendo. Sin esto dos
 # worktrees creados en frío se asignarían el mismo par y chocarían al arrancar.
+# Incluye el checkout principal: si alguien le puso ahí un VITE_PORT del rango
+# para probar, también hay que respetarlo.
 _wt_puertos_reservados() {
   local f
-  for f in "$TC_WT_ROOT"/*/packages/web/.env.local(N); do
+  for f in "$TC_WT_ROOT"/*/packages/web/.env.local(N) "$TC_REPO/packages/web/.env.local"(N); do
     grep -hE '^VITE_PORT=' "$f" 2>/dev/null | cut -d= -f2
   done
 }
@@ -173,8 +175,9 @@ wt() {
       [[ "$1" == "--force" ]] && forzar="--force"
       local dir; dir="$(_wt_dir "$spec")"
       local rama; rama="$(_wt_branch "$spec")"
-      # No se puede remover el worktree en el que estás parado.
-      [[ "$PWD" == "$dir"* ]] && cd "$TC_REPO"
+      # No se puede remover el worktree en el que estás parado. Igualdad o
+      # subruta, no prefijo: si no, estando en `<spec>2` saldría por `<spec>`.
+      [[ "$PWD" == "$dir" || "$PWD" == "$dir"/* ]] && cd "$TC_REPO"
       git -C "$TC_REPO" worktree remove $forzar "$dir" || {
         echo "wt: worktree con cambios sin guardar; revísalo o usa --force" >&2; return 1
       }

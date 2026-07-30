@@ -30,7 +30,15 @@ export default function RedirEjerciciosLegacy() {
   useEffect(() => {
     if (isLoading || !sessionToken || !slug || esAlumno) return;
     let vigente = true;
-    fetch('/api/admin/grupos', { headers: { 'x-session-token': sessionToken } })
+    // Con timeout, igual que `useCargaGated`: esta es una pantalla de paso, sin
+    // salida ni reintento, así que si el API no responde vale más caer al destino
+    // de respaldo que dejar un "Cargando…" eterno.
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 15000);
+    fetch('/api/admin/grupos', {
+      headers: { 'x-session-token': sessionToken },
+      signal: ctrl.signal,
+    })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
         if (!vigente) return;
@@ -38,8 +46,9 @@ export default function RedirEjerciciosLegacy() {
         const g = grupos.find((x) => x.colecciones?.some((c) => c.slug === slug));
         setGrupoId(g?.id ?? null);
       })
-      .catch(() => { if (vigente) setGrupoId(null); });
-    return () => { vigente = false; };
+      .catch(() => { if (vigente) setGrupoId(null); })
+      .finally(() => clearTimeout(t));
+    return () => { vigente = false; clearTimeout(t); ctrl.abort(); };
   }, [isLoading, sessionToken, slug, esAlumno]);
 
   if (isLoading) return <p style={{ padding: 24 }}>Cargando…</p>;

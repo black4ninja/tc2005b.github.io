@@ -27,8 +27,10 @@ export function rutaEjerciciosAlumno(slug: string): string {
  * páginas necesita saber por cuál de los dos árboles de rutas llegó.
  *
  * `:id` solo existe en el árbol admin, así que distingue el rol sin consultarlo.
+ * `slug` en cambio está SIEMPRE: las cuatro rutas del módulo lo declaran, así que
+ * se afirma en vez de darle un default que produciría una ruta rota en silencio.
  */
 export function useEjerciciosBase(): string {
-  const { id, slug } = useParams<{ id?: string; slug?: string }>();
-  return id ? rutaEjerciciosAdmin(id, slug ?? '') : rutaEjerciciosAlumno(slug ?? '');
+  const { id, slug } = useParams<{ id?: string; slug: string }>();
+  return id ? rutaEjerciciosAdmin(id, slug!) : rutaEjerciciosAlumno(slug!);
 }
