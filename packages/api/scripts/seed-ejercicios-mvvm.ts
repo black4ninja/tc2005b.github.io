@@ -68,6 +68,12 @@ interface Ejercicio {
   categoria: string;
   lenguajes: ('kotlin' | 'swift')[];
   enunciado: string;
+  /**
+   * Diagrama Mermaid que sitúa la capa en el conjunto. Se inserta antes de la
+   * primera sección del enunciado. Es lo que más ayuda contra la confusión que
+   * reportan los alumnos: ver DÓNDE encaja lo que están escribiendo.
+   */
+  diagrama?: string;
   /** Plantilla con el driver oculto; `{{solucion}}` marca dónde entra el alumno. */
   plantilla: { kotlin?: string; swift?: string };
   inicial: { kotlin?: string; swift?: string };
@@ -84,6 +90,19 @@ const EJ_MODELO_KOTLIN: Ejercicio = {
   titulo: 'Modelo de dominio (Android)',
   categoria: 'Modelo y capa de datos',
   lenguajes: ['kotlin'],
+  diagrama: `flowchart LR
+    subgraph data["data/"]
+        DTO[PokemonDto]
+    end
+    subgraph domain["domain/"]
+        M["Pokemon<br/>lo que escribes"]
+    end
+    subgraph presentation["presentation/"]
+        VM[HomeViewModel]
+    end
+    DTO -->|toDomain| M
+    M --> VM
+    style M fill:#ddd6fe,stroke:#6d28d9,stroke-width:3px`,
   enunciado: `# Modelo de dominio (Android)
 
 **Capa:** Dominio — archivo \`domain/model/Pokemon.kt\`
@@ -185,6 +204,12 @@ const EJ_MODELO_SWIFT: Ejercicio = {
   titulo: 'Modelo de dominio (iOS)',
   categoria: 'Modelo y capa de datos',
   lenguajes: ['swift'],
+  diagrama: `flowchart LR
+    API[JSON de la PokeAPI] -->|Codable| M["Pokedex y Pokemon<br/>lo que escribes"]
+    M --> R[PokemonRepository]
+    R --> VM[ContentViewModel]
+    VM --> V[ContentView]
+    style M fill:#ddd6fe,stroke:#6d28d9,stroke-width:3px`,
   enunciado: `# Modelo de dominio (iOS)
 
 **Capa:** Modelos — archivo \`Modelos/Pokemon.swift\`
@@ -299,6 +324,12 @@ const EJ_MAPPER: Ejercicio = {
   titulo: 'Mapper: del DTO al modelo de dominio',
   categoria: 'Modelo y capa de datos',
   lenguajes: ['kotlin'],
+  diagrama: `flowchart LR
+    API[PokemonApi] --> DTO["PokemonDto<br/>forma de la API"]
+    DTO --> MAP["toDomain()<br/>lo que escribes"]
+    MAP --> DOM["Pokemon<br/>forma del dominio"]
+    DOM --> UC[GetPokemonListUseCase]
+    style MAP fill:#ddd6fe,stroke:#6d28d9,stroke-width:3px`,
   enunciado: `# Mapper: del DTO al modelo de dominio
 
 **Capa:** Datos (\`data/mapper/PokemonMapper.kt\`)
@@ -436,6 +467,24 @@ const EJ_CONTRATO: Ejercicio = {
   titulo: 'Contrato del repositorio y doble de prueba',
   categoria: 'Capa de dominio',
   lenguajes: ['kotlin', 'swift'],
+  diagrama: `classDiagram
+    class PokemonRepository {
+        <<interface>>
+        +getPokemonList()
+        +getPokemonById(id)
+    }
+    class FakePokemonRepository {
+        +getPokemonList()
+        +getPokemonById(id)
+    }
+    class PokemonRepositoryImpl {
+        +getPokemonList()
+        +getPokemonById(id)
+    }
+    class GetPokemonListUseCase
+    GetPokemonListUseCase ..> PokemonRepository : depende del CONTRATO
+    PokemonRepository <|.. FakePokemonRepository : para pruebas
+    PokemonRepository <|.. PokemonRepositoryImpl : para produccion`,
   enunciado: `# Contrato del repositorio y doble de prueba
 
 **Capa:** Dominio (Android: \`domain/repository/\` · iOS: group \`data\`)
@@ -645,6 +694,10 @@ const EJ_ID_URL: Ejercicio = {
   titulo: 'Extraer el id desde la URL',
   categoria: 'Modelo y capa de datos',
   lenguajes: ['kotlin', 'swift'],
+  diagrama: `flowchart LR
+    L["listado: name + url"] --> F["idDesdeUrl()<br/>lo que escribes"]
+    F --> ID["id<br/>para pedir el detalle"]
+    style F fill:#ddd6fe,stroke:#6d28d9,stroke-width:3px`,
   enunciado: `# Extraer el id desde la URL
 
 **Capa:** Datos
@@ -764,6 +817,15 @@ const EJ_CASO_USO: Ejercicio = {
   titulo: 'Caso de uso (Android) · Requirement (iOS)',
   categoria: 'Capa de dominio',
   lenguajes: ['kotlin', 'swift'],
+  diagrama: `sequenceDiagram
+    participant VM as HomeViewModel
+    participant UC as GetPokemonListUseCase
+    participant R as PokemonRepository
+    VM->>UC: invoke()
+    Note over UC: recibe el repositorio,<br/>no lo construye
+    UC->>R: getPokemonList()
+    R-->>UC: List~Pokemon~
+    UC-->>VM: List~Pokemon~`,
   enunciado: `# Caso de uso (Android) · Requirement (iOS)
 
 **Capa:** Dominio (Android: \`domain/usecase/\` · iOS: group \`domain\`)
@@ -948,6 +1010,12 @@ const EJ_RESULT: Ejercicio = {
   titulo: 'Result: los tres estados de una carga',
   categoria: 'Estado y ViewModel',
   lenguajes: ['kotlin'],
+  diagrama: `stateDiagram-v2
+    [*] --> Loading: se pide la carga
+    Loading --> Success: llegaron datos
+    Loading --> Error: fallo
+    Success --> Loading: recargar
+    Error --> Loading: reintentar`,
   enunciado: `# Result: los tres estados de una carga
 
 **Capa:** Dominio — \`domain/common/Result.kt\`
@@ -1036,6 +1104,12 @@ const EJ_REDUCER: Ejercicio = {
   titulo: 'UiState y el reducer',
   categoria: 'Estado y ViewModel',
   lenguajes: ['kotlin'],
+  diagrama: `flowchart LR
+    S1["HomeUiState<br/>actual"] --> R["reduce()<br/>lo que escribes"]
+    RES["Result<br/>Loading / Success / Error"] --> R
+    R --> S2["HomeUiState<br/>siguiente"]
+    S2 --> V[HomeScreen]
+    style R fill:#ddd6fe,stroke:#6d28d9,stroke-width:3px`,
   enunciado: `# UiState y el reducer
 
 **Capa:** Presentación — \`presentation/screens/home/HomeUiState.kt\`
@@ -1162,6 +1236,17 @@ const EJ_VM_ANDROID: Ejercicio = {
   titulo: 'ViewModel (Android)',
   categoria: 'Estado y ViewModel',
   lenguajes: ['kotlin'],
+  diagrama: `sequenceDiagram
+    participant V as HomeScreen
+    participant VM as HomeViewModel
+    participant UC as GetPokemonListUseCase
+    V->>VM: cargar()
+    VM->>VM: reduce(estado, Loading)
+    VM-->>V: uiState (isLoading = true)
+    VM->>UC: invoke()
+    UC-->>VM: List~Pokemon~
+    VM->>VM: reduce(estado, Success)
+    VM-->>V: uiState (lista lista)`,
   enunciado: `# ViewModel (Android)
 
 **Capa:** Presentación — \`presentation/screens/home/HomeViewModel.kt\`
@@ -1314,6 +1399,15 @@ const EJ_VM_IOS: Ejercicio = {
   titulo: 'ViewModel (iOS)',
   categoria: 'Estado y ViewModel',
   lenguajes: ['swift'],
+  diagrama: `sequenceDiagram
+    participant V as ContentView
+    participant VM as ContentViewModel
+    participant REQ as PokemonListRequirement
+    V->>VM: getPokemonList()
+    VM->>REQ: getPokemonList()
+    REQ-->>VM: [Pokemon]
+    VM->>VM: pokemonList = ...
+    VM-->>V: onChange (en la app real, @Published)`,
   enunciado: `# ViewModel (iOS)
 
 **Capa:** framework — \`Viewmodels/ContentViewModel.swift\`
@@ -1450,6 +1544,12 @@ const EJ_COMP_ANDROID: Ejercicio = {
   titulo: 'Composición end-to-end (Android)',
   categoria: 'Composición',
   lenguajes: ['kotlin'],
+  diagrama: `flowchart LR
+    API["FakePokemonApi<br/>devuelve DTOs"] --> IMPL["PokemonRepositoryImpl<br/>lo que escribes"]
+    IMPL -->|toDomain| UC[GetPokemonListUseCase]
+    UC --> VM[HomeViewModel]
+    VM --> V[HomeScreen]
+    style IMPL fill:#ddd6fe,stroke:#6d28d9,stroke-width:3px`,
   enunciado: `# Composición end-to-end (Android)
 
 **Capa:** Datos — \`data/repository/PokemonRepositoryImpl.kt\`
@@ -1579,6 +1679,12 @@ const EJ_COMP_IOS: Ejercicio = {
   titulo: 'Composición end-to-end (iOS)',
   categoria: 'Composición',
   lenguajes: ['swift'],
+  diagrama: `flowchart LR
+    N["NetworkAPIService<br/>devuelve Pokedex"] --> REPO["PokemonRepository<br/>lo que escribes"]
+    REPO --> REQ[PokemonListRequirement]
+    REQ --> VM[ContentViewModel]
+    VM --> V[ContentView]
+    style REPO fill:#ddd6fe,stroke:#6d28d9,stroke-width:3px`,
   enunciado: `# Composición end-to-end (iOS)
 
 **Capa:** data — \`data/PokemonRepository.swift\`
@@ -1726,6 +1832,18 @@ const EJERCICIOS: Ejercicio[] = [
 
 // ---------------------------------------------------------------------------
 
+/**
+ * Inserta el diagrama justo antes de la primera sección (`## `). Así queda tras
+ * la cabecera y la línea de capa, que es donde el alumno mira primero.
+ */
+function conDiagrama(enunciado: string, diagrama?: string): string {
+  if (!diagrama) return enunciado;
+  const bloque = '## Dónde encaja\n\n' + '```mermaid\n' + diagrama.trim() + '\n```\n\n';
+  const i = enunciado.indexOf('\n## ');
+  if (i < 0) return enunciado + '\n' + bloque;
+  return enunciado.slice(0, i + 1) + bloque + enunciado.slice(i + 1);
+}
+
 async function main(): Promise<void> {
   const col = await new Parse.Query('Coleccion')
     .equalTo('slug', SLUG_COL).first({ useMasterKey: true });
@@ -1777,8 +1895,9 @@ async function main(): Promise<void> {
     ej!.set('titulo', d.titulo);
     ej!.set('slug', d.slug);
     ej!.set('orden', orden++);
-    ej!.set('enunciado', d.enunciado);
-    ej!.set('enunciadoHtml', await renderMarkdown(d.enunciado));
+    const md = conDiagrama(d.enunciado, d.diagrama);
+    ej!.set('enunciado', md);
+    ej!.set('enunciadoHtml', await renderMarkdown(md));
     ej!.set('lenguajes', d.lenguajes);
     ej!.set('modoEvaluacion', 'plantilla');
     ej!.set('plantillaCodigo', d.plantilla);
