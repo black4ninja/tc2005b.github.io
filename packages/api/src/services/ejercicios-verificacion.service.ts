@@ -196,11 +196,18 @@ export async function revisarEjecucion(
     if (arranque?.trim()) {
       const r = await evaluar({ lenguaje: l, codigo: componer(l, arranque), casos, limites });
       if (r.veredicto === 'error_compilacion') {
+        // AVISO, no error. En los ejercicios que piden DECLARAR algo —un tipo,
+        // una interfaz, un protocolo— el código inicial no puede compilar por
+        // definición: hacerlo compilar ES la tarea. Solo es un defecto cuando
+        // falla por algo ajeno al alumno, y eso no se distingue automáticamente,
+        // así que se avisa y lo juzga quien autora.
         out.push({
-          nivel: 'error',
+          nivel: 'aviso',
           codigo: 'inicial-no-compila',
           lenguaje: l,
-          mensaje: `El código inicial no compila; el alumno arrancaría con un error ajeno: ${detalleFallo(r)}`,
+          mensaje:
+            `El código inicial no compila: ${detalleFallo(r)}. ` +
+            'Es lo esperado si la tarea es declarar eso; revísalo si no.',
         });
       } else if (r.veredicto === 'aceptado') {
         out.push({
