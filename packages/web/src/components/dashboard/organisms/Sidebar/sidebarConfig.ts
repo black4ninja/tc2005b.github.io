@@ -60,8 +60,9 @@ export function getSidebarItems(
     items.push({ label: 'Documentación', icon: 'menu_book', path: docsHref, external: true, disabled: !perfilCompleto });
   }
   // Solo si algún grupo del alumno tiene Ejercicios habilitado y con contenido.
+  // No es `external`: el módulo vive dentro del shell, como el resto del menú.
   if (ejerciciosHref) {
-    items.push({ label: 'Ejercicios', icon: 'terminal', path: ejerciciosHref, external: true, disabled: !perfilCompleto });
+    items.push({ label: 'Ejercicios', icon: 'terminal', path: ejerciciosHref, disabled: !perfilCompleto });
   }
   // Sin URL en su grupo, no hay agenda que enlazar (igual que "Documentación").
   if (agendaHref) {
@@ -97,11 +98,12 @@ export function getGrupoDetailItems(
     { label: 'Equipos', icon: 'group_work', path: `/admin/grupos/${grupoId}/equipos` },
     { label: 'Entrevistas', icon: 'record_voice_over', path: `/admin/grupos/${grupoId}/entrevistas` },
   ];
-  // Probar los ejercicios del grupo como los ve el alumno (enlace al visor del
-  // alumno). Aparece cuando el grupo tiene el módulo 'ejercicios' encendido en
-  // alguna colección — tanto para el profesor como para el admin que revisa.
+  // Probar los ejercicios del grupo como los ve el alumno. Aparece cuando el
+  // grupo tiene el módulo 'ejercicios' encendido en alguna colección — tanto
+  // para el profesor como para el admin que revisa. La ruta cuelga del grupo,
+  // así que el menú no se pierde al entrar.
   if (ejerciciosHref) {
-    items.push({ label: 'Ejercicios', icon: 'terminal', path: ejerciciosHref, external: true });
+    items.push({ label: 'Ejercicios', icon: 'terminal', path: ejerciciosHref });
   }
   if (agendaHref) {
     items.push({ label: 'Agendar Entrevistas', icon: 'event_available', path: agendaHref, external: true });

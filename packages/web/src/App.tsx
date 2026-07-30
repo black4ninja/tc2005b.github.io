@@ -49,12 +49,16 @@ const VisorContenidoPage = lazy(
   () => import('./components/contenidos/VisorContenidoPage'),
 );
 
-// Módulo "Ejercicios" del alumno: lista y solver (el solver carga CodeMirror).
+// Módulo "Ejercicios": lista y solver (el solver carga CodeMirror). Se monta
+// DENTRO del shell del dashboard, una vez por rol — ver `config/rutasEjercicios`.
 const EjerciciosAlumnoPage = lazy(
   () => import('./components/contenidos/EjerciciosAlumnoPage'),
 );
 const EjercicioSolverPage = lazy(
   () => import('./components/contenidos/EjercicioSolverPage'),
+);
+const RedirEjerciciosLegacy = lazy(
+  () => import('./components/contenidos/RedirEjerciciosLegacy'),
 );
 
 export default function App() {
@@ -79,13 +83,14 @@ export default function App() {
       <Route path="login" element={<LoginPage />} />
       <Route path="auth/verify" element={<VerifyPage />} />
 
-      {/* Ejercicios del alumno (mini-juez). ANTES del catch-all :slug/* para que
-          "ejercicios" no lo capture el visor. */}
+      {/* URLs previas del mini-juez, cuando era una pantalla suelta: redirigen al
+          árbol del rol. ANTES del catch-all :slug/* para que "ejercicios" no lo
+          capture el visor. */}
       <Route
         path="contenidos/:slug/ejercicios"
         element={
           <Suspense fallback={<p style={{ padding: 24 }}>Cargando…</p>}>
-            <EjerciciosAlumnoPage />
+            <RedirEjerciciosLegacy />
           </Suspense>
         }
       />
@@ -93,7 +98,7 @@ export default function App() {
         path="contenidos/:slug/ejercicios/:ejSlug"
         element={
           <Suspense fallback={<p style={{ padding: 24 }}>Cargando…</p>}>
-            <EjercicioSolverPage />
+            <RedirEjerciciosLegacy />
           </Suspense>
         }
       />
@@ -123,6 +128,24 @@ export default function App() {
         <Route path="admin/grupos/:id/entrevistas" element={<EntrevistasPage />} />
         <Route path="admin/grupos/:id/entrevistas/:entrevistaId/evaluacion" element={<EvaluacionEntrevistaPage />} />
         <Route path="admin/grupos/:id/calendario" element={<AdminCalendarioPage />} />
+        {/* Ejercicios como los ve el alumno, colgando del grupo para conservar su
+            sidebar. `:slug` es la colección. */}
+        <Route
+          path="admin/grupos/:id/ejercicios/:slug"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando…</p>}>
+              <EjerciciosAlumnoPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="admin/grupos/:id/ejercicios/:slug/:ejSlug"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando ejercicio…</p>}>
+              <EjercicioSolverPage />
+            </Suspense>
+          }
+        />
         <Route path="admin/competencias" element={<CompetenciasPage />} />
         <Route path="admin/actividades" element={<ActividadesPage />} />
         <Route path="admin/paginas" element={<PaginasPage />} />
@@ -153,6 +176,24 @@ export default function App() {
         <Route path="alumno/grupos/:id/calendario" element={<AlumnoCalendarioPage />} />
         <Route path="alumno/grupos/:id/malla" element={<MallaEvaluacionPage />} />
         <Route path="alumno/grupos/:id/competencias" element={<AlumnoCompetenciasPage />} />
+        {/* Ejercicios es sección de primer nivel del alumno: no cuelga de un grupo
+            sino de la colección (`:slug`), que es lo que agrupa los ejercicios. */}
+        <Route
+          path="alumno/ejercicios/:slug"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando…</p>}>
+              <EjerciciosAlumnoPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="alumno/ejercicios/:slug/:ejSlug"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando ejercicio…</p>}>
+              <EjercicioSolverPage />
+            </Suspense>
+          }
+        />
       </Route>
     </Routes>
   );

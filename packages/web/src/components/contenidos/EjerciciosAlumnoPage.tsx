@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { useCargaGated } from '../../hooks/useCargaGated';
 import { NOMBRE_LENGUAJE } from '../../config/codemirrorLenguaje';
+import { useEjerciciosBase } from '../../config/rutasEjercicios';
 import styles from './EjerciciosAlumno.module.css';
 
 interface EjercicioLista {
@@ -47,6 +48,7 @@ const LENGUAJES = Object.keys(NOMBRE_LENGUAJE);
 
 export default function EjerciciosAlumnoPage() {
   const { slug } = useParams<{ slug: string }>();
+  const base = useEjerciciosBase();
   const { data, cargando, error, noEncontrado, reintentar } = useCargaGated<RespuestaLista>(
     slug ? `/api/contenidos/${slug}/ejercicios` : null,
   );
@@ -85,16 +87,20 @@ export default function EjerciciosAlumnoPage() {
     return (
       <div className={styles.page}>
         <p className={styles.info}>No se encontró esta sección de ejercicios.</p>
-        <Link to="/alumno" className={styles.volver}>Volver</Link>
       </div>
     );
   }
 
   return (
     <div className={styles.page}>
+      {/* Sin enlace "volver": dentro del shell, Ejercicios es una sección de
+          primer nivel del menú y la salida es el propio sidebar. La colección
+          va de subtítulo porque un grupo puede tener más de una materia. */}
       <header className={styles.header}>
-        <Link to={`/contenidos/${slug}/`} className={styles.volver}>← {coleccion?.clave || coleccion?.nombre || 'Contenidos'}</Link>
         <h1 className={styles.titulo}>Ejercicios</h1>
+        {(coleccion?.clave || coleccion?.nombre) && (
+          <p className={styles.subtitulo}>{coleccion?.clave || coleccion?.nombre}</p>
+        )}
         {progreso.total > 0 && (
           <div className={styles.progreso}>
             <div className={styles.barra}>
@@ -136,7 +142,7 @@ export default function EjerciciosAlumnoPage() {
                     <ul className={styles.lista}>
                       {g.items.map((e) => (
                         <li key={e.id}>
-                          <Link to={`/contenidos/${slug}/ejercicios/${e.slug}`} className={`${styles.item} ${e.resuelto ? styles.itemResuelto : ''}`}>
+                          <Link to={`${base}/${e.slug}`} className={`${styles.item} ${e.resuelto ? styles.itemResuelto : ''}`}>
                             <span className={styles.itemIzq}>
                               <span className={styles.check} aria-hidden>{e.resuelto ? '✓' : '○'}</span>
                               <span className={styles.itemTitulo}>{e.titulo}</span>

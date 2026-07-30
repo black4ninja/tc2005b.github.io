@@ -11,6 +11,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import { APP_NAME } from '../../../../config/app';
 import { moduloHabilitado } from '../../../../config/modulosContenido';
+import { rutaEjerciciosAdmin, rutaEjerciciosAlumno } from '../../../../config/rutasEjercicios';
 
 /** Colección asignada al grupo, como la devuelve /api/admin/grupos. */
 interface ColeccionGrupo {
@@ -98,7 +99,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
         const cols: { slug: string }[] = json?.colecciones ?? [];
-        setEjerciciosHref(cols.length > 0 ? `/contenidos/${cols[0].slug}/ejercicios` : null);
+        setEjerciciosHref(cols.length > 0 ? rutaEjerciciosAlumno(cols[0].slug) : null);
       })
       .catch(() => {});
   }, [sessionToken, role]);
@@ -213,9 +214,10 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   // grupo (colecciones + modulosDeshabilitados), así queda acotado a ESE grupo —
   // tanto para el profesor como para el admin que lo revisa.
   const ejerciciosGrupoHref = useMemo(() => {
+    if (!grupoId) return null;
     const col = colecciones.find((c) => moduloHabilitado(modulosDeshabilitados, c.id, 'ejercicios'));
-    return col ? `/contenidos/${col.slug}/ejercicios` : null;
-  }, [colecciones, modulosDeshabilitados]);
+    return col ? rutaEjerciciosAdmin(grupoId, col.slug) : null;
+  }, [colecciones, modulosDeshabilitados, grupoId]);
 
   const items = isGrupoDetail
     ? getGrupoDetailItems(grupoId!, agendaGrupoHref, ejerciciosGrupoHref)

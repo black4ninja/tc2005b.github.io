@@ -1,8 +1,8 @@
+/* Dentro del shell del dashboard: sin auto-centrado ni padding lateral propio
+   (lo pone el layout); el max-width solo evita que el editor se estire de más. */
 .page {
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px 20px 64px;
-  font-family: 'Inter', system-ui, sans-serif;
+  padding: 8px 0 32px;
 }
 
 .header { margin-bottom: 20px; }
@@ -16,7 +16,7 @@
 }
 .volver:hover { text-decoration: underline; }
 
-.titulo { margin: 0; font-size: 24px; color: #1f2328; }
+.titulo { margin: 0; font-size: 24px; font-weight: 700; color: var(--text-primary); }
 
 .info { color: #57606a; font-size: 15px; }
 

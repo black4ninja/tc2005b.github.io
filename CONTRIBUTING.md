@@ -25,6 +25,9 @@ git push -u origin feature/mi-cambio
 gh pr create                        # abre el PR usando el template del repo
 ```
 
+> Para llevar **varias features a la vez** no uses `git switch`: cada una va en su
+> propio worktree, con su dev-server y sus puertos. Ver [§8](#8-worktrees--varias-features-en-paralelo).
+
 ## 2. Nombres de rama — [Conventional Branch](https://conventionalbranch.org/)
 
 Formato: `<tipo>/<descripción-en-kebab-case>`. Solo minúsculas, números y guiones
@@ -144,7 +147,78 @@ hallazgos como comentarios inline del PR automáticamente.
 ## 7. Verificación antes de abrir el PR
 
 ```bash
-yarn test                              # pruebas (Vitest)
+yarn test                              # pruebas (Vitest) — desde la RAÍZ del repo
 cd packages/web && npx tsc --noEmit    # type-check del web
 yarn build                             # build completo si afecta el output
 ```
+
+## 8. Worktrees — varias features en paralelo
+
+Cuando hay **más de un frente vivo** (dos US, una feature y un hotfix, un PR en
+review mientras empiezas el siguiente), cada uno va en su propio **git worktree**:
+una copia física del árbol de trabajo en otra carpeta, compartiendo el mismo
+`.git`. No es un `git clone` — el historial no se duplica.
+
+Lo que aporta es **simultaneidad**: varias copias abiertas a la vez, cada una con
+su `yarn dev`, sin `git stash` ni cambiar de rama a media tarea. Si solo trabajas
+una cosa, una rama normal basta.
+
+### Ciclo de vida (obligatorio de punta a punta)
+
+| # | Paso | Comando |
+|---|---|---|
+| 1 | Crear worktree + rama desde `main` al día | `wt new feature/mi-cambio` |
+| 2 | Levantar el dev-server del worktree | `yarn dev` (dentro) o `wt dev feature/mi-cambio` |
+| 3 | Trabajar y commitear (Conventional Commits) | `git commit` |
+| 4 | Pruebas manuales sobre ESE servidor, y correcciones | — |
+| 5 | Verificación de §7 y push | `git push -u origin feature/mi-cambio` |
+| 6 | Abrir PR con el template | `gh pr create` |
+| 7 | Code review de §5 y resolución de hilos | — |
+| 8 | Merge del PR | `gh pr merge` |
+| 9 | Cerrar worktree, borrar rama y sincronizar | `wt done feature/mi-cambio` + `git pull` en el principal |
+
+El worktree **no se cierra antes del merge**: los pasos 4 y 7 pueden devolverte a
+él para correcciones. `wt done` se niega a borrar una rama sin mergear, y solo
+tira la carpeta si no hay cambios sin guardar (`--force` para forzar).
+
+### El helper `wt`
+
+Vive en [`tools/wt.zsh`](./tools/wt.zsh). Instalación, una vez:
+
+```bash
+echo 'source ~/ITESM/TC2005B/Calendario/tc2005b.github.io/tools/wt.zsh' >> ~/.zshrc
+```
+
+```bash
+wt new <spec> [--base <ref>] [--no-install]   # worktree + rama + bootstrap + cd
+wt ls                                          # worktrees vivos y su puerto web
+wt cd <spec> | wt path <spec>                  # navegar
+wt dev <spec>                                  # yarn dev en ese worktree
+wt done <spec> [--force]                       # cerrar y borrar la rama
+```
+
+El `<spec>` es el nombre de la rama. Sin prefijo de Conventional Branch se asume
+`feature/`. Los worktrees se crean **fuera del repo**, en `../.worktrees/<spec>`,
+para que Vite y `tsc` no vean una copia del árbol dentro del árbol.
+
+### Puertos: por qué no colisionan
+
+Lo que git ignora (`node_modules`, `.env`) **no se copia** al worktree; de eso se
+encarga el bootstrap de `wt new`, que además le asigna un par de puertos propio:
+
+- Busca el primer desplazamiento libre sobre los del checkout principal
+  (web `5173`, api `3006`) → el primer worktree usa `5174/3007`, el segundo
+  `5175/3008`, etc.
+- "Libre" es **ni escuchando ahora ni reservado** por otro worktree: se leen los
+  `.env.local` de todos, así que dos worktrees creados en frío tampoco chocan.
+- Escribe `packages/api/.env` (con `PORT` y `SERVER_URL` reescritos) y
+  `packages/web/.env.local` (`VITE_PORT`, `VITE_API_PORT`, que
+  [`vite.config.ts`](./packages/web/vite.config.ts) lee para el server y el proxy).
+
+Por eso dentro de un worktree basta `yarn dev`: los puertos ya están en su sitio.
+El dev-server usa `strictPort`, así que si un puerto estuviera tomado falla en
+vez de saltar al siguiente y quedarse proxeando al API de otra rama.
+
+> ⚠️ **Todos los worktrees comparten la BD de PRODUCCIÓN**, igual que el checkout
+> principal (ver `CLAUDE.md`). Aislar el puerto no aísla los datos: las pruebas
+> manuales de un worktree escriben en la misma base que las de otro.

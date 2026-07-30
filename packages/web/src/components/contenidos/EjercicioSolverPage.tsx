@@ -6,6 +6,7 @@ import { EditorView } from '@codemirror/view';
 import { useAuth } from '../../context/AuthContext';
 import { useCargaGated } from '../../hooks/useCargaGated';
 import { extensionLenguaje, NOMBRE_LENGUAJE } from '../../config/codemirrorLenguaje';
+import { useEjerciciosBase } from '../../config/rutasEjercicios';
 import styles from './EjercicioSolver.module.css';
 
 interface CasoMuestra { indice: number; entrada: string; salidaEsperada: string }
@@ -41,6 +42,8 @@ const VEREDICTO_LABEL: Record<string, string> = {
 export default function EjercicioSolverPage() {
   const { slug, ejSlug } = useParams<{ slug: string; ejSlug: string }>();
   const { sessionToken } = useAuth();
+  // Aquí el "volver" SÍ corresponde: el solver cuelga del listado del módulo.
+  const base = useEjerciciosBase();
 
   const { data, cargando, error: errorCarga, noEncontrado, reintentar } = useCargaGated<{ ejercicio: EjercicioDTO }>(
     slug && ejSlug ? `/api/contenidos/${slug}/ejercicios/${ejSlug}` : null,
@@ -150,7 +153,7 @@ export default function EjercicioSolverPage() {
     return (
       <div className={styles.page}>
         <p className={styles.info}>No se encontró este ejercicio.</p>
-        <Link to={`/contenidos/${slug}/ejercicios`} className={styles.volver}>Volver a ejercicios</Link>
+        <Link to={base} className={styles.volver}>Volver a ejercicios</Link>
       </div>
     );
   }
@@ -160,7 +163,7 @@ export default function EjercicioSolverPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <Link to={`/contenidos/${slug}/ejercicios`} className={styles.volver}>← Ejercicios</Link>
+        <Link to={base} className={styles.volver}>← Ejercicios</Link>
         <h1 className={styles.titulo}>{ej.titulo}</h1>
       </header>
 
