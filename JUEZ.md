@@ -97,8 +97,69 @@ revisa que el binario exista y que bubblewrap corra (`bwrap --version`).
 > heurística (sin cgroups). Endurecer con cgroups v2 (límite de memoria real) y
 > `seccomp` queda como mejora futura si algún día se abre a público.
 
-## 6. Modo development (sin servidor)
+## 6. Modo development en macOS (sin servidor)
 
 En macOS no hay bubblewrap: con `JUEZ_SANDBOX` sin definir (o `false`) el motor
-corre **sin sandbox**, solo para probar la lógica localmente si tienes `kotlinc`/
-`swiftc` instalados. **Nunca** usar `JUEZ_SANDBOX=false` en el servidor.
+corre **sin sandbox**. Sirve para **probar ejercicios y autorar material** en local.
+**Nunca** usar `JUEZ_SANDBOX=false` en el servidor.
+
+Con `NODE_ENV=development` en el `.env` —que es lo normal en local— el sandbox ya
+queda apagado por defecto: no hace falta tocar `JUEZ_SANDBOX`.
+
+### 6.1 Instalar los toolchains (Apple Silicon)
+
+```bash
+brew install kotlin openjdk@21   # kotlinc + el JDK 21 que usa el servidor
+xcode-select --install           # Swift ya viene en las Command Line Tools
+```
+
+Swift no se instala aparte: las CLT traen `swiftc`. Comprueba las tres rutas:
+
+```bash
+/opt/homebrew/opt/kotlin/libexec/bin/kotlinc -version
+/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home/bin/java -version
+/Library/Developer/CommandLineTools/usr/bin/swiftc --version
+```
+
+### 6.2 Variables en el `.env` del API
+
+```dotenv
+KOTLIN_HOME=/opt/homebrew/opt/kotlin/libexec
+JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
+SWIFT_HOME=/Library/Developer/CommandLineTools
+SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
+```
+
+`SWIFT_HOME` apunta a las CLT porque el motor busca `$SWIFT_HOME/usr/bin/swiftc`,
+que es justo el layout que tienen.
+
+⚠️ **`SDKROOT` no es opcional.** El motor invoca `swiftc` por **ruta absoluta**, y
+así no resuelve el SDK solo: falla con `unable to load standard library for target
+'arm64-apple-macosx…'` y **todos los ejercicios de Swift salen como error de
+compilación**. Con `SDKROOT` explícito compila. (Obtén la ruta con
+`xcrun --show-sdk-path`.)
+
+Verifica igual que en el servidor — debe dar `8/8`:
+
+```bash
+cd packages/api && ./node_modules/.bin/tsx scripts/probar-juez.ts
+```
+
+### 6.3 En qué NO se parece a producción
+
+Sirve para validar enunciados, casos y veredictos, **no** el aislamiento:
+
+| | Servidor | macOS local |
+|---|---|---|
+| Aislamiento bubblewrap (red, filesystem, PID) | sí | **no** |
+| `ulimit` de CPU, procesos y memoria | sí | **no** — `comandoUlimit` devuelve `:` fuera del sandbox |
+| Reloj de pared (→ `tiempo_excedido`) | sí | sí |
+| Veredictos `aceptado`/`respuesta_incorrecta`/`error_compilacion` | sí | sí |
+
+Dos consecuencias prácticas:
+
+- **El código corre sin aislar, con tu usuario.** Vale para ejercicios que
+  escribes tú; **no** pegues aquí envíos de alumnos sin leerlos.
+- Swift compila contra el **SDK de macOS**, no contra glibc. Para ejercicios de
+  consola (stdin/stdout, colecciones, POO) es equivalente; si algún día uno usa
+  API específicas de plataforma, valídalo en el servidor.
