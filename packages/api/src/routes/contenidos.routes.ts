@@ -44,6 +44,12 @@ import {
   updateCategoriaEjercicio,
   deleteCategoriaEjercicio,
 } from '../controllers/ejercicios-categorias.controller.js';
+import {
+  listBloquesEjercicio,
+  createBloqueEjercicio,
+  updateBloqueEjercicio,
+  deleteBloqueEjercicio,
+} from '../controllers/ejercicios-bloques.controller.js';
 
 // Subida en memoria: el binario va directo a Parse.File (sin disco temporal).
 const subida = multer({ storage: multer.memoryStorage(), limits: { fileSize: RECURSO_MAX_BYTES } });
@@ -116,5 +122,11 @@ router.get('/admin/colecciones/:id/categorias-ejercicios', listCategoriasEjercic
 router.post('/admin/colecciones/:id/categorias-ejercicios', createCategoriaEjercicio);
 router.put('/admin/categorias-ejercicios/:id', updateCategoriaEjercicio);
 router.delete('/admin/categorias-ejercicios/:id', deleteCategoriaEjercicio);
+
+// Bloques de ejercicios (el nivel por encima de la categoría)
+router.get('/admin/colecciones/:id/bloques-ejercicios', listBloquesEjercicio);
+router.post('/admin/colecciones/:id/bloques-ejercicios', createBloqueEjercicio);
+router.put('/admin/bloques-ejercicios/:id', updateBloqueEjercicio);
+router.delete('/admin/bloques-ejercicios/:id', deleteBloqueEjercicio);
 
 export default router;

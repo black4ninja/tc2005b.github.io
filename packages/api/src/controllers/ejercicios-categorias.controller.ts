@@ -4,6 +4,7 @@ import { Coleccion } from '../models/Coleccion.js';
 import { CategoriaEjercicio } from '../models/CategoriaEjercicio.js';
 import { EjercicioProgramacion } from '../models/EjercicioProgramacion.js';
 import { getColeccionActiva } from './cms-documentos.controller.js';
+import { resolverBloque } from './ejercicios-bloques.controller.js';
 
 /** Busca una categoría existente con su colección viva (solo `exists`). */
 async function buscarCategoria(id: string): Promise<CategoriaEjercicio | null> {
@@ -44,7 +45,7 @@ export async function listCategoriasEjercicio(req: Request, res: Response): Prom
 /** POST /admin/colecciones/:id/categorias-ejercicios */
 export async function createCategoriaEjercicio(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { nombre, descripcion, orden } = req.body ?? {};
+  const { nombre, descripcion, orden, bloqueId } = req.body ?? {};
   if (!nombre || typeof nombre !== 'string' || !nombre.trim()) {
     res.status(400).json({ status: 'error', message: 'El nombre es requerido' });
     return;
@@ -55,8 +56,14 @@ export async function createCategoriaEjercicio(req: Request, res: Response): Pro
       res.status(404).json({ status: 'error', message: 'Colección no encontrada' });
       return;
     }
+    const bloque = await resolverBloque(bloqueId, id);
+    if (bloque === 'invalido') {
+      res.status(400).json({ status: 'error', message: 'El bloque indicado no existe en la colección' });
+      return;
+    }
     const cat = new CategoriaEjercicio().initDefaults();
     cat.setColeccion(coleccion);
+    cat.setBloque(bloque);
     cat.setNombre(nombre.trim());
     if (typeof descripcion === 'string') cat.setDescripcion(descripcion.trim());
     cat.setOrden(typeof orden === 'number' ? orden : 0);
@@ -74,7 +81,7 @@ export async function updateCategoriaEjercicio(req: Request, res: Response): Pro
     res.status(404).json({ status: 'error', message: 'Categoría no encontrada' });
     return;
   }
-  const { nombre, descripcion, orden } = req.body ?? {};
+  const { nombre, descripcion, orden, bloqueId } = req.body ?? {};
   try {
     if (nombre !== undefined) {
       if (typeof nombre !== 'string' || !nombre.trim()) {
@@ -82,6 +89,15 @@ export async function updateCategoriaEjercicio(req: Request, res: Response): Pro
         return;
       }
       cat.setNombre(nombre.trim());
+    }
+    if (bloqueId !== undefined) {
+      // `null`/'' quitan el bloque; un id de otra colección se rechaza.
+      const bloque = await resolverBloque(bloqueId, cat.getColeccion()!.id!);
+      if (bloque === 'invalido') {
+        res.status(400).json({ status: 'error', message: 'El bloque indicado no existe en la colección' });
+        return;
+      }
+      cat.setBloque(bloque);
     }
     if (descripcion !== undefined) cat.setDescripcion(String(descripcion ?? '').trim());
     if (orden !== undefined && typeof orden === 'number') cat.setOrden(orden);

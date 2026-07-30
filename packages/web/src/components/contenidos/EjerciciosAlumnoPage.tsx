@@ -3,17 +3,13 @@ import { useParams, Link } from 'react-router';
 import { useCargaGated } from '../../hooks/useCargaGated';
 import { NOMBRE_LENGUAJE } from '../../config/codemirrorLenguaje';
 import { useEjerciciosBase } from '../../config/rutasEjercicios';
+import {
+  agruparEnBloques,
+  type BloqueRef,
+  type CategoriaRef,
+  type EjercicioLista,
+} from './agruparEjercicios';
 import styles from './EjerciciosAlumno.module.css';
-
-interface EjercicioLista {
-  id: string;
-  titulo: string;
-  slug: string;
-  lenguajes: string[];
-  orden: number;
-  categoriaId: string | null;
-  resuelto: boolean;
-}
 
 interface ColeccionRef {
   slug: string;
@@ -21,27 +17,13 @@ interface ColeccionRef {
   clave: string | null;
 }
 
-interface CategoriaRef { id: string; nombre: string; orden: number }
-
 interface RespuestaLista {
   coleccion: ColeccionRef | null;
+  /** Ausente en respuestas de un API anterior a los bloques → agrupado plano. */
+  bloques?: BloqueRef[];
   categorias: CategoriaRef[];
   ejercicios: EjercicioLista[];
   progreso: { resueltos: number; total: number };
-}
-
-interface Grupo { clave: string; titulo: string | null; items: EjercicioLista[] }
-
-/** Agrupa los ejercicios por categoría, en el orden de las categorías. */
-function agrupar(categorias: CategoriaRef[], ejercicios: EjercicioLista[]): Grupo[] {
-  const grupos: Grupo[] = [];
-  for (const c of categorias) {
-    const items = ejercicios.filter((e) => e.categoriaId === c.id);
-    if (items.length) grupos.push({ clave: c.id, titulo: c.nombre, items });
-  }
-  const sinCategoria = ejercicios.filter((e) => !e.categoriaId || !categorias.some((c) => c.id === e.categoriaId));
-  if (sinCategoria.length) grupos.push({ clave: '__otros', titulo: categorias.length ? 'Otros' : null, items: sinCategoria });
-  return grupos;
 }
 
 const LENGUAJES = Object.keys(NOMBRE_LENGUAJE);
@@ -58,9 +40,11 @@ export default function EjerciciosAlumnoPage() {
   const coleccion = data?.coleccion ?? null;
   const ejercicios = data?.ejercicios ?? [];
   const categorias = data?.categorias ?? [];
+  const bloques = data?.bloques ?? [];
 
   const filtrados = filtroLeng === 'todos' ? ejercicios : ejercicios.filter((e) => e.lenguajes.includes(filtroLeng));
-  const grupos = agrupar(categorias, filtrados);
+  // Sin bloques devuelve un único bloque sin título → se pinta como siempre.
+  const arbol = agruparEnBloques(bloques, categorias, filtrados);
   // El progreso se calcula sobre lo FILTRADO (no el total del servidor): así un
   // alumno que filtra por su lenguaje llega a 100% sin que los ejercicios
   // exclusivos del otro lenguaje —que no puede resolver— lo dejen atascado.
@@ -125,33 +109,62 @@ export default function EjerciciosAlumnoPage() {
             ))}
           </div>
 
-          {grupos.length === 0 ? (
+          {arbol.length === 0 ? (
             <p className={styles.info}>No hay ejercicios para este lenguaje.</p>
           ) : (
-            grupos.map((g) => {
-              const abierto = !colapsadas.has(g.clave);
-              const resueltos = g.items.filter((e) => e.resuelto).length;
+            arbol.map((b) => {
+              // Las claves van prefijadas: el residual se llama '__otros' en los
+              // DOS niveles y sin prefijo colapsar un bloque plegaría su categoría.
+              const claveBloque = `bloque:${b.clave}`;
+              const bloqueAbierto = !colapsadas.has(claveBloque);
+              const items = b.grupos.flatMap((g) => g.items);
+              const resueltosBloque = items.filter((e) => e.resuelto).length;
               return (
-                <section key={g.clave} className={styles.grupo}>
-                  <button className={styles.grupoHeader} onClick={() => toggle(g.clave)}>
-                    <span className={styles.chevron}>{abierto ? '▾' : '▸'}</span>
-                    <span className={styles.grupoTitulo}>{g.titulo ?? 'Ejercicios'}</span>
-                    <span className={styles.grupoConteo}>{resueltos}/{g.items.length}</span>
-                  </button>
-                  {abierto && (
-                    <ul className={styles.lista}>
-                      {g.items.map((e) => (
-                        <li key={e.id}>
-                          <Link to={`${base}/${e.slug}`} className={`${styles.item} ${e.resuelto ? styles.itemResuelto : ''}`}>
-                            <span className={styles.itemIzq}>
-                              <span className={styles.check} aria-hidden>{e.resuelto ? '✓' : '○'}</span>
-                              <span className={styles.itemTitulo}>{e.titulo}</span>
-                            </span>
-                            <span className={styles.itemLeng}>{e.lenguajes.map((l) => NOMBRE_LENGUAJE[l] ?? l).join(' · ')}</span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                <section key={claveBloque} className={b.titulo ? styles.bloque : undefined}>
+                  {/* Sin título no hay cabecera: es el caso "no hay bloques",
+                      donde la pantalla debe verse como antes de que existieran. */}
+                  {b.titulo && (
+                    <button className={styles.bloqueHeader} onClick={() => toggle(claveBloque)}>
+                      <span className={styles.chevron}>{bloqueAbierto ? '▾' : '▸'}</span>
+                      <span className={styles.bloqueTitulo}>{b.titulo}</span>
+                      <span className={styles.grupoConteo}>{resueltosBloque}/{items.length}</span>
+                    </button>
+                  )}
+                  {b.titulo && b.descripcion && bloqueAbierto && (
+                    <p className={styles.bloqueSub}>{b.descripcion}</p>
+                  )}
+                  {(!b.titulo || bloqueAbierto) && (
+                    <div className={b.titulo ? styles.bloqueBody : undefined}>
+                      {b.grupos.map((g) => {
+                        const claveGrupo = `cat:${g.clave}`;
+                        const abierto = !colapsadas.has(claveGrupo);
+                        const resueltos = g.items.filter((e) => e.resuelto).length;
+                        return (
+                          <section key={claveGrupo} className={styles.grupo}>
+                            <button className={styles.grupoHeader} onClick={() => toggle(claveGrupo)}>
+                              <span className={styles.chevron}>{abierto ? '▾' : '▸'}</span>
+                              <span className={styles.grupoTitulo}>{g.titulo ?? 'Ejercicios'}</span>
+                              <span className={styles.grupoConteo}>{resueltos}/{g.items.length}</span>
+                            </button>
+                            {abierto && (
+                              <ul className={styles.lista}>
+                                {g.items.map((e) => (
+                                  <li key={e.id}>
+                                    <Link to={`${base}/${e.slug}`} className={`${styles.item} ${e.resuelto ? styles.itemResuelto : ''}`}>
+                                      <span className={styles.itemIzq}>
+                                        <span className={styles.check} aria-hidden>{e.resuelto ? '✓' : '○'}</span>
+                                        <span className={styles.itemTitulo}>{e.titulo}</span>
+                                      </span>
+                                      <span className={styles.itemLeng}>{e.lenguajes.map((l) => NOMBRE_LENGUAJE[l] ?? l).join(' · ')}</span>
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </section>
+                        );
+                      })}
+                    </div>
                   )}
                 </section>
               );
