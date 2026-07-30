@@ -24,7 +24,8 @@ export default function EjerciciosColeccionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [catOpen, setCatOpen] = useState(false);
-  const [categorias, setCategorias] = useState<{ id: string; nombre: string }[]>([]);
+  const [categorias, setCategorias] = useState<{ id: string; nombre: string; bloqueId: string | null }[]>([]);
+  const [bloques, setBloques] = useState<{ id: string; nombre: string }[]>([]);
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -64,7 +65,16 @@ export default function EjerciciosColeccionPage() {
       const res = await fetch(`${API_BASE}/admin/colecciones/${id}/categorias-ejercicios`, { headers: { 'x-session-token': sessionToken ?? '' } });
       if (!res.ok) return;
       const data = await res.json();
-      setCategorias((data.categorias ?? []).map((c: any) => ({ id: c.id, nombre: c.nombre })));
+      setCategorias((data.categorias ?? []).map((c: any) => ({ id: c.id, nombre: c.nombre, bloqueId: c.bloqueId ?? null })));
+    } catch { /* ignore */ }
+  }, [id, sessionToken]);
+
+  const fetchBloques = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/colecciones/${id}/bloques-ejercicios`, { headers: { 'x-session-token': sessionToken ?? '' } });
+      if (!res.ok) return;
+      const data = await res.json();
+      setBloques((data.bloques ?? []).map((b: any) => ({ id: b.id, nombre: b.nombre })));
     } catch { /* ignore */ }
   }, [id, sessionToken]);
 
@@ -72,10 +82,21 @@ export default function EjerciciosColeccionPage() {
     fetchEjercicios();
     fetchNombre();
     fetchCategorias();
-  }, [fetchEjercicios, fetchNombre, fetchCategorias]);
+    fetchBloques();
+  }, [fetchEjercicios, fetchNombre, fetchCategorias, fetchBloques]);
 
-  const nombrePorCategoria = useMemo(() => new Map(categorias.map((c) => [c.id, c.nombre])), [categorias]);
-  const nombreCategoria = (catId: string | null) => (catId && nombrePorCategoria.get(catId)) || '—';
+  // "Bloque › Categoría" en una sola columna, en vez de añadir otra: con dos
+  // bloques, un nombre de categoría suelto ("Colecciones") ya no identifica nada.
+  const etiquetaPorCategoria = useMemo(() => {
+    const nombreBloque = new Map(bloques.map((b) => [b.id, b.nombre]));
+    return new Map(
+      categorias.map((c) => {
+        const bloque = c.bloqueId ? nombreBloque.get(c.bloqueId) : undefined;
+        return [c.id, bloque ? `${bloque} › ${c.nombre}` : c.nombre];
+      }),
+    );
+  }, [categorias, bloques]);
+  const nombreCategoria = (catId: string | null) => (catId && etiquetaPorCategoria.get(catId)) || '—';
 
   async function handleTogglePublicado(ej: EjercicioData) {
     setError('');
@@ -178,7 +199,9 @@ export default function EjerciciosColeccionPage() {
         />
       )}
 
-      {id && <CategoriasEjerciciosModal isOpen={catOpen} coleccionId={id} onClose={() => { setCatOpen(false); fetchCategorias(); fetchEjercicios(); }} />}
+      {/* Al cerrar hay que refrescar también los BLOQUES: el modal permite
+          crearlos y renombrarlos, y la columna de la tabla los usa. */}
+      {id && <CategoriasEjerciciosModal isOpen={catOpen} coleccionId={id} onClose={() => { setCatOpen(false); fetchCategorias(); fetchBloques(); fetchEjercicios(); }} />}
     </div>
   );
 }
