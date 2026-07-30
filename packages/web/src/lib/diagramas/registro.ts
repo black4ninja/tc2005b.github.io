@@ -50,14 +50,26 @@ export function motorDe(lenguaje: string | null, codigo: string): string | null 
 
 const cache = new Map<string, Promise<Renderizador>>();
 
-/** Carga (una sola vez) el motor pedido. */
+/**
+ * Carga el motor pedido, una sola vez por sesión.
+ *
+ * Si la carga FALLA se saca de la caché. Cachear la promesa rechazada dejaba el
+ * motor muerto para el resto de la sesión: un chunk que no llega —red inestable,
+ * un deploy a medias, una dependencia sin instalar— condenaba a que ningún
+ * diagrama volviera a dibujarse hasta recargar la página entera, aunque el
+ * problema ya estuviera resuelto.
+ */
 export function cargarMotor(motor: string): Promise<Renderizador> {
-  let p = cache.get(motor);
-  if (!p) {
-    const cargador = REGISTRO[motor];
-    if (!cargador) return Promise.reject(new Error(`Motor de diagramas desconocido: ${motor}`));
-    p = cargador();
-    cache.set(motor, p);
-  }
+  const cacheado = cache.get(motor);
+  if (cacheado) return cacheado;
+
+  const cargador = REGISTRO[motor];
+  if (!cargador) return Promise.reject(new Error(`Motor de diagramas desconocido: ${motor}`));
+
+  const p = cargador().catch((e: unknown) => {
+    cache.delete(motor);
+    throw e;
+  });
+  cache.set(motor, p);
   return p;
 }
