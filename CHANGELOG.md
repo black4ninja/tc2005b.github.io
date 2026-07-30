@@ -8,6 +8,26 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Ejercicios de arquitectura MVVM, capa por capa (12 ejercicios).** Nuevo bloque
+  con cuatro categorías —Modelo y capa de datos, Capa de dominio, Estado y
+  ViewModel, y Composición— que llevan al alumno de entender cada capa por
+  separado a componerlas de punta a punta.
+  - **Se evalúan con el modo `plantilla` que ya existía**, sin tocar el motor: el
+    alumno escribe solo su capa y un driver oculto la ejercita. La `entrada` del
+    caso nombra el test y el driver imprime el valor observado, así que **un test
+    = un caso** y la aserción la hace el juez comparando stdout. Cada test corre
+    en su proceso con su propio timeout.
+  - **Fiel a cada pista**, como la enseña el wiki: Android lleva DTO, mapper,
+    `Result` y `UiState`; iOS structs `Codable` directos y `Requirement`. Cuando
+    lo que se pide difiere entre pistas, el ejercicio se parte en uno por lenguaje.
+  - Se ejercita la **inversión de dependencias** con repositorios espía: si el
+    alumno construye el repositorio dentro del caso de uso en vez de recibirlo,
+    el espía no registra llamadas y el caso falla.
+  - Lo que no se puede ejercitar en consola queda sustituido y **explicado en el
+    enunciado**: `StateFlow` y `@Published` (Combine no existe en Linux) se
+    reemplazan por un callback con el mismo papel.
+  - Sin narrativa y con nombres de archivo y clase explícitos, que es donde se
+    pierden los alumnos al aprender la arquitectura.
 - **Bloques de ejercicios: un nivel de agrupación por encima de las categorías.**
   El listado del alumno pasa a dos niveles (**bloque → categoría → ejercicios**),
   para que los ejercicios de arquitectura no queden mezclados con los de sintaxis
