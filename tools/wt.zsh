@@ -92,8 +92,13 @@ VITE_API_PORT=$api
 EOF
 
   if [[ "$instalar" == "si" ]]; then
+    # `--ignore-engines` porque una dependencia transitiva (@parse/s3-files-adapter)
+    # declara un rango de node que deja fuera las versiones recientes, y un install
+    # limpio aborta. El node_modules del checkout principal se instaló bajo un node
+    # más viejo, así que el problema solo se ve al montar un worktree en frío.
     echo "wt: yarn install…"
-    (cd "$dir" && yarn install --silent) || { echo "wt: falló yarn install" >&2; return 1; }
+    (cd "$dir" && yarn install --silent --ignore-engines) \
+      || { echo "wt: falló yarn install" >&2; return 1; }
   fi
 
   echo "wt: web http://localhost:$web · api http://localhost:$api"
