@@ -201,6 +201,11 @@ El `<spec>` es el nombre de la rama. Sin prefijo de Conventional Branch se asume
 `feature/`. Los worktrees se crean **fuera del repo**, en `../.worktrees/<spec>`,
 para que Vite y `tsc` no vean una copia del árbol dentro del árbol.
 
+Si la rama **ya existe**, `wt new` la **adopta** en vez de crearla — sirve para
+retomar una rama, revisar el PR de otro, o mover a un worktree trabajo que empezó
+en el checkout principal. Como una rama solo puede estar checkouteada en un sitio
+a la vez, primero hay que salir de ella (`git switch main`).
+
 ### Puertos: por qué no colisionan
 
 Lo que git ignora (`node_modules`, `.env`) **no se copia** al worktree; de eso se

@@ -117,13 +117,29 @@ wt() {
       local rama; rama="$(_wt_branch "$spec")"
       [[ -e "$dir" ]] && { echo "wt: ya existe $dir" >&2; return 1 }
       mkdir -p "$TC_WT_ROOT"
-      # Partir de la base REMOTA al día, no de lo que tenga local el checkout.
-      git -C "$TC_REPO" fetch origin "$base" --quiet || true
-      local ref="origin/$base"
-      git -C "$TC_REPO" rev-parse --verify --quiet "$ref" >/dev/null || ref="$base"
-      git -C "$TC_REPO" worktree add -b "$rama" "$dir" "$ref" || return 1
+      # Si la rama YA existe se adopta en vez de crearla: pasa al retomar una
+      # rama, al revisar el PR de otro, o al mover a un worktree trabajo que
+      # empezó en el checkout principal. Con `-b` git fallaría.
+      local origen
+      if git -C "$TC_REPO" show-ref --verify --quiet "refs/heads/$rama"; then
+        # Una rama solo puede estar checkouteada en UN worktree a la vez.
+        if [[ "$(git -C "$TC_REPO" branch --show-current)" == "$rama" ]]; then
+          echo "wt: '$rama' está checkouteada en $TC_REPO." >&2
+          echo "    Sal de ella primero: git -C $TC_REPO switch $TC_BASE" >&2
+          return 1
+        fi
+        git -C "$TC_REPO" worktree add "$dir" "$rama" || return 1
+        origen="rama existente"
+      else
+        # Partir de la base REMOTA al día, no de lo que tenga local el checkout.
+        git -C "$TC_REPO" fetch origin "$base" --quiet || true
+        local ref="origin/$base"
+        git -C "$TC_REPO" rev-parse --verify --quiet "$ref" >/dev/null || ref="$base"
+        git -C "$TC_REPO" worktree add -b "$rama" "$dir" "$ref" || return 1
+        origen="nueva sobre $ref"
+      fi
       _wt_bootstrap "$dir" "$instalar" || return 1
-      echo "wt: listo → $dir (rama $rama sobre $ref)"
+      echo "wt: listo → $dir (rama $rama, $origen)"
       cd "$dir"
       ;;
     ls)
