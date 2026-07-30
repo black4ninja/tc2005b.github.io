@@ -86,7 +86,7 @@ export default function GrupoDetailPage() {
   const [alumnoModalOpen, setAlumnoModalOpen] = useState(false);
   const [editAlumno, setEditAlumno] = useState<AlumnoData | undefined>();
   const [csvModalOpen, setCsvModalOpen] = useState(false);
-  const [createdPassword, setCreatedPassword] = useState('');
+  const [, setCreatedPassword] = useState('');
   const [toast, setToast] = useState('');
 
   const [mallaStatus, setMallaStatus] = useState<MallaStatus | null>(null);

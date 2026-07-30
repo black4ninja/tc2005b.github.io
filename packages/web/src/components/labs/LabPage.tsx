@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router';
-import { labLoaders, labIndex } from '@/data/labs';
+import { labLoaders } from '@/data/labs';
 import type { Lab } from '@/types/lab';
 import LabContent from './LabContent';
 import LabPrevNext from './LabPrevNext';

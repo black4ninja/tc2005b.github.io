@@ -99,7 +99,7 @@ export default function EvaluacionEntrevistaPage() {
   const [evaluaciones, setEvaluaciones] = useState<EvaluacionData[]>([]);
   const [localEdits, setLocalEdits] = useState<Map<string, LocalEdit>>(new Map());
   const [periodoMap, setPeriodoMap] = useState<Record<string, string>>({});
-  const [periodoNames, setPeriodoNames] = useState<string[]>([]);
+  const [, setPeriodoNames] = useState<string[]>([]);
   const [compAlumnoMap, setCompAlumnoMap] = useState<Record<string, CompAlumnoData>>({});
   const [loading, setLoading] = useState(true);
   const [savingCellId, setSavingCellId] = useState<string | null>(null);
@@ -236,7 +236,6 @@ export default function EvaluacionEntrevistaPage() {
 
   const alumnos = entrevista?.equipo?.miembros ?? [];
   const competencias = entrevista?.competencias ?? [];
-  const profesores = entrevista?.profesores ?? [];
   const isLiberada = entrevista?.liberada === true;
 
   const fechaFormatted = entrevista?.fecha
