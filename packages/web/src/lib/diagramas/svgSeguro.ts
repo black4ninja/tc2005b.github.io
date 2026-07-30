@@ -33,13 +33,14 @@ function limpiar(el: Element): void {
 
 /** Reemplaza el contenido de `contenedor` por el SVG, ya saneado. */
 export function insertarSvg(contenedor: HTMLElement, svg: string): void {
-  const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
-  const raiz = doc.documentElement;
-  // Un SVG mal formado produce un documento `parsererror`: se trata como fallo
-  // de render, no se inserta nada.
-  if (!raiz || raiz.nodeName === 'parsererror' || raiz.querySelector('parsererror')) {
-    throw new Error('El motor devolvió un SVG que no se puede parsear.');
-  }
+  // `text/html` y NO `image/svg+xml`: el segundo es XML ESTRICTO, y Mermaid mete
+  // HTML dentro de `foreignObject` en cuanto una etiqueta lleva `<br/>`. Eso no
+  // es XML bien formado, así que el parser estricto devolvía `parsererror` y
+  // TODO diagrama con salto de línea en una etiqueta fallaba. El parser de HTML
+  // sí entiende contenido extranjero y produce el mismo árbol SVG.
+  const doc = new DOMParser().parseFromString(svg, 'text/html');
+  const raiz = doc.body.querySelector('svg');
+  if (!raiz) throw new Error('El motor no devolvió un SVG.');
   raiz.querySelectorAll('script').forEach((s) => s.remove());
   limpiar(raiz);
   contenedor.replaceChildren(document.importNode(raiz, true));

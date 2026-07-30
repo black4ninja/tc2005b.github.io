@@ -7,7 +7,21 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **Los diagramas con salto de línea en una etiqueta no se dibujaban.** `svgSeguro`
+  parseaba el SVG como `image/svg+xml`, que es **XML estricto**, y Mermaid mete
+  HTML dentro de `foreignObject` en cuanto una etiqueta lleva `<br/>`. El parser
+  devolvía `parsererror` y el bloque caía al modo "no se pudo dibujar". Ahora se
+  parsea como `text/html`, que entiende contenido extranjero y produce el mismo
+  árbol SVG. Afectaba a la mayoría de diagramas útiles.
+
 ### Added
+- **Diagramas en los enunciados de MVVM.** Los 12 ejercicios de arquitectura
+  abren con un diagrama que sitúa la capa en el conjunto, con **la pieza que
+  escribe el alumno resaltada**. Es lo que más ayuda contra la confusión que
+  motivó estos ejercicios: ver *dónde* encaja lo que estás escribiendo antes de
+  escribirlo. Se usan flowcharts para la estructura, secuencia para el flujo y
+  un diagrama de estados para `Result`.
 - **Diagramas-como-código en el CMS (Mermaid + PlantUML).** Los bloques de código
   de un documento o de un enunciado pueden ser diagramas y se dibujan en el
   navegador. Registro extensible por lenguaje de fence, con carga bajo demanda.
