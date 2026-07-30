@@ -92,7 +92,9 @@ async function main(): Promise<void> {
 
   const q = new Parse.Query<EjercicioProgramacion>('EjercicioProgramacion');
   q.equalTo('coleccion' as any, coleccion as any);
-  q.equalTo('active' as any, true as any);
+  // `exists` y no `active`: es el eje de borrado que usan las consultas del
+  // controller admin, y el verificador tiene que ver el MISMO catálogo.
+  q.equalTo('exists' as any, true as any);
   if (SOLO_SLUG) q.equalTo('slug' as any, SOLO_SLUG as any);
   if (SOLO_PUBLICADOS) q.equalTo('publicado' as any, true as any);
   q.ascending('orden');
@@ -113,13 +115,23 @@ async function main(): Promise<void> {
   }
 
   const reportes: { slug: string; titulo: string; publicado: boolean; hallazgos: Hallazgo[] }[] = [];
+  // Lenguajes que se declararon pero NO se llegaron a ejecutar. Se acumulan para
+  // decirlo en el resumen: sin esto, un catálogo bilingüe en una máquina sin
+  // kotlinc sale con "0 errores" habiendo comprobado solo la mitad, y "0 errores"
+  // es justo lo que uno mira antes de publicar.
+  const noVerificados = new Map<Lenguaje, number>();
+
   for (const ejParse of ejercicios) {
     const ej = aVerificable(ejParse);
     const objetivo = SOLO_LENGUAJE ? ej.lenguajes.filter((l) => l === SOLO_LENGUAJE) : ej.lenguajes;
 
     const hallazgos = revisarEstructura(ej, objetivo);
     if (!RAPIDO) {
-      hallazgos.push(...(await revisarEjecucion(ej, objetivo.filter((l) => disponibles.includes(l)))));
+      const ejecutables = objetivo.filter((l) => disponibles.includes(l));
+      for (const l of objetivo) {
+        if (!ejecutables.includes(l)) noVerificados.set(l, (noVerificados.get(l) ?? 0) + 1);
+      }
+      hallazgos.push(...(await revisarEjecucion(ej, ejecutables)));
     }
     reportes.push({ slug: ej.slug, titulo: ej.titulo, publicado: ej.publicado, hallazgos });
 
@@ -140,14 +152,29 @@ async function main(): Promise<void> {
   const totalAvisos = cuenta('aviso');
   const limpios = reportes.filter((r) => r.hallazgos.length === 0).length;
 
+  const sinVerificar = [...noVerificados].map(([l, n]) => `${l} (${n})`);
+
   if (JSON_OUT) {
-    console.log(JSON.stringify({ coleccion: SLUG_COLECCION, reportes, totalErrores, totalAvisos }, null, 2));
+    console.log(JSON.stringify({
+      coleccion: SLUG_COLECCION,
+      reportes,
+      totalErrores,
+      totalAvisos,
+      // Explícito en el JSON: un consumidor no debe leer totalErrores=0 como
+      // "todo verificado" sin mirar esto.
+      noVerificados: Object.fromEntries(noVerificados),
+      soloEstructura: RAPIDO,
+    }, null, 2));
   } else {
     console.log(
       `\n${reportes.length} ejercicios · ${verde(`${limpios} limpios`)} · ` +
         `${rojo(`${totalErrores} errores`)} · ${amarillo(`${totalAvisos} avisos`)}`,
     );
-    if (RAPIDO) console.log(gris('Modo --rapido: no se compiló nada.'));
+    if (RAPIDO) {
+      console.log(amarillo('Modo --rapido: NO se compiló nada; los chequeos de ejecución no corrieron.'));
+    } else if (sinVerificar.length) {
+      console.log(amarillo(`Sin verificar por falta de toolchain: ${sinVerificar.join(', ')}. Ver JUEZ.md §6.`));
+    }
   }
   process.exit(totalErrores > 0 ? 1 : 0);
 }
