@@ -40,14 +40,46 @@ La regla práctica que se deriva: **el dominio no importa nada de fuera.** Si tu
 \`Item\` necesitara una anotación de la librería de red o de la base de datos,
 habrías atado tu vocabulario a una herramienta concreta.
 
-Que sea \`data class\` y no \`class\` no es cosmético. Te da dos cosas gratis:
+### La palabra \`data\` escribe código por ti
 
-- **Igualdad por valor**: dos \`Item\` con los mismos campos son iguales. Sin eso
-  tendrías que escribir \`equals\` a mano, y sin \`equals\` no puedes comparar
-  estados para saber si la pantalla cambió.
-- **Copia con cambios** (\`copy\`): produce un objeto nuevo en vez de mutar el que
-  ya tienes. Es lo que hace posible tratar el estado como inmutable, que es la
-  base de todo lo que viene después en esta arquitectura.
+Esto es lo que más confunde la primera vez, así que conviene decirlo entero.
+
+Tú vas a escribir **una declaración sin instrucciones**: cuatro campos y ni un
+solo \`if\`, \`return\` ni \`println\`. Aun así las comprobaciones van a imprimir
+cosas. No es magia: al marcar la clase con \`data\`, **el compilador de Kotlin
+genera métodos que tú no escribiste**, a partir de los campos del constructor.
+
+Genera cuatro que importan aquí:
+
+- \`equals\` — compara **campo por campo** en vez de comparar si son el mismo
+  objeto en memoria. Por eso \`==\` entre dos \`Item\` con los mismos valores da
+  \`true\` aunque sean dos objetos distintos.
+- \`hashCode\` — coherente con \`equals\`, para poder usarlos en \`Set\` y como
+  claves de \`Map\`.
+- \`copy\` — crea un objeto nuevo cambiando solo lo que le indiques, y **deja
+  intacto el original**.
+- \`toString\` — un texto legible con los campos, en vez de \`Item@3f2a1b\`.
+
+Ponlo del revés y se ve mejor. Si escribieras \`class\` en lugar de \`data class\`,
+con exactamente los mismos campos:
+
+| Lo que hace la comprobación | Con \`data class\` | Con \`class\` |
+|---|---|---|
+| Leer \`a.id\`, \`a.name\`… | funciona | funciona |
+| \`a == b\` con los mismos valores | \`true\` | \`false\` — compara identidad, y son dos objetos |
+| \`a.copy(stock = 0)\` | funciona | **no compila**: \`copy\` no existe |
+
+Es decir: los campos los declaras tú, y el comportamiento que se comprueba lo
+aporta \`data\`. Esa es toda la relación entre lo que escribes y lo que se imprime.
+
+### Por qué el resto de la arquitectura lo necesita
+
+- **Igualdad por valor**: sin \`equals\` no puedes preguntar "¿el estado nuevo es
+  distinto del anterior?", y sin esa pregunta no se sabe si hay que redibujar la
+  pantalla.
+- **Copia con cambios**: producir un objeto nuevo en vez de mutar el que ya
+  tienes es lo que permite tratar el estado como inmutable — la base de todo lo
+  que viene después en esta arquitectura.
 `;
 
 const DIAGRAMA = `
@@ -140,18 +172,28 @@ Cuatro comprobaciones, **todas visibles**. Ninguna está oculta: aquí no hay
 comportamiento que generalizar, así que esconder una solo serviría para que
 falles por algo que no podías deducir.
 
+Cada una dice además **qué parte de tu declaración pone a prueba**.
+
 - **\`campos_en_orden\`** — construye \`Item("7", "Camisa", 24, listOf("ropa"))\`
   y muestra sus cuatro campos, separados por barras verticales.
   Debe imprimir \`7|Camisa|24|ropa\`.
+  *Pone a prueba:* que los campos existan, con esos tipos y **en ese orden** —
+  el objeto se construye por posición, no por nombre.
 - **\`dos_items_iguales\`** — construye **dos** \`Item\` distintos con los mismos
   valores y los compara con \`==\`.
   Debe imprimir \`true\`.
+  *Pone a prueba:* el \`equals\` que generó \`data\`. Con \`class\` a secas daría
+  \`false\`.
 - **\`copiar_no_toca_el_original\`** — hace \`copy(stock = 0)\` y muestra los
   campos de la copia y, al final, el stock del original.
-  Debe imprimir \`7|Camisa|0|24\` — fíjate en el último número.
+  Debe imprimir \`7|Camisa|0|24\` — el \`0\` es el de la copia y el \`24\` es el del
+  original, que no cambió.
+  *Pone a prueba:* el \`copy\` que generó \`data\`, y que los campos sean \`val\`.
 - **\`lista_conserva_el_orden\`** — construye un \`Item\` con dos etiquetas y
   muestra cuántas hay y en qué orden.
   Debe imprimir \`2:ropa+invierno\`.
+  *Pone a prueba:* que \`tags\` sea una lista, no un campo suelto ni un \`Set\` —
+  un \`Set\` no garantiza el orden.
 
 Si alguna falla, el veredicto te dice qué esperaba y qué obtuvo.
 `;

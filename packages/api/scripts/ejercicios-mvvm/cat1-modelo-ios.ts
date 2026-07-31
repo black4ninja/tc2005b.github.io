@@ -33,10 +33,39 @@ La idea es vieja y está en todas partes: Jackson en Java, \`serde\` en Rust,
 \`encoding/json\` en Go, los dataclasses de Python. Todas hacen el mismo trato:
 **menos código a cambio de acoplar los nombres de tu tipo a un formato externo.**
 
-Y \`struct\` en vez de \`class\` no es un detalle. Un \`struct\` es un **tipo de
+### El compilador escribe código por ti
+
+Esto es lo que más despista la primera vez. Vas a escribir **dos declaraciones
+sin una sola instrucción**: propiedades y ya. Aun así las comprobaciones
+decodifican JSON y construyen objetos. No lo hace tu código: lo hace el que
+Swift genera al leer tus declaraciones.
+
+Dos mecanismos distintos, y conviene no confundirlos:
+
+- **El inicializador por miembros.** Todo \`struct\` recibe gratis un \`init\` con
+  un parámetro por propiedad, en el orden en que las declaraste. Por eso
+  \`Item(id:name:stock:)\` existe sin que lo escribas.
+- **La síntesis de \`Codable\`.** Al escribir \`: Codable\`, Swift genera el código
+  que lee cada propiedad del JSON **buscando una clave con el mismo nombre**. Si
+  llamas \`name\` a la propiedad, busca \`"name"\`. Si la llamas \`nombre\`, busca
+  \`"nombre"\`, no la encuentra, y la decodificación lanza un error.
+
+Del revés se ve mejor:
+
+| Lo que hace la comprobación | Con \`struct: Codable\` | Sin \`: Codable\` |
+|---|---|---|
+| \`Item(id: …, name: …, stock: …)\` | funciona | funciona: el \`init\` es del \`struct\` |
+| \`JSONDecoder().decode(Item.self, …)\` | funciona | **no compila** |
+| Renombrar una propiedad | rompe la decodificación en ejecución | — |
+
+Y \`struct\` en vez de \`class\` tampoco es un detalle. Un \`struct\` es un **tipo de
 valor**: al asignarlo se copia. Dos partes de la app no pueden acabar compartiendo
 el mismo objeto y pisándose los cambios sin darse cuenta, que es una clase entera
 de errores que en iOS simplemente no ocurre si usas \`struct\`.
+
+Compáralo con Android: allí \`data\` genera \`equals\` y \`copy\` para darte igualdad
+por valor y copias explícitas. Aquí no hace falta pedir la copia — la semántica
+de valor del \`struct\` ya la da en cada asignación.
 `;
 
 const DIAGRAMA = `
@@ -63,6 +92,9 @@ const ERRORES = `
   ejecución.
 - **Usar \`class\` por costumbre.** Pierdes la semántica de valor y vuelves a
   poder compartir estado sin querer.
+- **Declarar las propiedades como \`let\`.** El tipo sigue siendo decodificable,
+  pero ya no se puede modificar una copia, y la última comprobación deja de
+  compilar. Usa \`var\`, como en la firma que te damos.
 - **Meter lógica de presentación en el modelo** (textos ya formateados, colores).
   El modelo describe datos, no cómo se pintan.
 `;
@@ -84,7 +116,7 @@ case "decodifica_catalogo_con_lista":
     let json = "{\\"total\\":2,\\"items\\":[{\\"id\\":\\"1\\",\\"name\\":\\"A\\",\\"stock\\":1},{\\"id\\":\\"2\\",\\"name\\":\\"B\\",\\"stock\\":0}]}"
     let c = try! JSONDecoder().decode(Catalogo.self, from: json.data(using: .utf8)!)
     print("\\(c.total):\\(c.items.map { $0.name }.joined(separator: "+"))")
-case "copiar_no_toca_el_original":
+case "asignar_hace_una_copia":
     var a = Item(id: "7", name: "Camisa", stock: 24)
     let b = a
     a.name = "Camiseta"
@@ -99,7 +131,7 @@ const CASOS = [
   { entrada: 'campos_en_orden\n', salidaEsperada: '7|Camisa|24', oculto: false },
   { entrada: 'decodifica_un_item\n', salidaEsperada: '9|Abrigo|3', oculto: false },
   { entrada: 'decodifica_catalogo_con_lista\n', salidaEsperada: '2:A+B', oculto: false },
-  { entrada: 'copiar_no_toca_el_original\n', salidaEsperada: 'Camiseta/Camisa', oculto: false },
+  { entrada: 'asignar_hace_una_copia\n', salidaEsperada: 'Camiseta/Camisa', oculto: false },
 ];
 
 const SOLUCIONES = [
@@ -129,20 +161,30 @@ struct Item: Codable {
 ];
 
 const COMPRUEBA = `
-Cuatro comprobaciones, **todas visibles**.
+Cuatro comprobaciones, **todas visibles**. Cada una dice qué parte de tus
+declaraciones pone a prueba.
 
 - **\`campos_en_orden\`** — construye \`Item(id: "7", name: "Camisa", stock: 24)\`
   y muestra sus tres campos separados por barras verticales.
   Debe imprimir \`7|Camisa|24\`.
+  *Pone a prueba:* que las propiedades se llamen así y estén en ese orden — el
+  inicializador por miembros las toma tal cual las declaraste.
 - **\`decodifica_un_item\`** — decodifica \`{"id":"9","name":"Abrigo","stock":3}\`
   y muestra los campos del resultado.
   Debe imprimir \`9|Abrigo|3\`.
+  *Pone a prueba:* que \`Item\` sea \`Codable\` y que los nombres coincidan con las
+  claves del JSON.
 - **\`decodifica_catalogo_con_lista\`** — decodifica un catálogo con dos
   artículos y muestra el total y sus nombres.
   Debe imprimir \`2:A+B\`.
-- **\`copiar_no_toca_el_original\`** — copia el \`Item\` a otra variable, cambia
-  el nombre **de la copia** y muestra los dos.
-  Debe imprimir \`Camiseta/Camisa\`.
+  *Pone a prueba:* que \`Catalogo\` también sea \`Codable\` y que \`items\` sea un
+  array de \`Item\`. La síntesis es recursiva: para decodificar el catálogo, Swift
+  necesita saber decodificar cada artículo.
+- **\`asignar_hace_una_copia\`** — asigna el \`Item\` a una segunda variable,
+  cambia el nombre **del primero** y muestra los dos.
+  Debe imprimir \`Camiseta/Camisa\`: el segundo conserva el valor viejo.
+  *Pone a prueba:* que sea \`struct\` y no \`class\`. Con \`class\` las dos variables
+  apuntarían al mismo objeto y saldría \`Camiseta/Camiseta\`.
 
 Si tus nombres de propiedad no coinciden con las claves del JSON, las dos
 comprobaciones de decodificación fallan.
