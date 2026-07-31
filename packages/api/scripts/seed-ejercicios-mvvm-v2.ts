@@ -25,6 +25,8 @@ import { modeloIos } from './ejercicios-mvvm/cat1-modelo-ios.js';
 import { mapperAndroid } from './ejercicios-mvvm/cat1-mapper.js';
 import { idDesdeUrl } from './ejercicios-mvvm/cat1-id-desde-url.js';
 import { repositorio } from './ejercicios-mvvm/cat2-repositorio.js';
+import { casoDeUso } from './ejercicios-mvvm/cat2-caso-de-uso.js';
+import { resultAndroid } from './ejercicios-mvvm/cat3-result.js';
 
 Parse.initialize(config.appId);
 (Parse as any).serverURL = config.serverURL;
@@ -41,7 +43,7 @@ const SLUG_COL =
 const NOMBRE_BLOQUE = 'Arquitectura MVVM';
 
 /** Todos los ejercicios, en el orden en que deben aparecer. */
-const TODOS: Ejercicio[] = [...modeloAndroid, ...modeloIos, ...mapperAndroid, ...idDesdeUrl, ...repositorio];
+const TODOS: Ejercicio[] = [...modeloAndroid, ...modeloIos, ...mapperAndroid, ...idDesdeUrl, ...repositorio, ...casoDeUso, ...resultAndroid];
 
 /**
  * Slugs de la v1, que sigue publicada mientras se revisa la v2.
