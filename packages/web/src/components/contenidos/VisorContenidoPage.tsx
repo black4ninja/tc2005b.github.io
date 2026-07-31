@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import type { TocEntry } from '@tc2005b/contenido-pipeline';
 import { useAuth } from '../../context/AuthContext';
@@ -64,11 +64,23 @@ export default function VisorContenidoPage() {
   // Árbol lateral colapsable: útil al presentar contenido con alumnos (estorba).
   const [arbolOculto, setArbolOculto] = useState(() => localStorage.getItem(ARBOL_KEY) === '1');
   const [reintento, setReintento] = useState(0);
-  const articleRef = useRef<HTMLElement>(null);
+  const articleRef = useRef<HTMLElement | null>(null);
 
   // Diagramas-como-código: reemplaza los bloques ```mermaid (y los que ya están
   // escritos en PlantUML) por su SVG. Mismo patrón que el botón de copiar.
-  useDiagramas(articleRef, [pagina]);
+  const refDiagramas = useDiagramas([pagina]);
+
+  // El <article> necesita las DOS refs: `articleRef` para el botón de copiar y
+  // la del hook de diagramas. Va en un `useCallback` estable: una lambda inline
+  // se recrearía en cada render, y React la llamaría con null y luego con el
+  // nodo cada vez, relanzando el efecto de diagramas sin parar.
+  const refArticulo = useCallback(
+    (nodo: HTMLElement | null) => {
+      articleRef.current = nodo;
+      refDiagramas(nodo);
+    },
+    [refDiagramas],
+  );
 
   // Búsqueda (US-5): server-side, con scope por permisos.
   const [consulta, setConsulta] = useState('');
@@ -495,7 +507,7 @@ export default function VisorContenidoPage() {
                    pipeline compartido (rehype-sanitize, allowlist) — scripts,
                    handlers e iframes se eliminan (design §3). El HTML crudo de
                    páginas tipo `html` NUNCA pasa por aquí (iframe sandbox, US-5). */
-                <article ref={articleRef} className="contenido-render" dangerouslySetInnerHTML={{ __html: pagina.cuerpoHtml }} />
+                <article ref={refArticulo} className="contenido-render" dangerouslySetInnerHTML={{ __html: pagina.cuerpoHtml }} />
               )}
               <div className={styles.prevNext}>
                 {pagina.prev ? (

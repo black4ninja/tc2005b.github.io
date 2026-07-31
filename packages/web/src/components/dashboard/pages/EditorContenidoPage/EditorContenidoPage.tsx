@@ -89,10 +89,9 @@ export default function EditorContenidoPage({
   const [estado, setEstado] = useState<EstadoGuardado>('cargando');
   const [error, setError] = useState('');
   const [previewHtml, setPreviewHtml] = useState('');
-  const previewRef = useRef<HTMLDivElement>(null);
   // Previsualización EN VIVO de los diagramas: el mismo hook del visor sobre el
   // panel de preview, así que reaprovecha el debounce que ya existe.
-  useDiagramas(previewRef, [previewHtml]);
+  const refDiagramas = useDiagramas([previewHtml]);
   // Se recuerda entre sesiones: quien escribe en una pantalla chica no quiere
   // volver a colapsar el preview cada vez que entra.
   const [vista, setVistaState] = useState<Vista>(leerVista);
@@ -697,7 +696,7 @@ export default function EditorContenidoPage({
                 {/* Seguro: previewHtml SIEMPRE sale de renderMarkdown(), cuyo pipeline
                     aplica rehype-sanitize (allowlist) — scripts/handlers/iframes se
                     eliminan. Es el mismo HTML que servirá producción (design §3). */}
-                <div ref={previewRef} className="contenido-render" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                <div ref={refDiagramas} className="contenido-render" dangerouslySetInnerHTML={{ __html: previewHtml }} />
               </div>
             ) : (
               <div className={styles.preview}>

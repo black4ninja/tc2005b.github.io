@@ -61,11 +61,10 @@ export default function EjercicioSolverPage() {
   const [jobEstado, setJobEstado] = useState<{ estado: string; posicion: number } | null>(null);
   const pollToken = useRef(0);
 
-  // Diagramas del enunciado. La dependencia es el HTML y no el ejercicio entero:
-  // es lo único que puede traerlos, y así no se reevalúa en cada cambio de
-  // estado del solver, que al enviar son muchos.
-  const enunciadoRef = useRef<HTMLDivElement>(null);
-  useDiagramas(enunciadoRef, [ej?.enunciadoHtml]);
+  // Diagramas del enunciado. Ref de CALLBACK: el solver se re-renderiza mucho
+  // (editor, cola del juez, veredicto) y React puede recrear este contenedor,
+  // restaurando el HTML original y borrando el SVG ya dibujado.
+  const refDiagramas = useDiagramas([ej?.enunciadoHtml]);
 
   // Al llegar el ejercicio: idioma inicial y código semilla por lenguaje.
   useEffect(() => {
@@ -177,7 +176,7 @@ export default function EjercicioSolverPage() {
       <div className={styles.cols}>
         {/* Enunciado + casos de muestra */}
         <section className={styles.enunciadoCol}>
-          <div ref={enunciadoRef} className={styles.enunciado} dangerouslySetInnerHTML={{ __html: ej.enunciadoHtml }} />
+          <div ref={refDiagramas} className={styles.enunciado} dangerouslySetInnerHTML={{ __html: ej.enunciadoHtml }} />
           {ej.casosMuestra.length > 0 && (
             <div className={styles.muestras}>
               <h2 className={styles.subtitulo}>Casos de ejemplo</h2>
