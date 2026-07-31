@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router';
 import CodeMirror from '@uiw/react-codemirror';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { EditorView, tooltips } from '@codemirror/view';
+import { EditorView } from '@codemirror/view';
 import { useAuth } from '../../context/AuthContext';
 import { useCargaGated } from '../../hooks/useCargaGated';
 import { extensionLenguaje, NOMBRE_LENGUAJE } from '../../config/codemirrorLenguaje';
@@ -76,13 +76,13 @@ export default function EjercicioSolverPage() {
   }, [ej]);
 
   const codigo = codigoPorLeng[lenguaje] ?? '';
-  // `tooltips({ parent: document.body })` saca el desplegable del autocompletado
-  // fuera del editor. La columna derecha es sticky y tiene scroll propio, y sin
-  // esto el desplegable se recorta contra ese borde justo al final del editor.
-  const extensiones = useMemo(
-    () => [extensionLenguaje(lenguaje), EditorView.lineWrapping, tooltips({ parent: document.body })],
-    [lenguaje],
-  );
+  // OJO: no pasar `tooltips({ parent: document.body })` para sacar de la columna
+  // el desplegable del autocompletado. CodeMirror crea entonces un contenedor
+  // `position: relative` al final de <body> y posiciona el desplegable de forma
+  // absoluta dentro de él; al abrirse, ese elemento amplía el área desplazable y
+  // aparece un hueco vacío al final de la página. El desplegable cabe de sobra
+  // dentro del editor, que son 480 px, así que no hace falta sacarlo.
+  const extensiones = useMemo(() => [extensionLenguaje(lenguaje), EditorView.lineWrapping], [lenguaje]);
 
   const post = useCallback(async (accion: 'ejecutar' | 'enviar', body: object): Promise<{ jobId?: string; envioId?: string }> => {
     const res = await fetch(`/api/contenidos/${slug}/ejercicios/${ejSlug}/${accion}`, {

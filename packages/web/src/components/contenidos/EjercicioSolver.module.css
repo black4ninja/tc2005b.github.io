@@ -83,7 +83,11 @@
    la evaluación, que pueden ser más altos que la pantalla; sin él, su parte
    final quedaría inalcanzable mientras la columna está fijada.
    Solo en dos columnas: por debajo de 860px el diseño ya es vertical y fijar la
-   columna dejaría el enunciado sin espacio. */
+   columna dejaría el enunciado sin espacio.
+
+   El desplegable del autocompletado se queda DENTRO del editor a propósito. Ver
+   la nota en EjercicioSolverPage.tsx: sacarlo con `tooltips({ parent })` añade
+   área desplazable vacía al final de la página. */
 @media (min-width: 861px) {
   .editorCol {
     position: sticky;
