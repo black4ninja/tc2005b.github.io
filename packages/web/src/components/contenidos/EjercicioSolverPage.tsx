@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router';
 import CodeMirror from '@uiw/react-codemirror';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { EditorView } from '@codemirror/view';
+import { EditorView, tooltips } from '@codemirror/view';
 import { useAuth } from '../../context/AuthContext';
 import { useCargaGated } from '../../hooks/useCargaGated';
 import { extensionLenguaje, NOMBRE_LENGUAJE } from '../../config/codemirrorLenguaje';
@@ -76,7 +76,13 @@ export default function EjercicioSolverPage() {
   }, [ej]);
 
   const codigo = codigoPorLeng[lenguaje] ?? '';
-  const extensiones = useMemo(() => [extensionLenguaje(lenguaje), EditorView.lineWrapping], [lenguaje]);
+  // `tooltips({ parent: document.body })` saca el desplegable del autocompletado
+  // fuera del editor. La columna derecha es sticky y tiene scroll propio, y sin
+  // esto el desplegable se recorta contra ese borde justo al final del editor.
+  const extensiones = useMemo(
+    () => [extensionLenguaje(lenguaje), EditorView.lineWrapping, tooltips({ parent: document.body })],
+    [lenguaje],
+  );
 
   const post = useCallback(async (accion: 'ejecutar' | 'enviar', body: object): Promise<{ jobId?: string; envioId?: string }> => {
     const res = await fetch(`/api/contenidos/${slug}/ejercicios/${ejSlug}/${accion}`, {
