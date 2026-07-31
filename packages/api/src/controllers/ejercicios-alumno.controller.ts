@@ -46,6 +46,11 @@ function dtoEjercicio(ej: EjercicioProgramacion) {
     codigoInicial: ej.getCodigoInicial(),
     limiteTiempoMs: ej.getLimiteTiempoMs(),
     limiteMemoriaMb: ej.getLimiteMemoriaMb(),
+    // La vista rotula los casos según el modo: en 'programa' la entrada son
+    // datos que el alumno lee, y en 'plantilla' es el nombre de la comprobación
+    // que ejecuta un programa oculto. Llamar "Entrada" a lo segundo hacía que se
+    // intentara leerla y escribir un `main`.
+    modoEvaluacion: ej.getModoEvaluacion(),
     casosMuestra: muestra,
     casosOcultos: casos.length - muestra.length,
   };

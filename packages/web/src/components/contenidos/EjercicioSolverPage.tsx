@@ -19,8 +19,26 @@ interface EjercicioDTO {
   lenguajes: string[];
   codigoInicial: Record<string, string>;
   limiteTiempoMs: number;
+  modoEvaluacion?: 'programa' | 'plantilla';
   casosMuestra: CasoMuestra[];
   casosOcultos: number;
+}
+
+/**
+ * Rótulos de los casos, según lo que la entrada significa de verdad.
+ *
+ * En modo `programa` el alumno escribe un programa completo y la entrada son
+ * datos que debe leer: "Entrada"/"Salida" es correcto.
+ *
+ * En modo `plantilla` escribe una pieza que inserta un programa oculto, y la
+ * entrada es el NOMBRE de la comprobación a ejecutar. Llamarlo "Entrada" hacía
+ * que se intentara leerla: en el estudio a ciegas, varios describieron el
+ * impulso de escribir un `main` que imprimiera la salida mostrada.
+ */
+function rotulos(modo: EjercicioDTO['modoEvaluacion']) {
+  return modo === 'plantilla'
+    ? { entrada: 'Comprobación', esperado: 'Debe imprimir', obtenido: 'Tu código imprimió' }
+    : { entrada: 'Entrada', esperado: 'Salida esperada', obtenido: 'Tu salida' };
 }
 interface ResultadoCaso {
   indice: number; oculto: boolean; paso: boolean; veredicto: string;
@@ -76,6 +94,7 @@ export default function EjercicioSolverPage() {
   }, [ej]);
 
   const codigo = codigoPorLeng[lenguaje] ?? '';
+  const rot = rotulos(ej?.modoEvaluacion);
   // OJO: no pasar `tooltips({ parent: document.body })` para sacar de la columna
   // el desplegable del autocompletado. CodeMirror crea entonces un contenedor
   // `position: relative` al final de <body> y posiciona el desplegable de forma
@@ -188,8 +207,8 @@ export default function EjercicioSolverPage() {
               <h2 className={styles.subtitulo}>Casos de ejemplo</h2>
               {ej.casosMuestra.map((c) => (
                 <div key={c.indice} className={styles.muestra}>
-                  <div><span className={styles.muestraLabel}>Entrada</span><pre className={styles.pre}>{c.entrada}</pre></div>
-                  <div><span className={styles.muestraLabel}>Salida</span><pre className={styles.pre}>{c.salidaEsperada}</pre></div>
+                  <div><span className={styles.muestraLabel}>{rot.entrada}</span><pre className={styles.pre}>{c.entrada}</pre></div>
+                  <div><span className={styles.muestraLabel}>{rot.esperado}</span><pre className={styles.pre}>{c.salidaEsperada}</pre></div>
                 </div>
               ))}
             </div>
@@ -263,9 +282,9 @@ export default function EjercicioSolverPage() {
                   </div>
                   {!c.oculto && !c.paso && (
                     <div className={styles.casoDetalle}>
-                      <div><span className={styles.muestraLabel}>Entrada</span><pre className={styles.pre}>{c.entrada}</pre></div>
-                      <div><span className={styles.muestraLabel}>Esperado</span><pre className={styles.pre}>{c.salidaEsperada}</pre></div>
-                      <div><span className={styles.muestraLabel}>Tu salida</span><pre className={styles.pre}>{c.salidaObtenida}</pre></div>
+                      <div><span className={styles.muestraLabel}>{rot.entrada}</span><pre className={styles.pre}>{c.entrada}</pre></div>
+                      <div><span className={styles.muestraLabel}>{rot.esperado}</span><pre className={styles.pre}>{c.salidaEsperada}</pre></div>
+                      <div><span className={styles.muestraLabel}>{rot.obtenido}</span><pre className={styles.pre}>{c.salidaObtenida}</pre></div>
                     </div>
                   )}
                 </div>

@@ -179,11 +179,10 @@ visible. Dicho programa:
 2. Ejecuta esa comprobación sobre el código entregado.
 3. Imprime el resultado.
 
-Por ese motivo, en "Casos de ejemplo" la **Entrada** es una palabra —el nombre de
-la comprobación— y la **Salida** es el texto que debe producirse si el código es
-correcto. Los separadores \`|\` y \`:\` los genera el programa de comprobación para
-mostrar varios valores en una línea; no deben producirse desde el código
-entregado.
+Por ese motivo, en "Casos de ejemplo" cada caso muestra la **Comprobación** —el
+nombre que se ejecuta— y lo que **Debe imprimir** si el código es correcto. Los
+separadores \`|\` y \`:\` los genera el programa de comprobación para mostrar varios
+valores en una línea; no deben producirse desde el código entregado.
 
 ${seccionYaDeclarado(e)}## Qué escribes
 
