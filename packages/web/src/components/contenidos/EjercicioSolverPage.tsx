@@ -34,10 +34,20 @@ interface EjercicioDTO {
  * entrada es el NOMBRE de la comprobación a ejecutar. Llamarlo "Entrada" hacía
  * que se intentara leerla: en el estudio a ciegas, varios describieron el
  * impulso de escribir un `main` que imprimiera la salida mostrada.
+ *
+ * Los rótulos NOMBRAN AL SUJETO que hace cada cosa. Es lo que ha funcionado en
+ * las tres calibraciones: un rótulo pasivo deja la atribución al aire y el
+ * lector se la adjudica. "Debe imprimir" se leía como "tú debes imprimir" —tras
+ * ese cambio, 3 de 6 pasaron a preguntarse quién producía la salida—, así que
+ * el sujeto va explícito: la comprobación imprime, tu código imprimió.
  */
 function rotulos(modo: EjercicioDTO['modoEvaluacion']) {
   return modo === 'plantilla'
-    ? { entrada: 'Comprobación', esperado: 'Debe imprimir', obtenido: 'Tu código imprimió' }
+    ? {
+        entrada: 'Comprobación',
+        esperado: 'La comprobación imprime',
+        obtenido: 'Tu código imprimió',
+      }
     : { entrada: 'Entrada', esperado: 'Salida esperada', obtenido: 'Tu salida' };
 }
 interface ResultadoCaso {

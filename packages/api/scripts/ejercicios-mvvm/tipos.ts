@@ -180,9 +180,9 @@ visible. Dicho programa:
 3. Imprime el resultado.
 
 Por ese motivo, en "Casos de ejemplo" cada caso muestra la **Comprobación** —el
-nombre que se ejecuta— y lo que **Debe imprimir** si el código es correcto. Los
-separadores \`|\` y \`:\` los genera el programa de comprobación para mostrar varios
-valores en una línea; no deben producirse desde el código entregado.
+nombre que se ejecuta— y lo que **la comprobación imprime** cuando el código es
+correcto. Ese texto lo escribe el programa de comprobación, no tu código: los
+separadores \`|\` y \`:\` los añade él para mostrar varios valores en una línea.
 
 ${seccionYaDeclarado(e)}## Qué escribes
 

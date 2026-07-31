@@ -53,9 +53,20 @@ async function cargar(slugColeccion: string): Promise<Parse.Object[]> {
   });
 }
 
-/** Lo que ve un alumno. Cualquier campo de más aquí invalida el estudio. */
+/**
+ * Lo que ve un alumno. Cualquier campo de más aquí invalida el estudio.
+ *
+ * Los casos se rotulan como los rotula la PANTALLA, no con los nombres internos
+ * del modelo. Si se vuelcan como `entrada`/`salidaEsperada`, el estudio mide el
+ * esquema de datos en lugar de la interfaz, y cualquier cambio de rótulo se
+ * vuelve invisible para la medición.
+ */
 function vistaAlumno(e: Parse.Object): Record<string, unknown> {
   const casos = (e.get('casos') ?? []) as { entrada: string; salidaEsperada: string; oculto: boolean }[];
+  const plantilla = e.get('modoEvaluacion') === 'plantilla';
+  const rotulo = plantilla
+    ? { a: 'Comprobación', b: 'La comprobación imprime' }
+    : { a: 'Entrada', b: 'Salida esperada' };
   return {
     slug: e.get('slug'),
     titulo: e.get('titulo'),
@@ -63,7 +74,7 @@ function vistaAlumno(e: Parse.Object): Record<string, unknown> {
     enunciado: e.get('enunciado'),
     codigoInicial: e.get('codigoInicial'),
     casosVisibles: casos.filter((c) => !c.oculto)
-      .map((c) => ({ entrada: c.entrada, salidaEsperada: c.salidaEsperada })),
+      .map((c) => ({ [rotulo.a]: c.entrada, [rotulo.b]: c.salidaEsperada })),
     numeroCasosOcultos: casos.filter((c) => c.oculto).length,
   };
 }
