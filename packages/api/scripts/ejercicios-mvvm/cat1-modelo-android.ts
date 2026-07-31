@@ -11,16 +11,23 @@ const CATEGORIA = 'Modelo y capa de datos';
 const CAPA = 'Dominio — `domain/model/Item.kt`';
 
 const PROBLEMA = `
-Tu app muestra un catálogo. Los datos llegan de una API con la forma que decidió
-quien la escribió: nombres en minúscula, fechas como texto, campos que a veces
-faltan.
+Este ejercicio construye **una sola pieza**: el tipo \`Item\`.
 
-Si esa forma viaja tal cual hasta la pantalla, cualquier cambio en la API te
-obliga a tocar la vista. Y al revés: no puedes probar la pantalla sin fabricar
-respuestas con el formato exacto del servidor.
+Tiene exactamente dos vecinos, y son los del diagrama de más abajo:
 
-El **modelo de dominio** corta eso: es la forma que tu app entiende, decidida por
-ti, independiente de quién te dé los datos.
+- **Quien lo produce**: un traductor (\`toDomain\`) que recibe la respuesta de la
+  API y la convierte en \`Item\`. Ese traductor es otro ejercicio; aquí no lo
+  escribes.
+- **Quien lo consume**: el ViewModel, que lee \`Item\` para decidir qué mostrar.
+  También es otro ejercicio.
+
+El problema que resuelve \`Item\` es de traducción. La API devuelve los datos con
+la forma que decidió quien la escribió: nombres en minúscula, números como texto,
+campos que a veces faltan. Si esa forma llegara sin traducir hasta el ViewModel,
+un cambio en la API obligaría a tocarlo.
+
+\`Item\` es la forma que decides **tú**. Nada más. No necesitas saber cómo
+funcionan sus vecinos para escribirlo.
 `;
 
 const DE_DONDE_VIENE = `
@@ -86,13 +93,13 @@ fun main() {
     val caso = readLine()?.trim() ?: ""
     val a = Item("7", "Camisa", 24, listOf("ropa"))
     when (caso) {
-        "campos" -> println("\${a.id}|\${a.name}|\${a.stock}|\${a.tags.joinToString(",")}")
-        "igualdad_por_valor" -> println((a == Item("7", "Camisa", 24, listOf("ropa"))).toString())
-        "copia_cambiando_stock" -> {
+        "campos_en_orden" -> println("\${a.id}|\${a.name}|\${a.stock}|\${a.tags.joinToString(",")}")
+        "dos_items_iguales" -> println((a == Item("7", "Camisa", 24, listOf("ropa"))).toString())
+        "copiar_no_toca_el_original" -> {
             val vendido = a.copy(stock = 0)
             println("\${vendido.id}|\${vendido.name}|\${vendido.stock}|\${a.stock}")
         }
-        "varias_etiquetas" -> {
+        "lista_conserva_el_orden" -> {
             val b = Item("8", "Abrigo", 3, listOf("ropa", "invierno"))
             println(b.tags.size.toString() + ":" + b.tags.joinToString("+"))
         }
@@ -100,11 +107,14 @@ fun main() {
     }
 }`;
 
+// TODOS visibles a propósito. En un ejercicio que solo declara un tipo no hay
+// comportamiento que generalizar: un caso oculto no comprobaría comprensión,
+// solo escondería un dato que el alumno no tiene forma de deducir.
 const CASOS = [
-  { entrada: 'campos\n', salidaEsperada: '7|Camisa|24|ropa', oculto: false },
-  { entrada: 'igualdad_por_valor\n', salidaEsperada: 'true', oculto: false },
-  { entrada: 'copia_cambiando_stock\n', salidaEsperada: '7|Camisa|0|24', oculto: false },
-  { entrada: 'varias_etiquetas\n', salidaEsperada: '2:ropa+invierno', oculto: true },
+  { entrada: 'campos_en_orden\n', salidaEsperada: '7|Camisa|24|ropa', oculto: false },
+  { entrada: 'dos_items_iguales\n', salidaEsperada: 'true', oculto: false },
+  { entrada: 'copiar_no_toca_el_original\n', salidaEsperada: '7|Camisa|0|24', oculto: false },
+  { entrada: 'lista_conserva_el_orden\n', salidaEsperada: '2:ropa+invierno', oculto: false },
 ];
 
 const SOLUCIONES_BASE = [
@@ -126,10 +136,24 @@ const SOLUCIONES_BASE = [
 ];
 
 const COMPRUEBA = `
-El driver construye un \`Item\` y observa cuatro cosas: que los campos estén en el
-orden y con el tipo pedidos, que dos instancias iguales se comparen iguales, que
-\`copy\` produzca un objeto nuevo **sin tocar el original**, y que la lista de
-etiquetas conserve el orden.
+Cuatro comprobaciones, **todas visibles**. Ninguna está oculta: aquí no hay
+comportamiento que generalizar, así que esconder una solo serviría para que
+falles por algo que no podías deducir.
+
+- **\`campos_en_orden\`** — construye \`Item("7", "Camisa", 24, listOf("ropa"))\`
+  y muestra sus cuatro campos, separados por barras verticales.
+  Debe imprimir \`7|Camisa|24|ropa\`.
+- **\`dos_items_iguales\`** — construye **dos** \`Item\` distintos con los mismos
+  valores y los compara con \`==\`.
+  Debe imprimir \`true\`.
+- **\`copiar_no_toca_el_original\`** — hace \`copy(stock = 0)\` y muestra los
+  campos de la copia y, al final, el stock del original.
+  Debe imprimir \`7|Camisa|0|24\` — fíjate en el último número.
+- **\`lista_conserva_el_orden\`** — construye un \`Item\` con dos etiquetas y
+  muestra cuántas hay y en qué orden.
+  Debe imprimir \`2:ropa+invierno\`.
+
+Si alguna falla, el veredicto te dice qué esperaba y qué obtuvo.
 `;
 
 export const modeloAndroid: Ejercicio[] = [

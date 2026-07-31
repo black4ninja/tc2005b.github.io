@@ -6,13 +6,21 @@ const CATEGORIA = 'Modelo y capa de datos';
 const CAPA = 'Modelos — `Modelos/Item.swift`';
 
 const PROBLEMA = `
-En la pista de iOS el modelo tiene un papel doble: es lo que **llega del JSON** y
-lo que **usa la vista**. No hay una capa de traducción intermedia, así que el
-tipo que declares es a la vez tu vocabulario y tu contrato con el servidor.
+Este ejercicio construye **dos tipos**: \`Item\` y \`Catalogo\`. Nada más.
 
-Eso lo hace más simple y más frágil a la vez: cualquier cambio de nombre en la
-API rompe la decodificación en silencio, devolviendo un error en vez de datos.
-Por eso conviene saber exactamente qué está haciendo \`Codable\` por debajo.
+Sus vecinos, los del diagrama de abajo:
+
+- **Quien los produce**: el decodificador de JSON. No lo escribes tú: lo genera
+  Swift a partir de tus nombres de propiedad.
+- **Quien los consume**: el repositorio, que los pasa hacia arriba. Es otro
+  ejercicio.
+
+En la pista de iOS estos tipos tienen un papel doble: son lo que llega del JSON
+**y** lo que usa la pantalla, sin traducción intermedia. Eso los hace más simples
+y más frágiles a la vez: si un nombre deja de coincidir con la clave del JSON, la
+decodificación falla y devuelve un error en vez de datos.
+
+Por eso aquí conviene saber exactamente qué hace \`Codable\` por debajo.
 `;
 
 const DE_DONDE_VIENE = `
@@ -65,18 +73,18 @@ const DRIVER = `import Foundation
 
 let caso = readLine()?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 switch caso {
-case "campos":
+case "campos_en_orden":
     let a = Item(id: "7", name: "Camisa", stock: 24)
     print("\\(a.id)|\\(a.name)|\\(a.stock)")
-case "decodifica_item":
+case "decodifica_un_item":
     let json = "{\\"id\\":\\"9\\",\\"name\\":\\"Abrigo\\",\\"stock\\":3}"
     let d = try! JSONDecoder().decode(Item.self, from: json.data(using: .utf8)!)
     print("\\(d.id)|\\(d.name)|\\(d.stock)")
-case "decodifica_catalogo":
+case "decodifica_catalogo_con_lista":
     let json = "{\\"total\\":2,\\"items\\":[{\\"id\\":\\"1\\",\\"name\\":\\"A\\",\\"stock\\":1},{\\"id\\":\\"2\\",\\"name\\":\\"B\\",\\"stock\\":0}]}"
     let c = try! JSONDecoder().decode(Catalogo.self, from: json.data(using: .utf8)!)
     print("\\(c.total):\\(c.items.map { $0.name }.joined(separator: "+"))")
-case "es_tipo_valor":
+case "copiar_no_toca_el_original":
     var a = Item(id: "7", name: "Camisa", stock: 24)
     let b = a
     a.name = "Camiseta"
@@ -85,11 +93,13 @@ default:
     print("caso desconocido: \\(caso)")
 }`;
 
+// TODOS visibles: declarar un tipo no tiene comportamiento que generalizar, así
+// que un caso oculto solo escondería un dato que el alumno no puede deducir.
 const CASOS = [
-  { entrada: 'campos\n', salidaEsperada: '7|Camisa|24', oculto: false },
-  { entrada: 'decodifica_item\n', salidaEsperada: '9|Abrigo|3', oculto: false },
-  { entrada: 'decodifica_catalogo\n', salidaEsperada: '2:A+B', oculto: false },
-  { entrada: 'es_tipo_valor\n', salidaEsperada: 'Camiseta/Camisa', oculto: true },
+  { entrada: 'campos_en_orden\n', salidaEsperada: '7|Camisa|24', oculto: false },
+  { entrada: 'decodifica_un_item\n', salidaEsperada: '9|Abrigo|3', oculto: false },
+  { entrada: 'decodifica_catalogo_con_lista\n', salidaEsperada: '2:A+B', oculto: false },
+  { entrada: 'copiar_no_toca_el_original\n', salidaEsperada: 'Camiseta/Camisa', oculto: false },
 ];
 
 const SOLUCIONES = [
@@ -119,10 +129,23 @@ struct Item: Codable {
 ];
 
 const COMPRUEBA = `
-El driver hace cuatro cosas: construye un \`Item\` a mano, decodifica un \`Item\`
-desde JSON, decodifica un \`Catalogo\` con lista anidada, y comprueba la semántica
-de valor copiando y modificando. Si tus nombres de propiedad no coinciden con las
-claves del JSON, la decodificación falla.
+Cuatro comprobaciones, **todas visibles**.
+
+- **\`campos_en_orden\`** — construye \`Item(id: "7", name: "Camisa", stock: 24)\`
+  y muestra sus tres campos separados por barras verticales.
+  Debe imprimir \`7|Camisa|24\`.
+- **\`decodifica_un_item\`** — decodifica \`{"id":"9","name":"Abrigo","stock":3}\`
+  y muestra los campos del resultado.
+  Debe imprimir \`9|Abrigo|3\`.
+- **\`decodifica_catalogo_con_lista\`** — decodifica un catálogo con dos
+  artículos y muestra el total y sus nombres.
+  Debe imprimir \`2:A+B\`.
+- **\`copiar_no_toca_el_original\`** — copia el \`Item\` a otra variable, cambia
+  el nombre **de la copia** y muestra los dos.
+  Debe imprimir \`Camiseta/Camisa\`.
+
+Si tus nombres de propiedad no coinciden con las claves del JSON, las dos
+comprobaciones de decodificación fallan.
 `;
 
 export const modeloIos: Ejercicio[] = [

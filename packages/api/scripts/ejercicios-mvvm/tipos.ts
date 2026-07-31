@@ -99,6 +99,23 @@ ${e.dondeMasLoVeras.trim()}
 
 ${e.queEscribes.trim()}
 
+## Cómo se ejecuta lo que escribes
+
+**No escribas \`main\`, ni imprimas, ni leas nada.** Escribe solo lo que pide la
+sección anterior.
+
+Tu código se inserta dentro de un programa que ya existe y que no ves. Ese
+programa:
+
+1. Recibe por su entrada **el nombre de una comprobación** (no datos: un nombre).
+2. Ejecuta esa comprobación **usando lo que tú escribiste**.
+3. Imprime el resultado.
+
+Por eso, en "Casos de ejemplo", la **Entrada** es una palabra —el nombre de la
+comprobación— y la **Salida** es lo que debe aparecer si tu código es correcto.
+Los separadores \`|\` y \`:\` los pone ese programa para mostrar varios valores en
+una línea; tú no tienes que generarlos.
+
 ## Paso a paso
 
 ${e.pasoAPaso.trim()}
