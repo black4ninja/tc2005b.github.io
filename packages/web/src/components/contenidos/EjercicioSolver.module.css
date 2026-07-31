@@ -73,6 +73,32 @@
 
 /* --- Editor --- */
 .editorCol { min-width: 0; }
+
+/* El editor acompaña al scroll del enunciado.
+   Estos enunciados son largos —teoría, diagrama, tabla de comprobaciones—, así
+   que al bajar a leer qué hay que escribir el editor quedaba fuera de pantalla y
+   había que volver arriba para escribirlo. Fijándolo, lo leído y el sitio donde
+   se escribe están a la vista a la vez.
+   El scroll propio es necesario porque debajo del editor van los resultados de
+   la evaluación, que pueden ser más altos que la pantalla; sin él, su parte
+   final quedaría inalcanzable mientras la columna está fijada.
+   Solo en dos columnas: por debajo de 860px el diseño ya es vertical y fijar la
+   columna dejaría el enunciado sin espacio.
+
+   El desplegable del autocompletado se queda DENTRO del editor a propósito. Ver
+   la nota en EjercicioSolverPage.tsx: sacarlo con `tooltips({ parent })` añade
+   área desplazable vacía al final de la página. */
+@media (min-width: 861px) {
+  .editorCol {
+    position: sticky;
+    top: calc(var(--dashboard-header-height, 64px) + 12px);
+    max-height: calc(100vh - var(--dashboard-header-height, 64px) - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* Sitio para la barra de scroll propia, para que no tape los botones. */
+    padding-right: 4px;
+  }
+}
 .editorHead { margin-bottom: 8px; }
 .select, .lengFijo {
   font-size: 14px;

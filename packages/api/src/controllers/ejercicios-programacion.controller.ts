@@ -163,6 +163,15 @@ export async function listEjercicios(req: Request, res: Response): Promise<void>
     const q = new Parse.Query<EjercicioProgramacion>('EjercicioProgramacion');
     q.equalTo('coleccion' as any, Coleccion.createWithoutData(id) as any);
     q.equalTo('exists' as any, true as any);
+    // Solo lo que muestra la tabla del listado. Los campos pesados —enunciado,
+    // enunciadoHtml, plantillaCodigo, codigoInicial y solucionesReferencia— no
+    // se pintan aquí, y traerlos hacía que la pantalla tardase más de 30 s con
+    // 46 ejercicios. El editor los pide aparte, por `GET /admin/ejercicios/:id`.
+    // `casos` se conserva porque la tabla muestra su longitud.
+    q.select(
+      'titulo' as any, 'slug' as any, 'lenguajes' as any, 'orden' as any,
+      'categoria' as any, 'publicado' as any, 'casos' as any, 'modoEvaluacion' as any,
+    );
     q.ascending('orden');
     q.limit(1000);
     const ejercicios = await q.find({ useMasterKey: true });
