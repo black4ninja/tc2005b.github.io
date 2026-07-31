@@ -1,5 +1,32 @@
 import type { Ejercicio } from './tipos.js';
 
+/** Firmas de lo ya proporcionado. Sin cuerpos: son solución de otros ejercicios. */
+const YA_DECLARADO = {
+  kotlin: `data class Item(val id: String, val name: String, val stock: Int)
+
+interface ItemRepository {
+    fun obtenerTodos(): List<Item>
+    fun obtenerPorId(id: String): Item?
+}
+
+// Implementación de prueba, ya escrita:
+class RepositorioFijo(private val items: List<Item>) : ItemRepository`,
+  swift: `struct Item {
+    var id: String
+    var name: String
+    var stock: Int
+}
+
+protocol ItemRepository {
+    func obtenerTodos() -> [Item]
+    func obtenerPorId(_ id: String) -> Item?
+}
+
+// Implementación de prueba, ya escrita:
+struct RepositorioFijo: ItemRepository { var items: [Item] }`,
+};
+
+
 /**
  * Concepto 2.2 — Caso de uso (Android) · Requirement (iOS). Bilingüe.
  *
@@ -333,6 +360,7 @@ ${FIRMAS}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { kotlin: DRIVER_KOTLIN, swift: DRIVER_SWIFT },
     inicial: {
       kotlin: `class GetItemsUseCase(private val repositorio: ItemRepository) {
@@ -384,6 +412,7 @@ ${FIRMAS}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { kotlin: DRIVER_KOTLIN, swift: DRIVER_SWIFT },
     inicial: {
       kotlin: `// Escribe aquí GetItemsUseCase.
@@ -531,6 +560,7 @@ exactamente esa situación, y ninguna comprobación visible la ejercita.
 El orden alfabético es el del lenguaje: las mayúsculas preceden a las minúsculas,
 de modo que \`Camisa\` va antes que \`camisa larga\`.
 `,
+    yaDeclarado: YA_DECLARADO,
     plantilla: {
       kotlin: `${CABECERA_KOTLIN}
 

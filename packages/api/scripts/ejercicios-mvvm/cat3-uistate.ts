@@ -1,5 +1,17 @@
 import type { Ejercicio } from './tipos.js';
 
+/** Firmas de lo ya proporcionado. Sin cuerpos: son solución de otros ejercicios. */
+const YA_DECLARADO = {
+  kotlin: `data class Item(val id: String, val name: String)
+
+sealed class Result {
+    object Cargando : Result()
+    data class Exito(val datos: List<Item>) : Result()   // OJO: la propiedad es \`datos\`
+    data class Error(val mensaje: String) : Result()
+}`,
+};
+
+
 /**
  * Concepto 3.2 — `UiState` y el reducer (Android).
  *
@@ -287,6 +299,7 @@ ${TABLA_REGLAS}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { kotlin: DRIVER },
     inicial: {
       kotlin: `data class ItemsUiState(
@@ -334,6 +347,7 @@ ${TABLA_REGLAS}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { kotlin: DRIVER },
     inicial: {
       kotlin: `// Escribe aquí ItemsUiState y la función reducir.
@@ -489,6 +503,7 @@ muestran el estado final con el formato
 La comprobación oculta es deducible: el enunciado define \`listaVacia\` con las
 tres condiciones exactas que esa secuencia cumple.
 `,
+    yaDeclarado: YA_DECLARADO,
     plantilla: {
       kotlin: `data class Item(val id: String, val name: String)
 

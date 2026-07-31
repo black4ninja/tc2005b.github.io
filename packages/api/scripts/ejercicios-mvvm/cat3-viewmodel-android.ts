@@ -1,5 +1,30 @@
 import type { Ejercicio } from './tipos.js';
 
+/** Firmas de lo ya proporcionado. Sin cuerpos: son solución de otros ejercicios. */
+const YA_DECLARADO = {
+  kotlin: `data class Item(val id: String, val name: String, val stock: Int)
+
+interface ItemRepository {
+    fun obtenerTodos(): List<Item>
+}
+
+// Aplica las reglas de negocio. LANZA excepción si el repositorio falla.
+class GetItemsUseCase(private val repositorio: ItemRepository) {
+    operator fun invoke(): List<Item>
+}
+
+data class ItemsUiState(
+    val items: List<Item> = emptyList(),
+    val cargando: Boolean = false,
+    val error: String? = null,
+)
+
+// Repositorios de prueba, ya escritos:
+class RepositorioFijo(private val items: List<Item>) : ItemRepository
+class RepositorioQueFalla(private val mensaje: String) : ItemRepository`,
+};
+
+
 /**
  * Concepto 3.3 — ViewModel (Android).
  *
@@ -349,6 +374,7 @@ ${REGLAS}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { kotlin: DRIVER },
     inicial: {
       kotlin: `class ItemsViewModel(private val obtenerItems: GetItemsUseCase) {
@@ -406,6 +432,7 @@ ${REGLAS}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { kotlin: DRIVER },
     inicial: {
       kotlin: `// Escribe aquí ItemsViewModel según el enunciado.
@@ -542,6 +569,7 @@ separan con \` / \`.
 La comprobación oculta es deducible: la regla 4 indica que los sucesos no se
 guardan, y ninguna comprobación visible lo ejercita.
 `,
+    yaDeclarado: YA_DECLARADO,
     plantilla: {
       kotlin: `${CABECERA}
 

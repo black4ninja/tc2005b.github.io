@@ -1,5 +1,31 @@
 import type { Ejercicio } from './tipos.js';
 
+/** Firmas de lo ya proporcionado. Sin cuerpos: son solución de otros ejercicios. */
+const YA_DECLARADO = {
+  swift: `struct Item {
+    var id: String
+    var name: String
+    var stock: Int
+}
+
+struct ErrorCarga: Error { var mensaje: String }
+
+protocol ItemRepository {
+    func obtenerTodos() throws -> [Item]
+}
+
+// Aplica las reglas de negocio. Propaga el error del repositorio.
+struct ItemsRequirement {
+    let repositorio: ItemRepository
+    func execute() throws -> [Item]
+}
+
+// Repositorios de prueba, ya escritos:
+struct RepositorioFijo: ItemRepository { var items: [Item] }
+struct RepositorioQueFalla: ItemRepository { var mensaje: String }`,
+};
+
+
 /**
  * Concepto 3.4 — ViewModel (iOS).
  *
@@ -382,6 +408,7 @@ ${REGLAS}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { swift: DRIVER },
     inicial: {
       swift: `final class ItemsViewModel {
@@ -442,6 +469,7 @@ ${REGLAS}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { swift: DRIVER },
     inicial: {
       swift: `// Escribe aquí ItemsViewModel según el enunciado.
@@ -591,6 +619,7 @@ reduciéndola al liberarse.
 La comprobación oculta es deducible: si cancelar libera la pantalla, no cancelar
 la mantiene viva, y ese es precisamente el motivo por el que la baja existe.
 `,
+    yaDeclarado: YA_DECLARADO,
     plantilla: {
       swift: `${CABECERA}
 

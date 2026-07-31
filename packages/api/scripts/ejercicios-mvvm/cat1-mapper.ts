@@ -1,5 +1,18 @@
 import type { Ejercicio } from './tipos.js';
 
+/** Firmas de lo ya proporcionado. Sin cuerpos: son solución de otros ejercicios. */
+const YA_DECLARADO = {
+  kotlin: `data class Item(val id: String, val name: String, val stock: Int, val tags: List<String>)
+
+data class ItemDto(
+    val item_id: String?,
+    val item_name: String?,
+    val in_stock: String?,
+    val tag_list: List<String>?,
+)`,
+};
+
+
 /**
  * Concepto 1.3 — Mapper: del DTO al modelo de dominio (Android), en tres niveles.
  *
@@ -247,6 +260,7 @@ ${TABLA}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { kotlin: DRIVER },
     inicial: {
       kotlin: `fun ItemDto.toDomain(): Item = Item(
@@ -305,6 +319,7 @@ ${TABLA}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { kotlin: DRIVER },
     inicial: {
       kotlin: `// Escribe aquí la función toDomain() según la tabla del enunciado.
@@ -421,6 +436,7 @@ formato \`número de elementos:identificadores separados por comas\`.
 La comprobación oculta es deducible: aplica las dos reglas del enunciado al caso
 límite que menciona el paso 4.
 `,
+    yaDeclarado: YA_DECLARADO,
     plantilla: {
       kotlin: `data class Item(
     val id: String,

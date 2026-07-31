@@ -1,5 +1,34 @@
 import type { Ejercicio } from './tipos.js';
 
+/** Firmas de lo ya proporcionado. Sin cuerpos: son solución de otros ejercicios. */
+const YA_DECLARADO = {
+  kotlin: `data class Item(val id: String, val name: String)`,
+  swift: `struct Item {
+    var id: String
+    var name: String
+}`,
+};
+
+
+/** El RETO sí recibe el contrato hecho: lo reutiliza sin modificarlo. */
+const YA_DECLARADO_RETO = {
+  kotlin: `data class Item(val id: String, val name: String)
+
+interface ItemRepository {
+    fun obtenerTodos(): List<Item>
+    fun obtenerPorId(id: String): Item?
+}`,
+  swift: `struct Item {
+    var id: String
+    var name: String
+}
+
+protocol ItemRepository {
+    func obtenerTodos() -> [Item]
+    func obtenerPorId(_ id: String) -> Item?
+}`,
+};
+
 /**
  * Concepto 2.1 — Contrato del repositorio y doble de prueba. Bilingüe.
  *
@@ -312,6 +341,7 @@ ${FIRMAS}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { kotlin: DRIVER_KOTLIN, swift: DRIVER_SWIFT },
     inicial: {
       kotlin: `interface ItemRepository {
@@ -363,6 +393,7 @@ inaccesible desde ellas.
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { kotlin: DRIVER_KOTLIN, swift: DRIVER_SWIFT },
     inicial: {
       kotlin: `// Escribe aquí ItemRepository y ItemRepositoryFalso.
@@ -501,6 +532,7 @@ Las comprobaciones utilizan los tres dobles a través del mismo contrato.
 La comprobación oculta es deducible: el enunciado indica que el contador registra
 una unidad por invocación, de modo que su valor inicial se deriva de esa regla.
 `,
+    yaDeclarado: YA_DECLARADO_RETO,
     plantilla: {
       kotlin: `data class Item(val id: String, val name: String)
 

@@ -1,5 +1,11 @@
 import type { Ejercicio } from './tipos.js';
 
+/** Firmas de lo ya proporcionado. Sin cuerpos: son solución de otros ejercicios. */
+const YA_DECLARADO = {
+  kotlin: `data class Item(val id: String, val name: String)`,
+};
+
+
 /**
  * Concepto 3.1 — `Result`: los tres estados de una carga (Android).
  *
@@ -225,6 +231,7 @@ ${FIRMA}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { kotlin: DRIVER },
     inicial: {
       kotlin: `sealed class Result {
@@ -262,6 +269,7 @@ ${FIRMA}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { kotlin: DRIVER },
     inicial: {
       kotlin: `// Escribe aquí el tipo Result con sus tres alternativas.
@@ -396,6 +404,7 @@ La comprobación oculta es deducible: la jerarquía del enunciado declara dos
 clases de error y la tabla de \`map\` indica que ambas se conservan sin
 transformar.
 `,
+    yaDeclarado: YA_DECLARADO,
     plantilla: {
       kotlin: `data class Item(val id: String, val name: String)
 

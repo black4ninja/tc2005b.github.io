@@ -1,5 +1,38 @@
 import type { Ejercicio } from './tipos.js';
 
+/** Firmas de lo ya proporcionado. Sin cuerpos: son solución de otros ejercicios. */
+const YA_DECLARADO = {
+  swift: `struct Item: Codable { var id: String; var name: String; var stock: Int }
+struct Catalogo: Codable { var items: [Item] }
+struct ErrorCarga: Error { var mensaje: String }
+
+protocol FuenteRemota {
+    func leer() throws -> Data          // devuelve el JSON en bruto
+}
+
+protocol ItemRepository {
+    func obtenerTodos() throws -> [Item]
+}
+
+struct ItemsRequirement {
+    let repositorio: ItemRepository
+    func execute() throws -> [Item]     // descarta stock <= 0 y ordena por nombre
+}
+
+final class ItemsViewModel {
+    private(set) var items: [Item]
+    private(set) var cargando: Bool
+    private(set) var error: String?
+    init(requerimiento: ItemsRequirement)
+    func cargar()                       // convierte el error lanzado en estado
+}
+
+// Fuentes de prueba, ya escritas:
+struct FuenteFija: FuenteRemota { var texto: String }
+struct FuenteQueFalla: FuenteRemota { var mensaje: String }`,
+};
+
+
 /**
  * Concepto 4.2 — Composición end-to-end (iOS).
  *
@@ -354,6 +387,7 @@ ${FIRMA}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { swift: DRIVER },
     inicial: {
       swift: `struct ItemRepositoryApi: ItemRepository {
@@ -405,6 +439,7 @@ ${FIRMA}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { swift: DRIVER },
     inicial: {
       swift: `// Escribe aquí ItemRepositoryApi y crearViewModel.
@@ -559,6 +594,7 @@ muestran el estado final con el formato \`nombres|cargando|error\`.
 La comprobación oculta es deducible: la regla 4 la enuncia de forma explícita, y
 ninguna comprobación visible la ejercita.
 `,
+    yaDeclarado: YA_DECLARADO,
     plantilla: {
       swift: `${CABECERA}
 

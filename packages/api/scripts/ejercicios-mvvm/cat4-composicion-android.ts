@@ -1,5 +1,40 @@
 import type { Ejercicio } from './tipos.js';
 
+/** Firmas de lo ya proporcionado. Sin cuerpos: son solución de otros ejercicios. */
+const YA_DECLARADO = {
+  kotlin: `data class ItemDto(val item_id: String?, val item_name: String?, val in_stock: String?)
+data class Item(val id: String, val name: String, val stock: Int)
+
+interface FuenteRemota {
+    fun leer(): List<ItemDto>          // LANZA excepción si la fuente falla
+}
+
+interface ItemRepository {
+    fun obtenerTodos(): List<Item>
+}
+
+class GetItemsUseCase(private val repositorio: ItemRepository) {
+    operator fun invoke(): List<Item>  // descarta stock <= 0 y ordena por nombre
+}
+
+data class ItemsUiState(
+    val items: List<Item> = emptyList(),
+    val cargando: Boolean = false,
+    val error: String? = null,
+)
+
+class ItemsViewModel(private val obtenerItems: GetItemsUseCase) {
+    val estado: ItemsUiState
+    fun observar(alCambiar: (ItemsUiState) -> Unit)
+    fun cargar()                        // convierte la excepción en estado de error
+}
+
+// Fuentes de prueba, ya escritas:
+class FuenteFija(private val dtos: List<ItemDto>) : FuenteRemota
+class FuenteQueFalla(private val mensaje: String) : FuenteRemota`,
+};
+
+
 /**
  * Concepto 4.1 — Composición end-to-end (Android).
  *
@@ -363,6 +398,7 @@ ${REGLAS_TRADUCCION}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { kotlin: DRIVER },
     inicial: {
       kotlin: `class ItemRepositoryApi(private val fuente: FuenteRemota) : ItemRepository {
@@ -414,6 +450,7 @@ ${REGLAS_TRADUCCION}
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
+    yaDeclarado: YA_DECLARADO,
     plantilla: { kotlin: DRIVER },
     inicial: {
       kotlin: `// Escribe aquí ItemRepositoryApi y crearViewModel.
@@ -564,6 +601,7 @@ consulta**, y muestran el estado final seguido de ese recuento, separados por
 La comprobación oculta es deducible: combina dos reglas ya enunciadas, sin
 introducir ninguna nueva.
 `,
+    yaDeclarado: YA_DECLARADO,
     plantilla: {
       kotlin: `${CABECERA}
 

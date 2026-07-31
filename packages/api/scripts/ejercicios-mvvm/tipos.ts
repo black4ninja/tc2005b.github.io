@@ -66,6 +66,19 @@ export interface Ejercicio {
   pasoAPaso: string;
   erroresTipicos: string;
   comoSeComprueba: string;
+  /**
+   * Superficie de API de los tipos que el ejercicio da por escritos.
+   *
+   * OBLIGATORIO siempre que el enunciado diga "ya está declarado". El estudio a
+   * ciegas de los 36 dio 16 fallos y los 16 fueron de compilación, ninguno de
+   * comprensión: el alumno razonaba bien pero adivinaba mal un nombre que nunca
+   * se le mostró (`getItems` por `obtenerTodos`, `items` por `datos`). En un
+   * lenguaje de tipado estático eso no es un matiz, es no poder entregar.
+   *
+   * Van FIRMAS, no cuerpos: el cuerpo de `GetItemsUseCase` es la solución del
+   * ejercicio del caso de uso, y mostrarlo aquí lo regalaría.
+   */
+  yaDeclarado?: { kotlin?: string; swift?: string };
   /** Plantilla con el driver oculto; `{{solucion}}` marca dónde entra el alumno. */
   plantilla: { kotlin?: string; swift?: string };
   inicial: { kotlin?: string; swift?: string };
@@ -87,6 +100,29 @@ export const tituloDe = (e: Ejercicio): string => `${e.tituloBase}${ETIQUETA[e.n
  * Está centralizado para que los 36 se lean igual: si el alumno aprende dónde
  * mirar en uno, lo sabe en todos.
  */
+/**
+ * Sección "Lo que ya está escrito", justo ANTES de "Qué escribes".
+ *
+ * El orden importa: el alumno necesita conocer la superficie con la que va a
+ * hablar antes de que se le pida escribir contra ella.
+ */
+function seccionYaDeclarado(e: Ejercicio): string {
+  const y = e.yaDeclarado;
+  if (!y || (!y.kotlin && !y.swift)) return '';
+  const bloques: string[] = [];
+  if (y.kotlin) bloques.push(`\`\`\`kotlin\n${y.kotlin.trim()}\n\`\`\``);
+  if (y.swift) bloques.push(`\`\`\`swift\n${y.swift.trim()}\n\`\`\``);
+  return `## Lo que ya está escrito
+
+Estos tipos se proporcionan y **no debes declararlos otra vez**: hacerlo produce
+un error de redeclaración. Se muestran sus firmas para que sepas con qué nombres
+hablar; los cuerpos no se incluyen porque no los necesitas.
+
+${bloques.join('\n\n')}
+
+`;
+}
+
 export function componerEnunciado(e: Ejercicio): string {
   const intro: Record<Nivel, string> = {
     guiado:
@@ -122,7 +158,7 @@ ${e.diagrama.trim()}
 
 ${e.dondeMasLoVeras.trim()}
 
-## Qué escribes
+${seccionYaDeclarado(e)}## Qué escribes
 
 ${e.queEscribes.trim()}
 
