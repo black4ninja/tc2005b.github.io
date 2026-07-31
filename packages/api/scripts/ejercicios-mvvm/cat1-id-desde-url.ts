@@ -196,7 +196,7 @@ func idDesdeUrl(_ url: String) -> String? {
 export const idDesdeUrl: Ejercicio[] = [
   // --- GUIADO ---------------------------------------------------------------
   {
-    slugBase: 'mvvm-id-desde-url',
+    slugBase: 'mvvm-url-identificador',
     tituloBase: 'Extraer el identificador desde la URL',
     nivel: 'guiado',
     categoria: CATEGORIA,
@@ -261,7 +261,7 @@ parámetros de consulta.
 
   // --- BASE -----------------------------------------------------------------
   {
-    slugBase: 'mvvm-id-desde-url',
+    slugBase: 'mvvm-url-identificador',
     tituloBase: 'Extraer el identificador desde la URL',
     nivel: 'base',
     categoria: CATEGORIA,
@@ -310,7 +310,7 @@ es la ausencia.
 
   // --- RETO -----------------------------------------------------------------
   {
-    slugBase: 'mvvm-id-desde-url',
+    slugBase: 'mvvm-url-identificador',
     tituloBase: 'Extraer el identificador desde la URL',
     nivel: 'reto',
     categoria: CATEGORIA,
