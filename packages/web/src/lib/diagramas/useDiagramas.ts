@@ -1,13 +1,21 @@
-import { useEffect } from 'react';
-import type { RefObject } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { cargarMotor, motorDe } from './registro';
 
 /**
- * Sustituye por diagramas los bloques de código que lo sean, dentro de `ref`.
+ * Sustituye por diagramas los bloques de código que lo sean, dentro del
+ * contenedor al que se ate la ref que devuelve.
  *
- * Mismo mecanismo que el botón de copiar del visor: el HTML entra por
- * `dangerouslySetInnerHTML`, así que se enriquece el DOM DESPUÉS del render y el
- * efecto se vuelve a disparar cuando cambia el contenido.
+ * Devuelve una **ref de callback**, no acepta una `RefObject`, y eso es lo
+ * importante: el HTML entra por `dangerouslySetInnerHTML`, así que enriquecemos
+ * el DOM a mano después del render. Si React vuelve a montar ese contenedor
+ * —cosa que hace cuando cambia la forma del árbol alrededor— recrea el nodo con
+ * el HTML original y se lleva por delante el SVG que habíamos insertado. Con una
+ * `RefObject` eso es invisible: `ref.current` cambia sin avisar y el efecto no
+ * se relanza, porque sus dependencias son las mismas. El diagrama se dibujaba y
+ * desaparecía sin dejar rastro.
+ *
+ * Con la ref de callback, el nodo es ESTADO: si React lo recrea, el efecto
+ * vuelve a correr sobre el nodo nuevo.
  *
  * Es idempotente: marca cada `<pre>` procesado, así que re-ejecutarlo no
  * redibuja lo que ya está.
@@ -17,12 +25,12 @@ import { cargarMotor, motorDe } from './registro';
  * hueco donde debería haber un diagrama.
  */
 export function useDiagramas(
-  ref: RefObject<HTMLElement | null>,
   deps: unknown[],
   oscuro = false,
-): void {
+): (nodo: HTMLElement | null) => void {
+  const [raiz, setRaiz] = useState<HTMLElement | null>(null);
+
   useEffect(() => {
-    const raiz = ref.current;
     if (!raiz) return;
     // Al cambiar de página o de tema, este efecto se relanza; lo que quedara a
     // medias de la pasada anterior no debe escribir sobre el DOM nuevo.
@@ -75,5 +83,7 @@ export function useDiagramas(
     return () => { vigente = false; };
     // `deps` lo controla quien llama: normalmente la página o el markdown.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ref, oscuro, ...deps]);
+  }, [raiz, oscuro, ...deps]);
+
+  return useCallback((nodo: HTMLElement | null) => setRaiz(nodo), []);
 }
