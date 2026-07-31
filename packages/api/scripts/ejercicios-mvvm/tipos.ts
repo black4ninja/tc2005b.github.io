@@ -7,6 +7,29 @@
  * imposibles de revisar.
  */
 
+/**
+ * REGISTRO DEL ENUNCIADO — aplica a los 36, sin excepción.
+ *
+ * Material académico: formal y neutro, pero legible. La formalidad está en la
+ * precisión y en la ausencia de coloquialismos, NO en alargar las frases.
+ *
+ * Prohibido:
+ * - Comentarios sobre el estado mental del alumno: "esto es lo que más
+ *   confunde", "no te preocupes si no lo ves a la primera".
+ * - Coloquialismos y muletillas: "no es magia", "ojo", "y ya", "gratis",
+ *   "te regala", "ponlo del revés", "fíjate", "pista:".
+ * - Apelación directa constante: "te damos", "tú decides", "vas a escribir",
+ *   "tu app". Se prefiere la forma impersonal ("se proporciona", "queda a
+ *   criterio propio", "la aplicación").
+ * - Jerga interna del juez: "driver". En el enunciado es "el programa de
+ *   comprobación".
+ *
+ * Permitido:
+ * - Imperativo en "Qué escribes" y "Paso a paso": son instrucciones, y la forma
+ *   impersonal ahí resulta más confusa, no más formal.
+ * - Segunda persona puntual cuando evita una perífrasis peor.
+ */
+
 /** El dominio es NEUTRO a propósito: `Item`, no un dominio concreto. */
 export const DOMINIO = 'Item';
 
@@ -66,9 +89,13 @@ export const tituloDe = (e: Ejercicio): string => `${e.tituloBase}${ETIQUETA[e.n
  */
 export function componerEnunciado(e: Ejercicio): string {
   const intro: Record<Nivel, string> = {
-    guiado: '> **Nivel guiado.** Te damos la firma y el esqueleto. Sigue el paso a paso.',
-    base: '> **Nivel base.** Te damos la firma; la implementación es tuya.',
-    reto: '> **Nivel reto.** Te damos solo el comportamiento esperado. Tú decides la estructura.',
+    guiado:
+      '> **Nivel guiado.** Se proporcionan la firma y el esqueleto. El apartado ' +
+      '"Paso a paso" indica el orden de trabajo.',
+    base: '> **Nivel base.** Se proporciona la firma; la implementación corresponde al alumno.',
+    reto:
+      '> **Nivel reto.** Se proporciona únicamente el comportamiento esperado. ' +
+      'La estructura queda a criterio del alumno.',
   };
 
   return `# ${tituloDe(e)}
@@ -101,20 +128,21 @@ ${e.queEscribes.trim()}
 
 ## Cómo se ejecuta lo que escribes
 
-**No escribas \`main\`, ni imprimas, ni leas nada.** Escribe solo lo que pide la
-sección anterior.
+**No se debe escribir \`main\`, ni imprimir, ni leer la entrada.** El código a
+entregar es únicamente el que describe el apartado anterior.
 
-Tu código se inserta dentro de un programa que ya existe y que no ves. Ese
-programa:
+Ese código se inserta en un programa de comprobación que ya existe y que no es
+visible. Dicho programa:
 
-1. Recibe por su entrada **el nombre de una comprobación** (no datos: un nombre).
-2. Ejecuta esa comprobación **usando lo que tú escribiste**.
+1. Recibe por su entrada **el nombre de una comprobación**, no datos.
+2. Ejecuta esa comprobación sobre el código entregado.
 3. Imprime el resultado.
 
-Por eso, en "Casos de ejemplo", la **Entrada** es una palabra —el nombre de la
-comprobación— y la **Salida** es lo que debe aparecer si tu código es correcto.
-Los separadores \`|\` y \`:\` los pone ese programa para mostrar varios valores en
-una línea; tú no tienes que generarlos.
+Por ese motivo, en "Casos de ejemplo" la **Entrada** es una palabra —el nombre de
+la comprobación— y la **Salida** es el texto que debe producirse si el código es
+correcto. Los separadores \`|\` y \`:\` los genera el programa de comprobación para
+mostrar varios valores en una línea; no deben producirse desde el código
+entregado.
 
 ## Paso a paso
 

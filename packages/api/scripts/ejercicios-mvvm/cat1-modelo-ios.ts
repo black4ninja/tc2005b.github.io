@@ -15,62 +15,65 @@ Sus vecinos, los del diagrama de abajo:
 - **Quien los consume**: el repositorio, que los pasa hacia arriba. Es otro
   ejercicio.
 
-En la pista de iOS estos tipos tienen un papel doble: son lo que llega del JSON
-**y** lo que usa la pantalla, sin traducción intermedia. Eso los hace más simples
-y más frágiles a la vez: si un nombre deja de coincidir con la clave del JSON, la
-decodificación falla y devuelve un error en vez de datos.
+En la pista de iOS estos tipos cumplen un papel doble: son a la vez lo que llega
+del JSON y lo que utiliza la pantalla, sin traducción intermedia. Esa decisión
+los vuelve más simples y, al mismo tiempo, más frágiles: si un nombre deja de
+coincidir con la clave del JSON, la decodificación falla y produce un error en
+lugar de datos.
 
-Por eso aquí conviene saber exactamente qué hace \`Codable\` por debajo.
+De ahí la importancia de conocer con precisión el funcionamiento de \`Codable\`.
 `;
 
 const DE_DONDE_VIENE = `
-\`Codable\` es **serialización por convención**: Swift genera el código de
-decodificación mirando los nombres de tus propiedades y asumiendo que coinciden
-con las claves del JSON. No hay magia — hay un compilador escribiendo por ti el
-código que escribirías a mano.
+\`Codable\` implementa **serialización por convención**: Swift genera el código de
+decodificación a partir de los nombres de las propiedades, asumiendo que
+coinciden con las claves del JSON. El compilador produce el código que, de otro
+modo, habría que escribir manualmente.
 
-La idea es vieja y está en todas partes: Jackson en Java, \`serde\` en Rust,
-\`encoding/json\` en Go, los dataclasses de Python. Todas hacen el mismo trato:
-**menos código a cambio de acoplar los nombres de tu tipo a un formato externo.**
+El mecanismo es común a muchos entornos: Jackson en Java, \`serde\` en Rust,
+\`encoding/json\` en Go, las dataclasses de Python. Todos plantean el mismo
+compromiso: **menos código a cambio de acoplar los nombres del tipo a un formato
+externo.**
 
-### El compilador escribe código por ti
+### Código generado por el compilador
 
-Esto es lo que más despista la primera vez. Vas a escribir **dos declaraciones
-sin una sola instrucción**: propiedades y ya. Aun así las comprobaciones
-decodifican JSON y construyen objetos. No lo hace tu código: lo hace el que
-Swift genera al leer tus declaraciones.
+Las declaraciones de este ejercicio no contienen instrucciones: son propiedades.
+Aun así, las comprobaciones decodifican JSON y construyen objetos. Esa ejecución
+no procede del código escrito, sino del que Swift genera a partir de las
+declaraciones.
 
-Dos mecanismos distintos, y conviene no confundirlos:
+Intervienen dos mecanismos distintos, que conviene no confundir:
 
-- **El inicializador por miembros.** Todo \`struct\` recibe gratis un \`init\` con
-  un parámetro por propiedad, en el orden en que las declaraste. Por eso
-  \`Item(id:name:stock:)\` existe sin que lo escribas.
-- **La síntesis de \`Codable\`.** Al escribir \`: Codable\`, Swift genera el código
-  que lee cada propiedad del JSON **buscando una clave con el mismo nombre**. Si
-  llamas \`name\` a la propiedad, busca \`"name"\`. Si la llamas \`nombre\`, busca
-  \`"nombre"\`, no la encuentra, y la decodificación lanza un error.
+- **El inicializador por miembros.** Todo \`struct\` dispone de un \`init\` con un
+  parámetro por propiedad, en el orden de declaración. De ahí que
+  \`Item(id:name:stock:)\` exista sin declararlo explícitamente.
+- **La síntesis de \`Codable\`.** Al declarar \`: Codable\`, Swift genera el código
+  que lee cada propiedad del JSON **buscando una clave con el mismo nombre**. Una
+  propiedad llamada \`name\` busca la clave \`"name"\`; una propiedad llamada
+  \`nombre\` busca \`"nombre"\`, no la encuentra, y la decodificación lanza un error.
 
-Del revés se ve mejor:
+La comparación delimita el aporte de cada mecanismo:
 
-| Lo que hace la comprobación | Con \`struct: Codable\` | Sin \`: Codable\` |
+| Operación de la comprobación | Con \`struct: Codable\` | Sin \`: Codable\` |
 |---|---|---|
-| \`Item(id: …, name: …, stock: …)\` | funciona | funciona: el \`init\` es del \`struct\` |
+| \`Item(id: …, name: …, stock: …)\` | funciona | funciona: el \`init\` procede del \`struct\` |
 | \`JSONDecoder().decode(Item.self, …)\` | funciona | **no compila** |
-| Renombrar una propiedad | rompe la decodificación en ejecución | — |
+| Renombrar una propiedad | altera la decodificación en ejecución | — |
 
-Y \`struct\` en vez de \`class\` tampoco es un detalle. Un \`struct\` es un **tipo de
-valor**: al asignarlo se copia. Dos partes de la app no pueden acabar compartiendo
-el mismo objeto y pisándose los cambios sin darse cuenta, que es una clase entera
-de errores que en iOS simplemente no ocurre si usas \`struct\`.
+La elección de \`struct\` frente a \`class\` tampoco es accesoria. Un \`struct\` es un
+**tipo de valor**: al asignarlo se copia. Dos partes de la aplicación no pueden
+compartir el mismo objeto y sobrescribir sus cambios de forma inadvertida, una
+categoría de errores que no se produce al emplear \`struct\`.
 
-Compáralo con Android: allí \`data\` genera \`equals\` y \`copy\` para darte igualdad
-por valor y copias explícitas. Aquí no hace falta pedir la copia — la semántica
-de valor del \`struct\` ya la da en cada asignación.
+La comparación con Android resulta ilustrativa: allí \`data\` genera \`equals\` y
+\`copy\` para proporcionar igualdad por valor y copias explícitas. Aquí la copia no
+se solicita, dado que la semántica de valor del \`struct\` la produce en cada
+asignación.
 `;
 
 const DIAGRAMA = `
 flowchart LR
-    API["JSON de la API"] -->|Codable| M["Item y Catalogo<br/>lo que escribes"]
+    API["JSON de la API"] -->|Codable| M["Item y Catalogo<br/>piezas de este ejercicio"]
     M --> R[ItemRepository]
     R --> VM[ItemsViewModel]
     VM --> V[ContentView]
@@ -78,25 +81,27 @@ flowchart LR
 `;
 
 const DONDE_MAS = `
-- **Backend.** Un servicio que expone JSON define los mismos tipos al revés: los
-  serializa en vez de decodificarlos. El acoplamiento nombre-clave es idéntico.
-- **Configuración.** Leer un \`.json\` o un \`.yaml\` de ajustes usa exactamente
-  este mecanismo; por eso renombrar un campo de config rompe el arranque.
-- **Persistencia local.** Guardar un objeto en disco o en \`UserDefaults\` pasa por
-  la misma codificación.
+- **Backend.** Un servicio que expone JSON define los mismos tipos en sentido
+  inverso: los serializa en lugar de decodificarlos. El acoplamiento entre nombre
+  y clave es idéntico.
+- **Configuración.** La lectura de un \`.json\` o un \`.yaml\` de ajustes emplea este
+  mismo mecanismo, razón por la cual renombrar un campo de configuración impide
+  el arranque.
+- **Persistencia local.** El almacenamiento de un objeto en disco o en
+  \`UserDefaults\` utiliza la misma codificación.
 `;
 
 const ERRORES = `
-- **Renombrar una propiedad y no darse cuenta** de que se ha roto la
-  decodificación. El compilador no avisa: el error aparece en tiempo de
-  ejecución.
-- **Usar \`class\` por costumbre.** Pierdes la semántica de valor y vuelves a
-  poder compartir estado sin querer.
+- **Renombrar una propiedad sin advertir** que la decodificación deja de
+  funcionar. El compilador no emite ningún aviso: el error se manifiesta en
+  tiempo de ejecución.
+- **Emplear \`class\` por costumbre.** Se pierde la semántica de valor y vuelve a
+  ser posible compartir estado de forma inadvertida.
 - **Declarar las propiedades como \`let\`.** El tipo sigue siendo decodificable,
-  pero ya no se puede modificar una copia, y la última comprobación deja de
-  compilar. Usa \`var\`, como en la firma que te damos.
-- **Meter lógica de presentación en el modelo** (textos ya formateados, colores).
-  El modelo describe datos, no cómo se pintan.
+  pero deja de admitir la modificación de una copia y la última comprobación no
+  compila. La firma proporcionada emplea \`var\`.
+- **Incluir lógica de presentación en el modelo** (textos ya formateados,
+  colores). El modelo describe los datos, no su representación visual.
 `;
 
 const DRIVER = `import Foundation
@@ -161,32 +166,33 @@ struct Item: Codable {
 ];
 
 const COMPRUEBA = `
-Cuatro comprobaciones, **todas visibles**. Cada una dice qué parte de tus
-declaraciones pone a prueba.
+Cuatro comprobaciones, **todas visibles**. Cada una indica qué parte de las
+declaraciones verifica.
 
 - **\`campos_en_orden\`** — construye \`Item(id: "7", name: "Camisa", stock: 24)\`
   y muestra sus tres campos separados por barras verticales.
   Debe imprimir \`7|Camisa|24\`.
-  *Pone a prueba:* que las propiedades se llamen así y estén en ese orden — el
-  inicializador por miembros las toma tal cual las declaraste.
+  *Verifica:* que las propiedades tengan esos nombres y ese orden. El
+  inicializador por miembros los toma de la declaración.
 - **\`decodifica_un_item\`** — decodifica \`{"id":"9","name":"Abrigo","stock":3}\`
   y muestra los campos del resultado.
   Debe imprimir \`9|Abrigo|3\`.
-  *Pone a prueba:* que \`Item\` sea \`Codable\` y que los nombres coincidan con las
+  *Verifica:* que \`Item\` sea \`Codable\` y que los nombres coincidan con las
   claves del JSON.
 - **\`decodifica_catalogo_con_lista\`** — decodifica un catálogo con dos
   artículos y muestra el total y sus nombres.
   Debe imprimir \`2:A+B\`.
-  *Pone a prueba:* que \`Catalogo\` también sea \`Codable\` y que \`items\` sea un
-  array de \`Item\`. La síntesis es recursiva: para decodificar el catálogo, Swift
-  necesita saber decodificar cada artículo.
+  *Verifica:* que \`Catalogo\` sea también \`Codable\` y que \`items\` sea un array de
+  \`Item\`. La síntesis es recursiva: para decodificar el catálogo, Swift requiere
+  la decodificación de cada artículo.
 - **\`asignar_hace_una_copia\`** — asigna el \`Item\` a una segunda variable,
-  cambia el nombre **del primero** y muestra los dos.
-  Debe imprimir \`Camiseta/Camisa\`: el segundo conserva el valor viejo.
-  *Pone a prueba:* que sea \`struct\` y no \`class\`. Con \`class\` las dos variables
-  apuntarían al mismo objeto y saldría \`Camiseta/Camiseta\`.
+  modifica el nombre **del primero** y muestra ambos.
+  Debe imprimir \`Camiseta/Camisa\`: el segundo conserva el valor anterior.
+  *Verifica:* que el tipo sea \`struct\` y no \`class\`. Con \`class\`, ambas
+  variables referenciarían el mismo objeto y el resultado sería
+  \`Camiseta/Camiseta\`.
 
-Si tus nombres de propiedad no coinciden con las claves del JSON, las dos
+Si los nombres de las propiedades no coinciden con las claves del JSON, las dos
 comprobaciones de decodificación fallan.
 `;
 
@@ -203,7 +209,7 @@ export const modeloIos: Ejercicio[] = [
     diagrama: DIAGRAMA,
     dondeMasLoVeras: DONDE_MAS,
     queEscribes: `
-Te damos \`Item\` empezado y \`Catalogo\` por hacer.
+Se proporciona \`Item\` iniciado; \`Catalogo\` está pendiente de declarar.
 
 \`\`\`swift
 struct Item: Codable {
@@ -224,11 +230,12 @@ El JSON que llega tiene esta forma:
 1. Añade \`name\` como \`String\` a \`Item\`.
 2. Añade \`stock\` como \`Int\`.
 3. Declara \`Catalogo\` con dos propiedades: \`total\` (\`Int\`) e \`items\`
-   (\`[Item]\`). **Los nombres deben coincidir con las claves del JSON** de arriba.
-4. Marca \`Catalogo\` como \`Codable\` también. Si un tipo contiene otro, los dos
-   tienen que serlo.
-5. No cambies \`struct\` por \`class\`: uno de los casos comprueba la semántica de
-   valor.
+   (\`[Item]\`). **Los nombres deben coincidir con las claves del JSON**
+   anterior.
+4. Declara \`Catalogo\` como \`Codable\`. Cuando un tipo contiene otro, ambos deben
+   serlo.
+5. Mantén \`struct\` en lugar de \`class\`: una de las comprobaciones verifica la
+   semántica de valor.
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
@@ -282,8 +289,8 @@ Los nombres de las propiedades **son** el contrato con este JSON:
     pasoAPaso: `
 1. Declara \`Item\` con sus tres propiedades y hazlo decodificable.
 2. Declara \`Catalogo\` con \`total\` e \`items\`.
-3. Decide entre \`struct\` y \`class\` sabiendo que un caso copia el valor y
-   modifica la copia.
+3. Elige entre \`struct\` y \`class\` considerando que una de las comprobaciones
+   asigna el valor a otra variable y modifica el original.
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
@@ -312,31 +319,33 @@ El equipo de backend cambia el formato. Ahora el JSON llega así:
   "data": [ { "item_id": "1", "item_name": "A", "in_stock": 1, "is_active": true } ] }
 \`\`\`
 
-Nombres en \`snake_case\`, con prefijos, y un campo nuevo. **No puedes cambiar el
-JSON**, y no quieres que esos nombres se propaguen por toda tu app: nadie debería
-escribir \`item.item_name\` en una vista.
+Nombres en \`snake_case\`, con prefijos, y un campo adicional. **El formato del
+JSON no se puede modificar**, y esos nombres no deben propagarse al resto de la
+aplicación: una vista no debería contener \`item.item_name\`.
 `,
     deDondeViene: `
-Esto es una **capa anticorrupción**, otro término de *Domain-Driven Design*: una
-frontera donde el vocabulario ajeno se traduce al tuyo, para que no contamine el
-resto del sistema.
+El patrón aplicable es la **capa anticorrupción**, otro término de
+*Domain-Driven Design*: una frontera en la que el vocabulario externo se traduce
+al propio, de modo que no se extienda al resto del sistema.
 
-Swift lo resuelve con \`CodingKeys\`: un enum que declara la correspondencia entre
-tus nombres y los del JSON. El compilador deja de adivinar por convención y usa
-tu tabla.
+Swift lo resuelve mediante \`CodingKeys\`: un enum que declara la correspondencia
+entre los nombres del modelo y los del JSON. El compilador deja de aplicar la
+convención por defecto y utiliza esa tabla.
 
-Es lo mismo que \`@SerializedName\` en Gson, \`@JsonProperty\` en Jackson o
-\`#[serde(rename)]\` en Rust. Todos existen por la misma razón: **quien define el
-formato externo no eres tú**.
+El mecanismo equivale a \`@SerializedName\` en Gson, \`@JsonProperty\` en Jackson o
+\`#[serde(rename)]\` en Rust. Todos responden a la misma causa: **el formato
+externo lo define un tercero**.
 `,
     diagrama: DIAGRAMA,
     dondeMasLoVeras: `
-- **Integraciones con terceros.** Casi ninguna API pública usa tus convenciones
-  de nombres; esta traducción es el trabajo diario de integrar.
+- **Integraciones con terceros.** Prácticamente ninguna API pública sigue las
+  convenciones de nombres del cliente; esta traducción constituye el trabajo
+  habitual de integración.
 - **Migraciones de API.** Cuando el backend pasa de v1 a v2, la tabla de
-  correspondencias es lo único que cambia si la capa está bien puesta.
-- **Formatos heredados.** Leer un CSV o un XML antiguo con nombres imposibles es
-  el mismo problema.
+  correspondencias es el único elemento que cambia si la capa está bien
+  delimitada.
+- **Formatos heredados.** La lectura de un CSV o un XML antiguo con nombres
+  arbitrarios plantea el mismo problema.
 `,
     queEscribes: `
 Modelos con **nombres idiomáticos** que decodifiquen ese JSON:
@@ -355,38 +364,40 @@ struct Catalogo: Codable {
 }
 \`\`\`
 
-Tuyo es hacer que esos nombres lean del JSON de arriba. Y además una función:
+La tarea consiste en hacer que esos nombres lean del JSON anterior. Se requiere
+además una función:
 
 \`\`\`swift
 func resumen(_ c: Catalogo) -> String
 \`\`\`
 
-que devuelva \`<total>:<nombres de los activos separados por +>\`. Los inactivos
-se decodifican igual, pero no aparecen en el resumen.
+que devuelva \`<total>:<nombres de los activos separados por +>\`. Los artículos
+inactivos se decodifican igualmente, pero no figuran en el resumen.
 `,
     pasoAPaso: `
-1. Declara los modelos con los nombres que quieres usar en tu app, no los del
-   JSON.
-2. Añade a cada uno la tabla de correspondencias que Swift necesita para
-   decodificar. **Todas** las propiedades deben aparecer en ella, también las que
-   ya coincidían.
-3. Escribe \`resumen\` filtrando por el campo de actividad.
-4. Comprueba el caso de un catálogo donde ninguno está activo: debe dar el total
-   y una lista vacía, no fallar.
+1. Declara los modelos con los nombres previstos para la aplicación, no con los
+   del JSON.
+2. Añade a cada uno la tabla de correspondencias que Swift requiere para
+   decodificar. **Todas** las propiedades deben figurar en ella, incluidas las
+   que ya coincidían.
+3. Escribe \`resumen\` aplicando el filtro por el campo de actividad.
+4. Contempla el caso de un catálogo sin artículos activos: debe devolver el total
+   y una lista vacía, sin producir error.
 `,
     erroresTipicos: `
-- **Listar solo las propiedades que cambian** en la tabla de correspondencias. Si
-  declaras el enum, tiene que estar completo: las que falten dejan de
-  decodificarse.
-- **Renombrar la propiedad en vez de mapearla.** Volverías a tener el vocabulario
-  del backend dentro de tu app.
-- **Filtrar los inactivos al decodificar.** Perderías información que quizá otra
-  pantalla necesita. Se filtra al usar, no al leer.
+- **Declarar en la tabla de correspondencias solo las propiedades que cambian.**
+  Una vez declarado el enum, debe estar completo: las propiedades ausentes dejan
+  de decodificarse.
+- **Renombrar la propiedad en lugar de asociarla.** El vocabulario del backend
+  volvería a introducirse en la aplicación.
+- **Filtrar los artículos inactivos durante la decodificación.** Se perdería
+  información que otra pantalla puede requerir. El filtrado corresponde al uso,
+  no a la lectura.
 `,
     comoSeComprueba: `
-El driver decodifica el JSON con el formato nuevo y llama a \`resumen\`. Si tu
-tabla de correspondencias está incompleta, la decodificación falla y lo verás en
-el veredicto.
+Las comprobaciones decodifican el JSON con el formato nuevo e invocan
+\`resumen\`. Si la tabla de correspondencias está incompleta, la decodificación
+falla y el veredicto lo indica.
 `,
     plantilla: {
       swift: `import Foundation

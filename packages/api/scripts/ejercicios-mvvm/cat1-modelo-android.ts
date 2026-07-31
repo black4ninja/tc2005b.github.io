@@ -13,73 +13,72 @@ const CAPA = 'Dominio — `domain/model/Item.kt`';
 const PROBLEMA = `
 Este ejercicio construye **una sola pieza**: el tipo \`Item\`.
 
-Tiene exactamente dos vecinos, y son los del diagrama de más abajo:
+La pieza tiene dos vecinos, los que aparecen en el diagrama:
 
-- **Quien lo produce**: un traductor (\`toDomain\`) que recibe la respuesta de la
-  API y la convierte en \`Item\`. Ese traductor es otro ejercicio; aquí no lo
-  escribes.
-- **Quien lo consume**: el ViewModel, que lee \`Item\` para decidir qué mostrar.
-  También es otro ejercicio.
+- **Quien la produce**: un traductor (\`toDomain\`) que convierte la respuesta de
+  la API en \`Item\`. Corresponde a otro ejercicio.
+- **Quien la consume**: el ViewModel, que lee \`Item\` para determinar qué se
+  muestra. Corresponde también a otro ejercicio.
 
-El problema que resuelve \`Item\` es de traducción. La API devuelve los datos con
-la forma que decidió quien la escribió: nombres en minúscula, números como texto,
-campos que a veces faltan. Si esa forma llegara sin traducir hasta el ViewModel,
-un cambio en la API obligaría a tocarlo.
+El problema que resuelve \`Item\` es de traducción. La API entrega los datos con
+la forma que definió quien la escribió: nombres en minúscula, números
+representados como texto, campos ausentes. Si esa forma llegara sin traducir
+hasta el ViewModel, cualquier cambio en la API obligaría a modificarlo.
 
-\`Item\` es la forma que decides **tú**. Nada más. No necesitas saber cómo
-funcionan sus vecinos para escribirlo.
+\`Item\` define la forma que utiliza la aplicación. Para escribirlo no se
+requiere conocer el funcionamiento de sus vecinos.
 `;
 
 const DE_DONDE_VIENE = `
-Separar el modelo de su representación externa es más viejo que las apps
-móviles. Eric Evans lo llamó **modelo de dominio** en *Domain-Driven Design*
-(2003): el conjunto de tipos que expresan el vocabulario del negocio, sin
-contaminar con detalles de infraestructura.
+La separación entre el modelo y su representación externa es anterior al
+desarrollo móvil. Eric Evans la describe en *Domain-Driven Design* (2003) bajo el
+nombre de **modelo de dominio**: el conjunto de tipos que expresan el vocabulario
+del negocio, sin detalles de infraestructura.
 
-La regla práctica que se deriva: **el dominio no importa nada de fuera.** Si tu
-\`Item\` necesitara una anotación de la librería de red o de la base de datos,
-habrías atado tu vocabulario a una herramienta concreta.
+De ahí se deriva una regla práctica: **el dominio no depende de nada externo.**
+Si \`Item\` requiriera una anotación de la librería de red o de la base de datos,
+el vocabulario del negocio quedaría atado a una herramienta concreta.
 
-### La palabra \`data\` escribe código por ti
+### Código generado por el compilador
 
-Esto es lo que más confunde la primera vez, así que conviene decirlo entero.
+La declaración de este ejercicio no contiene instrucciones: son cuatro campos,
+sin \`if\`, \`return\` ni \`println\`. Aun así, las comprobaciones producen salida.
+El motivo es que la palabra \`data\` indica al compilador de Kotlin que **genere,
+a partir de los campos del constructor, métodos que no aparecen en el código
+fuente**.
 
-Tú vas a escribir **una declaración sin instrucciones**: cuatro campos y ni un
-solo \`if\`, \`return\` ni \`println\`. Aun así las comprobaciones van a imprimir
-cosas. No es magia: al marcar la clase con \`data\`, **el compilador de Kotlin
-genera métodos que tú no escribiste**, a partir de los campos del constructor.
+Cuatro de ellos son relevantes aquí:
 
-Genera cuatro que importan aquí:
+- \`equals\` — compara **campo por campo**, en lugar de comparar la identidad en
+  memoria. Por eso \`==\` entre dos \`Item\` con los mismos valores devuelve
+  \`true\` aunque sean objetos distintos.
+- \`hashCode\` — coherente con \`equals\`; permite usar el tipo en un \`Set\` y como
+  clave de un \`Map\`.
+- \`copy\` — construye un objeto nuevo con los cambios indicados y deja intacto el
+  original.
+- \`toString\` — devuelve un texto legible con los campos, en lugar de
+  \`Item@3f2a1b\`.
 
-- \`equals\` — compara **campo por campo** en vez de comparar si son el mismo
-  objeto en memoria. Por eso \`==\` entre dos \`Item\` con los mismos valores da
-  \`true\` aunque sean dos objetos distintos.
-- \`hashCode\` — coherente con \`equals\`, para poder usarlos en \`Set\` y como
-  claves de \`Map\`.
-- \`copy\` — crea un objeto nuevo cambiando solo lo que le indiques, y **deja
-  intacto el original**.
-- \`toString\` — un texto legible con los campos, en vez de \`Item@3f2a1b\`.
+La comparación con \`class\`, declarando los mismos campos, delimita qué aporta
+cada parte:
 
-Ponlo del revés y se ve mejor. Si escribieras \`class\` en lugar de \`data class\`,
-con exactamente los mismos campos:
-
-| Lo que hace la comprobación | Con \`data class\` | Con \`class\` |
+| Operación de la comprobación | Con \`data class\` | Con \`class\` |
 |---|---|---|
 | Leer \`a.id\`, \`a.name\`… | funciona | funciona |
-| \`a == b\` con los mismos valores | \`true\` | \`false\` — compara identidad, y son dos objetos |
+| \`a == b\` con los mismos valores | \`true\` | \`false\`: compara identidad, y son dos objetos |
 | \`a.copy(stock = 0)\` | funciona | **no compila**: \`copy\` no existe |
 
-Es decir: los campos los declaras tú, y el comportamiento que se comprueba lo
-aporta \`data\`. Esa es toda la relación entre lo que escribes y lo que se imprime.
+Los campos se declaran de forma explícita; el comportamiento que se comprueba lo
+aporta \`data\`.
 
-### Por qué el resto de la arquitectura lo necesita
+### Función en el resto de la arquitectura
 
-- **Igualdad por valor**: sin \`equals\` no puedes preguntar "¿el estado nuevo es
-  distinto del anterior?", y sin esa pregunta no se sabe si hay que redibujar la
-  pantalla.
-- **Copia con cambios**: producir un objeto nuevo en vez de mutar el que ya
-  tienes es lo que permite tratar el estado como inmutable — la base de todo lo
-  que viene después en esta arquitectura.
+- **Igualdad por valor**: sin \`equals\` no es posible determinar si un estado
+  nuevo difiere del anterior, que es la condición para decidir si la pantalla
+  debe redibujarse.
+- **Copia con cambios**: construir un objeto nuevo en lugar de modificar el
+  existente permite tratar el estado como inmutable, base de las capas
+  posteriores.
 `;
 
 const DIAGRAMA = `
@@ -88,7 +87,7 @@ flowchart LR
         DTO["ItemDto<br/>forma de la API"]
     end
     subgraph domain["domain/"]
-        M["Item<br/>lo que escribes"]
+        M["Item<br/>pieza de este ejercicio"]
     end
     subgraph presentation["presentation/"]
         VM[ItemsViewModel]
@@ -99,24 +98,26 @@ flowchart LR
 `;
 
 const DONDE_MAS = `
-La misma separación aparece en todas partes, con otros nombres:
+La misma separación aparece en otros contextos, con otros nombres:
 
 - **Backend.** Una API REST recibe un JSON, lo convierte a su tipo interno y solo
   entonces aplica reglas. El tipo interno no lleva anotaciones de HTTP.
 - **Bases de datos.** El registro de la tabla y el objeto del negocio no son el
-  mismo tipo; por eso existen los ORM y los *mappers*.
+  mismo tipo; de esa distinción provienen los ORM y los *mappers*.
 - **Sistemas con varias fuentes.** Cuando los mismos datos llegan de una API, de
-  una caché y de un archivo, el modelo de dominio es lo único común a las tres.
+  una caché y de un archivo, el modelo de dominio es el único elemento común a
+  las tres.
 `;
 
 const ERRORES = `
-- **Meter en el modelo campos que solo importan a la API** (tokens de
-  paginación, códigos de respuesta). El dominio no debería saber que hubo una
+- **Incluir en el modelo campos que solo conciernen a la API** (tokens de
+  paginación, códigos de respuesta). El dominio no debería registrar que hubo una
   petición.
-- **Usar \`class\` en vez de \`data class\`** y perder igualdad y copia. El código
-  compila, pero luego comparar estados deja de funcionar y cuesta ver por qué.
-- **Representar la ausencia con valores centinela** (\`-1\`, \`""\`) en vez de con
-  tipos que la expresen. Lo verás en el nivel reto.
+- **Declarar \`class\` en lugar de \`data class\`**, con la consiguiente pérdida de
+  igualdad y copia. El código compila, pero la comparación de estados deja de
+  funcionar y el origen del fallo resulta difícil de localizar.
+- **Representar la ausencia mediante valores centinela** (\`-1\`, \`""\`) en lugar
+  de tipos que la expresen. Se aborda en el nivel reto.
 `;
 
 const DRIVER = `{{solucion}}
@@ -168,34 +169,35 @@ const SOLUCIONES_BASE = [
 ];
 
 const COMPRUEBA = `
-Cuatro comprobaciones, **todas visibles**. Ninguna está oculta: aquí no hay
-comportamiento que generalizar, así que esconder una solo serviría para que
-falles por algo que no podías deducir.
+Cuatro comprobaciones, **todas visibles**. Ninguna está oculta: en una
+declaración de tipo no hay comportamiento que generalizar, de modo que ocultar
+una comprobación no verificaría la comprensión del concepto.
 
-Cada una dice además **qué parte de tu declaración pone a prueba**.
+Cada una indica además **qué parte de la declaración verifica**.
 
 - **\`campos_en_orden\`** — construye \`Item("7", "Camisa", 24, listOf("ropa"))\`
   y muestra sus cuatro campos, separados por barras verticales.
   Debe imprimir \`7|Camisa|24|ropa\`.
-  *Pone a prueba:* que los campos existan, con esos tipos y **en ese orden** —
-  el objeto se construye por posición, no por nombre.
+  *Verifica:* que los campos existan, con esos tipos y **en ese orden**. El
+  objeto se construye por posición, no por nombre.
 - **\`dos_items_iguales\`** — construye **dos** \`Item\` distintos con los mismos
   valores y los compara con \`==\`.
   Debe imprimir \`true\`.
-  *Pone a prueba:* el \`equals\` que generó \`data\`. Con \`class\` a secas daría
+  *Verifica:* el \`equals\` generado por \`data\`. Con \`class\` el resultado sería
   \`false\`.
-- **\`copiar_no_toca_el_original\`** — hace \`copy(stock = 0)\` y muestra los
-  campos de la copia y, al final, el stock del original.
-  Debe imprimir \`7|Camisa|0|24\` — el \`0\` es el de la copia y el \`24\` es el del
-  original, que no cambió.
-  *Pone a prueba:* el \`copy\` que generó \`data\`, y que los campos sean \`val\`.
+- **\`copiar_no_toca_el_original\`** — ejecuta \`copy(stock = 0)\` y muestra los
+  campos de la copia y, en último lugar, el stock del original.
+  Debe imprimir \`7|Camisa|0|24\`: el \`0\` corresponde a la copia y el \`24\` al
+  original, que no se modificó.
+  *Verifica:* el \`copy\` generado por \`data\` y que los campos sean \`val\`.
 - **\`lista_conserva_el_orden\`** — construye un \`Item\` con dos etiquetas y
   muestra cuántas hay y en qué orden.
   Debe imprimir \`2:ropa+invierno\`.
-  *Pone a prueba:* que \`tags\` sea una lista, no un campo suelto ni un \`Set\` —
-  un \`Set\` no garantiza el orden.
+  *Verifica:* que \`tags\` sea una lista, y no un campo suelto ni un \`Set\`. Un
+  \`Set\` no garantiza el orden.
 
-Si alguna falla, el veredicto te dice qué esperaba y qué obtuvo.
+Cuando una comprobación falla, el veredicto indica el valor esperado y el
+obtenido.
 `;
 
 export const modeloAndroid: Ejercicio[] = [
@@ -212,7 +214,7 @@ export const modeloAndroid: Ejercicio[] = [
     diagrama: DIAGRAMA,
     dondeMasLoVeras: DONDE_MAS,
     queEscribes: `
-Te damos la declaración empezada. **Completa los campos que faltan.**
+La declaración se proporciona iniciada. **Completa los campos que faltan.**
 
 \`\`\`kotlin
 data class Item(
@@ -221,25 +223,25 @@ data class Item(
 )
 \`\`\`
 
-El catálogo necesita, en este orden:
+El catálogo requiere los siguientes campos, en este orden:
 
-| Campo | Tipo | Para qué |
+| Campo | Tipo | Función |
 |---|---|---|
 | \`id\` | \`String\` | Identificar el artículo |
 | \`name\` | \`String\` | Mostrarlo en la lista |
-| \`stock\` | \`Int\` | Cuántas unidades quedan |
+| \`stock\` | \`Int\` | Unidades disponibles |
 | \`tags\` | \`List<String>\` | Etiquetas para filtrar |
 `,
     pasoAPaso: `
-1. Abre la declaración que te damos y fíjate en que ya es \`data class\`, no
-   \`class\`. Eso es lo que te dará igualdad y copia.
-2. Añade \`name\` como \`String\`, después de \`id\`. **El orden importa**: el driver
-   construye el objeto con parámetros posicionales.
+1. Observa que la declaración proporcionada ya es \`data class\` y no \`class\`. De
+   ahí provienen la igualdad y la copia.
+2. Añade \`name\` como \`String\`, después de \`id\`. **El orden es significativo**:
+   el objeto se construye con parámetros posicionales.
 3. Añade \`stock\` como \`Int\`.
-4. Añade \`tags\` como \`List<String>\`. Fíjate en que es \`List\` y no
-   \`MutableList\`: nadie debería poder añadir etiquetas al objeto ya creado.
-5. No añadas nada más. Cualquier campo extra que la API te dé pero la app no
-   necesite, no pertenece aquí.
+4. Añade \`tags\` como \`List<String>\`. El tipo es \`List\` y no \`MutableList\`: no
+   debe ser posible añadir etiquetas a un objeto ya creado.
+5. No añadas ningún campo adicional. Los campos que la API proporciona pero la
+   aplicación no utiliza no pertenecen al modelo de dominio.
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
@@ -279,14 +281,16 @@ data class Item(
 )
 \`\`\`
 
-Con ese orden de parámetros. Elige tú \`data class\` frente a \`class\`, y \`List\`
-frente a \`MutableList\`, sabiendo lo que implica cada uno.
+Con ese orden de parámetros. La elección entre \`data class\` y \`class\`, y entre
+\`List\` y \`MutableList\`, queda a criterio propio, con conocimiento de lo que
+implica cada una.
 `,
     pasoAPaso: `
 1. Declara el tipo con los cuatro campos, en el orden de la firma.
-2. Decide si necesitas \`data class\`. Pista: el driver compara dos instancias
-   distintas y espera que sean iguales.
-3. Decide si \`tags\` debe poder modificarse después de crear el objeto.
+2. Determina si se requiere \`data class\`. Considera que una de las
+   comprobaciones compara dos instancias distintas y espera que resulten
+   iguales.
+3. Determina si \`tags\` debe poder modificarse después de crear el objeto.
 `,
     erroresTipicos: ERRORES,
     comoSeComprueba: COMPRUEBA,
@@ -317,24 +321,25 @@ expresar:
 - Un artículo puede **no tener precio asignado** todavía, que no es lo mismo que
   valer cero.
 
-La tentación es resolverlo con valores centinela: \`stock = -1\` para
-descatalogado, \`precio = 0.0\` para "sin precio". Funciona hasta que alguien
-suma precios y cuenta los ceros, o filtra por stock y se lleva los -1 por
-delante.
+Una solución frecuente consiste en emplear valores centinela: \`stock = -1\` para
+descatalogado y \`precio = 0.0\` para "sin precio". El resultado es correcto hasta
+que un cálculo suma precios e incluye los ceros, o un filtro por stock incorpora
+los valores -1.
 `,
     deDondeViene: `
-Esto es **hacer imposibles los estados inválidos**, una idea que Yaron Minsky
-resumió como *"make illegal states unrepresentable"*. Si el tipo no puede
-representar algo que no debería existir, el compilador te impide crearlo.
+El principio aplicable es **hacer irrepresentables los estados inválidos**,
+formulado por Yaron Minsky como *"make illegal states unrepresentable"*. Si el
+tipo no puede representar una situación que no debería existir, el compilador
+impide construirla.
 
-Un valor centinela hace lo contrario: mete un significado especial dentro del
-rango normal del tipo, y a partir de ahí **todo el que lo use tiene que
-acordarse** de la excepción. El día que alguien no se acuerde, el error no salta:
-se propaga silencioso.
+Un valor centinela produce el efecto contrario: introduce un significado especial
+dentro del rango normal del tipo, de modo que **todo el código que lo utilice
+debe contemplar la excepción**. Cuando algún punto del código la omite, el error
+no se manifiesta de inmediato, sino que se propaga.
 
-Kotlin te da dos herramientas para esto: los **tipos anulables** (\`Double?\`), que
-distinguen "hay un valor" de "no hay", y los **enum o sealed class**, que
-enumeran los estados posibles con nombre.
+Kotlin ofrece dos mecanismos para este caso: los **tipos anulables** (\`Double?\`),
+que distinguen la presencia de un valor de su ausencia, y los **enum o sealed
+class**, que enumeran con nombre los estados posibles.
 `,
     diagrama: DIAGRAMA,
     dondeMasLoVeras: `
@@ -342,12 +347,12 @@ enumeran los estados posibles con nombre.
   discusión, y por eso \`SUM\` ignora los nulos pero no los ceros.
 - **APIs.** Un campo ausente en un JSON no significa lo mismo que un campo con
   valor vacío. Confundirlos es una fuente clásica de bugs de integración.
-- **Lenguajes sin nulos.** Rust y Haskell no tienen \`null\`: obligan a usar
-  \`Option\`/\`Maybe\`, que es este mismo principio llevado al extremo.
+- **Lenguajes sin nulos.** Rust y Haskell carecen de \`null\` y obligan a emplear
+  \`Option\`/\`Maybe\`, aplicación estricta de este mismo principio.
 `,
     queEscribes: `
-Rediseña \`Item\` para que exprese ambas situaciones **sin valores centinela**. Tú
-decides cómo.
+Rediseña \`Item\` para que exprese ambas situaciones **sin valores centinela**. La
+representación queda a criterio propio.
 
 El modelo debe seguir teniendo \`id\`, \`name\`, \`stock\` y \`tags\`, y además:
 
@@ -369,27 +374,29 @@ que devuelva, exactamente:
 | Descatalogado | \`<name>: descatalogado\` |
 `,
     pasoAPaso: `
-1. Decide cómo representas "sin precio". La respuesta idiomática en Kotlin no
-   requiere ningún tipo nuevo.
-2. Decide cómo representas el estado. Tienes al menos dos opciones razonables;
-   elige la que impida construir un artículo en un estado que no existe.
-3. Escribe \`describir\` cubriendo las tres situaciones. Si tu representación es
-   buena, el compilador te ayudará a no olvidarte de ninguna.
-4. Comprueba que "descatalogado" gana sobre el precio: un artículo descatalogado
-   se describe así aunque tenga precio.
+1. Determina la representación de "sin precio". La forma idiomática en Kotlin no
+   requiere declarar ningún tipo nuevo.
+2. Determina la representación del estado. Existen al menos dos opciones
+   razonables; conviene elegir la que impida construir un artículo en un estado
+   inexistente.
+3. Escribe \`describir\` cubriendo las tres situaciones. Con una representación
+   adecuada, el compilador señala los casos no contemplados.
+4. Verifica la precedencia: un artículo descatalogado se describe como tal
+   aunque tenga precio asignado.
 `,
     erroresTipicos: `
-- **Usar \`-1\` o \`0.0\` como marca.** Es justo lo que el ejercicio pide evitar.
-- **Un \`Boolean\` llamado \`descatalogado\`.** Funciona hoy, pero cuando aparezca
-  un tercer estado (\`agotado\`, \`próximamente\`) tendrás dos booleanos y cuatro
-  combinaciones, dos de ellas imposibles.
-- **Olvidar el orden de precedencia.** Descatalogado se describe igual tenga
-  precio o no.
+- **Emplear \`-1\` o \`0.0\` como marca.** Es la práctica que el ejercicio pide
+  evitar.
+- **Declarar un \`Boolean\` llamado \`descatalogado\`.** Resulta suficiente con dos
+  estados, pero al incorporar un tercero (\`agotado\`, \`próximamente\`) se obtienen
+  dos booleanos y cuatro combinaciones, dos de ellas imposibles.
+- **Omitir el orden de precedencia.** La descripción de un artículo
+  descatalogado no depende de si tiene precio.
 `,
     comoSeComprueba: `
-El driver construye artículos en las tres situaciones y compara el texto de
-\`describir\`. No mira cómo lo representaste por dentro: si el comportamiento es
-correcto, tu diseño vale.
+Las comprobaciones construyen artículos en las tres situaciones y comparan el
+texto devuelto por \`describir\`. La representación interna no se inspecciona:
+cualquier diseño con el comportamiento correcto se considera válido.
 `,
     plantilla: {
       kotlin: `{{solucion}}
@@ -407,7 +414,8 @@ fun main() {
     inicial: {
       kotlin: `// Rediseña Item según el enunciado, sin valores centinela.
 //
-// El driver construye artículos con estas dos funciones, que también son tuyas:
+// El programa de comprobación construye los artículos con estas dos funciones,
+// que también deben escribirse aquí:
 //
 //   fun crear(id: String, name: String, precio: Double?): Item
 //   fun descatalogar(item: Item): Item
