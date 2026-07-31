@@ -124,6 +124,13 @@ export async function listEjerciciosAlumno(req: Request, res: Response): Promise
     q.equalTo('publicado' as any, true as any);
     q.notEqualTo('oculto' as any, true as any);
     q.equalTo('exists' as any, true as any);
+    // SOLO los campos que se devuelven. Sin esto se descargan los documentos
+    // enteros —enunciado, enunciadoHtml, plantillas, casos y soluciones de
+    // referencia— para construir una respuesta que no usa ninguno de ellos.
+    // Con 46 ejercicios eso eran 0.79 MB y hasta 37 s contra Atlas, por encima
+    // del timeout de 15 s del front: la pantalla fallaba de forma intermitente.
+    // Seleccionando los cinco campos necesarios baja a ~14 KB y medio segundo.
+    q.select('titulo' as any, 'slug' as any, 'lenguajes' as any, 'orden' as any, 'categoria' as any);
     q.ascending('orden');
     q.limit(1000);
     const ejercicios = await q.find({ useMasterKey: true });
