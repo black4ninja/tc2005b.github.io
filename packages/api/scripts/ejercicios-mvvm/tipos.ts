@@ -94,8 +94,17 @@ export const tituloDe = (e: Ejercicio): string => `${e.tituloBase}${ETIQUETA[e.n
 
 /**
  * Compone el enunciado en Markdown con la estructura fija: cabecera, el
- * problema, de dónde viene, dónde encaja (diagrama), dónde más lo verás, qué
- * escribes, paso a paso, errores típicos y cómo se comprueba.
+ * problema, de dónde viene, dónde encaja (diagrama), dónde más lo verás, cómo se
+ * ejecuta lo que escribes, lo que ya está escrito, qué escribes, paso a paso,
+ * errores típicos y cómo se comprueba.
+ *
+ * ORDEN DELIBERADO de las tres secciones centrales. El estudio a ciegas señaló
+ * "Cómo se ejecuta lo que escribes" como el apartado más costoso en 20 de 36
+ * ejercicios: el formato Entrada/Salida de los casos contradice visualmente el
+ * "no imprimas", y leerlo DESPUÉS de la firma llega tarde. Va antes, seguido de
+ * la superficie de API, y solo entonces se pide escribir:
+ *
+ *   cómo se ejecuta  ->  con qué nombres hablas  ->  qué escribes
  *
  * Está centralizado para que los 36 se lean igual: si el alumno aprende dónde
  * mirar en uno, lo sabe en todos.
@@ -158,14 +167,10 @@ ${e.diagrama.trim()}
 
 ${e.dondeMasLoVeras.trim()}
 
-${seccionYaDeclarado(e)}## Qué escribes
-
-${e.queEscribes.trim()}
-
 ## Cómo se ejecuta lo que escribes
 
 **No se debe escribir \`main\`, ni imprimir, ni leer la entrada.** El código a
-entregar es únicamente el que describe el apartado anterior.
+entregar es únicamente el que describe el apartado "Qué escribes".
 
 Ese código se inserta en un programa de comprobación que ya existe y que no es
 visible. Dicho programa:
@@ -179,6 +184,10 @@ la comprobación— y la **Salida** es el texto que debe producirse si el códig
 correcto. Los separadores \`|\` y \`:\` los genera el programa de comprobación para
 mostrar varios valores en una línea; no deben producirse desde el código
 entregado.
+
+${seccionYaDeclarado(e)}## Qué escribes
+
+${e.queEscribes.trim()}
 
 ## Paso a paso
 
