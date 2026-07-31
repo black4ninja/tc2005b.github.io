@@ -22,6 +22,8 @@ import '../src/models/index.js';
 import { componerEnunciado, slugDe, tituloDe, type Ejercicio } from './ejercicios-mvvm/tipos.js';
 import { modeloAndroid } from './ejercicios-mvvm/cat1-modelo-android.js';
 import { modeloIos } from './ejercicios-mvvm/cat1-modelo-ios.js';
+import { mapperAndroid } from './ejercicios-mvvm/cat1-mapper.js';
+import { idDesdeUrl } from './ejercicios-mvvm/cat1-id-desde-url.js';
 
 Parse.initialize(config.appId);
 (Parse as any).serverURL = config.serverURL;
@@ -38,7 +40,7 @@ const SLUG_COL =
 const NOMBRE_BLOQUE = 'Arquitectura MVVM';
 
 /** Todos los ejercicios, en el orden en que deben aparecer. */
-const TODOS: Ejercicio[] = [...modeloAndroid, ...modeloIos];
+const TODOS: Ejercicio[] = [...modeloAndroid, ...modeloIos, ...mapperAndroid, ...idDesdeUrl];
 
 async function main(): Promise<void> {
   const col = await new Parse.Query('Coleccion')
