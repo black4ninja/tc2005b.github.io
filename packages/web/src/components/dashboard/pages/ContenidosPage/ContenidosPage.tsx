@@ -130,6 +130,7 @@ export default function ContenidosPage() {
     { label: 'Competencias', icon: 'emoji_events', onClick: () => navigate(`/admin/competencias?coleccion=${coleccion.id}`) },
     { label: 'Actividades', icon: 'assignment', onClick: () => navigate(`/admin/actividades?coleccion=${coleccion.id}`) },
     { label: 'Ejercicios', icon: 'terminal', onClick: () => navigate(`/admin/contenidos/${coleccion.id}/ejercicios`) },
+    { label: 'Diagramas', icon: 'schema', onClick: () => navigate(`/admin/contenidos/${coleccion.id}/diagramas`) },
     { label: 'Editar', icon: 'edit', onClick: () => openEdit(coleccion) },
     { label: 'Eliminar', icon: 'delete', onClick: () => handleDelete(coleccion), variant: 'danger' },
   ];

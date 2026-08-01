@@ -66,17 +66,17 @@ export class EnvioDiagrama extends BaseModel {
   }
 
   getAserionesPasadas(): number {
-    return this.get('aserionesPasadas') ?? 0;
+    return this.get('asercionesPasadas') ?? 0;
   }
   setAserionesPasadas(n: number): void {
-    this.set('aserionesPasadas', n);
+    this.set('asercionesPasadas', n);
   }
 
   getAserionesTotales(): number {
-    return this.get('aserionesTotales') ?? 0;
+    return this.get('asercionesTotales') ?? 0;
   }
   setAserionesTotales(n: number): void {
-    this.set('aserionesTotales', n);
+    this.set('asercionesTotales', n);
   }
 
   /**
@@ -100,8 +100,8 @@ export class EnvioDiagrama extends BaseModel {
       codigo: this.getCodigo(),
       veredicto: this.getVeredicto(),
       errorSintaxis: this.getErrorSintaxis(),
-      aserionesPasadas: this.getAserionesPasadas(),
-      aserionesTotales: this.getAserionesTotales(),
+      asercionesPasadas: this.getAserionesPasadas(),
+      asercionesTotales: this.getAserionesTotales(),
       detalle: this.getDetalle(),
       active: this.get('active'),
       createdAt: this.createdAt,

@@ -56,8 +56,8 @@ export async function evaluarDiagrama(op: OpcionesEvaluacion): Promise<Resultado
       return {
         veredicto: 'error_sintaxis',
         errorSintaxis: e.message,
-        aserionesPasadas: 0,
-        aserionesTotales: op.aserciones.length,
+        asercionesPasadas: 0,
+        asercionesTotales: op.aserciones.length,
         aserciones: [],
       };
     }
@@ -118,8 +118,8 @@ export async function evaluarDiagrama(op: OpcionesEvaluacion): Promise<Resultado
 
   return {
     veredicto: pasadas === op.aserciones.length ? 'aceptado' : 'aserciones_fallidas',
-    aserionesPasadas: pasadas,
-    aserionesTotales: op.aserciones.length,
+    asercionesPasadas: pasadas,
+    asercionesTotales: op.aserciones.length,
     aserciones: resultados,
   };
 }

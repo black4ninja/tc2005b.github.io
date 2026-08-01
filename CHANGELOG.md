@@ -31,6 +31,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     experimento del que salió la tabla y falla si una actualización la mueve.
   - Modelos `EjercicioDiagrama` y `EnvioDiagrama`, y módulo de contenido
     `diagramas`, **opt-in** como `ejercicios`.
+- **Autoría de ejercicios de diagrama en Contenidos**: CRUD de admin, editor con
+  vista previa en vivo del diagrama y constructor de comprobaciones a partir del
+  catálogo, sin escribir JSON a mano.
+  - **Verificación de autoría** (`diagramas-verificacion.service.ts` y
+    `scripts/verificar-ejercicios-diagrama.ts`): cada diagrama de referencia debe
+    pasar todas las comprobaciones y el **diagrama trampa** debe fallar alguna.
+    Lo primero delata aserciones sobreajustadas; lo segundo, aserciones tan laxas
+    que el ejercicio se aprueba solo. **Publicar exige pasarla**, no solo tener
+    comprobaciones: a diferencia de un caso de prueba, una aserción mal calibrada
+    no se nota al leerla.
+
+### Fixed
+- Un documento en la raíz de una colección podía **renombrarse** al slug
+  reservado `ejercicios` y tapar la ruta del módulo: la reserva solo se
+  comprobaba al crear. Ahora se comprueba también al renombrar, y la lista de
+  slugs reservados es una sola constante que incluye `diagramas`.
 - **Temario de arquitectura MVVM reescrito y ampliado a 36 ejercicios** en la
   colección `tc2007b`: 12 conceptos × 3 niveles (guiado, base y reto). Los 12
   anteriores quedan **despublicados, no borrados**.

@@ -117,6 +117,24 @@ function queryDocumentos(coleccion: Coleccion): Parse.Query<Documento> {
   return q;
 }
 
+/**
+ * Slugs que no puede tomar un documento en la RAÍZ de una colección porque ahí
+ * cuelgan las rutas de los módulos del visor: `/contenidos/:slug/ejercicios` y
+ * `/contenidos/:slug/diagramas`. Un documento con ese slug quedaría inalcanzable.
+ *
+ * Es una lista y no un `if` suelto porque cada módulo nuevo que publique una
+ * ruta literal tiene que sumar aquí su key; con la comprobación escrita a mano
+ * para un solo valor, el segundo módulo se olvida.
+ *
+ * Anidado no colisiona: la reserva es solo a nivel raíz.
+ */
+export const SLUGS_RESERVADOS_RAIZ = new Set(['ejercicios', 'diagramas']);
+
+export function slugReservadoEnRaiz(padre: Documento | null, slug: string): string | null {
+  if (padre || !SLUGS_RESERVADOS_RAIZ.has(slug)) return null;
+  return `"${slug}" es una ruta reservada en la raíz de la colección; usa otro slug.`;
+}
+
 /** ¿Ya hay un hermano con ese slug bajo el mismo padre? */
 async function slugDuplicado(
   coleccion: Coleccion,
@@ -205,11 +223,9 @@ export async function createDocumento(req: Request, res: Response): Promise<void
       }
     }
 
-    // "ejercicios" en la RAÍZ de la colección chocaría con la ruta del alumno
-    // /contenidos/:slug/ejercicios (mini-juez), dejando ese documento inalcanzable.
-    // Se reserva solo a nivel raíz (anidado no colisiona).
-    if (!padre && slugValido === 'ejercicios') {
-      res.status(409).json({ status: 'error', message: '"ejercicios" es una ruta reservada en la raíz de la colección; usa otro slug.' });
+    const reservado = slugReservadoEnRaiz(padre, slugValido);
+    if (reservado) {
+      res.status(409).json({ status: 'error', message: reservado });
       return;
     }
 
@@ -282,6 +298,14 @@ export async function updateDocumento(req: Request, res: Response): Promise<void
       }
       if (slugValido !== documento.getSlug()) {
         const padre = documento.getPadre() ?? null;
+        // La reserva se comprobaba solo al CREAR, así que un documento de raíz
+        // podía renombrarse a "ejercicios" y tapar la ruta del módulo. Al añadir
+        // un segundo módulo con ruta literal, ese hueco pasa de teórico a fácil.
+        const reservado = slugReservadoEnRaiz(padre, slugValido);
+        if (reservado) {
+          res.status(409).json({ status: 'error', message: reservado });
+          return;
+        }
         if (await slugDuplicado(coleccion, padre, slugValido, docId)) {
           res.status(409).json({ status: 'error', message: 'Ya existe un documento con ese slug en este nivel' });
           return;

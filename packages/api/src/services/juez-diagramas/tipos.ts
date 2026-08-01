@@ -182,8 +182,8 @@ export interface ResultadoDiagrama {
   veredicto: Veredicto;
   /** Mensaje del parser cuando `veredicto === 'error_sintaxis'`. */
   errorSintaxis?: string;
-  aserionesPasadas: number;
-  aserionesTotales: number;
+  asercionesPasadas: number;
+  asercionesTotales: number;
   aserciones: ResultadoAsercion[];
 }
 

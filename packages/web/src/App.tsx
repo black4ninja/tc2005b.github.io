@@ -43,6 +43,16 @@ const EditorEjercicioPage = lazy(
   () => import('./components/dashboard/pages/EditorEjercicioPage/EditorEjercicioPage'),
 );
 
+// Módulo "Diagramas". El editor arrastra CodeMirror Y el motor de diagramas para
+// la vista previa, así que pesa aún más que el de ejercicios: bajo demanda los
+// dos, listado incluido.
+const EjerciciosDiagramaColeccionPage = lazy(
+  () => import('./components/dashboard/pages/EjerciciosDiagramaColeccionPage/EjerciciosDiagramaColeccionPage'),
+);
+const EditorEjercicioDiagramaPage = lazy(
+  () => import('./components/dashboard/pages/EditorEjercicioDiagramaPage/EditorEjercicioDiagramaPage'),
+);
+
 // Visor del CMS (US-3): página completa con su propio chrome, fuera de los
 // layouts; todo su contenido llega por API autorizada por request.
 const VisorContenidoPage = lazy(
@@ -157,6 +167,22 @@ export default function App() {
           element={
             <Suspense fallback={<p style={{ padding: 24 }}>Cargando editor…</p>}>
               <EditorEjercicioPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="admin/contenidos/:id/diagramas"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando…</p>}>
+              <EjerciciosDiagramaColeccionPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="admin/contenidos/:id/diagramas/:ejercicioId"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando editor…</p>}>
+              <EditorEjercicioDiagramaPage />
             </Suspense>
           }
         />

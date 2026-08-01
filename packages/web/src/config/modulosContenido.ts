@@ -6,8 +6,8 @@
  * Dos clases según su default:
  *  - **default ON** (los 4 primeros): la lista guardada por colección enumera lo
  *    APAGADO; un módulo nuevo default-on nace encendido sin migración.
- *  - **opt-in / default OFF** (`ejercicios`): la lista enumera lo ENCENDIDO; nace
- *    apagado y se enciende por grupo.
+ *  - **opt-in / default OFF** (`ejercicios`, `diagramas`): la lista enumera lo
+ *    ENCENDIDO; nacen apagados y se encienden por grupo.
  * `moduloEsOptIn` desambigua ambas semánticas sobre el mismo mapa.
  */
 export interface ModuloContenido {
@@ -24,6 +24,7 @@ export const MODULOS_CONTENIDO: ModuloContenido[] = [
   { key: 'competencias', label: 'Competencias', icon: 'emoji_events' },
   { key: 'actividades', label: 'Actividades', icon: 'assignment' },
   { key: 'ejercicios', label: 'Ejercicios', icon: 'terminal', optIn: true },
+  { key: 'diagramas', label: 'Diagramas', icon: 'schema', optIn: true },
 ];
 
 const OPT_IN = new Set(MODULOS_CONTENIDO.filter((m) => m.optIn).map((m) => m.key));

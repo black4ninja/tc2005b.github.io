@@ -363,7 +363,7 @@ describe('informe global', () => {
       aserciones: [{ tipo: 'clases-con-contenido' }, { tipo: 'sin-nombres-vagos' }],
     });
     expect(r.veredicto).toBe('aceptado');
-    expect(r.aserionesPasadas).toBe(2);
+    expect(r.asercionesPasadas).toBe(2);
   });
 
   it('una comprobación desconocida falla en vez de darse por buena', async () => {
