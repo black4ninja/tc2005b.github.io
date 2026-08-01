@@ -35,3 +35,8 @@ export { EnvioEjercicio } from './EnvioEjercicio.js';
 export type { DetalleCasoEnvio, EstadoEnvio } from './EnvioEjercicio.js';
 export { CategoriaEjercicio } from './CategoriaEjercicio.js';
 export { BloqueEjercicios } from './BloqueEjercicios.js';
+// Módulo "Diagramas" (juez de diseño UML). Reutiliza CategoriaEjercicio y
+// BloqueEjercicios: agrupan la colección, no el juez.
+export { EjercicioDiagrama } from './EjercicioDiagrama.js';
+export type { DiagramaContextoEjercicio } from './EjercicioDiagrama.js';
+export { EnvioDiagrama } from './EnvioDiagrama.js';

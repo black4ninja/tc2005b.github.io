@@ -8,6 +8,29 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Núcleo del juez de diagramas UML** (`packages/api/src/services/juez-diagramas/`),
+  primera fase del módulo de ejercicios de diseño. Evalúa el **modelo** del
+  diagrama, no su texto: sintaxis, léxico (nombres y convenciones) y semántica
+  (estructura).
+  - Corre Mermaid en el servidor sin navegador (`jsdom` solo porque lo necesita
+    DOMPurify) y extrae el modelo con `mermaidAPI.getDiagramFromText`: clases con
+    visibilidad, tipo y retorno; secuencia con mensajes síncronos, asíncronos y
+    de retorno; estados con transiciones y sus disparadores.
+  - **Sin sandbox, sin compilador y sin cola**: la evaluación es síncrona y tarda
+    milisegundos, así que `EnvioDiagrama` no necesita estados de trabajo.
+  - **27 aserciones** en un catálogo cerrado y declarativo. El autor elige y
+    parametriza; el servidor no ejecuta código de nadie y cada comprobación se
+    describe sola al alumno en español, de modo que el rótulo no puede
+    desincronizarse de lo que se comprueba.
+  - **Aserciones cruzadas entre diagramas** (`mensaje-existe-como-operacion`,
+    `disparador-existe-como-operacion`, `participante-existe-como-clase`): son el
+    eje del módulo, porque los errores dominantes medidos en alumnos no son de
+    notación local sino de trazabilidad entre vistas.
+  - Los códigos numéricos de Mermaid —que no son API contractual— quedan
+    confinados a `codigos-mermaid.ts`, con un **test-alambre** que repite el
+    experimento del que salió la tabla y falla si una actualización la mueve.
+  - Modelos `EjercicioDiagrama` y `EnvioDiagrama`, y módulo de contenido
+    `diagramas`, **opt-in** como `ejercicios`.
 - **Temario de arquitectura MVVM reescrito y ampliado a 36 ejercicios** en la
   colección `tc2007b`: 12 conceptos × 3 niveles (guiado, base y reto). Los 12
   anteriores quedan **despublicados, no borrados**.
