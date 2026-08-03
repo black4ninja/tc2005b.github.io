@@ -42,6 +42,27 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     comprobaciones: a diferencia de un caso de prueba, una aserción mal calibrada
     no se nota al leerla.
 
+- **Experiencia del alumno en Diagramas**: listado agrupado por bloque y
+  categoría con su progreso, y solver con enunciado, diagramas de contexto ya
+  dibujados, editor con vista previa en vivo, historial de envíos y la columna
+  del editor siguiendo el scroll.
+  - **Sin cola ni sondeo**: el veredicto llega en la respuesta de la propia
+    petición, porque juzgar un diagrama cuesta milisegundos. El módulo de código
+    necesita `pendiente → ejecutando → listo` solo porque compilar tarda.
+  - Las comprobaciones **ocultas** se listan con su marca de fallo pero sin el
+    porqué, que el servidor omite antes de responder.
+
+### Changed
+- La regla de acceso a los módulos opt-in se unifica en
+  `acceso-modulos.service.ts`, parametrizada por módulo. Era idéntica para
+  Ejercicios y Diagramas, y dos copias de una regla de **permisos** divergen en
+  cuanto se corrige una sola. `ejercicios-alumno.service.ts` pasa a delegar en
+  ella conservando sus nombres públicos.
+- La invalidación de la caché de acceso deja de ser por módulo: lo que la dispara
+  —cambiar las asignaciones de un grupo o archivarlo— afecta a todos por igual,
+  así que **una** llamada los invalida todos. Con el patrón anterior había que
+  acordarse de añadir una línea por cada módulo nuevo.
+
 ### Fixed
 - Un documento en la raíz de una colección podía **renombrarse** al slug
   reservado `ejercicios` y tapar la ruta del módulo: la reserva solo se

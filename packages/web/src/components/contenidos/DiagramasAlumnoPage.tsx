@@ -1,15 +1,15 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { useCargaGated } from '../../hooks/useCargaGated';
-import { NOMBRE_LENGUAJE } from '../../config/codemirrorLenguaje';
-import { useEjerciciosBase } from '../../config/rutasEjercicios';
+import { useDiagramasBase } from '../../config/rutasDiagramas';
+import { TIPOS_DIAGRAMA, etiquetaTipoDiagrama } from '../../lib/diagramas/etiquetas';
 import {
   agruparEnBloques,
   type BloqueRef,
   type CategoriaRef,
   type EjercicioLista,
 } from './agruparEjercicios';
-import styles from './EjerciciosAlumno.module.css';
+import styles from './DiagramasAlumno.module.css';
 
 interface ColeccionRef {
   slug: string;
@@ -18,47 +18,67 @@ interface ColeccionRef {
 }
 
 /**
- * En este módulo los lenguajes SIEMPRE vienen: son los que el juez puede
- * compilar, así que ningún ejercicio existe sin al menos uno. En
- * `EjercicioLista` son opcionales porque esa forma la comparte con el módulo de
- * diagramas, que no tiene lenguajes.
+ * En este módulo el tipo de diagrama SIEMPRE viene: es lo que decide qué
+ * comprobaciones aplican, así que ningún ejercicio puede existir sin él. En
+ * `EjercicioLista` es opcional porque la comparte con el módulo de código, que
+ * no lo tiene.
  */
-interface EjercicioCodigoLista extends EjercicioLista {
-  lenguajes: string[];
+interface DiagramaLista extends EjercicioLista {
+  tipoDiagrama: string;
 }
 
 interface RespuestaLista {
   coleccion: ColeccionRef | null;
-  /** Ausente en respuestas de un API anterior a los bloques → agrupado plano. */
-  bloques?: BloqueRef[];
   categorias: CategoriaRef[];
-  ejercicios: EjercicioCodigoLista[];
-  progreso: { resueltos: number; total: number };
+  bloques: BloqueRef[];
+  ejercicios: DiagramaLista[];
 }
 
-const LENGUAJES = Object.keys(NOMBRE_LENGUAJE);
+/** Orden canónico de los tipos, para que los filtros no dependan de los datos. */
+const ORDEN_TIPOS = TIPOS_DIAGRAMA.map((t) => String(t.key));
 
-export default function EjerciciosAlumnoPage() {
+export default function DiagramasAlumnoPage() {
   const { slug } = useParams<{ slug: string }>();
-  const base = useEjerciciosBase();
+  const base = useDiagramasBase();
   const { data, cargando, error, noEncontrado, reintentar } = useCargaGated<RespuestaLista>(
-    slug ? `/api/contenidos/${slug}/ejercicios` : null,
+    slug ? `/api/contenidos/${slug}/diagramas` : null,
   );
-  const [filtroLeng, setFiltroLeng] = useState<'todos' | string>('todos');
+  const [filtroTipo, setFiltroTipo] = useState<'todos' | string>('todos');
   const [colapsadas, setColapsadas] = useState<Set<string>>(new Set());
 
   const coleccion = data?.coleccion ?? null;
-  const ejercicios = data?.ejercicios ?? [];
+  const ejercicios = useMemo(() => data?.ejercicios ?? [], [data]);
   const categorias = data?.categorias ?? [];
   const bloques = data?.bloques ?? [];
 
-  const filtrados = filtroLeng === 'todos' ? ejercicios : ejercicios.filter((e) => e.lenguajes.includes(filtroLeng));
+  /**
+   * Los chips se derivan de lo que hay publicado, no del catálogo entero: de los
+   * ocho tipos que el editor ofrece, una colección suele usar dos o tres, y
+   * pintar los seis restantes sería ofrecer filtros que siempre dan vacío. Se
+   * ordenan por el catálogo para que la fila no cambie de orden según el
+   * contenido, y los tipos que este cliente aún no conozca van al final en vez
+   * de desaparecer.
+   */
+  const tiposPresentes = useMemo(() => {
+    const presentes = [...new Set(ejercicios.map((e) => e.tipoDiagrama))];
+    const posicion = (t: string) => {
+      const i = ORDEN_TIPOS.indexOf(t);
+      return i === -1 ? ORDEN_TIPOS.length : i;
+    };
+    return presentes.sort((a, b) => posicion(a) - posicion(b) || a.localeCompare(b));
+  }, [ejercicios]);
+
+  const filtrados =
+    filtroTipo === 'todos' ? ejercicios : ejercicios.filter((e) => e.tipoDiagrama === filtroTipo);
   // Sin bloques devuelve un único bloque sin título → se pinta como siempre.
   const arbol = agruparEnBloques(bloques, categorias, filtrados);
-  // El progreso se calcula sobre lo FILTRADO (no el total del servidor): así un
-  // alumno que filtra por su lenguaje llega a 100% sin que los ejercicios
-  // exclusivos del otro lenguaje —que no puede resolver— lo dejen atascado.
-  const progreso = { resueltos: filtrados.filter((e) => e.resuelto).length, total: filtrados.length };
+  // El progreso se calcula sobre lo FILTRADO, igual que en el módulo de código:
+  // quien esté trabajando un solo tipo de diagrama ve su avance en ESE tipo, sin
+  // que los de los demás lo dejen permanentemente por debajo del 100%.
+  const progreso = {
+    resueltos: filtrados.filter((e) => e.resuelto).length,
+    total: filtrados.length,
+  };
 
   function toggle(clave: string) {
     setColapsadas((prev) => {
@@ -72,33 +92,36 @@ export default function EjerciciosAlumnoPage() {
   if (error) {
     return (
       <div className={styles.page}>
-        <p className={styles.info}>No se pudo cargar. Revisa tu conexión e inténtalo de nuevo.</p>
-        <button className={styles.volver} style={{ border: 'none', background: 'none', padding: 0, cursor: 'pointer' }} onClick={reintentar}>Reintentar</button>
+        <p className={styles.info}>No se pudo cargar el listado. Puede deberse a un problema de conexión.</p>
+        <button className={`${styles.volver} ${styles.enlaceBoton}`} onClick={reintentar}>Reintentar</button>
       </div>
     );
   }
   if (noEncontrado) {
     return (
       <div className={styles.page}>
-        <p className={styles.info}>No se encontró esta sección de ejercicios.</p>
+        <p className={styles.info}>No se encontró esta sección de diagramas.</p>
       </div>
     );
   }
 
   return (
     <div className={styles.page}>
-      {/* Sin enlace "volver": dentro del shell, Ejercicios es una sección de
+      {/* Sin enlace "volver": dentro del shell, Diagramas es una sección de
           primer nivel del menú y la salida es el propio sidebar. La colección
           va de subtítulo porque un grupo puede tener más de una materia. */}
       <header className={styles.header}>
-        <h1 className={styles.titulo}>Ejercicios</h1>
+        <h1 className={styles.titulo}>Diagramas</h1>
         {(coleccion?.clave || coleccion?.nombre) && (
           <p className={styles.subtitulo}>{coleccion?.clave || coleccion?.nombre}</p>
         )}
         {progreso.total > 0 && (
           <div className={styles.progreso}>
             <div className={styles.barra}>
-              <div className={styles.barraLlena} style={{ width: `${Math.round((progreso.resueltos / progreso.total) * 100)}%` }} />
+              <div
+                className={styles.barraLlena}
+                style={{ width: `${Math.round((progreso.resueltos / progreso.total) * 100)}%` }}
+              />
             </div>
             <span className={styles.progresoTexto}>{progreso.resueltos} / {progreso.total} resueltos</span>
           </div>
@@ -106,21 +129,33 @@ export default function EjerciciosAlumnoPage() {
       </header>
 
       {ejercicios.length === 0 ? (
-        <p className={styles.info}>Aún no hay ejercicios publicados en esta colección.</p>
+        <p className={styles.info}>Aún no hay ejercicios de diagrama publicados en esta colección.</p>
       ) : (
         <>
-          <div className={styles.filtros}>
-            <span className={styles.filtroLabel}>Lenguaje:</span>
-            <button className={`${styles.chip} ${filtroLeng === 'todos' ? styles.chipActivo : ''}`} onClick={() => setFiltroLeng('todos')}>Todos</button>
-            {LENGUAJES.map((l) => (
-              <button key={l} className={`${styles.chip} ${filtroLeng === l ? styles.chipActivo : ''}`} onClick={() => setFiltroLeng(l)}>
-                {NOMBRE_LENGUAJE[l] ?? l}
+          {/* Con un solo tipo el filtro no filtra nada: la fila se omite. */}
+          {tiposPresentes.length > 1 && (
+            <div className={styles.filtros}>
+              <span className={styles.filtroLabel}>Tipo de diagrama:</span>
+              <button
+                className={`${styles.chip} ${filtroTipo === 'todos' ? styles.chipActivo : ''}`}
+                onClick={() => setFiltroTipo('todos')}
+              >
+                Todos
               </button>
-            ))}
-          </div>
+              {tiposPresentes.map((t) => (
+                <button
+                  key={t}
+                  className={`${styles.chip} ${filtroTipo === t ? styles.chipActivo : ''}`}
+                  onClick={() => setFiltroTipo(t)}
+                >
+                  {etiquetaTipoDiagrama(t)}
+                </button>
+              ))}
+            </div>
+          )}
 
           {arbol.length === 0 ? (
-            <p className={styles.info}>No hay ejercicios para este lenguaje.</p>
+            <p className={styles.info}>No hay ejercicios de este tipo de diagrama.</p>
           ) : (
             arbol.map((b) => {
               // Las claves van prefijadas: el residual se llama '__otros' en los
@@ -132,7 +167,7 @@ export default function EjerciciosAlumnoPage() {
               return (
                 <section key={claveBloque} className={b.titulo ? styles.bloque : undefined}>
                   {/* Sin título no hay cabecera: es el caso "no hay bloques",
-                      donde la pantalla debe verse como antes de que existieran. */}
+                      donde la pantalla debe verse como una lista plana. */}
                   {b.titulo && (
                     <button className={styles.bloqueHeader} aria-expanded={bloqueAbierto} onClick={() => toggle(claveBloque)}>
                       <span className={styles.chevron} aria-hidden>{bloqueAbierto ? '▾' : '▸'}</span>
@@ -153,7 +188,7 @@ export default function EjerciciosAlumnoPage() {
                           <section key={claveGrupo} className={styles.grupo}>
                             <button className={styles.grupoHeader} aria-expanded={abierto} onClick={() => toggle(claveGrupo)}>
                               <span className={styles.chevron} aria-hidden>{abierto ? '▾' : '▸'}</span>
-                              <span className={styles.grupoTitulo}>{g.titulo ?? 'Ejercicios'}</span>
+                              <span className={styles.grupoTitulo}>{g.titulo ?? 'Diagramas'}</span>
                               <span className={styles.grupoConteo}>{resueltos}/{g.items.length}</span>
                             </button>
                             {abierto && (
@@ -165,10 +200,12 @@ export default function EjerciciosAlumnoPage() {
                                         <span className={styles.check} aria-hidden>{e.resuelto ? '✓' : '○'}</span>
                                         <span className={styles.itemTitulo}>{e.titulo}</span>
                                       </span>
-                                      {/* `agruparEnBloques` devuelve `EjercicioLista`, donde los
-                                          lenguajes son opcionales por compartirse con el módulo de
-                                          diagramas; aquí siempre llegan. */}
-                                      <span className={styles.itemLeng}>{(e.lenguajes ?? []).map((l) => NOMBRE_LENGUAJE[l] ?? l).join(' · ')}</span>
+                                      {/* `agruparEnBloques` devuelve `EjercicioLista`, donde el tipo
+                                          es opcional; aquí siempre llega, y si faltara se omite el
+                                          metadato en vez de pintar "undefined". */}
+                                      {e.tipoDiagrama && (
+                                        <span className={styles.itemTipo}>{etiquetaTipoDiagrama(e.tipoDiagrama)}</span>
+                                      )}
                                     </Link>
                                   </li>
                                 ))}

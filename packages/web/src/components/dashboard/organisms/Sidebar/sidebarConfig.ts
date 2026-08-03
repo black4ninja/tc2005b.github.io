@@ -14,6 +14,7 @@ export function getSidebarItems(
   docsHref: string | null = null,
   agendaHref: string | null = null,
   ejerciciosHref: string | null = null,
+  diagramasHref: string | null = null,
 ): SidebarItem[] {
   if (role === 'admin') {
     return [
@@ -64,6 +65,11 @@ export function getSidebarItems(
   if (ejerciciosHref) {
     items.push({ label: 'Ejercicios', icon: 'terminal', path: ejerciciosHref, disabled: !perfilCompleto });
   }
+  // Ídem para Diagramas, que se enciende por separado: un grupo puede tener uno
+  // de los dos módulos y no el otro.
+  if (diagramasHref) {
+    items.push({ label: 'Diagramas', icon: 'schema', path: diagramasHref, disabled: !perfilCompleto });
+  }
   // Sin URL en su grupo, no hay agenda que enlazar (igual que "Documentación").
   if (agendaHref) {
     items.push({
@@ -89,6 +95,7 @@ export function getGrupoDetailItems(
   grupoId: string,
   agendaHref: string | null = null,
   ejerciciosHref: string | null = null,
+  diagramasHref: string | null = null,
 ): SidebarItem[] {
   const items: SidebarItem[] = [
     { label: 'Calendario', icon: 'calendar_month', path: `/admin/grupos/${grupoId}/calendario` },
@@ -104,6 +111,9 @@ export function getGrupoDetailItems(
   // así que el menú no se pierde al entrar.
   if (ejerciciosHref) {
     items.push({ label: 'Ejercicios', icon: 'terminal', path: ejerciciosHref });
+  }
+  if (diagramasHref) {
+    items.push({ label: 'Diagramas', icon: 'schema', path: diagramasHref });
   }
   if (agendaHref) {
     items.push({ label: 'Agendar Entrevistas', icon: 'event_available', path: agendaHref, external: true });

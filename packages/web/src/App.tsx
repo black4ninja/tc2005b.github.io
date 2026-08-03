@@ -67,6 +67,14 @@ const EjerciciosAlumnoPage = lazy(
 const EjercicioSolverPage = lazy(
   () => import('./components/contenidos/EjercicioSolverPage'),
 );
+// Módulo "Diagramas": lista y solver del alumno. Mismo montaje que Ejercicios,
+// una vez por rol — ver `config/rutasDiagramas`.
+const DiagramasAlumnoPage = lazy(
+  () => import('./components/contenidos/DiagramasAlumnoPage'),
+);
+const DiagramaSolverPage = lazy(
+  () => import('./components/contenidos/DiagramaSolverPage'),
+);
 const RedirEjerciciosLegacy = lazy(
   () => import('./components/contenidos/RedirEjerciciosLegacy'),
 );
@@ -156,6 +164,23 @@ export default function App() {
             </Suspense>
           }
         />
+        {/* Diagramas como los ve el alumno, con el mismo montaje colgado del grupo. */}
+        <Route
+          path="admin/grupos/:id/diagramas/:slug"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando…</p>}>
+              <DiagramasAlumnoPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="admin/grupos/:id/diagramas/:slug/:ejSlug"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando ejercicio…</p>}>
+              <DiagramaSolverPage />
+            </Suspense>
+          }
+        />
         <Route path="admin/competencias" element={<CompetenciasPage />} />
         <Route path="admin/actividades" element={<ActividadesPage />} />
         <Route path="admin/paginas" element={<PaginasPage />} />
@@ -217,6 +242,24 @@ export default function App() {
           element={
             <Suspense fallback={<p style={{ padding: 24 }}>Cargando ejercicio…</p>}>
               <EjercicioSolverPage />
+            </Suspense>
+          }
+        />
+        {/* Diagramas, con el mismo criterio: sección de primer nivel colgada de
+            la colección, no del grupo. */}
+        <Route
+          path="alumno/diagramas/:slug"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando…</p>}>
+              <DiagramasAlumnoPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="alumno/diagramas/:slug/:ejSlug"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando ejercicio…</p>}>
+              <DiagramaSolverPage />
             </Suspense>
           }
         />

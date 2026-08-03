@@ -12,6 +12,7 @@ import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import { APP_NAME } from '../../../../config/app';
 import { moduloHabilitado } from '../../../../config/modulosContenido';
 import { rutaEjerciciosAdmin, rutaEjerciciosAlumno } from '../../../../config/rutasEjercicios';
+import { rutaDiagramasAdmin, rutaDiagramasAlumno } from '../../../../config/rutasDiagramas';
 
 /** Colección asignada al grupo, como la devuelve /api/admin/grupos. */
 interface ColeccionGrupo {
@@ -63,6 +64,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
   const [docsHref, setDocsHref] = useState<string | null>(null);
   const [ejerciciosHref, setEjerciciosHref] = useState<string | null>(null);
+  const [diagramasHref, setDiagramasHref] = useState<string | null>(null);
   const [colecciones, setColecciones] = useState<ColeccionGrupo[]>([]);
   // Módulos apagados por colección del grupo: filtran qué secciones aparecen.
   const [modulosDeshabilitados, setModulosDeshabilitados] = useState<Record<string, string[]>>({});
@@ -100,6 +102,20 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       .then((json) => {
         const cols: { slug: string }[] = json?.colecciones ?? [];
         setEjerciciosHref(cols.length > 0 ? rutaEjerciciosAlumno(cols[0].slug) : null);
+      })
+      .catch(() => {});
+  }, [sessionToken, role]);
+
+  // Diagramas del ALUMNO: mismo criterio que Ejercicios, con su propio endpoint
+  // porque el módulo se enciende por separado y puede tener contenido publicado
+  // cuando el otro no.
+  useEffect(() => {
+    if (!sessionToken || role !== 'alumno') return;
+    fetch('/api/me/diagramas/colecciones', { headers: { 'x-session-token': sessionToken } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        const cols: { slug: string }[] = json?.colecciones ?? [];
+        setDiagramasHref(cols.length > 0 ? rutaDiagramasAlumno(cols[0].slug) : null);
       })
       .catch(() => {});
   }, [sessionToken, role]);
@@ -219,8 +235,16 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
     return col ? rutaEjerciciosAdmin(grupoId, col.slug) : null;
   }, [colecciones, modulosDeshabilitados, grupoId]);
 
+  // Ídem para Diagramas. Se resuelve por separado porque los dos módulos se
+  // encienden por separado: un grupo puede tener uno y no el otro.
+  const diagramasGrupoHref = useMemo(() => {
+    if (!grupoId) return null;
+    const col = colecciones.find((c) => moduloHabilitado(modulosDeshabilitados, c.id, 'diagramas'));
+    return col ? rutaDiagramasAdmin(grupoId, col.slug) : null;
+  }, [colecciones, modulosDeshabilitados, grupoId]);
+
   const items = isGrupoDetail
-    ? getGrupoDetailItems(grupoId!, agendaGrupoHref, ejerciciosGrupoHref)
+    ? getGrupoDetailItems(grupoId!, agendaGrupoHref, ejerciciosGrupoHref, diagramasGrupoHref)
     : getSidebarItems(
         role,
         role === 'alumno' ? selectedGrupoId : undefined,
@@ -228,6 +252,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         docsHref,
         agendaAlumnoHref,
         ejerciciosHref,
+        diagramasHref,
       );
 
   return (
