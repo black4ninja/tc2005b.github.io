@@ -107,6 +107,11 @@
 }
 .chip:hover { background: #f6f8fa; }
 .chipActivo { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+/* `.chip:hover` tiene MÁS especificidad que `.chipActivo` (clase + pseudoclase
+   frente a clase), así que sin esta regla el chip seleccionado se quedaba con
+   el fondo casi blanco del hover y el texto blanco encima: ilegible justo
+   cuando el puntero está sobre él. */
+.chipActivo:hover { background: #4338ca; border-color: #4338ca; color: #fff; }
 
 /* --- Bloque: el nivel por encima de la categoría ---
    Deliberadamente distinto del header de categoría —más grande y SIN uppercase—
