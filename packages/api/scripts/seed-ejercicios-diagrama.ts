@@ -42,7 +42,18 @@ function inicializarParse(): void {
   (Parse as unknown as { masterKey: string }).masterKey = config.masterKey;
 }
 
-/** Busca o crea un objeto por (colección, nombre). Devuelve null en dry-run si no existía. */
+/**
+ * Busca o crea un objeto por (colección, nombre), y en ambos casos deja sus
+ * campos `extra` como dicen las definiciones. Devuelve null en dry-run si no
+ * existía.
+ *
+ * Actualizar también los EXISTENTES no es un detalle: `orden` se calcula a
+ * partir del orden en que aparecen los bloques en las definiciones, y el
+ * contador arranca de cero en cada corrida. Al crear solo los que faltaban, un
+ * bloque nuevo recibía un número que los antiguos ya tenían, empataban y el
+ * listado los pintaba en un orden arbitrario. Sembrar tiene que dejar el mismo
+ * estado se ejecute las veces que se ejecute.
+ */
 async function obtenerOCrear(
   clase: string,
   coleccion: Parse.Object,
@@ -54,7 +65,24 @@ async function obtenerOCrear(
   q.equalTo('nombre' as never, nombre as never);
   q.equalTo('exists' as never, true as never);
   const existente = await q.first({ useMasterKey: true });
-  if (existente) return existente;
+
+  if (existente) {
+    const cambios = Object.entries(extra).filter(([k, v]) => {
+      const actual = existente.get(k);
+      // Los punteros se comparan por id; el resto por valor.
+      const actualId = (actual as Parse.Object | undefined)?.id;
+      const nuevoId = (v as Parse.Object | undefined)?.id;
+      return nuevoId ? actualId !== nuevoId : actual !== v;
+    });
+    if (cambios.length) {
+      console.log(`  ~ ${clase}: «${nombre}» (${cambios.map(([k]) => k).join(', ')})`);
+      if (!DRY_RUN) {
+        for (const [k, v] of cambios) existente.set(k, v);
+        await existente.save(null, { useMasterKey: true });
+      }
+    }
+    return existente;
+  }
 
   console.log(`  + ${clase}: «${nombre}»`);
   if (DRY_RUN) return null;
@@ -91,10 +119,17 @@ async function main(): Promise<void> {
   console.log(`Colección: ${SLUG_COL} (${coleccion.id})${DRY_RUN ? '  [DRY-RUN]' : ''}\n`);
 
   // Bloques y categorías, en el orden en que aparecen en las definiciones.
+  //
+  // Se numeran desde 200 porque `BloqueEjercicios` y `CategoriaEjercicio`
+  // pertenecen a la COLECCIÓN y los comparten los dos módulos: en `tc2007b` ya
+  // viven los bloques del mini-juez de código, numerados desde 0. Empezar
+  // también en 0 hacía que "Punto de partida" empatara con "Introducción al
+  // lenguaje", y un empate deja el orden a merced de la base de datos.
+  const BASE_ORDEN = 200;
   const bloques = new Map<string, Parse.Object | null>();
   const categorias = new Map<string, Parse.Object | null>();
-  let ordenBloque = 0;
-  let ordenCategoria = 0;
+  let ordenBloque = BASE_ORDEN;
+  let ordenCategoria = BASE_ORDEN;
 
   for (const d of definiciones) {
     if (!bloques.has(d.bloque)) {
