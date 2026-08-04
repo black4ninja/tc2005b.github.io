@@ -466,11 +466,11 @@ const ejercicios: EjercicioDiagramaDef[] = [
   {
     slug: 'ejemplo-resuelto-secuencia-reserva',
     titulo: 'Ejemplo resuelto: la interacción que crea una reserva',
-    categoria: 'Ejemplo resuelto',
-    bloque: 'Punto de partida',
+    categoria: 'Secuencia',
+    bloque: 'Interacción',
     nivel: 'guiado',
     esEjemplo: true,
-    orden: 2,
+    orden: 105,
     motor: 'mermaid',
     tipoDiagrama: 'secuencia',
 
@@ -624,11 +624,11 @@ const ejercicios: EjercicioDiagramaDef[] = [
   {
     slug: 'ejemplo-resuelto-estados-reserva',
     titulo: 'Ejemplo resuelto: ciclo de vida de una reserva',
-    categoria: 'Ejemplo resuelto',
-    bloque: 'Punto de partida',
+    categoria: 'Estados',
+    bloque: 'Comportamiento',
     nivel: 'guiado',
     esEjemplo: true,
-    orden: 3,
+    orden: 205,
     motor: 'mermaid',
     tipoDiagrama: 'estados',
 
@@ -741,11 +741,11 @@ const ejercicios: EjercicioDiagramaDef[] = [
   {
     slug: 'ejemplo-resuelto-er-reserva',
     titulo: 'Ejemplo resuelto: los datos que se guardan de una reserva',
-    categoria: 'Ejemplo resuelto',
-    bloque: 'Punto de partida',
+    categoria: 'Entidad-relación',
+    bloque: 'Estructura',
     nivel: 'guiado',
     esEjemplo: true,
-    orden: 4,
+    orden: 305,
     motor: 'mermaid',
     tipoDiagrama: 'er',
 
@@ -912,11 +912,11 @@ const ejercicios: EjercicioDiagramaDef[] = [
   {
     slug: 'ejemplo-resuelto-flujo-reserva',
     titulo: 'Ejemplo resuelto: el procedimiento de reservar una sala',
-    categoria: 'Ejemplo resuelto',
-    bloque: 'Punto de partida',
+    categoria: 'Flujo',
+    bloque: 'Comportamiento',
     nivel: 'guiado',
     esEjemplo: true,
-    orden: 5,
+    orden: 405,
     motor: 'mermaid',
     tipoDiagrama: 'flujo',
 

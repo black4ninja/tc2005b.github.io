@@ -47,8 +47,9 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   tipos** en tres niveles cada uno (guiado, base y reto): clases, secuencia,
   estados, entidad-relación, flujo, casos de uso, componentes y paquetes.
   - **Un «ejercicio completo» por tipo**, los ocho sobre el mismo caso de reserva
-    de salas: abren con el diagrama ya terminado, llevan el distintivo en el
-    propio nombre y no cuentan para el progreso. Su código inicial ES su primera
+    de salas y cada uno **al principio de la categoría de su tipo**: abren con el
+    diagrama ya terminado, llevan el distintivo en el propio nombre y no cuentan
+    para el progreso. Su código inicial ES su primera
     solución de referencia, así que la verificación demuestra que enviarlos sin
     tocar nada pasa.
   - Documento guía «Un caso completo: reserva de salas», con el mismo sistema

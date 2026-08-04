@@ -153,11 +153,11 @@ const ejercicios: EjercicioDiagramaDef[] = [
   {
     slug: 'ejemplo-resuelto-reserva-salas',
     titulo: 'Ejemplo resuelto: reserva de salas en tres vistas',
-    categoria: 'Ejemplo resuelto',
-    bloque: 'Punto de partida',
+    categoria: 'Clases',
+    bloque: 'Estructura',
     nivel: 'guiado',
     esEjemplo: true,
-    orden: 1,
+    orden: 5,
     motor: 'mermaid',
     tipoDiagrama: 'clases',
 

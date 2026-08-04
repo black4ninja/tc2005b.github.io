@@ -257,11 +257,11 @@ const ejercicios: EjercicioDiagramaDef[] = [
   {
     slug: 'ejemplo-resuelto-casos-uso-reserva',
     titulo: 'Ejemplo resuelto: casos de uso de la reserva de salas',
-    categoria: 'Ejemplo resuelto',
-    bloque: 'Punto de partida',
+    categoria: 'Casos de uso',
+    bloque: 'Arquitectura',
     nivel: 'guiado',
     esEjemplo: true,
-    orden: 6,
+    orden: 505,
     motor: 'plantuml',
     tipoDiagrama: 'casos-de-uso',
 
@@ -386,11 +386,11 @@ Coordinador -- consultar
   {
     slug: 'ejemplo-resuelto-componentes-reserva',
     titulo: 'Ejemplo resuelto: componentes de la reserva de salas',
-    categoria: 'Ejemplo resuelto',
-    bloque: 'Punto de partida',
+    categoria: 'Componentes',
+    bloque: 'Arquitectura',
     nivel: 'guiado',
     esEjemplo: true,
-    orden: 7,
+    orden: 605,
     motor: 'plantuml',
     tipoDiagrama: 'componentes',
 
@@ -529,11 +529,11 @@ SincronizadorDeReservas ..> PantallaDeReservas
   {
     slug: 'ejemplo-resuelto-paquetes-reserva',
     titulo: 'Ejemplo resuelto: paquetes de la reserva de salas',
-    categoria: 'Ejemplo resuelto',
-    bloque: 'Punto de partida',
+    categoria: 'Paquetes',
+    bloque: 'Arquitectura',
     nivel: 'guiado',
     esEjemplo: true,
-    orden: 8,
+    orden: 705,
     motor: 'plantuml',
     tipoDiagrama: 'paquetes',
 
