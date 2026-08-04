@@ -293,3 +293,66 @@
   color: #5b21b6;
   white-space: nowrap;
 }
+
+/* --- Barra de vista ---
+   Mismos tres estados y mismos iconos que el editor del CMS. Quien ya usó aquel
+   reconoce el control sin tener que descubrirlo otra vez. */
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.btnEnunciado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 13px;
+  color: #57606a;
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btnEnunciado:hover { background: #f6f8fa; color: #1f2328; }
+
+.vistaGrupo {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+}
+.vistaGrupo button {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: #57606a;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.vistaGrupo button:hover { color: #1f2328; }
+.vistaActiva,
+.vistaGrupo button.vistaActiva:hover {
+  background: #fff;
+  color: #4f46e5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Sin enunciado, el área de trabajo ocupa el ancho completo. */
+.colsSinEnunciado { grid-template-columns: minmax(0, 1fr); }
+
+/* Con una sola mitad visible, la que queda ocupa todo el ancho. */
+.splitSolo { grid-template-columns: minmax(0, 1fr); }
+
+/* Se oculta sin desmontar: CodeMirror perdería cursor, selección e historial
+   de deshacer en cada cambio de vista. */
+.oculto { display: none; }

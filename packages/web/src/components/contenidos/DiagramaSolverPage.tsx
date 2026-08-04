@@ -12,6 +12,26 @@ import { etiquetaMotorDiagrama, etiquetaTipoDiagrama } from '../../lib/diagramas
 // autor y el alumno dibujaran con componentes distintos, un diagrama podría
 // verse bien al redactarlo y romperse al resolverlo sin que nadie lo notara.
 import VistaPreviaDiagrama from '../dashboard/pages/EditorEjercicioDiagramaPage/VistaPreviaDiagrama';
+import Icon from '../dashboard/atoms/Icon/Icon';
+
+/**
+ * Qué mitades del área de trabajo se ven, con los mismos tres estados y los
+ * mismos iconos que el editor del CMS: quien ya usó aquel no tiene que aprender
+ * otro control aquí.
+ */
+type Vista = 'codigo' | 'ambos' | 'preview';
+const VISTA_KEY = 'diagramas:solver:vista';
+const ENUNCIADO_KEY = 'diagramas:solver:enunciado';
+
+function leerVista(): Vista {
+  const v = localStorage.getItem(VISTA_KEY);
+  return v === 'codigo' || v === 'preview' ? v : 'ambos';
+}
+
+/** El enunciado se ve por defecto: ocultarlo es una decisión del alumno. */
+function leerEnunciadoVisible(): boolean {
+  return localStorage.getItem(ENUNCIADO_KEY) !== 'oculto';
+}
 import styles from './DiagramaSolver.module.css';
 
 interface ContextoDTO {
@@ -86,6 +106,23 @@ export default function DiagramaSolverPage() {
   const { sessionToken } = useAuth();
   // Aquí el "volver" SÍ corresponde: el solver cuelga del listado del módulo.
   const base = useDiagramasBase();
+  // Ambas preferencias se recuerdan entre sesiones: quien trabaja en una
+  // pantalla chica no quiere volver a colapsar lo mismo cada vez que entra.
+  const [vista, setVistaState] = useState<Vista>(leerVista);
+  const [enunciadoVisible, setEnunciadoVisibleState] = useState<boolean>(leerEnunciadoVisible);
+
+  function setVista(v: Vista) {
+    setVistaState(v);
+    localStorage.setItem(VISTA_KEY, v);
+  }
+  function setEnunciadoVisible(v: boolean) {
+    setEnunciadoVisibleState(v);
+    localStorage.setItem(ENUNCIADO_KEY, v ? 'visible' : 'oculto');
+  }
+
+  // Al dedicar la pantalla a una sola cosa, lo que se gana no es solo ancho:
+  // un diagrama alto cabe entero en lugar de pedir scroll dentro del panel.
+  const alturaPaneles = !enunciadoVisible && vista !== 'ambos' ? 680 : vista !== 'ambos' ? 560 : 420;
 
   const { data, cargando, error: errorCarga, noEncontrado, reintentar } = useCargaGated<{ ejercicio: EjercicioDTO }>(
     slug && ejSlug ? `/api/contenidos/${slug}/diagramas/${ejSlug}` : null,
@@ -203,8 +240,9 @@ export default function DiagramaSolverPage() {
         </div>
       </header>
 
-      <div className={styles.cols}>
+      <div className={`${styles.cols} ${enunciadoVisible ? '' : styles.colsSinEnunciado}`}>
         {/* Enunciado, diagramas dados y comprobaciones anunciadas */}
+        {enunciadoVisible && (
         <section className={styles.enunciadoCol}>
           <div ref={refEnunciado} className={styles.enunciado} dangerouslySetInnerHTML={{ __html: ej.enunciadoHtml }} />
 
@@ -243,26 +281,73 @@ export default function DiagramaSolverPage() {
             </p>
           )}
         </section>
+        )}
 
         {/* Editor con vista previa, acciones, resultado e historial */}
         <section className={styles.editorCol}>
-          <div className={styles.split}>
-            <div className={styles.panel}>
+          <div className={styles.barra}>
+            <button
+              type="button"
+              className={styles.btnEnunciado}
+              onClick={() => setEnunciadoVisible(!enunciadoVisible)}
+              aria-pressed={!enunciadoVisible}
+              title={enunciadoVisible ? 'Ocultar el enunciado' : 'Mostrar el enunciado'}
+            >
+              <Icon name={enunciadoVisible ? 'chevron_left' : 'chevron_right'} size="sm" />
+              <span>{enunciadoVisible ? 'Ocultar enunciado' : 'Mostrar enunciado'}</span>
+            </button>
+
+            <div className={styles.vistaGrupo} role="group" aria-label="Vista del área de trabajo">
+              <button
+                type="button"
+                className={vista === 'codigo' ? styles.vistaActiva : ''}
+                onClick={() => setVista('codigo')}
+                title="Solo el diagrama escrito"
+                aria-pressed={vista === 'codigo'}
+              >
+                <Icon name="code" size="sm" />
+              </button>
+              <button
+                type="button"
+                className={vista === 'ambos' ? styles.vistaActiva : ''}
+                onClick={() => setVista('ambos')}
+                title="Escritura y vista previa"
+                aria-pressed={vista === 'ambos'}
+              >
+                <Icon name="vertical_split" size="sm" />
+              </button>
+              <button
+                type="button"
+                className={vista === 'preview' ? styles.vistaActiva : ''}
+                onClick={() => setVista('preview')}
+                title="Solo la vista previa"
+                aria-pressed={vista === 'preview'}
+              >
+                <Icon name="visibility" size="sm" />
+              </button>
+            </div>
+          </div>
+
+          {/* Los dos paneles se OCULTAN con CSS en vez de desmontarse: al
+              desmontar CodeMirror se perderían el cursor, la selección y el
+              historial de deshacer cada vez que se cambia de vista. */}
+          <div className={`${styles.split} ${vista === 'ambos' ? '' : styles.splitSolo}`}>
+            <div className={`${styles.panel} ${vista === 'preview' ? styles.oculto : ''}`}>
               <span className={styles.panelLabel}>Diagrama</span>
               <CodeMirror
                 value={codigo}
-                height="420px"
+                height={`${alturaPaneles}px`}
                 theme={oneDark}
                 extensions={extensiones}
                 onChange={setCodigo}
                 editable={!trabajando}
               />
             </div>
-            <div className={styles.panel}>
+            <div className={`${styles.panel} ${vista === 'codigo' ? styles.oculto : ''}`}>
               <span className={styles.panelLabel}>Vista previa</span>
               {/* Repinta con retardo y, si el código no compila, conserva el
                   último dibujo válido y muestra debajo el mensaje del motor. */}
-              <VistaPreviaDiagrama codigo={codigo} motor={ej.motor} altura={420} />
+              <VistaPreviaDiagrama codigo={codigo} motor={ej.motor} altura={alturaPaneles} />
             </div>
           </div>
 
