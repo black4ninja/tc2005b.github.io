@@ -15,7 +15,8 @@
 import { Semaforo } from '../judge/cola.js';
 import { instalarDom } from './entorno-dom.js';
 import {
-  aristaDesdeRelacion, esMarcaEstructural, mensajeDesdeCodigo,
+  aristaDesdeRelacion, cardinalidadesDeRelacionEr, esMarcaEstructural, formaDesdeFlujo,
+  mensajeDesdeCodigo, nombreEntidadEr,
   ESTADO_FINAL_MERMAID, ESTADO_INICIAL_MERMAID, type RelacionCruda,
 } from './codigos-mermaid.js';
 import {
@@ -26,7 +27,7 @@ import {
 const cola = new Semaforo(1);
 
 /** Tipos que este normalizador sabe traducir hoy. */
-const SOPORTADOS: TipoDiagrama[] = ['clases', 'secuencia', 'estados'];
+const SOPORTADOS: TipoDiagrama[] = ['clases', 'secuencia', 'estados', 'er', 'flujo'];
 
 type MermaidModulo = {
   initialize: (config: Record<string, unknown>) => void;
@@ -78,6 +79,8 @@ export async function normalizarMermaid(
       case 'clases': return deClases(diagrama.db);
       case 'secuencia': return deSecuencia(diagrama.db);
       case 'estados': return deEstados(diagrama.db);
+      case 'er': return deEr(diagrama.db);
+      case 'flujo': return deFlujo(diagrama.db);
       default: throw new Error(`Tipo no soportado: ${tipo}`);
     }
   });
@@ -228,6 +231,82 @@ function deEstados(db: any): ModeloDiagrama {
       destino: String(r.id2),
       tipo: 'transicion',
       etiqueta: String(r.relationTitle ?? '').trim() || undefined,
+    });
+  }
+
+  return modelo;
+}
+
+// --- Entidad-relación ------------------------------------------------------
+
+function deEr(db: any): ModeloDiagrama {
+  const modelo = modeloVacio('er', 'mermaid');
+
+  const entidades = db.getEntities?.();
+  const entradas: Array<[string, any]> = entidades instanceof Map
+    ? [...entidades.entries()]
+    : Object.entries(entidades ?? {});
+
+  for (const [id, e] of entradas) {
+    modelo.nodos.push({
+      id: String(id),
+      nombre: String(e?.label || e?.alias || id),
+      clase: 'entidad',
+      // Los atributos de una entidad son su contenido: sin ellos la caja no
+      // modela nada, igual que una clase vacía. Mermaid los entrega como
+      // `{name, type}`, no con los nombres largos que usa en las clases.
+      atributos: (e?.attributes ?? []).map((a: any) => ({
+        nombre: String(a?.name ?? ''),
+        tipo: a?.type ? String(a.type) : undefined,
+      })),
+      operaciones: [],
+      anotaciones: [],
+    });
+  }
+
+  for (const r of (db.getRelationships?.() ?? []) as any[]) {
+    const cardinalidades = cardinalidadesDeRelacionEr(r?.relSpec);
+    modelo.aristas.push({
+      origen: nombreEntidadEr(r?.entityA),
+      destino: nombreEntidadEr(r?.entityB),
+      tipo: 'relacion-er',
+      etiqueta: String(r?.roleA ?? '').trim() || undefined,
+      cardinalidadOrigen: cardinalidades.origen,
+      cardinalidadDestino: cardinalidades.destino,
+    });
+  }
+
+  return modelo;
+}
+
+// --- Flujo -----------------------------------------------------------------
+
+function deFlujo(db: any): ModeloDiagrama {
+  const modelo = modeloVacio('flujo', 'mermaid');
+
+  const vertices = db.getVertices?.();
+  const entradas: Array<[string, any]> = vertices instanceof Map
+    ? [...vertices.entries()]
+    : Object.entries(vertices ?? {});
+
+  for (const [id, v] of entradas) {
+    modelo.nodos.push({
+      id: String(id),
+      nombre: String(v?.text ?? id).trim() || String(id),
+      clase: 'nodo',
+      // La forma no es decoración: distingue una decisión de un paso, y es lo
+      // que permite comprobar que una bifurcación esté dibujada como tal.
+      forma: formaDesdeFlujo(v?.type ?? v?.shape),
+      atributos: [], operaciones: [], anotaciones: [],
+    });
+  }
+
+  for (const e of (db.getEdges?.() ?? []) as any[]) {
+    modelo.aristas.push({
+      origen: String(e?.start),
+      destino: String(e?.end),
+      tipo: 'flujo',
+      etiqueta: String(e?.text ?? '').trim() || undefined,
     });
   }
 

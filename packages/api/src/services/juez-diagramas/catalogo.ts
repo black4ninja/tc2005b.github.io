@@ -525,6 +525,157 @@ const transicionesDeterministas: Evaluador = (_a, { modelo }) => {
     : ok;
 };
 
+// --- Flujo -----------------------------------------------------------------
+
+/** Los nodos de arranque: los terminales sin ninguna arista de entrada. */
+function iniciosDeFlujo(modelo: ModeloDiagrama): string[] {
+  const conEntrada = new Set(modelo.aristas.map((a) => a.destino));
+  const terminales = modelo.nodos.filter((n) => n.forma === 'inicio-fin');
+  const inicios = terminales.filter((n) => !conEntrada.has(n.id)).map((n) => n.id);
+  // Sin terminales explícitos se toma cualquier nodo sin entradas: hay diagramas
+  // legítimos que no dibujan el óvalo de inicio, y exigirlo sería una regla de
+  // estilo disfrazada de comprobación de estructura.
+  if (inicios.length) return inicios;
+  return modelo.nodos.filter((n) => !conEntrada.has(n.id)).map((n) => n.id);
+}
+
+const nodoConForma: Evaluador = (a, { modelo }) => {
+  const nombre = texto(a, 'nombre');
+  const forma = texto(a, 'forma');
+  const nodo = buscarNodo(modelo, nombre);
+  if (!nodo) return falla(`No encontré «${nombre}» en el diagrama.`);
+  if (nodo.forma !== forma) {
+    return falla(
+      `«${nombre}» está dibujado como ${nodo.forma ?? 'una forma sin identificar'} y debería ser ${forma}. En un diagrama de flujo la forma indica el papel del nodo, no es decoración.`,
+    );
+  }
+  return ok;
+};
+
+const pasoDeFlujo: Evaluador = (a, { modelo }) => {
+  const desde = texto(a, 'desde');
+  const hasta = texto(a, 'hasta');
+  const candidatas = modelo.aristas.filter(
+    (x) => x.tipo === 'flujo' && coincideNodo(modelo, x.origen, desde) && coincideNodo(modelo, x.destino, hasta),
+  );
+  if (!candidatas.length) return falla(`No hay ningún paso de «${desde}» a «${hasta}».`);
+  const etiqueta = textoOpcional(a, 'etiqueta');
+  if (etiqueta && !candidatas.some((x) => mismoNombre(x.etiqueta ?? '', etiqueta))) {
+    return falla(
+      `El paso existe pero está rotulado ${enumerar(candidatas.map((x) => x.etiqueta ?? 'sin rótulo'))} y se esperaba «${etiqueta}».`,
+    );
+  }
+  return ok;
+};
+
+/** Desde cualquier nodo se tiene que poder llegar a un final. */
+const flujoTermina: Evaluador = (_a, { modelo }) => {
+  const conSalida = new Set(modelo.aristas.map((x) => x.origen));
+  const finales = modelo.nodos
+    .filter((n) => (n.forma === 'inicio-fin' && !conSalida.has(n.id)) || !conSalida.has(n.id))
+    .map((n) => n.id);
+  if (!finales.length) return falla('No hay ningún nodo final: todo camino queda en un ciclo.');
+  const productivos = coalcanzablesHasta(modelo, finales);
+  const atrapados = modelo.nodos.filter((n) => !productivos.has(n.id)).map((n) => n.nombre);
+  return atrapados.length
+    ? falla(`Desde estos nodos no se puede llegar al final: ${enumerar(atrapados)}.`)
+    : ok;
+};
+
+const nodosAlcanzables: Evaluador = (_a, { modelo }) => {
+  const inicios = iniciosDeFlujo(modelo);
+  if (!inicios.length) return falla('Todos los nodos tienen entradas: no se sabe por dónde empieza el flujo.');
+  const vistos = alcanzablesDesde(modelo, inicios);
+  const huerfanos = modelo.nodos.filter((n) => !vistos.has(n.id)).map((n) => n.nombre);
+  return huerfanos.length
+    ? falla(`No se puede llegar a estos nodos desde el inicio: ${enumerar(huerfanos)}.`)
+    : ok;
+};
+
+/**
+ * Una decisión con una sola salida no decide nada: o sobra el rombo, o falta la
+ * rama que no se dibujó. Además, cada salida debe ir rotulada, porque si no el
+ * diagrama no dice cuál se toma en cada caso.
+ */
+const decisionesConSalidas: Evaluador = (a, { modelo }) => {
+  const minimo = numeroOpcional(a, 'min') ?? 2;
+  const problemas: string[] = [];
+  for (const nodo of modelo.nodos.filter((n) => n.forma === 'decision')) {
+    const salidas = modelo.aristas.filter((x) => x.origen === nodo.id);
+    if (salidas.length < minimo) {
+      problemas.push(`«${nodo.nombre}» tiene ${salidas.length} salida(s) y una decisión necesita al menos ${minimo}`);
+      continue;
+    }
+    const sinRotulo = salidas.filter((x) => !x.etiqueta).length;
+    if (sinRotulo) problemas.push(`«${nodo.nombre}» tiene ${sinRotulo} salida(s) sin rotular`);
+  }
+  return problemas.length ? falla(problemas.join('; ') + '.') : ok;
+};
+
+// --- Casos de uso, componentes y paquetes ----------------------------------
+
+/**
+ * Un elemento está DENTRO de un contenedor. Es la comprobación propia de los
+ * diagramas de paquetes y de componentes: la caja que envuelve no es un adorno,
+ * dice a qué módulo pertenece cada cosa.
+ */
+const contenidoEnPaquete: Evaluador = (a, { modelo }) => {
+  const elemento = texto(a, 'elemento');
+  const paquete = texto(a, 'paquete');
+  const nodo = buscarNodo(modelo, elemento);
+  if (!nodo) return falla(`No encontré «${elemento}» en el diagrama.`);
+  if (!nodo.contenedor) {
+    return falla(`«${elemento}» está suelto: no lo envuelve ningún paquete.`);
+  }
+  if (!coincideNodo(modelo, nodo.contenedor, paquete)) {
+    const dentroDe = modelo.nodos.find((n) => n.id === nodo.contenedor);
+    return falla(`«${elemento}» está dentro de «${dentroDe?.nombre ?? nodo.contenedor}» y debería estar en «${paquete}».`);
+  }
+  return ok;
+};
+
+/** Ids de los nodos con al menos una arista, en cualquier sentido. */
+function conectados(modelo: ModeloDiagrama): Set<string> {
+  const s = new Set<string>();
+  for (const a of modelo.aristas) { s.add(a.origen); s.add(a.destino); }
+  return s;
+}
+
+/**
+ * Un caso de uso sin actor no lo pide nadie, y un diagrama de casos de uso
+ * describe precisamente quién quiere qué del sistema.
+ */
+const sinCasosUsoSinActor: Evaluador = (_a, { modelo }) => {
+  const actores = new Set(modelo.nodos.filter((n) => n.clase === 'actor').map((n) => n.id));
+  const huerfanos = modelo.nodos
+    .filter((n) => n.clase === 'caso-de-uso')
+    // Vale con que lo alcance un actor directamente o a través de otro caso de
+    // uso: un caso incluido por otro sí tiene quien lo pida.
+    .filter((n) => !modelo.aristas.some(
+      (x) => (x.destino === n.id && (actores.has(x.origen) || esCasoDeUso(modelo, x.origen)))
+        || (x.origen === n.id && actores.has(x.destino)),
+    ))
+    .map((n) => n.nombre);
+  return huerfanos.length
+    ? falla(`Estos casos de uso no los solicita nadie: ${enumerar(huerfanos)}.`)
+    : ok;
+};
+
+function esCasoDeUso(modelo: ModeloDiagrama, id: string): boolean {
+  return modelo.nodos.some((n) => n.id === id && n.clase === 'caso-de-uso');
+}
+
+/** Un actor dibujado y sin conectar a nada no aporta información. */
+const sinActoresOciosos: Evaluador = (_a, { modelo }) => {
+  const unidos = conectados(modelo);
+  const ociosos = modelo.nodos
+    .filter((n) => n.clase === 'actor' && !unidos.has(n.id))
+    .map((n) => n.nombre);
+  return ociosos.length
+    ? falla(`Estos actores no participan en ningún caso de uso: ${enumerar(ociosos)}.`)
+    : ok;
+};
+
 // --- Cruzadas: coherencia con los diagramas dados --------------------------
 
 /**
@@ -632,6 +783,16 @@ export const CATALOGO: Record<string, Evaluador> = {
   'sin-callejones': sinCallejones,
   'transiciones-con-evento': transicionesConEvento,
   'transiciones-deterministas': transicionesDeterministas,
+  // flujo
+  'nodo-con-forma': nodoConForma,
+  'paso-de-flujo': pasoDeFlujo,
+  'flujo-termina': flujoTermina,
+  'nodos-alcanzables': nodosAlcanzables,
+  'decisiones-con-salidas': decisionesConSalidas,
+  // casos de uso, componentes y paquetes
+  'contenido-en-paquete': contenidoEnPaquete,
+  'sin-casos-uso-sin-actor': sinCasosUsoSinActor,
+  'sin-actores-ociosos': sinActoresOciosos,
   // cruzadas
   'mensaje-existe-como-operacion': mensajeExisteComoOperacion,
   'disparador-existe-como-operacion': disparadorExisteComoOperacion,

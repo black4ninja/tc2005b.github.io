@@ -14,6 +14,7 @@
 import { CATALOGO } from './catalogo.js';
 import { describir } from './describir.js';
 import { normalizarMermaid } from './normalizar-mermaid.js';
+import { normalizarPlantuml } from './normalizar-plantuml.js';
 import {
   ErrorSintaxisDiagrama,
   type Asercion, type ContextoEvaluacion, type Motor, type ModeloDiagrama,
@@ -44,6 +45,9 @@ export async function parsear(
   codigo: string,
 ): Promise<ModeloDiagrama> {
   if (motor === 'mermaid') return normalizarMermaid(tipo, codigo);
+  // PlantUML se lee con un parser propio y síncrono: su motor oficial no corre
+  // en el servidor (ver la cabecera de `normalizar-plantuml.ts`).
+  if (motor === 'plantuml') return normalizarPlantuml(tipo, codigo);
   throw new Error(`El motor «${motor}» todavía no tiene normalizador.`);
 }
 

@@ -42,9 +42,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     comprobaciones: a diferencia de un caso de prueba, una aserción mal calibrada
     no se nota al leerla.
 
-- **Primera tanda de 9 ejercicios de diagrama** publicados en `tc2007b`: tres
-  categorías (Clases, Secuencia, Estados) por tres niveles (guiado, base y reto),
-  en los bloques Estructura, Interacción y Comportamiento.
+- **25 ejercicios de diagrama** publicados en `tc2007b`, cubriendo los **ocho
+  tipos** en tres niveles cada uno (guiado, base y reto): clases, secuencia,
+  estados, entidad-relación, flujo, casos de uso, componentes y paquetes, más un
+  **ejemplo resuelto** que abre con el diagrama ya completo para contrastar.
+  - Documento guía «Un caso completo: reserva de salas», con el mismo sistema
+    modelado en las tres vistas y la tabla de correspondencias entre ellas.
+    Importado como BORRADOR.
   - Cada enunciado explica de dónde viene la notación, qué significa cada
     elemento y dónde se usa la misma idea fuera de UML, con la sintaxis del
     diagramador separada de la teoría.

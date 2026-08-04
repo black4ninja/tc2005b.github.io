@@ -21,6 +21,7 @@
  * controller, desde un script de autoría y desde los tests sin base de datos.
  */
 import { esTipoDeAsercionValido, evaluarDiagrama } from './juez-diagramas/index.js';
+import { metadatoDe } from './juez-diagramas/metadatos.js';
 import type { Asercion, Motor, TipoDiagrama, Veredicto } from './juez-diagramas/index.js';
 
 export interface EjercicioVerificable {
@@ -60,6 +61,20 @@ export async function verificarEjercicioDiagrama(
   for (const a of ej.aserciones) {
     if (!esTipoDeAsercionValido(a.tipo)) {
       problemas.push(`La comprobación «${a.tipo}» no existe en el catálogo del juez.`);
+      continue;
+    }
+    // Una comprobación aplicada al tipo de diagrama equivocado es peor que
+    // inútil: varias PASAN EN VERDE sin comprobar nada porque recorren una
+    // colección vacía —las cruzadas de mensajes sobre un diagrama de clases, por
+    // ejemplo—. El editor ya filtra por `aplicaA`, pero un script de autoría o
+    // una llamada directa a la API pueden saltárselo, y el resultado sería un
+    // ejercicio que aprueba a cualquiera sin que nadie lo note.
+    const meta = metadatoDe(a.tipo);
+    if (meta && !meta.aplicaA.includes(ej.tipoDiagrama)) {
+      problemas.push(
+        `La comprobación «${a.tipo}» no aplica a un diagrama de tipo «${ej.tipoDiagrama}» ` +
+        `(aplica a: ${meta.aplicaA.join(', ')}). Aquí no comprobaría nada.`,
+      );
     }
   }
 

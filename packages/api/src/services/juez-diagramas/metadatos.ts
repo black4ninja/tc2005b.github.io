@@ -402,6 +402,96 @@ export const METADATOS: MetadatoAsercion[] = [
     descripcion: 'Comprueba que ningún estado tenga dos transiciones de salida con el mismo disparador, lo que dejaría la máquina sin decidir.',
   },
 
+  // --- Flujo ---------------------------------------------------------------
+  {
+    tipo: 'nodo-con-forma',
+    etiqueta: 'El nodo tiene la forma que le corresponde',
+    familia: 'semantica',
+    aplicaA: ['flujo'],
+    parametros: [
+      { nombre: 'nombre', etiqueta: 'Nodo', tipo: 'texto', requerido: true },
+      {
+        nombre: 'forma', etiqueta: 'Forma', tipo: 'opcion', requerido: true,
+        opciones: ['decision', 'inicio-fin', 'proceso', 'subproceso', 'almacen', 'preparacion'],
+        ayuda: 'En un diagrama de flujo la forma indica el papel del nodo; no es decoración.',
+      },
+    ],
+    descripcion: 'Comprueba que una bifurcación esté dibujada como rombo y un paso como rectángulo.',
+  },
+  {
+    tipo: 'paso-de-flujo',
+    etiqueta: 'Existe el paso entre dos nodos',
+    familia: 'semantica',
+    aplicaA: ['flujo'],
+    parametros: [
+      { nombre: 'desde', etiqueta: 'Desde', tipo: 'texto', requerido: true },
+      { nombre: 'hasta', etiqueta: 'Hasta', tipo: 'texto', requerido: true },
+      {
+        nombre: 'etiqueta', etiqueta: 'Rótulo de la rama', tipo: 'texto', requerido: false,
+        ayuda: 'Para exigir por qué rama sale de una decisión, por ejemplo «sí» o «no».',
+      },
+    ],
+    descripcion: 'Comprueba que el flujo avance de un nodo al siguiente, opcionalmente por una rama concreta.',
+  },
+  {
+    tipo: 'flujo-termina',
+    etiqueta: 'Todo camino llega al final',
+    familia: 'semantica',
+    aplicaA: ['flujo'],
+    parametros: [],
+    descripcion: 'Comprueba que no haya nodos desde los que el proceso quede atrapado sin poder terminar.',
+  },
+  {
+    tipo: 'nodos-alcanzables',
+    etiqueta: 'Todo nodo se alcanza desde el inicio',
+    familia: 'semantica',
+    aplicaA: ['flujo'],
+    parametros: [],
+    descripcion: 'Comprueba que no haya nodos sueltos a los que el flujo nunca pueda llegar.',
+  },
+  {
+    tipo: 'decisiones-con-salidas',
+    etiqueta: 'Las decisiones deciden algo',
+    familia: 'semantica',
+    aplicaA: ['flujo'],
+    parametros: [
+      {
+        nombre: 'min', etiqueta: 'Salidas mínimas', tipo: 'numero', requerido: false,
+        ayuda: 'Por omisión 2: una decisión con una sola salida no decide nada.',
+      },
+    ],
+    descripcion: 'Comprueba que cada rombo tenga al menos dos salidas y que todas vayan rotuladas.',
+  },
+
+  // --- Casos de uso, componentes y paquetes --------------------------------
+  {
+    tipo: 'contenido-en-paquete',
+    etiqueta: 'El elemento está en su paquete',
+    familia: 'semantica',
+    aplicaA: ['paquetes', 'componentes'],
+    parametros: [
+      { nombre: 'elemento', etiqueta: 'Elemento', tipo: 'texto', requerido: true },
+      { nombre: 'paquete', etiqueta: 'Paquete o contenedor', tipo: 'texto', requerido: true },
+    ],
+    descripcion: 'Comprueba que un elemento esté dibujado dentro del contenedor que le corresponde. La caja que envuelve indica a qué módulo pertenece.',
+  },
+  {
+    tipo: 'sin-casos-uso-sin-actor',
+    etiqueta: 'Todo caso de uso lo pide alguien',
+    familia: 'semantica',
+    aplicaA: ['casos-de-uso'],
+    parametros: [],
+    descripcion: 'Comprueba que ningún caso de uso quede desconectado: vale que lo solicite un actor o que lo incluya otro caso de uso.',
+  },
+  {
+    tipo: 'sin-actores-ociosos',
+    etiqueta: 'Ningún actor queda suelto',
+    familia: 'semantica',
+    aplicaA: ['casos-de-uso'],
+    parametros: [],
+    descripcion: 'Comprueba que todo actor dibujado participe en algo. Un actor sin conexiones no aporta información.',
+  },
+
   // --- Cruzadas: coherencia con los diagramas dados por el ejercicio --------
   {
     tipo: 'mensaje-existe-como-operacion',

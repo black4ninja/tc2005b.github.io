@@ -164,3 +164,74 @@ function limpiarCardinalidad(v: string | undefined): string | undefined {
  */
 export const ESTADO_INICIAL_MERMAID = 'root_start';
 export const ESTADO_FINAL_MERMAID = 'root_end';
+
+// --- Entidad-relación ------------------------------------------------------
+
+/** Nombres de cardinalidad de Mermaid → la notación que usa el resto del juez. */
+const CARDINALIDAD_ER: Record<string, string> = {
+  ONLY_ONE: '1',
+  ZERO_OR_ONE: '0..1',
+  ZERO_OR_MORE: '0..*',
+  ONE_OR_MORE: '1..*',
+};
+
+export function cardinalidadDesdeEr(nombre: unknown): string | undefined {
+  return typeof nombre === 'string' ? CARDINALIDAD_ER[nombre] : undefined;
+}
+
+/**
+ * En las relaciones ER, Mermaid identifica las entidades como `entity-NOMBRE-N`,
+ * no por su nombre. Aquí se devuelve el nombre, que es con lo que razona el
+ * catálogo.
+ *
+ * El índice va al final y el prefijo delante, así que se recortan por separado
+ * en lugar de partir por guiones: un nombre de entidad puede llevarlos.
+ */
+export function nombreEntidadEr(id: unknown): string {
+  const s = String(id ?? '');
+  return s.replace(/^entity-/, '').replace(/-\d+$/, '');
+}
+
+/**
+ * OJO, y por eso está aislado aquí: `relSpec.cardA` es la cardinalidad del
+ * extremo de **entityB**, y `cardB` la de **entityA**. Están cruzadas respecto a
+ * los nombres, y leerlas de forma directa produce un modelo que dice justo lo
+ * contrario del diagrama. Comprobado con `CLIENTE ||--o{ RESERVA`, que entrega
+ * `cardA: ZERO_OR_MORE`.
+ */
+export function cardinalidadesDeRelacionEr(relSpec: unknown): {
+  origen: string | undefined;
+  destino: string | undefined;
+} {
+  const spec = (relSpec ?? {}) as { cardA?: unknown; cardB?: unknown };
+  return {
+    origen: cardinalidadDesdeEr(spec.cardB),
+    destino: cardinalidadDesdeEr(spec.cardA),
+  };
+}
+
+// --- Flujo -----------------------------------------------------------------
+
+/**
+ * Forma del nodo de un diagrama de flujo → su papel.
+ *
+ * Es lo que permite comprobar que una decisión esté dibujada como rombo: en un
+ * diagrama de flujo la forma NO es decorativa, distingue un paso de una
+ * bifurcación.
+ */
+const FORMA_FLUJO: Record<string, string> = {
+  diamond: 'decision',
+  stadium: 'inicio-fin',
+  circle: 'inicio-fin',
+  doublecircle: 'inicio-fin',
+  square: 'proceso',
+  round: 'proceso',
+  rect: 'proceso',
+  subroutine: 'subproceso',
+  cylinder: 'almacen',
+  hexagon: 'preparacion',
+};
+
+export function formaDesdeFlujo(tipo: unknown): string {
+  return FORMA_FLUJO[String(tipo ?? '')] ?? 'proceso';
+}

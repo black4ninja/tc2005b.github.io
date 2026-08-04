@@ -131,6 +131,30 @@ const PLANTILLAS: Record<string, (a: Asercion) => string> = {
   'transiciones-con-evento': () => 'Toda transición entre estados espera un evento',
   'transiciones-deterministas': () => 'Ningún estado tiene dos salidas con el mismo disparador',
 
+  'nodo-con-forma': (a) => {
+    const forma = p(a, 'forma');
+    const nombres: Record<string, string> = {
+      decision: 'una decisión (rombo)',
+      'inicio-fin': 'un inicio o un fin (óvalo)',
+      proceso: 'un paso (rectángulo)',
+    };
+    return `«${p(a, 'nombre')}» está dibujado como ${nombres[forma] ?? forma}`;
+  },
+  'paso-de-flujo': (a) => {
+    const e = p(a, 'etiqueta');
+    return `El flujo va de «${p(a, 'desde')}» a «${p(a, 'hasta')}»` + (e ? ` por la rama «${e}»` : '');
+  },
+  'flujo-termina': () => 'Desde cualquier nodo se puede llegar al final',
+  'nodos-alcanzables': () => 'Todo nodo se alcanza desde el inicio',
+  'decisiones-con-salidas': (a) => {
+    const min = n(a, 'min') ?? 2;
+    return `Cada decisión tiene al menos ${min} salidas y todas van rotuladas`;
+  },
+
+  'contenido-en-paquete': (a) => `«${p(a, 'elemento')}» está dentro de «${p(a, 'paquete')}»`,
+  'sin-casos-uso-sin-actor': () => 'Cada caso de uso lo solicita alguien',
+  'sin-actores-ociosos': () => 'Cada actor participa en algún caso de uso',
+
   'mensaje-existe-como-operacion': () =>
     'Cada mensaje corresponde a una operación declarada en el diagrama de clases',
   'disparador-existe-como-operacion': (a) =>
