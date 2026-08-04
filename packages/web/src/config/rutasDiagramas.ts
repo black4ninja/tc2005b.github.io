@@ -25,6 +25,22 @@ export function rutaDiagramasAlumno(slug: string): string {
 }
 
 /**
+ * Taller de diagramas libres.
+ *
+ * NO lleva slug de colección, a diferencia de los ejercicios: lo que se guarda
+ * ahí es del alumno y no del curso, así que no tiene sentido colgarlo de una
+ * colección. En el árbol de admin sí cuelga del grupo, por el mismo motivo que
+ * el resto del módulo: conservar el sidebar en modo «detalle de grupo».
+ */
+export function rutaTallerAdmin(grupoId: string): string {
+  return `/admin/grupos/${grupoId}/taller-diagramas`;
+}
+
+export function rutaTallerAlumno(): string {
+  return '/alumno/taller-diagramas';
+}
+
+/**
  * Base de la sección para la ruta actual: el listado del módulo. El solver la usa
  * para volver y el listado para enlazar cada ejercicio, así ninguna de las dos
  * páginas necesita saber por cuál de los dos árboles de rutas llegó.

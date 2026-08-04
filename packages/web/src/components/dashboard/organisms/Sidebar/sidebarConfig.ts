@@ -15,6 +15,7 @@ export function getSidebarItems(
   agendaHref: string | null = null,
   ejerciciosHref: string | null = null,
   diagramasHref: string | null = null,
+  tallerHref: string | null = null,
 ): SidebarItem[] {
   if (role === 'admin') {
     return [
@@ -70,6 +71,12 @@ export function getSidebarItems(
   if (diagramasHref) {
     items.push({ label: 'Diagramas', icon: 'schema', path: diagramasHref, disabled: !perfilCompleto });
   }
+  // Hermano de «Diagramas» y no una opción dentro de los ejercicios: dibujar
+  // libremente no es resolver nada, y meterlo ahí lo haría parecer un ejercicio
+  // más. El sidebar no admite submenús, así que van como entradas contiguas.
+  if (tallerHref) {
+    items.push({ label: 'Diagramar', icon: 'draw', path: tallerHref, disabled: !perfilCompleto });
+  }
   // Sin URL en su grupo, no hay agenda que enlazar (igual que "Documentación").
   if (agendaHref) {
     items.push({
@@ -96,6 +103,7 @@ export function getGrupoDetailItems(
   agendaHref: string | null = null,
   ejerciciosHref: string | null = null,
   diagramasHref: string | null = null,
+  tallerHref: string | null = null,
 ): SidebarItem[] {
   const items: SidebarItem[] = [
     { label: 'Calendario', icon: 'calendar_month', path: `/admin/grupos/${grupoId}/calendario` },
@@ -114,6 +122,9 @@ export function getGrupoDetailItems(
   }
   if (diagramasHref) {
     items.push({ label: 'Diagramas', icon: 'schema', path: diagramasHref });
+  }
+  if (tallerHref) {
+    items.push({ label: 'Diagramar', icon: 'draw', path: tallerHref });
   }
   if (agendaHref) {
     items.push({ label: 'Agendar Entrevistas', icon: 'event_available', path: agendaHref, external: true });

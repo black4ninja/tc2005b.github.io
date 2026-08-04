@@ -62,6 +62,21 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     clases dado: es donde están los errores dominantes medidos en alumnos.
   - Todos pasan la verificación de autoría: dos soluciones válidas y distintas
     cumplen todas las comprobaciones y el diagrama trampa falla alguna.
+- **Taller de diagramas**: espacio para dibujar libremente, sin ejercicio ni
+  juez, con selector de motor y de tipo, plantillas de arranque para los ocho
+  tipos en ambos motores, vista previa en vivo y el mismo control de vista de
+  tres estados que el solver.
+  - Los diagramas se **guardan con nombre, se listan y se editan después**
+    (`DiagramaTaller`, CRUD bajo `/me/diagramas-taller`). Pertenecen al alumno y
+    no al curso, así que sobreviven a un cambio de grupo.
+  - Cada operación comprueba la **propiedad** del objeto, no solo la sesión, y
+    un diagrama ajeno responde 404 en lugar de 403: decir «existe pero no es
+    tuyo» confirmaría que el identificador es real.
+  - Entra en el menú como **«Diagramar»**, hermano de «Diagramas» y no como una
+    opción dentro de los ejercicios: dibujar libremente no es resolver nada.
+- **Plegar el enunciado** en los solvers de diagramas y de programación, y
+  control de vista de tres estados en el de diagramas, con los mismos iconos que
+  el editor del CMS. Las preferencias se recuerdan entre sesiones.
 - **Experiencia del alumno en Diagramas**: listado agrupado por bloque y
   categoría con su progreso, y solver con enunciado, diagramas de contexto ya
   dibujados, editor con vista previa en vivo, historial de envíos y la columna

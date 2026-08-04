@@ -1,0 +1,315 @@
+/* Taller de diagramas.
+
+   Dentro del shell del dashboard: sin auto-centrado ni padding lateral propio
+   (lo pone el layout). Mismo ancho máximo que el solver de diagramas y por el
+   mismo motivo: aquí también hay que ver a la vez lo escrito y lo dibujado, y a
+   eso se suma la lista de diagramas guardados. */
+.page {
+  max-width: 1400px;
+  padding: 8px 0 32px;
+}
+
+.header { margin-bottom: 20px; }
+.titulo { margin: 0; font-size: 24px; font-weight: 700; color: var(--text-primary); }
+.subtitulo {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #57606a;
+  max-width: 70ch;
+}
+
+.info { color: #57606a; font-size: 15px; }
+
+/* La lista se acota: son nombres cortos y a más ancho solo aumentaría el hueco
+   entre el nombre y su fecha. El resto va al área de trabajo, que lo aprovecha
+   con dos paneles. */
+.cols {
+  display: grid;
+  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* --- Lista de diagramas guardados --- */
+.listaCol { min-width: 0; }
+
+.listaBarra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.listaTitulo { margin: 0; font-size: 16px; color: #1f2328; }
+
+.btnNuevo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: #4f46e5;
+  border: 1px solid #4f46e5;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btnNuevo:disabled { opacity: 0.55; cursor: default; }
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item {
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #fff;
+}
+/* El diagrama abierto se distingue con la misma marca de acento que el resto de
+   los estados activos del panel. */
+.itemActivo {
+  border-color: #4f46e5;
+  box-shadow: inset 3px 0 0 #4f46e5;
+}
+
+.itemAbrir {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.itemNombre {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2328;
+  overflow-wrap: anywhere;
+}
+.itemMeta { font-size: 12px; color: #57606a; }
+.itemFecha { font-size: 12px; color: #8c959f; }
+
+.itemAcciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+.btnMini {
+  font-size: 12px;
+  padding: 3px 10px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background: #fff;
+  color: #57606a;
+  cursor: pointer;
+}
+.btnMini:hover { background: #f6f8fa; color: #1f2328; }
+.btnMiniPeligro { border-color: #f0b4ae; color: #b42318; }
+.btnMiniPeligro:hover { background: #fdecea; color: #b42318; }
+
+.renombrar { display: flex; flex-direction: column; gap: 6px; }
+
+/* Confirmación de borrado en el propio elemento, no en un diálogo del navegador:
+   así se ve QUÉ se va a eliminar mientras se decide. */
+.confirmar { display: flex; flex-direction: column; gap: 4px; }
+.confirmarTexto {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #1f2328;
+  overflow-wrap: anywhere;
+}
+
+/* --- Estado vacío --- */
+.vacio {
+  border: 1px dashed #d0d7de;
+  border-radius: 8px;
+  padding: 14px;
+  background: #f6f8fa;
+}
+.vacioTitulo { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #1f2328; }
+.vacioTexto { margin: 0 0 8px; font-size: 13px; line-height: 1.5; color: #57606a; }
+.vacioTexto:last-child { margin-bottom: 0; }
+
+/* --- Área de trabajo --- */
+.editorCol { min-width: 0; }
+
+.barra {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.campos { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.campoGrupo { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.campoLabel { font-size: 12px; color: #57606a; }
+.campo {
+  font-size: 13px;
+  font-family: inherit;
+  color: #1f2328;
+  padding: 6px 10px;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  background: #fff;
+  min-width: 0;
+}
+.campo:focus { outline: 2px solid #4f46e5; outline-offset: 1px; }
+
+/* Etiqueta solo para lectores de pantalla: el campo de renombrado se entiende
+   por su posición, pero sin nombre accesible sería un cuadro anónimo. */
+.etiquetaOculta {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- Barra de vista ---
+   Mismos tres estados y mismos iconos que el solver y el editor del CMS. */
+.vistaGrupo {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+}
+.vistaGrupo button {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: #57606a;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.vistaGrupo button:hover { color: #1f2328; }
+.vistaActiva,
+.vistaGrupo button.vistaActiva:hover {
+  background: #fff;
+  color: #4f46e5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Editor y dibujo lado a lado: un diagrama se corrige mirando el dibujo, no el
+   texto, así que ver el efecto de cada línea sin desplazarse es el punto entero
+   de esta pantalla. */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+/* Con una sola mitad visible, la que queda ocupa todo el ancho. */
+.splitSolo { grid-template-columns: minmax(0, 1fr); }
+
+.panel { min-width: 0; }
+.panelLabel {
+  display: block;
+  font-size: 12px;
+  color: #57606a;
+  margin-bottom: 4px;
+}
+
+/* Se oculta sin desmontar: CodeMirror perdería cursor, selección e historial de
+   deshacer en cada cambio de vista. */
+.oculto { display: none; }
+
+/* --- Acciones --- */
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.btnSec, .btnPri {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 9px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid #d0d7de;
+  background: #fff;
+  color: #1f2328;
+}
+.btnPri { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+.btnSec:disabled, .btnPri:disabled { opacity: 0.55; cursor: default; }
+
+/* El estado de guardado se lee de un vistazo por el color, pero también lleva
+   texto: el color por sí solo no sirve a quien no lo distingue. */
+.marcaSinGuardar {
+  font-size: 13px;
+  font-weight: 600;
+  color: #9a6700;
+  background: #fff8e5;
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+.marcaGuardado {
+  font-size: 13px;
+  color: #57606a;
+  padding: 4px 4px;
+}
+
+.errorBox {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: #fdecea;
+  color: #b42318;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.aviso { margin: 10px 0 0; font-size: 13px; color: #1e7e34; }
+
+.enlaceBoton {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: #4f46e5;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Aviso de descarte: arriba del área de trabajo y en tono de advertencia, porque
+   interrumpe una acción que ya se pidió. */
+.confirmarDescarte {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border: 1px solid #e5c07b;
+  border-left-width: 4px;
+  border-radius: 6px;
+  background: #fff8e5;
+}
+
+@media (max-width: 1024px) {
+  .cols { grid-template-columns: 1fr; }
+}
+
+/* Por debajo de esto los dos paneles quedan demasiado estrechos para leer el
+   código y ver el dibujo, así que se apilan. */
+@media (max-width: 700px) {
+  .split { grid-template-columns: 1fr; }
+}

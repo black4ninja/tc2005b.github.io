@@ -75,6 +75,11 @@ const DiagramasAlumnoPage = lazy(
 const DiagramaSolverPage = lazy(
   () => import('./components/contenidos/DiagramaSolverPage'),
 );
+// Taller libre: arrastra CodeMirror y el motor de diagramas, igual que el
+// solver, así que también se carga bajo demanda.
+const TallerDiagramasPage = lazy(
+  () => import('./components/contenidos/TallerDiagramasPage'),
+);
 const RedirEjerciciosLegacy = lazy(
   () => import('./components/contenidos/RedirEjerciciosLegacy'),
 );
@@ -181,6 +186,14 @@ export default function App() {
             </Suspense>
           }
         />
+        <Route
+          path="admin/grupos/:id/taller-diagramas"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando taller…</p>}>
+              <TallerDiagramasPage />
+            </Suspense>
+          }
+        />
         <Route path="admin/competencias" element={<CompetenciasPage />} />
         <Route path="admin/actividades" element={<ActividadesPage />} />
         <Route path="admin/paginas" element={<PaginasPage />} />
@@ -260,6 +273,16 @@ export default function App() {
           element={
             <Suspense fallback={<p style={{ padding: 24 }}>Cargando ejercicio…</p>}>
               <DiagramaSolverPage />
+            </Suspense>
+          }
+        />
+        {/* Taller libre: fuera del árbol de :slug porque no pertenece a ninguna
+            colección. Colgarlo de una haría creer que lo guardado es del curso. */}
+        <Route
+          path="alumno/taller-diagramas"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando taller…</p>}>
+              <TallerDiagramasPage />
             </Suspense>
           }
         />

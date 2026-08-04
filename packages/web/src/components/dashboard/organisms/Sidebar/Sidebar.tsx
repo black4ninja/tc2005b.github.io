@@ -12,7 +12,7 @@ import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import { APP_NAME } from '../../../../config/app';
 import { moduloHabilitado } from '../../../../config/modulosContenido';
 import { rutaEjerciciosAdmin, rutaEjerciciosAlumno } from '../../../../config/rutasEjercicios';
-import { rutaDiagramasAdmin, rutaDiagramasAlumno } from '../../../../config/rutasDiagramas';
+import { rutaDiagramasAdmin, rutaDiagramasAlumno, rutaTallerAdmin, rutaTallerAlumno } from '../../../../config/rutasDiagramas';
 
 /** Colección asignada al grupo, como la devuelve /api/admin/grupos. */
 interface ColeccionGrupo {
@@ -65,6 +65,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const [docsHref, setDocsHref] = useState<string | null>(null);
   const [ejerciciosHref, setEjerciciosHref] = useState<string | null>(null);
   const [diagramasHref, setDiagramasHref] = useState<string | null>(null);
+  const [tallerHref, setTallerHref] = useState<string | null>(null);
   const [colecciones, setColecciones] = useState<ColeccionGrupo[]>([]);
   // Módulos apagados por colección del grupo: filtran qué secciones aparecen.
   const [modulosDeshabilitados, setModulosDeshabilitados] = useState<Record<string, string[]>>({});
@@ -116,6 +117,9 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       .then((json) => {
         const cols: { slug: string }[] = json?.colecciones ?? [];
         setDiagramasHref(cols.length > 0 ? rutaDiagramasAlumno(cols[0].slug) : null);
+        // El taller no cuelga de una colección, pero solo se ofrece si el
+        // módulo está activo para el alumno: sin él no pinta nada en el menú.
+        setTallerHref(cols.length > 0 ? rutaTallerAlumno() : null);
       })
       .catch(() => {});
   }, [sessionToken, role]);
@@ -243,8 +247,12 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
     return col ? rutaDiagramasAdmin(grupoId, col.slug) : null;
   }, [colecciones, modulosDeshabilitados, grupoId]);
 
+  // El taller del admin cuelga del grupo abierto, igual que el resto del módulo,
+  // y se ofrece bajo la misma condición que Diagramas.
+  const tallerGrupoHref = grupoId && diagramasGrupoHref ? rutaTallerAdmin(grupoId) : null;
+
   const items = isGrupoDetail
-    ? getGrupoDetailItems(grupoId!, agendaGrupoHref, ejerciciosGrupoHref, diagramasGrupoHref)
+    ? getGrupoDetailItems(grupoId!, agendaGrupoHref, ejerciciosGrupoHref, diagramasGrupoHref, tallerGrupoHref)
     : getSidebarItems(
         role,
         role === 'alumno' ? selectedGrupoId : undefined,
@@ -253,6 +261,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         agendaAlumnoHref,
         ejerciciosHref,
         diagramasHref,
+        tallerHref,
       );
 
   return (
