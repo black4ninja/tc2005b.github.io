@@ -99,7 +99,16 @@
     padding-right: 4px;
   }
 }
-.editorHead { margin-bottom: 8px; }
+/* Fila: el interruptor del enunciado a la izquierda y el selector de lenguaje a
+   la derecha, que es donde ya estaba. */
+.editorHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
 .select, .lengFijo {
   font-size: 14px;
   padding: 6px 10px;
@@ -197,3 +206,20 @@
   .cols { grid-template-columns: 1fr; }
   .casoDetalle { grid-template-columns: 1fr; }
 }
+
+/* Sin enunciado, el editor ocupa el ancho completo. */
+.colsSinEnunciado { grid-template-columns: minmax(0, 1fr); }
+
+.btnEnunciado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 13px;
+  color: #57606a;
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btnEnunciado:hover { background: #f6f8fa; color: #1f2328; }
