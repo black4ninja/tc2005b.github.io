@@ -279,3 +279,17 @@
   font-size: 13px;
   line-height: 1.5;
 }
+
+/* Distintivo junto al título. Mismo color que su marca en el listado. */
+.distintivoEjemplo {
+  margin-left: 12px;
+  vertical-align: middle;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #ede9fe;
+  color: #5b21b6;
+  white-space: nowrap;
+}

@@ -136,6 +136,8 @@ export interface EjercicioDiagramaData {
   diagramasReferencia: string[];
   /** Solución plausible pero incorrecta: debe FALLAR alguna aserción. */
   diagramaTrampa: string;
+  /** Ejemplo resuelto: abre con el diagrama ya completo y no cuenta para el progreso. */
+  esEjemplo?: boolean;
   publicado: boolean;
   oculto: boolean;
   autorId: string | null;

@@ -135,7 +135,20 @@ export default function EjerciciosDiagramaColeccionPage() {
   const columnHelper = createColumnHelper<EjercicioDiagramaData>();
   const columns = [
     columnHelper.accessor('orden', { header: 'Orden' }),
-    columnHelper.accessor('titulo', { header: 'Título' }),
+    columnHelper.accessor('titulo', {
+      header: 'Título',
+      // El autor necesita distinguirlos aquí igual que el alumno en su listado:
+      // un ejercicio completo se edita con otro criterio, porque su código
+      // inicial ES la solución.
+      cell: (info) => (
+        <>
+          {info.getValue()}
+          {info.row.original.esEjemplo && (
+            <span className={styles.etiquetaEjemplo}>Ejercicio completo</span>
+          )}
+        </>
+      ),
+    }),
     columnHelper.accessor((row) => nombreCategoria(row.categoriaId), {
       id: 'categoria',
       header: 'Categoría',
