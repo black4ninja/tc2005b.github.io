@@ -251,8 +251,24 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   // y se ofrece bajo la misma condición que Diagramas.
   const tallerGrupoHref = grupoId && diagramasGrupoHref ? rutaTallerAdmin(grupoId) : null;
 
+  /**
+   * «Diagramas» como SECCIÓN desplegable y no como dos entradas sueltas:
+   * resolver ejercicios y dibujar libremente son dos usos del mismo módulo, y
+   * de un vistazo se leían como dos módulos distintos. Reutiliza el mismo
+   * componente que agrupa «Contenido», que además se aplana a un enlace directo
+   * si solo quedara una de las dos.
+   */
+  const enlacesDiagramas = useMemo<EnlaceColeccion[]>(() => {
+    const listado = isGrupoDetail ? diagramasGrupoHref : diagramasHref;
+    const taller = isGrupoDetail ? tallerGrupoHref : tallerHref;
+    const enlaces: EnlaceColeccion[] = [];
+    if (listado) enlaces.push({ key: 'ejercicios', label: 'Ejercicios', href: listado });
+    if (taller) enlaces.push({ key: 'libre', label: 'Libre', href: taller });
+    return enlaces;
+  }, [isGrupoDetail, diagramasGrupoHref, diagramasHref, tallerGrupoHref, tallerHref]);
+
   const items = isGrupoDetail
-    ? getGrupoDetailItems(grupoId!, agendaGrupoHref, ejerciciosGrupoHref, diagramasGrupoHref, tallerGrupoHref)
+    ? getGrupoDetailItems(grupoId!, agendaGrupoHref, ejerciciosGrupoHref)
     : getSidebarItems(
         role,
         role === 'alumno' ? selectedGrupoId : undefined,
@@ -260,8 +276,6 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         docsHref,
         agendaAlumnoHref,
         ejerciciosHref,
-        diagramasHref,
-        tallerHref,
       );
 
   return (
@@ -366,6 +380,14 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
                   onClick={onCloseMobile}
                 />
               ))}
+              {enlacesDiagramas.length > 0 && (
+                <SeccionColecciones
+                  titulo="Diagramas"
+                  icono="schema"
+                  items={enlacesDiagramas}
+                  collapsed={collapsed}
+                />
+              )}
               {/* Las secciones de colección (Páginas/Actividades) llevan a
                   pantallas GLOBALES admin-only; el profesor no las ve. */}
               {isGrupoDetail && !esProfesor &&
