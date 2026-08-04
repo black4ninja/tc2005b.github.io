@@ -313,3 +313,35 @@
 @media (max-width: 700px) {
   .split { grid-template-columns: 1fr; }
 }
+
+/* Sin la lista, el editor ocupa el ancho completo. */
+.colsSinLista { grid-template-columns: minmax(0, 1fr); }
+
+.btnLista {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 13px;
+  color: #57606a;
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btnLista:hover { background: #f6f8fa; color: #1f2328; }
+
+/* Acción de la tarjeta reducida a un icono: renombrar pasó al doble clic. */
+.btnIcono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  color: #57606a;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btnIcono:hover { background: #ffebe9; color: #cf222e; }

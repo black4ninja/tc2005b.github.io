@@ -36,6 +36,12 @@ type Vista = 'codigo' | 'ambos' | 'preview';
 
 /** Clave propia: la preferencia del taller es independiente de la del solver. */
 const VISTA_KEY = 'taller:vista';
+const LISTA_KEY = 'taller:lista';
+
+/** La lista se ve por defecto: plegarla es una decisión del alumno. */
+function leerListaVisible(): boolean {
+  return localStorage.getItem(LISTA_KEY) !== 'oculta';
+}
 
 function leerVista(): Vista {
   const v = localStorage.getItem(VISTA_KEY);
@@ -353,6 +359,17 @@ export default function TallerDiagramasPage() {
   const plantillaCargada = useRef<string>(BORRADOR_INICIAL.codigo);
 
   const [vista, setVistaState] = useState<Vista>(leerVista);
+
+  const [listaVisible, setListaVisibleState] = useState<boolean>(leerListaVisible);
+
+
+  function setListaVisible(v: boolean) {
+
+    setListaVisibleState(v);
+
+    localStorage.setItem(LISTA_KEY, v ? 'visible' : 'oculta');
+
+  }
   const [cargandoDiagrama, setCargandoDiagrama] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
@@ -639,8 +656,9 @@ export default function TallerDiagramasPage() {
         </p>
       </header>
 
-      <div className={styles.cols}>
+      <div className={`${styles.cols} ${listaVisible ? '' : styles.colsSinLista}`}>
         {/* --- Lista de diagramas guardados --- */}
+        {listaVisible && (
         <aside className={styles.listaCol} aria-label="Diagramas guardados">
           <div className={styles.listaBarra}>
             <h2 className={styles.listaTitulo}>Mis diagramas</h2>
@@ -745,6 +763,11 @@ export default function TallerDiagramasPage() {
                         type="button"
                         className={styles.itemAbrir}
                         onClick={() => pedirAbrir(d.id)}
+                        // Doble clic para renombrar, igual que el árbol de
+                        // Contenidos: el nombre se edita donde se lee y la
+                        // tarjeta se queda con una sola acción visible.
+                        onDoubleClick={() => setRenombrando({ id: d.id, valor: d.nombre })}
+                        title="Doble clic para renombrar"
                         aria-current={d.id === seleccion ? 'true' : undefined}
                       >
                         <span className={styles.itemNombre}>{d.nombre}</span>
@@ -756,17 +779,12 @@ export default function TallerDiagramasPage() {
                       <div className={styles.itemAcciones}>
                         <button
                           type="button"
-                          className={styles.btnMini}
-                          onClick={() => setRenombrando({ id: d.id, valor: d.nombre })}
-                        >
-                          Renombrar
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.btnMini}
+                          className={styles.btnIcono}
                           onClick={() => setConfirmandoBorrado(d.id)}
+                          title={`Eliminar «${d.nombre}»`}
+                          aria-label={`Eliminar ${d.nombre}`}
                         >
-                          Eliminar
+                          <Icon name="delete" size="sm" />
                         </button>
                       </div>
                     </>
@@ -776,6 +794,7 @@ export default function TallerDiagramasPage() {
             </ul>
           )}
         </aside>
+        )}
 
         {/* --- Editor --- */}
         <section className={styles.editorCol}>
@@ -798,6 +817,19 @@ export default function TallerDiagramasPage() {
           )}
 
           <div className={styles.barra}>
+            {/* Equivalente al de los solvers, con las palabras de aquí: lo que
+                se pliega es la lista de diagramas, no un enunciado. */}
+            <button
+              type="button"
+              className={styles.btnLista}
+              onClick={() => setListaVisible(!listaVisible)}
+              aria-pressed={!listaVisible}
+              title={listaVisible ? 'Ocultar la lista de diagramas' : 'Mostrar la lista de diagramas'}
+            >
+              <Icon name={listaVisible ? 'chevron_left' : 'chevron_right'} size="sm" />
+              <span>{listaVisible ? 'Ocultar lista' : 'Mostrar lista'}</span>
+            </button>
+
             <div className={styles.campos}>
               <label className={styles.campoGrupo}>
                 <span className={styles.campoLabel}>Nombre</span>
