@@ -265,3 +265,17 @@
 @media (max-width: 700px) {
   .split { grid-template-columns: 1fr; }
 }
+
+/* Aviso del ejemplo resuelto: mismo color que su marca en el listado, para que
+   se reconozca como la misma cosa al abrirlo. */
+.avisoEjemplo {
+  margin: 8px 0 0;
+  padding: 10px 14px;
+  border: 1px solid #c7b8f5;
+  border-left-width: 4px;
+  border-radius: 6px;
+  background: #faf8ff;
+  color: #3c3255;
+  font-size: 13px;
+  line-height: 1.5;
+}

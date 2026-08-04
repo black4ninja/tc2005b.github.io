@@ -46,6 +46,7 @@ function dtoEjercicio(ej: EjercicioDiagrama) {
     enunciadoHtml: ej.getEnunciadoHtml(),
     motor: ej.getMotor(),
     tipoDiagrama: ej.getTipoDiagrama(),
+    esEjemplo: ej.getEsEjemplo(),
     codigoInicial: ej.getCodigoInicial(),
     // El contexto SÍ se entrega: es material del enunciado, no solución. Sin él
     // el alumno no puede resolver un ejercicio de trazabilidad entre vistas.
@@ -137,7 +138,10 @@ export async function listDiagramasAlumno(req: Request, res: Response): Promise<
     // SOLO los campos que se devuelven. Traer el documento entero —enunciado,
     // código, contexto, referencias— para pintar una tabla es lo que volvió
     // lentísimo el listado de ejercicios en su día.
-    q.select('titulo' as any, 'slug' as any, 'orden' as any, 'categoria' as any, 'tipoDiagrama' as any);
+    q.select(
+      'titulo' as any, 'slug' as any, 'orden' as any, 'categoria' as any,
+      'tipoDiagrama' as any, 'esEjemplo' as any,
+    );
     q.ascending('orden');
     q.limit(1000);
     const ejercicios = await q.find({ useMasterKey: true });
@@ -172,6 +176,7 @@ export async function listDiagramasAlumno(req: Request, res: Response): Promise<
         slug: e.getSlug(),
         orden: e.getOrden(),
         tipoDiagrama: e.getTipoDiagrama(),
+        esEjemplo: e.getEsEjemplo(),
         categoriaId: e.get('categoria')?.id ?? null,
         resuelto: resueltos.has(e.id!),
       })),

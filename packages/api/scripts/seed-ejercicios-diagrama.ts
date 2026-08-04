@@ -142,6 +142,7 @@ async function main(): Promise<void> {
     ej.set('diagramasContexto', d.diagramasContexto ?? []);
     ej.set('diagramasReferencia', d.diagramasReferencia);
     ej.set('diagramaTrampa', d.diagramaTrampa);
+    ej.set('esEjemplo', d.esEjemplo === true);
     const cat = categorias.get(`${d.bloque}::${d.categoria}`);
     if (cat) ej.set('categoria', cat);
 

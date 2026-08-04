@@ -157,6 +157,7 @@ export async function listEjerciciosDiagrama(req: Request, res: Response): Promi
     q.select(
       'titulo' as any, 'slug' as any, 'orden' as any, 'categoria' as any,
       'publicado' as any, 'motor' as any, 'tipoDiagrama' as any, 'aserciones' as any,
+      'esEjemplo' as any,
     );
     q.ascending('orden');
     q.limit(1000);
@@ -172,7 +173,7 @@ export async function createEjercicioDiagrama(req: Request, res: Response): Prom
   const { id } = req.params;
   const {
     titulo, slug, orden, enunciado, motor, tipoDiagrama, codigoInicial, aserciones,
-    diagramasContexto, diagramasReferencia, diagramaTrampa, categoriaId,
+    diagramasContexto, diagramasReferencia, diagramaTrampa, categoriaId, esEjemplo,
   } = req.body ?? {};
 
   if (!titulo || typeof titulo !== 'string' || !titulo.trim()) {
@@ -232,6 +233,7 @@ export async function createEjercicioDiagrama(req: Request, res: Response): Prom
     ejercicio.setDiagramasContexto(ctxVal);
     ejercicio.setDiagramasReferencia(normalizarDiagramas(diagramasReferencia));
     ejercicio.setDiagramaTrampa(typeof diagramaTrampa === 'string' ? diagramaTrampa : '');
+    ejercicio.setEsEjemplo(esEjemplo === true);
     ejercicio.setPublicado(false); // nace como borrador
     const autor = req.appUser as AppUser | undefined;
     if (autor) ejercicio.setAutor(autor);
@@ -263,7 +265,7 @@ export async function updateEjercicioDiagrama(req: Request, res: Response): Prom
   const { ejercicio, coleccion } = encontrado;
   const {
     titulo, slug, orden, enunciado, motor, tipoDiagrama, codigoInicial, aserciones,
-    diagramasContexto, diagramasReferencia, diagramaTrampa, categoriaId,
+    diagramasContexto, diagramasReferencia, diagramaTrampa, categoriaId, esEjemplo,
   } = req.body ?? {};
 
   try {
@@ -326,6 +328,7 @@ export async function updateEjercicioDiagrama(req: Request, res: Response): Prom
     if (diagramaTrampa !== undefined) {
       ejercicio.setDiagramaTrampa(typeof diagramaTrampa === 'string' ? diagramaTrampa : '');
     }
+    if (esEjemplo !== undefined) ejercicio.setEsEjemplo(esEjemplo === true);
     if (categoriaId !== undefined) {
       const categoria = await resolverCategoria(categoriaId, coleccion.id!);
       if (categoria === 'invalido') {

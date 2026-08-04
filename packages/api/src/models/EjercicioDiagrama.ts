@@ -160,6 +160,22 @@ export class EjercicioDiagrama extends BaseModel {
     this.set('diagramaTrampa', diagrama);
   }
 
+  /**
+   * Ejemplo resuelto: el ejercicio abre con el diagrama YA completo y sirve para
+   * contrastar, no para resolver.
+   *
+   * Es un campo del ejercicio y no el nombre de su categoría porque de él
+   * dependen dos cosas que no pueden apoyarse en una cadena de texto: cómo se
+   * marca en el listado y que NO cuente para el progreso. Un ejercicio que se
+   * aprueba con solo enviarlo inflaría el porcentaje de avance del alumno.
+   */
+  getEsEjemplo(): boolean {
+    return this.get('esEjemplo') === true;
+  }
+  setEsEjemplo(esEjemplo: boolean): void {
+    this.set('esEjemplo', esEjemplo);
+  }
+
   getPublicado(): boolean {
     return this.get('publicado') === true;
   }
@@ -203,6 +219,7 @@ export class EjercicioDiagrama extends BaseModel {
       diagramasContexto: this.getDiagramasContexto(),
       diagramasReferencia: this.getDiagramasReferencia(),
       diagramaTrampa: this.getDiagramaTrampa(),
+      esEjemplo: this.getEsEjemplo(),
       publicado: this.getPublicado(),
       oculto: this.getOculto(),
       autorId: this.getAutor()?.id ?? null,

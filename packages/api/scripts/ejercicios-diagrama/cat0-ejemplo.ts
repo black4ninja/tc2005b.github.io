@@ -156,6 +156,7 @@ const ejercicios: EjercicioDiagramaDef[] = [
     categoria: 'Ejemplo resuelto',
     bloque: 'Punto de partida',
     nivel: 'guiado',
+    esEjemplo: true,
     orden: 1,
     motor: 'mermaid',
     tipoDiagrama: 'clases',

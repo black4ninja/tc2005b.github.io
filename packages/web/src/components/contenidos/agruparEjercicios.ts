@@ -23,6 +23,8 @@ export interface EjercicioLista {
    */
   lenguajes?: string[];
   tipoDiagrama?: string;
+  /** Ejemplo resuelto: se muestra marcado y no cuenta para el progreso. */
+  esEjemplo?: boolean;
 }
 
 export interface CategoriaRef {

@@ -45,6 +45,8 @@ export interface EjercicioDiagramaDef {
   bloque: string;
   nivel: Nivel;
   orden: number;
+  /** Ejemplo resuelto: abre con el diagrama ya completo y no cuenta para el progreso. */
+  esEjemplo?: boolean;
   motor: Motor;
   tipoDiagrama: TipoDiagrama;
 

@@ -39,6 +39,8 @@ interface EjercicioDTO {
   diagramasContexto: ContextoDTO[];
   comprobacionesVisibles: ComprobacionVisible[];
   comprobacionesOcultas: number;
+  /** Ejemplo resuelto: abre con el diagrama ya completo. */
+  esEjemplo?: boolean;
 }
 
 interface ResultadoAsercion {
@@ -185,6 +187,16 @@ export default function DiagramaSolverPage() {
       <header className={styles.header}>
         <Link to={base} className={styles.volver}>← Diagramas</Link>
         <h1 className={styles.titulo}>{ej.titulo}</h1>
+        {/* Sin este aviso, un ejercicio que abre ya resuelto parece uno normal
+            que alguien dejó hecho, y el alumno no sabe que puede tocarlo. */}
+        {ej.esEjemplo && (
+          <p className={styles.avisoEjemplo}>
+            <strong>Ejemplo resuelto.</strong> El diagrama ya está completo y no hace falta
+            modificarlo: sirve para contrastarlo con los que construirás después. Puede enviarse
+            tal cual para ver el informe, y también modificarse para observar qué comprobación
+            deja de cumplirse. No cuenta para el progreso.
+          </p>
+        )}
         <div className={styles.metaFila}>
           <span className={styles.meta}>{etiquetaTipoDiagrama(ej.tipoDiagrama)}</span>
           <span className={styles.meta}>{etiquetaMotorDiagrama(ej.motor)}</span>

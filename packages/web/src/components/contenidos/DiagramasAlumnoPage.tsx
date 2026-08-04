@@ -75,9 +75,13 @@ export default function DiagramasAlumnoPage() {
   // El progreso se calcula sobre lo FILTRADO, igual que en el módulo de código:
   // quien esté trabajando un solo tipo de diagrama ve su avance en ESE tipo, sin
   // que los de los demás lo dejen permanentemente por debajo del 100%.
+  // Los ejemplos resueltos NO cuentan: abren con el diagrama ya hecho y se
+  // aprueban con solo enviarlos, así que inflarían el avance sin que el alumno
+  // haya resuelto nada.
+  const cuentanParaElProgreso = filtrados.filter((e) => !e.esEjemplo);
   const progreso = {
-    resueltos: filtrados.filter((e) => e.resuelto).length,
-    total: filtrados.length,
+    resueltos: cuentanParaElProgreso.filter((e) => e.resuelto).length,
+    total: cuentanParaElProgreso.length,
   };
 
   function toggle(clave: string) {
@@ -163,7 +167,8 @@ export default function DiagramasAlumnoPage() {
               const claveBloque = `bloque:${b.clave}`;
               const bloqueAbierto = !colapsadas.has(claveBloque);
               const items = b.grupos.flatMap((g) => g.items);
-              const resueltosBloque = items.filter((e) => e.resuelto).length;
+              const contablesBloque = items.filter((e) => !e.esEjemplo);
+              const resueltosBloque = contablesBloque.filter((e) => e.resuelto).length;
               return (
                 <section key={claveBloque} className={b.titulo ? styles.bloque : undefined}>
                   {/* Sin título no hay cabecera: es el caso "no hay bloques",
@@ -172,7 +177,7 @@ export default function DiagramasAlumnoPage() {
                     <button className={styles.bloqueHeader} aria-expanded={bloqueAbierto} onClick={() => toggle(claveBloque)}>
                       <span className={styles.chevron} aria-hidden>{bloqueAbierto ? '▾' : '▸'}</span>
                       <span className={styles.bloqueTitulo}>{b.titulo}</span>
-                      <span className={styles.grupoConteo}>{resueltosBloque}/{items.length}</span>
+                      <span className={styles.grupoConteo}>{resueltosBloque}/{contablesBloque.length}</span>
                     </button>
                   )}
                   {b.titulo && b.descripcion && bloqueAbierto && (
@@ -183,22 +188,28 @@ export default function DiagramasAlumnoPage() {
                       {b.grupos.map((g) => {
                         const claveGrupo = `cat:${g.clave}`;
                         const abierto = !colapsadas.has(claveGrupo);
-                        const resueltos = g.items.filter((e) => e.resuelto).length;
+                        const contables = g.items.filter((e) => !e.esEjemplo);
+                        const resueltos = contables.filter((e) => e.resuelto).length;
                         return (
                           <section key={claveGrupo} className={styles.grupo}>
                             <button className={styles.grupoHeader} aria-expanded={abierto} onClick={() => toggle(claveGrupo)}>
                               <span className={styles.chevron} aria-hidden>{abierto ? '▾' : '▸'}</span>
                               <span className={styles.grupoTitulo}>{g.titulo ?? 'Diagramas'}</span>
-                              <span className={styles.grupoConteo}>{resueltos}/{g.items.length}</span>
+                              <span className={styles.grupoConteo}>{resueltos}/{contables.length}</span>
                             </button>
                             {abierto && (
                               <ul className={styles.lista}>
                                 {g.items.map((e) => (
                                   <li key={e.id}>
-                                    <Link to={`${base}/${e.slug}`} className={`${styles.item} ${e.resuelto ? styles.itemResuelto : ''}`}>
+                                    <Link to={`${base}/${e.slug}`} className={`${styles.item} ${e.esEjemplo ? styles.itemEjemplo : e.resuelto ? styles.itemResuelto : ''}`}>
                                       <span className={styles.itemIzq}>
-                                        <span className={styles.check} aria-hidden>{e.resuelto ? '✓' : '○'}</span>
+                                        {/* Un ejemplo no se resuelve, se consulta: la palomita de
+                                            "hecho" ahí confundiría con el avance real. */}
+                                        <span className={styles.check} aria-hidden>
+                                          {e.esEjemplo ? '★' : e.resuelto ? '✓' : '○'}
+                                        </span>
                                         <span className={styles.itemTitulo}>{e.titulo}</span>
+                                        {e.esEjemplo && <span className={styles.etiquetaEjemplo}>Ejemplo resuelto</span>}
                                       </span>
                                       {/* `agruparEnBloques` devuelve `EjercicioLista`, donde el tipo
                                           es opcional; aquí siempre llega, y si faltara se omite el
