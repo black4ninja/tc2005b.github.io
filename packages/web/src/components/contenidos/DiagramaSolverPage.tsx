@@ -186,12 +186,7 @@ export default function DiagramaSolverPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <Link to={base} className={styles.volver}>← Diagramas</Link>
-        <h1 className={styles.titulo}>
-          {ej.titulo}
-          {/* Junto al título y no solo en el aviso de abajo: es lo primero que
-              se lee al abrir, y es lo que distingue este ejercicio del resto. */}
-          {ej.esEjemplo && <span className={styles.distintivoEjemplo}>Ejercicio completo</span>}
-        </h1>
+        <h1 className={styles.titulo}>{ej.titulo}</h1>
         {/* Sin este aviso, un ejercicio que abre ya resuelto parece uno normal
             que alguien dejó hecho, y el alumno no sabe que puede tocarlo. */}
         {ej.esEjemplo && (

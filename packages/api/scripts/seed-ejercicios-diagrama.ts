@@ -165,7 +165,11 @@ async function main(): Promise<void> {
       ej.set('publicado', false); // nace como borrador, siempre
     }
 
-    ej.set('titulo', d.titulo);
+    // El distintivo va EN EL NOMBRE y no solo como etiqueta de la interfaz:
+    // así viaja con el ejercicio a cualquier pantalla, presente o futura, que
+    // muestre su título —listados, buscador, historial— sin tener que
+    // acordarse de pintarlo en cada una.
+    ej.set('titulo', d.esEjemplo ? `${d.titulo} (Ejercicio completo)` : d.titulo);
     ej.set('slug', d.slug);
     ej.set('orden', d.orden);
     ej.set('enunciado', enunciado);

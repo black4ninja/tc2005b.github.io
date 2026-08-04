@@ -209,7 +209,6 @@ export default function DiagramasAlumnoPage() {
                                           {e.esEjemplo ? '★' : e.resuelto ? '✓' : '○'}
                                         </span>
                                         <span className={styles.itemTitulo}>{e.titulo}</span>
-                                        {e.esEjemplo && <span className={styles.etiquetaEjemplo}>Ejercicio completo</span>}
                                       </span>
                                       {/* `agruparEnBloques` devuelve `EjercicioLista`, donde el tipo
                                           es opcional; aquí siempre llega, y si faltara se omite el

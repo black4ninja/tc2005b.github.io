@@ -43,10 +43,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     comprobaciones: a diferencia de un caso de prueba, una aserción mal calibrada
     no se nota al leerla.
 
-- **25 ejercicios de diagrama** publicados en `tc2007b`, cubriendo los **ocho
+- **32 ejercicios de diagrama** publicados en `tc2007b`, cubriendo los **ocho
   tipos** en tres niveles cada uno (guiado, base y reto): clases, secuencia,
-  estados, entidad-relación, flujo, casos de uso, componentes y paquetes, más un
-  **ejemplo resuelto** que abre con el diagrama ya completo para contrastar.
+  estados, entidad-relación, flujo, casos de uso, componentes y paquetes.
+  - **Un «ejercicio completo» por tipo**, los ocho sobre el mismo caso de reserva
+    de salas: abren con el diagrama ya terminado, llevan el distintivo en el
+    propio nombre y no cuentan para el progreso. Su código inicial ES su primera
+    solución de referencia, así que la verificación demuestra que enviarlos sin
+    tocar nada pasa.
   - Documento guía «Un caso completo: reserva de salas», con el mismo sistema
     modelado en las tres vistas y la tabla de correspondencias entre ellas.
     Importado como BORRADOR.
