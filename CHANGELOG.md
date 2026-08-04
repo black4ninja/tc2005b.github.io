@@ -42,6 +42,16 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     comprobaciones: a diferencia de un caso de prueba, una aserción mal calibrada
     no se nota al leerla.
 
+- **Primera tanda de 9 ejercicios de diagrama** publicados en `tc2007b`: tres
+  categorías (Clases, Secuencia, Estados) por tres niveles (guiado, base y reto),
+  en los bloques Estructura, Interacción y Comportamiento.
+  - Cada enunciado explica de dónde viene la notación, qué significa cada
+    elemento y dónde se usa la misma idea fuera de UML, con la sintaxis del
+    diagramador separada de la teoría.
+  - **Cuatro de los nueve usan comprobaciones cruzadas** contra un diagrama de
+    clases dado: es donde están los errores dominantes medidos en alumnos.
+  - Todos pasan la verificación de autoría: dos soluciones válidas y distintas
+    cumplen todas las comprobaciones y el diagrama trampa falla alguna.
 - **Experiencia del alumno en Diagramas**: listado agrupado por bloque y
   categoría con su progreso, y solver con enunciado, diagramas de contexto ya
   dibujados, editor con vista previa en vivo, historial de envíos y la columna

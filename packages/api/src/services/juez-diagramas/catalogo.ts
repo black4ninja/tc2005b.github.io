@@ -75,9 +75,15 @@ export function nombreDeMensaje(textoMensaje: string): string {
 /**
  * Disparador de una transición: lo que va ANTES de la guarda y de la acción.
  * `pulsar [hay red] / cargar()` → `pulsar`.
+ *
+ * La lista de argumentos se descarta, igual que en los mensajes de secuencia:
+ * un disparador es un evento de llamada, y `cargar()` y `cargar` nombran la
+ * misma operación. Compararlos como cadenas distintas haría fallar a un alumno
+ * por escribir dos paréntesis, que es exactamente el tipo de veredicto que mide
+ * la notación en vez del modelo.
  */
 export function disparadorDeTransicion(etiqueta: string): string {
-  return etiqueta.split('[')[0].split('/')[0].trim();
+  return nombreDeMensaje(etiqueta.split('[')[0].split('/')[0]);
 }
 
 function contextoDe(ctx: ContextoEvaluacion, nombre: string): ModeloDiagrama {
