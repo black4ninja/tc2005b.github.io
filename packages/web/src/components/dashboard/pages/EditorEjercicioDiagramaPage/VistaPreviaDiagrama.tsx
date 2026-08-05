@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { cargarMotor } from '../../../../lib/diagramas/registro';
+import { ajustarAlContenedor } from '../../../../lib/diagramas/ajustar';
 import styles from './VistaPreviaDiagrama.module.css';
 
 /**
@@ -58,6 +59,10 @@ export default function VistaPreviaDiagrama({ codigo, motor, altura = 220 }: Pro
       .then(() => {
         if (!vigente) return;
         destino.replaceChildren(...Array.from(provisional.childNodes));
+        // Los motores dejan el SVG a su tamaño intrínseco: sin esto, un
+        // diagrama de dos clases se queda diminuto en un panel ancho.
+        const svg = destino.querySelector('svg');
+        if (svg) ajustarAlContenedor(svg, altura);
         setError('');
       })
       .catch((e: unknown) => {
@@ -69,7 +74,7 @@ export default function VistaPreviaDiagrama({ codigo, motor, altura = 220 }: Pro
       });
 
     return () => { vigente = false; };
-  }, [codigoRetardado, motor]);
+  }, [codigoRetardado, motor, altura]);
 
   const vacio = !codigoRetardado.trim();
 
