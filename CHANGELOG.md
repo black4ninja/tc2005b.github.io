@@ -62,6 +62,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     clases dado: es donde están los errores dominantes medidos en alumnos.
   - Todos pasan la verificación de autoría: dos soluciones válidas y distintas
     cumplen todas las comprobaciones y el diagrama trampa falla alguna.
+- **Marca de agua en los diagramas renderizados**: aviso inclinado «Solo para
+  fines académicos» y crédito «developed by meeplab». Se inyecta dentro del SVG
+  y no como capa de CSS, así que viaja con la imagen al guardarla o copiarla, y
+  se coloca a partir del lienzo real del diagrama para no salirse en los
+  pequeños ni quedar invisible en los grandes.
 - **Taller de diagramas**: espacio para dibujar libremente, sin ejercicio ni
   juez, con selector de motor y de tipo, plantillas de arranque para los ocho
   tipos en ambos motores, vista previa en vivo y el mismo control de vista de
