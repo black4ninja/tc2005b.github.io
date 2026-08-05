@@ -77,13 +77,23 @@ export function marcarSvg(svg: SVGSVGElement): void {
   const centroX = caja.x + caja.ancho / 2;
   const centroY = caja.y + caja.alto / 2;
 
-  // El tamaño se calcula para que el texto ocupe ~el 80 % del ancho: con una
-  // medida fija, la marca se salía de los diagramas pequeños y quedaba
-  // invisible en los grandes.
-  const tamanoUso = Math.max(
-    12,
-    Math.min((caja.ancho * 0.8) / (TEXTO_USO.length * RATIO_CARACTER), caja.alto * 0.22),
+  // El tamaño sale de la DIAGONAL y no del ancho.
+  //
+  // El texto va inclinado, así que su longitud se reparte entre las dos
+  // dimensiones: medirlo contra el ancho lo dejaba diminuto en los diagramas
+  // altos y estrechos —una clase encima de otra— mientras se veía bien en los
+  // anchos. Con la diagonal, la marca ocupa una fracción parecida del dibujo
+  // sea cual sea su forma.
+  const diagonal = Math.hypot(caja.ancho, caja.alto);
+  // Y aun así se acota para que el texto girado quepa dentro del lienzo: a -30°
+  // ocupa `L·cos30` en horizontal y `L·sen30` en vertical. Sin esta cota, un
+  // diagrama muy estrecho se llevaría la marca fuera del área visible.
+  const largo = Math.min(
+    diagonal * 0.72,
+    (caja.ancho * 0.95) / Math.cos(Math.PI / 6),
+    (caja.alto * 0.95) / Math.sin(Math.PI / 6),
   );
+  const tamanoUso = Math.max(12, largo / (TEXTO_USO.length * RATIO_CARACTER));
 
   grupo.appendChild(
     crearTexto(TEXTO_USO, {
@@ -101,14 +111,18 @@ export function marcarSvg(svg: SVGSVGElement): void {
     }),
   );
 
-  // El crédito va abajo a la derecha, legible pero discreto, y con un tamaño
-  // que no depende del diagrama: es una firma, no parte del dibujo.
+  // El crédito va ARRIBA A LA IZQUIERDA, no abajo a la derecha: ahí se montaba
+  // sobre la última caja de los diagramas que crecen hacia abajo, que son la
+  // mayoría. La esquina superior izquierda casi siempre queda libre porque los
+  // motores empiezan a dibujar con un margen.
+  //
+  // El tamaño no depende del diagrama: es una firma, no parte del dibujo.
   const tamanoCredito = Math.max(9, Math.min(12, caja.alto * 0.05));
   grupo.appendChild(
     crearTexto(TEXTO_CREDITO, {
-      x: String(caja.x + caja.ancho - tamanoCredito * 0.6),
-      y: String(caja.y + caja.alto - tamanoCredito * 0.6),
-      'text-anchor': 'end',
+      x: String(caja.x + tamanoCredito * 0.6),
+      y: String(caja.y + tamanoCredito * 1.2),
+      'text-anchor': 'start',
       fill: '#57606a',
       'fill-opacity': '0.55',
       'font-family': 'Inter, system-ui, sans-serif',

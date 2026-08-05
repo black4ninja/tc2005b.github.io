@@ -12,6 +12,8 @@ import { describe, it, expect } from 'vitest';
 import { marcarSvg } from './marcaDeAgua';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
+/** El mismo texto que inyecta el módulo; se repite aquí para medirlo. */
+const TEXTO = 'Solo para fines académicos';
 
 function svgCon(atributos: Record<string, string>): SVGSVGElement {
   const svg = document.createElementNS(SVG_NS, 'svg');
@@ -55,14 +57,43 @@ describe('marcarSvg', () => {
     expect(textos(svg)).toHaveLength(2);
   });
 
+  const tamanoAviso = (s: SVGSVGElement) =>
+    Number(s.querySelector('[data-marca-agua] text')?.getAttribute('font-size'));
+
   it('el tamaño del aviso se adapta al lienzo', () => {
     const pequeno = svgCon({ viewBox: '0 0 200 150' });
     const grande = svgCon({ viewBox: '0 0 1200 900' });
     marcarSvg(pequeno);
     marcarSvg(grande);
-    const tamano = (s: SVGSVGElement) =>
-      Number(s.querySelector('[data-marca-agua] text')?.getAttribute('font-size'));
-    expect(tamano(grande)).toBeGreaterThan(tamano(pequeno));
+    expect(tamanoAviso(grande)).toBeGreaterThan(tamanoAviso(pequeno));
+  });
+
+  it('un diagrama alto y estrecho no se queda con una marca diminuta', () => {
+    // El caso que motivó el cambio: dos clases una encima de otra. La marca no
+    // puede salir igual de grande que en un lienzo ancho —no cabría—, pero sí
+    // debe aprovechar el ancho disponible en lugar de encogerse.
+    const estrecho = svgCon({ viewBox: '0 0 300 900' });
+    marcarSvg(estrecho);
+    const largo = tamanoAviso(estrecho) * TEXTO.length * 0.55;
+    const ocupaDeAncho = (largo * Math.cos(Math.PI / 6)) / 300;
+    expect(ocupaDeAncho).toBeGreaterThan(0.8);
+  });
+
+  it('el aviso girado no se sale del lienzo', () => {
+    const estrecho = svgCon({ viewBox: '0 0 200 1200' });
+    marcarSvg(estrecho);
+    const largo = tamanoAviso(estrecho) * TEXTO.length * 0.55;
+    // A -30°, el texto ocupa `largo · cos30` en horizontal.
+    expect(largo * Math.cos(Math.PI / 6)).toBeLessThanOrEqual(200);
+  });
+
+  it('el crédito va arriba a la izquierda, donde no tapa el dibujo', () => {
+    const svg = svgCon({ viewBox: '0 0 400 300' });
+    marcarSvg(svg);
+    const credito = [...svg.querySelectorAll('[data-marca-agua] text')][1];
+    expect(credito.getAttribute('text-anchor')).toBe('start');
+    expect(Number(credito.getAttribute('x'))).toBeLessThan(40);
+    expect(Number(credito.getAttribute('y'))).toBeLessThan(40);
   });
 
   it('sin lienzo averiguable no marca nada, en vez de colocarlo a ciegas', () => {
