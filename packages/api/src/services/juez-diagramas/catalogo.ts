@@ -510,9 +510,20 @@ const transicionesConEvento: Evaluador = (a, { modelo }) => {
  * la elección no está resuelta.
  */
 const transicionesDeterministas: Evaluador = (_a, { modelo }) => {
+  const pseudo = new Set(modelo.nodos.filter((n) => n.clase === 'pseudoestado').map((n) => n.id));
   const vistas = new Map<string, number>();
   for (const x of modelo.aristas) {
-    const firma = `${x.origen}::${clave(disparadorDeTransicion(x.etiqueta ?? ''))}`;
+    // Un pseudoestado de decisión sale SIEMPRE con guardas y sin disparador: es
+    // la forma canónica de modelar una elección, no una ambigüedad.
+    if (pseudo.has(x.origen)) continue;
+    // La GUARDA entra en la firma. Dos salidas con el mismo disparador y guardas
+    // excluyentes —`validar [saldo > 0]` y `validar [saldo <= 0]`— están
+    // perfectamente resueltas; compararlas solo por el disparador las declaraba
+    // ambiguas y suspendía la manera correcta de escribirlas.
+    const guarda = (x.etiqueta ?? '').includes('[')
+      ? (x.etiqueta ?? '').slice((x.etiqueta ?? '').indexOf('['))
+      : '';
+    const firma = `${x.origen}::${clave(disparadorDeTransicion(x.etiqueta ?? ''))}::${clave(guarda)}`;
     vistas.set(firma, (vistas.get(firma) ?? 0) + 1);
   }
   const ambiguas = [...vistas.entries()]

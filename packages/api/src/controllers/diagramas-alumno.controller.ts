@@ -13,7 +13,7 @@ import {
   diagramasResueltos,
   type AccesoDiagramas,
 } from '../services/diagramas-alumno.service.js';
-import { describir, evaluarDiagrama } from '../services/juez-diagramas/index.js';
+import { describir, evaluarDiagrama, CODIGO_MAX } from '../services/juez-diagramas/index.js';
 
 /**
  * Lado del alumno del módulo "Diagramas".
@@ -217,9 +217,20 @@ async function juzgar(ejercicio: EjercicioDiagrama, codigo: string) {
   });
 }
 
-function leerCodigo(req: Request): string | null {
+/**
+ * Lee el diagrama del cuerpo, acotado.
+ *
+ * El tope no es cosmética: el juez corre síncrono en el hilo de Node, así que
+ * un envío grande no ralentiza solo su petición, bloquea la API entera. Sin
+ * esta cota, cualquier usuario autenticado podía dejar el servidor sin
+ * responder con un único envío.
+ */
+function leerCodigo(req: Request): string | { error: string } {
   const codigo = req.body?.codigo;
-  if (typeof codigo !== 'string' || !codigo.trim()) return null;
+  if (typeof codigo !== 'string' || !codigo.trim()) return { error: 'Falta el diagrama' };
+  if (codigo.length > CODIGO_MAX) {
+    return { error: `El diagrama no puede pasar de ${CODIGO_MAX} caracteres` };
+  }
   return codigo;
 }
 
@@ -236,8 +247,8 @@ export async function evaluarDiagramaAlumno(req: Request, res: Response): Promis
   if (!cargado) return;
 
   const codigo = leerCodigo(req);
-  if (codigo === null) {
-    res.status(400).json({ status: 'error', message: 'Falta el diagrama' });
+  if (typeof codigo !== 'string') {
+    res.status(400).json({ status: 'error', message: codigo.error });
     return;
   }
   try {
@@ -260,8 +271,8 @@ export async function enviarDiagramaAlumno(req: Request, res: Response): Promise
   if (!cargado) return;
 
   const codigo = leerCodigo(req);
-  if (codigo === null) {
-    res.status(400).json({ status: 'error', message: 'Falta el diagrama' });
+  if (typeof codigo !== 'string') {
+    res.status(400).json({ status: 'error', message: codigo.error });
     return;
   }
 

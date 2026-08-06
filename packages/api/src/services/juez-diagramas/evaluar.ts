@@ -16,7 +16,7 @@ import { describir } from './describir.js';
 import { normalizarMermaid } from './normalizar-mermaid.js';
 import { normalizarPlantuml } from './normalizar-plantuml.js';
 import {
-  ErrorSintaxisDiagrama,
+  ErrorSintaxisDiagrama, ROTULO_OCULTA,
   type Asercion, type ContextoEvaluacion, type Motor, type ModeloDiagrama,
   type ResultadoAsercion, type ResultadoDiagrama, type TipoDiagrama,
 } from './tipos.js';
@@ -87,7 +87,11 @@ export async function evaluarDiagrama(op: OpcionesEvaluacion): Promise<Resultado
 
   op.aserciones.forEach((asercion, indice) => {
     const oculta = asercion.oculta === true;
-    const comprobacion = describir(asercion);
+    // El rótulo de una comprobación oculta NO sale de aquí. `describir()` redacta
+    // los parámetros en prosa —«Pedido declara el atributo folio de tipo
+    // String»—, así que enseñarlo entrega la solución exactamente igual que el
+    // detalle, y con un solo envío vacío se enumeraba el ejercicio entero.
+    const comprobacion = oculta ? ROTULO_OCULTA : describir(asercion);
     const evaluador = CATALOGO[asercion.tipo];
 
     if (!evaluador) {

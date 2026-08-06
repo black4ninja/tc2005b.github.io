@@ -132,6 +132,32 @@ describe('estados: los ids que Mermaid inventa para [*] se traducen a pseudoesta
   });
 });
 
+describe('estados compuestos', () => {
+  it('se rechazan con un mensaje claro en vez de dar un modelo falso', async () => {
+    // Mermaid deja el contenido del compuesto en `doc`, fuera de `getStates()`.
+    // Antes de esta comprobación, esta submáquina —con un estado inalcanzable y
+    // un ciclo del que no se sale— se evaluaba como si no existiera y el
+    // diagrama entero salía «aceptado».
+    const compuesto = `stateDiagram-v2
+  [*] --> Encendido
+  state Encendido {
+    [*] --> A
+    A --> B
+    B --> A
+    Huerfano --> A
+  }
+  Encendido --> [*]`;
+    await expect(normalizarMermaid('estados', compuesto)).rejects.toThrow(ErrorSintaxisDiagrama);
+    await expect(normalizarMermaid('estados', compuesto)).rejects.toThrow(/compuestos/);
+  });
+
+  it('una máquina plana sigue funcionando', async () => {
+    const plana = 'stateDiagram-v2\n  [*] --> A\n  A --> B: ir\n  B --> [*]';
+    const m = await normalizarMermaid('estados', plana);
+    expect(m.nodos.filter((n) => n.clase === 'estado').map((n) => n.id).sort()).toEqual(['A', 'B']);
+  });
+});
+
 describe('sintaxis inválida', () => {
   it('se reporta como error de sintaxis con la línea, no como excepción cruda', async () => {
     await expect(normalizarMermaid('secuencia', 'sequenceDiagram\n  A ->>>>> B: mal'))

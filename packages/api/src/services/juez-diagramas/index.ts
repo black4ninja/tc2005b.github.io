@@ -9,7 +9,7 @@ export { CATALOGO, TIPOS_ASERCION, esTipoDeAsercionValido, nodosDuplicados } fro
 export { describir } from './describir.js';
 export { normalizarMermaid } from './normalizar-mermaid.js';
 export {
-  ErrorSintaxisDiagrama, TIPOS_DIAGRAMA,
+  ErrorSintaxisDiagrama, TIPOS_DIAGRAMA, ROTULO_OCULTA, CODIGO_MAX,
   type Asercion, type Arista, type ContextoEvaluacion, type Mensaje, type Miembro,
   type ModeloDiagrama, type Motor, type Nodo, type ResultadoAsercion,
   type ResultadoDiagrama, type TipoArista, type TipoDiagrama, type TipoMensaje,

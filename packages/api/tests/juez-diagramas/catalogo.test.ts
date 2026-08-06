@@ -259,6 +259,20 @@ describe('estados', () => {
     expect(r.detalle).toContain('no espera');
   });
 
+  it('dos salidas con el mismo disparador y guardas excluyentes SÍ deciden', async () => {
+    // Es la forma canónica de modelar una elección en UML. Comparando solo por
+    // el disparador se declaraba ambigua y se suspendía al alumno que la escribe
+    // bien.
+    const conGuardas = `stateDiagram-v2
+  [*] --> Espera
+  Espera --> Aceptado : validar [saldo > 0]
+  Espera --> Rechazado : validar [saldo <= 0]
+  Aceptado --> [*]
+  Rechazado --> [*]`;
+    const r = await juzgar(conGuardas, { tipo: 'transiciones-deterministas' }, 'estados');
+    expect(r.paso, r.detalle).toBe(true);
+  });
+
   it('detecta el no determinismo por disparador repetido', async () => {
     const ambiguo = `stateDiagram-v2
   [*] --> A
@@ -347,13 +361,32 @@ describe('informe global', () => {
     expect(r.aserciones).toHaveLength(0);
   });
 
-  it('una aserción oculta que falla no revela el porqué, pero sí qué se revisó', async () => {
+  it('una aserción oculta que falla no revela NADA de lo que exige', async () => {
+    // Ni el detalle ni el rótulo. `describir()` redacta los parámetros en
+    // prosa, así que enseñar el rótulo entregaba la solución igual de bien: con
+    // un envío vacío se enumeraba el ejercicio entero.
     const r = await evaluarDiagrama({
-      motor: 'mermaid', tipoDiagrama: 'clases', codigo: 'classDiagram\n  class Cosa',
-      aserciones: [{ tipo: 'sin-nombres-vagos', oculta: true }],
+      motor: 'mermaid', tipoDiagrama: 'clases', codigo: 'classDiagram\n  class Vacio',
+      aserciones: [{
+        tipo: 'clase-tiene-atributo', oculta: true,
+        parametros: { clase: 'Pedido', atributo: 'folio', tipo: 'String', visibilidad: '+' },
+      }],
     });
     expect(r.aserciones[0].paso).toBe(false);
     expect(r.aserciones[0].detalle).toBeUndefined();
+    expect(r.aserciones[0].comprobacion).toBe('Comprobación oculta');
+    // Ningún parámetro del ejercicio puede aparecer en la respuesta.
+    const respuesta = JSON.stringify(r);
+    for (const filtrado of ['Pedido', 'folio', 'String']) {
+      expect(respuesta).not.toContain(filtrado);
+    }
+  });
+
+  it('las visibles sí dicen qué se revisó', async () => {
+    const r = await evaluarDiagrama({
+      motor: 'mermaid', tipoDiagrama: 'clases', codigo: 'classDiagram\n  class Cosa',
+      aserciones: [{ tipo: 'sin-nombres-vagos' }],
+    });
     expect(r.aserciones[0].comprobacion).toContain('nombres');
   });
 

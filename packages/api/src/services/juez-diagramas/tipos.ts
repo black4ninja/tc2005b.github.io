@@ -166,6 +166,22 @@ export interface Asercion {
   parametros?: Record<string, unknown>;
 }
 
+/**
+ * Lo que se le muestra al alumno en lugar del rótulo de una comprobación
+ * oculta. Tiene que ser genérico: el rótulo real describe qué se exige y con
+ * qué valores, así que enseñarlo entrega la solución igual que el detalle.
+ */
+export const ROTULO_OCULTA = 'Comprobación oculta';
+
+/**
+ * Tope de tamaño del diagrama que se acepta evaluar.
+ *
+ * No es una cota de estilo: el juez corre SÍNCRONO en el hilo de Node, así que
+ * un envío grande no ralentiza su petición sino que bloquea la API entera.
+ * Medido: 10 KB tardan 1,9 s y 30 KB, 5,5 s.
+ */
+export const CODIGO_MAX = 20000;
+
 export interface ResultadoAsercion {
   indice: number;
   oculta: boolean;

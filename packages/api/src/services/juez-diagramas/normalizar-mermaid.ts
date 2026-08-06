@@ -211,6 +211,27 @@ function deSecuencia(db: any): ModeloDiagrama {
 function deEstados(db: any): ModeloDiagrama {
   const modelo = modeloVacio('estados', 'mermaid');
 
+  // Mermaid solo entrega en `getStates()` los estados del nivel RAÍZ: lo que hay
+  // dentro de un estado compuesto vive en su `doc` y aquí no llegaría. Aceptarlo
+  // en silencio daba un modelo falso en las dos direcciones: una submáquina con
+  // estados inalcanzables y ciclos sin salida obtenía «aceptado», y una aserción
+  // sobre un subestado fallaba aunque el alumno lo hubiera escrito.
+  //
+  // Se rechaza en vez de recorrerlo porque hacerlo BIEN no es recorrer: entrar en
+  // un estado compuesto significa entrar en su subestado inicial, y esa semántica
+  // cambia qué es alcanzable y qué es un callejón. Es una funcionalidad con su
+  // propio diseño, no un remiendo del normalizador.
+  const compuestos = valores<any>(db.getStates?.())
+    .filter((e) => Array.isArray(e?.doc) && e.doc.length > 0)
+    .map((e) => String(e.id));
+  if (compuestos.length) {
+    throw new ErrorSintaxisDiagrama(
+      `El juez todavía no evalúa estados compuestos (un estado con otros dentro): ` +
+      `${compuestos.map((c) => `«${c}»`).join(', ')}. ` +
+      `Modela la submáquina en un diagrama aparte.`,
+    );
+  }
+
   for (const s of valores<any>(db.getStates?.())) {
     const id = String(s.id);
     const esInicial = id === ESTADO_INICIAL_MERMAID;
