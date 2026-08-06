@@ -67,6 +67,14 @@
   margin-bottom: 4px;
 }
 
+/* Envoltorio de un <label> que CONTIENE a su control, que es como se nombra un
+   campo sin depender de un `id` único: el rótulo va en un <span> interior con
+   .label o .subLabel, así que este contenedor no aporta más estilo que ser un
+   bloque —el aspecto es exactamente el de antes de asociar las etiquetas—. */
+.campoGrupo {
+  display: block;
+}
+
 .hint {
   margin: 0 0 10px;
   font-size: 13px;

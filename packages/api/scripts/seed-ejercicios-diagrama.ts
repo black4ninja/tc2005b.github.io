@@ -101,8 +101,12 @@ async function obtenerOCrear(
 async function main(): Promise<void> {
   inicializarParse();
 
-  let definiciones = await cargarDefiniciones();
-  if (SOLO) definiciones = definiciones.filter((d) => d.slug === SOLO);
+  // El orden de bloques y categorías se calcula SIEMPRE con el catálogo
+  // completo, aunque solo se siembre un ejercicio: se deriva de en qué posición
+  // aparece cada bloque, y con la lista filtrada el contador arrancaba de cero
+  // otra vez y reescribía ese bloque al primer número, empatándolo con otro.
+  const todas = await cargarDefiniciones();
+  const definiciones = SOLO ? todas.filter((d) => d.slug === SOLO) : todas;
   if (!definiciones.length) {
     console.error('No hay definiciones que sembrar.');
     process.exit(2);
@@ -131,7 +135,7 @@ async function main(): Promise<void> {
   let ordenBloque = BASE_ORDEN;
   let ordenCategoria = BASE_ORDEN;
 
-  for (const d of definiciones) {
+  for (const d of todas) {
     if (!bloques.has(d.bloque)) {
       bloques.set(d.bloque, await obtenerOCrear('BloqueEjercicios', coleccion, d.bloque, { orden: ordenBloque++ }));
     }
@@ -200,7 +204,17 @@ async function main(): Promise<void> {
         ej.set('publicado', true);
       } else {
         sinPublicar++;
-        console.log(`  ! ${d.slug} no pasa su verificación; se deja como borrador`);
+        // Si el ejercicio YA estaba publicado hay que despublicarlo, no solo
+        // «no publicarlo»: las aserciones nuevas se guardan igual unas líneas
+        // más abajo, así que dejarlo visible significaría un ejercicio en manos
+        // de los alumnos con comprobaciones que el verificador rechaza. Es el
+        // invariante que el endpoint de publicación sí garantiza.
+        const estaba = ej.get('publicado') === true;
+        ej.set('publicado', false);
+        console.log(
+          `  ! ${d.slug} no pasa su verificación; ` +
+          (estaba ? 'SE DESPUBLICA' : 'se deja como borrador'),
+        );
         for (const p of informe.problemas) console.log(`      · ${p}`);
       }
     }

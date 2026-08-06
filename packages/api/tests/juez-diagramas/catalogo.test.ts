@@ -122,6 +122,85 @@ describe('clases', () => {
     expect(r.detalle).toContain('sobrevive');
   });
 
+  it('conteo-nodos sin ningún límite se rechaza en vez de aprobar sin mirar', async () => {
+    // Era la única comprobación del catálogo capaz de pasar VACÍA: las demás
+    // exigen sus parámetros con `texto()`, que lanza. Y sobrevivía a la
+    // verificación de autoría, porque pasaba igual en las referencias y en la
+    // trampa, así que el ejercicio se publicaba con una comprobación de adorno.
+    const sinLimites = await juzgar(CLASES, { tipo: 'conteo-nodos', parametros: { clase: 'clase' } });
+    expect(sinLimites.paso).toBe(false);
+    expect(sinLimites.detalle).toContain('límite');
+
+    // Un «min» que llega como cadena —lo que devuelve un <input> sin convertir—
+    // se trata como ausente, así que acaba en el mismo sitio y no comprueba otra
+    // cosa en silencio.
+    // Y el diagnóstico distingue las dos causas: «falta un límite» y «lo
+    // escribiste, pero como texto» mandan a buscar el error a sitios distintos.
+    const minTexto = await juzgar(CLASES, { tipo: 'conteo-nodos', parametros: { min: '5' } });
+    expect(minTexto.paso).toBe(false);
+    expect(minTexto.detalle).toContain('como texto');
+    expect(minTexto.detalle).not.toBe(sinLimites.detalle);
+
+    const conLimite = await juzgar(CLASES, { tipo: 'conteo-nodos', parametros: { clase: 'clase', min: 2 } });
+    expect(conLimite.paso, conLimite.detalle).toBe(true);
+  });
+
+  it('conteo-nodos distingue «no escribiste límite» de «lo escribiste como texto»', async () => {
+    // Los dos casos fallan, que es lo correcto, pero mandan a buscar el error a
+    // sitios distintos: en uno falta el parámetro y en el otro está escrito sin
+    // convertir a número, que es lo que entrega un `<input type="number">`. Un
+    // único mensaje mandaba al autor a revisar lo que ya había puesto.
+    const ausente = await juzgar(CLASES, { tipo: 'conteo-nodos' });
+    const cadena = await juzgar(CLASES, { tipo: 'conteo-nodos', parametros: { min: '5' } });
+    expect(ausente.paso).toBe(false);
+    expect(cadena.paso).toBe(false);
+    expect(ausente.detalle).toContain('necesita al menos un límite');
+    expect(cadena.detalle).toContain('como texto');
+    expect(cadena.detalle).not.toBe(ausente.detalle);
+  });
+
+  it('conteo-nodos discrimina por cada extremo del rango y por clase', async () => {
+    // Con el límite puesto queda por comprobar lo que la comprobación mide de
+    // verdad: los dos casos negativos, uno por extremo. Probarla solo con el
+    // rango holgado la habría dado por buena aunque no contara nada.
+    const exacto = await juzgar(CLASES, { tipo: 'conteo-nodos', parametros: { min: 2, max: 2 } });
+    expect(exacto.paso, exacto.detalle).toBe(true);
+
+    const pocos = await juzgar(CLASES, { tipo: 'conteo-nodos', parametros: { min: 3 } });
+    expect(pocos.paso).toBe(false);
+    expect(pocos.detalle).toContain('al menos 3');
+
+    const demasiados = await juzgar(CLASES, { tipo: 'conteo-nodos', parametros: { max: 1 } });
+    expect(demasiados.paso).toBe(false);
+    expect(demasiados.detalle).toContain('como mucho 1');
+
+    // El filtro por clase cuenta SOLO esa clase: el diagrama tiene dos cajas y
+    // ninguna interfaz, así que exigir una interfaz falla pese a sobrar nodos.
+    const porClase = await juzgar(CLASES, { tipo: 'conteo-nodos', parametros: { clase: 'interfaz', min: 1 } });
+    expect(porClase.paso).toBe(false);
+    expect(porClase.detalle).toContain('Hay 0');
+  });
+
+  it('detecta la relación dibujada dos veces', async () => {
+    // Repetir la misma relación no añade información y suele delatar que el
+    // alumno redibujó en vez de corregir.
+    const repetida = `${CLASES}\n  Pedido *-- Linea : contiene`;
+    const r = await juzgar(repetida, { tipo: 'sin-relaciones-duplicadas' });
+    expect(r.paso).toBe(false);
+    expect(r.detalle).toContain('Pedido');
+
+    expect((await juzgar(CLASES, { tipo: 'sin-relaciones-duplicadas' })).paso).toBe(true);
+  });
+
+  it('dos relaciones con rótulos distintos no son una relación repetida', async () => {
+    // La etiqueta entra en la firma a propósito: dos flechas entre las mismas
+    // cajas rotuladas distinto son dos relaciones distintas, y marcarlas como
+    // duplicadas suspendería el patrón más común de varias notaciones.
+    const dosRotulos = `${CLASES}\n  Pedido *-- Linea : agrupa`;
+    const r = await juzgar(dosRotulos, { tipo: 'sin-relaciones-duplicadas' });
+    expect(r.paso, r.detalle).toBe(true);
+  });
+
   it('detecta cajas sin contenido', async () => {
     expect((await juzgar(CLASES, { tipo: 'clases-con-contenido' })).paso).toBe(true);
     expect((await juzgar(`${CLASES}\n  class Cliente`, { tipo: 'clases-con-contenido' })).paso).toBe(false);
@@ -156,6 +235,30 @@ const SECUENCIA = `sequenceDiagram
   VM-->>U: pintar()`;
 
 describe('secuencia', () => {
+  it('comprueba que la línea de vida exista y sea de la clase esperada', async () => {
+    const existe = await juzgar(SECUENCIA, {
+      tipo: 'existe-participante', parametros: { nombre: 'Repositorio' },
+    }, 'secuencia');
+    expect(existe.paso, existe.detalle).toBe(true);
+
+    // Un actor y una línea de vida no son lo mismo: el actor queda fuera del
+    // sistema y el participante es un objeto de dentro. Sin el parámetro «clase»
+    // discriminando, la comprobación solo miraría que el nombre apareciera.
+    const claseEquivocada = await juzgar(SECUENCIA, {
+      tipo: 'existe-participante', parametros: { nombre: 'ViewModel', clase: 'actor' },
+    }, 'secuencia');
+    expect(claseEquivocada.paso).toBe(false);
+    expect(claseEquivocada.detalle).toContain('participante');
+
+    // Al fallar enumera las líneas de vida que sí hay, que es lo que permite al
+    // alumno ver si lo que falta es el participante o solo su nombre.
+    const ausente = await juzgar(SECUENCIA, {
+      tipo: 'existe-participante', parametros: { nombre: 'Cache' },
+    }, 'secuencia');
+    expect(ausente.paso).toBe(false);
+    expect(ausente.detalle).toContain('ViewModel');
+  });
+
   it('comprueba un mensaje concreto, su texto y su tipo', async () => {
     const r = await juzgar(SECUENCIA, {
       tipo: 'mensaje-entre',
@@ -232,6 +335,67 @@ describe('estados', () => {
       const r = await juzgar(ESTADOS, { tipo }, 'estados');
       expect(r.paso, `${tipo}: ${r.detalle}`).toBe(true);
     }
+  });
+
+  it('comprueba que el estado exista, y que sea un estado y no un pseudoestado', async () => {
+    expect((await juzgar(ESTADOS, {
+      tipo: 'existe-estado', parametros: { nombre: 'Cargando' },
+    }, 'estados')).paso).toBe(true);
+
+    const ausente = await juzgar(ESTADOS, {
+      tipo: 'existe-estado', parametros: { nombre: 'Pausado' },
+    }, 'estados');
+    expect(ausente.paso).toBe(false);
+    expect(ausente.detalle).toContain('Inactivo');
+
+    // «inicio» y «fin» son los pseudoestados que Mermaid crea para «[*]». Un
+    // pseudoestado es de paso y no espera nada, así que aceptarlo como estado
+    // dejaría pasar una máquina a la que le falta el estado pedido.
+    const pseudo = await juzgar(ESTADOS, {
+      tipo: 'existe-estado', parametros: { nombre: 'inicio' },
+    }, 'estados');
+    expect(pseudo.paso).toBe(false);
+    expect(pseudo.detalle).toContain('pseudoestado');
+  });
+
+  it('comprueba la transición y, si se pide, su disparador', async () => {
+    const conDisparador = await juzgar(ESTADOS, {
+      tipo: 'transicion', parametros: { desde: 'Inactivo', hasta: 'Cargando', etiqueta: 'cargar' },
+    }, 'estados');
+    expect(conDisparador.paso, conDisparador.detalle).toBe(true);
+
+    // Sin disparador esperado basta con que la transición exista: el autor puede
+    // querer exigir el camino sin atarse a cómo se rotuló.
+    const soloElCamino = await juzgar(ESTADOS, {
+      tipo: 'transicion', parametros: { desde: 'Cargando', hasta: 'Error' },
+    }, 'estados');
+    expect(soloElCamino.paso, soloElCamino.detalle).toBe(true);
+
+    const otroDisparador = await juzgar(ESTADOS, {
+      tipo: 'transicion', parametros: { desde: 'Inactivo', hasta: 'Cargando', etiqueta: 'refrescar' },
+    }, 'estados');
+    expect(otroDisparador.paso).toBe(false);
+    expect(otroDisparador.detalle).toContain('cargar');
+
+    const inexistente = await juzgar(ESTADOS, {
+      tipo: 'transicion', parametros: { desde: 'Listo', hasta: 'Inactivo' },
+    }, 'estados');
+    expect(inexistente.paso).toBe(false);
+    expect(inexistente.detalle).toContain('No hay transición');
+  });
+
+  it('el disparador se compara sin su guarda ni su acción', async () => {
+    // «cargar» y «cargar [hay red] / traer()» nombran el mismo evento. Exigir la
+    // etiqueta completa mediría cómo se escribió la transición en vez de qué
+    // dispara, que es justo el veredicto que este juez evita.
+    const conGuarda = `stateDiagram-v2
+  [*] --> Inactivo
+  Inactivo --> Cargando: cargar [hay red] / traer()
+  Cargando --> [*]`;
+    const r = await juzgar(conGuarda, {
+      tipo: 'transicion', parametros: { desde: 'Inactivo', hasta: 'Cargando', etiqueta: 'cargar' },
+    }, 'estados');
+    expect(r.paso, r.detalle).toBe(true);
   });
 
   it('detecta estados inalcanzables', async () => {

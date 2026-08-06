@@ -116,6 +116,26 @@ const conteoNodos: Evaluador = (a, { modelo }) => {
   const cuantos = modelo.nodos.filter((n) => !claseFiltro || n.clase === claseFiltro).length;
   const min = numeroOpcional(a, 'min');
   const max = numeroOpcional(a, 'max');
+  // Sin ningún límite, esta comprobación aprobaba cualquier diagrama sin mirar
+  // nada, y era la ÚNICA del catálogo capaz de pasar vacía: las demás exigen sus
+  // parámetros con `texto()`, que lanza. Además sobrevivía a la verificación de
+  // autoría, porque pasaba igual en las referencias y en la trampa.
+  //
+  // Un `min` que llegue como cadena —lo que devuelve un `<input>` sin convertir—
+  // se trata como parámetro ausente, así que también acabaría aquí en lugar de
+  // comprobar en silencio otra cosa.
+  if (min === undefined && max === undefined) {
+    // Se distinguen las dos causas. Decirle al autor que «falta un límite»
+    // cuando sí lo escribió —pero como cadena, que es lo que entrega un
+    // `<input type="number">` sin convertir— manda a buscar el error donde no
+    // está.
+    const escritos = ['min', 'max'].filter((k) => param(a, k) !== undefined);
+    throw new Error(
+      escritos.length
+        ? `La aserción "conteo-nodos" recibió ${escritos.map((k) => `«${k}»`).join(' y ')} como texto; debe ser un número.`
+        : 'La aserción "conteo-nodos" necesita al menos un límite numérico, «min» o «max».',
+    );
+  }
   if (min !== undefined && cuantos < min) {
     return falla(`Hay ${cuantos} y se esperaban al menos ${min}.`);
   }
@@ -227,6 +247,11 @@ const relacionEntre: Evaluador = (a, { modelo }) => {
   }
   return ok;
 };
+
+/** Nombre visible de un nodo por su id; cae al id si no se encuentra. */
+function nombreDe(modelo: ModeloDiagrama, id: string): string {
+  return modelo.nodos.find((n) => n.id === id)?.nombre ?? id;
+}
 
 function coincideNodo(modelo: ModeloDiagrama, id: string, nombre: string): boolean {
   if (mismoNombre(id, nombre)) return true;
@@ -495,8 +520,14 @@ const transicionesConEvento: Evaluador = (a, { modelo }) => {
     // el estado acaba su trabajo, y exigirle un evento sería un falso positivo.
     .filter((x) => !pseudo.has(x.destino))
     .filter((x) => !disparadorDeTransicion(x.etiqueta ?? ''))
-    .filter((x) => !excepto.includes(clave(x.origen)))
-    .map((x) => `${x.origen} → ${x.destino}`);
+    // El autor escribe el NOMBRE que ve en el diagrama; el id solo coincide con
+    // él cuando no hay alias. Se aceptan los dos, como hace `clases-con-contenido`.
+    .filter((x) => {
+      const nodo = modelo.nodos.find((n) => n.id === x.origen);
+      return !excepto.includes(clave(x.origen)) && !excepto.includes(clave(nodo?.nombre ?? ''));
+    })
+    // Y el detalle nombra lo que el alumno ve, no identificadores internos.
+    .map((x) => `${nombreDe(modelo, x.origen)} → ${nombreDe(modelo, x.destino)}`);
   return malas.length
     ? falla(
       `Estas transiciones salen de un estado sin esperar ningún evento: ${enumerar(malas)}. Un nodo que no espera un evento no es un estado.`,

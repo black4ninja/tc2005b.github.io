@@ -381,6 +381,16 @@ export async function moveDocumento(req: Request, res: Response): Promise<void> 
     }
 
     // El slug debe seguir siendo único en el nivel destino.
+    // Mover a la raíz es la TERCERA vía de que un documento tome un slug
+    // reservado: crear y renombrar ya lo comprueban. Sin esto bastaba con crear
+    // el documento bajo una categoría —donde la reserva no aplica— y moverlo
+    // después, tapando la ruta del módulo igual que antes.
+    const reservadoAlMover = slugReservadoEnRaiz(nuevoPadre, documento.getSlug());
+    if (reservadoAlMover) {
+      res.status(409).json({ status: 'error', message: reservadoAlMover });
+      return;
+    }
+
     if (await slugDuplicado(coleccion, nuevoPadre, documento.getSlug(), docId)) {
       res.status(409).json({ status: 'error', message: 'Ya existe un documento con ese slug en el nivel destino' });
       return;

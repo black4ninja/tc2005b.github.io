@@ -297,12 +297,16 @@ export default function DiagramaSolverPage() {
               <span>{enunciadoVisible ? 'Ocultar enunciado' : 'Mostrar enunciado'}</span>
             </button>
 
+            {/* `aria-label` en cada botón: el único contenido es la ligadura de
+                Material Icons, así que sin él un lector de pantalla anuncia el
+                nombre del icono («code», «vertical_split», «visibility»). */}
             <div className={styles.vistaGrupo} role="group" aria-label="Vista del área de trabajo">
               <button
                 type="button"
                 className={vista === 'codigo' ? styles.vistaActiva : ''}
                 onClick={() => setVista('codigo')}
                 title="Solo el diagrama escrito"
+                aria-label="Solo el diagrama escrito"
                 aria-pressed={vista === 'codigo'}
               >
                 <Icon name="code" size="sm" />
@@ -312,6 +316,7 @@ export default function DiagramaSolverPage() {
                 className={vista === 'ambos' ? styles.vistaActiva : ''}
                 onClick={() => setVista('ambos')}
                 title="Escritura y vista previa"
+                aria-label="Escritura y vista previa"
                 aria-pressed={vista === 'ambos'}
               >
                 <Icon name="vertical_split" size="sm" />
@@ -321,6 +326,7 @@ export default function DiagramaSolverPage() {
                 className={vista === 'preview' ? styles.vistaActiva : ''}
                 onClick={() => setVista('preview')}
                 title="Solo la vista previa"
+                aria-label="Solo la vista previa"
                 aria-pressed={vista === 'preview'}
               >
                 <Icon name="visibility" size="sm" />

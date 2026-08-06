@@ -37,6 +37,8 @@ type Vista = 'codigo' | 'ambos' | 'preview';
 /** Clave propia: la preferencia del taller es independiente de la del solver. */
 const VISTA_KEY = 'taller:vista';
 const LISTA_KEY = 'taller:lista';
+/** Copia local del trabajo sin guardar. Ver `leerBorrador` para el porqué. */
+const BORRADOR_KEY = 'taller:borrador';
 
 /** La lista se ve por defecto: plegarla es una decisión del alumno. */
 function leerListaVisible(): boolean {
@@ -318,7 +320,94 @@ function mismoEstado(a: Estado, b: Estado): boolean {
   return a.nombre === b.nombre && a.motor === b.motor && a.tipo === b.tipo && a.codigo === b.codigo;
 }
 
+// --- Borrador local ---------------------------------------------------------
+
+/**
+ * Copia local de lo que hay en el editor cuando difiere de lo guardado en BD.
+ *
+ * Se conserva también `referencia` —el estado del servidor— porque al volver hay
+ * que poder seguir distinguiendo «cambiado» de «igual a lo guardado» sin pedirle
+ * el diagrama otra vez al API.
+ */
+interface Borrador {
+  seleccion: string | null;
+  editor: Estado;
+  referencia: Estado;
+  guardadoEn: string;
+}
+
+/**
+ * Lee un `Estado` de datos sin tipar (JSON del almacenamiento local).
+ *
+ * Todo lo que viene de `localStorage` es texto que pudo escribir otra versión de
+ * esta pantalla, así que se valida campo a campo: un borrador corrupto se
+ * descarta en vez de dejar el editor con `undefined` dentro.
+ */
+function estadoDesdeCrudo(valor: unknown): Estado | null {
+  if (typeof valor !== 'object' || valor === null) return null;
+  const o = valor as Record<string, unknown>;
+  if (typeof o.nombre !== 'string' || typeof o.codigo !== 'string') return null;
+  if (typeof o.motor !== 'string' || typeof o.tipo !== 'string') return null;
+  return { nombre: o.nombre, motor: aMotor(o.motor), tipo: aTipo(o.tipo), codigo: o.codigo };
+}
+
+/**
+ * Recupera el borrador local, si lo hay.
+ *
+ * LIMITACIÓN CONOCIDA que este borrador compensa: la aplicación monta un
+ * `<BrowserRouter>`, no un router de datos, así que `useBlocker` no está
+ * disponible y `beforeunload` no se dispara con la navegación interna de React
+ * Router. Al pulsar «Diagramas» en el menú —un enlace del armazón, fuera de esta
+ * pantalla— no hay ningún punto en el que preguntar antes de desmontar. En vez
+ * de interceptar la navegación, el taller escribe el trabajo pendiente aquí y lo
+ * restaura al volver, avisando de que procede de un borrador.
+ *
+ * Lo que NO cubre: el borrador es de este navegador y este perfil, y solo hay
+ * uno —el último—, de modo que trabajar en dos pestañas del taller a la vez deja
+ * viva la última que escriba. Tampoco sobrevive a un `localStorage` lleno o
+ * deshabilitado (navegación privada), caso en el que se ignora sin avisar.
+ */
+function leerBorrador(): Borrador | null {
+  try {
+    const crudo = localStorage.getItem(BORRADOR_KEY);
+    if (!crudo) return null;
+    const dato: unknown = JSON.parse(crudo);
+    if (typeof dato !== 'object' || dato === null) return null;
+    const o = dato as Record<string, unknown>;
+    const editor = estadoDesdeCrudo(o.editor);
+    const referencia = estadoDesdeCrudo(o.referencia);
+    if (!editor || !referencia) return null;
+    return {
+      seleccion: typeof o.seleccion === 'string' ? o.seleccion : null,
+      editor,
+      referencia,
+      guardadoEn: typeof o.guardadoEn === 'string' ? o.guardadoEn : '',
+    };
+  } catch {
+    // JSON inválido o almacenamiento bloqueado: se arranca en limpio.
+    return null;
+  }
+}
+
+function olvidarBorrador() {
+  try {
+    localStorage.removeItem(BORRADOR_KEY);
+  } catch {
+    // Sin almacenamiento no hay nada que olvidar.
+  }
+}
+
 const FECHA = new Intl.DateTimeFormat('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+
+/**
+ * Fecha legible, o cadena vacía si el dato no es una fecha. El sello del
+ * borrador viene de `localStorage`, así que puede ser cualquier texto: sin esta
+ * comprobación, un valor corrupto tumbaría el render con `Invalid time value`.
+ */
+function fechaLegible(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : FECHA.format(d);
+}
 
 export default function TallerDiagramasPage() {
   const { sessionToken } = useAuth();
@@ -342,11 +431,20 @@ export default function TallerDiagramasPage() {
     return [...lista].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }, [data]);
 
+  /**
+   * Borrador local de la visita anterior, leído UNA vez al montar. Se restaura
+   * en el primer render en lugar de en un efecto: así el editor nunca llega a
+   * pintar la plantilla vacía que el alumno vería como «se ha perdido».
+   */
+  const [recuperado] = useState<Borrador | null>(leerBorrador);
+  /** El aviso se muestra hasta que el alumno lo cierra o descarta el borrador. */
+  const [avisoBorrador, setAvisoBorrador] = useState<boolean>(recuperado !== null);
+
   // `null` significa borrador: hay algo en el editor que todavía no existe en BD.
-  const [seleccion, setSeleccion] = useState<string | null>(null);
-  const [editor, setEditor] = useState<Estado>(BORRADOR_INICIAL);
+  const [seleccion, setSeleccion] = useState<string | null>(recuperado?.seleccion ?? null);
+  const [editor, setEditor] = useState<Estado>(recuperado?.editor ?? BORRADOR_INICIAL);
   /** Lo último guardado o cargado: contra esto se mide si hay cambios. */
-  const [referencia, setReferencia] = useState<Estado>(BORRADOR_INICIAL);
+  const [referencia, setReferencia] = useState<Estado>(recuperado?.referencia ?? BORRADOR_INICIAL);
 
   /**
    * Texto EXACTO de la última plantilla precargada.
@@ -356,7 +454,9 @@ export default function TallerDiagramasPage() {
    * malos al cambiar de tipo: pisar lo escrito, o dejar en pantalla la plantilla
    * de un tipo que ya no es el seleccionado.
    */
-  const plantillaCargada = useRef<string>(BORRADOR_INICIAL.codigo);
+  // Lo restaurado es trabajo del alumno, nunca una plantilla intacta: se arranca
+  // sin plantilla vigente para que cambiar de tipo no lo sobrescriba.
+  const plantillaCargada = useRef<string>(recuperado ? '' : BORRADOR_INICIAL.codigo);
 
   const [vista, setVistaState] = useState<Vista>(leerVista);
 
@@ -399,8 +499,10 @@ export default function TallerDiagramasPage() {
   }, [aviso]);
 
   /**
-   * Recarga o cierre de pestaña con trabajo sin guardar. El taller no guarda
-   * solo, así que sin esto un F5 se lleva el diagrama entero sin preguntar.
+   * Recarga o cierre de pestaña con trabajo sin guardar: se pregunta antes de
+   * irse. El borrador local ya evitaría la pérdida, pero preguntar sigue siendo
+   * mejor que recuperar, y `beforeunload` solo cubre este caso —la navegación
+   * interna de React Router no lo dispara—.
    */
   useEffect(() => {
     if (!hayCambios) return;
@@ -408,6 +510,36 @@ export default function TallerDiagramasPage() {
     window.addEventListener('beforeunload', avisar);
     return () => window.removeEventListener('beforeunload', avisar);
   }, [hayCambios]);
+
+  /**
+   * Autoguardado del borrador local (ver `leerBorrador` para la limitación que
+   * compensa). Se escribe con retardo para no tocar `localStorage` en cada
+   * pulsación, y se borra en cuanto el editor vuelve a coincidir con lo guardado
+   * en BD: dejar ahí un borrador ya obsoleto haría aparecer el aviso de
+   * recuperación sin que hubiera nada que recuperar.
+   */
+  useEffect(() => {
+    if (!hayCambios) {
+      olvidarBorrador();
+      return;
+    }
+    const t = window.setTimeout(() => {
+      const borrador: Borrador = {
+        seleccion,
+        editor,
+        referencia,
+        guardadoEn: new Date().toISOString(),
+      };
+      try {
+        localStorage.setItem(BORRADOR_KEY, JSON.stringify(borrador));
+      } catch {
+        // Cuota llena o almacenamiento deshabilitado: no se puede hacer nada
+        // útil aquí, y avisar de un mecanismo interno solo distraería del
+        // trabajo. El aviso de `beforeunload` sigue cubriendo recarga y cierre.
+      }
+    }, 600);
+    return () => window.clearTimeout(t);
+  }, [hayCambios, seleccion, editor, referencia]);
 
   const cabeceras = useMemo(
     () => ({ 'Content-Type': 'application/json', 'x-session-token': sessionToken ?? '' }),
@@ -501,6 +633,19 @@ export default function TallerDiagramasPage() {
       return;
     }
     nuevoBorrador();
+  }
+
+  /**
+   * Renuncia al borrador restaurado y vuelve a la última versión guardada: se
+   * relee del servidor si el borrador pertenecía a un diagrama existente, y se
+   * empieza en limpio si era nuevo. Sin esto, la única forma de deshacerse de un
+   * borrador restaurado sería borrar su contenido a mano.
+   */
+  function descartarBorrador() {
+    setAvisoBorrador(false);
+    olvidarBorrador();
+    if (seleccion) void abrir(seleccion);
+    else nuevoBorrador();
   }
 
   function ejecutarPendiente() {
@@ -798,6 +943,26 @@ export default function TallerDiagramasPage() {
 
         {/* --- Editor --- */}
         <section className={styles.editorCol}>
+          {/* Aviso de recuperación: lo que se ve NO es lo que hay en la BD, y
+              callarlo llevaría a creer que el trabajo ya estaba guardado. */}
+          {avisoBorrador && recuperado && (
+            <div className={styles.confirmarDescarte} role="status">
+              <p className={styles.confirmarTexto}>
+                Se recuperó el trabajo sin guardar de la sesión anterior
+                {fechaLegible(recuperado.guardadoEn) ? ` (${fechaLegible(recuperado.guardadoEn)})` : ''}.
+                Sigue sin guardarse: usa «Guardar» para conservarlo.
+              </p>
+              <div className={styles.itemAcciones}>
+                <button type="button" className={styles.btnMini} onClick={() => setAvisoBorrador(false)}>
+                  Continuar editando
+                </button>
+                <button type="button" className={styles.btnMini} onClick={descartarBorrador}>
+                  Descartar recuperación
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Confirmación de descarte: se pregunta ANTES de mover nada, porque el
               taller no guarda solo y lo escrito no se puede recuperar. */}
           {pendiente && (
@@ -874,12 +1039,16 @@ export default function TallerDiagramasPage() {
               </label>
             </div>
 
+            {/* `aria-label` en cada botón: el único contenido es la ligadura de
+                Material Icons, así que sin él un lector de pantalla anuncia el
+                nombre del icono («code», «vertical_split», «visibility»). */}
             <div className={styles.vistaGrupo} role="group" aria-label="Vista del área de trabajo">
               <button
                 type="button"
                 className={vista === 'codigo' ? styles.vistaActiva : ''}
                 onClick={() => setVista('codigo')}
                 title="Solo el diagrama escrito"
+                aria-label="Solo el diagrama escrito"
                 aria-pressed={vista === 'codigo'}
               >
                 <Icon name="code" size="sm" />
@@ -889,6 +1058,7 @@ export default function TallerDiagramasPage() {
                 className={vista === 'ambos' ? styles.vistaActiva : ''}
                 onClick={() => setVista('ambos')}
                 title="Escritura y vista previa"
+                aria-label="Escritura y vista previa"
                 aria-pressed={vista === 'ambos'}
               >
                 <Icon name="vertical_split" size="sm" />
@@ -898,6 +1068,7 @@ export default function TallerDiagramasPage() {
                 className={vista === 'preview' ? styles.vistaActiva : ''}
                 onClick={() => setVista('preview')}
                 title="Solo la vista previa"
+                aria-label="Solo la vista previa"
                 aria-pressed={vista === 'preview'}
               >
                 <Icon name="visibility" size="sm" />

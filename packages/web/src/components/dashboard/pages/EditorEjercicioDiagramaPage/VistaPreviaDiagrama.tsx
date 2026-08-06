@@ -36,15 +36,23 @@ export default function VistaPreviaDiagrama({ codigo, motor, altura = 220 }: Pro
   }, [codigo]);
 
   useEffect(() => {
-    const destino = lienzo.current;
-    if (!destino) return;
-
     const fuente = codigoRetardado.trim();
+
+    // El caso «sin código» se resuelve ANTES de mirar la ref, y no después.
+    // Cuando el editor se vacía, este componente deja de pintar el <div> del
+    // lienzo, React pone la ref a `null` y un `return` temprano por ref nula
+    // saltaba por encima de esta limpieza: en pantalla quedaba «Sin código que
+    // dibujar» junto al error del código anterior, que ya no existe.
     if (!fuente) {
-      destino.replaceChildren();
+      // Normalmente la ref ya es nula, pero si el lienzo sigue montado hay que
+      // borrar el dibujo anterior: no puede quedar un diagrama sin código.
+      lienzo.current?.replaceChildren();
       setError('');
       return;
     }
+
+    const destino = lienzo.current;
+    if (!destino) return;
 
     let vigente = true;
     setPintando(true);

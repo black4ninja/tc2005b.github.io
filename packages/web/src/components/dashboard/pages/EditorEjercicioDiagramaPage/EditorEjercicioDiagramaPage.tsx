@@ -174,6 +174,49 @@ export default function EditorEjercicioDiagramaPage() {
     [metadatos, tipoDiagrama],
   );
 
+  // --- Cambios sin guardar --------------------------------------------------
+
+  /**
+   * Retrato del formulario completo, en texto, para poder compararlo con lo
+   * último cargado o guardado. Se serializa en vez de comparar campo a campo
+   * porque el ejercicio incluye listas anidadas (aserciones con sus parámetros,
+   * diagramas de contexto) que una comparación superficial no distinguiría.
+   *
+   * El `uid` queda fuera: es identidad de la interfaz y cambia con cada carga,
+   * así que incluirlo marcaría cambios donde no los hay.
+   */
+  const instantanea = useMemo(
+    () => JSON.stringify({
+      titulo,
+      slug,
+      orden,
+      categoriaId,
+      enunciado,
+      motor,
+      tipoDiagrama,
+      codigoInicial,
+      aserciones: aserciones.map(({ uid: _uid, ...a }) => a),
+      contextos: contextos.map(({ uid: _uid, ...c }) => c),
+      referencias: referencias.map((r) => r.codigo),
+      diagramaTrampa,
+    }),
+    [titulo, slug, orden, categoriaId, enunciado, motor, tipoDiagrama, codigoInicial,
+      aserciones, contextos, referencias, diagramaTrampa],
+  );
+
+  /** Retrato de la versión que hay en el servidor. `null` mientras se carga. */
+  const [instantaneaGuardada, setInstantaneaGuardada] = useState<string | null>(null);
+
+  // La línea base se toma en cuanto termina la carga, y una sola vez: es el
+  // estado del formulario cuando todavía nadie lo ha tocado. En un ejercicio
+  // nuevo el formulario arranca vacío y esa es su línea base.
+  useEffect(() => {
+    if (cargando || instantaneaGuardada !== null) return;
+    setInstantaneaGuardada(instantanea);
+  }, [cargando, instantaneaGuardada, instantanea]);
+
+  const hayCambiosSinGuardar = instantaneaGuardada !== null && instantanea !== instantaneaGuardada;
+
   // --- Aserciones ---------------------------------------------------------
 
   function agregarAsercion() {
@@ -256,16 +299,18 @@ export default function EditorEjercicioDiagramaPage() {
     if (p.tipo === 'opcion') {
       return (
         <div key={p.nombre} className={styles.parametro}>
-          <label className={styles.subLabel}>{etiqueta}</label>
-          <select
-            className={styles.select}
-            value={typeof valor === 'string' ? valor : ''}
-            onChange={(e) => setParametro(a.uid, p.nombre, e.target.value || undefined)}
-            disabled={guardando}
-          >
-            <option value="">Sin especificar</option>
-            {(p.opciones ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
-          </select>
+          <label className={styles.campoGrupo}>
+            <span className={styles.subLabel}>{etiqueta}</span>
+            <select
+              className={styles.select}
+              value={typeof valor === 'string' ? valor : ''}
+              onChange={(e) => setParametro(a.uid, p.nombre, e.target.value || undefined)}
+              disabled={guardando}
+            >
+              <option value="">Sin especificar</option>
+              {(p.opciones ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </label>
           {p.ayuda && <p className={styles.ayuda}>{p.ayuda}</p>}
         </div>
       );
@@ -374,6 +419,10 @@ export default function EditorEjercicioDiagramaPage() {
         const err = (await res.json().catch(() => ({}))) as { message?: string };
         throw new Error(err.message || 'Error al guardar');
       }
+      // Lo que hay en pantalla pasa a ser lo guardado: hoy se navega fuera justo
+      // después, pero dejar la línea base desfasada haría que «Verificar»
+      // quedara bloqueado sin cambios reales si esa navegación desaparece.
+      setInstantaneaGuardada(instantanea);
       navigate(`/admin/contenidos/${coleccionId}/diagramas`);
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'Error al guardar'));
@@ -428,50 +477,61 @@ export default function EditorEjercicioDiagramaPage() {
         <TextInput label="Orden" type="number" icon="sort" value={orden} onChange={setOrden} disabled={guardando} />
       </div>
 
+      {/* Los <label> ENVUELVEN a su control, igual que en las pantallas del
+          alumno: sin asociación, un lector de pantalla anuncia estos desplegables
+          sin nombre y el rótulo de al lado queda como texto suelto. El pie de
+          ayuda se deja FUERA del <label> porque un <p> no es contenido válido
+          dentro de una etiqueta y engordaría el nombre anunciado. */}
       <div className={styles.field}>
-        <label className={styles.label}>Categoría</label>
-        <select
-          className={styles.select}
-          value={categoriaId}
-          onChange={(e) => setCategoriaId(e.target.value)}
-          disabled={guardando}
-        >
-          <option value="">Sin categoría</option>
-          {/* Agrupadas por bloque; las que no tienen ninguno van sueltas al
-              final, que es también como las pinta el listado del alumno. */}
-          {bloques.map((b) => {
-            const suyas = categorias.filter((c) => c.bloqueId === b.id);
-            if (!suyas.length) return null;
-            return (
-              <optgroup key={b.id} label={b.nombre}>
-                {suyas.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-              </optgroup>
-            );
-          })}
-          {categorias
-            .filter((c) => !c.bloqueId || !bloques.some((b) => b.id === c.bloqueId))
-            .map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-        </select>
+        <label className={styles.campoGrupo}>
+          <span className={styles.label}>Categoría</span>
+          <select
+            className={styles.select}
+            value={categoriaId}
+            onChange={(e) => setCategoriaId(e.target.value)}
+            disabled={guardando}
+          >
+            <option value="">Sin categoría</option>
+            {/* Agrupadas por bloque; las que no tienen ninguno van sueltas al
+                final, que es también como las pinta el listado del alumno. */}
+            {bloques.map((b) => {
+              const suyas = categorias.filter((c) => c.bloqueId === b.id);
+              if (!suyas.length) return null;
+              return (
+                <optgroup key={b.id} label={b.nombre}>
+                  {suyas.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                </optgroup>
+              );
+            })}
+            {categorias
+              .filter((c) => !c.bloqueId || !bloques.some((b) => b.id === c.bloqueId))
+              .map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+          </select>
+        </label>
         <p className={styles.hint}>Las categorías se administran desde la lista de diagramas de la colección.</p>
       </div>
 
       <div className={styles.grid}>
         <div>
-          <label className={styles.label}>Motor</label>
-          <select className={styles.select} value={motor} onChange={(e) => setMotor(e.target.value as MotorDiagrama)} disabled={guardando}>
-            {MOTORES_DIAGRAMA.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
-          </select>
+          <label className={styles.campoGrupo}>
+            <span className={styles.label}>Motor</span>
+            <select className={styles.select} value={motor} onChange={(e) => setMotor(e.target.value as MotorDiagrama)} disabled={guardando}>
+              {MOTORES_DIAGRAMA.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
+            </select>
+          </label>
         </div>
         <div>
-          <label className={styles.label}>Tipo de diagrama</label>
-          <select
-            className={styles.select}
-            value={tipoDiagrama}
-            onChange={(e) => setTipoDiagrama(e.target.value as TipoDiagrama)}
-            disabled={guardando}
-          >
-            {TIPOS_DIAGRAMA.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
-          </select>
+          <label className={styles.campoGrupo}>
+            <span className={styles.label}>Tipo de diagrama</span>
+            <select
+              className={styles.select}
+              value={tipoDiagrama}
+              onChange={(e) => setTipoDiagrama(e.target.value as TipoDiagrama)}
+              disabled={guardando}
+            >
+              {TIPOS_DIAGRAMA.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+            </select>
+          </label>
           <p className={styles.hint}>Determina qué comprobaciones del catálogo están disponibles.</p>
         </div>
       </div>
@@ -539,42 +599,69 @@ export default function EditorEjercicioDiagramaPage() {
                     />
                     <span>Oculta</span>
                   </label>
+                  {/* `aria-label` con el número de fila: el contenido de estos
+                      botones es solo la ligadura de Material Icons, que se
+                      anuncia como «arrow_upward», y además hay una botonera
+                      idéntica por aserción. */}
                   <div className={styles.botonera}>
-                    <button type="button" className={styles.iconoBtn} onClick={() => moverAsercion(a.uid, -1)} disabled={guardando || i === 0} title="Subir">
+                    <button
+                      type="button"
+                      className={styles.iconoBtn}
+                      onClick={() => moverAsercion(a.uid, -1)}
+                      disabled={guardando || i === 0}
+                      title="Subir"
+                      aria-label={`Subir la aserción ${i + 1}`}
+                    >
                       <Icon name="arrow_upward" size="sm" />
                     </button>
-                    <button type="button" className={styles.iconoBtn} onClick={() => moverAsercion(a.uid, 1)} disabled={guardando || i === aserciones.length - 1} title="Bajar">
+                    <button
+                      type="button"
+                      className={styles.iconoBtn}
+                      onClick={() => moverAsercion(a.uid, 1)}
+                      disabled={guardando || i === aserciones.length - 1}
+                      title="Bajar"
+                      aria-label={`Bajar la aserción ${i + 1}`}
+                    >
                       <Icon name="arrow_downward" size="sm" />
                     </button>
-                    <button type="button" className={styles.quitar} onClick={() => quitarAsercion(a.uid)} disabled={guardando} title="Quitar aserción">
+                    <button
+                      type="button"
+                      className={styles.quitar}
+                      onClick={() => quitarAsercion(a.uid)}
+                      disabled={guardando}
+                      title="Quitar aserción"
+                      aria-label={`Quitar la aserción ${i + 1}`}
+                    >
                       <Icon name="delete" size="sm" />
                     </button>
                   </div>
                 </div>
 
-                <label className={styles.subLabel}>Comprobación</label>
-                <select
-                  className={styles.select}
-                  value={a.tipo}
-                  onChange={(e) => cambiarTipoAsercion(a.uid, e.target.value)}
-                  disabled={guardando}
-                >
-                  <option value="">Sin seleccionar</option>
-                  {FAMILIAS.map((f) => {
-                    const suyas = aplicables.filter((m) => m.familia === f.key);
-                    if (!suyas.length) return null;
-                    return (
-                      <optgroup key={f.key} label={f.label}>
-                        {suyas.map((m) => <option key={m.tipo} value={m.tipo}>{m.etiqueta}</option>)}
-                      </optgroup>
-                    );
-                  })}
-                  {/* La opción vigente entra aunque no aplique, o el desplegable
-                      se vería vacío y guardar la sustituiría en silencio. */}
-                  {noAplica && meta && (
-                    <option value={meta.tipo}>{meta.etiqueta} — no aplica a {etiquetaTipoDiagrama(tipoDiagrama)}</option>
-                  )}
-                </select>
+                <label className={styles.campoGrupo}>
+                  <span className={styles.subLabel}>Comprobación</span>
+                  <select
+                    className={styles.select}
+                    value={a.tipo}
+                    onChange={(e) => cambiarTipoAsercion(a.uid, e.target.value)}
+                    disabled={guardando}
+                  >
+                    <option value="">Sin seleccionar</option>
+                    {FAMILIAS.map((f) => {
+                      const suyas = aplicables.filter((m) => m.familia === f.key);
+                      if (!suyas.length) return null;
+                      return (
+                        <optgroup key={f.key} label={f.label}>
+                          {suyas.map((m) => <option key={m.tipo} value={m.tipo}>{m.etiqueta}</option>)}
+                        </optgroup>
+                      );
+                    })}
+                    {/* La opción vigente entra aunque no aplique, o el desplegable
+                        se vería vacío y guardar la sustituiría en silencio. */}
+                    {noAplica && meta && (
+                      <option value={meta.tipo}>{meta.etiqueta} — no aplica a {etiquetaTipoDiagrama(tipoDiagrama)}</option>
+                    )}
+                  </select>
+                </label>
 
                 {meta && <p className={styles.descripcion}>{meta.descripcion}</p>}
                 {noAplica && (
@@ -627,6 +714,7 @@ export default function EditorEjercicioDiagramaPage() {
                     onClick={() => setContextos((prev) => prev.filter((x) => x.uid !== c.uid))}
                     disabled={guardando}
                     title="Quitar diagrama de contexto"
+                    aria-label={`Quitar el diagrama de contexto ${i + 1}`}
                   >
                     <Icon name="delete" size="sm" />
                   </button>
@@ -637,16 +725,20 @@ export default function EditorEjercicioDiagramaPage() {
                 <TextInput label="Nombre (referencia)" placeholder="clases" value={c.nombre} onChange={(v) => setContexto(c.uid, 'nombre', v)} disabled={guardando} />
                 <TextInput label="Título visible (opcional)" value={c.titulo ?? ''} onChange={(v) => setContexto(c.uid, 'titulo', v)} disabled={guardando} />
                 <div>
-                  <label className={styles.subLabel}>Tipo</label>
-                  <select className={styles.select} value={c.tipo} onChange={(e) => setContexto(c.uid, 'tipo', e.target.value)} disabled={guardando}>
-                    {TIPOS_DIAGRAMA.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
-                  </select>
+                  <label className={styles.campoGrupo}>
+                    <span className={styles.subLabel}>Tipo</span>
+                    <select className={styles.select} value={c.tipo} onChange={(e) => setContexto(c.uid, 'tipo', e.target.value)} disabled={guardando}>
+                      {TIPOS_DIAGRAMA.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+                    </select>
+                  </label>
                 </div>
                 <div>
-                  <label className={styles.subLabel}>Motor</label>
-                  <select className={styles.select} value={c.motor} onChange={(e) => setContexto(c.uid, 'motor', e.target.value)} disabled={guardando}>
-                    {MOTORES_DIAGRAMA.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
-                  </select>
+                  <label className={styles.campoGrupo}>
+                    <span className={styles.subLabel}>Motor</span>
+                    <select className={styles.select} value={c.motor} onChange={(e) => setContexto(c.uid, 'motor', e.target.value)} disabled={guardando}>
+                      {MOTORES_DIAGRAMA.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
+                    </select>
+                  </label>
                 </div>
               </div>
 
@@ -688,6 +780,7 @@ export default function EditorEjercicioDiagramaPage() {
                     onClick={() => setReferencias((prev) => prev.filter((x) => x.uid !== r.uid))}
                     disabled={guardando}
                     title="Quitar referencia"
+                    aria-label={`Quitar el diagrama de referencia ${i + 1}`}
                   >
                     <Icon name="delete" size="sm" />
                   </button>
@@ -739,10 +832,30 @@ export default function EditorEjercicioDiagramaPage() {
           Comprueba el ejercicio, no la respuesta de un alumno: corre las comprobaciones contra las
           referencias y la trampa. Se ejecuta sobre la última versión guardada.
         </p>
-        <DashButton variant="outline" onClick={verificar} disabled={esNuevo || guardando || verificando}>
+        {/* Deshabilitado con cambios en pantalla: el servidor verifica la última
+            versión GUARDADA, así que el informe hablaría de un ejercicio distinto
+            del que se está viendo —y sus fallos, o su ausencia, serían
+            inexplicables—. El motivo va en el `title` y también a la vista,
+            porque un botón apagado no puede explicarse solo. */}
+        <DashButton
+          variant="outline"
+          onClick={verificar}
+          disabled={esNuevo || guardando || verificando || hayCambiosSinGuardar}
+          title={
+            hayCambiosSinGuardar
+              ? 'Hay cambios sin guardar: la verificación corre sobre la última versión guardada del ejercicio. Guarda primero.'
+              : undefined
+          }
+        >
           {verificando ? 'Verificando...' : 'Verificar'}
         </DashButton>
         {esNuevo && <p className={styles.hint}>Disponible una vez creado el ejercicio.</p>}
+        {!esNuevo && hayCambiosSinGuardar && (
+          <p className={styles.hint} role="status">
+            Hay cambios sin guardar. La verificación se ejecuta sobre la última versión guardada, así
+            que primero hay que guardar el ejercicio.
+          </p>
+        )}
 
         {informe && (
           <div className={`${styles.informe} ${informe.ok ? styles.informeOk : styles.informeMal}`}>
