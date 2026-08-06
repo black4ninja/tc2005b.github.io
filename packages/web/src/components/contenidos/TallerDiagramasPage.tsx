@@ -38,7 +38,17 @@ type Vista = 'codigo' | 'ambos' | 'preview';
 const VISTA_KEY = 'taller:vista';
 const LISTA_KEY = 'taller:lista';
 /** Copia local del trabajo sin guardar. Ver `leerBorrador` para el porqué. */
-const BORRADOR_KEY = 'taller:borrador';
+/**
+ * Clave del borrador, con el id del ALUMNO dentro.
+ *
+ * Sin él, el borrador es del navegador y no de la persona: cerrar sesión solo
+ * limpia el token, así que en un equipo de laboratorio el siguiente alumno se
+ * encontraba el trabajo sin guardar del anterior, con un `seleccion` apuntando a
+ * un diagrama ajeno cuyo guardado responde 404.
+ */
+function claveBorrador(usuarioId: string): string {
+  return `taller:borrador:${usuarioId}`;
+}
 
 /** La lista se ve por defecto: plegarla es una decisión del alumno. */
 function leerListaVisible(): boolean {
@@ -367,9 +377,10 @@ function estadoDesdeCrudo(valor: unknown): Estado | null {
  * viva la última que escriba. Tampoco sobrevive a un `localStorage` lleno o
  * deshabilitado (navegación privada), caso en el que se ignora sin avisar.
  */
-function leerBorrador(): Borrador | null {
+function leerBorrador(usuarioId: string | undefined): Borrador | null {
+  if (!usuarioId) return null;
   try {
-    const crudo = localStorage.getItem(BORRADOR_KEY);
+    const crudo = localStorage.getItem(claveBorrador(usuarioId));
     if (!crudo) return null;
     const dato: unknown = JSON.parse(crudo);
     if (typeof dato !== 'object' || dato === null) return null;
@@ -389,9 +400,10 @@ function leerBorrador(): Borrador | null {
   }
 }
 
-function olvidarBorrador() {
+function olvidarBorrador(usuarioId: string | undefined) {
+  if (!usuarioId) return;
   try {
-    localStorage.removeItem(BORRADOR_KEY);
+    localStorage.removeItem(claveBorrador(usuarioId));
   } catch {
     // Sin almacenamiento no hay nada que olvidar.
   }
@@ -410,7 +422,7 @@ function fechaLegible(iso: string): string {
 }
 
 export default function TallerDiagramasPage() {
-  const { sessionToken } = useAuth();
+  const { sessionToken, user } = useAuth();
 
   const {
     data,
@@ -436,7 +448,7 @@ export default function TallerDiagramasPage() {
    * en el primer render en lugar de en un efecto: así el editor nunca llega a
    * pintar la plantilla vacía que el alumno vería como «se ha perdido».
    */
-  const [recuperado] = useState<Borrador | null>(leerBorrador);
+  const [recuperado] = useState<Borrador | null>(() => leerBorrador(user?.id));
   /** El aviso se muestra hasta que el alumno lo cierra o descarta el borrador. */
   const [avisoBorrador, setAvisoBorrador] = useState<boolean>(recuperado !== null);
 
@@ -518,28 +530,48 @@ export default function TallerDiagramasPage() {
    * en BD: dejar ahí un borrador ya obsoleto haría aparecer el aviso de
    * recuperación sin que hubiera nada que recuperar.
    */
+  const escribirBorrador = useCallback(() => {
+    if (!user?.id) return;
+    const borrador: Borrador = { seleccion, editor, referencia, guardadoEn: new Date().toISOString() };
+    try {
+      localStorage.setItem(claveBorrador(user.id), JSON.stringify(borrador));
+    } catch {
+      // Cuota llena o almacenamiento deshabilitado: no se puede hacer nada útil
+      // aquí, y avisar de un mecanismo interno solo distraería del trabajo. El
+      // aviso de `beforeunload` sigue cubriendo recarga y cierre.
+    }
+  }, [user?.id, seleccion, editor, referencia]);
+
   useEffect(() => {
     if (!hayCambios) {
-      olvidarBorrador();
+      olvidarBorrador(user?.id);
       return;
     }
-    const t = window.setTimeout(() => {
-      const borrador: Borrador = {
-        seleccion,
-        editor,
-        referencia,
-        guardadoEn: new Date().toISOString(),
-      };
-      try {
-        localStorage.setItem(BORRADOR_KEY, JSON.stringify(borrador));
-      } catch {
-        // Cuota llena o almacenamiento deshabilitado: no se puede hacer nada
-        // útil aquí, y avisar de un mecanismo interno solo distraería del
-        // trabajo. El aviso de `beforeunload` sigue cubriendo recarga y cierre.
-      }
-    }, 600);
-    return () => window.clearTimeout(t);
-  }, [hayCambios, seleccion, editor, referencia]);
+    const t = window.setTimeout(escribirBorrador, 600);
+    return () => {
+      window.clearTimeout(t);
+      // Y se vuelca lo pendiente AL DESMONTAR, que es exactamente el momento que
+      // este mecanismo existe para cubrir: con solo el retardo, quien escribe
+      // sin pausas de 600 ms y navega perdía todo, porque la limpieza del efecto
+      // cancelaba la única escritura que quedaba por hacer.
+      escribirBorrador();
+    };
+  }, [hayCambios, escribirBorrador, user?.id]);
+
+  /**
+   * Un borrador restaurado apunta a un id que pudo cambiar o desaparecer desde
+   * otra pestaña o desde otro equipo. Si ya no está en la lista del alumno, se
+   * suelta la selección: guardar creará uno nuevo con ese contenido. Sin esto,
+   * «Guardar cambios» hacía PUT contra un id inexistente y respondía 404 una y
+   * otra vez, dejando el trabajo recuperado sin ninguna vía de guardado.
+   */
+  const reconciliado = useRef(false);
+  useEffect(() => {
+    if (reconciliado.current || cargandoLista || !recuperado?.seleccion) return;
+    reconciliado.current = true;
+    const sigueExistiendo = (data?.diagramas ?? []).some((d) => d.id === recuperado.seleccion);
+    if (!sigueExistiendo) setSeleccion(null);
+  }, [cargandoLista, data, recuperado]);
 
   const cabeceras = useMemo(
     () => ({ 'Content-Type': 'application/json', 'x-session-token': sessionToken ?? '' }),
@@ -588,6 +620,9 @@ export default function TallerDiagramasPage() {
     setReferencia(siguiente);
     setSeleccion(null);
     setError('');
+    // El aviso describía un borrador que ya no está en pantalla; dejarlo diría
+    // que hay trabajo sin guardar sobre algo recién empezado.
+    setAvisoBorrador(false);
   }
 
   const abrir = useCallback(
@@ -607,6 +642,7 @@ export default function TallerDiagramasPage() {
         setEditor(siguiente);
         setReferencia(siguiente);
         setSeleccion(id);
+        setAvisoBorrador(false);
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -643,9 +679,11 @@ export default function TallerDiagramasPage() {
    */
   function descartarBorrador() {
     setAvisoBorrador(false);
-    olvidarBorrador();
-    if (seleccion) void abrir(seleccion);
-    else nuevoBorrador();
+    // Se olvida DESPUÉS de que la relectura haya ido bien: si `abrir` falla —red
+    // caída, sesión expirada— el editor conserva lo recuperado, y borrar antes
+    // lo dejaría sin copia local y sin aviso.
+    if (seleccion) void abrir(seleccion).then(() => olvidarBorrador(user?.id));
+    else { nuevoBorrador(); olvidarBorrador(user?.id); }
   }
 
   function ejecutarPendiente() {
@@ -691,6 +729,7 @@ export default function TallerDiagramasPage() {
       setEditor(siguiente);
       setReferencia(siguiente);
       setSeleccion(diagrama.id);
+      setAvisoBorrador(false);
       recargarLista();
       setAviso(nuevo ? 'Diagrama creado.' : 'Cambios guardados.');
     } catch (e: unknown) {

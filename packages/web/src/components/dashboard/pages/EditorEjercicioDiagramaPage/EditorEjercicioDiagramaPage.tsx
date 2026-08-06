@@ -65,6 +65,27 @@ function contextoVacio(motor: MotorDiagrama, tipo: TipoDiagrama): ContextoEditab
 }
 
 /** Editor de un ejercicio de diseño de diagramas (crear/editar). */
+/** Serialización estable: ordena claves y omite lo vacío, a cualquier profundidad. */
+function canonico(valor: unknown): string {
+  const limpiar = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(limpiar);
+    if (v && typeof v === 'object') {
+      const salida: Record<string, unknown> = {};
+      for (const k of Object.keys(v as Record<string, unknown>).sort()) {
+        const hijo = limpiar((v as Record<string, unknown>)[k]);
+        // Un opcional en blanco y un opcional ausente son lo mismo para el
+        // servidor, así que también han de serlo aquí.
+        if (hijo === '' || hijo === undefined || hijo === null) continue;
+        if (Array.isArray(hijo) && hijo.length === 0) continue;
+        salida[k] = hijo;
+      }
+      return salida;
+    }
+    return v;
+  };
+  return JSON.stringify(limpiar(valor));
+}
+
 export default function EditorEjercicioDiagramaPage() {
   const { id: coleccionId, ejercicioId } = useParams<{ id: string; ejercicioId: string }>();
   const esNuevo = !ejercicioId || ejercicioId === 'nuevo';
@@ -97,6 +118,8 @@ export default function EditorEjercicioDiagramaPage() {
   const [borradores, setBorradores] = useState<Record<string, string>>({});
 
   const [cargando, setCargando] = useState(!esNuevo);
+  /** ¿La carga trajo el ejercicio? En uno nuevo no hay nada que traer. */
+  const [cargaOk, setCargaOk] = useState(esNuevo);
   const [guardando, setGuardando] = useState(false);
   const [verificando, setVerificando] = useState(false);
   const [informe, setInforme] = useState<InformeVerificacionDiagrama | null>(null);
@@ -122,6 +145,7 @@ export default function EditorEjercicioDiagramaPage() {
       setContextos((ejercicio.diagramasContexto ?? []).map((d) => ({ ...d, uid: nuevoUid() })));
       setReferencias((ejercicio.diagramasReferencia ?? []).map((codigo) => ({ uid: nuevoUid(), codigo })));
       setDiagramaTrampa(ejercicio.diagramaTrampa ?? '');
+      setCargaOk(true);
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'No se pudo cargar el ejercicio'));
     } finally {
@@ -185,8 +209,15 @@ export default function EditorEjercicioDiagramaPage() {
    * El `uid` queda fuera: es identidad de la interfaz y cambia con cada carga,
    * así que incluirlo marcaría cambios donde no los hay.
    */
+  // Retrato CANÓNICO: claves ordenadas y campos vacíos descartados.
+  //
+  // Comparar el `JSON.stringify` en crudo comparaba la FORMA del objeto, no su
+  // contenido: el servidor omite los opcionales en blanco, así que tocar y
+  // vaciar un «Rótulo (opcional)» dejaba `rotulo: ''` donde la versión guardada
+  // no tenía la clave, y el editor se quedaba con «cambios sin guardar» para
+  // siempre, sin forma de deshacerlo desde la interfaz.
   const instantanea = useMemo(
-    () => JSON.stringify({
+    () => canonico({
       titulo,
       slug,
       orden,
@@ -210,12 +241,18 @@ export default function EditorEjercicioDiagramaPage() {
   // La línea base se toma en cuanto termina la carga, y una sola vez: es el
   // estado del formulario cuando todavía nadie lo ha tocado. En un ejercicio
   // nuevo el formulario arranca vacío y esa es su línea base.
+  // Solo se toma línea base si la carga fue BIEN. Si falló, el formulario quedó
+  // vacío y congelar esa nada como línea base dejaba «Verificar» habilitado
+  // sobre una pantalla en blanco: el informe describiría el ejercicio real
+  // guardado, que no es el que se está viendo.
   useEffect(() => {
-    if (cargando || instantaneaGuardada !== null) return;
+    if (cargando || !cargaOk || instantaneaGuardada !== null) return;
     setInstantaneaGuardada(instantanea);
-  }, [cargando, instantaneaGuardada, instantanea]);
+  }, [cargando, cargaOk, instantaneaGuardada, instantanea]);
 
   const hayCambiosSinGuardar = instantaneaGuardada !== null && instantanea !== instantaneaGuardada;
+  /** Sin línea base no se puede afirmar nada sobre lo que hay en pantalla. */
+  const sinLineaBase = instantaneaGuardada === null;
 
   // --- Aserciones ---------------------------------------------------------
 
@@ -840,7 +877,7 @@ export default function EditorEjercicioDiagramaPage() {
         <DashButton
           variant="outline"
           onClick={verificar}
-          disabled={esNuevo || guardando || verificando || hayCambiosSinGuardar}
+          disabled={esNuevo || guardando || verificando || hayCambiosSinGuardar || sinLineaBase}
           title={
             hayCambiosSinGuardar
               ? 'Hay cambios sin guardar: la verificación corre sobre la última versión guardada del ejercicio. Guarda primero.'
