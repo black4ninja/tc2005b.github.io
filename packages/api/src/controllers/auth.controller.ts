@@ -3,6 +3,8 @@ import { AppUser } from '../models/index.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { getGruposDeAlumno } from '../services/grupo-alumno.service.js';
 import { getGruposDeStaff } from '../services/grupo-admin.service.js';
+import { setSessionCookie } from '../utils/session-cookie.js';
+import { config } from '../config/index.js';
 
 async function buildGruposExtras(
   user: AppUser,
@@ -55,6 +57,24 @@ export async function getCurrentUser(req: Request, res: Response): Promise<void>
   if (!req.appUser) {
     res.status(401).json({ status: 'error', message: 'Not authenticated' });
     return;
+  }
+
+  // Repone la cookie de sesión si falta.
+  //
+  // El SPA guarda su token en localStorage y lo manda en `x-session-token`, pero
+  // un `<img>` NO puede mandar cabeceras: las imágenes del CMS
+  // (`/api/contenidos/recursos/…`) dependen exclusivamente de la cookie. Si el
+  // token sobrevive y la cookie no —se limpiaron cookies, se caducó antes, o la
+  // sesión se abrió antes de que la cookie existiera— la app parece funcionar
+  // (el texto carga por cabecera) y solo se rompen las imágenes, en silencio y
+  // sin ningún mensaje que explique por qué.
+  //
+  // `/auth/me` corre en cada arranque de la app con el token en la cabecera y ya
+  // validado por `identifyUser`, así que es el punto natural para volver a
+  // sembrarla: con una recarga, el usuario se recupera solo.
+  const enCabecera = req.headers['x-session-token'];
+  if (typeof enCabecera === 'string' && enCabecera && !req.cookies?.[config.cookies.name]) {
+    setSessionCookie(res, enCabecera);
   }
 
   const extras = await buildGruposExtras(req.appUser);

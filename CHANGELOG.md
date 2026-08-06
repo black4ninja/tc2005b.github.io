@@ -41,6 +41,15 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   al bajar a leer qué hay que escribir.
 
 ### Fixed
+- **Las imágenes del visor fallaban con 401 mientras el texto cargaba bien.** El
+  SPA se autentica con el token de localStorage en la cabecera `x-session-token`,
+  pero **un `<img>` no puede mandar cabeceras**: las imágenes del CMS dependen en
+  exclusiva de la cookie de sesión. Si el token sobrevivía y la cookie no —cookies
+  limpiadas, caducada antes, o sesión abierta antes de que la cookie existiera— la
+  aplicación parecía funcionar y solo se rompían las imágenes, sin ningún aviso.
+  Ahora `/auth/me`, que corre en cada arranque con el token ya validado, vuelve a
+  sembrar la cookie si falta: con una recarga el usuario se recupera solo, sin
+  tener que cerrar sesión.
 - **Los diagramas se dibujaban siempre en claro, aunque el visor estuviera en
   oscuro.** El hook `useDiagramas` ya aceptaba un flag `oscuro` y ambos motores
   (Mermaid y PlantUML) lo soportan, pero `VisorContenidoPage` **nunca se lo
