@@ -93,8 +93,14 @@ export function marcarSvg(svg: SVGSVGElement): void {
     (caja.ancho * 0.95) / Math.cos(Math.PI / 6),
     (caja.alto * 0.95) / Math.sin(Math.PI / 6),
   );
-  const tamanoUso = Math.max(12, largo / (TEXTO_USO.length * RATIO_CARACTER));
+  const tamanoUso = largo / (TEXTO_USO.length * RATIO_CARACTER);
 
+  // Un suelo de tamaño anularía la cota de encaje de arriba: el texto mediría
+  // siempre lo mismo y se saldría del lienzo, que además recorta. En un dibujo
+  // tan pequeño que el aviso no cabe legible se omite el aviso y queda solo el
+  // crédito; una marca fuera del área visible no marca nada.
+  const TAMANO_MINIMO = 10;
+  if (tamanoUso >= TAMANO_MINIMO) {
   grupo.appendChild(
     crearTexto(TEXTO_USO, {
       x: String(centroX),
@@ -110,6 +116,7 @@ export function marcarSvg(svg: SVGSVGElement): void {
       'letter-spacing': '0.04em',
     }),
   );
+  }
 
   // El crédito va ARRIBA A LA IZQUIERDA, no abajo a la derecha: ahí se montaba
   // sobre la última caja de los diagramas que crecen hacia abajo, que son la

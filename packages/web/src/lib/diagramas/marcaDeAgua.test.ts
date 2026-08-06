@@ -21,6 +21,10 @@ function svgCon(atributos: Record<string, string>): SVGSVGElement {
   return svg;
 }
 
+function svg2textos(svg: SVGSVGElement): string[] {
+  return textos(svg);
+}
+
 function textos(svg: SVGSVGElement): string[] {
   return [...svg.querySelectorAll('[data-marca-agua] text')].map((t) => t.textContent ?? '');
 }
@@ -79,12 +83,28 @@ describe('marcarSvg', () => {
     expect(ocupaDeAncho).toBeGreaterThan(0.8);
   });
 
-  it('el aviso girado no se sale del lienzo', () => {
-    const estrecho = svgCon({ viewBox: '0 0 200 1200' });
-    marcarSvg(estrecho);
-    const largo = tamanoAviso(estrecho) * TEXTO.length * 0.55;
-    // A -30°, el texto ocupa `largo · cos30` en horizontal.
-    expect(largo * Math.cos(Math.PI / 6)).toBeLessThanOrEqual(200);
+  it('el aviso girado nunca se sale del lienzo, sea cual sea su forma', () => {
+    // El suelo de tamaño que había antes anulaba la cota de encaje: el texto
+    // medía siempre lo mismo y desbordaba los lienzos pequeños, que además
+    // recortan. El test anterior usaba 200×1200, justo por encima del umbral, y
+    // por eso no ejercitaba el caso que fallaba.
+    for (const [ancho, alto] of [[200, 1200], [1200, 80], [400, 300], [900, 600]]) {
+      const svg = svgCon({ viewBox: `0 0 ${ancho} ${alto}` });
+      marcarSvg(svg);
+      const aviso = svg.querySelector('[data-marca-agua] text[transform]');
+      if (!aviso) continue; // se omite cuando no cabe legible; se comprueba aparte
+      const largo = Number(aviso.getAttribute('font-size')) * TEXTO.length * 0.55;
+      expect(largo * Math.cos(Math.PI / 6), `ancho en ${ancho}x${alto}`).toBeLessThanOrEqual(ancho);
+      expect(largo * Math.sin(Math.PI / 6), `alto en ${ancho}x${alto}`).toBeLessThanOrEqual(alto);
+    }
+  });
+
+  it('en un lienzo donde el aviso no cabe legible, se omite y queda el crédito', () => {
+    // Preferible a forzarlo: una marca fuera del área visible no marca nada, y
+    // encima tapa el dibujo por el camino.
+    const diminuto = svgCon({ viewBox: '0 0 120 500' });
+    marcarSvg(diminuto);
+    expect(svg2textos(diminuto)).toEqual(['developed by meeplab']);
   });
 
   it('el crédito va arriba a la izquierda, donde no tapa el dibujo', () => {
