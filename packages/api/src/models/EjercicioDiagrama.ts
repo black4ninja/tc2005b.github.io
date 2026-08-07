@@ -228,6 +228,34 @@ export class EjercicioDiagrama extends BaseModel {
       updatedAt: this.updatedAt,
     };
   }
+
+  /**
+   * Representación para el LISTADO de admin, que se sirve desde una consulta con
+   * `select()` y por tanto NO trae los campos pesados.
+   *
+   * Va aparte de `toSafeJSON` a propósito: sobre un objeto parcial, aquel llama a
+   * los getters de lo que no se pidió y devuelve sus valores por defecto
+   * —`enunciado: ""`, `diagramasReferencia: []`, `diagramaTrampa: ""`—, con lo que
+   * el cliente no puede distinguir «no lo pedí» de «está vacío». Hoy la tabla no
+   * los usa, pero cualquier flujo que reenviara un objeto del listado en un `PUT`
+   * borraría enunciado, código inicial, referencias y trampa, porque el `update`
+   * acepta esas claves con `!== undefined`. Enumerar aquí solo lo que la consulta
+   * pide cierra esa puerta: lo que no viaja no puede volver vacío.
+   */
+  toResumenJSON(): Record<string, unknown> {
+    return {
+      id: this.id,
+      categoriaId: this.getCategoria()?.id ?? null,
+      titulo: this.getTitulo(),
+      slug: this.getSlug(),
+      orden: this.getOrden(),
+      motor: this.getMotor(),
+      tipoDiagrama: this.getTipoDiagrama(),
+      aserciones: this.getAserciones(),
+      esEjemplo: this.getEsEjemplo(),
+      publicado: this.getPublicado(),
+    };
+  }
 }
 
 Parse.Object.registerSubclass('EjercicioDiagrama', EjercicioDiagrama);

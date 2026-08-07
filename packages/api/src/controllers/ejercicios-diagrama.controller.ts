@@ -162,7 +162,10 @@ export async function listEjerciciosDiagrama(req: Request, res: Response): Promi
     q.ascending('orden');
     q.limit(1000);
     const ejercicios = await q.find({ useMasterKey: true });
-    res.json({ status: 'ok', ejercicios: ejercicios.map((e) => e.toSafeJSON()) });
+    // `toResumenJSON` y NO `toSafeJSON`: sobre un objeto traído con `select()`,
+    // el segundo sirve los campos ausentes con su valor por defecto y el cliente
+    // no puede distinguirlos de un campo vacío de verdad.
+    res.json({ status: 'ok', ejercicios: ejercicios.map((e) => e.toResumenJSON()) });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al obtener ejercicios de diagrama' });
   }

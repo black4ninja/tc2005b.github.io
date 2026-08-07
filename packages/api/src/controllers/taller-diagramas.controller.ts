@@ -9,13 +9,23 @@ import { TIPOS_DIAGRAMA, type Motor, type TipoDiagrama } from '../services/juez-
  * Taller de diagramas: CRUD de los diagramas libres de CADA usuario.
  *
  * No cuelga de una colección ni de un ejercicio, así que no usa el slug del
- * visor. Lo que sí comparte con el módulo es la puerta: solo entra quien tenga
- * «diagramas» encendido en alguna de sus colecciones, para que el taller no
- * aparezca en cursos donde el módulo no se usa.
+ * visor.
  *
- * Cada operación comprueba la PROPIEDAD del diagrama, no solo la sesión: sin
- * eso, conocer un identificador ajeno bastaría para leer o borrar el trabajo de
- * otro alumno.
+ * Hay DOS comprobaciones distintas, y no cubren lo mismo a propósito:
+ *
+ * - **La puerta del módulo** (`tieneAcceso`) cubre `list` y `create`, que son las
+ *   que ofrecen el taller: si «diagramas» no está encendido en ninguna colección
+ *   del alumno, el taller no aparece ni se puede empezar nada nuevo.
+ * - **La propiedad del objeto** cubre además `get`, `update` y `delete`. Estas
+ *   tres NO pasan por la puerta: un diagrama del taller es del alumno y no del
+ *   curso, así que apagar el módulo —o cambiar de grupo— no debe convertir su
+ *   propio trabajo en algo que ya no puede abrir ni borrar. Sin la lista no se
+ *   llega a ellos desde la interfaz, y por identificador solo alcanza a los
+ *   suyos, así que esto no abre nada de nadie más.
+ *
+ * Que la propiedad se compruebe en TODAS las operaciones no es opcional: sin eso,
+ * conocer un identificador ajeno bastaría para leer o borrar el trabajo de otro
+ * alumno.
  */
 
 const MOTORES: Motor[] = ['mermaid', 'plantuml'];

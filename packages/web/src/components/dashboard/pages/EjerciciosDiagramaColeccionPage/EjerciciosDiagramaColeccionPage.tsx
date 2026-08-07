@@ -8,7 +8,7 @@ import Icon from '../../atoms/Icon/Icon';
 import CategoriasEjerciciosModal from '../../organisms/CategoriasEjerciciosModal/CategoriasEjerciciosModal';
 import { etiquetaMotorDiagrama, etiquetaTipoDiagrama } from '../../../../lib/diagramas/etiquetas';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
-import type { EjercicioDiagramaData } from '../../../../types/contenidos';
+import type { EjercicioDiagramaResumen } from '../../../../types/contenidos';
 import styles from './EjerciciosDiagramaColeccionPage.module.css';
 
 const API_BASE = '/api';
@@ -26,7 +26,7 @@ export default function EjerciciosDiagramaColeccionPage() {
   const { id } = useParams<{ id: string }>();
   const { sessionToken } = useAuth();
   const navigate = useNavigate();
-  const [ejercicios, setEjercicios] = useState<EjercicioDiagramaData[]>([]);
+  const [ejercicios, setEjercicios] = useState<EjercicioDiagramaResumen[]>([]);
   const [nombreColeccion, setNombreColeccion] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -46,7 +46,7 @@ export default function EjerciciosDiagramaColeccionPage() {
         headers: { 'x-session-token': sessionToken ?? '' },
       });
       if (!res.ok) throw new Error('Error al cargar ejercicios de diagrama');
-      const data = (await res.json()) as { ejercicios?: EjercicioDiagramaData[] };
+      const data = (await res.json()) as { ejercicios?: EjercicioDiagramaResumen[] };
       setEjercicios(data.ejercicios ?? []);
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'Error al cargar ejercicios de diagrama'));
@@ -105,7 +105,7 @@ export default function EjerciciosDiagramaColeccionPage() {
   }, [categorias, bloques]);
   const nombreCategoria = (catId: string | null) => (catId && etiquetaPorCategoria.get(catId)) || '—';
 
-  async function handleTogglePublicado(ej: EjercicioDiagramaData) {
+  async function handleTogglePublicado(ej: EjercicioDiagramaResumen) {
     setError('');
     try {
       const res = await fetch(`${API_BASE}/admin/ejercicios-diagrama/${ej.id}/publicacion`, {
@@ -121,7 +121,7 @@ export default function EjerciciosDiagramaColeccionPage() {
     }
   }
 
-  async function handleDelete(ej: EjercicioDiagramaData) {
+  async function handleDelete(ej: EjercicioDiagramaResumen) {
     if (!(await confirmar({ titulo: `¿Eliminar el ejercicio "${ej.titulo}"?`, texto: 'Esta acción no se puede deshacer.', confirmar: 'Eliminar', peligro: true }))) return;
     try {
       const res = await fetch(`${API_BASE}/admin/ejercicios-diagrama/${ej.id}`, { method: 'DELETE', headers });
@@ -132,7 +132,7 @@ export default function EjerciciosDiagramaColeccionPage() {
     }
   }
 
-  const columnHelper = createColumnHelper<EjercicioDiagramaData>();
+  const columnHelper = createColumnHelper<EjercicioDiagramaResumen>();
   const columns = [
     columnHelper.accessor('orden', { header: 'Orden' }),
     columnHelper.accessor('titulo', { header: 'Título' }),
@@ -172,7 +172,7 @@ export default function EjerciciosDiagramaColeccionPage() {
     }),
   ];
 
-  const getActions = (ej: EjercicioDiagramaData): ActionItem[] => [
+  const getActions = (ej: EjercicioDiagramaResumen): ActionItem[] => [
     { label: 'Editar', icon: 'edit', onClick: () => navigate(`/admin/contenidos/${id}/diagramas/${ej.id}`) },
     {
       label: ej.publicado ? 'Despublicar' : 'Publicar',

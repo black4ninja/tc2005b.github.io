@@ -143,6 +143,20 @@ export interface EjercicioDiagramaData {
   autorId: string | null;
 }
 
+/**
+ * Lo que devuelve el LISTADO de admin, que no trae los campos pesados.
+ *
+ * Es un tipo propio y no `Partial<EjercicioDiagramaData>` para que el compilador
+ * impida reenviar un elemento del listado en un `PUT`: ahí las claves ausentes se
+ * interpretarían como «déjalo vacío» y borrarían enunciado, código y soluciones.
+ * Para editar hay que pedir el ejercicio completo.
+ */
+export type EjercicioDiagramaResumen = Pick<
+  EjercicioDiagramaData,
+  'id' | 'categoriaId' | 'titulo' | 'slug' | 'orden'
+  | 'motor' | 'tipoDiagrama' | 'aserciones' | 'esEjemplo' | 'publicado'
+>;
+
 export type FamiliaAsercion = 'lexica' | 'semantica' | 'cruzada';
 
 export type TipoParametroAsercion = 'texto' | 'numero' | 'lista-texto' | 'opcion';
