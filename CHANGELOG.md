@@ -8,80 +8,91 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- **Temario de arquitectura MVVM reescrito y ampliado a 36 ejercicios** en la
-  colección `tc2007b`: 12 conceptos × 3 niveles (guiado, base y reto). Los 12
-  anteriores quedan **despublicados, no borrados**.
-  - Los enunciados explican de dónde viene cada concepto, dónde más se usa fuera
-    del móvil y qué problema resuelve, no solo qué escribir. Dominio neutro
-    (`Item`) en lugar del dominio del wiki.
-  - El vocabulario de arquitectura sigue siendo el de cada pista —`UseCase` en
-    Android, `Requirement` en iOS—, porque es el que el alumno encontrará en la
-    documentación de su plataforma.
-  - 90 soluciones de referencia, mínimo dos por lenguaje y con estrategias
-    distintas: dos soluciones válidas con veredictos distintos delatan un caso
-    sobreajustado.
-  - Las restricciones del juez se documentan en el enunciado en lugar de
-    esquivarse: Combine no existe en Linux y no hay corrutinas, así que
-    `@Published`, `StateFlow` y `LiveData` no compilan en el servidor y se
-    sustituyen por un callback, con su tabla de equivalencias por plataforma.
-- **Herramienta de medida de comprensión** (`packages/api/scripts/estudio-comprension.ts`):
-  exporta lo que ve un alumno, evalúa código candidato contra el ejercicio real
-  y calcula métricas de carga cognitiva.
+- **Núcleo del juez de diagramas UML** (`packages/api/src/services/juez-diagramas/`),
+  primera fase del módulo de ejercicios de diseño. Evalúa el **modelo** del
+  diagrama, no su texto: sintaxis, léxico (nombres y convenciones) y semántica
+  (estructura).
+  - Corre Mermaid en el servidor sin navegador (`jsdom` solo porque lo necesita
+    DOMPurify) y extrae el modelo con `mermaidAPI.getDiagramFromText`: clases con
+    visibilidad, tipo y retorno; secuencia con mensajes síncronos, asíncronos y
+    de retorno; estados con transiciones y sus disparadores.
+  - **Sin sandbox, sin compilador y sin cola**: la evaluación es síncrona y tarda
+    milisegundos, así que `EnvioDiagrama` no necesita estados de trabajo.
+  - **27 aserciones** en un catálogo cerrado y declarativo. El autor elige y
+    parametriza; el servidor no ejecuta código de nadie y cada comprobación se
+    describe sola al alumno en español, de modo que el rótulo no puede
+    desincronizarse de lo que se comprueba.
+  - **Aserciones cruzadas entre diagramas** (`mensaje-existe-como-operacion`,
+    `disparador-existe-como-operacion`, `participante-existe-como-clase`): son el
+    eje del módulo, porque los errores dominantes medidos en alumnos no son de
+    notación local sino de trazabilidad entre vistas.
+  - Los códigos numéricos de Mermaid —que no son API contractual— quedan
+    confinados a `codigos-mermaid.ts`, con un **test-alambre** que repite el
+    experimento del que salió la tabla y falla si una actualización la mueve.
+  - Modelos `EjercicioDiagrama` y `EnvioDiagrama`, y módulo de contenido
+    `diagramas`, **opt-in** como `ejercicios`.
+- **Autoría de ejercicios de diagrama en Contenidos**: CRUD de admin, editor con
+  vista previa en vivo del diagrama y constructor de comprobaciones a partir del
+  catálogo, sin escribir JSON a mano.
+  - **Verificación de autoría** (`diagramas-verificacion.service.ts` y
+    `scripts/verificar-ejercicios-diagrama.ts`): cada diagrama de referencia debe
+    pasar todas las comprobaciones y el **diagrama trampa** debe fallar alguna.
+    Lo primero delata aserciones sobreajustadas; lo segundo, aserciones tan laxas
+    que el ejercicio se aprueba solo. **Publicar exige pasarla**, no solo tener
+    comprobaciones: a diferencia de un caso de prueba, una aserción mal calibrada
+    no se nota al leerla.
 
-### Changed
-- **Los enunciados muestran las firmas de lo ya proporcionado.** Decir que un
-  tipo "ya está declarado" sin enseñarlo obligaba a adivinar los nombres, y en
-  lenguajes de tipado estático eso impide entregar aunque el razonamiento sea
-  correcto.
-- **El contrato de ejecución se lee antes que la firma**, y los casos se rotulan
-  según lo que la entrada significa: en modo plantilla es el nombre de una
-  comprobación, no datos que el alumno lea. En modo programa no cambia, porque
-  ahí la entrada sí son datos.
-- **El editor del solver acompaña al scroll del enunciado**, que dejaba de verse
-  al bajar a leer qué hay que escribir.
+- **32 ejercicios de diagrama** publicados en `tc2007b`, cubriendo los **ocho
+  tipos** en tres niveles cada uno (guiado, base y reto): clases, secuencia,
+  estados, entidad-relación, flujo, casos de uso, componentes y paquetes.
+  - **Un «ejercicio completo» por tipo**, los ocho sobre el mismo caso de reserva
+    de salas y cada uno **al principio de la categoría de su tipo**: abren con el
+    diagrama ya terminado, llevan el distintivo en el propio nombre y no cuentan
+    para el progreso. Su código inicial ES su primera
+    solución de referencia, así que la verificación demuestra que enviarlos sin
+    tocar nada pasa.
+  - Documento guía «Un caso completo: reserva de salas», con el mismo sistema
+    modelado en las tres vistas y la tabla de correspondencias entre ellas.
+    Importado como BORRADOR.
+  - Cada enunciado explica de dónde viene la notación, qué significa cada
+    elemento y dónde se usa la misma idea fuera de UML, con la sintaxis del
+    diagramador separada de la teoría.
+  - **Cuatro de los nueve usan comprobaciones cruzadas** contra un diagrama de
+    clases dado: es donde están los errores dominantes medidos en alumnos.
+  - Todos pasan la verificación de autoría: dos soluciones válidas y distintas
+    cumplen todas las comprobaciones y el diagrama trampa falla alguna.
+- **Marca de agua en los diagramas renderizados**: aviso inclinado «Solo para
+  fines académicos» y crédito «developed by meeplab». Se inyecta dentro del SVG
+  y no como capa de CSS, así que viaja con la imagen al guardarla o copiarla, y
+  se coloca a partir del lienzo real del diagrama para no salirse en los
+  pequeños ni quedar invisible en los grandes. Se dibuja con `currentColor` para
+  seguir a la paleta del tema: un gris fijo desaparecía en el visor en oscuro,
+  justo donde el resto del diagrama sí se ve.
+- **Taller de diagramas**: espacio para dibujar libremente, sin ejercicio ni
+  juez, con selector de motor y de tipo, plantillas de arranque para los ocho
+  tipos en ambos motores, vista previa en vivo y el mismo control de vista de
+  tres estados que el solver.
+  - Los diagramas se **guardan con nombre, se listan y se editan después**
+    (`DiagramaTaller`, CRUD bajo `/me/diagramas-taller`). Pertenecen al alumno y
+    no al curso, así que sobreviven a un cambio de grupo.
+  - Cada operación comprueba la **propiedad** del objeto, no solo la sesión, y
+    un diagrama ajeno responde 404 en lugar de 403: decir «existe pero no es
+    tuyo» confirmaría que el identificador es real.
+  - Entra en el menú como **«Diagramar»**, hermano de «Diagramas» y no como una
+    opción dentro de los ejercicios: dibujar libremente no es resolver nada.
+- **Plegar el enunciado** en los solvers de diagramas y de programación, y
+  control de vista de tres estados en el de diagramas, con los mismos iconos que
+  el editor del CMS. Las preferencias se recuerdan entre sesiones.
+- **Experiencia del alumno en Diagramas**: listado agrupado por bloque y
+  categoría con su progreso, y solver con enunciado, diagramas de contexto ya
+  dibujados, editor con vista previa en vivo, historial de envíos y la columna
+  del editor siguiendo el scroll.
+  - **Sin cola ni sondeo**: el veredicto llega en la respuesta de la propia
+    petición, porque juzgar un diagrama cuesta milisegundos. El módulo de código
+    necesita `pendiente → ejecutando → listo` solo porque compilar tarda.
+  - Las comprobaciones **ocultas** se listan con su marca de fallo pero sin el
+    porqué, que el servidor omite antes de responder.
 
-### Fixed
-- **Las imágenes del visor fallaban con 401 mientras el texto cargaba bien.** El
-  SPA se autentica con el token de localStorage en la cabecera `x-session-token`,
-  pero **un `<img>` no puede mandar cabeceras**: las imágenes del CMS dependen en
-  exclusiva de la cookie de sesión. Si el token sobrevivía y la cookie no —cookies
-  limpiadas, caducada antes, o sesión abierta antes de que la cookie existiera— la
-  aplicación parecía funcionar y solo se rompían las imágenes, sin ningún aviso.
-  Ahora `/auth/me`, que corre en cada arranque con el token ya validado, vuelve a
-  sembrar la cookie si falta: con una recarga el usuario se recupera solo, sin
-  tener que cerrar sesión.
-- **Los diagramas se dibujaban siempre en claro, aunque el visor estuviera en
-  oscuro.** El hook `useDiagramas` ya aceptaba un flag `oscuro` y ambos motores
-  (Mermaid y PlantUML) lo soportan, pero `VisorContenidoPage` **nunca se lo
-  pasaba**: quedaba en su valor por defecto `false`. Sobre fondo oscuro, las
-  cajas salían blancas y las flechas y etiquetas —negras— eran directamente
-  invisibles. Ahora el flag viaja desde el estado del tema.
-  Además, el `<pre>` original ya **no se borra** al dibujar el SVG, sino que se
-  oculta, y la limpieza del efecto deshace lo pintado: sin eso, cambiar de tema
-  no repintaba nada porque no quedaba bloque que procesar, y el diagrama se
-  quedaba con la paleta anterior hasta recargar la página.
-- **Las pantallas de ejercicios fallaban con "No se pudo cargar".** Los dos
-  listados pedían el documento completo de cada ejercicio —enunciado, plantillas,
-  casos y soluciones— para construir respuestas que no usan ninguno de esos
-  campos. Con 46 ejercicios eran 0.79 MB y hasta 37 s contra Atlas, por encima
-  del timeout de 15 s del front: la vista de alumno fallaba de forma
-  intermitente y la de admin siempre. Seleccionando solo los campos devueltos,
-  14 KB y medio segundo.
-- **Los diagramas no se dibujaban en el enunciado de un ejercicio.** Al cablear el
-  hook en el solver se añadieron el `import` y el `ref`, pero **nunca la llamada**,
-  así que el bloque se quedaba como código. El visor y el editor sí la tenían.
-  - Se activa `noUnusedLocals` en el type-check del web, que es el guardarraíl que
-    lo habría cazado: con la llamada ausente, el import queda sin usar y `tsc`
-    falla. Comprobado reintroduciendo el bug a propósito. De paso se retiran las
-    7 variables e imports muertos que impedían encender el flag.
-- **Los diagramas con salto de línea en una etiqueta no se dibujaban.** `svgSeguro`
-  parseaba el SVG como `image/svg+xml`, que es **XML estricto**, y Mermaid mete
-  HTML dentro de `foreignObject` en cuanto una etiqueta lleva `<br/>`. El parser
-  devolvía `parsererror` y el bloque caía al modo "no se pudo dibujar". Ahora se
-  parsea como `text/html`, que entiende contenido extranjero y produce el mismo
-  árbol SVG. Afectaba a la mayoría de diagramas útiles.
-
-### Added
 - **Diagramas en los enunciados de MVVM.** Los 12 ejercicios de arquitectura
   abren con un diagrama que sitúa la capa en el conjunto, con **la pieza que
   escribe el alumno resaltada**. Es lo que más ayuda contra la confusión que
@@ -367,7 +378,127 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   enlaces del README de medio término que apuntaban a `4_half_term/…` desde
   *dentro* de `4_half_term/`: estaban rotos también en el sitio publicado.
 
+- **La agenda de entrevistas es ahora un campo del grupo**
+  (`Grupo.urlAgendaEntrevistas`, opcional, editable en el form del grupo). Antes
+  era una URL **hardcodeada en tres sitios** (el sidebar, el navbar público y el
+  mock del calendario que lee el pie), la misma hoja para todos. Ahora cada grupo
+  tiene la suya: el ítem "Agendar Entrevistas" desaparece del menú global del
+  admin y aparece **dentro del grupo**, y el alumno ve la de **su** grupo. Sin
+  URL, el ítem no se muestra (mismo criterio que "Documentación" sin colecciones).
+  - **La URL se valida en el SERVIDOR: solo `http`/`https`.** Se renderiza como
+    `<a href>`, así que un `javascript:` guardado ahí sería XSS en la sesión de
+    quien pulsara el enlace. La validación vive en `utils/url.ts`, con 20 tests.
+  - `scripts/migrate-agenda-entrevistas.ts` — pone en los grupos existentes la URL
+    que estaba activa, para que nadie pierda el enlace (idempotente, `--dry-run`).
+  - Los enlaces del **sitio público** (navbar y pie), que no tienen contexto de
+    grupo, se consolidan en `config/enlaces.ts` en vez de estar copiados en dos
+    componentes.
+
+- **Páginas por colección (materia)**: `Pagina` ahora apunta a una `Coleccion`
+  del CMS "Contenidos" (pointer `Pagina.coleccion`), de modo que cada página
+  pertenece a una materia. Al agregar una actividad al calendario, el picker de
+  páginas solo ofrece las de las colecciones asignadas al grupo
+  (`Grupo.colecciones`); si el grupo tiene varias, ofrece las de todas. Si no
+  tiene ninguna, muestra todas con un aviso en lugar de quedarse vacío.
+  - `GET /api/paginas?grupoId=` — listado público acotado a las colecciones del
+    grupo; responde `filtrado: false` cuando no pudo acotar. Sin el parámetro, el
+    comportamiento es el de siempre.
+  - `GET /api/admin/paginas?coleccionId=` — filtro para la tabla del admin
+    (`sin-coleccion` lista las que no tienen colección asignada).
+  - `scripts/migrate-paginas-coleccion.ts` — backfill idempotente de las páginas
+    existentes hacia una colección (`--coleccion <slug>`, `--dry-run`).
+  - `scripts/seed-paginas.ts` acepta `--coleccion <slug>` para no volver a crear
+    páginas huérfanas.
+
+- **CMS "Contenidos" — mejoras de autoría y lectura**: en el editor de Páginas,
+  el bloque "Práctica" incluye un selector "Seleccionar del CMS" que enlaza a una
+  página publicada (colección → página, con búsqueda) sin teclear la ruta. En el
+  visor: el árbol lateral se puede colapsar/mostrar con un botón (útil al
+  presentar con alumnos; se recuerda en `localStorage`), las barras de scroll del
+  árbol y del TOC se ocultan (el scroll sigue activo), y cada bloque de código
+  tiene un botón para copiarlo al portapapeles.
+- **CMS "Contenidos" — flujo de autoría de contenido**: par de scripts para
+  escribir y probar contenido antes de publicar, recuperando lo que daba
+  Docusaurus pero contra la BD. `preview-contenido.ts` renderiza `.md` con el
+  pipeline real y los estilos del visor a un HTML autocontenido (sin servidor
+  ni BD); `importar-markdown.ts` sube una carpeta de `.md` a una colección
+  existente como **borrador** (o `--publish`), idempotente por
+  `(colección, padre, slug)`, con `--padre`, `--dry-run` y subida de imágenes
+  relativas como Recurso. Documentado en `AUTHORING.md` y `CLAUDE.md`.
+- **CMS "Contenidos" (US-8)**: storage en AWS S3 — el files adapter cambia a
+  `@parse/s3-files-adapter` cuando el `.env` trae credenciales (bucket
+  privado `groups-meeplab-contenidos`; `directAccess` desactivado: S3 jamás
+  sirve directo) + script de migración GridFS→S3 con `--dry-run`.
+- **CMS "Contenidos" (US-6)**: importador Docusaurus→Contenidos con
+  `--dry-run` y reporte de paridad (verificado: tc2005b y tc2007b, 0 y 1
+  enlaces sin resolver, preexistentes); asignación de colecciones a grupos
+  (multi-select en el editor y submenú del grupo); redirects 301
+  `/docs/*→/contenidos/*` con mapa generado, apagados hasta el corte (US-7).
+- **CMS "Contenidos" (US-5)**: búsqueda full-text con scope por permisos
+  (imposible sugerir contenido ajeno; índice de texto Mongo con degradación
+  a regex) con buscador en el visor; y páginas HTML crudas servidas con CSP
+  propia dentro de iframe sandbox (origen opaco, sin cookies).
+- **CMS "Contenidos" (US-4)**: recursos adjuntos — subida (límite 50 MB) y
+  pegado de imágenes en el editor con referencia `recurso:`, gestor por
+  documento, y stream vía endpoint gated por colección; los archivos de
+  Parse dejan de ser públicos (gate interno de `/parse/files`).
+- **CMS "Contenidos" (US-3)**: visor de lectura `/contenidos/<slug>/...` con
+  autorización por request (árbol, TOC, breadcrumb y prev/next calculados en
+  servidor; no permitido = 404), caches de permisos con invalidación y tema
+  claro/oscuro. Tests unitarios de la poda de seguridad y la sanitización.
+- **CMS "Contenidos" (US-2)**: editor CodeMirror 6 con preview en vivo
+  (`/admin/contenidos/:id/editar/:docId`), autosave a borrador único,
+  publicar con versionado (`cuerpoHtml` renderizado en servidor), historial
+  con restaurar, y el pipeline compartido `@tc2005b/contenido-pipeline`
+  (GFM, admonitions estilo Docusaurus, sanitización allowlist, highlight).
+- **CMS "Contenidos" (US-1)**: modelos Parse `Coleccion`, `Documento`,
+  `DocumentoVersion` y `Recurso`; CRUD admin y sección `/admin/contenidos`
+  con árbol de páginas (según `design/cms-contenidos.html`).
+- Redirects de las URLs viejas `/docs/docs/...` hacia las nuevas
+  (`@docusaurus/plugin-client-redirects`).
+- `CONTRIBUTING.md`, plantilla de PR y este `CHANGELOG.md`.
+
+- **Temario de arquitectura MVVM reescrito y ampliado a 36 ejercicios** en la
+  colección `tc2007b`: 12 conceptos × 3 niveles (guiado, base y reto). Los 12
+  anteriores quedan **despublicados, no borrados**.
+  - Los enunciados explican de dónde viene cada concepto, dónde más se usa fuera
+    del móvil y qué problema resuelve, no solo qué escribir. Dominio neutro
+    (`Item`) en lugar del dominio del wiki.
+  - El vocabulario de arquitectura sigue siendo el de cada pista —`UseCase` en
+    Android, `Requirement` en iOS—, porque es el que el alumno encontrará en la
+    documentación de su plataforma.
+  - 90 soluciones de referencia, mínimo dos por lenguaje y con estrategias
+    distintas: dos soluciones válidas con veredictos distintos delatan un caso
+    sobreajustado.
+  - Las restricciones del juez se documentan en el enunciado en lugar de
+    esquivarse: Combine no existe en Linux y no hay corrutinas, así que
+    `@Published`, `StateFlow` y `LiveData` no compilan en el servidor y se
+    sustituyen por un callback, con su tabla de equivalencias por plataforma.
+- **Herramienta de medida de comprensión** (`packages/api/scripts/estudio-comprension.ts`):
+  exporta lo que ve un alumno, evalúa código candidato contra el ejercicio real
+  y calcula métricas de carga cognitiva.
 ### Changed
+- La regla de acceso a los módulos opt-in se unifica en
+  `acceso-modulos.service.ts`, parametrizada por módulo. Era idéntica para
+  Ejercicios y Diagramas, y dos copias de una regla de **permisos** divergen en
+  cuanto se corrige una sola. `ejercicios-alumno.service.ts` pasa a delegar en
+  ella conservando sus nombres públicos.
+- La invalidación de la caché de acceso deja de ser por módulo: lo que la dispara
+  —cambiar las asignaciones de un grupo o archivarlo— afecta a todos por igual,
+  así que **una** llamada los invalida todos. Con el patrón anterior había que
+  acordarse de añadir una línea por cada módulo nuevo.
+
+- **Los enunciados muestran las firmas de lo ya proporcionado.** Decir que un
+  tipo "ya está declarado" sin enseñarlo obligaba a adivinar los nombres, y en
+  lenguajes de tipado estático eso impide entregar aunque el razonamiento sea
+  correcto.
+- **El contrato de ejecución se lee antes que la firma**, y los casos se rotulan
+  según lo que la entrada significa: en modo plantilla es el nombre de una
+  comprobación, no datos que el alumno lea. En modo programa no cambia, porque
+  ahí la entrada sí son datos.
+- **El editor del solver acompaña al scroll del enunciado**, que dejaba de verse
+  al bajar a leer qué hay que escribir.
+
 - **Ejercicios pasa a vivir dentro del shell (topbar + sidebar).** Era una pantalla
   suelta: el enlace del menú estaba marcado `external`, así que abría una **pestaña
   nueva** sin topbar ni sidebar, con un "← TC2007B" que devolvía al **visor de
@@ -448,7 +579,137 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     plantilla es un troquel de un solo uso, se copia POR VALOR y nada de lo ya
     estampado (274 actividades de grupo, 1482 celdas de malla) apunta a ella.
 
+- **CMS "Contenidos" — el editor a un clic.** El árbol de páginas se muda al
+  sidebar (modo contextual, como `/admin/grupos/:id`) y seleccionar una página
+  abre el editor **inline**, sin el paso intermedio de "Abrir editor". La página
+  seleccionada viaja en la URL (`?doc=<id>`), así que recargar o compartir el
+  enlace conserva lo que estabas editando. La ruta a pantalla completa
+  (`/admin/contenidos/:id/editar/:docId`) sigue viva como modo enfocado.
+  - **El árbol se maneja como un explorador de archivos**: arrastrar mueve
+    (vertical reordena, horizontal cambia de nivel), doble clic renombra en
+    línea, y al pasar el cursor aparecen las acciones de cambiar slug y eliminar.
+  - **Renombrar cambia SOLO el título; el slug (la URL) no se toca.** 82 de los
+    120 documentos tienen un slug que no deriva de su título (`readme`, herencia
+    de Docusaurus) y hay ~59 enlaces internos apuntando a esas rutas sin ningún
+    redirect: regenerar el slug al renombrar los habría roto en silencio. Al
+    **crear**, en cambio, el slug sí se genera del título (nada apunta aún a la
+    página), y el campo desaparece del formulario.
+  - Cambiar el slug a propósito es una acción aparte, con un diálogo que muestra
+    **la ruta actual y cómo quedará** antes de guardar.
+  - Desaparece el panel de metadatos: todo se movió a donde se usa (la plantilla
+    baja a la toolbar del editor).
+  - El editor puede **colapsar el código o la vista previa** (código / ambos /
+    preview; por defecto ambos, y se recuerda). El panel oculto no se desmonta,
+    para no perder el historial de deshacer de CodeMirror.
+- **Los diálogos del admin usan SweetAlert2** (`utils/dialogos.ts`). Se
+  sustituyen los **25 `confirm()`/`prompt()`/`alert()` nativos** de todo el web:
+  además de verse mejor, los nativos **bloquean el hilo del navegador** mientras
+  están abiertos. Los borrados van en rojo y con el botón etiquetado ("Eliminar"),
+  no con un "OK" genérico; la contraseña generada de un alumno se muestra en un
+  diálogo copiable en vez de un `alert()` del sistema.
+
+- **La URL pública de las páginas no cambia** (`/paginas/:slug`) y el slug sigue
+  siendo único global: las actividades del calendario enlazan a las páginas por
+  string (`Actividad.enlace`), sin integridad referencial, y cambiar la forma de
+  la URL las habría roto en silencio.
+- Las páginas **siguen siendo públicas**: la colección organiza y filtra, no
+  restringe el acceso. El gating del CMS "Contenidos" no se extiende a `/paginas`.
+- `PaginaForm`: el campo "Grupo", que era un input de texto donde se tecleaba a
+  mano el objectId del grupo, se sustituye por un `<select>` de colecciones. El
+  admin ya no puede escribir un id inexistente: el API valida que la colección
+  exista (antes creaba el pointer a ciegas con `createWithoutData`).
+- `PaginasPage`: la columna "Alcance" (que solo derivaba de si había grupo o no)
+  se sustituye por "Colección", con filtro por colección.
+
+- **CMS "Contenidos" — retoques de nombre y enlaces tras el retiro de
+  Docusaurus**: el menú del sidebar del grupo pasa de "Docusaurus" a
+  "Contenidos"; las descripciones/enlaces de los labs que decían "Docusaurus
+  del curso" ahora apuntan a la documentación del CMS (incluye reponer un
+  enlace muerto de lab11). En la BD, los enlaces `/docs/...` de las Páginas se
+  migran al visor `/contenidos/...` (21 páginas, 22 enlaces) con un script
+  idempotente que respeta los `/docs/...` externos (MDN, Node, Tailwind…).
+- El Docusaurus se sirve ahora en `/docs/...` en lugar de `/docs/docs/...`
+  (`routeBasePath: '/'`). Las páginas registradas en BD y los enlaces de los
+  labs se migraron al nuevo esquema.
+- Branding genérico configurable: el nombre y subtítulo de la app
+  (antes "TC2005B" / "Construcción de Software y Toma de Decisiones") ahora
+  salen de `packages/web/src/config/app.ts` (`APP_NAME`, `APP_TAGLINE`) y se
+  usan en login, navbar, home, sidebar, título del navegador y export XLSX.
+
+### Deprecated
+- Se elimina el despliegue por **GitHub Pages**. El sitio se despliega en un
+  servidor (`groups.meeplab.com`) que hace `pull` del repositorio y sirve `dist/`.
+  Se removieron los workflows de GitHub Pages, `.nojekyll` y el hack SPA `?/`.
+
+### Removed
+- **`Grupo.enlaces`**: el `Record<string,string>` del modelo. Estaba **vacío en
+  los 3 grupos** de producción y no lo consumía nadie — el pie del sitio, que
+  parecía leerlo, lee en realidad el mock estático. Se va del modelo, del payload
+  del calendario, del seed y del tipo del front. Es el quinto campo muerto que se
+  retira de `Grupo`.
+
+- **`Pagina.grupo`**: el pointer a `Grupo` y la noción de "alcance Global/Grupo"
+  derivada de él. No filtraba nada en ninguna capa —toda página publicada era
+  visible para cualquiera con el slug— y ninguna de las 47 páginas en producción
+  lo tenía asignado.
+- **La entidad `Materia` completa**: modelo, CRUD (`/api/admin/materias`), seed,
+  `Grupo.materia`, `Coleccion.materia`, `types/materia.ts` y su UI (el `<select>`
+  del form de grupos y la columna de la tabla). `Materia` nació como el mecanismo
+  de gating de Docusaurus; al retirarse Docusaurus (US-7) el gate murió y
+  `Coleccion` ocupó su lugar, pero la entidad sobrevivió sin función: ninguna
+  query, gate ni filtro dependía de ella. `Coleccion` era además un superconjunto
+  estricto (`nombre`/`slug`/`codigo` → `nombre`/`slug`/`clave`, más `descripcion`,
+  `icono` y `publicada`).
+  - **`Grupo.colecciones` queda como fuente única.** Antes el form permitía
+    guardar un grupo con `materia = TC2005B` y `colecciones = [TC2007B]`: el
+    primero no hacía nada y el segundo decidía el acceso real. Esa contradicción
+    ya no es representable.
+  - La columna "Materia" de `/admin/grupos` pasa a ser **"Colecciones"**.
+  - **Cambio de contrato:** el JSON de `Grupo` ya no incluye la clave `materia`.
+  - `Coleccion.materia` nunca se escribió: la columna no existía en ningún
+    documento de la BD.
+  - `scripts/cleanup-materia.ts` limpia los datos huérfanos que quedan en Mongo
+    (idempotente, con `--dry-run` y respaldo JSON). **Correrlo después del
+    deploy**, no antes.
+- **`Grupo.curso` y `Grupo.nombreCurso`**: strings legacy que duplicaban a
+  `Grupo.materia`. `createGrupo`/`updateGrupo` dejaron de escribirlos al migrar
+  a `Grupo.materia` (pointer), pero el payload de `GET /api/calendario/:grupo` y
+  la interfaz `Calendario` del front seguían declarándolos — **y ningún
+  componente los renderizaba**. Se retiran del modelo, del payload, del tipo, del
+  seed y del mock. Sin cambio visible: el calendario nunca los mostró.
+  `migrate-grupo-curso-to-materia.ts` sigue disponible para BDs sin migrar (lee
+  las columnas crudas).
+- **Docusaurus retirado (US-7)**: se elimina `packages/docusaurus`, el gate
+  `/docs` por materia y el campo `Grupo.docusaurus[]`. `/docs/*` responde
+  301 permanente hacia `/contenidos/*` (mapa del importador + heurística).
+  La documentación vive ahora en el CMS "Contenidos".
+
 ### Fixed
+- Un documento en la raíz de una colección podía **renombrarse** al slug
+  reservado `ejercicios` y tapar la ruta del módulo: la reserva solo se
+  comprobaba al crear. Ahora se comprueba también al renombrar, y la lista de
+  slugs reservados es una sola constante que incluye `diagramas`.
+- **Las pantallas de ejercicios fallaban con "No se pudo cargar".** Los dos
+  listados pedían el documento completo de cada ejercicio —enunciado, plantillas,
+  casos y soluciones— para construir respuestas que no usan ninguno de esos
+  campos. Con 46 ejercicios eran 0.79 MB y hasta 37 s contra Atlas, por encima
+  del timeout de 15 s del front: la vista de alumno fallaba de forma
+  intermitente y la de admin siempre. Seleccionando solo los campos devueltos,
+  14 KB y medio segundo.
+- **Los diagramas no se dibujaban en el enunciado de un ejercicio.** Al cablear el
+  hook en el solver se añadieron el `import` y el `ref`, pero **nunca la llamada**,
+  así que el bloque se quedaba como código. El visor y el editor sí la tenían.
+  - Se activa `noUnusedLocals` en el type-check del web, que es el guardarraíl que
+    lo habría cazado: con la llamada ausente, el import queda sin usar y `tsc`
+    falla. Comprobado reintroduciendo el bug a propósito. De paso se retiran las
+    7 variables e imports muertos que impedían encender el flag.
+- **Los diagramas con salto de línea en una etiqueta no se dibujaban.** `svgSeguro`
+  parseaba el SVG como `image/svg+xml`, que es **XML estricto**, y Mermaid mete
+  HTML dentro de `foreignObject` en cuanto una etiqueta lleva `<br/>`. El parser
+  devolvía `parsererror` y el bloque caía al modo "no se pudo dibujar". Ahora se
+  parsea como `text/html`, que entiende contenido extranjero y produce el mismo
+  árbol SVG. Afectaba a la mayoría de diagramas útiles.
+
 - **"No se pudo cargar" intermitente en las pantallas del alumno.** `useCargaGated`
   abortaba la petición anterior en el cleanup del efecto, pero el `.catch` de esa
   petición **ya abortada** marcaba `error` sobre el estado de la petición **nueva**:
@@ -521,61 +782,6 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   listas ya filtradas, y se perderían la vista de conjunto (filtro por etiqueta
   entre colecciones) y el acceso a las páginas **sin colección**.
 
-### Added
-- **La agenda de entrevistas es ahora un campo del grupo**
-  (`Grupo.urlAgendaEntrevistas`, opcional, editable en el form del grupo). Antes
-  era una URL **hardcodeada en tres sitios** (el sidebar, el navbar público y el
-  mock del calendario que lee el pie), la misma hoja para todos. Ahora cada grupo
-  tiene la suya: el ítem "Agendar Entrevistas" desaparece del menú global del
-  admin y aparece **dentro del grupo**, y el alumno ve la de **su** grupo. Sin
-  URL, el ítem no se muestra (mismo criterio que "Documentación" sin colecciones).
-  - **La URL se valida en el SERVIDOR: solo `http`/`https`.** Se renderiza como
-    `<a href>`, así que un `javascript:` guardado ahí sería XSS en la sesión de
-    quien pulsara el enlace. La validación vive en `utils/url.ts`, con 20 tests.
-  - `scripts/migrate-agenda-entrevistas.ts` — pone en los grupos existentes la URL
-    que estaba activa, para que nadie pierda el enlace (idempotente, `--dry-run`).
-  - Los enlaces del **sitio público** (navbar y pie), que no tienen contexto de
-    grupo, se consolidan en `config/enlaces.ts` en vez de estar copiados en dos
-    componentes.
-
-### Removed
-- **`Grupo.enlaces`**: el `Record<string,string>` del modelo. Estaba **vacío en
-  los 3 grupos** de producción y no lo consumía nadie — el pie del sitio, que
-  parecía leerlo, lee en realidad el mock estático. Se va del modelo, del payload
-  del calendario, del seed y del tipo del front. Es el quinto campo muerto que se
-  retira de `Grupo`.
-
-### Changed
-- **CMS "Contenidos" — el editor a un clic.** El árbol de páginas se muda al
-  sidebar (modo contextual, como `/admin/grupos/:id`) y seleccionar una página
-  abre el editor **inline**, sin el paso intermedio de "Abrir editor". La página
-  seleccionada viaja en la URL (`?doc=<id>`), así que recargar o compartir el
-  enlace conserva lo que estabas editando. La ruta a pantalla completa
-  (`/admin/contenidos/:id/editar/:docId`) sigue viva como modo enfocado.
-  - **El árbol se maneja como un explorador de archivos**: arrastrar mueve
-    (vertical reordena, horizontal cambia de nivel), doble clic renombra en
-    línea, y al pasar el cursor aparecen las acciones de cambiar slug y eliminar.
-  - **Renombrar cambia SOLO el título; el slug (la URL) no se toca.** 82 de los
-    120 documentos tienen un slug que no deriva de su título (`readme`, herencia
-    de Docusaurus) y hay ~59 enlaces internos apuntando a esas rutas sin ningún
-    redirect: regenerar el slug al renombrar los habría roto en silencio. Al
-    **crear**, en cambio, el slug sí se genera del título (nada apunta aún a la
-    página), y el campo desaparece del formulario.
-  - Cambiar el slug a propósito es una acción aparte, con un diálogo que muestra
-    **la ruta actual y cómo quedará** antes de guardar.
-  - Desaparece el panel de metadatos: todo se movió a donde se usa (la plantilla
-    baja a la toolbar del editor).
-  - El editor puede **colapsar el código o la vista previa** (código / ambos /
-    preview; por defecto ambos, y se recuerda). El panel oculto no se desmonta,
-    para no perder el historial de deshacer de CodeMirror.
-- **Los diálogos del admin usan SweetAlert2** (`utils/dialogos.ts`). Se
-  sustituyen los **25 `confirm()`/`prompt()`/`alert()` nativos** de todo el web:
-  además de verse mejor, los nativos **bloquean el hilo del navegador** mientras
-  están abiertos. Los borrados van en rojo y con el botón etiquetado ("Eliminar"),
-  no con un "OK" genérico; la contraseña generada de un alumno se muestra en un
-  diálogo copiable en vez de un `alert()` del sistema.
-
-### Fixed
 - **Pérdida de borrador al cambiar de página en el editor.** El autosave
   (debounce de 1.5 s) se **cancelaba** al cambiar de documento o desmontar, así
   que lo escrito en el último segundo y medio se perdía sin aviso. Ahora se
@@ -601,143 +807,23 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     `--dry-run`: convierte strings→pointers, **repara** las entradas que eran
     nombres (busca la `Etiqueta` por nombre) y deduplica. Ejecutada: 3 páginas,
     3 referencias reparadas, 0 descartadas.
-
-### Added
-- **Páginas por colección (materia)**: `Pagina` ahora apunta a una `Coleccion`
-  del CMS "Contenidos" (pointer `Pagina.coleccion`), de modo que cada página
-  pertenece a una materia. Al agregar una actividad al calendario, el picker de
-  páginas solo ofrece las de las colecciones asignadas al grupo
-  (`Grupo.colecciones`); si el grupo tiene varias, ofrece las de todas. Si no
-  tiene ninguna, muestra todas con un aviso en lugar de quedarse vacío.
-  - `GET /api/paginas?grupoId=` — listado público acotado a las colecciones del
-    grupo; responde `filtrado: false` cuando no pudo acotar. Sin el parámetro, el
-    comportamiento es el de siempre.
-  - `GET /api/admin/paginas?coleccionId=` — filtro para la tabla del admin
-    (`sin-coleccion` lista las que no tienen colección asignada).
-  - `scripts/migrate-paginas-coleccion.ts` — backfill idempotente de las páginas
-    existentes hacia una colección (`--coleccion <slug>`, `--dry-run`).
-  - `scripts/seed-paginas.ts` acepta `--coleccion <slug>` para no volver a crear
-    páginas huérfanas.
-
-### Changed
-- **La URL pública de las páginas no cambia** (`/paginas/:slug`) y el slug sigue
-  siendo único global: las actividades del calendario enlazan a las páginas por
-  string (`Actividad.enlace`), sin integridad referencial, y cambiar la forma de
-  la URL las habría roto en silencio.
-- Las páginas **siguen siendo públicas**: la colección organiza y filtra, no
-  restringe el acceso. El gating del CMS "Contenidos" no se extiende a `/paginas`.
-- `PaginaForm`: el campo "Grupo", que era un input de texto donde se tecleaba a
-  mano el objectId del grupo, se sustituye por un `<select>` de colecciones. El
-  admin ya no puede escribir un id inexistente: el API valida que la colección
-  exista (antes creaba el pointer a ciegas con `createWithoutData`).
-- `PaginasPage`: la columna "Alcance" (que solo derivaba de si había grupo o no)
-  se sustituye por "Colección", con filtro por colección.
-
-### Removed
-- **`Pagina.grupo`**: el pointer a `Grupo` y la noción de "alcance Global/Grupo"
-  derivada de él. No filtraba nada en ninguna capa —toda página publicada era
-  visible para cualquiera con el slug— y ninguna de las 47 páginas en producción
-  lo tenía asignado.
-- **La entidad `Materia` completa**: modelo, CRUD (`/api/admin/materias`), seed,
-  `Grupo.materia`, `Coleccion.materia`, `types/materia.ts` y su UI (el `<select>`
-  del form de grupos y la columna de la tabla). `Materia` nació como el mecanismo
-  de gating de Docusaurus; al retirarse Docusaurus (US-7) el gate murió y
-  `Coleccion` ocupó su lugar, pero la entidad sobrevivió sin función: ninguna
-  query, gate ni filtro dependía de ella. `Coleccion` era además un superconjunto
-  estricto (`nombre`/`slug`/`codigo` → `nombre`/`slug`/`clave`, más `descripcion`,
-  `icono` y `publicada`).
-  - **`Grupo.colecciones` queda como fuente única.** Antes el form permitía
-    guardar un grupo con `materia = TC2005B` y `colecciones = [TC2007B]`: el
-    primero no hacía nada y el segundo decidía el acceso real. Esa contradicción
-    ya no es representable.
-  - La columna "Materia" de `/admin/grupos` pasa a ser **"Colecciones"**.
-  - **Cambio de contrato:** el JSON de `Grupo` ya no incluye la clave `materia`.
-  - `Coleccion.materia` nunca se escribió: la columna no existía en ningún
-    documento de la BD.
-  - `scripts/cleanup-materia.ts` limpia los datos huérfanos que quedan en Mongo
-    (idempotente, con `--dry-run` y respaldo JSON). **Correrlo después del
-    deploy**, no antes.
-- **`Grupo.curso` y `Grupo.nombreCurso`**: strings legacy que duplicaban a
-  `Grupo.materia`. `createGrupo`/`updateGrupo` dejaron de escribirlos al migrar
-  a `Grupo.materia` (pointer), pero el payload de `GET /api/calendario/:grupo` y
-  la interfaz `Calendario` del front seguían declarándolos — **y ningún
-  componente los renderizaba**. Se retiran del modelo, del payload, del tipo, del
-  seed y del mock. Sin cambio visible: el calendario nunca los mostró.
-  `migrate-grupo-curso-to-materia.ts` sigue disponible para BDs sin migrar (lee
-  las columnas crudas).
-- **Docusaurus retirado (US-7)**: se elimina `packages/docusaurus`, el gate
-  `/docs` por materia y el campo `Grupo.docusaurus[]`. `/docs/*` responde
-  301 permanente hacia `/contenidos/*` (mapa del importador + heurística).
-  La documentación vive ahora en el CMS "Contenidos".
-
-### Changed
-- **CMS "Contenidos" — retoques de nombre y enlaces tras el retiro de
-  Docusaurus**: el menú del sidebar del grupo pasa de "Docusaurus" a
-  "Contenidos"; las descripciones/enlaces de los labs que decían "Docusaurus
-  del curso" ahora apuntan a la documentación del CMS (incluye reponer un
-  enlace muerto de lab11). En la BD, los enlaces `/docs/...` de las Páginas se
-  migran al visor `/contenidos/...` (21 páginas, 22 enlaces) con un script
-  idempotente que respeta los `/docs/...` externos (MDN, Node, Tailwind…).
-- El Docusaurus se sirve ahora en `/docs/...` en lugar de `/docs/docs/...`
-  (`routeBasePath: '/'`). Las páginas registradas en BD y los enlaces de los
-  labs se migraron al nuevo esquema.
-- Branding genérico configurable: el nombre y subtítulo de la app
-  (antes "TC2005B" / "Construcción de Software y Toma de Decisiones") ahora
-  salen de `packages/web/src/config/app.ts` (`APP_NAME`, `APP_TAGLINE`) y se
-  usan en login, navbar, home, sidebar, título del navegador y export XLSX.
-
-### Deprecated
-- Se elimina el despliegue por **GitHub Pages**. El sitio se despliega en un
-  servidor (`groups.meeplab.com`) que hace `pull` del repositorio y sirve `dist/`.
-  Se removieron los workflows de GitHub Pages, `.nojekyll` y el hack SPA `?/`.
-
-### Added
-- **CMS "Contenidos" — mejoras de autoría y lectura**: en el editor de Páginas,
-  el bloque "Práctica" incluye un selector "Seleccionar del CMS" que enlaza a una
-  página publicada (colección → página, con búsqueda) sin teclear la ruta. En el
-  visor: el árbol lateral se puede colapsar/mostrar con un botón (útil al
-  presentar con alumnos; se recuerda en `localStorage`), las barras de scroll del
-  árbol y del TOC se ocultan (el scroll sigue activo), y cada bloque de código
-  tiene un botón para copiarlo al portapapeles.
-- **CMS "Contenidos" — flujo de autoría de contenido**: par de scripts para
-  escribir y probar contenido antes de publicar, recuperando lo que daba
-  Docusaurus pero contra la BD. `preview-contenido.ts` renderiza `.md` con el
-  pipeline real y los estilos del visor a un HTML autocontenido (sin servidor
-  ni BD); `importar-markdown.ts` sube una carpeta de `.md` a una colección
-  existente como **borrador** (o `--publish`), idempotente por
-  `(colección, padre, slug)`, con `--padre`, `--dry-run` y subida de imágenes
-  relativas como Recurso. Documentado en `AUTHORING.md` y `CLAUDE.md`.
-- **CMS "Contenidos" (US-8)**: storage en AWS S3 — el files adapter cambia a
-  `@parse/s3-files-adapter` cuando el `.env` trae credenciales (bucket
-  privado `groups-meeplab-contenidos`; `directAccess` desactivado: S3 jamás
-  sirve directo) + script de migración GridFS→S3 con `--dry-run`.
-- **CMS "Contenidos" (US-6)**: importador Docusaurus→Contenidos con
-  `--dry-run` y reporte de paridad (verificado: tc2005b y tc2007b, 0 y 1
-  enlaces sin resolver, preexistentes); asignación de colecciones a grupos
-  (multi-select en el editor y submenú del grupo); redirects 301
-  `/docs/*→/contenidos/*` con mapa generado, apagados hasta el corte (US-7).
-- **CMS "Contenidos" (US-5)**: búsqueda full-text con scope por permisos
-  (imposible sugerir contenido ajeno; índice de texto Mongo con degradación
-  a regex) con buscador en el visor; y páginas HTML crudas servidas con CSP
-  propia dentro de iframe sandbox (origen opaco, sin cookies).
-- **CMS "Contenidos" (US-4)**: recursos adjuntos — subida (límite 50 MB) y
-  pegado de imágenes en el editor con referencia `recurso:`, gestor por
-  documento, y stream vía endpoint gated por colección; los archivos de
-  Parse dejan de ser públicos (gate interno de `/parse/files`).
-- **CMS "Contenidos" (US-3)**: visor de lectura `/contenidos/<slug>/...` con
-  autorización por request (árbol, TOC, breadcrumb y prev/next calculados en
-  servidor; no permitido = 404), caches de permisos con invalidación y tema
-  claro/oscuro. Tests unitarios de la poda de seguridad y la sanitización.
-- **CMS "Contenidos" (US-2)**: editor CodeMirror 6 con preview en vivo
-  (`/admin/contenidos/:id/editar/:docId`), autosave a borrador único,
-  publicar con versionado (`cuerpoHtml` renderizado en servidor), historial
-  con restaurar, y el pipeline compartido `@tc2005b/contenido-pipeline`
-  (GFM, admonitions estilo Docusaurus, sanitización allowlist, highlight).
-- **CMS "Contenidos" (US-1)**: modelos Parse `Coleccion`, `Documento`,
-  `DocumentoVersion` y `Recurso`; CRUD admin y sección `/admin/contenidos`
-  con árbol de páginas (según `design/cms-contenidos.html`).
-- Redirects de las URLs viejas `/docs/docs/...` hacia las nuevas
-  (`@docusaurus/plugin-client-redirects`).
-- `CONTRIBUTING.md`, plantilla de PR y este `CHANGELOG.md`.
-
+- **Los diagramas se dibujaban siempre en claro, aunque el visor estuviera en
+  oscuro.** El hook `useDiagramas` ya aceptaba un flag `oscuro` y ambos motores
+  (Mermaid y PlantUML) lo soportan, pero `VisorContenidoPage` **nunca se lo
+  pasaba**: quedaba en su valor por defecto `false`. Sobre fondo oscuro, las
+  cajas salían blancas y las flechas y etiquetas —negras— eran directamente
+  invisibles. Ahora el flag viaja desde el estado del tema.
+  Además, el `<pre>` original ya **no se borra** al dibujar el SVG, sino que se
+  oculta, y la limpieza del efecto deshace lo pintado: sin eso, cambiar de tema
+  no repintaba nada porque no quedaba bloque que procesar, y el diagrama se
+  quedaba con la paleta anterior hasta recargar la página.
+- **Las imágenes del visor fallaban con 401 mientras el texto cargaba bien.** El
+  SPA se autentica con el token de localStorage en la cabecera `x-session-token`,
+  pero **un `<img>` no puede mandar cabeceras**: las imágenes del CMS dependen en
+  exclusiva de la cookie de sesión. Si el token sobrevivía y la cookie no —cookies
+  limpiadas, caducada antes, o sesión abierta antes de que la cookie existiera— la
+  aplicación parecía funcionar y solo se rompían las imágenes, sin ningún aviso.
+  Ahora `/auth/me`, que corre en cada arranque con el token ya validado, vuelve a
+  sembrar la cookie si falta: con una recarga el usuario se recupera solo, sin
+  tener que cerrar sesión.
 [Unreleased]: https://github.com/black4ninja/tc2005b.github.io/commits/main

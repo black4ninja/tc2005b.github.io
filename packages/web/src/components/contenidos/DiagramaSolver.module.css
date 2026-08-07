@@ -1,0 +1,358 @@
+/* Dentro del shell del dashboard: sin auto-centrado ni padding lateral propio
+   (lo pone el layout).
+
+   El ancho máximo es mayor que el del solver de código porque aquí hay TRES
+   superficies que deben verse a la vez —enunciado, editor y dibujo—, no dos:
+   la vista previa es el único sitio donde se comprueba que lo escrito es el
+   diagrama que se quería. */
+.page {
+  max-width: 1400px;
+  padding: 8px 0 32px;
+}
+
+.header { margin-bottom: 20px; }
+
+.volver {
+  display: inline-block;
+  font-size: 14px;
+  color: #4f46e5;
+  text-decoration: none;
+  margin-bottom: 8px;
+}
+.volver:hover { text-decoration: underline; }
+
+.enlaceBoton {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.titulo { margin: 0; font-size: 24px; font-weight: 700; color: var(--text-primary); }
+.metaFila { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.meta {
+  font-size: 12px;
+  color: #57606a;
+  background: #eaeef2;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+.info { color: #57606a; font-size: 15px; }
+
+/* El enunciado se acota: es prosa y a 700 px se lee peor que a 420. El resto
+   del ancho va a la columna de trabajo, que lo aprovecha con dos paneles. */
+.cols {
+  display: grid;
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* --- Enunciado --- */
+.enunciadoCol { min-width: 0; }
+.enunciado {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #24292f;
+  word-wrap: break-word;
+}
+.enunciado :global(pre) {
+  background: #f6f8fa;
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.enunciado :global(code) { font-family: ui-monospace, Menlo, monospace; }
+/* Un diagrama del enunciado no debe empujar el ancho de la columna. */
+.enunciado :global(.contenido-diagrama) { margin: 12px 0; overflow-x: auto; }
+.enunciado :global(.contenido-diagrama svg) { max-width: 100%; height: auto; }
+
+.subtitulo { font-size: 16px; margin: 20px 0 10px; color: #1f2328; }
+
+/* --- Diagramas de contexto --- */
+.contextos { display: flex; flex-direction: column; gap: 14px; }
+.contexto { min-width: 0; }
+.contextoHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.contextoTitulo { font-size: 14px; font-weight: 600; color: #1f2328; }
+.contextoTipo { font-size: 12px; color: #57606a; white-space: nowrap; }
+
+/* --- Comprobaciones anunciadas --- */
+.comprobaciones {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.comprobacion {
+  font-size: 14px;
+  color: #1f2328;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+/* --- Columna de trabajo --- */
+.editorCol { min-width: 0; }
+
+/* El editor acompaña al scroll del enunciado.
+   Estos enunciados son largos —contexto, diagramas dados, lista de
+   comprobaciones—, así que al bajar a leer qué hay que modelar el editor quedaba
+   fuera de pantalla y había que volver arriba para escribirlo. Fijándolo, lo
+   leído y el sitio donde se escribe están a la vista a la vez.
+   El scroll propio es necesario porque debajo del editor van el resultado y el
+   historial, que pueden ser más altos que la pantalla; sin él, su parte final
+   quedaría inalcanzable mientras la columna está fijada.
+   Solo en dos columnas: por debajo del punto de ruptura el diseño ya es vertical
+   y fijar la columna dejaría el enunciado sin espacio.
+
+   El desplegable del autocompletado se queda DENTRO del editor a propósito. Ver
+   la nota en DiagramaSolverPage.tsx: sacarlo con `tooltips({ parent })` añade
+   área desplazable vacía al final de la página. */
+@media (min-width: 1025px) {
+  .editorCol {
+    position: sticky;
+    top: calc(var(--dashboard-header-height, 64px) + 12px);
+    max-height: calc(100vh - var(--dashboard-header-height, 64px) - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* Sitio para la barra de scroll propia, para que no tape los botones. */
+    padding-right: 4px;
+  }
+}
+
+/* Editor y dibujo lado a lado: el diagrama se corrige mirando el dibujo, no el
+   texto, así que ver el efecto de cada línea sin desplazarse es el punto entero
+   de esta pantalla. */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.panel { min-width: 0; }
+.panelLabel {
+  display: block;
+  font-size: 12px;
+  color: #57606a;
+  margin-bottom: 4px;
+}
+
+.acciones { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.btnSec, .btnPri {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid #d0d7de;
+  background: #fff;
+  color: #1f2328;
+}
+.btnPri { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+.btnSec:disabled, .btnPri:disabled { opacity: 0.55; cursor: default; }
+
+.nota { margin: 8px 0 0; font-size: 13px; color: #57606a; }
+
+.errorBox {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: #fdecea;
+  color: #b42318;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* --- Resultado --- */
+.resultado { margin-top: 16px; }
+.veredictoRow { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.conteo { font-size: 14px; color: #57606a; }
+
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.badgeOk { background: #e6f4ea; color: #1e7e34; }
+.badgeMal { background: #fdecea; color: #b42318; }
+
+.salidaPre {
+  margin: 0;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #f6f8fa;
+  padding: 10px;
+  border-radius: 6px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.caso {
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+.casoOk { border-left: 3px solid #1e7e34; }
+.casoMal { border-left: 3px solid #b42318; }
+.casoHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2328;
+}
+.casoNombre { min-width: 0; }
+.casoEstado { white-space: nowrap; }
+.etiquetaOculta {
+  font-size: 11px;
+  font-weight: 600;
+  color: #57606a;
+  background: #eaeef2;
+  padding: 1px 8px;
+  border-radius: 999px;
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+.casoDetalle {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #57606a;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* --- Historial --- */
+.historial {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.envio {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.envioFecha { color: #57606a; white-space: nowrap; }
+
+@media (max-width: 1024px) {
+  .cols { grid-template-columns: 1fr; }
+}
+
+/* Por debajo de esto los dos paneles quedan demasiado estrechos para leer el
+   código y ver el dibujo, así que se apilan. */
+@media (max-width: 700px) {
+  .split { grid-template-columns: 1fr; }
+}
+
+/* Aviso del ejemplo resuelto: mismo color que su marca en el listado, para que
+   se reconozca como la misma cosa al abrirlo. */
+.avisoEjemplo {
+  margin: 8px 0 0;
+  padding: 10px 14px;
+  border: 1px solid #c7b8f5;
+  border-left-width: 4px;
+  border-radius: 6px;
+  background: #faf8ff;
+  color: #3c3255;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Distintivo junto al título. Mismo color que su marca en el listado. */
+.distintivoEjemplo {
+  margin-left: 12px;
+  vertical-align: middle;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #ede9fe;
+  color: #5b21b6;
+  white-space: nowrap;
+}
+
+/* --- Barra de vista ---
+   Mismos tres estados y mismos iconos que el editor del CMS. Quien ya usó aquel
+   reconoce el control sin tener que descubrirlo otra vez. */
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.btnEnunciado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 13px;
+  color: #57606a;
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btnEnunciado:hover { background: #f6f8fa; color: #1f2328; }
+
+.vistaGrupo {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+}
+.vistaGrupo button {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: #57606a;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.vistaGrupo button:hover { color: #1f2328; }
+.vistaActiva,
+.vistaGrupo button.vistaActiva:hover {
+  background: #fff;
+  color: #4f46e5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Sin enunciado, el área de trabajo ocupa el ancho completo. */
+.colsSinEnunciado { grid-template-columns: minmax(0, 1fr); }
+
+/* Con una sola mitad visible, la que queda ocupa todo el ancho. */
+.splitSolo { grid-template-columns: minmax(0, 1fr); }
+
+/* Se oculta sin desmontar: CodeMirror perdería cursor, selección e historial
+   de deshacer en cada cambio de vista. */
+.oculto { display: none; }

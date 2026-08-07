@@ -1,0 +1,144 @@
+/**
+ * Preguntas de grafo sobre el modelo: alcanzabilidad, callejones, ciclos y
+ * duplicados.
+ *
+ * Van aparte del catálogo porque son las respuestas caras y reutilizables: una
+ * máquina de estados y un diagrama de paquetes preguntan lo mismo sobre grafos
+ * distintos, y sin esta capa cada aserción reimplementaría su propio recorrido.
+ */
+import type { Arista, ModeloDiagrama, TipoArista } from './tipos.js';
+
+/** Adyacencia dirigida, opcionalmente filtrada por tipo de arista. */
+export function adyacencia(
+  modelo: ModeloDiagrama,
+  tipos?: TipoArista[],
+): Map<string, string[]> {
+  const mapa = new Map<string, string[]>();
+  for (const n of modelo.nodos) mapa.set(n.id, []);
+  for (const a of aristasDe(modelo, tipos)) {
+    if (!mapa.has(a.origen)) mapa.set(a.origen, []);
+    mapa.get(a.origen)!.push(a.destino);
+  }
+  return mapa;
+}
+
+export function aristasDe(modelo: ModeloDiagrama, tipos?: TipoArista[]): Arista[] {
+  if (!tipos || !tipos.length) return modelo.aristas;
+  return modelo.aristas.filter((a) => tipos.includes(a.tipo));
+}
+
+/** Nodos alcanzables desde `desde`, incluido él mismo. */
+export function alcanzablesDesde(
+  modelo: ModeloDiagrama,
+  desde: string[],
+  tipos?: TipoArista[],
+): Set<string> {
+  const ady = adyacencia(modelo, tipos);
+  const vistos = new Set<string>(desde);
+  const pila = [...desde];
+  while (pila.length) {
+    const actual = pila.pop()!;
+    for (const siguiente of ady.get(actual) ?? []) {
+      if (vistos.has(siguiente)) continue;
+      vistos.add(siguiente);
+      pila.push(siguiente);
+    }
+  }
+  return vistos;
+}
+
+/**
+ * Nodos desde los que se puede llegar a alguno de `hasta` (recorrido inverso).
+ * Es la pregunta de los callejones sin salida: un estado desde el que ya no se
+ * puede terminar es un estado-trampa.
+ */
+export function coalcanzablesHasta(
+  modelo: ModeloDiagrama,
+  hasta: string[],
+  tipos?: TipoArista[],
+): Set<string> {
+  const inverso = new Map<string, string[]>();
+  for (const n of modelo.nodos) inverso.set(n.id, []);
+  for (const a of aristasDe(modelo, tipos)) {
+    if (!inverso.has(a.destino)) inverso.set(a.destino, []);
+    inverso.get(a.destino)!.push(a.origen);
+  }
+  const vistos = new Set<string>(hasta);
+  const pila = [...hasta];
+  while (pila.length) {
+    const actual = pila.pop()!;
+    for (const previo of inverso.get(actual) ?? []) {
+      if (vistos.has(previo)) continue;
+      vistos.add(previo);
+      pila.push(previo);
+    }
+  }
+  return vistos;
+}
+
+/**
+ * Ciclos dirigidos, devueltos como listas de ids. Detección por recorrido en
+ * profundidad con pila de recursión: basta para el tamaño de un diagrama de
+ * aula y no necesita Tarjan.
+ */
+export function ciclos(modelo: ModeloDiagrama, tipos?: TipoArista[]): string[][] {
+  const ady = adyacencia(modelo, tipos);
+  const estado = new Map<string, 'nuevo' | 'enPila' | 'hecho'>();
+  for (const id of ady.keys()) estado.set(id, 'nuevo');
+  const encontrados: string[][] = [];
+  const pila: string[] = [];
+
+  const visitar = (id: string): void => {
+    estado.set(id, 'enPila');
+    pila.push(id);
+    for (const siguiente of ady.get(id) ?? []) {
+      const e = estado.get(siguiente) ?? 'nuevo';
+      if (e === 'nuevo') visitar(siguiente);
+      else if (e === 'enPila') {
+        const desde = pila.indexOf(siguiente);
+        if (desde >= 0) encontrados.push(pila.slice(desde));
+      }
+    }
+    pila.pop();
+    estado.set(id, 'hecho');
+  };
+
+  for (const id of ady.keys()) if (estado.get(id) === 'nuevo') visitar(id);
+  return encontrados;
+}
+
+/**
+ * Aristas repetidas. La asociación se compara SIN dirección —`A -- B` y `B -- A`
+ * son la misma relación dibujada dos veces—, y el resto con ella, porque
+ * `A hereda de B` y `B hereda de A` son cosas distintas (y ambas no pueden ser
+ * ciertas).
+ *
+ * La ETIQUETA entra en la firma: en un diagrama de flujo, dos flechas del mismo
+ * rombo al mismo paso rotuladas «sí» y «no» son dos ramas distintas, y en una
+ * máquina de estados dos transiciones entre los mismos estados con disparadores
+ * distintos son dos transiciones. Sin la etiqueta se marcaban como repetidas y
+ * se suspendía un diagrama correcto por el patrón más común de su notación.
+ */
+export function aristasDuplicadas(modelo: ModeloDiagrama): Arista[] {
+  // El separador es NUL escrito como ESCAPE, no como byte literal: un byte NUL
+  // en el fuente hace que git clasifique el fichero como binario, y entonces no
+  // hay diff, ni blame, ni comentarios de revisión en línea sobre él.
+  const vistas = new Set<string>();
+  const repetidas: Arista[] = [];
+  for (const a of modelo.aristas) {
+    const par = a.tipo === 'asociacion'
+      ? [a.origen, a.destino].sort().join('\u0000')
+      : `${a.origen}\u0000${a.destino}`;
+    const firma = `${a.tipo}\u0000${par}\u0000${a.etiqueta ?? ''}`;
+    if (vistas.has(firma)) repetidas.push(a);
+    else vistas.add(firma);
+  }
+  return repetidas;
+}
+
+/** ¿La cardinalidad expresa "muchos"? (`*`, `0..*`, `1..*`, `n`). */
+export function esMuchos(cardinalidad: string | undefined): boolean {
+  if (!cardinalidad) return false;
+  const c = cardinalidad.trim().toLowerCase();
+  return c.includes('*') || c.endsWith('n') || c === 'muchos';
+}

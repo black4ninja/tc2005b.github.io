@@ -24,12 +24,16 @@ export const MODULOS_CONTENIDO = [
   'competencias',
   'actividades',
   'ejercicios',
+  'diagramas',
 ] as const;
 
 export type ModuloContenido = (typeof MODULOS_CONTENIDO)[number];
 
 /** Módulos que nacen APAGADOS y se encienden explícitamente por grupo. */
-const MODULOS_OPT_IN: ReadonlySet<ModuloContenido> = new Set<ModuloContenido>(['ejercicios']);
+const MODULOS_OPT_IN: ReadonlySet<ModuloContenido> = new Set<ModuloContenido>([
+  'ejercicios',
+  'diagramas',
+]);
 
 export function esModuloValido(v: unknown): v is ModuloContenido {
   return typeof v === 'string' && (MODULOS_CONTENIDO as readonly string[]).includes(v);

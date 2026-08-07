@@ -17,12 +17,22 @@ interface ColeccionRef {
   clave: string | null;
 }
 
+/**
+ * En este módulo los lenguajes SIEMPRE vienen: son los que el juez puede
+ * compilar, así que ningún ejercicio existe sin al menos uno. En
+ * `EjercicioLista` son opcionales porque esa forma la comparte con el módulo de
+ * diagramas, que no tiene lenguajes.
+ */
+interface EjercicioCodigoLista extends EjercicioLista {
+  lenguajes: string[];
+}
+
 interface RespuestaLista {
   coleccion: ColeccionRef | null;
   /** Ausente en respuestas de un API anterior a los bloques → agrupado plano. */
   bloques?: BloqueRef[];
   categorias: CategoriaRef[];
-  ejercicios: EjercicioLista[];
+  ejercicios: EjercicioCodigoLista[];
   progreso: { resueltos: number; total: number };
 }
 
@@ -155,7 +165,10 @@ export default function EjerciciosAlumnoPage() {
                                         <span className={styles.check} aria-hidden>{e.resuelto ? '✓' : '○'}</span>
                                         <span className={styles.itemTitulo}>{e.titulo}</span>
                                       </span>
-                                      <span className={styles.itemLeng}>{e.lenguajes.map((l) => NOMBRE_LENGUAJE[l] ?? l).join(' · ')}</span>
+                                      {/* `agruparEnBloques` devuelve `EjercicioLista`, donde los
+                                          lenguajes son opcionales por compartirse con el módulo de
+                                          diagramas; aquí siempre llegan. */}
+                                      <span className={styles.itemLeng}>{(e.lenguajes ?? []).map((l) => NOMBRE_LENGUAJE[l] ?? l).join(' · ')}</span>
                                     </Link>
                                   </li>
                                 ))}

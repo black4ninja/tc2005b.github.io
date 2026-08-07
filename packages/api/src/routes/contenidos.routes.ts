@@ -50,6 +50,16 @@ import {
   updateBloqueEjercicio,
   deleteBloqueEjercicio,
 } from '../controllers/ejercicios-bloques.controller.js';
+import {
+  listEjerciciosDiagrama,
+  createEjercicioDiagrama,
+  getEjercicioDiagrama,
+  updateEjercicioDiagrama,
+  setPublicacionEjercicioDiagrama,
+  deleteEjercicioDiagrama,
+  verificarEjercicio,
+  getCatalogoAserciones,
+} from '../controllers/ejercicios-diagrama.controller.js';
 
 // Subida en memoria: el binario va directo a Parse.File (sin disco temporal).
 const subida = multer({ storage: multer.memoryStorage(), limits: { fileSize: RECURSO_MAX_BYTES } });
@@ -78,6 +88,8 @@ router.use('/admin/documentos', identifyUser, requireAdmin);
 router.use('/admin/recursos', identifyUser, requireAdmin);
 router.use('/admin/ejercicios', identifyUser, requireAdmin);
 router.use('/admin/categorias-ejercicios', identifyUser, requireAdmin);
+router.use('/admin/ejercicios-diagrama', identifyUser, requireAdmin);
+router.use('/admin/catalogo-aserciones', identifyUser, requireAdmin);
 
 // Colecciones
 router.get('/admin/colecciones', listColecciones);
@@ -116,6 +128,17 @@ router.get('/admin/ejercicios/:id', getEjercicio);
 router.put('/admin/ejercicios/:id', updateEjercicio);
 router.put('/admin/ejercicios/:id/publicacion', setPublicacionEjercicio);
 router.delete('/admin/ejercicios/:id', deleteEjercicio);
+
+// Diagramas (módulo "Diagramas" — juez de diseño UML). Comparte las categorías y
+// los bloques de más abajo: agrupan la colección, no el juez.
+router.get('/admin/catalogo-aserciones', getCatalogoAserciones);
+router.get('/admin/colecciones/:id/ejercicios-diagrama', listEjerciciosDiagrama);
+router.post('/admin/colecciones/:id/ejercicios-diagrama', createEjercicioDiagrama);
+router.get('/admin/ejercicios-diagrama/:id', getEjercicioDiagrama);
+router.put('/admin/ejercicios-diagrama/:id', updateEjercicioDiagrama);
+router.post('/admin/ejercicios-diagrama/:id/verificar', verificarEjercicio);
+router.put('/admin/ejercicios-diagrama/:id/publicacion', setPublicacionEjercicioDiagrama);
+router.delete('/admin/ejercicios-diagrama/:id', deleteEjercicioDiagrama);
 
 // Categorías de ejercicios
 router.get('/admin/colecciones/:id/categorias-ejercicios', listCategoriasEjercicio);

@@ -67,4 +67,25 @@ describe('módulos opt-in (default apagado, la lista guarda lo ENCENDIDO)', () =
     expect(moduloHabilitado(mapa, 'colA', 'ejercicios')).toBe(true); // encendido
     expect(moduloHabilitado(mapa, 'colA', 'documentacion')).toBe(true); // default on intacto
   });
+
+  it('diagramas también es opt-in', () => {
+    expect(moduloEsOptIn('diagramas')).toBe(true);
+    expect(esModuloValido('diagramas')).toBe(true);
+  });
+
+  it('dos opt-in se encienden por separado, sin arrastrarse el uno al otro', () => {
+    // Hasta ahora solo había un módulo opt-in, así que nada probaba que la
+    // semántica invertida de la lista siguiera funcionando con varios.
+    const soloDiagramas = { colA: ['diagramas'] };
+    expect(moduloHabilitado(soloDiagramas, 'colA', 'diagramas')).toBe(true);
+    expect(moduloHabilitado(soloDiagramas, 'colA', 'ejercicios')).toBe(false);
+
+    const ambos = { colA: ['ejercicios', 'diagramas'] };
+    expect(moduloHabilitado(ambos, 'colA', 'ejercicios')).toBe(true);
+    expect(moduloHabilitado(ambos, 'colA', 'diagramas')).toBe(true);
+
+    // Y en otra colección del mismo grupo siguen apagados los dos.
+    expect(moduloHabilitado(ambos, 'colB', 'diagramas')).toBe(false);
+    expect(moduloHabilitado(ambos, 'colB', 'ejercicios')).toBe(false);
+  });
 });

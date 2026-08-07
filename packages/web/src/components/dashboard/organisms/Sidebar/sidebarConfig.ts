@@ -64,6 +64,8 @@ export function getSidebarItems(
   if (ejerciciosHref) {
     items.push({ label: 'Ejercicios', icon: 'terminal', path: ejerciciosHref, disabled: !perfilCompleto });
   }
+  // Ídem para Diagramas, que se enciende por separado: un grupo puede tener uno
+  // de los dos módulos y no el otro.
   // Sin URL en su grupo, no hay agenda que enlazar (igual que "Documentación").
   if (agendaHref) {
     items.push({

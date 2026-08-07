@@ -1,0 +1,277 @@
+.page {
+  padding: 24px;
+  /* Más ancho que el editor de ejercicios de programación: aquí el código y su
+     vista previa van lado a lado, y con 900px ninguno de los dos se lee. */
+  max-width: 1240px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  width: fit-content;
+}
+.volver:hover {
+  color: var(--text-primary);
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.error {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: #fdecea;
+  color: var(--dash-danger);
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.field {
+  margin-bottom: 24px;
+}
+
+.label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.subLabel {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+/* Envoltorio de un <label> que CONTIENE a su control, que es como se nombra un
+   campo sin depender de un `id` único: el rótulo va en un <span> interior con
+   .label o .subLabel, así que este contenedor no aporta más estilo que ser un
+   bloque —el aspecto es exactamente el de antes de asociar las etiquetas—. */
+.campoGrupo {
+  display: block;
+}
+
+.hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.ayuda {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.descripcion {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.aviso {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #fff4e5;
+  color: #8a5300;
+  border-radius: 6px;
+}
+
+.select {
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-input, #fff);
+  color: var(--text-primary);
+  min-width: 240px;
+  max-width: 100%;
+}
+
+/* Editor y vista previa a la par. Al estrecharse pasan a apilarse, porque media
+   pantalla de código no se lee en un portátil pequeño. */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.tarjeta {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.tarjetaHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.tarjetaNum {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ocultoLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.botonera {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.iconoBtn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+}
+.iconoBtn:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+.iconoBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.quitar {
+  background: none;
+  border: none;
+  color: var(--dash-danger);
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+}
+.quitar:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.parametros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.parametro {
+  min-width: 0;
+}
+
+.gridContexto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* --- Informe de verificación --- */
+
+.informe {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  font-size: 14px;
+}
+.informeOk {
+  background: #e6f4ea;
+  border-color: #b7e1c4;
+  color: #1e5e33;
+}
+.informeMal {
+  background: #fdecea;
+  border-color: #f5c2bd;
+  color: #7d2820;
+}
+
+.informeTitulo {
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+
+.informeFila {
+  padding: 8px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.informeEtiqueta {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.informeConteo {
+  display: block;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.informeLista {
+  margin: 6px 0 0;
+  padding-left: 20px;
+  font-size: 13px;
+}
+.informeLista li {
+  margin-bottom: 2px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+@media (max-width: 980px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+}

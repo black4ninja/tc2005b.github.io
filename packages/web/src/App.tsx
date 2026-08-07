@@ -43,6 +43,16 @@ const EditorEjercicioPage = lazy(
   () => import('./components/dashboard/pages/EditorEjercicioPage/EditorEjercicioPage'),
 );
 
+// Módulo "Diagramas". El editor arrastra CodeMirror Y el motor de diagramas para
+// la vista previa, así que pesa aún más que el de ejercicios: bajo demanda los
+// dos, listado incluido.
+const EjerciciosDiagramaColeccionPage = lazy(
+  () => import('./components/dashboard/pages/EjerciciosDiagramaColeccionPage/EjerciciosDiagramaColeccionPage'),
+);
+const EditorEjercicioDiagramaPage = lazy(
+  () => import('./components/dashboard/pages/EditorEjercicioDiagramaPage/EditorEjercicioDiagramaPage'),
+);
+
 // Visor del CMS (US-3): página completa con su propio chrome, fuera de los
 // layouts; todo su contenido llega por API autorizada por request.
 const VisorContenidoPage = lazy(
@@ -56,6 +66,19 @@ const EjerciciosAlumnoPage = lazy(
 );
 const EjercicioSolverPage = lazy(
   () => import('./components/contenidos/EjercicioSolverPage'),
+);
+// Módulo "Diagramas": lista y solver del alumno. Mismo montaje que Ejercicios,
+// una vez por rol — ver `config/rutasDiagramas`.
+const DiagramasAlumnoPage = lazy(
+  () => import('./components/contenidos/DiagramasAlumnoPage'),
+);
+const DiagramaSolverPage = lazy(
+  () => import('./components/contenidos/DiagramaSolverPage'),
+);
+// Taller libre: arrastra CodeMirror y el motor de diagramas, igual que el
+// solver, así que también se carga bajo demanda.
+const TallerDiagramasPage = lazy(
+  () => import('./components/contenidos/TallerDiagramasPage'),
 );
 const RedirEjerciciosLegacy = lazy(
   () => import('./components/contenidos/RedirEjerciciosLegacy'),
@@ -146,6 +169,31 @@ export default function App() {
             </Suspense>
           }
         />
+        {/* Diagramas como los ve el alumno, con el mismo montaje colgado del grupo. */}
+        <Route
+          path="admin/grupos/:id/diagramas/:slug"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando…</p>}>
+              <DiagramasAlumnoPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="admin/grupos/:id/diagramas/:slug/:ejSlug"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando ejercicio…</p>}>
+              <DiagramaSolverPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="admin/grupos/:id/taller-diagramas"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando taller…</p>}>
+              <TallerDiagramasPage />
+            </Suspense>
+          }
+        />
         <Route path="admin/competencias" element={<CompetenciasPage />} />
         <Route path="admin/actividades" element={<ActividadesPage />} />
         <Route path="admin/paginas" element={<PaginasPage />} />
@@ -157,6 +205,22 @@ export default function App() {
           element={
             <Suspense fallback={<p style={{ padding: 24 }}>Cargando editor…</p>}>
               <EditorEjercicioPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="admin/contenidos/:id/diagramas"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando…</p>}>
+              <EjerciciosDiagramaColeccionPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="admin/contenidos/:id/diagramas/:ejercicioId"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando editor…</p>}>
+              <EditorEjercicioDiagramaPage />
             </Suspense>
           }
         />
@@ -191,6 +255,34 @@ export default function App() {
           element={
             <Suspense fallback={<p style={{ padding: 24 }}>Cargando ejercicio…</p>}>
               <EjercicioSolverPage />
+            </Suspense>
+          }
+        />
+        {/* Diagramas, con el mismo criterio: sección de primer nivel colgada de
+            la colección, no del grupo. */}
+        <Route
+          path="alumno/diagramas/:slug"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando…</p>}>
+              <DiagramasAlumnoPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="alumno/diagramas/:slug/:ejSlug"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando ejercicio…</p>}>
+              <DiagramaSolverPage />
+            </Suspense>
+          }
+        />
+        {/* Taller libre: fuera del árbol de :slug porque no pertenece a ninguna
+            colección. Colgarlo de una haría creer que lo guardado es del curso. */}
+        <Route
+          path="alumno/taller-diagramas"
+          element={
+            <Suspense fallback={<p style={{ padding: 24 }}>Cargando taller…</p>}>
+              <TallerDiagramasPage />
             </Suspense>
           }
         />

@@ -1,0 +1,52 @@
+.marco {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-page);
+  padding: 10px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.lienzo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Un diagrama grande desborda a lo ancho: que se desplace DENTRO de su marco
+     y no empuje el ancho de la página. */
+  overflow: auto;
+  transition: opacity 0.15s ease;
+}
+
+.lienzo :global(svg) {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Atenuar mientras se repinta evita el parpadeo de "desaparece y vuelve". */
+.ocupado {
+  opacity: 0.55;
+}
+
+/* Ocupa el mismo alto que el lienzo para que el editor de al lado no dé un salto
+   en cuanto se escribe la primera línea. */
+.vacio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.error {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: #fdecea;
+  color: var(--dash-danger);
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

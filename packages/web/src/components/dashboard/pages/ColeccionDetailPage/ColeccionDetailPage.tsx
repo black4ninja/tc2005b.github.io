@@ -87,6 +87,10 @@ export default function ColeccionDetailPage() {
             <Icon name="terminal" size="sm" />
             <span>Ejercicios</span>
           </Link>
+          <Link to={`/admin/contenidos/${id}/diagramas`} className={styles.ejerciciosLink}>
+            <Icon name="schema" size="sm" />
+            <span>Diagramas</span>
+          </Link>
           <DashButton onClick={() => { setModalError(''); setModalOpen(true); }}>+ Página / Categoría</DashButton>
         </div>
       </div>

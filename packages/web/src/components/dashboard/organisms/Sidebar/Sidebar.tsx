@@ -12,6 +12,7 @@ import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import { APP_NAME } from '../../../../config/app';
 import { moduloHabilitado } from '../../../../config/modulosContenido';
 import { rutaEjerciciosAdmin, rutaEjerciciosAlumno } from '../../../../config/rutasEjercicios';
+import { rutaDiagramasAdmin, rutaDiagramasAlumno, rutaTallerAdmin, rutaTallerAlumno } from '../../../../config/rutasDiagramas';
 
 /** Colección asignada al grupo, como la devuelve /api/admin/grupos. */
 interface ColeccionGrupo {
@@ -63,6 +64,8 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
   const [docsHref, setDocsHref] = useState<string | null>(null);
   const [ejerciciosHref, setEjerciciosHref] = useState<string | null>(null);
+  const [diagramasHref, setDiagramasHref] = useState<string | null>(null);
+  const [tallerHref, setTallerHref] = useState<string | null>(null);
   const [colecciones, setColecciones] = useState<ColeccionGrupo[]>([]);
   // Módulos apagados por colección del grupo: filtran qué secciones aparecen.
   const [modulosDeshabilitados, setModulosDeshabilitados] = useState<Record<string, string[]>>({});
@@ -100,6 +103,23 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       .then((json) => {
         const cols: { slug: string }[] = json?.colecciones ?? [];
         setEjerciciosHref(cols.length > 0 ? rutaEjerciciosAlumno(cols[0].slug) : null);
+      })
+      .catch(() => {});
+  }, [sessionToken, role]);
+
+  // Diagramas del ALUMNO: mismo criterio que Ejercicios, con su propio endpoint
+  // porque el módulo se enciende por separado y puede tener contenido publicado
+  // cuando el otro no.
+  useEffect(() => {
+    if (!sessionToken || role !== 'alumno') return;
+    fetch('/api/me/diagramas/colecciones', { headers: { 'x-session-token': sessionToken } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        const cols: { slug: string }[] = json?.colecciones ?? [];
+        setDiagramasHref(cols.length > 0 ? rutaDiagramasAlumno(cols[0].slug) : null);
+        // El taller no cuelga de una colección, pero solo se ofrece si el
+        // módulo está activo para el alumno: sin él no pinta nada en el menú.
+        setTallerHref(cols.length > 0 ? rutaTallerAlumno() : null);
       })
       .catch(() => {});
   }, [sessionToken, role]);
@@ -219,6 +239,34 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
     return col ? rutaEjerciciosAdmin(grupoId, col.slug) : null;
   }, [colecciones, modulosDeshabilitados, grupoId]);
 
+  // Ídem para Diagramas. Se resuelve por separado porque los dos módulos se
+  // encienden por separado: un grupo puede tener uno y no el otro.
+  const diagramasGrupoHref = useMemo(() => {
+    if (!grupoId) return null;
+    const col = colecciones.find((c) => moduloHabilitado(modulosDeshabilitados, c.id, 'diagramas'));
+    return col ? rutaDiagramasAdmin(grupoId, col.slug) : null;
+  }, [colecciones, modulosDeshabilitados, grupoId]);
+
+  // El taller del admin cuelga del grupo abierto, igual que el resto del módulo,
+  // y se ofrece bajo la misma condición que Diagramas.
+  const tallerGrupoHref = grupoId && diagramasGrupoHref ? rutaTallerAdmin(grupoId) : null;
+
+  /**
+   * «Diagramas» como SECCIÓN desplegable y no como dos entradas sueltas:
+   * resolver ejercicios y dibujar libremente son dos usos del mismo módulo, y
+   * de un vistazo se leían como dos módulos distintos. Reutiliza el mismo
+   * componente que agrupa «Contenido», que además se aplana a un enlace directo
+   * si solo quedara una de las dos.
+   */
+  const enlacesDiagramas = useMemo<EnlaceColeccion[]>(() => {
+    const listado = isGrupoDetail ? diagramasGrupoHref : diagramasHref;
+    const taller = isGrupoDetail ? tallerGrupoHref : tallerHref;
+    const enlaces: EnlaceColeccion[] = [];
+    if (listado) enlaces.push({ key: 'ejercicios', label: 'Ejercicios', href: listado });
+    if (taller) enlaces.push({ key: 'libre', label: 'Libre', href: taller });
+    return enlaces;
+  }, [isGrupoDetail, diagramasGrupoHref, diagramasHref, tallerGrupoHref, tallerHref]);
+
   const items = isGrupoDetail
     ? getGrupoDetailItems(grupoId!, agendaGrupoHref, ejerciciosGrupoHref)
     : getSidebarItems(
@@ -332,6 +380,14 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
                   onClick={onCloseMobile}
                 />
               ))}
+              {enlacesDiagramas.length > 0 && (
+                <SeccionColecciones
+                  titulo="Diagramas"
+                  icono="schema"
+                  items={enlacesDiagramas}
+                  collapsed={collapsed}
+                />
+              )}
               {/* Las secciones de colección (Páginas/Actividades) llevan a
                   pantallas GLOBALES admin-only; el profesor no las ve. */}
               {isGrupoDetail && !esProfesor &&

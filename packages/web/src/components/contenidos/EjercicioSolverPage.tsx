@@ -8,7 +8,22 @@ import { useCargaGated } from '../../hooks/useCargaGated';
 import { extensionLenguaje, NOMBRE_LENGUAJE } from '../../config/codemirrorLenguaje';
 import { useEjerciciosBase } from '../../config/rutasEjercicios';
 import { useDiagramas } from '../../lib/diagramas/useDiagramas';
+import Icon from '../dashboard/atoms/Icon/Icon';
 import styles from './EjercicioSolver.module.css';
+
+/**
+ * El enunciado se puede plegar para dedicarle la pantalla al código, igual que
+ * en el solver de diagramas. Se recuerda entre sesiones: quien trabaja en una
+ * pantalla chica no quiere volver a plegarlo cada vez que entra.
+ *
+ * Clave propia y no compartida con el otro módulo: son dos pantallas distintas
+ * y quien plega una no está pidiendo plegar la otra.
+ */
+const ENUNCIADO_KEY = 'ejercicios:solver:enunciado';
+
+function leerEnunciadoVisible(): boolean {
+  return localStorage.getItem(ENUNCIADO_KEY) !== 'oculto';
+}
 
 interface CasoMuestra { indice: number; entrada: string; salidaEsperada: string }
 interface EjercicioDTO {
@@ -73,6 +88,12 @@ export default function EjercicioSolverPage() {
   const { sessionToken } = useAuth();
   // Aquí el "volver" SÍ corresponde: el solver cuelga del listado del módulo.
   const base = useEjerciciosBase();
+  const [enunciadoVisible, setEnunciadoVisibleState] = useState<boolean>(leerEnunciadoVisible);
+
+  function setEnunciadoVisible(v: boolean) {
+    setEnunciadoVisibleState(v);
+    localStorage.setItem(ENUNCIADO_KEY, v ? 'visible' : 'oculto');
+  }
 
   const { data, cargando, error: errorCarga, noEncontrado, reintentar } = useCargaGated<{ ejercicio: EjercicioDTO }>(
     slug && ejSlug ? `/api/contenidos/${slug}/ejercicios/${ejSlug}` : null,
@@ -208,8 +229,9 @@ export default function EjercicioSolverPage() {
         <h1 className={styles.titulo}>{ej.titulo}</h1>
       </header>
 
-      <div className={styles.cols}>
+      <div className={`${styles.cols} ${enunciadoVisible ? '' : styles.colsSinEnunciado}`}>
         {/* Enunciado + casos de muestra */}
+        {enunciadoVisible && (
         <section className={styles.enunciadoCol}>
           <div ref={refDiagramas} className={styles.enunciado} dangerouslySetInnerHTML={{ __html: ej.enunciadoHtml }} />
           {ej.casosMuestra.length > 0 && (
@@ -227,10 +249,21 @@ export default function EjercicioSolverPage() {
             <p className={styles.info}>Además hay {ej.casosOcultos} caso(s) oculto(s) al enviar.</p>
           )}
         </section>
+        )}
 
         {/* Editor + acciones + resultados */}
         <section className={styles.editorCol}>
           <div className={styles.editorHead}>
+            <button
+              type="button"
+              className={styles.btnEnunciado}
+              onClick={() => setEnunciadoVisible(!enunciadoVisible)}
+              aria-pressed={!enunciadoVisible}
+              title={enunciadoVisible ? 'Ocultar el enunciado' : 'Mostrar el enunciado'}
+            >
+              <Icon name={enunciadoVisible ? 'chevron_left' : 'chevron_right'} size="sm" />
+              <span>{enunciadoVisible ? 'Ocultar enunciado' : 'Mostrar enunciado'}</span>
+            </button>
             {ej.lenguajes.length > 1 ? (
               <select className={styles.select} value={lenguaje} onChange={(e) => setLenguaje(e.target.value)} disabled={trabajando}>
                 {ej.lenguajes.map((l) => <option key={l} value={l}>{NOMBRE_LENGUAJE[l] ?? l}</option>)}

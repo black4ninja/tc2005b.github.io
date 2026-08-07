@@ -12,6 +12,7 @@
  * Se parsea con DOMParser y se adopta solo el nodo raíz: así el marcado nunca
  * pasa por `innerHTML` del documento vivo.
  */
+import { marcarSvg } from './marcaDeAgua';
 
 /** Atributos que pueden ejecutar código en SVG. */
 const EJECUTABLES = /^on/i;
@@ -43,5 +44,11 @@ export function insertarSvg(contenedor: HTMLElement, svg: string): void {
   if (!raiz) throw new Error('El motor no devolvió un SVG.');
   raiz.querySelectorAll('script').forEach((s) => s.remove());
   limpiar(raiz);
-  contenedor.replaceChildren(document.importNode(raiz, true));
+  const adoptado = document.importNode(raiz, true) as SVGSVGElement;
+  // DESPUÉS de sanear, para que la marca no pase por el limpiador —no lo
+  // necesita, la construimos nosotros— y para que nada del motor pueda
+  // sobrescribirla. Va aquí, en el único punto por el que pasan los dos motores
+  // y todas las pantallas: así no hay forma de dibujar un diagrama sin ella.
+  marcarSvg(adoptado);
+  contenedor.replaceChildren(adoptado);
 }

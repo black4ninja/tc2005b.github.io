@@ -10,10 +10,21 @@ export interface EjercicioLista {
   id: string;
   titulo: string;
   slug: string;
-  lenguajes: string[];
   orden: number;
   categoriaId: string | null;
   resuelto: boolean;
+  /**
+   * Presentes solo en su módulo: `lenguajes` en los ejercicios de código y
+   * `tipoDiagrama` en los de diseño.
+   *
+   * El agrupado no mira ninguno de los dos —solo `categoriaId`—, así que van
+   * opcionales en lugar de duplicar esta lógica, que es la única con tests, por
+   * cada módulo que agrupe por categoría y bloque.
+   */
+  lenguajes?: string[];
+  tipoDiagrama?: string;
+  /** Ejemplo resuelto: se muestra marcado y no cuenta para el progreso. */
+  esEjemplo?: boolean;
 }
 
 export interface CategoriaRef {
