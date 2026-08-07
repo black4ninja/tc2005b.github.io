@@ -18,6 +18,15 @@ const TEXTO_CREDITO = 'developed by meeplab';
 /** Ancho aproximado de un carácter respecto al tamaño de fuente, para una sans. */
 const RATIO_CARACTER = 0.55;
 
+/**
+ * `currentColor` y NO un gris fijo: el visor dibuja los diagramas con la paleta
+ * del tema, así que sobre fondo oscuro un gris oscuro al 10 % es invisible y la
+ * marca desaparece justo en el modo en el que el resto del dibujo se ve bien.
+ * `currentColor` hereda el color de texto del contenedor, que ya sigue al tema,
+ * y en un SVG guardado suelto cae a negro, que es lo que había antes.
+ */
+const COLOR = 'currentColor';
+
 interface Caja {
   x: number;
   y: number;
@@ -101,21 +110,21 @@ export function marcarSvg(svg: SVGSVGElement): void {
   // crédito; una marca fuera del área visible no marca nada.
   const TAMANO_MINIMO = 10;
   if (tamanoUso >= TAMANO_MINIMO) {
-  grupo.appendChild(
-    crearTexto(TEXTO_USO, {
-      x: String(centroX),
-      y: String(centroY),
-      'text-anchor': 'middle',
-      'dominant-baseline': 'middle',
-      transform: `rotate(-30 ${centroX} ${centroY})`,
-      fill: '#1f2328',
-      'fill-opacity': '0.10',
-      'font-family': 'Inter, system-ui, sans-serif',
-      'font-size': String(tamanoUso),
-      'font-weight': '700',
-      'letter-spacing': '0.04em',
-    }),
-  );
+    grupo.appendChild(
+      crearTexto(TEXTO_USO, {
+        x: String(centroX),
+        y: String(centroY),
+        'text-anchor': 'middle',
+        'dominant-baseline': 'middle',
+        transform: `rotate(-30 ${centroX} ${centroY})`,
+        fill: COLOR,
+        'fill-opacity': '0.10',
+        'font-family': 'Inter, system-ui, sans-serif',
+        'font-size': String(tamanoUso),
+        'font-weight': '700',
+        'letter-spacing': '0.04em',
+      }),
+    );
   }
 
   // El crédito va ARRIBA A LA IZQUIERDA, no abajo a la derecha: ahí se montaba
@@ -130,8 +139,8 @@ export function marcarSvg(svg: SVGSVGElement): void {
       x: String(caja.x + tamanoCredito * 0.6),
       y: String(caja.y + tamanoCredito * 1.2),
       'text-anchor': 'start',
-      fill: '#57606a',
-      'fill-opacity': '0.55',
+      fill: COLOR,
+      'fill-opacity': '0.45',
       'font-family': 'Inter, system-ui, sans-serif',
       'font-size': String(tamanoCredito),
     }),

@@ -122,6 +122,16 @@ describe('marcarSvg', () => {
     expect(svg.querySelector('[data-marca-agua]')).toBeNull();
   });
 
+  it('sigue al color del tema en vez de fijar un gris', () => {
+    // El visor dibuja con la paleta oscura cuando el tema lo está: un gris
+    // oscuro fijo al 10 % deja la marca invisible justo ahí.
+    const svg = svgCon({ viewBox: '0 0 400 300' });
+    marcarSvg(svg);
+    const textos = [...svg.querySelectorAll('[data-marca-agua] text')];
+    expect(textos).toHaveLength(2);
+    for (const t of textos) expect(t.getAttribute('fill')).toBe('currentColor');
+  });
+
   it('la marca no intercepta el ratón ni la lee un lector de pantalla', () => {
     const svg = svgCon({ viewBox: '0 0 400 300' });
     marcarSvg(svg);
