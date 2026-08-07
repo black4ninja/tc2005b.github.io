@@ -7,7 +7,6 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-
 ### Added
 - **Núcleo del juez de diagramas UML** (`packages/api/src/services/juez-diagramas/`),
   primera fase del módulo de ejercicios de diseño. Evalúa el **modelo** del
@@ -636,16 +635,7 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   (antes "TC2005B" / "Construcción de Software y Toma de Decisiones") ahora
   salen de `packages/web/src/config/app.ts` (`APP_NAME`, `APP_TAGLINE`) y se
   usan en login, navbar, home, sidebar, título del navegador y export XLSX.
-- **Los enunciados muestran las firmas de lo ya proporcionado.** Decir que un
-  tipo "ya está declarado" sin enseñarlo obligaba a adivinar los nombres, y en
-  lenguajes de tipado estático eso impide entregar aunque el razonamiento sea
-  correcto.
-- **El contrato de ejecución se lee antes que la firma**, y los casos se rotulan
-  según lo que la entrada significa: en modo plantilla es el nombre de una
-  comprobación, no datos que el alumno lea. En modo programa no cambia, porque
-  ahí la entrada sí son datos.
-- **El editor del solver acompaña al scroll del enunciado**, que dejaba de verse
-  al bajar a leer qué hay que escribir.
+
 ### Deprecated
 - Se elimina el despliegue por **GitHub Pages**. El sitio se despliega en un
   servidor (`groups.meeplab.com`) que hace `pull` del repositorio y sirve `dist/`.
@@ -699,26 +689,6 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   reservado `ejercicios` y tapar la ruta del módulo: la reserva solo se
   comprobaba al crear. Ahora se comprueba también al renombrar, y la lista de
   slugs reservados es una sola constante que incluye `diagramas`.
-- **Temario de arquitectura MVVM reescrito y ampliado a 36 ejercicios** en la
-  colección `tc2007b`: 12 conceptos × 3 niveles (guiado, base y reto). Los 12
-  anteriores quedan **despublicados, no borrados**.
-  - Los enunciados explican de dónde viene cada concepto, dónde más se usa fuera
-    del móvil y qué problema resuelve, no solo qué escribir. Dominio neutro
-    (`Item`) en lugar del dominio del wiki.
-  - El vocabulario de arquitectura sigue siendo el de cada pista —`UseCase` en
-    Android, `Requirement` en iOS—, porque es el que el alumno encontrará en la
-    documentación de su plataforma.
-  - 90 soluciones de referencia, mínimo dos por lenguaje y con estrategias
-    distintas: dos soluciones válidas con veredictos distintos delatan un caso
-    sobreajustado.
-  - Las restricciones del juez se documentan en el enunciado en lugar de
-    esquivarse: Combine no existe en Linux y no hay corrutinas, así que
-    `@Published`, `StateFlow` y `LiveData` no compilan en el servidor y se
-    sustituyen por un callback, con su tabla de equivalencias por plataforma.
-- **Herramienta de medida de comprensión** (`packages/api/scripts/estudio-comprension.ts`):
-  exporta lo que ve un alumno, evalúa código candidato contra el ejercicio real
-  y calcula métricas de carga cognitiva.
-
 - **Las pantallas de ejercicios fallaban con "No se pudo cargar".** Los dos
   listados pedían el documento completo de cada ejercicio —enunciado, plantillas,
   casos y soluciones— para construir respuestas que no usan ninguno de esos
@@ -847,25 +817,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   oculta, y la limpieza del efecto deshace lo pintado: sin eso, cambiar de tema
   no repintaba nada porque no quedaba bloque que procesar, y el diagrama se
   quedaba con la paleta anterior hasta recargar la página.
-- **Las pantallas de ejercicios fallaban con "No se pudo cargar".** Los dos
-  listados pedían el documento completo de cada ejercicio —enunciado, plantillas,
-  casos y soluciones— para construir respuestas que no usan ninguno de esos
-  campos. Con 46 ejercicios eran 0.79 MB y hasta 37 s contra Atlas, por encima
-  del timeout de 15 s del front: la vista de alumno fallaba de forma
-  intermitente y la de admin siempre. Seleccionando solo los campos devueltos,
-  14 KB y medio segundo.
-- **Los diagramas no se dibujaban en el enunciado de un ejercicio.** Al cablear el
-  hook en el solver se añadieron el `import` y el `ref`, pero **nunca la llamada**,
-  así que el bloque se quedaba como código. El visor y el editor sí la tenían.
-  - Se activa `noUnusedLocals` en el type-check del web, que es el guardarraíl que
-    lo habría cazado: con la llamada ausente, el import queda sin usar y `tsc`
-    falla. Comprobado reintroduciendo el bug a propósito. De paso se retiran las
-    7 variables e imports muertos que impedían encender el flag.
-- **Los diagramas con salto de línea en una etiqueta no se dibujaban.** `svgSeguro`
-  parseaba el SVG como `image/svg+xml`, que es **XML estricto**, y Mermaid mete
-  HTML dentro de `foreignObject` en cuanto una etiqueta lleva `<br/>`. El parser
-  devolvía `parsererror` y el bloque caía al modo "no se pudo dibujar". Ahora se
-  parsea como `text/html`, que entiende contenido extranjero y produce el mismo
-  árbol SVG. Afectaba a la mayoría de diagramas útiles.
-
+- **Las imágenes del visor fallaban con 401 mientras el texto cargaba bien.** El
+  SPA se autentica con el token de localStorage en la cabecera `x-session-token`,
+  pero **un `<img>` no puede mandar cabeceras**: las imágenes del CMS dependen en
+  exclusiva de la cookie de sesión. Si el token sobrevivía y la cookie no —cookies
+  limpiadas, caducada antes, o sesión abierta antes de que la cookie existiera— la
+  aplicación parecía funcionar y solo se rompían las imágenes, sin ningún aviso.
+  Ahora `/auth/me`, que corre en cada arranque con el token ya validado, vuelve a
+  sembrar la cookie si falta: con una recarga el usuario se recupera solo, sin
+  tener que cerrar sesión.
 [Unreleased]: https://github.com/black4ninja/tc2005b.github.io/commits/main
