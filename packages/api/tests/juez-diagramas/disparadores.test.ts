@@ -8,6 +8,7 @@
  * descarta, igual que en los mensajes de secuencia.
  */
 import { describe, it, expect } from 'vitest';
+import './calentar.js';
 import { disparadorDeTransicion } from '../../src/services/juez-diagramas/catalogo.js';
 import { evaluarDiagrama } from '../../src/services/juez-diagramas/evaluar.js';
 

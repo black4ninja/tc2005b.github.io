@@ -8,6 +8,7 @@
  * por bueno un ejercicio sin ninguna comprobación.
  */
 import { describe, it, expect } from 'vitest';
+import './calentar.js';
 import { verificarEjercicioDiagrama } from '../../src/services/diagramas-verificacion.service.js';
 import type { EjercicioVerificable } from '../../src/services/diagramas-verificacion.service.js';
 

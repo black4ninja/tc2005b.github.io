@@ -8,6 +8,7 @@
  * contrario del diagrama, y ningún test de más arriba lo detectaría.
  */
 import { describe, it, expect } from 'vitest';
+import './calentar.js';
 import { normalizarMermaid } from '../../src/services/juez-diagramas/normalizar-mermaid.js';
 import { evaluarDiagrama } from '../../src/services/juez-diagramas/evaluar.js';
 import type { Asercion } from '../../src/services/juez-diagramas/tipos.js';

@@ -7,6 +7,7 @@
  * caso negativo, que es el que demuestra que la comprobación discrimina.
  */
 import { describe, it, expect } from 'vitest';
+import './calentar.js';
 import { evaluarDiagrama } from '../../src/services/juez-diagramas/evaluar.js';
 import type { Asercion, TipoDiagrama } from '../../src/services/juez-diagramas/tipos.js';
 

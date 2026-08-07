@@ -11,6 +11,7 @@
  * propiedad que la frontera compra.
  */
 import { describe, it, expect } from 'vitest';
+import './calentar.js';
 import { normalizarMermaid } from '../../src/services/juez-diagramas/normalizar-mermaid.js';
 import { ErrorSintaxisDiagrama } from '../../src/services/juez-diagramas/tipos.js';
 
