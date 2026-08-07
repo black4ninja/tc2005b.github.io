@@ -78,7 +78,11 @@ export function useDiagramas(
           .then((r) => r.pintar(codigo, destino, oscuro))
           .then(() => {
             if (!vigente) return;
-            pre.remove();
+            // El <pre> se queda OCULTO, no se borra: es la única copia del
+            // código fuente que tenemos. Al cambiar de tema hay que volver a
+            // dibujar el SVG con la otra paleta, y para eso el bloque original
+            // tiene que seguir en el DOM (ver la limpieza del efecto). Ocultarlo
+            // es indistinguible de borrarlo para quien mira la página.
           })
           .catch((e: unknown) => {
             if (!vigente) return;
@@ -113,7 +117,21 @@ export function useDiagramas(
 
     procesar();
 
-    return () => { vigente = false; observador.disconnect(); };
+    return () => {
+      vigente = false;
+      observador.disconnect();
+      // Deshace lo dibujado y devuelve los <pre> a la vista. Es lo que permite
+      // que un cambio de TEMA repinte: `oscuro` está en las dependencias, así
+      // que el efecto se relanza, y sin esta limpieza la pasada siguiente no
+      // encontraría ningún bloque que procesar (ya llevan su marca) y el SVG
+      // se quedaría con la paleta anterior.
+      raiz.querySelectorAll('figure.contenido-diagrama').forEach((f) => f.remove());
+      raiz.querySelectorAll('p.contenido-diagrama-error').forEach((p) => p.remove());
+      raiz.querySelectorAll<HTMLElement>('pre[data-diagrama]').forEach((pre) => {
+        pre.style.display = '';
+        delete pre.dataset.diagrama;
+      });
+    };
     // `deps` lo controla quien llama: normalmente la página o el markdown.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [raiz, oscuro, ...deps]);

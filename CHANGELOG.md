@@ -41,6 +41,16 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   al bajar a leer qué hay que escribir.
 
 ### Fixed
+- **Los diagramas se dibujaban siempre en claro, aunque el visor estuviera en
+  oscuro.** El hook `useDiagramas` ya aceptaba un flag `oscuro` y ambos motores
+  (Mermaid y PlantUML) lo soportan, pero `VisorContenidoPage` **nunca se lo
+  pasaba**: quedaba en su valor por defecto `false`. Sobre fondo oscuro, las
+  cajas salían blancas y las flechas y etiquetas —negras— eran directamente
+  invisibles. Ahora el flag viaja desde el estado del tema.
+  Además, el `<pre>` original ya **no se borra** al dibujar el SVG, sino que se
+  oculta, y la limpieza del efecto deshace lo pintado: sin eso, cambiar de tema
+  no repintaba nada porque no quedaba bloque que procesar, y el diagrama se
+  quedaba con la paleta anterior hasta recargar la página.
 - **Las pantallas de ejercicios fallaban con "No se pudo cargar".** Los dos
   listados pedían el documento completo de cada ejercicio —enunciado, plantillas,
   casos y soluciones— para construir respuestas que no usan ninguno de esos

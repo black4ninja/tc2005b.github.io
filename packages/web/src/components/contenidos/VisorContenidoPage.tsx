@@ -68,7 +68,12 @@ export default function VisorContenidoPage() {
 
   // Diagramas-como-código: reemplaza los bloques ```mermaid (y los que ya están
   // escritos en PlantUML) por su SVG. Mismo patrón que el botón de copiar.
-  const refDiagramas = useDiagramas([pagina]);
+  //
+  // `oscuro` va al hook para que el SVG se dibuje con la paleta del tema: sin
+  // él, los diagramas salían siempre en claro —fondo blanco y líneas negras—
+  // sobre la página oscura, ilegibles. Además entra en las dependencias del
+  // efecto, así que al cambiar de tema se repintan.
+  const refDiagramas = useDiagramas([pagina], oscuro);
 
   // El <article> necesita las DOS refs: `articleRef` para el botón de copiar y
   // la del hook de diagramas. Va en un `useCallback` estable: una lambda inline
