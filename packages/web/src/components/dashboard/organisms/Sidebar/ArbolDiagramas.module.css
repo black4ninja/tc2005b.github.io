@@ -1,0 +1,159 @@
+/* Navegación del módulo Diagramas dentro del sidebar. Toma los mismos tokens
+   que `ArbolContenidos` a propósito: son dos árboles contextuales del mismo
+   armazón y una divergencia visual los leería como sistemas distintos. */
+.arbol {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 6px 12px;
+  scrollbar-width: thin;
+}
+.arbol::-webkit-scrollbar {
+  width: 6px;
+}
+.arbol::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 3px;
+}
+
+.buscador {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 2px 10px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 7px;
+  background: var(--bg-page, #f8fafc);
+  color: var(--text-secondary, #64748b);
+}
+
+.campo {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary, #0f172a);
+  font-size: 0.78rem;
+  outline: none;
+}
+
+.limpiar {
+  display: inline-flex;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.materia {
+  margin: 0 8px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+}
+
+/* Rótulo de sección («Curso UML», «Catálogo»). No es interactivo. */
+.rubro {
+  margin: 12px 8px 4px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary, #94a3b8);
+}
+.rubro:first-of-type {
+  margin-top: 4px;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sidebar-color, #334155);
+  font-size: 0.82rem;
+  line-height: 1.25;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.fila:hover {
+  background: var(--sidebar-hover-bg, rgba(0, 0, 0, 0.04));
+}
+
+.filaActiva,
+.filaActiva:hover {
+  background: var(--sidebar-active-bg, #eef2ff);
+  color: var(--sidebar-active-color, #4f46e5);
+  font-weight: 600;
+}
+
+.filaTexto {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filaConteo {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+}
+
+/* El catálogo cuenta TIPOS disponibles, no avance: se atenúa para que no se
+   lea como un progreso que el alumno tiene pendiente. */
+.filaConteoTenue {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary, #cbd5e1);
+}
+
+.filaMeta {
+  flex: none;
+  font-size: 0.68rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.aviso {
+  margin: 4px 8px;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.enlaceBoton {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--dash-primary, #4f46e5);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.todos {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding: 8px;
+  border-top: 1px solid var(--border-color, #f1f5f9);
+  color: var(--text-secondary, #64748b);
+  font-size: 0.78rem;
+  text-decoration: none;
+}
+.todos:hover {
+  color: var(--dash-primary, #4f46e5);
+}

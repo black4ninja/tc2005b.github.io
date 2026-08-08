@@ -1,231 +1,239 @@
 import { useMemo, useState } from 'react';
-import { useParams, Link } from 'react-router';
-import { useCargaGated } from '../../hooks/useCargaGated';
-import { useDiagramasBase } from '../../config/rutasDiagramas';
-import { etiquetaTipoDiagrama, posicionDeTipoDiagrama } from '../../lib/diagramas/etiquetas';
+import { Link } from 'react-router';
+import { useDiagramasNav, type DiagramaLista } from '../../context/DiagramasNavContext';
+import { rutaTallerAdmin, rutaTallerAlumno } from '../../config/rutasDiagramas';
+import { useParams } from 'react-router';
 import {
-  agruparEnBloques,
-  type BloqueRef,
-  type CategoriaRef,
-  type EjercicioLista,
-} from './agruparEjercicios';
+  agrupadoDiagramas,
+  etiquetaMotorDiagrama,
+  etiquetaTipoDiagrama,
+  posicionDeTipoDiagrama,
+  type TipoDiagramaDef,
+} from '../../lib/diagramas/etiquetas';
+import { contables, indiceDeBloques } from './navegacionDiagramas';
 import styles from './DiagramasAlumno.module.css';
 
-interface ColeccionRef {
-  slug: string;
-  nombre: string;
-  clave: string | null;
-}
-
 /**
- * En este módulo el tipo de diagrama SIEMPRE viene: es lo que decide qué
- * comprobaciones aplican, así que ningún ejercicio puede existir sin él. En
- * `EjercicioLista` es opcional porque la comparte con el módulo de código, que
- * no lo tiene.
+ * Listado de ejercicios de diagrama.
+ *
+ * La navegación —bloques del curso y grupos del catálogo— NO está aquí: la pinta
+ * el sidebar (`ArbolDiagramas`), y el avance global, el topbar. Esta pantalla se
+ * queda con lo que corresponde al panel principal: los tipos de la sección
+ * abierta, con sus ejercicios.
+ *
+ * Se agrupa por TIPO DE DIAGRAMA y no por categoría, que es lo que hacía antes.
+ * En este módulo son casi lo mismo —las categorías sembradas se llaman «Clases»,
+ * «Secuencia»…—, pero el tipo es el que decide qué se comprueba y el que el
+ * alumno reconoce, y además permite listar en la misma pantalla los tipos que
+ * todavía no tienen ejercicios.
  */
-interface DiagramaLista extends EjercicioLista {
-  tipoDiagrama: string;
-}
 
-interface RespuestaLista {
-  coleccion: ColeccionRef | null;
-  categorias: CategoriaRef[];
-  bloques: BloqueRef[];
+interface FilaTipo {
+  tipo: string;
+  def?: TipoDiagramaDef;
   ejercicios: DiagramaLista[];
 }
 
-
 export default function DiagramasAlumnoPage() {
-  const { slug } = useParams<{ slug: string }>();
-  const base = useDiagramasBase();
-  const { data, cargando, error, noEncontrado, reintentar } = useCargaGated<RespuestaLista>(
-    slug ? `/api/contenidos/${slug}/diagramas` : null,
-  );
-  const [filtroTipo, setFiltroTipo] = useState<'todos' | string>('todos');
-  const [colapsadas, setColapsadas] = useState<Set<string>>(new Set());
+  const { id } = useParams<{ id?: string }>();
+  const {
+    activo,
+    base,
+    coleccion,
+    bloques,
+    categorias,
+    ejercicios,
+    cargando,
+    error,
+    reintentar,
+    seccion,
+    irA,
+  } = useDiagramasNav();
 
-  const coleccion = data?.coleccion ?? null;
-  const ejercicios = useMemo(() => data?.ejercicios ?? [], [data]);
-  const categorias = data?.categorias ?? [];
-  const bloques = data?.bloques ?? [];
+  const [abierto, setAbierto] = useState<string | null>(null);
+
+  const rutaTaller = id ? rutaTallerAdmin(id) : rutaTallerAlumno();
+
+  /** Bloque de la colección al que pertenece cada ejercicio, vía su categoría. */
+  const bloqueDeEjercicio = useMemo(() => indiceDeBloques(bloques, categorias), [bloques, categorias]);
 
   /**
-   * Los chips se derivan de lo que hay publicado, no del catálogo entero: de los
-   * tipos que el editor ofrece, una colección suele usar dos o tres, y pintar el
-   * resto sería ofrecer filtros que siempre dan vacío. Se ordenan por el
-   * catálogo para que la fila no cambie de orden según el contenido, y los tipos
-   * que este cliente aún no conozca van al final en vez de desaparecer.
+   * Sección efectiva: la de la URL, o el primer bloque con ejercicios. Sin este
+   * respaldo, entrar al módulo sin `?seccion=` dejaría el panel vacío junto a un
+   * árbol lleno, que se lee como que no hay nada publicado.
    */
-  const tiposPresentes = useMemo(() => {
-    const presentes = [...new Set(ejercicios.map((e) => e.tipoDiagrama))];
-    return presentes.sort(
-      (a, b) => posicionDeTipoDiagrama(a) - posicionDeTipoDiagrama(b) || a.localeCompare(b),
+  const seccionEfectiva = seccion ?? (bloques[0] ? { clase: 'curso' as const, nombre: bloques[0].nombre } : null);
+
+  const esCatalogo = seccionEfectiva?.clase === 'cat';
+
+  /** Tipos con ejercicios de la sección abierta, en el orden del catálogo. */
+  const filas = useMemo<FilaTipo[]>(() => {
+    if (!seccionEfectiva || esCatalogo) return [];
+    const suyos = ejercicios.filter((e) => bloqueDeEjercicio(e) === seccionEfectiva.nombre);
+    const porTipo = new Map<string, DiagramaLista[]>();
+    for (const e of suyos) {
+      porTipo.set(e.tipoDiagrama, [...(porTipo.get(e.tipoDiagrama) ?? []), e]);
+    }
+    const catalogo = new Map(
+      agrupadoDiagramas().flatMap((g) => g.tipos.map((t) => [t.key, t] as const)),
     );
-  }, [ejercicios]);
+    return [...porTipo.entries()]
+      .sort(([a], [b]) => posicionDeTipoDiagrama(a) - posicionDeTipoDiagrama(b) || a.localeCompare(b))
+      .map(([tipo, items]) => ({
+        tipo,
+        def: catalogo.get(tipo),
+        ejercicios: [...items].sort((x, y) => x.orden - y.orden),
+      }));
+  }, [ejercicios, seccionEfectiva, esCatalogo, bloqueDeEjercicio]);
 
-  const filtrados =
-    filtroTipo === 'todos' ? ejercicios : ejercicios.filter((e) => e.tipoDiagrama === filtroTipo);
-  // Sin bloques devuelve un único bloque sin título → se pinta como siempre.
-  const arbol = agruparEnBloques(bloques, categorias, filtrados);
-  // El progreso se calcula sobre lo FILTRADO, igual que en el módulo de código:
-  // quien esté trabajando un solo tipo de diagrama ve su avance en ESE tipo, sin
-  // que los de los demás lo dejen permanentemente por debajo del 100%.
-  // Los ejemplos resueltos NO cuentan: abren con el diagrama ya hecho y se
-  // aprueban con solo enviarlos, así que inflarían el avance sin que el alumno
-  // haya resuelto nada.
-  const cuentanParaElProgreso = filtrados.filter((e) => !e.esEjemplo);
-  const progreso = {
-    resueltos: cuentanParaElProgreso.filter((e) => e.resuelto).length,
-    total: cuentanParaElProgreso.length,
-  };
+  /** Tipos del grupo del catálogo abierto: sin ejercicios, solo modo libre. */
+  const tiposCatalogo = useMemo<TipoDiagramaDef[]>(() => {
+    if (!seccionEfectiva || !esCatalogo) return [];
+    const conEjercicios = new Set(ejercicios.map((e) => e.tipoDiagrama));
+    return (
+      agrupadoDiagramas().find((g) => g.ambito === 'catalogo' && g.nombre === seccionEfectiva.nombre)
+        ?.tipos.filter((t) => !conEjercicios.has(t.key)) ?? []
+    );
+  }, [seccionEfectiva, esCatalogo, ejercicios]);
 
-  function toggle(clave: string) {
-    setColapsadas((prev) => {
-      const next = new Set(prev);
-      if (next.has(clave)) next.delete(clave); else next.add(clave);
-      return next;
-    });
+  // El primer tipo se abre solo: con todos plegados, la pantalla arranca en una
+  // lista de cabeceras que no enseña ningún ejercicio.
+  const abiertoEfectivo = abierto ?? filas[0]?.tipo ?? null;
+
+  if (!activo) return null;
+
+  if (cargando && ejercicios.length === 0 && !error) {
+    return <div className={styles.page}><p className={styles.info}>Cargando…</p></div>;
   }
-
-  if (cargando) return <div className={styles.page}><p className={styles.info}>Cargando…</p></div>;
   if (error) {
     return (
       <div className={styles.page}>
-        <p className={styles.info}>No se pudo cargar el listado. Puede deberse a un problema de conexión.</p>
-        <button className={`${styles.volver} ${styles.enlaceBoton}`} onClick={reintentar}>Reintentar</button>
+        <p className={styles.info}>
+          No se pudo cargar el listado. Puede deberse a un problema de conexión.
+        </p>
+        <button className={`${styles.volver} ${styles.enlaceBoton}`} onClick={reintentar}>
+          Reintentar
+        </button>
       </div>
     );
   }
-  if (noEncontrado) {
+
+  if (ejercicios.length === 0) {
     return (
       <div className={styles.page}>
-        <p className={styles.info}>No se encontró esta sección de diagramas.</p>
+        <header className={styles.header}>
+          <h1 className={styles.titulo}>Diagramas</h1>
+          {(coleccion?.clave || coleccion?.nombre) && (
+            <p className={styles.subtitulo}>{coleccion?.clave || coleccion?.nombre}</p>
+          )}
+        </header>
+        <p className={styles.info}>Aún no hay ejercicios de diagrama publicados en esta colección.</p>
+        <p className={styles.info}>
+          El <Link to={rutaTaller} className={styles.enlace}>modo libre</Link> sigue disponible para
+          practicar cualquier tipo del catálogo.
+        </p>
       </div>
     );
   }
 
   return (
     <div className={styles.page}>
-      {/* Sin enlace "volver": dentro del shell, Diagramas es una sección de
-          primer nivel del menú y la salida es el propio sidebar. La colección
-          va de subtítulo porque un grupo puede tener más de una materia. */}
+      {/* Sin barra de progreso: vive en el topbar, donde sigue visible mientras
+          se resuelve un ejercicio. Duplicarla aquí daría dos cifras que hay que
+          comparar para confiar en alguna. */}
       <header className={styles.header}>
-        <h1 className={styles.titulo}>Diagramas</h1>
+        <h1 className={styles.titulo}>{seccionEfectiva?.nombre ?? 'Diagramas'}</h1>
         {(coleccion?.clave || coleccion?.nombre) && (
           <p className={styles.subtitulo}>{coleccion?.clave || coleccion?.nombre}</p>
         )}
-        {progreso.total > 0 && (
-          <div className={styles.progreso}>
-            <div className={styles.barra}>
-              <div
-                className={styles.barraLlena}
-                style={{ width: `${Math.round((progreso.resueltos / progreso.total) * 100)}%` }}
-              />
-            </div>
-            <span className={styles.progresoTexto}>{progreso.resueltos} / {progreso.total} resueltos</span>
-          </div>
-        )}
       </header>
 
-      {ejercicios.length === 0 ? (
-        <p className={styles.info}>Aún no hay ejercicios de diagrama publicados en esta colección.</p>
-      ) : (
+      {esCatalogo ? (
         <>
-          {/* Con un solo tipo el filtro no filtra nada: la fila se omite. */}
-          {tiposPresentes.length > 1 && (
-            <div className={styles.filtros}>
-              <span className={styles.filtroLabel}>Tipo de diagrama:</span>
-              <button
-                className={`${styles.chip} ${filtroTipo === 'todos' ? styles.chipActivo : ''}`}
-                onClick={() => setFiltroTipo('todos')}
-              >
-                Todos
-              </button>
-              {tiposPresentes.map((t) => (
-                <button
-                  key={t}
-                  className={`${styles.chip} ${filtroTipo === t ? styles.chipActivo : ''}`}
-                  onClick={() => setFiltroTipo(t)}
-                >
-                  {etiquetaTipoDiagrama(t)}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {arbol.length === 0 ? (
-            <p className={styles.info}>No hay ejercicios de este tipo de diagrama.</p>
-          ) : (
-            arbol.map((b) => {
-              // Las claves van prefijadas: el residual se llama '__otros' en los
-              // DOS niveles y sin prefijo colapsar un bloque plegaría su categoría.
-              const claveBloque = `bloque:${b.clave}`;
-              const bloqueAbierto = !colapsadas.has(claveBloque);
-              const items = b.grupos.flatMap((g) => g.items);
-              const contablesBloque = items.filter((e) => !e.esEjemplo);
-              const resueltosBloque = contablesBloque.filter((e) => e.resuelto).length;
-              return (
-                <section key={claveBloque} className={b.titulo ? styles.bloque : undefined}>
-                  {/* Sin título no hay cabecera: es el caso "no hay bloques",
-                      donde la pantalla debe verse como una lista plana. */}
-                  {b.titulo && (
-                    <button className={styles.bloqueHeader} aria-expanded={bloqueAbierto} onClick={() => toggle(claveBloque)}>
-                      <span className={styles.chevron} aria-hidden>{bloqueAbierto ? '▾' : '▸'}</span>
-                      <span className={styles.bloqueTitulo}>{b.titulo}</span>
-                      <span className={styles.grupoConteo}>{resueltosBloque}/{contablesBloque.length}</span>
-                    </button>
-                  )}
-                  {b.titulo && b.descripcion && bloqueAbierto && (
-                    <p className={styles.bloqueSub}>{b.descripcion}</p>
-                  )}
-                  {(!b.titulo || bloqueAbierto) && (
-                    <div className={b.titulo ? styles.bloqueBody : undefined}>
-                      {b.grupos.map((g) => {
-                        const claveGrupo = `cat:${g.clave}`;
-                        const abierto = !colapsadas.has(claveGrupo);
-                        const contables = g.items.filter((e) => !e.esEjemplo);
-                        const resueltos = contables.filter((e) => e.resuelto).length;
-                        return (
-                          <section key={claveGrupo} className={styles.grupo}>
-                            <button className={styles.grupoHeader} aria-expanded={abierto} onClick={() => toggle(claveGrupo)}>
-                              <span className={styles.chevron} aria-hidden>{abierto ? '▾' : '▸'}</span>
-                              <span className={styles.grupoTitulo}>{g.titulo ?? 'Diagramas'}</span>
-                              <span className={styles.grupoConteo}>{resueltos}/{contables.length}</span>
-                            </button>
-                            {abierto && (
-                              <ul className={styles.lista}>
-                                {g.items.map((e) => (
-                                  <li key={e.id}>
-                                    <Link to={`${base}/${e.slug}`} className={`${styles.item} ${e.esEjemplo ? styles.itemEjemplo : e.resuelto ? styles.itemResuelto : ''}`}>
-                                      <span className={styles.itemIzq}>
-                                        {/* Un ejemplo no se resuelve, se consulta: la palomita de
-                                            "hecho" ahí confundiría con el avance real. */}
-                                        <span className={styles.check} aria-hidden>
-                                          {e.esEjemplo ? '★' : e.resuelto ? '✓' : '○'}
-                                        </span>
-                                        <span className={styles.itemTitulo}>{e.titulo}</span>
-                                      </span>
-                                      {/* `agruparEnBloques` devuelve `EjercicioLista`, donde el tipo
-                                          es opcional; aquí siempre llega, y si faltara se omite el
-                                          metadato en vez de pintar "undefined". */}
-                                      {e.tipoDiagrama && (
-                                        <span className={styles.itemTipo}>{etiquetaTipoDiagrama(e.tipoDiagrama)}</span>
-                                      )}
-                                    </Link>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </section>
-                        );
-                      })}
-                    </div>
-                  )}
-                </section>
-              );
-            })
-          )}
+          <p className={styles.catalogoIntro}>
+            Estos tipos no tienen ejercicios asignados. Se abren en modo libre con una plantilla de
+            arranque, para practicar la notación sin evaluación.
+          </p>
+          <ul className={styles.lista}>
+            {tiposCatalogo.map((t) => (
+              <li key={t.key}>
+                <Link to={rutaTaller} className={styles.tipoLibre}>
+                  <span className={styles.tipoTexto}>
+                    <span className={styles.tipoNombre}>{t.label}</span>
+                    <span className={styles.tipoDesc}>{t.descripcion}</span>
+                  </span>
+                  <span className={styles.abrirLibre}>Abrir en modo libre →</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </>
+      ) : filas.length === 0 ? (
+        <p className={styles.info}>Esta sección todavía no tiene ejercicios publicados.</p>
+      ) : (
+        filas.map((f) => {
+          const cuentan = contables(f.ejercicios);
+          const resueltos = cuentan.filter((e) => e.resuelto).length;
+          const estaAbierto = abiertoEfectivo === f.tipo;
+          return (
+            <section key={f.tipo} className={styles.grupo}>
+              <button
+                className={styles.grupoHeader}
+                aria-expanded={estaAbierto}
+                onClick={() => setAbierto(estaAbierto ? '' : f.tipo)}
+              >
+                <span className={styles.chevron} aria-hidden>{estaAbierto ? '▾' : '▸'}</span>
+                <span className={styles.grupoTitulo}>{etiquetaTipoDiagrama(f.tipo)}</span>
+                {f.def && <span className={styles.grupoDesc}>{f.def.descripcion}</span>}
+                {/* El motor sale de `motoresJuez`, no de una lista fija: es el
+                    único en el que un envío de este tipo se puede corregir. */}
+                {f.def?.motoresJuez.map((m) => (
+                  <span key={m} className={styles.motor}>{etiquetaMotorDiagrama(m)}</span>
+                ))}
+                <span className={styles.grupoConteo}>{resueltos}/{cuentan.length}</span>
+              </button>
+              {estaAbierto && (
+                <ul className={styles.lista}>
+                  {f.ejercicios.map((e) => (
+                    <li key={e.id}>
+                      <Link
+                        to={`${base}/${e.slug}`}
+                        className={`${styles.item} ${e.esEjemplo ? styles.itemEjemplo : e.resuelto ? styles.itemResuelto : ''}`}
+                      >
+                        <span className={styles.itemIzq}>
+                          {/* Un ejemplo no se resuelve, se consulta: la palomita
+                              de «hecho» ahí confundiría con el avance real. */}
+                          <span className={styles.check} aria-hidden>
+                            {e.esEjemplo ? '★' : e.resuelto ? '✓' : '○'}
+                          </span>
+                          <span className={styles.itemTitulo}>{e.titulo}</span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          );
+        })
+      )}
+
+      {/* Puente al catálogo, para quien no repare en el árbol del sidebar. */}
+      {!esCatalogo && (
+        <button
+          type="button"
+          className={styles.puenteCatalogo}
+          onClick={() => irA({ clase: 'cat', nombre: 'Modelado adicional' })}
+        >
+          <span className={styles.tipoTexto}>
+            <span className={styles.tipoNombre}>¿Buscas otro tipo de diagrama?</span>
+            <span className={styles.tipoDesc}>
+              El catálogo tiene más tipos de PlantUML y Mermaid con plantillas listas para el modo
+              libre.
+            </span>
+          </span>
+          <span className={styles.abrirLibre}>Explorar catálogo →</span>
+        </button>
       )}
     </div>
   );

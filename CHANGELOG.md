@@ -8,6 +8,27 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Navegación del módulo Diagramas dentro del armazón**, segunda fase de la
+  ampliación. La maqueta original traía una tercera columna propia de 248 px;
+  no se añade, porque esa navegación es exactamente lo que el sidebar hace.
+  - **`ArbolDiagramas` en el sidebar**, con el mismo patrón contextual que
+    `ArbolContenidos`: dos secciones —«Curso UML», con los bloques del temario y
+    su avance, y «Catálogo», con los tipos sin ejercicios— y un buscador que
+    mira ejercicios y tipos a la vez, porque el alumno no distingue unos de
+    otros. Sigue en pie **mientras se resuelve un ejercicio**, así que volver ya
+    no exige pasar por el menú global.
+  - **El avance pasa al topbar**, donde permanece visible durante el solver, que
+    es cuando de verdad importa: en la página del ejercicio la cabecera del
+    listado ya no está.
+  - El listado se agrupa ahora **por tipo de diagrama** y no por categoría, y
+    cada cabecera muestra el motor que sale de `motoresJuez` —el único en el que
+    un envío de ese tipo se puede corregir—.
+  - La sección abierta viaja en la URL (`?seccion=`), de modo que el botón de
+    volver del navegador funciona y una sección concreta se puede enlazar.
+  - Se añade el arnés `packages/web/herramientas/vista-diagramas.html`, que monta
+    el árbol y el listado con datos de prueba y el catálogo real: la base de
+    desarrollo es la de PRODUCCIÓN, y revisar estas pantallas «de verdad» exigía
+    entrar con una cuenta real de un grupo real.
 - **Catálogo compartido de tipos de diagrama** (`packages/diagramas-catalogo`),
   primera fase de la ampliación del módulo. Sustituye a las **tres listas
   paralelas** que había —la unión de la API, la unión del cliente y la tabla de
