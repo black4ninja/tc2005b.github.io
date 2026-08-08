@@ -82,15 +82,20 @@ export interface EjercicioData {
 
 export type MotorDiagrama = 'mermaid' | 'plantuml';
 
-export type TipoDiagrama =
-  | 'clases'
-  | 'secuencia'
-  | 'estados'
-  | 'er'
-  | 'flujo'
-  | 'casos-de-uso'
-  | 'componentes'
-  | 'paquetes';
+/**
+ * Tipos que el JUEZ sabe evaluar, y por tanto los únicos que puede tener un
+ * EJERCICIO. No es el catálogo entero: el modo libre admite cualquier tipo que
+ * algún motor sepa dibujar, y ahí el tipo viaja como `string`.
+ *
+ * Se REEXPORTA del catálogo en vez de repetirse. Escrita a mano aquí quedaba sin
+ * ninguna atadura: al añadir un tipo evaluable, el catálogo y el juez seguían
+ * sincronizados —lo comprueba `sincronia-juez.test.ts`—, la suite seguía verde y
+ * esta unión se quedaba atrás en silencio, con el `as TipoDiagrama` del editor
+ * colándolo sin que el compilador pudiera decir nada.
+ */
+import type { TipoJuzgable } from '@tc2005b/diagramas-catalogo/catalogo';
+
+export type TipoDiagrama = TipoJuzgable;
 
 /**
  * Una comprobación del catálogo, ya parametrizada por el autor.

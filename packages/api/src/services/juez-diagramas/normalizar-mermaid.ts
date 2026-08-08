@@ -27,7 +27,7 @@ import {
 const cola = new Semaforo(1);
 
 /** Tipos que este normalizador sabe traducir hoy. */
-const SOPORTADOS: TipoDiagrama[] = ['clases', 'secuencia', 'estados', 'er', 'flujo'];
+export const SOPORTADOS_MERMAID: TipoDiagrama[] = ['clases', 'secuencia', 'estados', 'er', 'flujo'];
 
 type MermaidModulo = {
   initialize: (config: Record<string, unknown>) => void;
@@ -58,7 +58,7 @@ export async function normalizarMermaid(
   tipo: TipoDiagrama,
   codigo: string,
 ): Promise<ModeloDiagrama> {
-  if (!SOPORTADOS.includes(tipo)) {
+  if (!SOPORTADOS_MERMAID.includes(tipo)) {
     throw new Error(`El juez todavía no sabe leer diagramas de tipo "${tipo}" en Mermaid.`);
   }
 

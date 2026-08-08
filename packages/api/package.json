@@ -22,6 +22,7 @@
   "dependencies": {
     "@parse/s3-files-adapter": "^4.1.0",
     "@tc2005b/contenido-pipeline": "0.1.0",
+    "@tc2005b/diagramas-catalogo": "0.1.0",
     "@tc2005b/evaluacion": "0.1.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",

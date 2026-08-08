@@ -1,38 +1,59 @@
-import type { MotorDiagrama, TipoDiagrama } from '../../types/contenidos';
+import {
+  MOTORES,
+  TIPOS,
+  agrupado,
+  esJuzgable,
+  etiquetaMotor,
+  etiquetaTipo,
+  posicionDeTipo,
+  type GrupoDeTipos,
+  type Motor,
+  type TipoDiagramaDef,
+  type TipoJuzgable,
+} from '@tc2005b/diagramas-catalogo/catalogo';
 
 /**
- * Nombres visibles de tipos y motores de diagrama.
+ * Puerta del cliente al catálogo compartido de tipos de diagrama.
  *
- * Viven aquí, y no dentro de una página, porque el listado y el editor del
- * módulo tienen que pintar exactamente las mismas etiquetas: si una lista dijera
- * "Casos de uso" y la otra "casos-de-uso", el mismo ejercicio parecería de dos
- * clases distintas según desde dónde se mire.
+ * El catálogo vive en `@tc2005b/diagramas-catalogo` porque la API lo necesita
+ * igual —para el juez, para las semillas y para validar lo que se guarda—, y
+ * dos listas paralelas se desincronizan: el síntoma es un tipo que el servidor
+ * sirve y el cliente pinta como su clave cruda.
+ *
+ * Se importa la subruta `/catalogo` y NO el barrel a propósito: el barrel
+ * arrastra la tabla de plantillas de arranque, decenas de kilobytes que las
+ * pantallas de listado —que solo necesitan un rótulo— no pintan nunca. Lo que
+ * sí necesita plantillas vive en `plantillas.ts`, al lado.
  */
 
-export const TIPOS_DIAGRAMA: { key: TipoDiagrama; label: string }[] = [
-  { key: 'clases', label: 'Clases' },
-  { key: 'secuencia', label: 'Secuencia' },
-  { key: 'estados', label: 'Estados' },
-  { key: 'er', label: 'Entidad-relación' },
-  { key: 'flujo', label: 'Flujo' },
-  { key: 'casos-de-uso', label: 'Casos de uso' },
-  { key: 'componentes', label: 'Componentes' },
-  { key: 'paquetes', label: 'Paquetes' },
-];
+export type { GrupoDeTipos, Motor, TipoDiagramaDef, TipoJuzgable };
 
-export const MOTORES_DIAGRAMA: { key: MotorDiagrama; label: string }[] = [
-  { key: 'mermaid', label: 'Mermaid' },
-  { key: 'plantuml', label: 'PlantUML' },
-];
+/**
+ * TODOS los tipos del catálogo, en orden canónico. Es lo que ofrece el modo
+ * libre, donde no hay juez y basta con que el motor sepa dibujarlo.
+ */
+export const TIPOS_CATALOGO: TipoDiagramaDef[] = TIPOS;
 
-const ETIQUETA_TIPO = new Map(TIPOS_DIAGRAMA.map((t) => [t.key as string, t.label]));
-const ETIQUETA_MOTOR = new Map(MOTORES_DIAGRAMA.map((m) => [m.key as string, m.label]));
+/**
+ * Solo los tipos que el juez sabe evaluar. Es lo que puede ofrecer el editor de
+ * ejercicios: dar de alta un ejercicio de un tipo sin normalizador crea algo que
+ * nadie puede resolver, porque el envío se rechaza siempre.
+ */
+export const TIPOS_JUZGABLES: TipoDiagramaDef[] = TIPOS.filter((t) => t.motoresJuez.length > 0);
 
-/** Cae al valor crudo si el API sirve un tipo que este cliente aún no conoce. */
-export function etiquetaTipoDiagrama(tipo: string): string {
-  return ETIQUETA_TIPO.get(tipo) ?? tipo;
-}
+export const MOTORES_DIAGRAMA = MOTORES;
 
-export function etiquetaMotorDiagrama(motor: string): string {
-  return ETIQUETA_MOTOR.get(motor) ?? motor;
+export const etiquetaTipoDiagrama = etiquetaTipo;
+export const etiquetaMotorDiagrama = etiquetaMotor;
+export const esTipoJuzgable = esJuzgable;
+export const agrupadoDiagramas = agrupado;
+export const posicionDeTipoDiagrama = posicionDeTipo;
+
+/**
+ * Motores en los que el JUEZ acepta ese tipo. Es lo que puede ofrecer el editor
+ * de autoría: cualquier otro motor produce un ejercicio cuyo envío responde 500
+ * porque no hay normalizador que lo lea.
+ */
+export function motoresJuezDeTipo(key: string): Motor[] {
+  return TIPOS.find((t) => t.key === key)?.motoresJuez ?? [];
 }

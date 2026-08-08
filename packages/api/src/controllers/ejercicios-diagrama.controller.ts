@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { renderMarkdown } from '@tc2005b/contenido-pipeline';
+import { esJuzgable, etiquetaMotor, etiquetaTipo, tipoDiagrama } from '@tc2005b/diagramas-catalogo';
 import { Coleccion } from '../models/Coleccion.js';
 import { EjercicioDiagrama, type DiagramaContextoEjercicio } from '../models/EjercicioDiagrama.js';
 import { CategoriaEjercicio } from '../models/CategoriaEjercicio.js';
@@ -34,6 +35,24 @@ function normalizarMotor(valor: unknown): Motor {
 
 function normalizarTipoDiagrama(valor: unknown): TipoDiagrama | null {
   return TIPOS_DIAGRAMA.includes(valor as TipoDiagrama) ? (valor as TipoDiagrama) : null;
+}
+
+/**
+ * El par (tipo, motor) tiene que tener normalizador. Validarlos por separado no
+ * basta: cada uno es válido y la combinación no, y el fallo no aparece al
+ * guardar sino en el primer envío de un alumno, donde `parsear` lanza un `Error`
+ * plano —no `ErrorSintaxisDiagrama`— que sube hasta el endpoint como HTTP 500.
+ * El ejercicio queda irresoluble para el grupo entero.
+ *
+ * Se comprueba aquí, y no solo en el editor, porque un cliente antiguo o una
+ * llamada directa al API llegarían igual.
+ */
+function paseElJuez(tipo: TipoDiagrama, motor: Motor): string | null {
+  if (esJuzgable(tipo, motor)) return null;
+  const admitidos = tipoDiagrama(tipo)?.motoresJuez ?? [];
+  return admitidos.length
+    ? `El juez no evalúa «${etiquetaTipo(tipo)}» en ${etiquetaMotor(motor)}; usa ${admitidos.map(etiquetaMotor).join(' o ')}.`
+    : `El juez todavía no evalúa «${etiquetaTipo(tipo)}» en ningún motor.`;
 }
 
 /**
@@ -76,10 +95,15 @@ function normalizarContexto(valor: unknown): DiagramaContextoEjercicio[] | { err
     nombres.add(nombre);
     const tipo = normalizarTipoDiagrama((c as any).tipo);
     if (!tipo) return { error: `El diagrama de contexto «${nombre}» tiene un tipo de diagrama inválido` };
+    const motorCtx = normalizarMotor((c as any).motor);
+    // Un par sin normalizador aquí es peor que en el diagrama del alumno:
+    // `evaluarDiagrama` parsea los contextos ANTES y lanza sin llegar a mirarlo.
+    const problema = paseElJuez(tipo, motorCtx);
+    if (problema) return { error: `El diagrama de contexto «${nombre}»: ${problema}` };
     salida.push({
       nombre,
       tipo,
-      motor: normalizarMotor((c as any).motor),
+      motor: motorCtx,
       codigo: typeof (c as any).codigo === 'string' ? (c as any).codigo : '',
       ...(typeof (c as any).titulo === 'string' && (c as any).titulo.trim()
         ? { titulo: (c as any).titulo.trim() } : {}),
@@ -193,6 +217,12 @@ export async function createEjercicioDiagrama(req: Request, res: Response): Prom
     res.status(400).json({ status: 'error', message: 'El tipo de diagrama no es válido' });
     return;
   }
+  const motorEj = normalizarMotor(motor);
+  const parInvalido = paseElJuez(tipo, motorEj);
+  if (parInvalido) {
+    res.status(400).json({ status: 'error', message: parInvalido });
+    return;
+  }
   const aserVal = normalizarAserciones(aserciones ?? []);
   if ('error' in aserVal) {
     res.status(400).json({ status: 'error', message: aserVal.error });
@@ -229,7 +259,7 @@ export async function createEjercicioDiagrama(req: Request, res: Response): Prom
     const md = typeof enunciado === 'string' ? enunciado : '';
     ejercicio.setEnunciado(md);
     ejercicio.setEnunciadoHtml(await renderMarkdown(md));
-    ejercicio.setMotor(normalizarMotor(motor));
+    ejercicio.setMotor(motorEj);
     ejercicio.setTipoDiagrama(tipo);
     ejercicio.setCodigoInicial(typeof codigoInicial === 'string' ? codigoInicial : '');
     ejercicio.setAserciones(aserVal);
@@ -297,7 +327,9 @@ export async function updateEjercicioDiagrama(req: Request, res: Response): Prom
       ejercicio.setEnunciado(md);
       ejercicio.setEnunciadoHtml(await renderMarkdown(md));
     }
-    if (motor !== undefined) ejercicio.setMotor(normalizarMotor(motor));
+    // El par se valida sobre el resultado, no sobre lo que venga en el cuerpo:
+    // una petición que cambia solo el tipo puede dejar inválido el motor que ya
+    // estaba guardado, y al revés.
     if (tipoDiagrama !== undefined) {
       const tipo = normalizarTipoDiagrama(tipoDiagrama);
       if (!tipo) {
@@ -305,6 +337,12 @@ export async function updateEjercicioDiagrama(req: Request, res: Response): Prom
         return;
       }
       ejercicio.setTipoDiagrama(tipo);
+    }
+    if (motor !== undefined) ejercicio.setMotor(normalizarMotor(motor));
+    const parInvalido = paseElJuez(ejercicio.getTipoDiagrama(), ejercicio.getMotor());
+    if (parInvalido) {
+      res.status(400).json({ status: 'error', message: parInvalido });
+      return;
     }
     if (codigoInicial !== undefined) {
       ejercicio.setCodigoInicial(typeof codigoInicial === 'string' ? codigoInicial : '');

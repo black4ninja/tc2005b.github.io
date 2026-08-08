@@ -34,7 +34,7 @@ import {
 } from './tipos.js';
 
 /** Tipos que este normalizador sabe traducir hoy. */
-const SOPORTADOS: TipoDiagrama[] = ['casos-de-uso', 'componentes', 'paquetes'];
+export const SOPORTADOS_PLANTUML: TipoDiagrama[] = ['casos-de-uso', 'componentes', 'paquetes'];
 
 /**
  * Palabra clave de declaración → clase de nodo.
@@ -218,7 +218,7 @@ function saldoDeLlaves(linea: string): number {
 // --- Normalizador ----------------------------------------------------------
 
 export function normalizarPlantuml(tipo: TipoDiagrama, codigo: string): ModeloDiagrama {
-  if (!SOPORTADOS.includes(tipo)) {
+  if (!SOPORTADOS_PLANTUML.includes(tipo)) {
     throw new Error(`El juez todavía no sabe leer diagramas de tipo "${tipo}" en PlantUML.`);
   }
 

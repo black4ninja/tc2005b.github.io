@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { useCargaGated } from '../../hooks/useCargaGated';
 import { useDiagramasBase } from '../../config/rutasDiagramas';
-import { TIPOS_DIAGRAMA, etiquetaTipoDiagrama } from '../../lib/diagramas/etiquetas';
+import { etiquetaTipoDiagrama, posicionDeTipoDiagrama } from '../../lib/diagramas/etiquetas';
 import {
   agruparEnBloques,
   type BloqueRef,
@@ -34,8 +34,6 @@ interface RespuestaLista {
   ejercicios: DiagramaLista[];
 }
 
-/** Orden canónico de los tipos, para que los filtros no dependan de los datos. */
-const ORDEN_TIPOS = TIPOS_DIAGRAMA.map((t) => String(t.key));
 
 export default function DiagramasAlumnoPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -53,19 +51,16 @@ export default function DiagramasAlumnoPage() {
 
   /**
    * Los chips se derivan de lo que hay publicado, no del catálogo entero: de los
-   * ocho tipos que el editor ofrece, una colección suele usar dos o tres, y
-   * pintar los seis restantes sería ofrecer filtros que siempre dan vacío. Se
-   * ordenan por el catálogo para que la fila no cambie de orden según el
-   * contenido, y los tipos que este cliente aún no conozca van al final en vez
-   * de desaparecer.
+   * tipos que el editor ofrece, una colección suele usar dos o tres, y pintar el
+   * resto sería ofrecer filtros que siempre dan vacío. Se ordenan por el
+   * catálogo para que la fila no cambie de orden según el contenido, y los tipos
+   * que este cliente aún no conozca van al final en vez de desaparecer.
    */
   const tiposPresentes = useMemo(() => {
     const presentes = [...new Set(ejercicios.map((e) => e.tipoDiagrama))];
-    const posicion = (t: string) => {
-      const i = ORDEN_TIPOS.indexOf(t);
-      return i === -1 ? ORDEN_TIPOS.length : i;
-    };
-    return presentes.sort((a, b) => posicion(a) - posicion(b) || a.localeCompare(b));
+    return presentes.sort(
+      (a, b) => posicionDeTipoDiagrama(a) - posicionDeTipoDiagrama(b) || a.localeCompare(b),
+    );
   }, [ejercicios]);
 
   const filtrados =

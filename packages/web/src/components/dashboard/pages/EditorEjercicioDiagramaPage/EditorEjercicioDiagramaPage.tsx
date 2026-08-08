@@ -9,7 +9,7 @@ import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Icon from '../../atoms/Icon/Icon';
 import VistaPreviaDiagrama from './VistaPreviaDiagrama';
-import { MOTORES_DIAGRAMA, TIPOS_DIAGRAMA, etiquetaTipoDiagrama } from '../../../../lib/diagramas/etiquetas';
+import { TIPOS_JUZGABLES, etiquetaMotorDiagrama, etiquetaTipoDiagrama, motoresJuezDeTipo } from '../../../../lib/diagramas/etiquetas';
 import type {
   AsercionDiagrama,
   DiagramaContextoData,
@@ -387,6 +387,27 @@ export default function EditorEjercicioDiagramaPage() {
     setContextos((prev) => prev.map((c) => (c.uid === uid ? { ...c, [campo]: valor } : c)));
   }
 
+  /**
+   * El tipo arrastra al motor: cada tipo solo se evalúa donde hay normalizador,
+   * y dejar el motor anterior guardaría un par que hace fallar el ejercicio.
+   */
+  function cambiarTipo(nuevo: TipoDiagrama) {
+    setTipoDiagrama(nuevo);
+    const motores = motoresJuezDeTipo(nuevo);
+    if (!motores.includes(motor) && motores[0]) setMotor(motores[0]);
+  }
+
+  function cambiarTipoContexto(uid: string, nuevo: string) {
+    const motores = motoresJuezDeTipo(nuevo);
+    setContextos((prev) =>
+      prev.map((c) =>
+        c.uid === uid
+          ? { ...c, tipo: nuevo, motor: motores.includes(c.motor as MotorDiagrama) ? c.motor : motores[0] ?? c.motor }
+          : c,
+      ),
+    );
+  }
+
   function setReferencia(uid: string, codigo: string) {
     setReferencias((prev) => prev.map((r) => (r.uid === uid ? { ...r, codigo } : r)));
   }
@@ -548,28 +569,44 @@ export default function EditorEjercicioDiagramaPage() {
         <p className={styles.hint}>Las categorías se administran desde la lista de diagramas de la colección.</p>
       </div>
 
+      {/* El TIPO va primero porque condiciona al motor: cada tipo se evalúa en
+          los motores que tienen normalizador, y hoy es exactamente uno. */}
       <div className={styles.grid}>
-        <div>
-          <label className={styles.campoGrupo}>
-            <span className={styles.label}>Motor</span>
-            <select className={styles.select} value={motor} onChange={(e) => setMotor(e.target.value as MotorDiagrama)} disabled={guardando}>
-              {MOTORES_DIAGRAMA.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
-            </select>
-          </label>
-        </div>
         <div>
           <label className={styles.campoGrupo}>
             <span className={styles.label}>Tipo de diagrama</span>
             <select
               className={styles.select}
               value={tipoDiagrama}
-              onChange={(e) => setTipoDiagrama(e.target.value as TipoDiagrama)}
+              onChange={(e) => cambiarTipo(e.target.value as TipoDiagrama)}
               disabled={guardando}
             >
-              {TIPOS_DIAGRAMA.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+              {TIPOS_JUZGABLES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
             </select>
           </label>
           <p className={styles.hint}>Determina qué comprobaciones del catálogo están disponibles.</p>
+        </div>
+        <div>
+          <label className={styles.campoGrupo}>
+            <span className={styles.label}>Motor</span>
+            {/* Solo los motores en los que el juez SABE leer este tipo. Ofrecer
+                cualquier otro deja crear un ejercicio cuyo envío responde 500
+                para todo el grupo, porque no hay normalizador que lo lea. */}
+            <select
+              className={styles.select}
+              value={motor}
+              onChange={(e) => setMotor(e.target.value as MotorDiagrama)}
+              disabled={guardando || motoresJuezDeTipo(tipoDiagrama).length < 2}
+            >
+              {motoresJuezDeTipo(tipoDiagrama).map((m) => (
+                <option key={m} value={m}>{etiquetaMotorDiagrama(m)}</option>
+              ))}
+            </select>
+          </label>
+          <p className={styles.hint}>
+            El juez solo evalúa «{etiquetaTipoDiagrama(tipoDiagrama)}» en{' '}
+            {motoresJuezDeTipo(tipoDiagrama).map(etiquetaMotorDiagrama).join(' y ')}.
+          </p>
         </div>
       </div>
 
@@ -764,16 +801,21 @@ export default function EditorEjercicioDiagramaPage() {
                 <div>
                   <label className={styles.campoGrupo}>
                     <span className={styles.subLabel}>Tipo</span>
-                    <select className={styles.select} value={c.tipo} onChange={(e) => setContexto(c.uid, 'tipo', e.target.value)} disabled={guardando}>
-                      {TIPOS_DIAGRAMA.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+                    <select className={styles.select} value={c.tipo} onChange={(e) => cambiarTipoContexto(c.uid, e.target.value)} disabled={guardando}>
+                      {TIPOS_JUZGABLES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
                     </select>
                   </label>
                 </div>
                 <div>
                   <label className={styles.campoGrupo}>
                     <span className={styles.subLabel}>Motor</span>
-                    <select className={styles.select} value={c.motor} onChange={(e) => setContexto(c.uid, 'motor', e.target.value)} disabled={guardando}>
-                      {MOTORES_DIAGRAMA.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
+                    {/* Un par (tipo, motor) sin normalizador en un diagrama de
+                        CONTEXTO es peor que en el del alumno: `evaluarDiagrama`
+                        parsea el contexto primero y lanza antes de mirar nada. */}
+                    <select className={styles.select} value={c.motor} onChange={(e) => setContexto(c.uid, 'motor', e.target.value)} disabled={guardando || motoresJuezDeTipo(c.tipo).length < 2}>
+                      {motoresJuezDeTipo(c.tipo).map((m) => (
+                        <option key={m} value={m}>{etiquetaMotorDiagrama(m)}</option>
+                      ))}
                     </select>
                   </label>
                 </div>
@@ -793,7 +835,7 @@ export default function EditorEjercicioDiagramaPage() {
             </div>
           ))}
         </div>
-        <DashButton variant="outline" onClick={() => setContextos((prev) => [...prev, contextoVacio(motor, tipoDiagrama)])} disabled={guardando}>
+        <DashButton variant="outline" onClick={() => setContextos((prev) => [...prev, contextoVacio(motoresJuezDeTipo(tipoDiagrama)[0] ?? motor, tipoDiagrama)])} disabled={guardando}>
           + Agregar diagrama de contexto
         </DashButton>
       </div>

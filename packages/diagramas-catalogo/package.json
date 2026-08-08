@@ -1,0 +1,17 @@
+{
+  "name": "@tc2005b/diagramas-catalogo",
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": { "types": "./index.d.ts", "default": "./index.js" },
+    "./catalogo": { "types": "./catalogo.d.ts", "default": "./catalogo.js" },
+    "./plantillas": { "types": "./plantillas.d.ts", "default": "./plantillas.js" }
+  },
+  "description": "Catálogo compartido de tipos de diagrama: qué tipos existen, en qué motor se dibujan, en cuáles los evalúa el juez y con qué plantilla arrancan. Lo usan el API (juez y semillas) y el web (modo libre y listados). La subruta /catalogo sirve rótulos y agrupados sin arrastrar la tabla de plantillas."
+}
