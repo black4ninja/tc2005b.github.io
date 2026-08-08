@@ -24,6 +24,7 @@
     "@plantuml/core": "^1.2026.6",
     "@tanstack/react-table": "^8.21.3",
     "@tc2005b/contenido-pipeline": "0.1.0",
+    "@tc2005b/diagramas-catalogo": "0.1.0",
     "@tc2005b/evaluacion": "0.1.0",
     "@uiw/react-codemirror": "^4.23.0",
     "apexcharts": "^5.10.4",

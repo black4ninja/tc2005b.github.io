@@ -8,6 +8,7 @@
     "packages/web",
     "packages/api",
     "packages/contenido-pipeline",
+    "packages/diagramas-catalogo",
     "packages/evaluacion"
   ],
   "scripts": {

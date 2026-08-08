@@ -1,38 +1,62 @@
-import type { MotorDiagrama, TipoDiagrama } from '../../types/contenidos';
+import {
+  MOTORES,
+  TIPOS,
+  agrupado,
+  esJuzgable,
+  etiquetaMotor,
+  etiquetaTipo,
+  motorPorOmision,
+  motoresDe,
+  plantilla,
+  type GrupoDeTipos,
+  type Motor,
+  type TipoDiagramaDef,
+} from '@tc2005b/diagramas-catalogo';
 
 /**
- * Nombres visibles de tipos y motores de diagrama.
+ * Puerta del cliente al catálogo compartido de tipos de diagrama.
  *
- * Viven aquí, y no dentro de una página, porque el listado y el editor del
- * módulo tienen que pintar exactamente las mismas etiquetas: si una lista dijera
- * "Casos de uso" y la otra "casos-de-uso", el mismo ejercicio parecería de dos
- * clases distintas según desde dónde se mire.
+ * El catálogo vive en `@tc2005b/diagramas-catalogo` porque la API lo necesita
+ * igual —para el juez, para las semillas y para validar lo que se guarda—, y
+ * dos listas paralelas se desincronizan: el síntoma es un tipo que el servidor
+ * sirve y el cliente pinta como su clave cruda.
+ *
+ * Este fichero no define nada; solo reexporta con los nombres que usan las
+ * pantallas y añade lo que solo interesa aquí.
  */
 
-export const TIPOS_DIAGRAMA: { key: TipoDiagrama; label: string }[] = [
-  { key: 'clases', label: 'Clases' },
-  { key: 'secuencia', label: 'Secuencia' },
-  { key: 'estados', label: 'Estados' },
-  { key: 'er', label: 'Entidad-relación' },
-  { key: 'flujo', label: 'Flujo' },
-  { key: 'casos-de-uso', label: 'Casos de uso' },
-  { key: 'componentes', label: 'Componentes' },
-  { key: 'paquetes', label: 'Paquetes' },
-];
+export type { GrupoDeTipos, Motor, TipoDiagramaDef };
 
-export const MOTORES_DIAGRAMA: { key: MotorDiagrama; label: string }[] = [
-  { key: 'mermaid', label: 'Mermaid' },
-  { key: 'plantuml', label: 'PlantUML' },
-];
+/**
+ * TODOS los tipos del catálogo, en orden canónico. Es lo que ofrece el modo
+ * libre, donde no hay juez y basta con que el motor sepa dibujarlo.
+ */
+export const TIPOS_CATALOGO: TipoDiagramaDef[] = TIPOS;
 
-const ETIQUETA_TIPO = new Map(TIPOS_DIAGRAMA.map((t) => [t.key as string, t.label]));
-const ETIQUETA_MOTOR = new Map(MOTORES_DIAGRAMA.map((m) => [m.key as string, m.label]));
+/**
+ * Solo los tipos que el juez sabe evaluar. Es lo que puede ofrecer el editor de
+ * ejercicios: dar de alta un ejercicio de un tipo sin normalizador crea algo que
+ * nadie puede resolver, porque el envío se rechaza siempre.
+ */
+export const TIPOS_JUZGABLES: TipoDiagramaDef[] = TIPOS.filter((t) => t.motoresJuez.length > 0);
 
-/** Cae al valor crudo si el API sirve un tipo que este cliente aún no conoce. */
-export function etiquetaTipoDiagrama(tipo: string): string {
-  return ETIQUETA_TIPO.get(tipo) ?? tipo;
-}
+export const MOTORES_DIAGRAMA = MOTORES;
 
-export function etiquetaMotorDiagrama(motor: string): string {
-  return ETIQUETA_MOTOR.get(motor) ?? motor;
+export const etiquetaTipoDiagrama = etiquetaTipo;
+export const etiquetaMotorDiagrama = etiquetaMotor;
+export const plantillaDiagrama = plantilla;
+export const motoresDeTipo = motoresDe;
+export const motorPorOmisionDeTipo = motorPorOmision;
+export const esTipoJuzgable = esJuzgable;
+export const agrupadoDiagramas = agrupado;
+
+/**
+ * Posición de un tipo en el orden del catálogo, para ordenar listas que vienen
+ * del servidor. Los tipos que este cliente aún no conozca van al final en vez de
+ * desaparecer.
+ */
+const POSICION = new Map(TIPOS.map((t, i) => [t.key, i]));
+
+export function posicionDeTipo(key: string): number {
+  return POSICION.get(key) ?? TIPOS.length;
 }

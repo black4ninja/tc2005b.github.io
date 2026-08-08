@@ -9,7 +9,7 @@ import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Icon from '../../atoms/Icon/Icon';
 import VistaPreviaDiagrama from './VistaPreviaDiagrama';
-import { MOTORES_DIAGRAMA, TIPOS_DIAGRAMA, etiquetaTipoDiagrama } from '../../../../lib/diagramas/etiquetas';
+import { MOTORES_DIAGRAMA, TIPOS_JUZGABLES, etiquetaTipoDiagrama } from '../../../../lib/diagramas/etiquetas';
 import type {
   AsercionDiagrama,
   DiagramaContextoData,
@@ -566,7 +566,7 @@ export default function EditorEjercicioDiagramaPage() {
               onChange={(e) => setTipoDiagrama(e.target.value as TipoDiagrama)}
               disabled={guardando}
             >
-              {TIPOS_DIAGRAMA.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+              {TIPOS_JUZGABLES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
             </select>
           </label>
           <p className={styles.hint}>Determina qué comprobaciones del catálogo están disponibles.</p>
@@ -765,7 +765,7 @@ export default function EditorEjercicioDiagramaPage() {
                   <label className={styles.campoGrupo}>
                     <span className={styles.subLabel}>Tipo</span>
                     <select className={styles.select} value={c.tipo} onChange={(e) => setContexto(c.uid, 'tipo', e.target.value)} disabled={guardando}>
-                      {TIPOS_DIAGRAMA.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+                      {TIPOS_JUZGABLES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
                     </select>
                   </label>
                 </div>

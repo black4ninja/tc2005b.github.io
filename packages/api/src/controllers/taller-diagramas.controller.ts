@@ -3,7 +3,8 @@ import Parse from 'parse/node';
 import { AppUser } from '../models/AppUser.js';
 import { DiagramaTaller } from '../models/DiagramaTaller.js';
 import { resolverAccesoDiagramas } from '../services/diagramas-alumno.service.js';
-import { TIPOS_DIAGRAMA, type Motor, type TipoDiagrama } from '../services/juez-diagramas/index.js';
+import { esTipoConocido, motoresDe } from '@tc2005b/diagramas-catalogo';
+import { type Motor } from '../services/juez-diagramas/index.js';
 
 /**
  * Taller de diagramas: CRUD de los diagramas libres de CADA usuario.
@@ -38,12 +39,27 @@ async function tieneAcceso(user: AppUser): Promise<boolean> {
   return accesos.size > 0;
 }
 
-function normalizarMotor(valor: unknown): Motor {
-  return MOTORES.includes(valor as Motor) ? (valor as Motor) : 'mermaid';
+/**
+ * Tipo del CATÁLOGO, no de los que el juez sabe evaluar.
+ *
+ * Aquí no se corrige nada, así que la única condición es que algún motor sepa
+ * dibujarlo. Antes se acotaba a los ocho tipos del juez y todo lo demás caía en
+ * `clases` sin avisar: quien guardaba un Gantt lo recuperaba etiquetado como
+ * diagrama de clases, y el motor de la vista previa dejaba de corresponderle.
+ */
+function normalizarTipo(valor: unknown): string {
+  return typeof valor === 'string' && esTipoConocido(valor) ? valor : 'clases';
 }
 
-function normalizarTipo(valor: unknown): TipoDiagrama {
-  return TIPOS_DIAGRAMA.includes(valor as TipoDiagrama) ? (valor as TipoDiagrama) : 'clases';
+/**
+ * Motor válido PARA ESE TIPO. La mayoría del catálogo existe en un solo motor, y
+ * guardar la combinación imposible dejaría el diagrama sin poder dibujarse al
+ * reabrirlo.
+ */
+function normalizarMotor(valor: unknown, tipo: string): Motor {
+  const posibles = motoresDe(tipo);
+  if (posibles.includes(valor as Motor)) return valor as Motor;
+  return posibles[0] ?? (MOTORES.includes(valor as Motor) ? (valor as Motor) : 'mermaid');
 }
 
 /** Nombre válido y acotado, o el error a devolver. */
@@ -147,11 +163,12 @@ export async function createDiagramaTaller(req: Request, res: Response): Promise
       res.status(404).json({ status: 'error', message: 'No encontrado' });
       return;
     }
+    const tipo = normalizarTipo(tipoDiagrama);
     const diagrama = new DiagramaTaller().initDefaults();
     diagrama.setAutor(user);
     diagrama.setNombre(nombreValido);
-    diagrama.setMotor(normalizarMotor(motor));
-    diagrama.setTipoDiagrama(normalizarTipo(tipoDiagrama));
+    diagrama.setTipoDiagrama(tipo);
+    diagrama.setMotor(normalizarMotor(motor, tipo));
     diagrama.setCodigo(codigoValido);
     await diagrama.save(null, { useMasterKey: true });
     res.status(201).json({ status: 'ok', diagrama: diagrama.toSafeJSON() });
@@ -187,8 +204,11 @@ export async function updateDiagramaTaller(req: Request, res: Response): Promise
       }
       diagrama.setCodigo(codigoValido);
     }
-    if (motor !== undefined) diagrama.setMotor(normalizarMotor(motor));
+    // El tipo se fija ANTES que el motor porque lo acota: cambiar a un tipo que
+    // solo existe en un motor tiene que arrastrar el motor con él, o el diagrama
+    // quedaría guardado en una combinación que no se puede dibujar.
     if (tipoDiagrama !== undefined) diagrama.setTipoDiagrama(normalizarTipo(tipoDiagrama));
+    if (motor !== undefined) diagrama.setMotor(normalizarMotor(motor, diagrama.getTipoDiagrama()));
 
     await diagrama.save(null, { useMasterKey: true });
     res.json({ status: 'ok', diagrama: diagrama.toSafeJSON() });

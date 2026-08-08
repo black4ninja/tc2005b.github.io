@@ -82,6 +82,15 @@ export interface EjercicioData {
 
 export type MotorDiagrama = 'mermaid' | 'plantuml';
 
+/**
+ * Tipos que el JUEZ sabe evaluar, y por tanto los únicos que puede tener un
+ * EJERCICIO. No es el catálogo entero: el modo libre admite cualquier tipo que
+ * algún motor sepa dibujar, y ahí el tipo viaja como `string`.
+ *
+ * La lista completa vive en `@tc2005b/diagramas-catalogo`; esta unión se queda
+ * porque es la que da seguridad de tipos al editor de autoría, y una prueba de
+ * la API comprueba que ambas no se separen.
+ */
 export type TipoDiagrama =
   | 'clases'
   | 'secuencia'

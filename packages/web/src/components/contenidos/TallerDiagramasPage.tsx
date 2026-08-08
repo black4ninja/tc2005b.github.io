@@ -5,12 +5,15 @@ import { EditorView } from '@codemirror/view';
 import { useAuth } from '../../context/AuthContext';
 import { useCargaGated } from '../../hooks/useCargaGated';
 import {
-  MOTORES_DIAGRAMA,
-  TIPOS_DIAGRAMA,
+  TIPOS_CATALOGO,
+  agrupadoDiagramas,
   etiquetaMotorDiagrama,
   etiquetaTipoDiagrama,
+  motorPorOmisionDeTipo,
+  motoresDeTipo,
+  plantillaDiagrama,
 } from '../../lib/diagramas/etiquetas';
-import type { MotorDiagrama, TipoDiagrama } from '../../types/contenidos';
+import type { MotorDiagrama } from '../../types/contenidos';
 // La MISMA vista previa del solver y del editor de autoría, no una copia: si el
 // taller dibujara con otro componente, un diagrama podría verse bien aquí y
 // romperse al llevarlo a un ejercicio sin que nadie lo notara.
@@ -76,11 +79,17 @@ interface DiagramaCompleto extends DiagramaResumen {
   createdAt: string;
 }
 
-/** Lo que el editor tiene en pantalla, sin identificador: vale para un borrador. */
+/**
+ * Lo que el editor tiene en pantalla, sin identificador: vale para un borrador.
+ *
+ * `tipo` es `string` y no la unión del juez: en el taller no hay evaluación, así
+ * que vale cualquier tipo del catálogo, incluidos los que ningún normalizador
+ * sabe leer todavía.
+ */
 interface Estado {
   nombre: string;
   motor: MotorDiagrama;
-  tipo: TipoDiagrama;
+  tipo: string;
   codigo: string;
 }
 
@@ -95,232 +104,54 @@ type Pendiente = { clase: 'abrir'; id: string } | { clase: 'nuevo' };
 // --- Plantillas de arranque -------------------------------------------------
 
 /**
- * Esqueleto mínimo de cada tipo en cada motor.
- *
- * Existen porque la barrera del diagrama-como-código no es el modelado sino la
- * primera línea: quien no recuerda si la palabra es `classDiagram` o `class` se
- * queda ante un editor vacío. Son deliberadamente CORTOS —dos o tres elementos y
- * una relación— para que se lean de un vistazo y se borren sin esfuerzo; no son
- * ejemplos que enseñen el tipo, sino un punto de partida sintáctico.
- *
- * Mermaid no tiene diagramas de casos de uso, de componentes ni de paquetes. Ahí
- * la plantilla usa `flowchart` con subgrafos, que es la aproximación habitual, y
- * PlantUML —que sí los tiene nativos— queda como la opción correcta para esos
- * tres tipos.
+ * Los esqueletos de arranque viven en `@tc2005b/diagramas-catalogo`, junto a la
+ * definición de cada tipo, y no aquí: el editor de autoría y las semillas los
+ * necesitan igual, y tres copias del mismo esqueleto se separan a la primera
+ * corrección.
  */
-const PLANTILLAS: Record<MotorDiagrama, Record<TipoDiagrama, string>> = {
-  mermaid: {
-    clases: `classDiagram
-    class Cliente {
-        +String nombre
-        +String correo
-        +registrar() void
-    }
-    class Pedido {
-        +Date fecha
-        +total() float
-    }
-    Cliente "1" --> "*" Pedido : realiza
-`,
-    secuencia: `sequenceDiagram
-    actor Cliente
-    participant Tienda
-    participant Almacen
-    Cliente->>Tienda: solicitarPedido()
-    Tienda->>Almacen: reservarExistencias()
-    Almacen-->>Tienda: reservaConfirmada
-    Tienda-->>Cliente: pedidoRegistrado
-`,
-    estados: `stateDiagram-v2
-    [*] --> Pendiente
-    Pendiente --> Pagado : registrarPago
-    Pagado --> Enviado : despachar
-    Enviado --> [*]
-`,
-    er: `erDiagram
-    CLIENTE ||--o{ PEDIDO : realiza
-    PEDIDO ||--|{ LINEA_PEDIDO : contiene
-    CLIENTE {
-        int id PK
-        string nombre
-    }
-    PEDIDO {
-        int id PK
-        date fecha
-    }
-    LINEA_PEDIDO {
-        int id PK
-        int cantidad
-    }
-`,
-    flujo: `flowchart TD
-    inicio([Inicio]) --> validar{"¿Datos completos?"}
-    validar -- No --> avisar["Mostrar error"]
-    validar -- Si --> registrar["Registrar solicitud"]
-    registrar --> fin([Fin])
-    avisar --> fin
-`,
-    'casos-de-uso': `flowchart LR
-    cliente["Cliente"]
-    subgraph tienda["Tienda en linea"]
-        uc1(("Consultar catalogo"))
-        uc2(("Realizar pedido"))
-    end
-    cliente --- uc1
-    cliente --- uc2
-`,
-    componentes: `flowchart LR
-    subgraph navegador["Navegador"]
-        ui["Interfaz web"]
-    end
-    subgraph servidor["Servidor"]
-        api["Servicio de pedidos"]
-        bd[("Base de datos")]
-    end
-    ui --> api
-    api --> bd
-`,
-    paquetes: `flowchart TD
-    subgraph presentacion["presentacion"]
-        p1["PantallaPedido"]
-    end
-    subgraph dominio["dominio"]
-        d1["Pedido"]
-    end
-    subgraph persistencia["persistencia"]
-        r1["RepositorioPedido"]
-    end
-    presentacion --> dominio
-    dominio --> persistencia
-`,
-  },
-  plantuml: {
-    clases: `@startuml
-class Cliente {
-  +nombre : String
-  +correo : String
-  +registrar() : void
-}
-class Pedido {
-  +fecha : Date
-  +total() : float
-}
-Cliente "1" --> "*" Pedido : realiza
-@enduml
-`,
-    secuencia: `@startuml
-actor Cliente
-participant Tienda
-participant Almacen
-Cliente -> Tienda : solicitarPedido()
-Tienda -> Almacen : reservarExistencias()
-Almacen --> Tienda : reservaConfirmada
-Tienda --> Cliente : pedidoRegistrado
-@enduml
-`,
-    estados: `@startuml
-[*] --> Pendiente
-Pendiente --> Pagado : registrarPago
-Pagado --> Enviado : despachar
-Enviado --> [*]
-@enduml
-`,
-    er: `@startuml
-hide circle
-entity Cliente {
-  * id : int
-  --
-  nombre : varchar
-}
-entity Pedido {
-  * id : int
-  --
-  fecha : date
-}
-Cliente ||--o{ Pedido
-@enduml
-`,
-    flujo: `@startuml
-start
-:Recibir solicitud;
-if (Datos completos?) then (si)
-  :Registrar solicitud;
-else (no)
-  :Mostrar error;
-endif
-stop
-@enduml
-`,
-    'casos-de-uso': `@startuml
-left to right direction
-actor Cliente
-rectangle Tienda {
-  usecase "Consultar catalogo" as UC1
-  usecase "Realizar pedido" as UC2
-}
-Cliente --> UC1
-Cliente --> UC2
-@enduml
-`,
-    componentes: `@startuml
-component "Interfaz web" as Web
-component "Servicio de pedidos" as Servicio
-database "Base de datos" as BD
-Web --> Servicio
-Servicio --> BD
-@enduml
-`,
-    paquetes: `@startuml
-package presentacion {
-  class PantallaPedido
-}
-package dominio {
-  class Pedido
-}
-package persistencia {
-  class RepositorioPedido
-}
-presentacion ..> dominio
-dominio ..> persistencia
-@enduml
-`,
-  },
-};
 
-const MOTOR_POR_OMISION: MotorDiagrama = 'mermaid';
-const TIPO_POR_OMISION: TipoDiagrama = 'clases';
+const TIPO_POR_OMISION = 'clases';
+const MOTOR_POR_OMISION: MotorDiagrama = motorPorOmisionDeTipo(TIPO_POR_OMISION);
 
 const BORRADOR_INICIAL: Estado = {
   nombre: '',
   motor: MOTOR_POR_OMISION,
   tipo: TIPO_POR_OMISION,
-  codigo: PLANTILLAS[MOTOR_POR_OMISION][TIPO_POR_OMISION],
+  codigo: plantillaDiagrama(TIPO_POR_OMISION, MOTOR_POR_OMISION),
 };
 
 // --- Normalización de lo que llega del API ----------------------------------
 
-const CLAVES_MOTOR: string[] = MOTORES_DIAGRAMA.map((m) => m.key);
-const CLAVES_TIPO: string[] = TIPOS_DIAGRAMA.map((t) => t.key);
+const CLAVES_TIPO: string[] = TIPOS_CATALOGO.map((t) => t.key);
 
 /**
- * El API sirve `motor` y `tipoDiagrama` como cadenas. Se acotan a la unión antes
- * de tocar el estado para que un valor desconocido —un despliegue más nuevo del
- * servidor— caiga en el valor por omisión en vez de dejar los `select` sin
- * ninguna opción seleccionada.
+ * El API sirve `motor` y `tipoDiagrama` como cadenas. Se acotan al catálogo
+ * antes de tocar el estado para que un valor desconocido —un despliegue más
+ * nuevo del servidor— caiga en el valor por omisión en vez de dejar los `select`
+ * sin ninguna opción seleccionada.
  */
-function aMotor(valor: string): MotorDiagrama {
-  return CLAVES_MOTOR.includes(valor) ? (valor as MotorDiagrama) : MOTOR_POR_OMISION;
+function aTipo(valor: string): string {
+  return CLAVES_TIPO.includes(valor) ? valor : TIPO_POR_OMISION;
 }
 
-function aTipo(valor: string): TipoDiagrama {
-  return CLAVES_TIPO.includes(valor) ? (valor as TipoDiagrama) : TIPO_POR_OMISION;
+/**
+ * El motor se acota a los que dibujan ESE tipo, no a los dos de siempre: la
+ * mayoría del catálogo existe en un solo motor, y dejar seleccionado el otro
+ * pintaría un editor cuya vista previa no puede funcionar.
+ */
+function aMotor(valor: string, tipo: string): MotorDiagrama {
+  const posibles = motoresDeTipo(tipo);
+  return posibles.includes(valor as MotorDiagrama)
+    ? (valor as MotorDiagrama)
+    : posibles[0] ?? MOTOR_POR_OMISION;
 }
 
 function estadoDesde(d: DiagramaCompleto): Estado {
+  const tipo = aTipo(d.tipoDiagrama);
   return {
     nombre: d.nombre,
-    motor: aMotor(d.motor),
-    tipo: aTipo(d.tipoDiagrama),
+    motor: aMotor(d.motor, tipo),
+    tipo,
     codigo: d.codigo,
   };
 }
@@ -358,7 +189,8 @@ function estadoDesdeCrudo(valor: unknown): Estado | null {
   const o = valor as Record<string, unknown>;
   if (typeof o.nombre !== 'string' || typeof o.codigo !== 'string') return null;
   if (typeof o.motor !== 'string' || typeof o.tipo !== 'string') return null;
-  return { nombre: o.nombre, motor: aMotor(o.motor), tipo: aTipo(o.tipo), codigo: o.codigo };
+  const tipo = aTipo(o.tipo);
+  return { nombre: o.nombre, motor: aMotor(o.motor, tipo), tipo, codigo: o.codigo };
 }
 
 /**
@@ -600,12 +432,15 @@ export default function TallerDiagramasPage() {
    * abrir el taller y probar los desplegables marcaría «cambios sin guardar»
    * sobre un diagrama que nadie ha tocado.
    */
-  function cambiarPlantilla(motor: MotorDiagrama, tipo: TipoDiagrama) {
+  function cambiarPlantilla(motor: MotorDiagrama, tipo: string) {
+    // Cambiar de tipo puede dejar el motor sin plantilla —la mayoría del
+    // catálogo existe en uno solo—, así que se reajusta antes de nada.
+    const motorValido = aMotor(motor, tipo);
     const intacto = !editor.codigo.trim() || editor.codigo === plantillaCargada.current;
-    const codigo = intacto ? PLANTILLAS[motor][tipo] : editor.codigo;
+    const codigo = intacto ? plantillaDiagrama(tipo, motorValido) : editor.codigo;
     if (intacto) plantillaCargada.current = codigo;
 
-    const siguiente: Estado = { ...editor, motor, tipo, codigo };
+    const siguiente: Estado = { ...editor, motor: motorValido, tipo, codigo };
     setEditor(siguiente);
     if (seleccion === null && intacto) setReferencia(siguiente);
   }
@@ -613,7 +448,7 @@ export default function TallerDiagramasPage() {
   function nuevoBorrador() {
     // Conserva motor y tipo actuales: quien está practicando secuencia encadena
     // varios diagramas de secuencia, no vuelve a clases en cada uno.
-    const codigo = PLANTILLAS[editor.motor][editor.tipo];
+    const codigo = plantillaDiagrama(editor.tipo, editor.motor);
     plantillaCargada.current = codigo;
     const siguiente: Estado = { nombre: '', motor: editor.motor, tipo: editor.tipo, codigo };
     setEditor(siguiente);
@@ -1047,21 +882,8 @@ export default function TallerDiagramasPage() {
                 />
               </label>
 
-              <label className={styles.campoGrupo}>
-                <span className={styles.campoLabel}>Motor</span>
-                <select
-                  className={styles.campo}
-                  value={editor.motor}
-                  onChange={(e) => cambiarPlantilla(aMotor(e.target.value), editor.tipo)}
-                >
-                  {MOTORES_DIAGRAMA.map((m) => (
-                    <option key={m.key} value={m.key}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
+              {/* El tipo va ANTES que el motor porque lo condiciona: elegir
+                  tipo puede reducir los motores disponibles a uno solo. */}
               <label className={styles.campoGrupo}>
                 <span className={styles.campoLabel}>Tipo</span>
                 <select
@@ -1069,9 +891,33 @@ export default function TallerDiagramasPage() {
                   value={editor.tipo}
                   onChange={(e) => cambiarPlantilla(editor.motor, aTipo(e.target.value))}
                 >
-                  {TIPOS_DIAGRAMA.map((t) => (
-                    <option key={t.key} value={t.key}>
-                      {t.label}
+                  {/* Agrupado por bloque del curso y por grupo del catálogo: con
+                      más de cuarenta tipos, una lista plana no se recorre. */}
+                  {agrupadoDiagramas().map((g) => (
+                    <optgroup key={`${g.ambito}:${g.nombre}`} label={g.nombre}>
+                      {g.tipos.map((t) => (
+                        <option key={t.key} value={t.key}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </label>
+
+              <label className={styles.campoGrupo}>
+                <span className={styles.campoLabel}>Motor</span>
+                <select
+                  className={styles.campo}
+                  value={editor.motor}
+                  onChange={(e) => cambiarPlantilla(aMotor(e.target.value, editor.tipo), editor.tipo)}
+                  // Ofrecer un motor que no dibuja este tipo llevaría a una vista
+                  // previa rota sin explicación posible.
+                  disabled={motoresDeTipo(editor.tipo).length < 2}
+                >
+                  {motoresDeTipo(editor.tipo).map((m) => (
+                    <option key={m} value={m}>
+                      {etiquetaMotorDiagrama(m)}
                     </option>
                   ))}
                 </select>

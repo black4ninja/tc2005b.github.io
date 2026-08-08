@@ -8,6 +8,27 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Catálogo compartido de tipos de diagrama** (`packages/diagramas-catalogo`),
+  primera fase de la ampliación del módulo. Sustituye a las **tres listas
+  paralelas** que había —la unión de la API, la unión del cliente y la tabla de
+  rótulos del web—, que con ocho tipos se sostenían y con más de cuarenta ya no.
+  - **44 tipos**: los 8 que ya existían, 5 tipos UML que faltaban (objetos,
+    despliegue, actividad, comunicación, tiempos) y 31 del catálogo adicional de
+    Mermaid y PlantUML. Los tipos nuevos están disponibles **en modo libre**; su
+    evaluación llega en fases posteriores.
+  - `motoresJuez` y las plantillas son campos **distintos** a propósito: hay
+    tipos que se dibujan y no se corrigen, y tipos que se dibujan en dos motores
+    pero solo se evalúan en uno. Fusionarlos llevaría a ofrecer un motor en el
+    que el envío del alumno se rechaza.
+  - Cada tipo trae su **esqueleto de arranque**, y una prueba pasa todas las
+    plantillas de Mermaid por el parser real: una plantilla rota no falla en el
+    build, falla en la cara del alumno que abre el editor.
+  - Se anota que `er` y `flujo` **no son notación UML** (Chen y diagrama de
+    flujo); se conservan por su uso en el curso, con `actividad` como el
+    equivalente UML de este último.
+  - **ZenUML queda fuera**: no está en la distribución open source de Mermaid,
+    requiere el paquete externo `@mermaid-js/mermaid-zenuml`.
+
 - **Núcleo del juez de diagramas UML** (`packages/api/src/services/juez-diagramas/`),
   primera fase del módulo de ejercicios de diseño. Evalúa el **modelo** del
   diagrama, no su texto: sintaxis, léxico (nombres y convenciones) y semántica
@@ -704,6 +725,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   La documentación vive ahora en el CMS "Contenidos".
 
 ### Fixed
+- **El taller de diagramas guardaba mal el tipo.** El API acotaba `tipoDiagrama`
+  a los ocho tipos del juez y convertía **en silencio** cualquier otro a
+  `clases`, así que un diagrama guardado con un tipo del catálogo se recuperaba
+  mal etiquetado y con un motor que podía no corresponderle. Ahora se valida
+  contra el catálogo, y el motor se acota a los que saben dibujar ESE tipo —tanto
+  en el servidor como en los selectores de la pantalla—.
 - **El juez declaraba ambigua una máquina de estados escrita correctamente.** Las
   guardas se comparaban con `clave()`, que borra todo lo que no sea letra o
   dígito —y en una guarda los operadores son justo lo que la distingue de su

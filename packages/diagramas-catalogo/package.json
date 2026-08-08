@@ -1,0 +1,12 @@
+{
+  "name": "@tc2005b/diagramas-catalogo",
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "description": "Catálogo compartido de tipos de diagrama: qué tipos existen, en qué motor se dibujan, en cuáles los evalúa el juez y con qué plantilla arrancan. Lo usan el API (juez y semillas) y el web (modo libre y listados) para que no haya dos listas que se desincronicen."
+}

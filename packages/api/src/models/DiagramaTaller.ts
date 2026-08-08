@@ -1,7 +1,7 @@
 import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
 import type { AppUser } from './AppUser.js';
-import type { Motor, TipoDiagrama } from '../services/juez-diagramas/index.js';
+import type { Motor } from '../services/juez-diagramas/index.js';
 
 /**
  * Un diagrama libre guardado por un alumno en el taller.
@@ -44,11 +44,15 @@ export class DiagramaTaller extends BaseModel {
   /**
    * Tipo de diagrama. Es informativo —el taller no comprueba nada—, pero sirve
    * para agrupar la lista y para elegir la plantilla inicial.
+   *
+   * Es `string` y NO la unión del juez: aquí vale cualquier tipo del catálogo,
+   * incluidos los muchos que ningún normalizador sabe leer. El controlador lo
+   * acota contra `@tc2005b/diagramas-catalogo` antes de guardarlo.
    */
-  getTipoDiagrama(): TipoDiagrama {
-    return (this.get('tipoDiagrama') as TipoDiagrama) ?? 'clases';
+  getTipoDiagrama(): string {
+    return (this.get('tipoDiagrama') as string) ?? 'clases';
   }
-  setTipoDiagrama(tipo: TipoDiagrama): void {
+  setTipoDiagrama(tipo: string): void {
     this.set('tipoDiagrama', tipo);
   }
 
