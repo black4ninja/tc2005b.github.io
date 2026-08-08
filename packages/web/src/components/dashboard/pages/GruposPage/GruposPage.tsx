@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { confirmar } from '../../../../utils/dialogos';
+import { confirmar, avisar } from '../../../../utils/dialogos';
 import { useNavigate } from 'react-router';
-import { createColumnHelper } from '@tanstack/react-table';
+import { createColumnHelper, type Row } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
@@ -46,11 +46,24 @@ function estaEliminado(grupo: GrupoData): boolean {
   return grupo.exists === false;
 }
 
-/** ms de la fecha, o undefined si no tiene: así `sortUndefined` las manda al final. */
-function tiempo(valor: string | undefined): number | undefined {
-  if (!valor) return undefined;
+/** ms de la fecha; las que faltan o no parsean van al final del orden ascendente. */
+function tiempo(valor: unknown): number {
+  if (typeof valor !== 'string' || !valor) return Number.POSITIVE_INFINITY;
   const ms = new Date(valor).getTime();
-  return Number.isNaN(ms) ? undefined : ms;
+  return Number.isNaN(ms) ? Number.POSITIVE_INFINITY : ms;
+}
+
+/**
+ * Orden de una columna de fecha POR INSTANTE, no por el texto ISO que guarda el
+ * accessor (que está ahí para que el buscador de la tabla siga encontrando por
+ * fecha). Comparar el texto funcionaría de casualidad mientras el formato no
+ * cambie; comparar timestamps es lo que se quiere decir.
+ */
+function ordenarPorFecha(filaA: Row<GrupoData>, filaB: Row<GrupoData>, columnaId: string): number {
+  const a = tiempo(filaA.getValue(columnaId));
+  const b = tiempo(filaB.getValue(columnaId));
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
 }
 
 export default function GruposPage() {
@@ -79,6 +92,11 @@ export default function GruposPage() {
   const fetchGrupos = useCallback(async () => {
     try {
       setLoading(true);
+      // Una recarga con éxito deja la pantalla en un estado coherente, así que
+      // se lleva por delante el error de la operación anterior. Si no, la banda
+      // roja sobrevive al cambio de filtro y hasta se cuela en el modal de
+      // asignaciones, que aparece "roto" antes de enviar nada.
+      setError('');
       const res = await fetch(`${API_BASE}/admin/grupos?estado=${filtro}`, { headers: { 'x-session-token': sessionToken ?? '' } });
       if (!res.ok) throw new Error('Error al cargar grupos');
       const data = await res.json();
@@ -112,11 +130,18 @@ export default function GruposPage() {
     }
   }, [sessionToken]);
 
+  // Los grupos se recargan al cambiar de filtro; los catálogos del formulario
+  // (colecciones y administradores) NO dependen del filtro. En un solo efecto,
+  // cada clic de chip volvía a pedir los tres, y `/admin/administradores` es la
+  // consulta cara.
   useEffect(() => {
     fetchGrupos();
+  }, [fetchGrupos]);
+
+  useEffect(() => {
     fetchColecciones();
     fetchAdmins();
-  }, [fetchGrupos, fetchColecciones, fetchAdmins]);
+  }, [fetchColecciones, fetchAdmins]);
 
   function openCreate() {
     setEditGrupo(undefined);
@@ -148,8 +173,20 @@ export default function GruposPage() {
         const err = await res.json();
         throw new Error(err.message || 'Error al guardar');
       }
+      const creando = !editGrupo;
       closeModal();
-      await fetchGrupos();
+      // Un grupo nace ACTIVO, así que recargar con el filtro puesto en
+      // "Eliminados" o "Inactivos" lo dejaría fuera de la lista: el admin ve
+      // que no aparece, cree que falló y lo crea otra vez. Se salta al filtro
+      // donde sí está (el cambio de filtro ya dispara la recarga).
+      if (creando && filtro !== 'activos' && filtro !== 'todos') {
+        setFiltro('activos');
+      } else {
+        await fetchGrupos();
+      }
+      if (creando) {
+        await avisar({ titulo: 'Grupo creado', texto: `"${data.name}" ya está en la lista.`, icono: 'success' });
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -185,6 +222,16 @@ export default function GruposPage() {
       const res = await fetch(`${API_BASE}/admin/grupos/${grupo.id}/archive`, { method: 'PATCH', headers });
       if (!res.ok) throw new Error(`Error al ${action.toLowerCase()}`);
       await fetchGrupos();
+      // Bajo el filtro "Activos" el grupo desactivado se cae de la lista, y una
+      // fila que se esfuma sin más es indistinguible de un borrado. Se avisa de
+      // dónde ha ido.
+      if (grupo.active && filtro === 'activos') {
+        await avisar({
+          titulo: 'Grupo desactivado',
+          texto: `"${grupo.name}" ya no aparece aquí; está en el filtro "Inactivos".`,
+          icono: 'success',
+        });
+      }
     } catch (err: any) {
       setError(err.message);
     }
@@ -229,22 +276,20 @@ export default function GruposPage() {
       header: 'Administradores',
       cell: (info) => info.getValue() || '—',
     }),
-    // Las fechas se ordenan por timestamp (no por el texto ISO) y las vacías van
-    // siempre al final, en cualquier sentido. Se excluyen del buscador: su valor
-    // ya no es texto, y un número de época daría coincidencias sin sentido.
-    columnHelper.accessor((row) => tiempo(row.fechaInicio), {
-      id: 'fechaInicio',
+    // El accessor sigue siendo el texto ISO para que el buscador de la tabla lo
+    // encuentre ("2026-08"); el orden NO puede depender de ese texto, así que va
+    // por timestamp en un sortingFn propio, con las vacías siempre al final.
+    columnHelper.accessor('fechaInicio', {
       header: 'Fecha Inicio',
-      cell: (info) => formatDate(info.row.original.fechaInicio),
+      cell: (info) => formatDate(info.getValue()),
+      sortingFn: ordenarPorFecha,
       sortUndefined: 'last',
-      enableGlobalFilter: false,
     }),
-    columnHelper.accessor((row) => tiempo(row.fechaFin), {
-      id: 'fechaFin',
+    columnHelper.accessor('fechaFin', {
       header: 'Fecha Fin',
-      cell: (info) => formatDate(info.row.original.fechaFin),
+      cell: (info) => formatDate(info.getValue()),
+      sortingFn: ordenarPorFecha,
       sortUndefined: 'last',
-      enableGlobalFilter: false,
     }),
     columnHelper.accessor((row) => (estaEliminado(row) ? 'Eliminado' : row.active ? 'Activo' : 'Inactivo'), {
       id: 'estado',
@@ -259,8 +304,10 @@ export default function GruposPage() {
   ];
 
   const getActions = (grupo: GrupoData): ActionItem[] => {
-    // Un grupo eliminado se lista para consulta, pero no se opera: el resto de
-    // endpoints (detalle, editar, archivar…) exigen un grupo vivo y responderían 404.
+    // Un grupo eliminado se lista para consulta, pero no se opera: los endpoints
+    // que quedan filtran por `exists` y responderían 404. Un grupo INACTIVO sí
+    // se edita y se configura (updateGrupo y setAsignacionesGrupo consultan por
+    // `exists`, no por `active`), así que aquí solo se mira el borrado.
     if (estaEliminado(grupo)) return [];
     return [
       { label: 'Ver', icon: 'visibility', onClick: () => navigate(`/admin/grupos/${grupo.id}`) },
@@ -306,21 +353,21 @@ export default function GruposPage() {
         ))}
       </div>
 
-      {loading ? (
-        <p>Cargando...</p>
-      ) : (
-        <AdminTable
-          title="Grupos registrados"
-          columns={columns}
-          data={grupos}
-          actions={getActions}
-          onAdd={openCreate}
-          addLabel="Nuevo Grupo"
-          emptyMessage={vacio}
-          searchPlaceholder="Buscar grupo..."
-          initialSorting={[{ id: 'fechaInicio', desc: false }]}
-        />
-      )}
+      {/* La tabla se renderiza SIEMPRE, con su prop `loading`: sustituirla por
+          un "Cargando..." la desmonta en cada cambio de filtro y su estado
+          interno (búsqueda, orden, página) vuelve a cero. */}
+      <AdminTable
+        title="Grupos registrados"
+        columns={columns}
+        data={grupos}
+        loading={loading}
+        actions={getActions}
+        onAdd={openCreate}
+        addLabel="Nuevo Grupo"
+        emptyMessage={vacio}
+        searchPlaceholder="Buscar grupo..."
+        initialSorting={[{ id: 'fechaInicio', desc: false }]}
+      />
 
       <Modal isOpen={modalOpen} onClose={closeModal} title={editGrupo ? 'Editar Grupo' : 'Nuevo Grupo'}>
         <GrupoForm

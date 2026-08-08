@@ -874,6 +874,18 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   La documentación vive ahora en el CMS "Contenidos".
 
 ### Fixed
+- **Un grupo desactivado no se podía editar ni configurar.** `updateGrupo` y
+  `setAsignacionesGrupo` resolvían el grupo con `BaseModel.queryActive`, que
+  exige `active === true` además de `exists === true`, así que archivar un grupo
+  lo dejaba inmodificable: el 404 saltaba al guardar, con la edición ya escrita
+  y perdida. Ahora consultan por `exists`, como archivar y eliminar — un grupo
+  inactivo sigue siendo un grupo.
+- **Un año menor a 0100 se guardaba desplazado 1900 años.** `Date.UTC(26, …)`
+  arrastra el mapeo heredado de años de dos cifras y devuelve 1926; el campo de
+  año de Chrome produce `0026` con solo teclear «26», así que llegaba de verdad
+  desde el formulario y se guardaba sin una queja. Se comprueba que el año
+  sobrevive al viaje de ida y vuelta, lo que cubre ese mapeo y cualquier otro
+  ajuste silencioso.
 - **Las fechas de un grupo se enseñaban un día antes de la capturada.** Al
   guardar el 10-ago, la tabla de grupos mostraba el 9-ago. La fecha nunca se
   guardó mal: `new Date('2026-08-10')` es la medianoche **UTC**, y al pintarla

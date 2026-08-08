@@ -60,9 +60,19 @@ export async function listGrupos(req: Request, res: Response): Promise<void> {
   try {
     // El profesor solo ve SUS grupos (donde figura en Grupo.admins); el admin,
     // todos. Es lo que hace que su vista de grupo funcione sin exponerle el resto.
-    // `estado` no aplica aquí: getGruposDeStaff devuelve siempre los activos, y
-    // la pantalla que usa el filtro (/admin/grupos) es solo de admin.
     if (req.appUser?.isProfesor()) {
+      // `getGruposDeStaff` devuelve SIEMPRE los activos, así que aquí el filtro
+      // no se puede atender. Se rechaza en vez de ignorarlo: la ruta es de staff
+      // (`requireStaff`, no `requireAdmin`), y respondiendo los grupos vigentes
+      // a un `?estado=eliminados` la pantalla le diría al profesor que sus
+      // grupos están borrados.
+      if (estado !== undefined && estado !== 'activos') {
+        res.status(403).json({
+          status: 'error',
+          message: 'Un profesor solo puede consultar sus grupos activos',
+        });
+        return;
+      }
       const grupos = await getGruposDeStaff(req.appUser.id);
       res.json({ status: 'ok', grupos: grupos.map((g) => g.toSafeJSON()) });
       return;
@@ -154,7 +164,14 @@ export function parseFechaDia(valor: unknown): Date | null | 'invalida' {
   const tope = mes === 2 && esBisiesto(anio) ? 29 : DIAS_POR_MES[mes];
   if (dia < 1 || dia > tope) return 'invalida';
 
-  return new Date(Date.UTC(anio, mes - 1, dia));
+  const fecha = new Date(Date.UTC(anio, mes - 1, dia));
+  // `Date.UTC` arrastra el mapeo heredado de años de dos cifras: un año 0-99 se
+  // convierte en 1900+año, así que el `0026-08-10` que produce Chrome cuando se
+  // teclea solo "26" en el campo del año se guardaría como 1926 sin quejarse.
+  // Se comprueba que el año sobrevive al viaje en vez de recortar el rango a
+  // mano: cubre ese mapeo y cualquier otro ajuste silencioso.
+  if (fecha.getUTCFullYear() !== anio) return 'invalida';
+  return fecha;
 }
 
 export async function createGrupo(req: Request, res: Response): Promise<void> {
@@ -207,7 +224,12 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
   const { name, fechaInicio, fechaFin, urlAgendaEntrevistas } = req.body;
 
   try {
-    const query = BaseModel.queryActive<Grupo>('Grupo');
+    // Por `exists`, NO por `queryActive`: un grupo desactivado sigue siendo un
+    // grupo y se tiene que poder editar. `queryActive` exige además
+    // `active: true`, así que archivar un grupo lo dejaba inmodificable — el
+    // 404 saltaba al guardar, con la edición ya escrita y perdida.
+    const query = new Parse.Query<Grupo>('Grupo');
+    query.equalTo('exists' as any, true as any);
     // colecciones/admins incluidos: toSafeJSON serializa pointers y sin fetch
     // respondería nulls (y no podría filtrar soft-deleted).
     query.include('colecciones' as any);
@@ -312,7 +334,10 @@ export async function setAsignacionesGrupo(req: Request, res: Response): Promise
   }
 
   try {
-    const query = BaseModel.queryActive<Grupo>('Grupo');
+    // Por `exists`, como en updateGrupo: un grupo desactivado se sigue
+    // configurando (ver el comentario de allí).
+    const query = new Parse.Query<Grupo>('Grupo');
+    query.equalTo('exists' as any, true as any);
     query.include('colecciones' as any);
     query.include('admins' as any);
     const grupo = await query.get(id, { useMasterKey: true });

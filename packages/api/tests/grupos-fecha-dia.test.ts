@@ -48,6 +48,17 @@ describe('parseFechaDia', () => {
     expect(parseFechaDia('2026-08-00')).toBe('invalida');
   });
 
+  it('rechaza los años que Date.UTC desplazaría 1900 años', () => {
+    // `Date.UTC(26, …)` arrastra el mapeo heredado de años de dos cifras y
+    // devuelve 1926. El campo de año de Chrome produce "0026" con solo teclear
+    // "26", así que esto llega de verdad desde el formulario.
+    expect(parseFechaDia('0026-08-10')).toBe('invalida');
+    expect(parseFechaDia('0099-12-31')).toBe('invalida');
+    expect(parseFechaDia('0000-01-01')).toBe('invalida');
+    // 0100 en adelante ya no se desplaza: se guarda tal cual.
+    expect((parseFechaDia('0100-01-01') as Date).toISOString()).toBe('0100-01-01T00:00:00.000Z');
+  });
+
   it('conoce los años bisiestos', () => {
     expect(parseFechaDia('2024-02-29')).toBeInstanceOf(Date); // bisiesto
     expect(parseFechaDia('2026-02-29')).toBe('invalida'); // no lo es
