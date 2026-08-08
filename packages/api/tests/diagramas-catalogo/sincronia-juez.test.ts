@@ -1,10 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { KEYS_JUZGABLES, esJuzgable, tipoDiagrama } from '@tc2005b/diagramas-catalogo';
+import { KEYS_JUZGABLES, TIPOS, esJuzgable } from '@tc2005b/diagramas-catalogo';
 import {
+  SOPORTADOS_JERARQUIA,
   SOPORTADOS_MERMAID,
   SOPORTADOS_PLANTUML,
   TIPOS_DIAGRAMA,
 } from '../../src/services/juez-diagramas/index.js';
+
+/**
+ * Todo lo que un motor sabe leer. La familia «jerarquía» tiene normalizador
+ * propio —cuatro dibujos que se reducen al mismo árbol— y también corre sobre
+ * Mermaid, así que cuenta aquí: sin sumarla, este guardián declararía sin
+ * normalizador a tipos que sí lo tienen.
+ */
+const POR_MERMAID = [...SOPORTADOS_MERMAID, ...SOPORTADOS_JERARQUIA];
 
 /**
  * El juez tiene su propia unión de tipos (`juez-diagramas/tipos.ts`) porque es
@@ -31,7 +40,7 @@ describe('el catálogo y el juez declaran los mismos tipos evaluables', () => {
 
   it('reparte los motores como los reparten los normalizadores', () => {
     for (const key of TIPOS_DIAGRAMA) {
-      expect(esJuzgable(key, 'mermaid'), `${key} en Mermaid`).toBe(SOPORTADOS_MERMAID.includes(key));
+      expect(esJuzgable(key, 'mermaid'), `${key} en Mermaid`).toBe(POR_MERMAID.includes(key));
       expect(esJuzgable(key, 'plantuml'), `${key} en PlantUML`).toBe(
         SOPORTADOS_PLANTUML.includes(key),
       );
@@ -43,15 +52,22 @@ describe('el catálogo y el juez declaran los mismos tipos evaluables', () => {
     // `motoresJuez` esté vacío coincidiría en ambos lados con `false` y pasaría.
     for (const key of TIPOS_DIAGRAMA) {
       expect(
-        SOPORTADOS_MERMAID.includes(key) || SOPORTADOS_PLANTUML.includes(key),
+        POR_MERMAID.includes(key) || SOPORTADOS_PLANTUML.includes(key),
         `${key} se declara evaluable pero ningún normalizador lo lee`,
       ).toBe(true);
     }
   });
 
-  it('no declara juzgable ningún tipo del catálogo adicional', () => {
-    for (const key of KEYS_JUZGABLES) {
-      expect(tipoDiagrama(key)?.ambito, key).toBe('curso');
-    }
+  it('mantiene evaluable todo el temario del curso', () => {
+    // Al revés que antes: la comprobación era «ningún tipo del catálogo es
+    // juzgable», y dejó de valer en cuanto la familia «jerarquía» le dio
+    // normalizador a cuatro de ellos. Lo que sí tiene que seguir siendo cierto
+    // es que ningún tipo DEL CURSO se quede sin poder evaluarse.
+    const delCurso = TIPOS.filter((t) => t.ambito === 'curso');
+    const sinJuez = delCurso.filter((t) => t.motoresJuez.length === 0).map((t) => t.key);
+    expect(sinJuez, 'tipos del temario todavía sin normalizador').toEqual([
+      // Pendientes de la fase 4b.
+      'comunicacion', 'timing', 'actividad',
+    ]);
   });
 });

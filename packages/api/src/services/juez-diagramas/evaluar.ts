@@ -15,11 +15,15 @@ import { CATALOGO } from './catalogo.js';
 import { describir } from './describir.js';
 import { normalizarMermaid } from './normalizar-mermaid.js';
 import { normalizarPlantuml } from './normalizar-plantuml.js';
+import { normalizarJerarquia } from './normalizar-jerarquia.js';
 import {
   ErrorSintaxisDiagrama, ROTULO_OCULTA,
   type Asercion, type ContextoEvaluacion, type Motor, type ModeloDiagrama,
   type ResultadoAsercion, type ResultadoDiagrama, type TipoDiagrama,
 } from './tipos.js';
+
+/** Tipos que lee `normalizar-jerarquia.ts`. */
+const TIPOS_JERARQUIA: TipoDiagrama[] = ['mapa-mental', 'treemap', 'arbol', 'ishikawa'];
 
 export interface DiagramaContexto {
   /** Nombre con el que la aserción lo referencia. */
@@ -44,7 +48,13 @@ export async function parsear(
   tipo: TipoDiagrama,
   codigo: string,
 ): Promise<ModeloDiagrama> {
-  if (motor === 'mermaid') return normalizarMermaid(tipo, codigo);
+  if (motor === 'mermaid') {
+    // La familia «jerarquía» tiene su propio normalizador: son cuatro dibujos
+    // distintos que se reducen al mismo árbol, y meterlos en el `switch` por
+    // tipo de `normalizar-mermaid.ts` habría duplicado el aplanado cuatro veces.
+    if (TIPOS_JERARQUIA.includes(tipo)) return normalizarJerarquia(tipo, codigo);
+    return normalizarMermaid(tipo, codigo);
+  }
   // PlantUML se lee con un parser propio y síncrono: su motor oficial no corre
   // en el servidor (ver la cabecera de `normalizar-plantuml.ts`).
   if (motor === 'plantuml') return normalizarPlantuml(tipo, codigo);

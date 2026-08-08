@@ -33,6 +33,9 @@ const bloques = [
   { id: 'b2', nombre: 'Interacción', orden: 2 },
   { id: 'b3', nombre: 'Comportamiento', orden: 3 },
   { id: 'b4', nombre: 'Arquitectura', orden: 4 },
+  // Bloque del catálogo adicional: tiene que caer en la sección «Catálogo», no
+  // bajo «Curso UML» junto a Estructura.
+  { id: 'b5', nombre: 'Catálogo', orden: 5 },
 ];
 
 const categorias = [
@@ -44,12 +47,14 @@ const categorias = [
   { id: 'c6', nombre: 'Casos de uso', orden: 6, bloqueId: 'b4' },
   { id: 'c7', nombre: 'Componentes', orden: 7, bloqueId: 'b4' },
   { id: 'c8', nombre: 'Paquetes', orden: 8, bloqueId: 'b4' },
+  { id: 'c9', nombre: 'Mapas y estructura', orden: 9, bloqueId: 'b5' },
 ];
 
 let n = 0;
 const MOTOR_DE: Record<string, string> = {
   clases: 'mermaid', er: 'mermaid', secuencia: 'mermaid', estados: 'mermaid', flujo: 'mermaid',
   'casos-de-uso': 'plantuml', componentes: 'plantuml', paquetes: 'plantuml',
+  'mapa-mental': 'mermaid',
 };
 
 const hacer = (
@@ -83,6 +88,7 @@ const ejercicios: DiagramaLista[] = [
   hacer('Include y extend en un cajero automático', 'c6', 'casos-de-uso'),
   hacer('Interfaces provistas y requeridas', 'c7', 'componentes'),
   hacer('Dependencias entre paquetes de un ERP', 'c8', 'paquetes'),
+  hacer('Ramificar: los módulos de una plataforma', 'c9', 'mapa-mental'),
 ];
 
 function Arnes() {

@@ -305,7 +305,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Datos y gráficos',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
   {
     key: 'venn',
@@ -379,7 +379,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Mapas y estructura',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
   {
     key: 'git',
@@ -439,7 +439,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Mapas y estructura',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
   {
     key: 'ishikawa',
@@ -449,7 +449,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Mapas y estructura',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
 
   // --- Catálogo: texto y formatos --------------------------------------------

@@ -9,8 +9,9 @@ Estado: **en ejecución**. Fecha: 2026-08-08.
 | 3 — Motor doble en Clases y ER | ✅ #85 |
 | 4a — Objetos y Despliegue | ✅ #86 |
 | 4b — Actividad, Comunicación y Tiempos | pendiente |
-| 5 — Normalizadores por familia | pendiente |
-| 6 — Contenido de los ejercicios | pendiente |
+| 5a — Familia «jerarquía» | ✅ #87 |
+| 5b — Familias restantes (red, versionado, estrategia, planificación, series, gramática) | pendiente |
+| 6 — Contenido de los ejercicios | 1 de ~52 (muestra validada) |
 
 Correcciones al plan descubiertas al ejecutarlo:
 
@@ -23,6 +24,14 @@ Correcciones al plan descubiertas al ejecutarlo:
   Node y no lanza ante lo que no entiende: dibuja un cartel de error dentro del
   SVG. Se añadió el arnés manual `packages/web/herramientas/verificar-plantuml.html`,
   que ya encontró una plantilla rota (`red` necesitaba `@startnwdiag`).
+- **El formato de ejercicio del catálogo NO necesita un tipo nuevo.** Se temía
+  tener que añadir una variante de `EjercicioDiagramaDef`; escribir la muestra
+  demostró que basta con dosificar las secciones existentes (`pasoAPaso` ya era
+  opcional). El guion queda escrito en la cabecera de
+  `scripts/ejercicios-diagrama/cat9-catalogo-jerarquia.ts`.
+- **Sembrar un ejercicio del catálogo crea un bloque que el sidebar colocaba
+  mal.** Lo destapó la muestra: un bloque «Catálogo» en la BD caía bajo «Curso
+  UML». Corregido repartiendo los bloques por nombre.
 - **`swimlane-beta` de Mermaid es el flowchart con calles**, no un tipo aparte:
   su sintaxis es la del flowchart y cada `subgraph` se dibuja como calle. Es lo
   que usará Actividad en la fase 4b.
