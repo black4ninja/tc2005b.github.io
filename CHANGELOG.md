@@ -8,6 +8,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Diagramas de objetos y de despliegue**, fase 4a de la ampliación. Son los dos
+  tipos UML estructurales que faltaban, y lo que aportan —y ningún otro tipo
+  puede dar— es la verificación **cruzada** de su vista: un objeto que no es
+  instancia de ninguna clase declarada, y un artefacto desplegado que nadie
+  diseñó. Cinco aserciones nuevas, dos de ellas cruzadas.
+  - `artefacto-desplegado-en` mira la **contención**, no las flechas: un
+    artefacto suelto con una flecha hacia un nodo no está desplegado en él, que
+    es el error clásico de esta vista.
+  - `enlace-entre-objetos` no exige dirección: un enlace es la instancia de una
+    asociación, y pedir un sentido concreto suspendería un diagrama correcto.
+  - `Miembro` gana `valor`, aparte de `tipo`: en un diagrama de objetos lo que
+    distingue una instancia de su clase no es el tipo del atributo sino lo que
+    vale, y mezclarlos habría roto las comprobaciones que miran tipos.
+  - `node`, `cloud` y `database` pasan a ser **nodos físicos** en despliegue y
+    siguen siendo contenedores genéricos en el resto, con una prueba que fija
+    que fuera de despliegue nada cambia.
 - **Clases y entidad-relación se evalúan también en PlantUML**, tercera fase de
   la ampliación. Hasta ahora el juez solo leía esos dos tipos en Mermaid, así
   que la notación UML canónica para un diagrama de clases no se podía usar en un
