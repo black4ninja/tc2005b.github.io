@@ -176,6 +176,11 @@ export async function listDiagramasAlumno(req: Request, res: Response): Promise<
         slug: e.getSlug(),
         orden: e.getOrden(),
         tipoDiagrama: e.getTipoDiagrama(),
+        // El motor del EJERCICIO, que no tiene por qué ser el único en el que
+        // el juez sabe leer su tipo: desde que `clases` y `er` se evalúan
+        // también en PlantUML, anunciar los del tipo prometería una escritura
+        // que este ejercicio concreto rechaza.
+        motor: e.getMotor(),
         esEjemplo: e.getEsEjemplo(),
         categoriaId: e.get('categoria')?.id ?? null,
         resuelto: resueltos.has(e.id!),

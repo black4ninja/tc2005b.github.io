@@ -30,11 +30,22 @@
 import { clave } from './nombres.js';
 import {
   ErrorSintaxisDiagrama, modeloVacio,
-  type ClaseNodo, type ModeloDiagrama, type Nodo, type TipoArista, type TipoDiagrama,
+  type ClaseNodo, type Miembro, type ModeloDiagrama, type Nodo, type TipoArista,
+  type TipoDiagrama,
 } from './tipos.js';
 
 /** Tipos que este normalizador sabe traducir hoy. */
-export const SOPORTADOS_PLANTUML: TipoDiagrama[] = ['casos-de-uso', 'componentes', 'paquetes'];
+export const SOPORTADOS_PLANTUML: TipoDiagrama[] = [
+  'casos-de-uso', 'componentes', 'paquetes', 'clases', 'er',
+];
+
+/**
+ * Tipos cuyas cajas llevan MIEMBROS dentro de `{ }` en vez de elementos
+ * contenidos. La distinción es la que decide si una llave abre un compartimento
+ * o un contenedor, y sin ella `class Pedido {` se leería como un paquete
+ * llamado «Pedido» cuyos atributos serían declaraciones sueltas.
+ */
+const CON_MIEMBROS: TipoDiagrama[] = ['clases', 'er'];
 
 /**
  * Palabra clave de declaración → clase de nodo.
@@ -44,6 +55,14 @@ export const SOPORTADOS_PLANTUML: TipoDiagrama[] = ['casos-de-uso', 'componentes
  * dibuja, lo que importa es que agrupan. La distinción visual es del render.
  */
 const PALABRAS: Record<string, ClaseNodo> = {
+  // Clases y entidades. `enum` cae en `clase` y se distingue por su anotación,
+  // igual que hace Mermaid con `<<enumeration>>`: al juez le importa que sea un
+  // clasificador, y el matiz queda donde se puede comprobar.
+  class: 'clase',
+  abstract: 'clase',
+  enum: 'clase',
+  struct: 'clase',
+  entity: 'entidad',
   actor: 'actor',
   usecase: 'caso-de-uso',
   component: 'componente',
@@ -64,6 +83,18 @@ const CLASE_IMPLICITA: Record<string, ClaseNodo> = {
   'casos-de-uso': 'caso-de-uso',
   componentes: 'componente',
   paquetes: 'paquete',
+  clases: 'clase',
+  er: 'entidad',
+};
+
+/**
+ * Palabras que anotan la declaración sin ser su clase. `abstract class Pago`
+ * declara una clase abstracta: la palabra útil es la segunda, y la primera se
+ * conserva como anotación para poder comprobarla.
+ */
+const PREFIJOS_ANOTACION: Record<string, string> = {
+  abstract: 'abstract',
+  enum: 'enumeration',
 };
 
 /**
@@ -112,7 +143,26 @@ const EXTREMO = String.raw`(?:"[^"]*"|\([^)]*\)|\[[^\]]*\]|:[^:]+:|[A-Za-z_][A-Z
  * `-down->`). El número de guiones solo controla la longitud del dibujo, así que
  * `-->` y `----->` son exactamente la misma relación.
  */
-const FLECHA = String.raw`(?:<\|?|<)?[-.]+(?:\[[^\]]*\])?(?:up|down|left|right|u|d|l|r)?[-.]*(?:\|?>)?`;
+/**
+ * Adorno del extremo IZQUIERDO de una flecha. El orden de la alternancia va de
+ * más largo a más corto: con `|` antes que `||`, la pata de gallo `||--` se
+ * leería como un `|` suelto y el resto rompería la flecha.
+ *
+ * Cubre lo de clases (`<|` herencia, `*` composición, `o` agregación) y lo de
+ * entidad-relación (`||`, `|o`, `}o`, `}|`).
+ */
+const ADORNO_IZQ = String.raw`(?:<\||\|\||\|o|\}o|\}\||<|\*|o)`;
+
+/** Ídem para el extremo DERECHO, con los mismos símbolos reflejados. */
+const ADORNO_DER = String.raw`(?:\|>|\|\||o\||o\{|\|\{|>|\*|o)`;
+
+/**
+ * Una flecha: adornos opcionales a los lados y, en medio, guiones o puntos con
+ * los aderezos que PlantUML admite (`-[#red]->`, `-down->`). El número de
+ * guiones solo controla la longitud del dibujo, así que `-->` y `----->` son
+ * exactamente la misma relación.
+ */
+const FLECHA = String.raw`${ADORNO_IZQ}?[-.]+(?:\[[^\]]*\])?(?:up|down|left|right|u|d|l|r)?[-.]*${ADORNO_DER}?`;
 
 /** `A "1" --> "0..*" B : etiqueta`, con cardinalidades y etiqueta opcionales. */
 const RELACION = new RegExp(
@@ -134,7 +184,106 @@ const ESTEREOTIPO = /<<([^>]*)>>/g;
 /** Una declaración: nombre y, opcionalmente, alias tras `as`. */
 const DECLARACION = new RegExp(`^(${EXTREMO})(?:\\s+as\\s+(${EXTREMO}))?$`, 'i');
 
+/** Pata de gallo → la cardinalidad normalizada que usa el modelo. */
+const CARDINALIDAD_ER: Record<string, string> = {
+  '||': '1',
+  '|o': '0..1',
+  'o|': '0..1',
+  '}o': '0..*',
+  'o{': '0..*',
+  '}|': '1..*',
+  '|{': '1..*',
+};
+
+/** Separadores de compartimento dentro de una caja. No aportan modelo. */
+const SEPARADOR_MIEMBRO = /^(?:-{2,}|\.{2,}|={2,}|_{2,})$/;
+
+/** Visibilidad UML al principio de un miembro. */
+const VISIBILIDAD: Record<string, '+' | '-' | '#' | '~'> = {
+  '+': '+', '-': '-', '#': '#', '~': '~',
+};
+
 // --- Utilidades ------------------------------------------------------------
+
+/**
+ * Lee una línea de compartimento como atributo u operación.
+ *
+ * Acepta las dos formas que se ven en clase: la canónica de PlantUML
+ * (`+folio : String`) y la de tipo delante (`int id`), que es la que arrastra
+ * quien viene de Mermaid o de un esquema de base de datos. Devuelve `null` para
+ * los separadores y para las líneas vacías.
+ *
+ * El `*` inicial de las entidades —que marca campo obligatorio— se conserva como
+ * parte del NOMBRE no: se descarta, porque es notación de la caja y no del
+ * atributo, y dejarlo dentro haría fallar cualquier comprobación por nombre.
+ */
+function leerMiembro(linea: string): { miembro: Miembro; esOperacion: boolean } | null {
+  let t = linea.trim();
+  if (!t || SEPARADOR_MIEMBRO.test(t)) return null;
+
+  // Modificadores `{static}`, `{abstract}`, `{field}`, `{method}`.
+  t = t.replace(/\{\s*(static|abstract|field|method)\s*\}/gi, ' ').trim();
+  if (!t) return null;
+
+  let visibilidad: '+' | '-' | '#' | '~' | undefined;
+  if (t.length > 1 && VISIBILIDAD[t[0]]) {
+    visibilidad = VISIBILIDAD[t[0]];
+    t = t.slice(1).trim();
+  }
+  // `* id : int` en una entidad: obligatorio. Va después de la visibilidad
+  // porque las dos pueden convivir.
+  if (t.startsWith('*')) t = t.slice(1).trim();
+  if (!t) return null;
+
+  const abre = t.indexOf('(');
+  if (abre >= 0) {
+    const cierra = t.lastIndexOf(')');
+    if (cierra > abre) {
+      const nombre = normalizarTexto(t.slice(0, abre));
+      const parametros = t.slice(abre + 1, cierra).trim();
+      const cola = t.slice(cierra + 1).trim();
+      const tipo = cola.startsWith(':') ? normalizarTexto(cola.slice(1)) : normalizarTexto(cola);
+      return {
+        esOperacion: true,
+        miembro: {
+          nombre,
+          ...(tipo ? { tipo } : {}),
+          ...(parametros ? { parametros } : {}),
+          ...(visibilidad ? { visibilidad } : {}),
+        },
+      };
+    }
+  }
+
+  const dosPuntos = t.indexOf(':');
+  if (dosPuntos > 0) {
+    return {
+      esOperacion: false,
+      miembro: {
+        nombre: normalizarTexto(t.slice(0, dosPuntos)),
+        tipo: normalizarTexto(t.slice(dosPuntos + 1)) || undefined,
+        ...(visibilidad ? { visibilidad } : {}),
+      },
+    };
+  }
+
+  // Sin dos puntos: `int id` (tipo delante) o un nombre suelto.
+  const trozos = normalizarTexto(t).split(' ');
+  if (trozos.length >= 2) {
+    return {
+      esOperacion: false,
+      miembro: {
+        nombre: trozos[trozos.length - 1],
+        tipo: trozos.slice(0, -1).join(' '),
+        ...(visibilidad ? { visibilidad } : {}),
+      },
+    };
+  }
+  return {
+    esOperacion: false,
+    miembro: { nombre: trozos[0], ...(visibilidad ? { visibilidad } : {}) },
+  };
+}
 
 function error(linea: number, mensaje: string): ErrorSintaxisDiagrama {
   return new ErrorSintaxisDiagrama(`Línea ${linea}: ${mensaje}`);
@@ -330,6 +479,11 @@ export function normalizarPlantuml(tipo: TipoDiagrama, codigo: string): ModeloDi
   let cerrado = false;
   /** Terminador del bloque de texto libre que se está saltando, si lo hay. */
   let terminador: string | null = null;
+  /**
+   * Caja cuyo compartimento se está leyendo. Mientras está puesta, cada línea es
+   * un atributo o una operación, no una declaración.
+   */
+  let miembrosDe: Nodo | null = null;
   /** Llaves pendientes de un bloque ignorado (`skinparam foo { … }`). */
   let llavesIgnoradas = 0;
   let dentroDeComentario = false;
@@ -346,9 +500,25 @@ export function normalizarPlantuml(tipo: TipoDiagrama, codigo: string): ModeloDi
     const cuerpo = normalizarTexto(limpio);
     if (!cuerpo) throw error(n, 'hay una declaración sin nombre.');
 
-    const primera = cuerpo.split(/\s+/)[0].toLowerCase();
+    const palabras = cuerpo.split(/\s+/);
+    let primera = palabras[0].toLowerCase();
+    let consumidas = palabras[0].length;
+    const extra: string[] = [];
+
+    // `abstract class Pago` y `enum Estado`: la palabra que da la CLASE puede ir
+    // detrás de un calificador. Sin consumir los dos, el resto sería
+    // «class Pago» y la declaración no casaría con nada.
+    if (PREFIJOS_ANOTACION[primera]) {
+      extra.push(PREFIJOS_ANOTACION[primera]);
+      const segunda = palabras[1]?.toLowerCase();
+      if (segunda && Object.prototype.hasOwnProperty.call(PALABRAS, segunda)) {
+        consumidas = cuerpo.indexOf(palabras[1]) + palabras[1].length;
+        primera = segunda;
+      }
+    }
+
     const conPalabra = Object.prototype.hasOwnProperty.call(PALABRAS, primera);
-    const resto = conPalabra ? cuerpo.slice(primera.length).trim() : cuerpo;
+    const resto = conPalabra ? cuerpo.slice(consumidas).trim() : cuerpo;
 
     if (conPalabra && !resto) {
       throw error(n, `«${primera}» no dice qué se está declarando: falta el nombre.`);
@@ -390,7 +560,9 @@ export function normalizarPlantuml(tipo: TipoDiagrama, codigo: string): ModeloDi
       );
     }
 
-    return declarar(ref, alias, clase, anotaciones, contenedorActual());
+    // Los calificadores (`abstract`, `enum`) viajan como anotación: es donde el
+    // catálogo los puede comprobar, igual que el `<<enumeration>>` de Mermaid.
+    return declarar(ref, alias, clase, [...anotaciones, ...extra], contenedorActual());
   }
 
   function registrarRelacion(
@@ -411,23 +583,99 @@ export function normalizarPlantuml(tipo: TipoDiagrama, codigo: string): ModeloDi
     // guardaría la misma información en dos sitios que podrían contradecirse.
     const restoEtiqueta = normalizarTexto(etiqueta.replace(ESTEREOTIPO_RELACION, ' '));
 
+    // Los adornos son lo que hay ANTES del primer guion o punto y lo que hay
+    // después del último: de ahí salen tanto la clase de relación de un diagrama
+    // de clases como las cardinalidades de pata de gallo de un ER.
+    const cuerpo = flecha.replace(/\[[^\]]*\]/g, '');
+    const adornoIzq = /^([^\-.]*)/.exec(cuerpo)?.[1] ?? '';
+    const adornoDer = /([^\-.]*)$/.exec(cuerpo)?.[1] ?? '';
+
     const puntaDerecha = flecha.includes('>');
     const puntaIzquierda = flecha.startsWith('<');
     // `A <-- B` significa lo mismo que `B --> A`: la dirección se normaliza aquí
     // para que el catálogo nunca tenga que saber cómo se escribió la flecha.
     const invertida = puntaIzquierda && !puntaDerecha;
 
-    let tipoArista: TipoArista;
     if (estereotipo) {
-      tipoArista = estereotipo[1].toLowerCase() === 'include' ? 'incluye' : 'extiende';
-    } else if (puntaDerecha || puntaIzquierda) {
-      // La punta es lo que distingue una dependencia de una asociación; que la
-      // línea sea continua o punteada solo cambia el dibujo.
-      tipoArista = 'dependencia';
-    } else {
-      tipoArista = tipoSinPunta;
+      modelo.aristas.push({
+        origen: invertida ? b.id : a.id,
+        destino: invertida ? a.id : b.id,
+        tipo: estereotipo[1].toLowerCase() === 'include' ? 'incluye' : 'extiende',
+        etiqueta: restoEtiqueta || undefined,
+        cardinalidadOrigen: (invertida ? cardDer : cardIzq)?.trim() || undefined,
+        cardinalidadDestino: (invertida ? cardIzq : cardDer)?.trim() || undefined,
+      });
+      return;
     }
 
+    if (tipo === 'er') {
+      // Pata de gallo: la cardinalidad la lleva el ADORNO, no las comillas. Si
+      // el alumno escribe las dos, mandan las comillas: son explícitas.
+      const arista = {
+        origen: a.id,
+        destino: b.id,
+        tipo: 'relacion-er' as TipoArista,
+        etiqueta: restoEtiqueta || undefined,
+        cardinalidadOrigen: cardIzq?.trim() || CARDINALIDAD_ER[adornoIzq] || undefined,
+        cardinalidadDestino: cardDer?.trim() || CARDINALIDAD_ER[adornoDer] || undefined,
+      };
+      modelo.aristas.push(arista);
+      return;
+    }
+
+    if (tipo === 'clases') {
+      // Un diagrama de clases distingue seis relaciones por el adorno y por si
+      // la línea es continua o punteada. En los otros tipos la punta solo
+      // separa dependencia de asociación, y ese comportamiento no se toca.
+      const punteada = /\.\./.test(flecha);
+      let tipoArista: TipoArista = 'asociacion';
+      let origen = invertida ? b.id : a.id;
+      let destino = invertida ? a.id : b.id;
+      let cardOrigen = (invertida ? cardDer : cardIzq)?.trim() || undefined;
+      let cardDestino = (invertida ? cardIzq : cardDer)?.trim() || undefined;
+
+      // El triángulo hueco señala SIEMPRE al padre; el rombo, al todo. Aquí se
+      // normaliza la dirección por significado —hijo→padre, todo→parte— para
+      // que el catálogo no tenga que saber de qué lado se dibujó el adorno.
+      const triangulo = adornoIzq === '<|' ? 'izq' : adornoDer === '|>' ? 'der' : null;
+      const rombo = adornoIzq === '*' || adornoIzq === 'o' ? 'izq'
+        : adornoDer === '*' || adornoDer === 'o' ? 'der' : null;
+
+      if (triangulo) {
+        tipoArista = punteada ? 'implementacion' : 'herencia';
+        // `A <|-- B`: el padre es A (el del triángulo), el hijo es B.
+        const hijo = triangulo === 'izq' ? b : a;
+        const padre = triangulo === 'izq' ? a : b;
+        origen = hijo.id;
+        destino = padre.id;
+        cardOrigen = undefined;
+        cardDestino = undefined;
+      } else if (rombo) {
+        const simbolo = rombo === 'izq' ? adornoIzq : adornoDer;
+        tipoArista = simbolo === '*' ? 'composicion' : 'agregacion';
+        // El rombo va del lado del TODO.
+        const todo = rombo === 'izq' ? a : b;
+        const parte = rombo === 'izq' ? b : a;
+        origen = todo.id;
+        destino = parte.id;
+        cardOrigen = (rombo === 'izq' ? cardIzq : cardDer)?.trim() || undefined;
+        cardDestino = (rombo === 'izq' ? cardDer : cardIzq)?.trim() || undefined;
+      } else if (punteada && (puntaDerecha || puntaIzquierda)) {
+        tipoArista = 'dependencia';
+      }
+
+      modelo.aristas.push({
+        origen,
+        destino,
+        tipo: tipoArista,
+        etiqueta: restoEtiqueta || undefined,
+        cardinalidadOrigen: cardOrigen,
+        cardinalidadDestino: cardDestino,
+      });
+      return;
+    }
+
+    const tipoArista: TipoArista = puntaDerecha || puntaIzquierda ? 'dependencia' : tipoSinPunta;
     modelo.aristas.push({
       origen: invertida ? b.id : a.id,
       destino: invertida ? a.id : b.id,
@@ -488,6 +736,9 @@ export function normalizarPlantuml(tipo: TipoDiagrama, codigo: string): ModeloDi
     }
     if (minuscula.startsWith('@enduml')) {
       if (!abierto) throw error(n, 'aparece @enduml sin un @startuml que lo abra.');
+      if (miembrosDe) {
+        throw error(n, `falta la «}» que cierra los miembros de «${miembrosDe.nombre}».`);
+      }
       if (pila.length) {
         throw error(n, `quedan ${pila.length} bloque(s) sin cerrar: falta alguna «}».`);
       }
@@ -499,6 +750,20 @@ export function normalizarPlantuml(tipo: TipoDiagrama, codigo: string): ModeloDi
       throw cerrado
         ? error(n, 'hay contenido después de @enduml.')
         : error(n, 'el diagrama tiene que empezar con @startuml.');
+    }
+
+    // Compartimento de una caja: todo lo de dentro son miembros.
+    if (miembrosDe) {
+      if (linea === '}') {
+        miembrosDe = null;
+        continue;
+      }
+      const leido = leerMiembro(linea);
+      if (leido) {
+        if (leido.esOperacion) miembrosDe.operaciones.push(leido.miembro);
+        else miembrosDe.atributos.push(leido.miembro);
+      }
+      continue;
     }
 
     // Cierre de contenedor.
@@ -537,6 +802,28 @@ export function normalizarPlantuml(tipo: TipoDiagrama, codigo: string): ModeloDi
       throw error(n, `«${linea}» parece una relación, pero no entiendo sus extremos o su flecha.`);
     }
 
+    // Miembro suelto: `Pedido : +folio : String`. Es la otra forma de escribir
+    // un compartimento en PlantUML, tan común como las llaves, y sin esto una
+    // clase escrita así daba error de sintaxis en la cara del alumno.
+    //
+    // Solo en los tipos que tienen miembros: en casos de uso o paquetes, unos
+    // dos puntos sueltos no son eso y tragárselos escondería un error real.
+    if (CON_MIEMBROS.includes(tipo)) {
+      const corte = linea.indexOf(':');
+      if (corte > 0 && !linea.endsWith('{')) {
+        const duenoTexto = linea.slice(0, corte).trim();
+        const dueno = buscar(duenoTexto, interpretarToken(duenoTexto).nombre);
+        if (dueno && (dueno.clase === 'clase' || dueno.clase === 'interfaz' || dueno.clase === 'entidad')) {
+          const leido = leerMiembro(linea.slice(corte + 1));
+          if (leido) {
+            if (leido.esOperacion) dueno.operaciones.push(leido.miembro);
+            else dueno.atributos.push(leido.miembro);
+          }
+          continue;
+        }
+      }
+    }
+
     // Apertura de contenedor: `package "Datos" {`.
     if (linea.endsWith('{')) {
       const cuerpo = linea.slice(0, -1).trim();
@@ -546,7 +833,14 @@ export function normalizarPlantuml(tipo: TipoDiagrama, codigo: string): ModeloDi
         pila.push('');
         continue;
       }
-      pila.push(declararLinea(n, cuerpo, true).id);
+      const nodo = declararLinea(n, cuerpo, true);
+      // Una clase o una entidad abren COMPARTIMENTO, no contenedor: dentro van
+      // sus atributos y operaciones, no otros elementos del diagrama.
+      if (CON_MIEMBROS.includes(tipo) && nodo.clase !== 'paquete') {
+        miembrosDe = nodo;
+      } else {
+        pila.push(nodo.id);
+      }
       continue;
     }
 

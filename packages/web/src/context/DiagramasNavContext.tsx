@@ -27,6 +27,8 @@ import {
 
 export interface DiagramaLista extends EjercicioLista {
   tipoDiagrama: string;
+  /** Motor en el que hay que resolverlo. No es el del tipo; ver el listado. */
+  motor: string;
 }
 
 interface ColeccionRef {
