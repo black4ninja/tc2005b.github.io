@@ -16,6 +16,7 @@ import {
 } from '../services/contenidos-arbol.js';
 import { extraerSnippet } from '../services/contenidos-busqueda.js';
 import { DocumentoVersion } from '../models/DocumentoVersion.js';
+import { escaparRegex } from '../utils/regex.js';
 
 /**
  * Lectura del CMS "Contenidos" (design §2/§4): NINGÚN byte de contenido sale
@@ -229,10 +230,6 @@ const BUSQUEDA_MAX = 20;
 // Disponibilidad del índice de texto, memoizada por campo: sin esto, un
 // entorno sin índices pagaría DOS $text fallidos por cada tecleo, siempre.
 const indiceTexto = new Map<string, boolean>();
-
-function escaparRegex(q: string): string {
-  return q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 
 /** fullText si el índice existe (memoizado); si no, regex contains. */
 async function buscarConIndice<T extends Parse.Object>(

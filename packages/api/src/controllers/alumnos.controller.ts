@@ -11,6 +11,7 @@ import {
   createGrupoAlumnoLink,
 } from '../services/grupo-alumno.service.js';
 import { invalidateColeccionesPermitidas } from '../services/contenidos.service.js';
+import { escaparRegex } from '../utils/regex.js';
 
 export async function listAlumnos(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
@@ -39,11 +40,130 @@ export async function listAlumnos(req: Request, res: Response): Promise<void> {
   }
 }
 
+/** Mínimo de caracteres para buscar: menos devuelve medio padrón por un tecleo. */
+const BUSCAR_MIN = 2;
+/** Tope de resultados. Es un buscador para identificar a alguien, no un listado. */
+const BUSCAR_MAX = 20;
+
+/**
+ * GET /admin/grupos/:grupoId/alumnos/buscar?q=… — alumnos YA DADOS DE ALTA en el
+ * sistema que casen por matrícula, nombre o correo, para meterlos al grupo sin
+ * volver a crearlos.
+ *
+ * Busca en TODO el padrón, no solo en el grupo: el caso de uso es justo el
+ * alumno que viene de otro grupo o de un semestre anterior. Por eso devuelve lo
+ * mínimo para identificarlo (nombre, matrícula, correo) y nada del perfil.
+ *
+ * `enGrupo`/`baja` viajan con cada resultado para que la interfaz no ofrezca
+ * agregar a quien ya está, y distinga a quien solo hay que reactivar.
+ */
+export async function buscarAlumnos(req: Request, res: Response): Promise<void> {
+  const { grupoId } = req.params;
+  const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+
+  if (q.length < BUSCAR_MIN) {
+    res.status(400).json({ status: 'error', message: `La búsqueda necesita al menos ${BUSCAR_MIN} caracteres` });
+    return;
+  }
+
+  try {
+    // El texto va escapado: sin eso, un `(((` del usuario es una regex inválida
+    // (500) y un `(a+)+$` es un cuelgue del servidor.
+    const patron = new RegExp(escaparRegex(q), 'i');
+    const porCampo = (campo: string) => {
+      const query = BaseModel.queryActive<AppUser>('AppUser');
+      query.equalTo('userType' as any, 'alumno' as any);
+      query.matches(campo as any, patron as any);
+      return query;
+    };
+
+    const query = Parse.Query.or(porCampo('matricula'), porCampo('name'), porCampo('email'));
+    query.ascending('name');
+    query.limit(BUSCAR_MAX);
+    const alumnos = await query.find({ useMasterKey: true });
+
+    // Una consulta por alumno bastaría, pero son <= BUSCAR_MAX y `findGrupoAlumnoLink`
+    // ya existe; se resuelven en paralelo para no encadenar 20 viajes.
+    const links = await Promise.all(alumnos.map((a) => findGrupoAlumnoLink(a.id, grupoId)));
+
+    res.json({
+      status: 'ok',
+      alumnos: alumnos.map((alumno, i) => {
+        const link = links[i];
+        const vinculado = !!link && link.get('exists') === true;
+        return {
+          id: alumno.id,
+          name: alumno.getName(),
+          email: alumno.getEmail(),
+          matricula: alumno.getMatricula(),
+          // Ya está en el grupo y activo: no hay nada que hacer con él.
+          enGrupo: vinculado && link!.get('active') === true,
+          // Estuvo y se le dio de baja: agregarlo lo reactiva, no lo duplica.
+          baja: vinculado && link!.get('active') !== true,
+        };
+      }),
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Error al buscar alumnos' });
+  }
+}
+
+/**
+ * POST /admin/grupos/:grupoId/alumnos/vincular — mete al grupo un alumno que ya
+ * existe, por id. Es el gemelo de `createAlumno` para el caso "ya está dado de
+ * alta": ni crea usuario ni genera contraseña, así que el alumno conserva la
+ * suya y su historial.
+ */
+export async function vincularAlumno(req: Request, res: Response): Promise<void> {
+  const { grupoId } = req.params;
+  const { alumnoId } = req.body;
+
+  if (!alumnoId || typeof alumnoId !== 'string') {
+    res.status(400).json({ status: 'error', message: 'Se requiere el id del alumno' });
+    return;
+  }
+
+  try {
+    const query = BaseModel.queryActive<AppUser>('AppUser');
+    query.equalTo('userType' as any, 'alumno' as any);
+    const alumno = await query.get(alumnoId, { useMasterKey: true });
+
+    const link = await findGrupoAlumnoLink(alumno.id, grupoId);
+    if (link && link.get('exists') === true && link.get('active') === true) {
+      res.status(409).json({ status: 'error', message: 'El alumno ya pertenece a este grupo' });
+      return;
+    }
+
+    if (link) {
+      // Reactivar el vínculo de una baja anterior conserva su perfil del grupo
+      // (repositorio, experiencia, expectativas…), que cuelga del propio link.
+      link.set('active', true);
+      link.set('exists', true);
+      await link.save(null, { useMasterKey: true });
+    } else {
+      const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
+      await createGrupoAlumnoLink(alumno, grupoPointer);
+    }
+    invalidateColeccionesPermitidas(alumno.id);
+
+    res.status(201).json({ status: 'ok', alumno: alumno.toSafeJSON(), reactivado: !!link });
+  } catch (error: any) {
+    if (error?.code === Parse.Error.OBJECT_NOT_FOUND) {
+      res.status(404).json({ status: 'error', message: 'Alumno no encontrado' });
+      return;
+    }
+    res.status(500).json({ status: 'error', message: 'Error al agregar el alumno al grupo' });
+  }
+}
+
 export async function createAlumno(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
   const { name, email, matricula } = req.body;
 
-  if (!name || !email || !matricula) {
+  // `typeof` además de vacío: un payload con un número donde va el nombre hacía
+  // reventar el `.trim()` de más abajo y salía como 500 en vez de 400.
+  const textoNoVacio = (v: unknown) => typeof v === 'string' && v.trim() !== '';
+  if (!textoNoVacio(name) || !textoNoVacio(email) || !textoNoVacio(matricula)) {
     res.status(400).json({ status: 'error', message: 'Nombre, correo y matrícula son requeridos' });
     return;
   }
@@ -80,6 +200,28 @@ export async function createAlumno(req: Request, res: Response): Promise<void> {
         alumno: existing.toSafeJSON(),
       });
       return;
+    }
+
+    // La deduplicación por correo (arriba) no ve al mismo alumno dado de alta con
+    // OTRO correo, que es como se cuelan los duplicados: el mismo humano con dos
+    // usuarios y el historial partido. La matrícula sí lo identifica.
+    //
+    // Solo se comprueba si viene con contenido: los alumnos importados por CSV
+    // sin matrícula la tienen en '', y buscar por '' los casaría a todos.
+    const matriculaLimpia = matricula.trim();
+    if (matriculaLimpia) {
+      const porMatricula = BaseModel.queryActive<AppUser>('AppUser');
+      porMatricula.equalTo('matricula' as any, matriculaLimpia as any);
+      const mismaMatricula = await porMatricula.first({ useMasterKey: true });
+      if (mismaMatricula) {
+        res.status(409).json({
+          status: 'error',
+          message:
+            `La matrícula ${matriculaLimpia} ya es de ${mismaMatricula.getName()} ` +
+            `(${mismaMatricula.getEmail()}). Búscalo en "Buscar existente" para agregarlo al grupo.`,
+        });
+        return;
+      }
     }
 
     // Usuario nuevo

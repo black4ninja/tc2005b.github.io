@@ -8,6 +8,24 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Agregar al grupo un alumno que ya existe, buscándolo por matrícula, nombre o
+  correo.** El modal «Agregar Alumno» abre en una pestaña «Buscar existente»
+  (además de la de siempre, «Crear nuevo»), que consulta el padrón completo —no
+  solo el grupo—, porque el caso de uso es justo el alumno que viene de otro
+  grupo o de un semestre anterior.
+  - El alta ya reutilizaba al alumno existente **si el correo coincidía exacto**,
+    pero sin buscador había que sabérselo de memoria: una letra de más creaba un
+    usuario duplicado, con su historial vacío y el viejo abandonado.
+  - Cada resultado dice si ya está en el grupo (no se ofrece agregarlo) o si
+    estuvo y se le dio de baja (el botón dice «Reactivar»: recupera su perfil del
+    grupo, que cuelga del vínculo, en vez de empezar de cero).
+  - Vincular NO crea usuario ni genera contraseña: el alumno conserva la suya y
+    su historial.
+  - Crear a mano un alumno con una **matrícula que ya existe** ahora responde 409
+    diciendo de quién es, en vez de dar de alta al duplicado. La deduplicación
+    por correo no veía a la misma persona registrada con otro correo, que es como
+    se colaban. La importación por CSV mantiene su comportamiento (deduplica por
+    correo y no por matrícula).
 - **Filtro por estado en el listado de grupos** (`/admin/grupos`): Activos —por
   defecto—, Inactivos, Eliminados y Todos. Se resuelve en el servidor
   (`GET /admin/grupos?estado=`), no filtrando en el cliente lo que ya se

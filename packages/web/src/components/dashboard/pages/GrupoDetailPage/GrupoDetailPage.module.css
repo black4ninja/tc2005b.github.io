@@ -256,3 +256,33 @@
   border-radius: 8px;
   font-size: 14px;
 }
+
+/* ── Pestañas del modal de alta de alumno (buscar existente / crear nuevo) ── */
+.altaTabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.altaTab {
+  padding: 8px 14px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.altaTab:hover {
+  color: var(--text-primary);
+}
+
+.altaTabActive {
+  color: var(--dash-primary);
+  border-bottom-color: var(--dash-primary);
+}
