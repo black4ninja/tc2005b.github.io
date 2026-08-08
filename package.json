@@ -1,6 +1,9 @@
 {
   "name": "tc2005b-monorepo",
   "private": true,
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "workspaces": [
     "packages/web",
     "packages/api",

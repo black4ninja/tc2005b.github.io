@@ -478,6 +478,25 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   exporta lo que ve un alumno, evalúa código candidato contra el ejercicio real
   y calcula métricas de carga cognitiva.
 ### Changed
+- **El juez de diagramas monta su DOM con `linkedom` en vez de `jsdom`.** Mermaid
+  parsea en Node, pero arrastra DOMPurify, que exige un `window`; aquí NO se
+  renderiza nada, así que un DOM completo sobraba. jsdom 30 declara
+  `engines: ^22.22.2 || ^24.15.0 || >=26.0.0` y arrastra `undici`: le imponía al
+  servidor un Node muy reciente por instalar un navegador entero para leer texto.
+  `linkedom` pide `>=16`. Verificado con las 162 pruebas del juez, que cubren los
+  cinco tipos de Mermaid.
+  - jsdom **no desaparece del repo**: pasa a dependencia de desarrollo del web,
+    donde dos pruebas lo necesitan de verdad. `ajustar.test.ts` comprueba
+    `getPropertyPriority('max-width') === 'important'`, y linkedom descarta el
+    `!important`, así que ahí sustituirlo daría una prueba que ya no comprueba lo
+    que dice.
+- **Se declara `engines.node: >=20.19.0`** en los cuatro `package.json`. No es un
+  número elegido: es el suelo que ya imponían `jwks-rsa` (`^20.19.0 || ^22.12.0
+  || >=23`) y `vite` (`^20.19.0 || >=22.12.0`). Estaba sin documentar, así que la
+  única forma de descubrirlo era desplegar y ver qué se rompía.
+  - Ojo con el techo, que no se declara porque el proyecto lo salta a conciencia:
+    `@parse/s3-files-adapter` pide `<23`, y por eso `yarn` necesita
+    `--ignore-engines` en este repo.
 - La regla de acceso a los módulos opt-in se unifica en
   `acceso-modulos.service.ts`, parametrizada por módulo. Era idéntica para
   Ejercicios y Diagramas, y dos copias de una regla de **permisos** divergen en
@@ -685,6 +704,18 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   La documentación vive ahora en el CMS "Contenidos".
 
 ### Fixed
+- **El juez declaraba ambigua una máquina de estados escrita correctamente.** Las
+  guardas se comparaban con `clave()`, que borra todo lo que no sea letra o
+  dígito —y en una guarda los operadores son justo lo que la distingue de su
+  contraria—, así que `[activo]` y `[!activo]`, o `[x > 0]` y `[x >= 0]`, daban
+  la misma clave y la elección canónica de UML se marcaba como no determinista.
+  - La prueba que cubría el caso pasaba **por accidente**: usaba `<=`, y jsdom
+    escapaba el `<` a `&lt;`, dejando las letras «lt» que hacían distintas las
+    dos claves. Cambiar de DOM la puso roja y destapó el defecto de fondo, que ya
+    estaba en producción. Ahora las guardas se comparan conservando los
+    operadores, y hay casos para la negación, para dos operadores sobre el mismo
+    operando y para el contrapunto —la misma guarda con otros espacios sigue
+    siendo ambigua—, que es lo que evita que la comprobación se vuelva vacía.
 - Un documento en la raíz de una colección podía **renombrarse** al slug
   reservado `ejercicios` y tapar la ruta del módulo: la reserva solo se
   comprobaba al crear. Ahora se comprueba también al renombrar, y la lista de

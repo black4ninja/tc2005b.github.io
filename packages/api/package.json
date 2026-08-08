@@ -1,6 +1,9 @@
 {
   "name": "@tc2005b/api",
   "private": true,
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -25,9 +28,9 @@
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",
     "express": "4.21.2",
-    "jsdom": "^30.0.1",
     "jsonwebtoken": "^9.0.3",
     "jwks-rsa": "^4.0.1",
+    "linkedom": "^0.18.13",
     "mailersend": "^2.6.0",
     "mermaid": "^11.16.0",
     "multer": "^2.0.2",
@@ -40,7 +43,6 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.17",
     "@types/express": "4.17.21",
-    "@types/jsdom": "^28.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^1.4.12",
     "@types/parse": "3.0.9",

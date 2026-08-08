@@ -1,6 +1,9 @@
 {
   "name": "@tc2005b/contenido-pipeline",
   "version": "0.1.0",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "private": true,
   "type": "module",
   "main": "index.js",
