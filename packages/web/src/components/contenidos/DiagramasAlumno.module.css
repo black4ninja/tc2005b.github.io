@@ -69,84 +69,26 @@
 }
 
 .itemTitulo { font-size: 16px; font-weight: 600; }
-.itemTipo { font-size: 13px; color: #57606a; white-space: nowrap; }
 
 .itemIzq { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .check { font-size: 15px; color: #d0d7de; width: 18px; text-align: center; }
 .itemResuelto { border-color: #a7d8b4; background: #f4fbf6; }
 .itemResuelto .check { color: #1e7e34; }
 
-.progreso { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
-.barra {
-  flex: 1;
-  height: 8px;
-  background: #eaeef2;
-  border-radius: 999px;
-  overflow: hidden;
-  max-width: 360px;
-}
-.barraLlena { height: 100%; background: #4f46e5; transition: width 0.3s; }
-.progresoTexto { font-size: 13px; color: #57606a; white-space: nowrap; }
 
-.filtros {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin: 20px 0 4px;
-}
-.filtroLabel { font-size: 13px; color: #57606a; }
-.chip {
-  font-size: 13px;
-  padding: 5px 14px;
-  border-radius: 999px;
-  border: 1px solid #d0d7de;
-  background: #fff;
-  color: #1f2328;
-  cursor: pointer;
-}
-.chip:hover { background: #f6f8fa; }
-.chipActivo { background: #4f46e5; border-color: #4f46e5; color: #fff; }
 /* `.chip:hover` tiene MÁS especificidad que `.chipActivo` (clase + pseudoclase
    frente a clase), así que sin esta regla el chip seleccionado se quedaba con
    el fondo casi blanco del hover y el texto blanco encima: ilegible justo
    cuando el puntero está sobre él. */
-.chipActivo:hover { background: #4338ca; border-color: #4338ca; color: #fff; }
 
 /* --- Bloque: el nivel por encima de la categoría ---
    Deliberadamente distinto del header de categoría —más grande y SIN uppercase—
    para que a simple vista se distinga cuál de los dos niveles es cuál. */
-.bloque { margin-top: 28px; }
 
-.bloqueHeader {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 8px 4px;
-  background: none;
-  border: none;
-  border-bottom: 2px solid #d0d7de;
-  cursor: pointer;
-  text-align: left;
-}
 
-.bloqueTitulo {
-  font-size: 19px;
-  font-weight: 700;
-  color: var(--text-primary);
-  flex: 1;
-}
 
-.bloqueSub {
-  margin: 8px 0 0;
-  padding-left: 24px;
-  font-size: 14px;
-  color: #57606a;
-}
 
 /* Sangría que hace visible la jerarquía sin tocar nada del nivel inferior. */
-.bloqueBody { padding-left: 16px; }
 
 .grupo { margin-top: 16px; }
 .grupoHeader {
@@ -209,4 +151,95 @@
   background: #ede9fe;
   color: #5b21b6;
   white-space: nowrap;
+}
+
+/* --- Cabecera de tipo ---------------------------------------------------- */
+
+.grupoDesc {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: #57606a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Motor en el que el JUEZ evalúa este tipo. Sale de `motoresJuez`, no de una
+   lista fija: es el único en el que un envío se puede corregir, así que
+   anunciar otro sería anunciar un envío rechazado. */
+.motor {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+/* --- Catálogo de tipos sin ejercicios ------------------------------------ */
+
+.catalogoIntro {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #57606a;
+}
+
+.tipoLibre,
+.puenteCatalogo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 16px;
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  background: #fff;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tipoLibre:hover,
+.puenteCatalogo:hover {
+  border-color: #4f46e5;
+}
+
+.puenteCatalogo {
+  margin-top: 20px;
+  border-style: dashed;
+}
+
+.tipoTexto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tipoNombre {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.tipoDesc {
+  font-size: 13px;
+  color: #57606a;
+}
+
+.abrirLibre {
+  flex: none;
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4f46e5;
+  white-space: nowrap;
+}
+
+.enlace {
+  color: #4f46e5;
 }

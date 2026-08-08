@@ -4,11 +4,13 @@ import NavItem from '../../molecules/NavItem/NavItem';
 import SeccionColecciones, { type EnlaceColeccion } from '../../molecules/SeccionColecciones/SeccionColecciones';
 import Icon from '../../atoms/Icon/Icon';
 import ArbolContenidos from './ArbolContenidos';
+import ArbolDiagramas from './ArbolDiagramas';
 import { getSidebarItems, getGrupoDetailItems } from './sidebarConfig';
 import styles from './Sidebar.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
 import { useAuth } from '../../../../context/AuthContext';
 import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
+import { useDiagramasNav } from '../../../../context/DiagramasNavContext';
 import { APP_NAME } from '../../../../config/app';
 import { moduloHabilitado } from '../../../../config/modulosContenido';
 import { rutaEjerciciosAdmin, rutaEjerciciosAlumno } from '../../../../config/rutasEjercicios';
@@ -59,6 +61,12 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   // comparte con la página para que una mutación se refleje aquí.
   const { coleccionId, coleccion } = useColeccionArbol();
   const isColeccionDetail = !!coleccionId;
+
+  // Dentro del módulo Diagramas el sidebar se vuelve su árbol de secciones,
+  // mismo patrón contextual que la colección abierta. Cubre también el solver,
+  // para que resolver un ejercicio no cueste perder la navegación.
+  const diagramasNav = useDiagramasNav();
+  const isDiagramas = diagramasNav.activo;
 
   const [grupoName, setGrupoName] = useState('');
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
@@ -284,7 +292,19 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       <aside
         className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''} ${mobileOpen ? styles.mobileOpen : ''}`}
       >
-        {isColeccionDetail ? (
+        {isDiagramas ? (
+          <div className={styles.backHeader}>
+            <Link
+              to={isGrupoDetail ? `/admin/grupos/${grupoId}` : '/alumno'}
+              className={styles.backButton}
+              onClick={onCloseMobile}
+            >
+              <Icon name="arrow_back" size="sm" />
+              {!collapsed && <span>Salir de Diagramas</span>}
+            </Link>
+            {!collapsed && <span className={styles.grupoLabel}>Diagramas</span>}
+          </div>
+        ) : isColeccionDetail ? (
           <div className={styles.backHeader}>
             <Link to="/admin/contenidos" className={styles.backButton} onClick={onCloseMobile}>
               <Icon name="arrow_back" size="sm" />
@@ -360,8 +380,14 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             </select>
           </div>
         )}
-        <nav className={`${styles.nav} ${isColeccionDetail && !collapsed ? styles.navArbol : ''}`}>
-          {isColeccionDetail ? (
+        <nav
+          className={`${styles.nav} ${(isColeccionDetail || isDiagramas) && !collapsed ? styles.navArbol : ''}`}
+        >
+          {isDiagramas ? (
+            // Colapsado (70px) el árbol es ilegible: se oculta y queda el botón
+            // de salida, igual que en el árbol de Contenidos.
+            !collapsed && <ArbolDiagramas />
+          ) : isColeccionDetail ? (
             // Colapsado (70px) el árbol es ilegible: se oculta y queda solo el
             // botón de volver, que es la salida.
             !collapsed && <ArbolContenidos coleccionId={coleccionId} />

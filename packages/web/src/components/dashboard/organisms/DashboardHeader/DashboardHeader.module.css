@@ -39,3 +39,53 @@
     left: 0 !important;
   }
 }
+
+/* Zona central de la barra: la ocupa la pantalla activa cuando tiene algo que
+   decir en todo momento. Hoy solo el avance del módulo Diagramas. Se encoge
+   antes que las otras dos, que llevan controles. */
+.center {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+}
+
+.progreso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.progresoBarra {
+  flex: 1;
+  min-width: 60px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-page);
+  overflow: hidden;
+}
+
+.progresoLlena {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--dash-primary);
+  transition: width 0.3s ease;
+}
+
+.progresoTexto {
+  flex: none;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* En móvil no cabe junto al menú y el perfil: el listado ya lleva su propio
+   contador, así que aquí desaparece en vez de apretar los otros dos. */
+@media (max-width: 640px) {
+  .center {
+    display: none;
+  }
+}

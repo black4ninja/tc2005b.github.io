@@ -4,6 +4,7 @@ import DashboardHeader from '../../organisms/DashboardHeader/DashboardHeader';
 import { useSidebarCollapse } from '../../../../hooks/useSidebarCollapse';
 import { useAuth } from '../../../../context/AuthContext';
 import { ColeccionArbolProvider } from '../../../../context/ColeccionArbolContext';
+import { DiagramasNavProvider } from '../../../../context/DiagramasNavContext';
 import styles from './DashboardLayout.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
 
@@ -33,16 +34,21 @@ export default function DashboardLayout({ role }: DashboardLayoutProps) {
     // El provider envuelve Sidebar y Outlet: el árbol de la colección abierta lo
     // pinta el sidebar y lo muta la página, así que ambos comparten una fuente.
     <ColeccionArbolProvider>
-      <div className={styles.layout}>
-        <Sidebar role={effectiveRole} collapsed={collapsed} mobileOpen={mobileOpen} onCloseMobile={closeMobile} />
-        <DashboardHeader role={effectiveRole} collapsed={collapsed} onToggleSidebar={toggle} />
-        <main
-          className={styles.content}
-          style={{ marginLeft: collapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)' }}
-        >
-          <Outlet />
-        </main>
-      </div>
+      {/* Ídem para Diagramas: el árbol lo pinta el sidebar, el avance el topbar
+          y el listado la página. Con tres consultas independientes, resolver un
+          ejercicio actualizaría una y dejaría las otras dos mintiendo. */}
+      <DiagramasNavProvider>
+        <div className={styles.layout}>
+          <Sidebar role={effectiveRole} collapsed={collapsed} mobileOpen={mobileOpen} onCloseMobile={closeMobile} />
+          <DashboardHeader role={effectiveRole} collapsed={collapsed} onToggleSidebar={toggle} />
+          <main
+            className={styles.content}
+            style={{ marginLeft: collapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)' }}
+          >
+            <Outlet />
+          </main>
+        </div>
+      </DiagramasNavProvider>
     </ColeccionArbolProvider>
   );
 }
