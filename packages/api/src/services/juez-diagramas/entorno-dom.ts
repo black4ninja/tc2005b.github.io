@@ -13,10 +13,40 @@
  *
  * Se instala UNA vez por proceso y de forma perezosa: quien no evalúe diagramas
  * no paga el arranque.
+ *
+ * ## El modelo que sale de aquí es TEXTO, y nadie debe interpretarlo como HTML
+ *
+ * Con este DOM **DOMPurify deja de sanear**, y conviene tenerlo escrito porque no
+ * se ve en ninguna línea de código. La misma etiqueta, con cada DOM:
+ *
+ * ```
+ * jsdom:    «al <img src="x"> pulsar»              ← DOMPurify quitó el onerror
+ * linkedom: «al <img src=x onerror=alert(1)> pulsar»
+ * ```
+ *
+ * Para un juez eso es MEJOR: jsdom estaba reescribiendo en silencio lo que el
+ * alumno escribió, y aquí el texto llega fiel. Pero significa que los nombres y
+ * las etiquetas del modelo son texto del alumno **sin filtrar**, y viajan al
+ * cliente dentro de los detalles de cada comprobación.
+ *
+ * Hoy eso es seguro porque el front los pinta como texto —React escapa— y ningún
+ * `dangerouslySetInnerHTML` recibe nada del modelo. La regla que lo sostiene, y
+ * que hay que respetar en cualquier consumidor nuevo (una vista de admin, un
+ * export, un correo), es simple: **el modelo no se inyecta como HTML**. Sanearlo
+ * aquí NO es la alternativa: escapar las etiquetas rompería las comparaciones que
+ * dependen de los operadores, que es justo el defecto que se corrigió con
+ * `claveDeGuarda` en `catalogo.ts`.
  */
 import { parseHTML } from 'linkedom';
 
-/** Globales que Mermaid y DOMPurify esperan encontrar. */
+/**
+ * Globales que Mermaid espera encontrar.
+ *
+ * Los dos últimos —`getComputedStyle` y `XMLSerializer`— **no existen en
+ * linkedom** y el bucle los salta siempre. Se quedan en la lista como lo que son:
+ * lo que Mermaid pediría si alguna vez se le hiciera RENDERIZAR aquí. No se
+ * sustituyen por un doble vacío a propósito; ver el comentario de `instalarDom`.
+ */
 const GLOBALES = [
   'window', 'document', 'navigator', 'Element', 'SVGElement', 'Node',
   'DOMParser', 'HTMLElement', 'getComputedStyle', 'XMLSerializer',

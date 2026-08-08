@@ -165,3 +165,34 @@ describe('sintaxis inválida', () => {
       .rejects.toThrow(ErrorSintaxisDiagrama);
   });
 });
+
+describe('el texto del modelo llega TAL CUAL lo escribió el alumno', () => {
+  /*
+   * El DOM del servidor no sanea —DOMPurify no se instala sobre linkedom—, así
+   * que las etiquetas llegan íntegras. Para un juez eso es lo correcto: con
+   * jsdom, `<img src=x onerror=…>` se reescribía en silencio a `<img src="x">`,
+   * y una comprobación que mire el texto juzgaba algo que el alumno no escribió.
+   *
+   * Lo que este caso fija es esa fidelidad Y su contrapartida: el modelo es texto
+   * del alumno SIN filtrar, así que ningún consumidor puede inyectarlo como HTML.
+   * Si algún día se decide sanear aquí, esta prueba se pondrá roja y obligará a
+   * revisar antes las comparaciones que dependen de los operadores —`[x <= 0]`
+   * frente a `[x > 0]`—, que es donde escapar el texto ya causó un defecto.
+   */
+  it('no reescribe ni escapa el marcado que venga en una etiqueta', async () => {
+    const crudo = 'al <img src=x onerror=alert(1)> pulsar';
+    const m = await normalizarMermaid(
+      'estados',
+      `stateDiagram-v2\n  [*] --> A\n  A --> B: ${crudo}\n  B --> [*]`,
+    );
+    expect(m.aristas.find((a) => a.destino === 'B')?.etiqueta).toBe(crudo);
+  });
+
+  it('conserva los operadores de una guarda, que es lo que la distingue', async () => {
+    const m = await normalizarMermaid(
+      'estados',
+      'stateDiagram-v2\n  [*] --> A\n  A --> B: ir [x <= 0]\n  B --> [*]',
+    );
+    expect(m.aristas.find((a) => a.destino === 'B')?.etiqueta).toBe('ir [x <= 0]');
+  });
+});

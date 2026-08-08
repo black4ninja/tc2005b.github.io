@@ -5,6 +5,26 @@ para cualquier cambio que entre a `main`.
 
 ---
 
+## 0. Instalación — Node y `--ignore-engines`
+
+```bash
+yarn install --ignore-engines
+```
+
+**El `--ignore-engines` no es opcional y sin él el install falla en seco.** No es
+un descuido, así que conviene entender de dónde sale antes de intentar
+«arreglarlo»:
+
+- **Suelo: Node 20.19.** Es lo que declaran los `package.json` (`engines.node`),
+  y no es un número elegido: lo imponen `jwks-rsa` (`^20.19.0 || ^22.12.0 ||
+  >=23`) y `vite` (`^20.19.0 || >=22.12.0`).
+- **Techo: `@parse/s3-files-adapter` pide `<23`**, y ese techo el proyecto lo
+  salta a conciencia. Por eso NO se declara en `engines`: declararlo rompería el
+  install en cualquier máquina con Node moderno sin ganar nada a cambio.
+
+Es decir, cualquier Node ≥20.19 sirve, pero uno ≥23 incumplirá al adaptador de S3
+y yarn se plantará si no le pasas la bandera. Lo mismo aplica a `yarn add`.
+
 ## 1. Flujo de ramas (Git)
 
 Usamos un GitFlow **simplificado**, sin rama `develop`:
