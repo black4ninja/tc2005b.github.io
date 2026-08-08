@@ -113,14 +113,14 @@ type Pendiente = { clase: 'abrir'; id: string } | { clase: 'nuevo' };
  */
 
 const TIPO_POR_OMISION = 'clases';
-const MOTOR_POR_OMISION: MotorDiagrama = motorPorOmisionDeTipo(TIPO_POR_OMISION);
 
-const BORRADOR_INICIAL: Estado = {
-  nombre: '',
-  motor: MOTOR_POR_OMISION,
-  tipo: TIPO_POR_OMISION,
-  codigo: plantillaDiagrama(TIPO_POR_OMISION, MOTOR_POR_OMISION),
-};
+/** Borrador en blanco de un tipo, con su motor y su plantilla. */
+function estadoDeTipo(tipo: string): Estado {
+  const motor = motorPorOmisionDeTipo(tipo);
+  return { nombre: '', motor, tipo, codigo: plantillaDiagrama(tipo, motor) };
+}
+
+const BORRADOR_INICIAL: Estado = estadoDeTipo(TIPO_POR_OMISION);
 
 // --- Normalización de lo que llega del API ----------------------------------
 
@@ -285,14 +285,31 @@ export default function TallerDiagramasPage() {
    * pintar la plantilla vacía que el alumno vería como «se ha perdido».
    */
   const [recuperado] = useState<Borrador | null>(() => leerBorrador(user?.id));
+
+  /**
+   * Tipo pedido en la URL (`?tipo=`), con el que entra quien pulsa «Abrir en
+   * modo libre» en una tarjeta del catálogo. Sin esto, la tarjeta prometía abrir
+   * ESE tipo y dejaba el taller en el último que se hubiera usado.
+   *
+   * Solo manda cuando NO hay trabajo recuperado: el borrador es trabajo del
+   * alumno y pisarlo con una plantilla sería peor que ignorar el enlace.
+   */
+  const [tipoPedido] = useState<string | null>(() => {
+    const pedido = new URLSearchParams(window.location.search).get('tipo');
+    return pedido && CLAVES_TIPO.includes(pedido) ? pedido : null;
+  });
   /** El aviso se muestra hasta que el alumno lo cierra o descarta el borrador. */
   const [avisoBorrador, setAvisoBorrador] = useState<boolean>(recuperado !== null);
 
   // `null` significa borrador: hay algo en el editor que todavía no existe en BD.
   const [seleccion, setSeleccion] = useState<string | null>(recuperado?.seleccion ?? null);
-  const [editor, setEditor] = useState<Estado>(recuperado?.editor ?? BORRADOR_INICIAL);
+  const [editor, setEditor] = useState<Estado>(
+    recuperado?.editor ?? (tipoPedido ? estadoDeTipo(tipoPedido) : BORRADOR_INICIAL),
+  );
   /** Lo último guardado o cargado: contra esto se mide si hay cambios. */
-  const [referencia, setReferencia] = useState<Estado>(recuperado?.referencia ?? BORRADOR_INICIAL);
+  const [referencia, setReferencia] = useState<Estado>(
+    recuperado?.referencia ?? (tipoPedido ? estadoDeTipo(tipoPedido) : BORRADOR_INICIAL),
+  );
 
   /**
    * Texto EXACTO de la última plantilla precargada.
@@ -304,7 +321,9 @@ export default function TallerDiagramasPage() {
    */
   // Lo restaurado es trabajo del alumno, nunca una plantilla intacta: se arranca
   // sin plantilla vigente para que cambiar de tipo no lo sobrescriba.
-  const plantillaCargada = useRef<string>(recuperado ? '' : BORRADOR_INICIAL.codigo);
+  const plantillaCargada = useRef<string>(
+    recuperado ? '' : (tipoPedido ? plantillaDiagrama(tipoPedido, motorPorOmisionDeTipo(tipoPedido)) : BORRADOR_INICIAL.codigo),
+  );
 
   const [vista, setVistaState] = useState<Vista>(leerVista);
 

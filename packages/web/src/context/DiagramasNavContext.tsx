@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useMatch, useSearchParams } from 'react-router';
+import { useMatch, useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from './AuthContext';
 import { rutaDiagramasAdmin, rutaDiagramasAlumno } from '../config/rutasDiagramas';
 import type { BloqueRef, CategoriaRef, EjercicioLista } from '../components/contenidos/agruparEjercicios';
@@ -104,7 +104,8 @@ export function DiagramasNavProvider({ children }: { children: React.ReactNode }
   const activo = !!slug;
 
   const { sessionToken } = useAuth();
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
 
   const [coleccion, setColeccion] = useState<ColeccionRef | null>(null);
   const [bloques, setBloques] = useState<BloqueRef[]>([]);
@@ -139,17 +140,28 @@ export function DiagramasNavProvider({ children }: { children: React.ReactNode }
 
   const seccion = leerSeccion(params.get('seccion'));
 
+  /**
+   * Abre una sección del árbol.
+   *
+   * Navega SIEMPRE al listado, no solo cambia el parámetro. El árbol sigue
+   * montado mientras se resuelve un ejercicio —que es el motivo de ponerlo en el
+   * sidebar—, así que desde el solver un `setSearchParams` dejaba la URL del
+   * ejercicio con un `?seccion=` nuevo: la sección cambiaba en un listado que no
+   * estaba en pantalla y el clic parecía no hacer nada.
+   *
+   * Sin `replace`: cambiar de sección es navegación, y el botón de volver del
+   * navegador debe devolver a la anterior.
+   */
   const irA = useCallback(
     (destino: Seccion) => {
       const siguiente = new URLSearchParams(params);
       const valor = escribirSeccion(destino);
       if (valor) siguiente.set('seccion', valor);
       else siguiente.delete('seccion');
-      // `replace` no: navegar entre secciones es navegación, y el alumno espera
-      // que el botón de volver del navegador le devuelva a la anterior.
-      setParams(siguiente);
+      const cola = siguiente.toString();
+      navigate(cola ? `${base}?${cola}` : base);
     },
-    [params, setParams],
+    [params, navigate, base],
   );
 
   const progreso = useMemo(() => progresoDe(ejercicios), [ejercicios]);

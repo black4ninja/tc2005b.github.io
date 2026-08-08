@@ -25,6 +25,8 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     un envío de ese tipo se puede corregir—.
   - La sección abierta viaja en la URL (`?seccion=`), de modo que el botón de
     volver del navegador funciona y una sección concreta se puede enlazar.
+  - Las tarjetas del catálogo abren el taller **con su tipo ya seleccionado**
+    (`?tipo=`), en vez de dejarlo en el último que se hubiera usado.
   - Se añade el arnés `packages/web/herramientas/vista-diagramas.html`, que monta
     el árbol y el listado con datos de prueba y el catálogo real: la base de
     desarrollo es la de PRODUCCIÓN, y revisar estas pantallas «de verdad» exigía

@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { useDiagramasNav, type DiagramaLista } from '../../context/DiagramasNavContext';
 import { rutaTallerAdmin, rutaTallerAlumno } from '../../config/rutasDiagramas';
-import { useParams } from 'react-router';
 import {
   agrupadoDiagramas,
   etiquetaMotorDiagrama,
@@ -61,8 +60,17 @@ export default function DiagramasAlumnoPage() {
    * Sección efectiva: la de la URL, o el primer bloque con ejercicios. Sin este
    * respaldo, entrar al módulo sin `?seccion=` dejaría el panel vacío junto a un
    * árbol lleno, que se lee como que no hay nada publicado.
+   *
+   * Se memoiza por sus DOS campos y no por el objeto: construido en cada render,
+   * su identidad cambiaba siempre y las memos que dependen de él no memoizaban
+   * nada.
    */
-  const seccionEfectiva = seccion ?? (bloques[0] ? { clase: 'curso' as const, nombre: bloques[0].nombre } : null);
+  const claseSeccion = seccion?.clase ?? (bloques.length ? 'curso' : null);
+  const nombreSeccion = seccion?.nombre ?? bloques[0]?.nombre ?? null;
+  const seccionEfectiva = useMemo(
+    () => (claseSeccion && nombreSeccion ? { clase: claseSeccion, nombre: nombreSeccion } : null),
+    [claseSeccion, nombreSeccion],
+  );
 
   const esCatalogo = seccionEfectiva?.clase === 'cat';
 
@@ -157,7 +165,9 @@ export default function DiagramasAlumnoPage() {
           <ul className={styles.lista}>
             {tiposCatalogo.map((t) => (
               <li key={t.key}>
-                <Link to={rutaTaller} className={styles.tipoLibre}>
+                {/* El tipo viaja en la URL: la tarjeta promete abrir ESE tipo,
+                    y sin el parámetro el taller arrancaba en el último usado. */}
+                <Link to={`${rutaTaller}?tipo=${encodeURIComponent(t.key)}`} className={styles.tipoLibre}>
                   <span className={styles.tipoTexto}>
                     <span className={styles.tipoNombre}>{t.label}</span>
                     <span className={styles.tipoDesc}>{t.descripcion}</span>
