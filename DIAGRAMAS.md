@@ -1,6 +1,31 @@
 # Ampliación del módulo Diagramas — plan de trabajo
 
-Estado: **propuesta**, pendiente de revisión. Fecha: 2026-08-08.
+Estado: **en ejecución**. Fecha: 2026-08-08.
+
+| Fase | Estado |
+| --- | --- |
+| 1 — Catálogo de tipos y modo libre | ✅ #83 |
+| 2 — Interfaz de ejercicios | ✅ #84 |
+| 3 — Motor doble en Clases y ER | ✅ #85 |
+| 4a — Objetos y Despliegue | ✅ #86 |
+| 4b — Actividad, Comunicación y Tiempos | pendiente |
+| 5 — Normalizadores por familia | pendiente |
+| 6 — Contenido de los ejercicios | pendiente |
+
+Correcciones al plan descubiertas al ejecutarlo:
+
+- **El motor es del EJERCICIO, no del envío.** El plan daba por hecho que añadir
+  un diagrama de referencia en PlantUML a los ejercicios de Clases bastaría para
+  que el alumno pudiera elegir. No: `evaluarDiagrama` recibe un solo motor por
+  ejercicio. Que el alumno elija exige que el ejercicio lleve sus referencias en
+  ambos motores, y queda fuera de la fase 3.
+- **Las plantillas de PlantUML no se pueden validar en CI.** El motor no corre en
+  Node y no lanza ante lo que no entiende: dibuja un cartel de error dentro del
+  SVG. Se añadió el arnés manual `packages/web/herramientas/verificar-plantuml.html`,
+  que ya encontró una plantilla rota (`red` necesitaba `@startnwdiag`).
+- **`swimlane-beta` de Mermaid es el flowchart con calles**, no un tipo aparte:
+  su sintaxis es la del flowchart y cada `subgraph` se dibuja como calle. Es lo
+  que usará Actividad en la fase 4b.
 
 Cubre tres cosas que se decidieron juntas porque se condicionan entre sí:
 

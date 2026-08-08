@@ -36,7 +36,7 @@ import {
 
 /** Tipos que este normalizador sabe traducir hoy. */
 export const SOPORTADOS_PLANTUML: TipoDiagrama[] = [
-  'casos-de-uso', 'componentes', 'paquetes', 'clases', 'er',
+  'casos-de-uso', 'componentes', 'paquetes', 'clases', 'er', 'objeto', 'despliegue',
 ];
 
 /**
@@ -45,7 +45,32 @@ export const SOPORTADOS_PLANTUML: TipoDiagrama[] = [
  * o un contenedor, y sin ella `class Pedido {` se leería como un paquete
  * llamado «Pedido» cuyos atributos serían declaraciones sueltas.
  */
-const CON_MIEMBROS: TipoDiagrama[] = ['clases', 'er'];
+const CON_MIEMBROS: TipoDiagrama[] = ['clases', 'er', 'objeto'];
+
+/**
+ * Palabras cuya CLASE depende del tipo de diagrama.
+ *
+ * `node`, `cloud` y `database` son contenedores genéricos en un diagrama de
+ * paquetes o de componentes, pero en uno de DESPLIEGUE son nodos físicos: el
+ * sitio donde algo corre. La distinción no es cosmética —es lo que permite
+ * comprobar «este artefacto está desplegado en un nodo»— y por eso no se puede
+ * resolver con una sola tabla global.
+ */
+const PALABRAS_POR_TIPO: Partial<Record<TipoDiagrama, Record<string, ClaseNodo>>> = {
+  despliegue: {
+    node: 'nodo-fisico',
+    cloud: 'nodo-fisico',
+    database: 'nodo-fisico',
+    storage: 'nodo-fisico',
+    artifact: 'artefacto',
+    component: 'artefacto',
+    file: 'artefacto',
+  },
+  objeto: {
+    object: 'objeto',
+    map: 'objeto',
+  },
+};
 
 /**
  * Palabra clave de declaración → clase de nodo.
@@ -67,6 +92,7 @@ const PALABRAS: Record<string, ClaseNodo> = {
   usecase: 'caso-de-uso',
   component: 'componente',
   interface: 'interfaz',
+  object: 'objeto',
   package: 'paquete',
   rectangle: 'paquete',
   folder: 'paquete',
@@ -85,6 +111,8 @@ const CLASE_IMPLICITA: Record<string, ClaseNodo> = {
   paquetes: 'paquete',
   clases: 'clase',
   er: 'entidad',
+  objeto: 'objeto',
+  despliegue: 'artefacto',
 };
 
 /**
@@ -253,6 +281,21 @@ function leerMiembro(linea: string): { miembro: Miembro; esOperacion: boolean } 
         },
       };
     }
+  }
+
+  // Ranura de objeto: `nombre = "Ana Ruiz"`. El valor va en su propio campo y
+  // NO en `tipo`, que significa otra cosa; ver `Miembro` en `tipos.ts`.
+  const igual = t.indexOf('=');
+  if (igual > 0 && (t.indexOf(':') < 0 || igual < t.indexOf(':'))) {
+    const valor = t.slice(igual + 1).trim();
+    return {
+      esOperacion: false,
+      miembro: {
+        nombre: normalizarTexto(t.slice(0, igual)),
+        ...(valor ? { valor: desentrecomillar(valor) } : {}),
+        ...(visibilidad ? { visibilidad } : {}),
+      },
+    };
   }
 
   const dosPuntos = t.indexOf(':');
@@ -511,13 +554,19 @@ export function normalizarPlantuml(tipo: TipoDiagrama, codigo: string): ModeloDi
     if (PREFIJOS_ANOTACION[primera]) {
       extra.push(PREFIJOS_ANOTACION[primera]);
       const segunda = palabras[1]?.toLowerCase();
-      if (segunda && Object.prototype.hasOwnProperty.call(PALABRAS, segunda)) {
+      const conocidaSegunda = segunda !== undefined
+        && (Object.prototype.hasOwnProperty.call(PALABRAS, segunda)
+          || Object.prototype.hasOwnProperty.call(PALABRAS_POR_TIPO[tipo] ?? {}, segunda));
+      if (segunda && conocidaSegunda) {
         consumidas = cuerpo.indexOf(palabras[1]) + palabras[1].length;
         primera = segunda;
       }
     }
 
-    const conPalabra = Object.prototype.hasOwnProperty.call(PALABRAS, primera);
+    const porTipo = PALABRAS_POR_TIPO[tipo];
+    const conPalabra =
+      (porTipo !== undefined && Object.prototype.hasOwnProperty.call(porTipo, primera)) ||
+      Object.prototype.hasOwnProperty.call(PALABRAS, primera);
     const resto = conPalabra ? cuerpo.slice(consumidas).trim() : cuerpo;
 
     if (conPalabra && !resto) {
@@ -551,7 +600,7 @@ export function normalizarPlantuml(tipo: TipoDiagrama, codigo: string): ModeloDi
     // Sin palabra clave, la clase sale de la forma del token; si tampoco la hay,
     // solo puede ser un contenedor abriendo bloque, o algo que no entendemos.
     const clase = conPalabra
-      ? PALABRAS[primera]
+      ? porTipo?.[primera] ?? PALABRAS[primera]
       : ref.clase ?? (abreBloque ? 'paquete' : undefined);
     if (!clase) {
       throw error(
@@ -836,7 +885,7 @@ export function normalizarPlantuml(tipo: TipoDiagrama, codigo: string): ModeloDi
       const nodo = declararLinea(n, cuerpo, true);
       // Una clase o una entidad abren COMPARTIMENTO, no contenedor: dentro van
       // sus atributos y operaciones, no otros elementos del diagrama.
-      if (CON_MIEMBROS.includes(tipo) && nodo.clase !== 'paquete') {
+      if (CON_MIEMBROS.includes(tipo) && nodo.clase !== 'paquete' && nodo.clase !== 'nodo-fisico') {
         miembrosDe = nodo;
       } else {
         pila.push(nodo.id);
