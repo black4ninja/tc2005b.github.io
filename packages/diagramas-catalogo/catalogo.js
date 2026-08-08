@@ -213,7 +213,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Modelado adicional',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
   {
     key: 'requisitos',
@@ -223,7 +223,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Modelado adicional',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
   {
     key: 'archimate',
@@ -389,7 +389,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Mapas y estructura',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
   {
     key: 'bloques',
@@ -399,7 +399,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Mapas y estructura',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
   {
     key: 'arquitectura-nube',
@@ -409,7 +409,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Mapas y estructura',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
   {
     key: 'red',
@@ -429,7 +429,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Mapas y estructura',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
   {
     key: 'arbol',
@@ -513,7 +513,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Estrategia',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
   {
     key: 'cynefin',
@@ -523,7 +523,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Estrategia',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
 ];
 

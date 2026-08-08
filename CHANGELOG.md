@@ -8,6 +8,24 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Familias «red», «versionado» y «estrategia»** del catálogo adicional: ocho
+  tipos más evaluables —C4, bloques, arquitectura en la nube, paquete de red,
+  ramas de Git, requisitos, mapa de Wardley y Cynefin—. Dibujan cosas sin
+  relación aparente y son, por debajo, lo mismo: elementos, agrupaciones y
+  conexiones. Se normalizan al `Nodo`/`Arista` que el juez ya tenía y **heredan
+  sin escribir nada** `existe-nodo`, `conteo-nodos`, `relacion-entre`,
+  `contenido-en-paquete`, `sin-ciclos` y `nodos-alcanzables`. Cero aserciones
+  nuevas.
+  - Lo propio de cada tipo es un adaptador: dónde están los elementos y cómo se
+    llama su etiqueta. Si un tipo necesitara algo que no cabe en `Nodo`/`Arista`
+    —valores, fechas, series— pertenece a otra familia, no a estas.
+  - Las agrupaciones se conservan como contenedores, que es lo que permite
+    preguntar qué hay dentro de una frontera de C4, de un grupo de la nube, de
+    una rama de Git o de un dominio de Cynefin.
+  - Una arista hacia un elemento no declarado **se descarta**: C4 dibuja igual un
+    `Rel(...)` con un alias inexistente, y dejarla rompería los recorridos del
+    catálogo.
+  - El catálogo pasa de **16 a 24 tipos evaluables** de 44.
 - **Agregar al grupo un alumno que ya existe, buscándolo por matrícula, nombre o
   correo.** El modal «Agregar Alumno» abre en una pestaña «Buscar existente»
   (además de la de siempre, «Crear nuevo»), que consulta el padrón completo —no

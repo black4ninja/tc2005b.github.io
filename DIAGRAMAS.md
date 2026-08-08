@@ -11,7 +11,8 @@ Estado: **en ejecución**. Fecha: 2026-08-08.
 | 4b — Actividad y Comunicación | ✅ #88 |
 | 4b — Tiempos | pendiente (gramática propia, sin parecido con las otras tres) |
 | 5a — Familia «jerarquía» | ✅ #87 |
-| 5b — Familias restantes (red, versionado, estrategia, planificación, series, gramática) | pendiente |
+| 5b — Familias «red», «versionado» y «estrategia» | ✅ #90 |
+| 5c — Familias «planificación», «series» y «gramática» | pendiente (exigen ampliar el modelo) |
 | 6 — Contenido de los ejercicios | 1 de ~52 (muestra validada) |
 
 Correcciones al plan descubiertas al ejecutarlo:

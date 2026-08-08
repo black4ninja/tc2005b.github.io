@@ -17,6 +17,7 @@ import { normalizarMermaid } from './normalizar-mermaid.js';
 import { normalizarPlantuml } from './normalizar-plantuml.js';
 import { normalizarJerarquia } from './normalizar-jerarquia.js';
 import { normalizarActividad } from './normalizar-actividad.js';
+import { normalizarGrafo, SOPORTADOS_GRAFO } from './normalizar-grafo.js';
 import {
   ErrorSintaxisDiagrama, ROTULO_OCULTA,
   type Asercion, type ContextoEvaluacion, type Motor, type ModeloDiagrama,
@@ -54,6 +55,9 @@ export async function parsear(
     // distintos que se reducen al mismo árbol, y meterlos en el `switch` por
     // tipo de `normalizar-mermaid.ts` habría duplicado el aplanado cuatro veces.
     if (TIPOS_JERARQUIA.includes(tipo)) return normalizarJerarquia(tipo, codigo);
+    // Mismo criterio: ocho tipos que se reducen a un grafo, con un adaptador
+    // cada uno. Ver la cabecera de `normalizar-grafo.ts`.
+    if (SOPORTADOS_GRAFO.includes(tipo)) return normalizarGrafo(tipo, codigo);
     return normalizarMermaid(tipo, codigo);
   }
   // PlantUML se lee con un parser propio y síncrono: su motor oficial no corre

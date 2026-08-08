@@ -11,6 +11,7 @@ export { normalizarMermaid, SOPORTADOS_MERMAID } from './normalizar-mermaid.js';
 export { SOPORTADOS_PLANTUML } from './normalizar-plantuml.js';
 export { normalizarJerarquia, SOPORTADOS_JERARQUIA } from './normalizar-jerarquia.js';
 export { normalizarActividad } from './normalizar-actividad.js';
+export { normalizarGrafo, SOPORTADOS_GRAFO } from './normalizar-grafo.js';
 export {
   ErrorSintaxisDiagrama, TIPOS_DIAGRAMA, ROTULO_OCULTA, CODIGO_MAX,
   type Asercion, type Arista, type ContextoEvaluacion, type Mensaje, type Miembro,

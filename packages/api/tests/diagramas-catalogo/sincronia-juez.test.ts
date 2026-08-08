@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { KEYS_JUZGABLES, TIPOS, esJuzgable } from '@tc2005b/diagramas-catalogo';
 import {
+  SOPORTADOS_GRAFO,
   SOPORTADOS_JERARQUIA,
   SOPORTADOS_MERMAID,
   SOPORTADOS_PLANTUML,
@@ -13,7 +14,7 @@ import {
  * Mermaid, así que cuenta aquí: sin sumarla, este guardián declararía sin
  * normalizador a tipos que sí lo tienen.
  */
-const POR_MERMAID = [...SOPORTADOS_MERMAID, ...SOPORTADOS_JERARQUIA];
+const POR_MERMAID = [...SOPORTADOS_MERMAID, ...SOPORTADOS_JERARQUIA, ...SOPORTADOS_GRAFO];
 
 /**
  * La actividad tiene parser propio —es la única sintaxis imperativa del
