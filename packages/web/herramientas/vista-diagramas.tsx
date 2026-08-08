@@ -47,6 +47,11 @@ const categorias = [
 ];
 
 let n = 0;
+const MOTOR_DE: Record<string, string> = {
+  clases: 'mermaid', er: 'mermaid', secuencia: 'mermaid', estados: 'mermaid', flujo: 'mermaid',
+  'casos-de-uso': 'plantuml', componentes: 'plantuml', paquetes: 'plantuml',
+};
+
 const hacer = (
   titulo: string,
   categoriaId: string,
@@ -60,6 +65,7 @@ const hacer = (
   categoriaId,
   resuelto: false,
   tipoDiagrama,
+  motor: MOTOR_DE[tipoDiagrama] ?? 'mermaid',
   ...extra,
 });
 

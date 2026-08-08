@@ -30,6 +30,8 @@ import styles from './DiagramasAlumno.module.css';
 interface FilaTipo {
   tipo: string;
   def?: TipoDiagramaDef;
+  /** Motores que usan SUS ejercicios, sin repetir. */
+  motores: string[];
   ejercicios: DiagramaLista[];
 }
 
@@ -90,6 +92,7 @@ export default function DiagramasAlumnoPage() {
       .map(([tipo, items]) => ({
         tipo,
         def: catalogo.get(tipo),
+        motores: [...new Set(items.map((e) => e.motor).filter(Boolean))],
         ejercicios: [...items].sort((x, y) => x.orden - y.orden),
       }));
   }, [ejercicios, seccionEfectiva, esCatalogo, bloqueDeEjercicio]);
@@ -195,9 +198,11 @@ export default function DiagramasAlumnoPage() {
                 <span className={styles.chevron} aria-hidden>{estaAbierto ? '▾' : '▸'}</span>
                 <span className={styles.grupoTitulo}>{etiquetaTipoDiagrama(f.tipo)}</span>
                 {f.def && <span className={styles.grupoDesc}>{f.def.descripcion}</span>}
-                {/* El motor sale de `motoresJuez`, no de una lista fija: es el
-                    único en el que un envío de este tipo se puede corregir. */}
-                {f.def?.motoresJuez.map((m) => (
+                {/* El motor sale de los EJERCICIOS, no del tipo. Desde que
+                    `clases` y `er` se evalúan en los dos motores, anunciar los
+                    del tipo prometería una escritura que estos ejercicios
+                    concretos rechazan: cada uno fija el suyo. */}
+                {f.motores.map((m) => (
                   <span key={m} className={styles.motor}>{etiquetaMotorDiagrama(m)}</span>
                 ))}
                 <span className={styles.grupoConteo}>{resueltos}/{cuentan.length}</span>

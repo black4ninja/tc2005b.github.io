@@ -73,7 +73,7 @@ export const TIPOS = [
     ambito: 'curso',
     uml: true,
     agrupacion: 'Estructura',
-    motoresJuez: ['mermaid'],
+    motoresJuez: ['mermaid', 'plantuml'],
   },
   {
     key: 'objeto',
@@ -95,7 +95,7 @@ export const TIPOS = [
     // el curso por su uso en el modelado de bases de datos.
     uml: false,
     agrupacion: 'Estructura',
-    motoresJuez: ['mermaid'],
+    motoresJuez: ['mermaid', 'plantuml'],
   },
   {
     key: 'paquetes',

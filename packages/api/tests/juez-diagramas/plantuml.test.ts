@@ -458,9 +458,12 @@ describe('sintaxis inválida', () => {
   it('el tipo de diagrama no soportado no se disfraza de error de sintaxis', () => {
     // Es un fallo de programación del juez, no del alumno: si saliera como
     // error de sintaxis, el veredicto culparía a quien no tiene la culpa.
+    //
+    // El ejemplo tiene que ser un tipo que este normalizador NO lea; `clases`
+    // servía hasta que se le añadió soporte.
     let capturado: unknown;
     try {
-      normalizarPlantuml('clases', uml('actor Alumno'));
+      normalizarPlantuml('secuencia', uml('actor Alumno'));
     } catch (e) {
       capturado = e;
     }

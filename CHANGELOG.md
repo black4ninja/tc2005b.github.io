@@ -8,6 +8,32 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Clases y entidad-relación se evalúan también en PlantUML**, tercera fase de
+  la ampliación. Hasta ahora el juez solo leía esos dos tipos en Mermaid, así
+  que la notación UML canónica para un diagrama de clases no se podía usar en un
+  ejercicio del curso.
+  - `normalizar-plantuml.ts` aprende **compartimentos de miembros**
+    (`+folio : String`, `+calcular(iva : float) : Double`, `{static}`,
+    separadores `--`), los calificadores `abstract` y `enum` —que viajan como
+    anotación, igual que el `<<enumeration>>` de Mermaid— y la distinción entre
+    una llave que abre un compartimento y una que abre un contenedor.
+  - **Semántica de las seis relaciones de clases** por su adorno: herencia,
+    implementación, composición, agregación, dependencia y asociación. La
+    dirección se normaliza por SIGNIFICADO —hijo → padre, todo → parte—, de modo
+    que `A <|-- B` y `B --|> A` producen el mismo modelo. En los otros tipos la
+    semántica no cambia.
+  - **Pata de gallo de ER** (`||--o{`, `}o--|{`…) traducida a las mismas
+    cardinalidades normalizadas que produce Mermaid.
+  - Una prueba de **paridad entre motores** comprueba que el mismo modelo escrito
+    en Mermaid y en PlantUML produce el mismo `ModeloDiagrama`. Sin ella, un
+    ejercicio aceptaría una escritura y rechazaría la otra.
+  - El listado anuncia ahora el motor **del ejercicio** y no el del tipo: desde
+    que un tipo se evalúa en los dos, anunciar los del tipo prometería una
+    escritura que ese ejercicio concreto rechaza.
+
+  **Limitación conocida:** el motor sigue siendo del EJERCICIO, no del envío. El
+  alumno resuelve en el que fijó el autor; que pudiera elegir exige que el
+  ejercicio lleve sus diagramas de referencia en ambos motores.
 - **Navegación del módulo Diagramas dentro del armazón**, segunda fase de la
   ampliación. La maqueta original traía una tercera columna propia de 248 px;
   no se añade, porque esa navegación es exactamente lo que el sidebar hace.
