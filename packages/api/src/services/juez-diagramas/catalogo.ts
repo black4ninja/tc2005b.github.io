@@ -536,6 +536,32 @@ const transicionesConEvento: Evaluador = (a, { modelo }) => {
 };
 
 /**
+ * Clave de comparación de una GUARDA.
+ *
+ * NO se usa `clave()` aquí, y esa es toda la gracia: `clave()` borra todo lo que
+ * no sea letra o dígito, y en una guarda los operadores son justo lo que la
+ * distingue de su contraria. Con ella, `[activo]` y `[!activo]` —o `[x > 0]` y
+ * `[x >= 0]`— daban la MISMA clave, así que la pareja canónica de guardas
+ * excluyentes se declaraba ambigua y suspendía un diagrama correcto.
+ *
+ * Se decodifican de paso las tres entidades que puede meter el sanitizador del
+ * DOM: no dependemos de que el DOM de turno deje el texto crudo, y `&lt;=` no
+ * puede volver a colarse como si fuera otra guarda distinta de `<=`.
+ */
+function claveDeGuarda(guarda: string): string {
+  return guarda
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .normalize('NFD')
+    // Por punto de código, como en `nombres.ts`: el rango se lee y no depende de
+    // cómo se guarde este fichero.
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, '');
+}
+
+/**
  * Dos transiciones del mismo estado con el mismo disparador dejan la máquina no
  * determinista. La especificación de UML considera mal formado el modelo cuando
  * la elección no está resuelta.
@@ -554,7 +580,7 @@ const transicionesDeterministas: Evaluador = (_a, { modelo }) => {
     const guarda = (x.etiqueta ?? '').includes('[')
       ? (x.etiqueta ?? '').slice((x.etiqueta ?? '').indexOf('['))
       : '';
-    const firma = `${x.origen}::${clave(disparadorDeTransicion(x.etiqueta ?? ''))}::${clave(guarda)}`;
+    const firma = `${x.origen}::${clave(disparadorDeTransicion(x.etiqueta ?? ''))}::${claveDeGuarda(guarda)}`;
     vistas.set(firma, (vistas.get(firma) ?? 0) + 1);
   }
   const ambiguas = [...vistas.entries()]

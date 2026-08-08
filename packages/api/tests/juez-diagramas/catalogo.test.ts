@@ -438,6 +438,40 @@ describe('estados', () => {
     expect(r.paso, r.detalle).toBe(true);
   });
 
+  // Estas dos parejas se declaraban AMBIGUAS y suspendían un diagrama correcto.
+  // La guarda se comparaba con `clave()`, que borra todo lo que no sea letra o
+  // dígito: `[activo]` y `[!activo]` daban la misma clave, y `[x > 0]` y
+  // `[x >= 0]` también. El caso de arriba no lo destapaba porque el `<` de `<=`
+  // llegaba escapado como `&lt;` y dejaba las letras «lt» detrás, así que las dos
+  // claves salían distintas por accidente del sanitizador del DOM.
+  it.each([
+    ['la negación', '[activo]', '[!activo]'],
+    ['operadores sobre el mismo operando', '[x > 0]', '[x >= 0]'],
+  ])('distingue guardas excluyentes por %s', async (_caso, guardaA, guardaB) => {
+    const d = `stateDiagram-v2
+  [*] --> Espera
+  Espera --> A : ir ${guardaA}
+  Espera --> B : ir ${guardaB}
+  A --> [*]
+  B --> [*]`;
+    const r = await juzgar(d, { tipo: 'transiciones-deterministas' }, 'estados');
+    expect(r.paso, r.detalle).toBe(true);
+  });
+
+  it('la misma guarda escrita con otros espacios sigue siendo ambigua', async () => {
+    // El contrapunto: si comparar guardas se volviera tan laxo que nunca
+    // coincidieran, la comprobación dejaría de comprobar nada.
+    const d = `stateDiagram-v2
+  [*] --> Espera
+  Espera --> A : ir [activo]
+  Espera --> B : ir [ activo ]
+  A --> [*]
+  B --> [*]`;
+    const r = await juzgar(d, { tipo: 'transiciones-deterministas' }, 'estados');
+    expect(r.paso).toBe(false);
+    expect(r.detalle).toContain('Espera');
+  });
+
   it('detecta el no determinismo por disparador repetido', async () => {
     const ambiguo = `stateDiagram-v2
   [*] --> A

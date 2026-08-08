@@ -1,7 +1,7 @@
 /**
  * Calentamiento de la frontera con Mermaid, compartido por las suites que la usan.
  *
- * Cargar Mermaid y levantar el `jsdom` que necesita DOMPurify cuesta segundos, y
+ * Cargar Mermaid y levantar el DOM que necesita DOMPurify cuesta segundos, y
  * ese coste se paga UNA vez por fichero de test: lo cobra la primera prueba que
  * llega. Con las suites corriendo en paralelo, esa primera prueba pasaba de ~2 s
  * en una máquina ociosa a ~13 s en una cargada y reventaba el timeout de 5 s de
