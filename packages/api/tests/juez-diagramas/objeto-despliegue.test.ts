@@ -149,6 +149,24 @@ describe('diagrama de despliegue', () => {
     expect(mal.veredicto).toBe('aserciones_fallidas');
   });
 
+  it('acepta el anidamiento indirecto, que es lo normal en esta vista', async () => {
+    // `cloud { node { artifact } }`: exigir contención DIRECTA suspendería un
+    // diagrama correcto.
+    const anidado = `@startuml
+cloud "AWS" as aws {
+  node "EC2" as ec2 {
+    artifact "app.jar" as app
+  }
+}
+@enduml`;
+    for (const nodo of ['EC2', 'AWS']) {
+      const r = await evaluar('despliegue', anidado, [
+        { tipo: 'artefacto-desplegado-en', parametros: { artefacto: 'app.jar', nodo } },
+      ]);
+      expect(r.veredicto, nodo).toBe('aceptado');
+    }
+  });
+
   it('un artefacto suelto no está desplegado, aunque tenga flechas', async () => {
     const r = await evaluar(
       'despliegue',

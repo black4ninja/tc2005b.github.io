@@ -902,9 +902,25 @@ const artefactoDesplegadoEn: Evaluador = (a, { modelo }) => {
   if (!art.contenedor) {
     return falla(`«${artefacto}» no está dentro de ningún nodo: un artefacto suelto no está desplegado.`);
   }
-  return clave(art.contenedor) === clave(destino.id) || clave(art.contenedor) === clave(destino.nombre)
-    ? ok
-    : falla(`«${artefacto}» está en «${art.contenedor}» y se esperaba que estuviera en «${nodoNombre}».`);
+
+  // Se sube por la cadena de contenedores, no solo el inmediato: anidar nodos
+  // —`cloud "AWS" { node "EC2" { artifact … } }`— es lo normal en esta vista, y
+  // exigir contención directa suspendería un diagrama correcto.
+  const cadena: string[] = [];
+  let actual: string | undefined = art.contenedor;
+  const visitados = new Set<string>();
+  while (actual && !visitados.has(actual)) {
+    visitados.add(actual);
+    const contenedor = modelo.nodos.find((n) => n.id === actual);
+    cadena.push(contenedor?.nombre ?? actual);
+    if (clave(actual) === clave(destino.id) || clave(contenedor?.nombre ?? '') === clave(destino.nombre)) {
+      return ok;
+    }
+    actual = contenedor?.contenedor;
+  }
+  return falla(
+    `«${artefacto}» está en ${enumerar(cadena)} y se esperaba que estuviera en «${nodoNombre}».`,
+  );
 };
 
 /** Todo artefacto desplegado tiene que corresponder a un componente del diseño. */
