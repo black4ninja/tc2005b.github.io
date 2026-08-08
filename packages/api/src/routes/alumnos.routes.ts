@@ -4,6 +4,8 @@ import { requireGrupoAccess } from '../middlewares/grupo-scope.middleware.js';
 import {
   listAlumnos,
   createAlumno,
+  buscarAlumnos,
+  vincularAlumno,
   importAlumnosCSV,
   downloadTemplate,
   updateAlumno,
@@ -17,7 +19,9 @@ router.use('/admin/grupos/:grupoId/alumnos', identifyUser, requireGrupoAccess);
 
 // Fixed paths BEFORE parameterized paths
 router.get('/admin/grupos/:grupoId/alumnos/template', downloadTemplate);
+router.get('/admin/grupos/:grupoId/alumnos/buscar', buscarAlumnos);
 router.post('/admin/grupos/:grupoId/alumnos/import', importAlumnosCSV);
+router.post('/admin/grupos/:grupoId/alumnos/vincular', vincularAlumno);
 
 router.get('/admin/grupos/:grupoId/alumnos', listAlumnos);
 router.post('/admin/grupos/:grupoId/alumnos', createAlumno);

@@ -6,6 +6,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
 import AlumnoForm from '../../organisms/AlumnoForm/AlumnoForm';
+import AlumnoPicker, { type AlumnoEncontrado } from '../../organisms/AlumnoPicker/AlumnoPicker';
 import CSVImportModal from '../../organisms/CSVImportModal/CSVImportModal';
 import CompetenciasQuickModal from '../../organisms/CompetenciasQuickModal/CompetenciasQuickModal';
 import ProfileInfoCell from '../../atoms/ProfileInfoCell/ProfileInfoCell';
@@ -85,6 +86,9 @@ export default function GrupoDetailPage() {
 
   const [alumnoModalOpen, setAlumnoModalOpen] = useState(false);
   const [editAlumno, setEditAlumno] = useState<AlumnoData | undefined>();
+  // Pestaña del modal de alta. Arranca en "buscar" a propósito: el alumno de un
+  // semestre anterior ya existe, y crearlo otra vez lo duplica con historial vacío.
+  const [altaTab, setAltaTab] = useState<'buscar' | 'crear'>('buscar');
   const [csvModalOpen, setCsvModalOpen] = useState(false);
   const [, setCreatedPassword] = useState('');
   const [toast, setToast] = useState('');
@@ -351,7 +355,30 @@ export default function GrupoDetailPage() {
   function openCreateAlumno() {
     setEditAlumno(undefined);
     setCreatedPassword('');
+    setAltaTab('buscar');
     setAlumnoModalOpen(true);
+  }
+
+  /** Mete al grupo un alumno que YA existe. Lanza si falla: lo pinta el picker. */
+  async function handleAsignarExistente(alumno: AlumnoEncontrado) {
+    const res = await fetch(`${API_BASE}/admin/grupos/${id}/alumnos/vincular`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ alumnoId: alumno.id }),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || 'Error al agregar el alumno');
+
+    closeAlumnoModal();
+    await fetchAlumnos();
+    await fetchMallaStatus();
+    await fetchCalificaciones();
+    setToast(
+      result.reactivado
+        ? `${alumno.name} vuelve a estar activo en el grupo`
+        : `${alumno.name} se agregó al grupo`,
+    );
+    setTimeout(() => setToast(''), 3000);
   }
 
   function openEditAlumno(alumno: AlumnoData) {
@@ -850,13 +877,49 @@ export default function GrupoDetailPage() {
         </>
       )}
 
-      <Modal isOpen={alumnoModalOpen} onClose={closeAlumnoModal} title={editAlumno ? 'Editar Alumno' : 'Nuevo Alumno'}>
-        <AlumnoForm
-          alumno={editAlumno}
-          onSave={handleSaveAlumno}
-          onCancel={closeAlumnoModal}
-          loading={saving}
-        />
+      <Modal
+        isOpen={alumnoModalOpen}
+        onClose={closeAlumnoModal}
+        title={editAlumno ? 'Editar Alumno' : 'Agregar Alumno'}
+      >
+        {/* Al EDITAR no hay pestañas: solo se dan a elegir al agregar. */}
+        {!editAlumno && (
+          <div className={styles.altaTabs} role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={altaTab === 'buscar'}
+              className={`${styles.altaTab} ${altaTab === 'buscar' ? styles.altaTabActive : ''}`}
+              onClick={() => setAltaTab('buscar')}
+            >
+              Buscar existente
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={altaTab === 'crear'}
+              className={`${styles.altaTab} ${altaTab === 'crear' ? styles.altaTabActive : ''}`}
+              onClick={() => setAltaTab('crear')}
+            >
+              Crear nuevo
+            </button>
+          </div>
+        )}
+        {!editAlumno && altaTab === 'buscar' ? (
+          <AlumnoPicker
+            grupoId={id!}
+            sessionToken={sessionToken ?? ''}
+            onAsignar={handleAsignarExistente}
+            onCancel={closeAlumnoModal}
+          />
+        ) : (
+          <AlumnoForm
+            alumno={editAlumno}
+            onSave={handleSaveAlumno}
+            onCancel={closeAlumnoModal}
+            loading={saving}
+          />
+        )}
       </Modal>
 
       <Modal isOpen={csvModalOpen} onClose={() => setCsvModalOpen(false)} title="Importar Alumnos desde CSV">
