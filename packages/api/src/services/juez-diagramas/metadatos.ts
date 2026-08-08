@@ -176,7 +176,7 @@ export const METADATOS: MetadatoAsercion[] = [
     // notaciones), así que se ofrece en cualquier diagrama que tenga aristas
     // propias; secuencia y estados quedan fuera porque ya tienen su propia
     // comprobación dedicada (mensaje-entre, transicion).
-    aplicaA: ['clases', 'er', 'flujo', 'casos-de-uso', 'componentes', 'paquetes'],
+    aplicaA: ['clases', 'er', 'flujo', 'casos-de-uso', 'componentes', 'paquetes', 'despliegue'],
     parametros: [
       { nombre: 'origen', etiqueta: 'Origen', tipo: 'texto', requerido: true },
       { nombre: 'destino', etiqueta: 'Destino', tipo: 'texto', requerido: true },
@@ -246,7 +246,7 @@ export const METADATOS: MetadatoAsercion[] = [
     // Ciclos de herencia o dependencia son un defecto de diseño reconocido en
     // clases, paquetes y componentes; en flujo o estados un ciclo suele ser
     // intencional (un bucle), así que no se ofrece ahí.
-    aplicaA: ['clases', 'paquetes', 'componentes'],
+    aplicaA: ['clases', 'paquetes', 'componentes', 'despliegue'],
     parametros: [
       {
         nombre: 'tipos', etiqueta: 'Tipos de relación a considerar', tipo: 'lista-texto', requerido: false,
@@ -261,7 +261,7 @@ export const METADATOS: MetadatoAsercion[] = [
     tipo: 'existe-participante',
     etiqueta: 'Existe un participante',
     familia: 'semantica',
-    aplicaA: ['secuencia'],
+    aplicaA: ['secuencia', 'comunicacion'],
     parametros: [
       { nombre: 'nombre', etiqueta: 'Nombre del participante', tipo: 'texto', requerido: true },
       {
@@ -276,7 +276,7 @@ export const METADATOS: MetadatoAsercion[] = [
     tipo: 'mensaje-entre',
     etiqueta: 'Mensaje entre dos participantes',
     familia: 'semantica',
-    aplicaA: ['secuencia'],
+    aplicaA: ['secuencia', 'comunicacion'],
     parametros: [
       { nombre: 'de', etiqueta: 'Emisor', tipo: 'texto', requerido: true },
       { nombre: 'a', etiqueta: 'Receptor', tipo: 'texto', requerido: true },
@@ -289,7 +289,7 @@ export const METADATOS: MetadatoAsercion[] = [
     tipo: 'orden-de-mensajes',
     etiqueta: 'Orden de los mensajes',
     familia: 'semantica',
-    aplicaA: ['secuencia'],
+    aplicaA: ['secuencia', 'comunicacion'],
     parametros: [
       {
         // El evaluador lanza error si la lista viene vacía, así que se marca
@@ -407,7 +407,7 @@ export const METADATOS: MetadatoAsercion[] = [
     tipo: 'nodo-con-forma',
     etiqueta: 'El nodo tiene la forma que le corresponde',
     familia: 'semantica',
-    aplicaA: ['flujo'],
+    aplicaA: ['flujo', 'actividad'],
     parametros: [
       { nombre: 'nombre', etiqueta: 'Nodo', tipo: 'texto', requerido: true },
       {
@@ -422,7 +422,7 @@ export const METADATOS: MetadatoAsercion[] = [
     tipo: 'paso-de-flujo',
     etiqueta: 'Existe el paso entre dos nodos',
     familia: 'semantica',
-    aplicaA: ['flujo'],
+    aplicaA: ['flujo', 'actividad'],
     parametros: [
       { nombre: 'desde', etiqueta: 'Desde', tipo: 'texto', requerido: true },
       { nombre: 'hasta', etiqueta: 'Hasta', tipo: 'texto', requerido: true },
@@ -437,7 +437,7 @@ export const METADATOS: MetadatoAsercion[] = [
     tipo: 'flujo-termina',
     etiqueta: 'Todo camino llega al final',
     familia: 'semantica',
-    aplicaA: ['flujo'],
+    aplicaA: ['flujo', 'actividad'],
     parametros: [],
     descripcion: 'Comprueba que no haya nodos desde los que el proceso quede atrapado sin poder terminar.',
   },
@@ -445,7 +445,7 @@ export const METADATOS: MetadatoAsercion[] = [
     tipo: 'nodos-alcanzables',
     etiqueta: 'Todo nodo se alcanza desde el inicio',
     familia: 'semantica',
-    aplicaA: ['flujo'],
+    aplicaA: ['flujo', 'actividad'],
     parametros: [],
     descripcion: 'Comprueba que no haya nodos sueltos a los que el flujo nunca pueda llegar.',
   },
@@ -453,7 +453,7 @@ export const METADATOS: MetadatoAsercion[] = [
     tipo: 'decisiones-con-salidas',
     etiqueta: 'Las decisiones deciden algo',
     familia: 'semantica',
-    aplicaA: ['flujo'],
+    aplicaA: ['flujo', 'actividad'],
     parametros: [
       {
         nombre: 'min', etiqueta: 'Salidas mínimas', tipo: 'numero', requerido: false,
@@ -468,7 +468,7 @@ export const METADATOS: MetadatoAsercion[] = [
     tipo: 'contenido-en-paquete',
     etiqueta: 'El elemento está en su paquete',
     familia: 'semantica',
-    aplicaA: ['paquetes', 'componentes'],
+    aplicaA: ['paquetes', 'componentes', 'despliegue'],
     parametros: [
       { nombre: 'elemento', etiqueta: 'Elemento', tipo: 'texto', requerido: true },
       { nombre: 'paquete', etiqueta: 'Paquete o contenedor', tipo: 'texto', requerido: true },
@@ -498,7 +498,7 @@ export const METADATOS: MetadatoAsercion[] = [
     etiqueta: 'Los mensajes son operaciones declaradas',
     familia: 'cruzada',
     // Solo secuencia tiene mensajes que verificar contra un diagrama de clases.
-    aplicaA: ['secuencia'],
+    aplicaA: ['secuencia', 'comunicacion'],
     parametros: [
       {
         nombre: 'contexto', etiqueta: 'Diagrama de clases de referencia', tipo: 'texto', requerido: true,
@@ -631,7 +631,7 @@ export const METADATOS: MetadatoAsercion[] = [
     tipo: 'participante-existe-como-clase',
     etiqueta: 'Los participantes son clases declaradas',
     familia: 'cruzada',
-    aplicaA: ['secuencia'],
+    aplicaA: ['secuencia', 'comunicacion'],
     parametros: [
       {
         nombre: 'contexto', etiqueta: 'Diagrama de clases de referencia', tipo: 'texto', requerido: true,
