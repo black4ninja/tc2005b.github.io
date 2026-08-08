@@ -654,7 +654,13 @@ const nodosAlcanzables: Evaluador = (_a, { modelo }) => {
   const inicios = iniciosDeFlujo(modelo);
   if (!inicios.length) return falla('Todos los nodos tienen entradas: no se sabe por dónde empieza el flujo.');
   const vistos = alcanzablesDesde(modelo, inicios);
-  const huerfanos = modelo.nodos.filter((n) => !vistos.has(n.id)).map((n) => n.nombre);
+  // Los CONTENEDORES no son pasos del flujo: una calle de responsabilidad
+  // agrupa acciones, no se «alcanza». Contarlas dejaba en rojo cualquier
+  // diagrama de actividad con calles, que son todos.
+  const huerfanos = modelo.nodos
+    .filter((n) => n.clase !== 'paquete')
+    .filter((n) => !vistos.has(n.id))
+    .map((n) => n.nombre);
   return huerfanos.length
     ? falla(`No se puede llegar a estos nodos desde el inicio: ${enumerar(huerfanos)}.`)
     : ok;
@@ -818,6 +824,52 @@ const participanteExisteComoClase: Evaluador = (a, ctx) => {
   return faltan.length
     ? falla(`Estas líneas de vida no corresponden a ninguna clase: ${enumerar(faltan)}.`)
     : ok;
+};
+
+// --- Actividad -------------------------------------------------------------
+
+/** Quién hace la acción: lo que distingue una actividad de un flujo cualquiera. */
+const accionEnCalle: Evaluador = (a, { modelo }) => {
+  const accion = texto(a, 'accion');
+  const calleNombre = texto(a, 'calle');
+  const nodo = buscarNodo(modelo, accion);
+  if (!nodo) {
+    const acciones = modelo.nodos.filter((x) => x.forma === 'proceso').map((x) => x.nombre);
+    return falla(`No encontré la acción «${accion}». Hay: ${enumerar(acciones)}.`);
+  }
+  const calle = modelo.nodos.find(
+    (x) => x.clase === 'paquete' && clave(x.nombre) === clave(calleNombre),
+  );
+  if (!calle) {
+    const calles = modelo.nodos.filter((x) => x.clase === 'paquete').map((x) => x.nombre);
+    return falla(`No hay ninguna calle «${calleNombre}». Hay: ${enumerar(calles)}.`);
+  }
+  if (!nodo.contenedor) {
+    return falla(`«${accion}» no está en ninguna calle: no dice quién la hace.`);
+  }
+  return nodo.contenedor === calle.id
+    ? ok
+    : falla(
+        `«${accion}» está en «${modelo.nodos.find((x) => x.id === nodo.contenedor)?.nombre ?? nodo.contenedor}» y se esperaba en «${calleNombre}».`,
+      );
+};
+
+/**
+ * Todo fork tiene su join.
+ *
+ * Un fork sin join deja ramas paralelas que nunca vuelven a juntarse, y eso no
+ * es paralelismo: es un diagrama que no dice cuándo termina la actividad. Es el
+ * error clásico al usar fork por primera vez.
+ */
+const forkTieneJoin: Evaluador = (_a, { modelo }) => {
+  const forks = modelo.nodos.filter((x) => x.papel === 'fork');
+  const joins = modelo.nodos.filter((x) => x.papel === 'join');
+  if (!forks.length) return falla('El diagrama no tiene ninguna bifurcación paralela (fork).');
+  return forks.length === joins.length
+    ? ok
+    : falla(
+        `Hay ${forks.length} bifurcación(es) y ${joins.length} unión(es): cada «fork» necesita su «end fork».`,
+      );
 };
 
 // --- Jerarquías ------------------------------------------------------------
@@ -1030,6 +1082,9 @@ export const CATALOGO: Record<string, Evaluador> = {
   'contenido-en-paquete': contenidoEnPaquete,
   'sin-casos-uso-sin-actor': sinCasosUsoSinActor,
   'sin-actores-ociosos': sinActoresOciosos,
+  // actividad
+  'accion-en-calle': accionEnCalle,
+  'fork-tiene-join': forkTieneJoin,
   // jerarquías
   'nodo-tiene-hijo': nodoTieneHijo,
   'profundidad-minima': profundidadMinima,
