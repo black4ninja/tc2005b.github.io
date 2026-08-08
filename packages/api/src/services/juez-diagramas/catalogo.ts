@@ -654,7 +654,13 @@ const nodosAlcanzables: Evaluador = (_a, { modelo }) => {
   const inicios = iniciosDeFlujo(modelo);
   if (!inicios.length) return falla('Todos los nodos tienen entradas: no se sabe por dónde empieza el flujo.');
   const vistos = alcanzablesDesde(modelo, inicios);
-  const huerfanos = modelo.nodos.filter((n) => !vistos.has(n.id)).map((n) => n.nombre);
+  // Los CONTENEDORES no son pasos del flujo: una calle de responsabilidad
+  // agrupa acciones, no se «alcanza». Contarlas dejaba en rojo cualquier
+  // diagrama de actividad con calles, que son todos.
+  const huerfanos = modelo.nodos
+    .filter((n) => n.clase !== 'paquete')
+    .filter((n) => !vistos.has(n.id))
+    .map((n) => n.nombre);
   return huerfanos.length
     ? falla(`No se puede llegar a estos nodos desde el inicio: ${enumerar(huerfanos)}.`)
     : ok;
@@ -820,6 +826,221 @@ const participanteExisteComoClase: Evaluador = (a, ctx) => {
     : ok;
 };
 
+// --- Actividad -------------------------------------------------------------
+
+/** Quién hace la acción: lo que distingue una actividad de un flujo cualquiera. */
+const accionEnCalle: Evaluador = (a, { modelo }) => {
+  const accion = texto(a, 'accion');
+  const calleNombre = texto(a, 'calle');
+  const nodo = buscarNodo(modelo, accion);
+  if (!nodo) {
+    const acciones = modelo.nodos.filter((x) => x.forma === 'proceso').map((x) => x.nombre);
+    return falla(`No encontré la acción «${accion}». Hay: ${enumerar(acciones)}.`);
+  }
+  const calle = modelo.nodos.find(
+    (x) => x.clase === 'paquete' && clave(x.nombre) === clave(calleNombre),
+  );
+  if (!calle) {
+    const calles = modelo.nodos.filter((x) => x.clase === 'paquete').map((x) => x.nombre);
+    return falla(`No hay ninguna calle «${calleNombre}». Hay: ${enumerar(calles)}.`);
+  }
+  if (!nodo.contenedor) {
+    return falla(`«${accion}» no está en ninguna calle: no dice quién la hace.`);
+  }
+  return nodo.contenedor === calle.id
+    ? ok
+    : falla(
+        `«${accion}» está en «${modelo.nodos.find((x) => x.id === nodo.contenedor)?.nombre ?? nodo.contenedor}» y se esperaba en «${calleNombre}».`,
+      );
+};
+
+/**
+ * Todo fork tiene su join.
+ *
+ * Un fork sin join deja ramas paralelas que nunca vuelven a juntarse, y eso no
+ * es paralelismo: es un diagrama que no dice cuándo termina la actividad. Es el
+ * error clásico al usar fork por primera vez.
+ */
+const forkTieneJoin: Evaluador = (_a, { modelo }) => {
+  const forks = modelo.nodos.filter((x) => x.papel === 'fork');
+  const joins = modelo.nodos.filter((x) => x.papel === 'join');
+  if (!forks.length) return falla('El diagrama no tiene ninguna bifurcación paralela (fork).');
+  return forks.length === joins.length
+    ? ok
+    : falla(
+        `Hay ${forks.length} bifurcación(es) y ${joins.length} unión(es): cada «fork» necesita su «end fork».`,
+      );
+};
+
+// --- Jerarquías ------------------------------------------------------------
+
+const nodoTieneHijo: Evaluador = (a, { modelo }) => {
+  const padreNombre = texto(a, 'padre');
+  const hijoNombre = texto(a, 'hijo');
+  const padre = buscarNodo(modelo, padreNombre);
+  if (!padre) {
+    return falla(`No encontré «${padreNombre}». Hay: ${enumerar(modelo.nodos.map((n) => n.nombre))}.`);
+  }
+  const hijos = modelo.nodos.filter((n) => n.contenedor === padre.id);
+  return hijos.some((h) => clave(h.nombre) === clave(hijoNombre))
+    ? ok
+    : falla(
+        `«${padreNombre}» no tiene la rama «${hijoNombre}». Cuelgan de él: ${enumerar(hijos.map((h) => h.nombre))}.`,
+      );
+};
+
+/**
+ * Profundidad del árbol, contando la raíz como nivel 1.
+ *
+ * Existe porque el error dominante al hacer un mapa mental o una descomposición
+ * es quedarse en una lista: un nivel de ramas y ninguna subrama. Eso no es una
+ * jerarquía, y sin esta comprobación un diagrama así pasaría cualquier conteo.
+ */
+const profundidadMinima: Evaluador = (a, { modelo }) => {
+  const minimo = numeroOpcional(a, 'niveles') ?? 2;
+  const hijosDe = new Map<string, string[]>();
+  for (const n of modelo.nodos) {
+    if (!n.contenedor) continue;
+    hijosDe.set(n.contenedor, [...(hijosDe.get(n.contenedor) ?? []), n.id]);
+  }
+  // Iterativo y con visitados: un modelo con un ciclo —que un árbol no debería
+  // tener, pero el juez no puede darlo por hecho— colgaría una recursión.
+  const raices = modelo.nodos.filter((n) => !n.contenedor).map((n) => n.id);
+  let nivel = 0;
+  let frente = raices;
+  const visitados = new Set<string>(raices);
+  while (frente.length) {
+    nivel++;
+    const siguiente: string[] = [];
+    for (const id of frente) {
+      for (const h of hijosDe.get(id) ?? []) {
+        if (visitados.has(h)) continue;
+        visitados.add(h);
+        siguiente.push(h);
+      }
+    }
+    frente = siguiente;
+  }
+  return nivel >= minimo
+    ? ok
+    : falla(`El árbol tiene ${nivel} nivel(es) y se esperaban al menos ${minimo}.`);
+};
+
+// --- Objetos ---------------------------------------------------------------
+
+/**
+ * Clasificador del que un objeto es instancia.
+ *
+ * UML lo escribe `ana : Cliente`, así que la clase es lo que hay tras los dos
+ * puntos. Un objeto anónimo (`: Cliente`) también encaja, y uno sin dos puntos
+ * se toma entero: quien escribe `Cliente` a secas está nombrando la clase.
+ */
+function clasificadorDe(nombre: string): string {
+  const corte = nombre.indexOf(':');
+  return (corte >= 0 ? nombre.slice(corte + 1) : nombre).trim();
+}
+
+const objetoTieneValor: Evaluador = (a, { modelo }) => {
+  const nombre = texto(a, 'objeto');
+  const ranura = texto(a, 'ranura');
+  const nodo = buscarNodo(modelo, nombre);
+  if (!nodo) {
+    return falla(`No encontré el objeto «${nombre}». Hay: ${enumerar(modelo.nodos.map((n) => n.nombre))}.`);
+  }
+  const slot = nodo.atributos.find((x) => clave(x.nombre) === clave(ranura));
+  if (!slot) {
+    return falla(
+      `«${nombre}» no tiene la ranura «${ranura}». Tiene: ${enumerar(nodo.atributos.map((x) => x.nombre))}.`,
+    );
+  }
+  const esperado = textoOpcional(a, 'valor');
+  if (esperado === undefined) return ok;
+  // Un objeto sin valor en la ranura no modela una instancia concreta, que es
+  // justo lo que distingue este diagrama del de clases.
+  if (slot.valor === undefined) {
+    return falla(`«${nombre}.${ranura}» no tiene ningún valor; se esperaba «${esperado}».`);
+  }
+  return clave(slot.valor) === clave(esperado)
+    ? ok
+    : falla(`«${nombre}.${ranura}» vale «${slot.valor}» y se esperaba «${esperado}».`);
+};
+
+const enlaceEntreObjetos: Evaluador = (a, { modelo }) => {
+  const origen = texto(a, 'origen');
+  const destino = texto(a, 'destino');
+  const a1 = buscarNodo(modelo, origen);
+  const b1 = buscarNodo(modelo, destino);
+  if (!a1) return falla(`No encontré el objeto «${origen}».`);
+  if (!b1) return falla(`No encontré el objeto «${destino}».`);
+  // El enlace de un diagrama de objetos no tiene dirección semántica: es la
+  // instancia de una asociación, y exigir un sentido concreto suspendería un
+  // diagrama correcto escrito al revés.
+  const hay = modelo.aristas.some(
+    (r) =>
+      (r.origen === a1.id && r.destino === b1.id) || (r.origen === b1.id && r.destino === a1.id),
+  );
+  return hay ? ok : falla(`No hay ningún enlace entre «${origen}» y «${destino}».`);
+};
+
+/** Todo objeto tiene que ser instancia de una clase que exista de verdad. */
+const objetoEsInstanciaDe: Evaluador = (a, ctx) => {
+  const clases = contextoDe(ctx, texto(a, 'contexto'));
+  const faltan = ctx.modelo.nodos
+    .filter((n) => n.clase === 'objeto')
+    .filter((n) => !buscarNodo(clases, clasificadorDe(n.nombre)))
+    .map((n) => n.nombre);
+  return faltan.length
+    ? falla(`Estos objetos no son instancia de ninguna clase declarada: ${enumerar(faltan)}.`)
+    : ok;
+};
+
+// --- Despliegue ------------------------------------------------------------
+
+const artefactoDesplegadoEn: Evaluador = (a, { modelo }) => {
+  const artefacto = texto(a, 'artefacto');
+  const nodoNombre = texto(a, 'nodo');
+  const art = buscarNodo(modelo, artefacto);
+  if (!art) {
+    return falla(`No encontré el artefacto «${artefacto}». Hay: ${enumerar(modelo.nodos.map((n) => n.nombre))}.`);
+  }
+  const destino = buscarNodo(modelo, nodoNombre);
+  if (!destino) return falla(`No encontré el nodo «${nodoNombre}».`);
+  if (!art.contenedor) {
+    return falla(`«${artefacto}» no está dentro de ningún nodo: un artefacto suelto no está desplegado.`);
+  }
+
+  // Se sube por la cadena de contenedores, no solo el inmediato: anidar nodos
+  // —`cloud "AWS" { node "EC2" { artifact … } }`— es lo normal en esta vista, y
+  // exigir contención directa suspendería un diagrama correcto.
+  const cadena: string[] = [];
+  let actual: string | undefined = art.contenedor;
+  const visitados = new Set<string>();
+  while (actual && !visitados.has(actual)) {
+    visitados.add(actual);
+    const contenedor = modelo.nodos.find((n) => n.id === actual);
+    cadena.push(contenedor?.nombre ?? actual);
+    if (clave(actual) === clave(destino.id) || clave(contenedor?.nombre ?? '') === clave(destino.nombre)) {
+      return ok;
+    }
+    actual = contenedor?.contenedor;
+  }
+  return falla(
+    `«${artefacto}» está en ${enumerar(cadena)} y se esperaba que estuviera en «${nodoNombre}».`,
+  );
+};
+
+/** Todo artefacto desplegado tiene que corresponder a un componente del diseño. */
+const artefactoCorrespondeAComponente: Evaluador = (a, ctx) => {
+  const componentes = contextoDe(ctx, texto(a, 'contexto'));
+  const faltan = ctx.modelo.nodos
+    .filter((n) => n.clase === 'artefacto')
+    .filter((n) => !buscarNodo(componentes, n.nombre))
+    .map((n) => n.nombre);
+  return faltan.length
+    ? falla(`Estos artefactos no corresponden a ningún componente del diseño: ${enumerar(faltan)}.`)
+    : ok;
+};
+
 // --- Registro --------------------------------------------------------------
 
 export const CATALOGO: Record<string, Evaluador> = {
@@ -861,7 +1082,20 @@ export const CATALOGO: Record<string, Evaluador> = {
   'contenido-en-paquete': contenidoEnPaquete,
   'sin-casos-uso-sin-actor': sinCasosUsoSinActor,
   'sin-actores-ociosos': sinActoresOciosos,
+  // actividad
+  'accion-en-calle': accionEnCalle,
+  'fork-tiene-join': forkTieneJoin,
+  // jerarquías
+  'nodo-tiene-hijo': nodoTieneHijo,
+  'profundidad-minima': profundidadMinima,
+  // objetos
+  'objeto-tiene-valor': objetoTieneValor,
+  'enlace-entre-objetos': enlaceEntreObjetos,
+  // despliegue
+  'artefacto-desplegado-en': artefactoDesplegadoEn,
   // cruzadas
+  'objeto-es-instancia-de': objetoEsInstanciaDe,
+  'artefacto-corresponde-a-componente': artefactoCorrespondeAComponente,
   'mensaje-existe-como-operacion': mensajeExisteComoOperacion,
   'disparador-existe-como-operacion': disparadorExisteComoOperacion,
   'participante-existe-como-clase': participanteExisteComoClase,

@@ -25,6 +25,70 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     eliminado). No es un detalle cosmético: el sidebar y la página de detalle
     resuelven el grupo actual desde este mismo listado, y con "activos" por
     defecto se quedarían sin nombre al abrir un grupo inactivo.
+- **Diagrama de ACTIVIDAD de UML y diagrama de COMUNICACIÓN**, fase 4b.
+  - La actividad tiene **parser propio** (`normalizar-actividad.ts`): es la única
+    sintaxis imperativa del temario —se describe un recorrido, no elementos y
+    relaciones—, así que no comparte nada con el parser declarativo. Cubre
+    `start`/`stop`, acciones de una o varias líneas, `if`/`elseif`/`else`/`endif`,
+    `fork`/`fork again`/`end fork`, `while`/`endwhile` y las **calles de
+    responsabilidad** (`|Cliente|`).
+  - Es lo que `flujo` no puede sustituir: a un `flowchart` le faltan las calles
+    —quién hace cada acción— y el paralelismo, que son justo lo que se evalúa en
+    esta vista.
+  - Dos aserciones nuevas: `accion-en-calle` y `fork-tiene-join`, que caza el
+    error clásico de dejar ramas paralelas que nunca se vuelven a juntar.
+  - La **comunicación** reutiliza el parser declarativo —es la misma sintaxis de
+    relaciones— y deriva encima los mensajes. El orden sale de la **numeración
+    escrita** (`1`, `1.2`, `1.10`), no del orden de las líneas: en esta vista la
+    secuencia la fija el número, y ordenar por el texto haría que mover una línea
+    cambiara el significado. Los enlaces se conservan además como aristas, que es
+    lo que esta vista destaca frente a la de secuencia.
+
+### Fixed
+- **`nodos-alcanzables` contaba los contenedores como pasos del flujo.** Una
+  calle de responsabilidad agrupa acciones, no se «alcanza», así que la
+  comprobación dejaba en rojo cualquier diagrama de actividad con calles — es
+  decir, todos.
+- **Familia «jerarquía» del catálogo adicional**, primera de las siete del plan.
+  Mapa mental, mapa de árbol, árbol de ficheros y diagrama de Ishikawa dibujan
+  cosas distintas y son, por debajo, el mismo árbol: se normalizan al
+  `Nodo`/`Arista` que el juez ya tenía y **heredan sin escribir nada**
+  `existe-nodo`, `conteo-nodos`, `nodos-alcanzables`, `sin-ciclos` y
+  `sin-nombres-vagos`. Lo único propio de cada tipo es un adaptador de tres
+  líneas, porque Mermaid llama a la etiqueta `descr`, `name` o `text` según el
+  diagrama y dos de los cuatro cuelgan el árbol de una raíz sintética.
+  - Dos aserciones nuevas: `nodo-tiene-hijo` y `profundidad-minima`, que ataca el
+    error dominante del tipo —quedarse en un nivel de ramas, que es una lista con
+    otro dibujo—.
+  - Los ids se derivan del CAMINO y no de la etiqueta: repetir una palabra en dos
+    ramas es normal en un mapa mental, y con ids por etiqueta las dos se fundían
+    en un nodo con dos padres, que ya no es un árbol.
+- **Primer ejercicio del catálogo adicional** (`mapa-mental-modulos-plataforma`),
+  escrito como MUESTRA para fijar el formato antes de producir los treinta que
+  faltan. El hallazgo es que `EjercicioDiagramaDef` **no necesita cambios**: lo
+  que varía frente a un ejercicio del temario es la dosis —un nivel en vez de
+  tres, sin ejemplo resuelto aparte, procedencia en dos frases—, y queda escrito
+  en la cabecera del fichero.
+- El sidebar reparte los bloques de la colección entre «Curso UML» y «Catálogo»
+  **por nombre**. Sin eso, sembrar un ejercicio del catálogo dejaba un bloque
+  «Catálogo» colgando del temario, diciendo que un mapa mental es materia del
+  curso.
+- **Diagramas de objetos y de despliegue**, fase 4a de la ampliación. Son los dos
+  tipos UML estructurales que faltaban, y lo que aportan —y ningún otro tipo
+  puede dar— es la verificación **cruzada** de su vista: un objeto que no es
+  instancia de ninguna clase declarada, y un artefacto desplegado que nadie
+  diseñó. Cinco aserciones nuevas, dos de ellas cruzadas.
+  - `artefacto-desplegado-en` mira la **contención**, no las flechas: un
+    artefacto suelto con una flecha hacia un nodo no está desplegado en él, que
+    es el error clásico de esta vista.
+  - `enlace-entre-objetos` no exige dirección: un enlace es la instancia de una
+    asociación, y pedir un sentido concreto suspendería un diagrama correcto.
+  - `Miembro` gana `valor`, aparte de `tipo`: en un diagrama de objetos lo que
+    distingue una instancia de su clase no es el tipo del atributo sino lo que
+    vale, y mezclarlos habría roto las comprobaciones que miran tipos.
+  - `node`, `cloud` y `database` pasan a ser **nodos físicos** en despliegue y
+    siguen siendo contenedores genéricos en el resto, con una prueba que fija
+    que fuera de despliegue nada cambia.
 - **Clases y entidad-relación se evalúan también en PlantUML**, tercera fase de
   la ampliación. Hasta ahora el juez solo leía esos dos tipos en Mermaid, así
   que la notación UML canónica para un diagrama de clases no se podía usar en un

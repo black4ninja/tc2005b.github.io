@@ -522,6 +522,112 @@ export const METADATOS: MetadatoAsercion[] = [
     descripcion: 'Comprueba que cada disparador de la máquina de estados corresponda a una operación de su clase asociada en el diagrama de clases indicado, para que el comportamiento no se desvincule de la estructura.',
   },
   {
+    tipo: 'accion-en-calle',
+    etiqueta: 'La acción está en la calle correcta',
+    familia: 'semantica',
+    aplicaA: ['actividad'],
+    parametros: [
+      { nombre: 'accion', etiqueta: 'Acción', tipo: 'texto', requerido: true },
+      { nombre: 'calle', etiqueta: 'Calle de responsabilidad', tipo: 'texto', requerido: true },
+    ],
+    descripcion: 'Comprueba que la acción esté en la calle indicada. Las calles dicen QUIÉN hace cada cosa, que es la mitad del valor de esta vista y lo que un diagrama de flujo no puede expresar.',
+  },
+  {
+    tipo: 'fork-tiene-join',
+    etiqueta: 'Cada bifurcación paralela se vuelve a unir',
+    familia: 'semantica',
+    aplicaA: ['actividad'],
+    parametros: [],
+    descripcion: 'Comprueba que haya al menos una bifurcación paralela y que cada «fork» tenga su «end fork». Un fork sin join deja ramas que nunca se juntan, y el diagrama no dice cuándo termina la actividad.',
+  },
+  {
+    tipo: 'nodo-tiene-hijo',
+    etiqueta: 'Un nodo tiene cierta rama colgando',
+    familia: 'semantica',
+    aplicaA: ['mapa-mental', 'treemap', 'arbol', 'ishikawa'],
+    parametros: [
+      { nombre: 'padre', etiqueta: 'Nodo padre', tipo: 'texto', requerido: true },
+      { nombre: 'hijo', etiqueta: 'Rama que debe colgar de él', tipo: 'texto', requerido: true },
+    ],
+    descripcion: 'Comprueba que una rama cuelgue del nodo indicado y no de otro. Es lo que distingue una jerarquía de una lista de nombres sueltos.',
+  },
+  {
+    tipo: 'profundidad-minima',
+    etiqueta: 'El árbol tiene al menos N niveles',
+    familia: 'semantica',
+    aplicaA: ['mapa-mental', 'treemap', 'arbol', 'ishikawa'],
+    parametros: [
+      {
+        nombre: 'niveles', etiqueta: 'Niveles mínimos', tipo: 'numero', requerido: false,
+        ayuda: 'La raíz cuenta como nivel 1. Por omisión, 2.',
+      },
+    ],
+    descripcion: 'Comprueba que el árbol se ramifique de verdad. El error dominante al hacer un mapa mental o una descomposición es quedarse en una lista: un nivel de ramas y ninguna subrama.',
+  },
+  {
+    tipo: 'objeto-tiene-valor',
+    etiqueta: 'El objeto tiene una ranura con cierto valor',
+    familia: 'semantica',
+    aplicaA: ['objeto'],
+    parametros: [
+      { nombre: 'objeto', etiqueta: 'Objeto', tipo: 'texto', requerido: true },
+      { nombre: 'ranura', etiqueta: 'Ranura (atributo)', tipo: 'texto', requerido: true },
+      {
+        nombre: 'valor', etiqueta: 'Valor esperado', tipo: 'texto', requerido: false,
+        ayuda: 'Sin valor, solo se comprueba que la ranura exista.',
+      },
+    ],
+    descripcion: 'Comprueba que un objeto tenga la ranura indicada y, si se da, que valga lo esperado. Es lo que distingue una instancia concreta de su clase.',
+  },
+  {
+    tipo: 'enlace-entre-objetos',
+    etiqueta: 'Hay un enlace entre dos objetos',
+    familia: 'semantica',
+    aplicaA: ['objeto'],
+    parametros: [
+      { nombre: 'origen', etiqueta: 'Un objeto', tipo: 'texto', requerido: true },
+      { nombre: 'destino', etiqueta: 'El otro objeto', tipo: 'texto', requerido: true },
+    ],
+    descripcion: 'Comprueba que dos objetos estén enlazados. El enlace no tiene dirección: es la instancia de una asociación, así que se acepta escrito en cualquier sentido.',
+  },
+  {
+    tipo: 'artefacto-desplegado-en',
+    etiqueta: 'El artefacto está desplegado en un nodo',
+    familia: 'semantica',
+    aplicaA: ['despliegue'],
+    parametros: [
+      { nombre: 'artefacto', etiqueta: 'Artefacto', tipo: 'texto', requerido: true },
+      { nombre: 'nodo', etiqueta: 'Nodo físico', tipo: 'texto', requerido: true },
+    ],
+    descripcion: 'Comprueba que el artefacto esté DENTRO del nodo indicado. Un artefacto suelto, aunque tenga una flecha, no está desplegado en ninguna parte.',
+  },
+  {
+    tipo: 'objeto-es-instancia-de',
+    etiqueta: 'Los objetos son instancias de clases declaradas',
+    familia: 'cruzada',
+    aplicaA: ['objeto'],
+    parametros: [
+      {
+        nombre: 'contexto', etiqueta: 'Diagrama de clases de referencia', tipo: 'texto', requerido: true,
+        ayuda: 'Nombre del diagrama, tal como lo dio el ejercicio, contra el que se valida cada objeto.',
+      },
+    ],
+    descripcion: 'Comprueba que todo objeto sea instancia de una clase declarada. El clasificador se lee de la parte que sigue a los dos puntos («ana : Cliente»).',
+  },
+  {
+    tipo: 'artefacto-corresponde-a-componente',
+    etiqueta: 'Los artefactos corresponden a componentes del diseño',
+    familia: 'cruzada',
+    aplicaA: ['despliegue'],
+    parametros: [
+      {
+        nombre: 'contexto', etiqueta: 'Diagrama de componentes de referencia', tipo: 'texto', requerido: true,
+        ayuda: 'Nombre del diagrama, tal como lo dio el ejercicio, contra el que se valida cada artefacto.',
+      },
+    ],
+    descripcion: 'Comprueba que todo artefacto desplegado corresponda a un componente del diseño: desplegar algo que no se diseñó es el error clásico de esta vista.',
+  },
+  {
     tipo: 'participante-existe-como-clase',
     etiqueta: 'Los participantes son clases declaradas',
     familia: 'cruzada',

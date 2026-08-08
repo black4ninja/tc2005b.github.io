@@ -1,10 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { KEYS_JUZGABLES, esJuzgable, tipoDiagrama } from '@tc2005b/diagramas-catalogo';
+import { KEYS_JUZGABLES, TIPOS, esJuzgable } from '@tc2005b/diagramas-catalogo';
 import {
+  SOPORTADOS_JERARQUIA,
   SOPORTADOS_MERMAID,
   SOPORTADOS_PLANTUML,
   TIPOS_DIAGRAMA,
 } from '../../src/services/juez-diagramas/index.js';
+
+/**
+ * Todo lo que un motor sabe leer. La familia «jerarquía» tiene normalizador
+ * propio —cuatro dibujos que se reducen al mismo árbol— y también corre sobre
+ * Mermaid, así que cuenta aquí: sin sumarla, este guardián declararía sin
+ * normalizador a tipos que sí lo tienen.
+ */
+const POR_MERMAID = [...SOPORTADOS_MERMAID, ...SOPORTADOS_JERARQUIA];
+
+/**
+ * La actividad tiene parser propio —es la única sintaxis imperativa del
+ * temario— y no está en `SOPORTADOS_PLANTUML`, así que se suma aparte.
+ */
+const POR_PLANTUML = [...SOPORTADOS_PLANTUML, 'actividad'];
 
 /**
  * El juez tiene su propia unión de tipos (`juez-diagramas/tipos.ts`) porque es
@@ -26,32 +41,42 @@ import {
  */
 describe('el catálogo y el juez declaran los mismos tipos evaluables', () => {
   it('coinciden como conjunto', () => {
-    expect([...KEYS_JUZGABLES].sort()).toEqual([...TIPOS_DIAGRAMA].sort());
+    // La comparación NO es contra `TIPOS_DIAGRAMA`, que es el dominio del juez
+    // —los tipos que su unión admite, incluidos los que aún no sabe leer—, sino
+    // contra lo que algún normalizador maneja de verdad. Compararlo con el
+    // dominio dejaba la prueba en rojo en cuanto se declaraba un tipo antes de
+    // escribir su parser, que es el orden natural de trabajo.
+    const conNormalizador = [...new Set([...POR_MERMAID, ...POR_PLANTUML])];
+    expect([...KEYS_JUZGABLES].sort()).toEqual(conNormalizador.sort());
   });
 
   it('reparte los motores como los reparten los normalizadores', () => {
     for (const key of TIPOS_DIAGRAMA) {
-      expect(esJuzgable(key, 'mermaid'), `${key} en Mermaid`).toBe(SOPORTADOS_MERMAID.includes(key));
+      expect(esJuzgable(key, 'mermaid'), `${key} en Mermaid`).toBe(POR_MERMAID.includes(key));
       expect(esJuzgable(key, 'plantuml'), `${key} en PlantUML`).toBe(
-        SOPORTADOS_PLANTUML.includes(key),
+        POR_PLANTUML.includes(key),
       );
     }
   });
 
-  it('no deja ningún tipo evaluable sin normalizador', () => {
-    // El caso que la comprobación anterior no cubre por sí sola: un tipo cuyo
-    // `motoresJuez` esté vacío coincidiría en ambos lados con `false` y pasaría.
-    for (const key of TIPOS_DIAGRAMA) {
+  it('no declara evaluable nada que no sepa leer', () => {
+    for (const key of KEYS_JUZGABLES) {
       expect(
-        SOPORTADOS_MERMAID.includes(key) || SOPORTADOS_PLANTUML.includes(key),
+        POR_MERMAID.includes(key) || POR_PLANTUML.includes(key),
         `${key} se declara evaluable pero ningún normalizador lo lee`,
       ).toBe(true);
     }
   });
 
-  it('no declara juzgable ningún tipo del catálogo adicional', () => {
-    for (const key of KEYS_JUZGABLES) {
-      expect(tipoDiagrama(key)?.ambito, key).toBe('curso');
-    }
+  it('mantiene evaluable todo el temario del curso', () => {
+    // Al revés que antes: la comprobación era «ningún tipo del catálogo es
+    // juzgable», y dejó de valer en cuanto la familia «jerarquía» le dio
+    // normalizador a cuatro de ellos. Lo que sí tiene que seguir siendo cierto
+    // es que ningún tipo DEL CURSO se quede sin poder evaluarse.
+    const delCurso = TIPOS.filter((t) => t.ambito === 'curso');
+    const sinJuez = delCurso.filter((t) => t.motoresJuez.length === 0).map((t) => t.key);
+    // `timing` es lo único que queda: su gramática (`robust`/`concise`, `@0`,
+    // `X is Estado`) no se parece a ninguna de las tres que ya hay.
+    expect(sinJuez, 'tipos del temario todavía sin normalizador').toEqual(['timing']);
   });
 });

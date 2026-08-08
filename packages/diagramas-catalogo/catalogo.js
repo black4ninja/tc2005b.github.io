@@ -83,7 +83,7 @@ export const TIPOS = [
     ambito: 'curso',
     uml: true,
     agrupacion: 'Estructura',
-    motoresJuez: [],
+    motoresJuez: ['plantuml'],
   },
   {
     key: 'er',
@@ -125,7 +125,7 @@ export const TIPOS = [
     ambito: 'curso',
     uml: true,
     agrupacion: 'Arquitectura',
-    motoresJuez: [],
+    motoresJuez: ['plantuml'],
   },
   {
     key: 'casos-de-uso',
@@ -157,7 +157,7 @@ export const TIPOS = [
     ambito: 'curso',
     uml: true,
     agrupacion: 'Interacción',
-    motoresJuez: [],
+    motoresJuez: ['plantuml'],
   },
   {
     key: 'timing',
@@ -189,7 +189,7 @@ export const TIPOS = [
     ambito: 'curso',
     uml: true,
     agrupacion: 'Comportamiento',
-    motoresJuez: [],
+    motoresJuez: ['plantuml'],
   },
   {
     key: 'flujo',
@@ -305,7 +305,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Datos y gráficos',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
   {
     key: 'venn',
@@ -379,7 +379,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Mapas y estructura',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
   {
     key: 'git',
@@ -439,7 +439,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Mapas y estructura',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
   {
     key: 'ishikawa',
@@ -449,7 +449,7 @@ export const TIPOS = [
     ambito: 'catalogo',
     uml: false,
     agrupacion: 'Mapas y estructura',
-    motoresJuez: [],
+    motoresJuez: ['mermaid'],
   },
 
   // --- Catálogo: texto y formatos --------------------------------------------

@@ -19,10 +19,22 @@ export type TipoDiagrama =
   | 'flujo'
   | 'casos-de-uso'
   | 'componentes'
-  | 'paquetes';
+  | 'paquetes'
+  | 'objeto'
+  | 'despliegue'
+  | 'actividad'
+  | 'comunicacion'
+  | 'timing'
+  // Familia «jerarquía» del catálogo adicional: distintos dibujos, un árbol.
+  | 'mapa-mental'
+  | 'treemap'
+  | 'arbol'
+  | 'ishikawa';
 
 export const TIPOS_DIAGRAMA: TipoDiagrama[] = [
   'clases', 'secuencia', 'estados', 'er', 'flujo', 'casos-de-uso', 'componentes', 'paquetes',
+  'objeto', 'despliegue', 'actividad', 'comunicacion', 'timing',
+  'mapa-mental', 'treemap', 'arbol', 'ishikawa',
 ];
 
 export type Motor = 'mermaid' | 'plantuml';
@@ -39,6 +51,9 @@ export type ClaseNodo =
   | 'caso-de-uso'
   | 'componente'
   | 'paquete'
+  | 'objeto'         // instancia concreta de un clasificador
+  | 'artefacto'      // lo que se despliega: un jar, una imagen, un binario
+  | 'nodo-fisico'    // dónde se despliega: un servidor, un dispositivo
   | 'nodo';          // genérico de flujo
 
 /** Un atributo o una operación. `tipo` es el tipo del atributo o el retorno. */
@@ -47,6 +62,13 @@ export interface Miembro {
   tipo?: string;
   parametros?: string;
   visibilidad?: '+' | '-' | '#' | '~';
+  /**
+   * Valor concreto de la ranura, solo en diagramas de OBJETOS: ahí lo que
+   * distingue una instancia de su clase no es el tipo del atributo sino lo que
+   * vale. Guardarlo en `tipo` habría mezclado dos cosas distintas y roto
+   * cualquier comprobación que mire tipos.
+   */
+  valor?: string;
 }
 
 export interface Nodo {
