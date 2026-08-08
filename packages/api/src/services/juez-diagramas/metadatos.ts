@@ -522,6 +522,30 @@ export const METADATOS: MetadatoAsercion[] = [
     descripcion: 'Comprueba que cada disparador de la máquina de estados corresponda a una operación de su clase asociada en el diagrama de clases indicado, para que el comportamiento no se desvincule de la estructura.',
   },
   {
+    tipo: 'nodo-tiene-hijo',
+    etiqueta: 'Un nodo tiene cierta rama colgando',
+    familia: 'semantica',
+    aplicaA: ['mapa-mental', 'treemap', 'arbol', 'ishikawa'],
+    parametros: [
+      { nombre: 'padre', etiqueta: 'Nodo padre', tipo: 'texto', requerido: true },
+      { nombre: 'hijo', etiqueta: 'Rama que debe colgar de él', tipo: 'texto', requerido: true },
+    ],
+    descripcion: 'Comprueba que una rama cuelgue del nodo indicado y no de otro. Es lo que distingue una jerarquía de una lista de nombres sueltos.',
+  },
+  {
+    tipo: 'profundidad-minima',
+    etiqueta: 'El árbol tiene al menos N niveles',
+    familia: 'semantica',
+    aplicaA: ['mapa-mental', 'treemap', 'arbol', 'ishikawa'],
+    parametros: [
+      {
+        nombre: 'niveles', etiqueta: 'Niveles mínimos', tipo: 'numero', requerido: false,
+        ayuda: 'La raíz cuenta como nivel 1. Por omisión, 2.',
+      },
+    ],
+    descripcion: 'Comprueba que el árbol se ramifique de verdad. El error dominante al hacer un mapa mental o una descomposición es quedarse en una lista: un nivel de ramas y ninguna subrama.',
+  },
+  {
     tipo: 'objeto-tiene-valor',
     etiqueta: 'El objeto tiene una ranura con cierto valor',
     familia: 'semantica',

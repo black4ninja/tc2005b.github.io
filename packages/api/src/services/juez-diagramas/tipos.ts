@@ -21,11 +21,17 @@ export type TipoDiagrama =
   | 'componentes'
   | 'paquetes'
   | 'objeto'
-  | 'despliegue';
+  | 'despliegue'
+  // Familia «jerarquía» del catálogo adicional: distintos dibujos, un árbol.
+  | 'mapa-mental'
+  | 'treemap'
+  | 'arbol'
+  | 'ishikawa';
 
 export const TIPOS_DIAGRAMA: TipoDiagrama[] = [
   'clases', 'secuencia', 'estados', 'er', 'flujo', 'casos-de-uso', 'componentes', 'paquetes',
   'objeto', 'despliegue',
+  'mapa-mental', 'treemap', 'arbol', 'ishikawa',
 ];
 
 export type Motor = 'mermaid' | 'plantuml';

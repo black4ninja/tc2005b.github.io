@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router';
 import { useDiagramasNav, type DiagramaLista } from '../../context/DiagramasNavContext';
 import { rutaTallerAdmin, rutaTallerAlumno } from '../../config/rutasDiagramas';
 import {
+  BLOQUES_CURSO,
   agrupadoDiagramas,
   etiquetaMotorDiagrama,
   etiquetaTipoDiagrama,
@@ -67,8 +68,13 @@ export default function DiagramasAlumnoPage() {
    * su identidad cambiaba siempre y las memos que dependen de él no memoizaban
    * nada.
    */
-  const claseSeccion = seccion?.clase ?? (bloques.length ? 'curso' : null);
-  const nombreSeccion = seccion?.nombre ?? bloques[0]?.nombre ?? null;
+  // Por omisión se abre un bloque DEL CURSO, no el primero que llegue: si la
+  // colección tuviera solo ejercicios del catálogo adicional, arrancar ahí sería
+  // correcto, pero teniendo temario es lo primero que el alumno espera ver.
+  const porOmision =
+    bloques.find((b) => BLOQUES_CURSO.includes(b.nombre))?.nombre ?? bloques[0]?.nombre ?? null;
+  const claseSeccion = seccion?.clase ?? (porOmision ? 'curso' : null);
+  const nombreSeccion = seccion?.nombre ?? porOmision;
   const seccionEfectiva = useMemo(
     () => (claseSeccion && nombreSeccion ? { clase: claseSeccion, nombre: nombreSeccion } : null),
     [claseSeccion, nombreSeccion],

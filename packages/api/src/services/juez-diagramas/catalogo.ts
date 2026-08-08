@@ -820,6 +820,60 @@ const participanteExisteComoClase: Evaluador = (a, ctx) => {
     : ok;
 };
 
+// --- Jerarquías ------------------------------------------------------------
+
+const nodoTieneHijo: Evaluador = (a, { modelo }) => {
+  const padreNombre = texto(a, 'padre');
+  const hijoNombre = texto(a, 'hijo');
+  const padre = buscarNodo(modelo, padreNombre);
+  if (!padre) {
+    return falla(`No encontré «${padreNombre}». Hay: ${enumerar(modelo.nodos.map((n) => n.nombre))}.`);
+  }
+  const hijos = modelo.nodos.filter((n) => n.contenedor === padre.id);
+  return hijos.some((h) => clave(h.nombre) === clave(hijoNombre))
+    ? ok
+    : falla(
+        `«${padreNombre}» no tiene la rama «${hijoNombre}». Cuelgan de él: ${enumerar(hijos.map((h) => h.nombre))}.`,
+      );
+};
+
+/**
+ * Profundidad del árbol, contando la raíz como nivel 1.
+ *
+ * Existe porque el error dominante al hacer un mapa mental o una descomposición
+ * es quedarse en una lista: un nivel de ramas y ninguna subrama. Eso no es una
+ * jerarquía, y sin esta comprobación un diagrama así pasaría cualquier conteo.
+ */
+const profundidadMinima: Evaluador = (a, { modelo }) => {
+  const minimo = numeroOpcional(a, 'niveles') ?? 2;
+  const hijosDe = new Map<string, string[]>();
+  for (const n of modelo.nodos) {
+    if (!n.contenedor) continue;
+    hijosDe.set(n.contenedor, [...(hijosDe.get(n.contenedor) ?? []), n.id]);
+  }
+  // Iterativo y con visitados: un modelo con un ciclo —que un árbol no debería
+  // tener, pero el juez no puede darlo por hecho— colgaría una recursión.
+  const raices = modelo.nodos.filter((n) => !n.contenedor).map((n) => n.id);
+  let nivel = 0;
+  let frente = raices;
+  const visitados = new Set<string>(raices);
+  while (frente.length) {
+    nivel++;
+    const siguiente: string[] = [];
+    for (const id of frente) {
+      for (const h of hijosDe.get(id) ?? []) {
+        if (visitados.has(h)) continue;
+        visitados.add(h);
+        siguiente.push(h);
+      }
+    }
+    frente = siguiente;
+  }
+  return nivel >= minimo
+    ? ok
+    : falla(`El árbol tiene ${nivel} nivel(es) y se esperaban al menos ${minimo}.`);
+};
+
 // --- Objetos ---------------------------------------------------------------
 
 /**
@@ -976,6 +1030,9 @@ export const CATALOGO: Record<string, Evaluador> = {
   'contenido-en-paquete': contenidoEnPaquete,
   'sin-casos-uso-sin-actor': sinCasosUsoSinActor,
   'sin-actores-ociosos': sinActoresOciosos,
+  // jerarquías
+  'nodo-tiene-hijo': nodoTieneHijo,
+  'profundidad-minima': profundidadMinima,
   // objetos
   'objeto-tiene-valor': objetoTieneValor,
   'enlace-entre-objetos': enlaceEntreObjetos,

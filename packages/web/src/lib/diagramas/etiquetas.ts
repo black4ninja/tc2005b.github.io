@@ -1,4 +1,5 @@
 import {
+  BLOQUES_CURSO,
   MOTORES,
   TIPOS,
   agrupado,
@@ -42,6 +43,7 @@ export const TIPOS_CATALOGO: TipoDiagramaDef[] = TIPOS;
 export const TIPOS_JUZGABLES: TipoDiagramaDef[] = TIPOS.filter((t) => t.motoresJuez.length > 0);
 
 export const MOTORES_DIAGRAMA = MOTORES;
+export { BLOQUES_CURSO };
 
 export const etiquetaTipoDiagrama = etiquetaTipo;
 export const etiquetaMotorDiagrama = etiquetaMotor;

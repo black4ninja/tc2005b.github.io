@@ -8,6 +8,30 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Familia «jerarquía» del catálogo adicional**, primera de las siete del plan.
+  Mapa mental, mapa de árbol, árbol de ficheros y diagrama de Ishikawa dibujan
+  cosas distintas y son, por debajo, el mismo árbol: se normalizan al
+  `Nodo`/`Arista` que el juez ya tenía y **heredan sin escribir nada**
+  `existe-nodo`, `conteo-nodos`, `nodos-alcanzables`, `sin-ciclos` y
+  `sin-nombres-vagos`. Lo único propio de cada tipo es un adaptador de tres
+  líneas, porque Mermaid llama a la etiqueta `descr`, `name` o `text` según el
+  diagrama y dos de los cuatro cuelgan el árbol de una raíz sintética.
+  - Dos aserciones nuevas: `nodo-tiene-hijo` y `profundidad-minima`, que ataca el
+    error dominante del tipo —quedarse en un nivel de ramas, que es una lista con
+    otro dibujo—.
+  - Los ids se derivan del CAMINO y no de la etiqueta: repetir una palabra en dos
+    ramas es normal en un mapa mental, y con ids por etiqueta las dos se fundían
+    en un nodo con dos padres, que ya no es un árbol.
+- **Primer ejercicio del catálogo adicional** (`mapa-mental-modulos-plataforma`),
+  escrito como MUESTRA para fijar el formato antes de producir los treinta que
+  faltan. El hallazgo es que `EjercicioDiagramaDef` **no necesita cambios**: lo
+  que varía frente a un ejercicio del temario es la dosis —un nivel en vez de
+  tres, sin ejemplo resuelto aparte, procedencia en dos frases—, y queda escrito
+  en la cabecera del fichero.
+- El sidebar reparte los bloques de la colección entre «Curso UML» y «Catálogo»
+  **por nombre**. Sin eso, sembrar un ejercicio del catálogo dejaba un bloque
+  «Catálogo» colgando del temario, diciendo que un mapa mental es materia del
+  curso.
 - **Diagramas de objetos y de despliegue**, fase 4a de la ampliación. Son los dos
   tipos UML estructurales que faltaban, y lo que aportan —y ningún otro tipo
   puede dar— es la verificación **cruzada** de su vista: un objeto que no es

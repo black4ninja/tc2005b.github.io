@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import Icon from '../../atoms/Icon/Icon';
 import { useDiagramasNav } from '../../../../context/DiagramasNavContext';
-import { TIPOS_CATALOGO, agrupadoDiagramas } from '../../../../lib/diagramas/etiquetas';
+import { BLOQUES_CURSO, TIPOS_CATALOGO, agrupadoDiagramas } from '../../../../lib/diagramas/etiquetas';
 import styles from './ArbolDiagramas.module.css';
 
 /**
@@ -25,6 +25,21 @@ export default function ArbolDiagramas() {
   const { base, coleccion, bloques, seccion, irA, progresoDeBloque, ejercicios, cargando, error, reintentar } =
     useDiagramasNav();
   const [busqueda, setBusqueda] = useState('');
+
+  /**
+   * Los bloques de la colección se reparten entre las dos secciones por NOMBRE.
+   *
+   * Un ejercicio del catálogo adicional se siembra con `bloque: 'Catálogo'`, y
+   * sin este reparto ese bloque aparecería bajo «Curso UML» junto a Estructura
+   * o Interacción, diciendo que un mapa mental es materia del temario.
+   */
+  const { deCurso, deCatalogo } = useMemo(() => {
+    const esDelCurso = new Set(BLOQUES_CURSO);
+    return {
+      deCurso: bloques.filter((b) => esDelCurso.has(b.nombre)),
+      deCatalogo: bloques.filter((b) => !esDelCurso.has(b.nombre)),
+    };
+  }, [bloques]);
 
   /** Tipos que YA tienen ejercicios: no se ofrecen otra vez en el catálogo. */
   const tiposConEjercicios = useMemo(
@@ -119,8 +134,8 @@ export default function ArbolDiagramas() {
         </>
       ) : (
         <>
-          {bloques.length > 0 && <p className={styles.rubro}>Curso UML</p>}
-          {bloques.map((b) => {
+          {deCurso.length > 0 && <p className={styles.rubro}>Curso UML</p>}
+          {deCurso.map((b) => {
             const { resueltos, total } = progresoDeBloque(b.id);
             const activo = seccion?.clase === 'curso' && seccion.nombre === b.nombre;
             return (
@@ -139,7 +154,29 @@ export default function ArbolDiagramas() {
             );
           })}
 
-          {gruposCatalogo.length > 0 && <p className={styles.rubro}>Catálogo</p>}
+          {(gruposCatalogo.length > 0 || deCatalogo.length > 0) && (
+            <p className={styles.rubro}>Catálogo</p>
+          )}
+          {/* Primero lo que SÍ tiene ejercicios, con su avance; después los
+              tipos que solo se pueden abrir en modo libre. */}
+          {deCatalogo.map((b) => {
+            const { resueltos, total } = progresoDeBloque(b.id);
+            const activo = seccion?.clase === 'curso' && seccion.nombre === b.nombre;
+            return (
+              <button
+                key={b.id}
+                type="button"
+                className={`${styles.fila} ${activo ? styles.filaActiva : ''}`}
+                aria-current={activo ? 'true' : undefined}
+                onClick={() => irA({ clase: 'curso', nombre: b.nombre })}
+              >
+                <span className={styles.filaTexto}>{b.nombre}</span>
+                <span className={styles.filaConteo}>
+                  {resueltos}/{total}
+                </span>
+              </button>
+            );
+          })}
           {gruposCatalogo.map((g) => {
             const activo = seccion?.clase === 'cat' && seccion.nombre === g.nombre;
             return (
