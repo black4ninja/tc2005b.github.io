@@ -29,12 +29,22 @@ export type TipoDiagrama =
   | 'mapa-mental'
   | 'treemap'
   | 'arbol'
-  | 'ishikawa';
+  | 'ishikawa'
+  // Familias «red», «versionado» y «estrategia»: distintos dibujos, un grafo.
+  | 'c4'
+  | 'bloques'
+  | 'arquitectura-nube'
+  | 'paquete-red'
+  | 'git'
+  | 'requisitos'
+  | 'wardley'
+  | 'cynefin';
 
 export const TIPOS_DIAGRAMA: TipoDiagrama[] = [
   'clases', 'secuencia', 'estados', 'er', 'flujo', 'casos-de-uso', 'componentes', 'paquetes',
   'objeto', 'despliegue', 'actividad', 'comunicacion', 'timing',
   'mapa-mental', 'treemap', 'arbol', 'ishikawa',
+  'c4', 'bloques', 'arquitectura-nube', 'paquete-red', 'git', 'requisitos', 'wardley', 'cynefin',
 ];
 
 export type Motor = 'mermaid' | 'plantuml';
