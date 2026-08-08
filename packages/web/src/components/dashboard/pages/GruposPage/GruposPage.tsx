@@ -17,6 +17,8 @@ interface GrupoData {
   fechaInicio?: string;
   fechaFin?: string;
   active: boolean;
+  /** false = borrado lógico. Solo llega así con los filtros "eliminados"/"todos". */
+  exists?: boolean;
   colecciones?: ColeccionRef[];
   admins?: AdminRef[];
   modulosDeshabilitados?: Record<string, string[]>;
@@ -24,6 +26,32 @@ interface GrupoData {
 }
 
 const API_BASE = '/api';
+
+/**
+ * Filtro de estado. Se resuelve en el SERVIDOR (`?estado=`), no en el cliente:
+ * por defecto solo se traen los activos, y los eliminados solo viajan si se
+ * piden expresamente.
+ */
+const FILTROS = [
+  { valor: 'activos', label: 'Activos' },
+  { valor: 'inactivos', label: 'Inactivos' },
+  { valor: 'eliminados', label: 'Eliminados' },
+  { valor: 'todos', label: 'Todos' },
+] as const;
+
+type FiltroEstado = (typeof FILTROS)[number]['valor'];
+
+/** Un grupo eliminado (borrado lógico) solo se muestra; ya no se opera sobre él. */
+function estaEliminado(grupo: GrupoData): boolean {
+  return grupo.exists === false;
+}
+
+/** ms de la fecha, o undefined si no tiene: así `sortUndefined` las manda al final. */
+function tiempo(valor: string | undefined): number | undefined {
+  if (!valor) return undefined;
+  const ms = new Date(valor).getTime();
+  return Number.isNaN(ms) ? undefined : ms;
+}
 
 export default function GruposPage() {
   const { sessionToken } = useAuth();
@@ -36,6 +64,8 @@ export default function GruposPage() {
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editGrupo, setEditGrupo] = useState<GrupoData | undefined>();
+  // Filtro de estado — no persistente (solo durante esta visita).
+  const [filtro, setFiltro] = useState<FiltroEstado>('activos');
 
   // Modal de asignaciones (colecciones + módulos por colección).
   const [asignGrupo, setAsignGrupo] = useState<GrupoData | null>(null);
@@ -49,7 +79,7 @@ export default function GruposPage() {
   const fetchGrupos = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/admin/grupos`, { headers: { 'x-session-token': sessionToken ?? '' } });
+      const res = await fetch(`${API_BASE}/admin/grupos?estado=${filtro}`, { headers: { 'x-session-token': sessionToken ?? '' } });
       if (!res.ok) throw new Error('Error al cargar grupos');
       const data = await res.json();
       setGrupos(data.grupos);
@@ -58,7 +88,7 @@ export default function GruposPage() {
     } finally {
       setLoading(false);
     }
-  }, [sessionToken]);
+  }, [sessionToken, filtro]);
 
   const fetchColecciones = useCallback(async () => {
     try {
@@ -103,7 +133,8 @@ export default function GruposPage() {
     setEditGrupo(undefined);
   }
 
-  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; admins?: string[]; urlAgendaEntrevistas?: string }) {
+  // `fechaInicio`/`fechaFin` en null = quitar la fecha (el servidor las borra).
+  async function handleSave(data: { name: string; fechaInicio?: string | null; fechaFin?: string | null; admins?: string[]; urlAgendaEntrevistas?: string }) {
     setSaving(true);
     setError('');
     try {
@@ -170,9 +201,18 @@ export default function GruposPage() {
     }
   }
 
+  // Se pinta en UTC porque así se guarda: son días de calendario anclados a la
+  // medianoche UTC (ver `parseFechaDia()` en la API). Sin `timeZone`, el
+  // navegador las traduce a la hora local y en México (UTC-6) la medianoche del
+  // 10-ago cae el 9-ago: la tabla enseñaba el día anterior al que se capturó.
   function formatDate(value?: string): string {
     if (!value) return '—';
-    return new Date(value).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
+    return new Date(value).toLocaleDateString('es-MX', {
+      timeZone: 'UTC',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   }
 
   const columnHelper = createColumnHelper<GrupoData>();
@@ -189,41 +229,82 @@ export default function GruposPage() {
       header: 'Administradores',
       cell: (info) => info.getValue() || '—',
     }),
-    columnHelper.accessor('fechaInicio', {
+    // Las fechas se ordenan por timestamp (no por el texto ISO) y las vacías van
+    // siempre al final, en cualquier sentido. Se excluyen del buscador: su valor
+    // ya no es texto, y un número de época daría coincidencias sin sentido.
+    columnHelper.accessor((row) => tiempo(row.fechaInicio), {
+      id: 'fechaInicio',
       header: 'Fecha Inicio',
-      cell: (info) => formatDate(info.getValue()),
+      cell: (info) => formatDate(info.row.original.fechaInicio),
+      sortUndefined: 'last',
+      enableGlobalFilter: false,
     }),
-    columnHelper.accessor('fechaFin', {
+    columnHelper.accessor((row) => tiempo(row.fechaFin), {
+      id: 'fechaFin',
       header: 'Fecha Fin',
-      cell: (info) => formatDate(info.getValue()),
+      cell: (info) => formatDate(info.row.original.fechaFin),
+      sortUndefined: 'last',
+      enableGlobalFilter: false,
     }),
-    columnHelper.accessor('active', {
+    columnHelper.accessor((row) => (estaEliminado(row) ? 'Eliminado' : row.active ? 'Activo' : 'Inactivo'), {
+      id: 'estado',
       header: 'Estado',
-      cell: (info) => (
-        <span className={`${styles.badge} ${info.getValue() ? styles.badgeActive : styles.badgeInactive}`}>
-          {info.getValue() ? 'Activo' : 'Inactivo'}
-        </span>
-      ),
+      cell: (info) => {
+        const estado = info.getValue();
+        const clase =
+          estado === 'Eliminado' ? styles.badgeDeleted : estado === 'Activo' ? styles.badgeActive : styles.badgeInactive;
+        return <span className={`${styles.badge} ${clase}`}>{estado}</span>;
+      },
     }),
   ];
 
-  const getActions = (grupo: GrupoData): ActionItem[] => [
-    { label: 'Ver', icon: 'visibility', onClick: () => navigate(`/admin/grupos/${grupo.id}`) },
-    { label: 'Editar', icon: 'edit', onClick: () => openEdit(grupo) },
-    { label: 'Asignaciones', icon: 'library_books', onClick: () => setAsignGrupo(grupo) },
-    {
-      label: grupo.active ? 'Desactivar' : 'Activar',
-      icon: grupo.active ? 'toggle_off' : 'toggle_on',
-      onClick: () => handleToggleActive(grupo),
-    },
-    { label: 'Eliminar', icon: 'delete', onClick: () => handleDelete(grupo), variant: 'danger' },
-  ];
+  const getActions = (grupo: GrupoData): ActionItem[] => {
+    // Un grupo eliminado se lista para consulta, pero no se opera: el resto de
+    // endpoints (detalle, editar, archivar…) exigen un grupo vivo y responderían 404.
+    if (estaEliminado(grupo)) return [];
+    return [
+      { label: 'Ver', icon: 'visibility', onClick: () => navigate(`/admin/grupos/${grupo.id}`) },
+      { label: 'Editar', icon: 'edit', onClick: () => openEdit(grupo) },
+      { label: 'Asignaciones', icon: 'library_books', onClick: () => setAsignGrupo(grupo) },
+      {
+        label: grupo.active ? 'Desactivar' : 'Activar',
+        icon: grupo.active ? 'toggle_off' : 'toggle_on',
+        onClick: () => handleToggleActive(grupo),
+      },
+      { label: 'Eliminar', icon: 'delete', onClick: () => handleDelete(grupo), variant: 'danger' },
+    ];
+  };
+
+  const vacio =
+    filtro === 'eliminados'
+      ? 'No hay grupos eliminados'
+      : filtro === 'inactivos'
+        ? 'No hay grupos inactivos'
+        : 'No hay grupos registrados';
 
   return (
     <div className={styles.page}>
       <h1 className={styles.pageTitle}>Grupos</h1>
 
       {error && <div className={styles.error}>{error}</div>}
+
+      <div className={styles.filtros}>
+        <span className={styles.filtrosLabel}>
+          <span className="material-icons">filter_list</span>
+          Mostrar:
+        </span>
+        {FILTROS.map((f) => (
+          <button
+            key={f.valor}
+            type="button"
+            className={`${styles.filtroBtn} ${filtro === f.valor ? styles.filtroBtnActive : ''}`}
+            aria-pressed={filtro === f.valor}
+            onClick={() => setFiltro(f.valor)}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
 
       {loading ? (
         <p>Cargando...</p>
@@ -235,8 +316,9 @@ export default function GruposPage() {
           actions={getActions}
           onAdd={openCreate}
           addLabel="Nuevo Grupo"
-          emptyMessage="No hay grupos registrados"
+          emptyMessage={vacio}
           searchPlaceholder="Buscar grupo..."
+          initialSorting={[{ id: 'fechaInicio', desc: false }]}
         />
       )}
 

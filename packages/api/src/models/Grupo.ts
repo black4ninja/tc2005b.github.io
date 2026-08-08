@@ -13,18 +13,31 @@ export class Grupo extends BaseModel {
     this.set('name', name);
   }
 
+  /**
+   * Inicio y fin del grupo. Son fechas de CALENDARIO, sin hora: el día en que
+   * arranca el semestre, no un instante. Parse solo tiene `Date`, así que se
+   * guardan canónicamente a **medianoche UTC** (`2026-08-10T00:00:00Z`) y hay
+   * que leerlas y pintarlas en UTC. Interpretarlas en la zona del navegador
+   * las corre un día hacia atrás en todo México: ver `parseFechaDia()` en
+   * grupos.controller y `formatDate()` en GruposPage.
+   *
+   * `undefined` QUITA el campo (unset), que es como se borra una fecha ya
+   * puesta: un `set(campo, undefined)` no lo elimina del objeto.
+   */
   getFechaInicio(): Date | undefined {
     return this.get('fechaInicio');
   }
-  setFechaInicio(date: Date): void {
-    this.set('fechaInicio', date);
+  setFechaInicio(date: Date | undefined): void {
+    if (date === undefined) this.unset('fechaInicio');
+    else this.set('fechaInicio', date);
   }
 
   getFechaFin(): Date | undefined {
     return this.get('fechaFin');
   }
-  setFechaFin(date: Date): void {
-    this.set('fechaFin', date);
+  setFechaFin(date: Date | undefined): void {
+    if (date === undefined) this.unset('fechaFin');
+    else this.set('fechaFin', date);
   }
 
   getSalon(): string {
@@ -117,6 +130,9 @@ export class Grupo extends BaseModel {
       // habilitado). Vacío = todo habilitado.
       modulosDeshabilitados: this.getModulosDeshabilitados(),
       active: this.get('active'),
+      // El borrado es lógico: con `?estado=eliminados|todos` el listado devuelve
+      // grupos borrados y la UI necesita distinguirlos de un simple inactivo.
+      exists: this.get('exists') !== false,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };

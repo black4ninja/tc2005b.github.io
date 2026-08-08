@@ -21,8 +21,10 @@ interface GrupoData {
 
 interface GrupoSavePayload {
   name: string;
-  fechaInicio?: string;
-  fechaFin?: string;
+  /** `null` = quitar la fecha. NO `undefined`: JSON.stringify lo borra del
+   *  cuerpo y el servidor no puede distinguirlo de "no toques este campo". */
+  fechaInicio?: string | null;
+  fechaFin?: string | null;
   admins?: string[];
   urlAgendaEntrevistas?: string;
 }
@@ -37,6 +39,13 @@ interface GrupoFormProps {
   loading?: boolean;
 }
 
+/**
+ * Fecha del API → valor de un `<input type="date">` (`YYYY-MM-DD`).
+ *
+ * Vía `toISOString()`, es decir en UTC, que es donde viven estas fechas: son
+ * días de calendario guardados a medianoche UTC. Leerlas en la zona del
+ * navegador (`getFullYear()` y compañía) restaría un día en todo México.
+ */
 function toDateString(value?: string | Date): string {
   if (!value) return '';
   const d = typeof value === 'string' ? new Date(value) : value;
@@ -78,8 +87,10 @@ export default function GrupoForm({ grupo, admins = [], onSave, onCancel, loadin
     setErrorAgenda('');
     onSave({
       name: name.trim(),
-      fechaInicio: fechaInicio || undefined,
-      fechaFin: fechaFin || undefined,
+      // Campo vacío = null = quitar la fecha (antes iba `undefined`, que se caía
+      // del JSON: la fecha se quedaba puesta y no había forma de borrarla).
+      fechaInicio: fechaInicio || null,
+      fechaFin: fechaFin || null,
       admins: adminsSel,
       // Cadena vacía = quitar el enlace del grupo.
       urlAgendaEntrevistas: url,
@@ -137,25 +148,53 @@ export default function GrupoForm({ grupo, admins = [], onSave, onCancel, loadin
         Aparece como “Agendar Entrevistas” en el menú del grupo y en el de sus alumnos.
         Déjala vacía para no mostrar el enlace.
       </p>
+      {/* Ambas fechas son opcionales, así que se pueden dejar en blanco. El botón
+          "Quitar" existe porque vaciar un <input type="date"> a mano es un engorro
+          (hay que borrar día, mes y año por separado) y en algunos navegadores
+          directamente no se puede. */}
       <div className={styles.field}>
         <label className={styles.label}>Fecha de inicio</label>
-        <input
-          type="date"
-          className={styles.dateInput}
-          value={fechaInicio}
-          onChange={(e) => setFechaInicio(e.target.value)}
-          disabled={loading}
-        />
+        <div className={styles.dateRow}>
+          <input
+            type="date"
+            className={styles.dateInput}
+            value={fechaInicio}
+            onChange={(e) => setFechaInicio(e.target.value)}
+            disabled={loading}
+          />
+          {fechaInicio && (
+            <button
+              type="button"
+              className={styles.clearDate}
+              onClick={() => setFechaInicio('')}
+              disabled={loading}
+            >
+              Quitar
+            </button>
+          )}
+        </div>
       </div>
       <div className={styles.field}>
         <label className={styles.label}>Fecha de fin</label>
-        <input
-          type="date"
-          className={styles.dateInput}
-          value={fechaFin}
-          onChange={(e) => setFechaFin(e.target.value)}
-          disabled={loading}
-        />
+        <div className={styles.dateRow}>
+          <input
+            type="date"
+            className={styles.dateInput}
+            value={fechaFin}
+            onChange={(e) => setFechaFin(e.target.value)}
+            disabled={loading}
+          />
+          {fechaFin && (
+            <button
+              type="button"
+              className={styles.clearDate}
+              onClick={() => setFechaFin('')}
+              disabled={loading}
+            >
+              Quitar
+            </button>
+          )}
+        </div>
       </div>
       <div className={styles.actions}>
         <DashButton variant="outline" onClick={onCancel} disabled={loading}>
