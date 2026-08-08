@@ -91,6 +91,40 @@ stop
     expect(bucle.aristas.some((r) => r.origen === paso.id && r.destino === cond.id)).toBe(true);
   });
 
+  it('rotula la rama implícita del elseif y la salida del while', async () => {
+    // `decisiones-con-salidas` exige que TODA salida de una decisión vaya
+    // rotulada. Sin respaldo, la rama que PlantUML dibuja sin texto suspendía un
+    // diagrama correcto por una arista que el alumno no escribió.
+    const conElseif = `@startuml
+start
+if (A?) then (si)
+  :Uno;
+elseif (B?) then (si)
+  :Dos;
+else (no)
+  :Tres;
+endif
+stop
+@enduml`;
+    const r = await evaluar('actividad', conElseif, [{ tipo: 'decisiones-con-salidas' }]);
+    expect(r.veredicto).toBe('aceptado');
+
+    const bucle = `@startuml
+start
+while (Quedan?) is (si)
+  :Procesar;
+endwhile (no)
+stop
+@enduml`;
+    const r2 = await evaluar('actividad', bucle, [{ tipo: 'decisiones-con-salidas' }]);
+    expect(r2.veredicto).toBe('aceptado');
+    const m2 = normalizarActividad(bucle);
+    const cond = m2.nodos.find((x) => x.nombre === 'Quedan?')!;
+    expect(
+      m2.aristas.filter((x) => x.origen === cond.id).map((x) => x.etiqueta).sort(),
+    ).toEqual(['no', 'si']);
+  });
+
   it('lee una acción repartida en varias líneas', () => {
     const m2 = normalizarActividad(
       '@startuml\nstart\n:Registrar la\n devolucion completa;\nstop\n@enduml',

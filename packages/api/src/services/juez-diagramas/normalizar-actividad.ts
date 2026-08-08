@@ -49,6 +49,18 @@ const SI = /^if\s*\((.*?)\)\s*then\s*(?:\((.*?)\))?$/i;
 const SI_NO_SI = /^elseif\s*\((.*?)\)\s*then\s*(?:\((.*?)\))?$/i;
 const SI_NO = /^else\s*(?:\((.*?)\))?$/i;
 const MIENTRAS = /^while\s*\((.*?)\)\s*(?:is\s*\((.*?)\))?$/i;
+const FIN_MIENTRAS = /^endwhile\s*(?:\((.*?)\))?$/i;
+
+/**
+ * Rótulo de la rama implícita de un `elseif` y de la salida de un `while`.
+ *
+ * PlantUML no obliga a escribirlos, pero `decisiones-con-salidas` exige que toda
+ * salida de una decisión vaya rotulada —si no, el diagrama no dice cuál se toma—
+ * y sin este respaldo esa comprobación suspendería un diagrama correcto por una
+ * arista que el alumno no escribió. Se deriva, no se inventa: es exactamente lo
+ * que significa la rama que el motor dibuja sin texto.
+ */
+const RAMA_IMPLICITA = 'si no';
 const CALLE = /^\|([^|]*)\|$/;
 
 /** Directivas que no aportan modelo. Misma lista que el parser declarativo. */
@@ -206,8 +218,9 @@ export function normalizarActividad(codigo: string): ModeloDiagrama {
       const ctx = pila[pila.length - 1];
       if (!ctx || ctx.clase !== 'if') throw error(numero, 'hay un «elseif» sin su «if».');
       ctx.acumuladas.push(...pendientes);
-      // Una condición encadenada es OTRA decisión, colgada de la anterior.
-      pendientes = [{ id: ctx.cabeza }];
+      // Una condición encadenada es OTRA decisión, colgada de la anterior por
+      // su rama negativa.
+      pendientes = [{ id: ctx.cabeza, etiqueta: RAMA_IMPLICITA }];
       const cabeza = crear(sinosi[1].trim() || 'decisión', 'decision');
       ctx.cabeza = cabeza;
       pendientes = [{ id: cabeza, etiqueta: sinosi[2]?.trim() || undefined }];
@@ -257,13 +270,16 @@ export function normalizarActividad(codigo: string): ModeloDiagrama {
       pendientes = [{ id: cabeza, etiqueta: mientras[2]?.trim() || undefined }];
       continue;
     }
-    if (minuscula === 'endwhile' || minuscula.startsWith('endwhile ')) {
+    const finMientras = FIN_MIENTRAS.exec(linea);
+    if (finMientras) {
       const ctx = pila.pop();
       if (!ctx || ctx.clase !== 'while') throw error(numero, 'hay un «endwhile» sin su «while».');
       // El cuerpo vuelve a la condición: es lo que hace que sea un bucle y no
       // una secuencia, y sin esta arista `nodos-alcanzables` mentiría.
       conectar(ctx.cabeza);
-      pendientes = [{ id: ctx.cabeza }];
+      // La salida del bucle lleva la guarda de `endwhile (no)` si el alumno la
+      // escribió; si no, la implícita.
+      pendientes = [{ id: ctx.cabeza, etiqueta: finMientras[1]?.trim() || RAMA_IMPLICITA }];
       continue;
     }
 
