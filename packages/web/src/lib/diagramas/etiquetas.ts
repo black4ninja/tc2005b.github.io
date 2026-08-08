@@ -5,13 +5,12 @@ import {
   esJuzgable,
   etiquetaMotor,
   etiquetaTipo,
-  motorPorOmision,
-  motoresDe,
-  plantilla,
+  posicionDeTipo,
   type GrupoDeTipos,
   type Motor,
   type TipoDiagramaDef,
-} from '@tc2005b/diagramas-catalogo';
+  type TipoJuzgable,
+} from '@tc2005b/diagramas-catalogo/catalogo';
 
 /**
  * Puerta del cliente al catálogo compartido de tipos de diagrama.
@@ -21,11 +20,13 @@ import {
  * dos listas paralelas se desincronizan: el síntoma es un tipo que el servidor
  * sirve y el cliente pinta como su clave cruda.
  *
- * Este fichero no define nada; solo reexporta con los nombres que usan las
- * pantallas y añade lo que solo interesa aquí.
+ * Se importa la subruta `/catalogo` y NO el barrel a propósito: el barrel
+ * arrastra la tabla de plantillas de arranque, decenas de kilobytes que las
+ * pantallas de listado —que solo necesitan un rótulo— no pintan nunca. Lo que
+ * sí necesita plantillas vive en `plantillas.ts`, al lado.
  */
 
-export type { GrupoDeTipos, Motor, TipoDiagramaDef };
+export type { GrupoDeTipos, Motor, TipoDiagramaDef, TipoJuzgable };
 
 /**
  * TODOS los tipos del catálogo, en orden canónico. Es lo que ofrece el modo
@@ -44,19 +45,15 @@ export const MOTORES_DIAGRAMA = MOTORES;
 
 export const etiquetaTipoDiagrama = etiquetaTipo;
 export const etiquetaMotorDiagrama = etiquetaMotor;
-export const plantillaDiagrama = plantilla;
-export const motoresDeTipo = motoresDe;
-export const motorPorOmisionDeTipo = motorPorOmision;
 export const esTipoJuzgable = esJuzgable;
 export const agrupadoDiagramas = agrupado;
+export const posicionDeTipoDiagrama = posicionDeTipo;
 
 /**
- * Posición de un tipo en el orden del catálogo, para ordenar listas que vienen
- * del servidor. Los tipos que este cliente aún no conozca van al final en vez de
- * desaparecer.
+ * Motores en los que el JUEZ acepta ese tipo. Es lo que puede ofrecer el editor
+ * de autoría: cualquier otro motor produce un ejercicio cuyo envío responde 500
+ * porque no hay normalizador que lo lea.
  */
-const POSICION = new Map(TIPOS.map((t, i) => [t.key, i]));
-
-export function posicionDeTipo(key: string): number {
-  return POSICION.get(key) ?? TIPOS.length;
+export function motoresJuezDeTipo(key: string): Motor[] {
+  return TIPOS.find((t) => t.key === key)?.motoresJuez ?? [];
 }

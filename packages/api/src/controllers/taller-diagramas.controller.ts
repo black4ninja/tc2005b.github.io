@@ -3,7 +3,7 @@ import Parse from 'parse/node';
 import { AppUser } from '../models/AppUser.js';
 import { DiagramaTaller } from '../models/DiagramaTaller.js';
 import { resolverAccesoDiagramas } from '../services/diagramas-alumno.service.js';
-import { esTipoConocido, motoresDe } from '@tc2005b/diagramas-catalogo';
+import { esTipoConocido, motorPorOmision, motoresDe } from '@tc2005b/diagramas-catalogo';
 import { type Motor } from '../services/juez-diagramas/index.js';
 
 /**
@@ -43,23 +43,33 @@ async function tieneAcceso(user: AppUser): Promise<boolean> {
  * Tipo del CATÁLOGO, no de los que el juez sabe evaluar.
  *
  * Aquí no se corrige nada, así que la única condición es que algún motor sepa
- * dibujarlo. Antes se acotaba a los ocho tipos del juez y todo lo demás caía en
- * `clases` sin avisar: quien guardaba un Gantt lo recuperaba etiquetado como
- * diagrama de clases, y el motor de la vista previa dejaba de corresponderle.
+ * dibujarlo. Un tipo desconocido se RECHAZA, siguiendo el mismo patrón que
+ * `normalizarNombre` y `normalizarCodigo`: adivinar `clases` es justo la
+ * corrupción silenciosa que este catálogo vino a quitar —el trabajo se guarda
+ * mal etiquetado y nadie se entera—, solo que con menos entradas afectadas.
  */
-function normalizarTipo(valor: unknown): string {
-  return typeof valor === 'string' && esTipoConocido(valor) ? valor : 'clases';
+function normalizarTipo(valor: unknown): string | { error: string } {
+  if (valor === undefined || valor === null) return 'clases';
+  if (typeof valor !== 'string' || !esTipoConocido(valor)) {
+    return { error: 'El tipo de diagrama no existe en el catálogo' };
+  }
+  return valor;
 }
 
 /**
  * Motor válido PARA ESE TIPO. La mayoría del catálogo existe en un solo motor, y
  * guardar la combinación imposible dejaría el diagrama sin poder dibujarse al
  * reabrirlo.
+ *
+ * El respaldo es `motorPorOmision` y no `motoresDe(tipo)[0]`: los tres tipos de
+ * arquitectura se dibujan también en Mermaid con una aproximación en `flowchart`
+ * que su notación rechaza, y `motoresDe` devuelve Mermaid primero.
  */
 function normalizarMotor(valor: unknown, tipo: string): Motor {
   const posibles = motoresDe(tipo);
   if (posibles.includes(valor as Motor)) return valor as Motor;
-  return posibles[0] ?? (MOTORES.includes(valor as Motor) ? (valor as Motor) : 'mermaid');
+  if (posibles.length) return motorPorOmision(tipo);
+  return MOTORES.includes(valor as Motor) ? (valor as Motor) : 'mermaid';
 }
 
 /** Nombre válido y acotado, o el error a devolver. */
@@ -157,13 +167,17 @@ export async function createDiagramaTaller(req: Request, res: Response): Promise
     res.status(400).json({ status: 'error', message: codigoValido.error });
     return;
   }
+  const tipo = normalizarTipo(tipoDiagrama);
+  if (typeof tipo !== 'string') {
+    res.status(400).json({ status: 'error', message: tipo.error });
+    return;
+  }
 
   try {
     if (!(await tieneAcceso(user))) {
       res.status(404).json({ status: 'error', message: 'No encontrado' });
       return;
     }
-    const tipo = normalizarTipo(tipoDiagrama);
     const diagrama = new DiagramaTaller().initDefaults();
     diagrama.setAutor(user);
     diagrama.setNombre(nombreValido);
@@ -207,8 +221,22 @@ export async function updateDiagramaTaller(req: Request, res: Response): Promise
     // El tipo se fija ANTES que el motor porque lo acota: cambiar a un tipo que
     // solo existe en un motor tiene que arrastrar el motor con él, o el diagrama
     // quedaría guardado en una combinación que no se puede dibujar.
-    if (tipoDiagrama !== undefined) diagrama.setTipoDiagrama(normalizarTipo(tipoDiagrama));
-    if (motor !== undefined) diagrama.setMotor(normalizarMotor(motor, diagrama.getTipoDiagrama()));
+    if (tipoDiagrama !== undefined) {
+      const tipo = normalizarTipo(tipoDiagrama);
+      if (typeof tipo !== 'string') {
+        res.status(400).json({ status: 'error', message: tipo.error });
+        return;
+      }
+      diagrama.setTipoDiagrama(tipo);
+    }
+    // Se reacota SIEMPRE, no solo cuando llega `motor`: un PUT que cambia solo
+    // el tipo —el renombrado de la lista ya demuestra que los PUT parciales son
+    // una forma admitida— dejaría si no el motor anterior sobre un tipo que no
+    // sabe dibujar, que es exactamente el par imposible que esto evita.
+    if (tipoDiagrama !== undefined || motor !== undefined) {
+      const deseado = motor !== undefined ? motor : diagrama.getMotor();
+      diagrama.setMotor(normalizarMotor(deseado, diagrama.getTipoDiagrama()));
+    }
 
     await diagrama.save(null, { useMasterKey: true });
     res.json({ status: 'ok', diagrama: diagrama.toSafeJSON() });

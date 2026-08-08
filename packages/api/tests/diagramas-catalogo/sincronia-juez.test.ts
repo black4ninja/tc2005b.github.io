@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { KEYS_JUZGABLES, esJuzgable, tipoDiagrama } from '@tc2005b/diagramas-catalogo';
-import { TIPOS_DIAGRAMA } from '../../src/services/juez-diagramas/index.js';
+import {
+  SOPORTADOS_MERMAID,
+  SOPORTADOS_PLANTUML,
+  TIPOS_DIAGRAMA,
+} from '../../src/services/juez-diagramas/index.js';
 
 /**
  * El juez tiene su propia unión de tipos (`juez-diagramas/tipos.ts`) porque es
@@ -11,9 +15,14 @@ import { TIPOS_DIAGRAMA } from '../../src/services/juez-diagramas/index.js';
  * `switch` sean exhaustivos, y el catálogo es un paquete de datos en JavaScript
  * plano —igual que `contenido-pipeline`— sin compilación. En vez de acoplarlos,
  * esta prueba comprueba que no divergen, que es la propiedad que de verdad
- * importa: un tipo declarado juzgable sin normalizador crea ejercicios que
- * fallan siempre, y uno normalizado pero no declarado queda inalcanzable desde
- * el editor.
+ * importa: un tipo declarado juzgable sin normalizador crea ejercicios cuyos
+ * envíos responden 500, y uno normalizado pero no declarado queda inalcanzable
+ * desde el editor.
+ *
+ * Las listas por motor se DERIVAN de los propios normalizadores y no se escriben
+ * a mano: copiarlas aquí sería una cuarta lista paralela dentro de la prueba que
+ * existe para evitarlas, y al añadir un motor a un tipo la prueba fallaría
+ * señalando al catálogo en vez de a sí misma.
  */
 describe('el catálogo y el juez declaran los mismos tipos evaluables', () => {
   it('coinciden como conjunto', () => {
@@ -21,18 +30,22 @@ describe('el catálogo y el juez declaran los mismos tipos evaluables', () => {
   });
 
   it('reparte los motores como los reparten los normalizadores', () => {
-    // Mermaid lee los cinco de `normalizar-mermaid.ts`; PlantUML, los tres de
-    // `normalizar-plantuml.ts`. Ningún tipo se evalúa hoy en los dos.
-    const porMermaid = ['clases', 'secuencia', 'estados', 'er', 'flujo'];
-    const porPlantuml = ['casos-de-uso', 'componentes', 'paquetes'];
-
-    for (const key of porMermaid) {
-      expect(esJuzgable(key, 'mermaid'), key).toBe(true);
-      expect(esJuzgable(key, 'plantuml'), key).toBe(false);
+    for (const key of TIPOS_DIAGRAMA) {
+      expect(esJuzgable(key, 'mermaid'), `${key} en Mermaid`).toBe(SOPORTADOS_MERMAID.includes(key));
+      expect(esJuzgable(key, 'plantuml'), `${key} en PlantUML`).toBe(
+        SOPORTADOS_PLANTUML.includes(key),
+      );
     }
-    for (const key of porPlantuml) {
-      expect(esJuzgable(key, 'plantuml'), key).toBe(true);
-      expect(esJuzgable(key, 'mermaid'), key).toBe(false);
+  });
+
+  it('no deja ningún tipo evaluable sin normalizador', () => {
+    // El caso que la comprobación anterior no cubre por sí sola: un tipo cuyo
+    // `motoresJuez` esté vacío coincidiría en ambos lados con `false` y pasaría.
+    for (const key of TIPOS_DIAGRAMA) {
+      expect(
+        SOPORTADOS_MERMAID.includes(key) || SOPORTADOS_PLANTUML.includes(key),
+        `${key} se declara evaluable pero ningún normalizador lo lee`,
+      ).toBe(true);
     }
   });
 

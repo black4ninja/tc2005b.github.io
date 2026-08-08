@@ -87,19 +87,15 @@ export type MotorDiagrama = 'mermaid' | 'plantuml';
  * EJERCICIO. No es el catálogo entero: el modo libre admite cualquier tipo que
  * algún motor sepa dibujar, y ahí el tipo viaja como `string`.
  *
- * La lista completa vive en `@tc2005b/diagramas-catalogo`; esta unión se queda
- * porque es la que da seguridad de tipos al editor de autoría, y una prueba de
- * la API comprueba que ambas no se separen.
+ * Se REEXPORTA del catálogo en vez de repetirse. Escrita a mano aquí quedaba sin
+ * ninguna atadura: al añadir un tipo evaluable, el catálogo y el juez seguían
+ * sincronizados —lo comprueba `sincronia-juez.test.ts`—, la suite seguía verde y
+ * esta unión se quedaba atrás en silencio, con el `as TipoDiagrama` del editor
+ * colándolo sin que el compilador pudiera decir nada.
  */
-export type TipoDiagrama =
-  | 'clases'
-  | 'secuencia'
-  | 'estados'
-  | 'er'
-  | 'flujo'
-  | 'casos-de-uso'
-  | 'componentes'
-  | 'paquetes';
+import type { TipoJuzgable } from '@tc2005b/diagramas-catalogo/catalogo';
+
+export type TipoDiagrama = TipoJuzgable;
 
 /**
  * Una comprobación del catálogo, ya parametrizada por el autor.

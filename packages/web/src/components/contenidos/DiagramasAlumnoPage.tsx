@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router';
 import { useCargaGated } from '../../hooks/useCargaGated';
 import { useDiagramasBase } from '../../config/rutasDiagramas';
-import { etiquetaTipoDiagrama, posicionDeTipo } from '../../lib/diagramas/etiquetas';
+import { etiquetaTipoDiagrama, posicionDeTipoDiagrama } from '../../lib/diagramas/etiquetas';
 import {
   agruparEnBloques,
   type BloqueRef,
@@ -58,7 +58,9 @@ export default function DiagramasAlumnoPage() {
    */
   const tiposPresentes = useMemo(() => {
     const presentes = [...new Set(ejercicios.map((e) => e.tipoDiagrama))];
-    return presentes.sort((a, b) => posicionDeTipo(a) - posicionDeTipo(b) || a.localeCompare(b));
+    return presentes.sort(
+      (a, b) => posicionDeTipoDiagrama(a) - posicionDeTipoDiagrama(b) || a.localeCompare(b),
+    );
   }, [ejercicios]);
 
   const filtrados =

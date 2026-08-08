@@ -9,10 +9,12 @@ import {
   agrupadoDiagramas,
   etiquetaMotorDiagrama,
   etiquetaTipoDiagrama,
+} from '../../lib/diagramas/etiquetas';
+import {
   motorPorOmisionDeTipo,
   motoresDeTipo,
   plantillaDiagrama,
-} from '../../lib/diagramas/etiquetas';
+} from '../../lib/diagramas/plantillas';
 import type { MotorDiagrama } from '../../types/contenidos';
 // La MISMA vista previa del solver y del editor de autoría, no una copia: si el
 // taller dibujara con otro componente, un diagrama podría verse bien aquí y
@@ -141,9 +143,11 @@ function aTipo(valor: string): string {
  */
 function aMotor(valor: string, tipo: string): MotorDiagrama {
   const posibles = motoresDeTipo(tipo);
-  return posibles.includes(valor as MotorDiagrama)
-    ? (valor as MotorDiagrama)
-    : posibles[0] ?? MOTOR_POR_OMISION;
+  if (posibles.includes(valor as MotorDiagrama)) return valor as MotorDiagrama;
+  // `motorPorOmisionDeTipo` y NO `posibles[0]`: los tres tipos de arquitectura
+  // se dibujan también en Mermaid con una aproximación en `flowchart`, y elegir
+  // esa entregaría al alumno un esqueleto que la notación del curso rechaza.
+  return motorPorOmisionDeTipo(tipo);
 }
 
 function estadoDesde(d: DiagramaCompleto): Estado {
@@ -319,6 +323,18 @@ export default function TallerDiagramasPage() {
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
   const [pendiente, setPendiente] = useState<Pendiente | null>(null);
+  /**
+   * Aviso de que el motor cambió solo, al elegir un tipo que el anterior no
+   * dibuja, teniendo el alumno código propio en el editor.
+   *
+   * Es un estado propio y no un `aviso` porque este NO puede caducar a los tres
+   * segundos: describe por qué la vista previa dejó de funcionar y cómo
+   * deshacerlo, y esa explicación tiene que seguir en pantalla mientras el
+   * problema siga ahí.
+   */
+  const [motorCambiado, setMotorCambiado] = useState<
+    { de: MotorDiagrama; a: MotorDiagrama; tipo: string } | null
+  >(null);
   const [renombrando, setRenombrando] = useState<{ id: string; valor: string } | null>(null);
   const [confirmandoBorrado, setConfirmandoBorrado] = useState<string | null>(null);
 
@@ -433,12 +449,25 @@ export default function TallerDiagramasPage() {
    * sobre un diagrama que nadie ha tocado.
    */
   function cambiarPlantilla(motor: MotorDiagrama, tipo: string) {
-    // Cambiar de tipo puede dejar el motor sin plantilla —la mayoría del
-    // catálogo existe en uno solo—, así que se reajusta antes de nada.
+    // Cambiar de tipo puede dejar el motor sin plantilla —solo 12 de los tipos
+    // del catálogo existen en los dos—, así que se reajusta antes de nada.
     const motorValido = aMotor(motor, tipo);
     const intacto = !editor.codigo.trim() || editor.codigo === plantillaCargada.current;
     const codigo = intacto ? plantillaDiagrama(tipo, motorValido) : editor.codigo;
     if (intacto) plantillaCargada.current = codigo;
+
+    /**
+     * Cambiar el motor por debajo de un diagrama que el alumno SÍ escribió deja
+     * la vista previa fallando sobre un texto que él no tocó, y sin explicación
+     * el error parece suyo. No se puede evitar el cambio —el tipo elegido no
+     * existe en el motor anterior—, así que se dice, y se dice cómo deshacerlo:
+     * el propio selector de tipo.
+     */
+    setMotorCambiado(
+      !intacto && motorValido !== editor.motor
+        ? { de: editor.motor, a: motorValido, tipo }
+        : null,
+    );
 
     const siguiente: Estado = { ...editor, motor: motorValido, tipo, codigo };
     setEditor(siguiente);
@@ -458,6 +487,8 @@ export default function TallerDiagramasPage() {
     // El aviso describía un borrador que ya no está en pantalla; dejarlo diría
     // que hay trabajo sin guardar sobre algo recién empezado.
     setAvisoBorrador(false);
+    // Ídem para el del motor: hablaba del código anterior, no de este.
+    setMotorCambiado(null);
   }
 
   const abrir = useCallback(
@@ -478,6 +509,7 @@ export default function TallerDiagramasPage() {
         setReferencia(siguiente);
         setSeleccion(id);
         setAvisoBorrador(false);
+        setMotorCambiado(null);
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -832,6 +864,26 @@ export default function TallerDiagramasPage() {
                 </button>
                 <button type="button" className={styles.btnMini} onClick={descartarBorrador}>
                   Descartar recuperación
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* El motor cambió solo bajo un diagrama que el alumno sí escribió.
+              Sin decirlo, la vista previa falla sobre un texto que él no tocó y
+              el error parece suyo. */}
+          {motorCambiado && (
+            <div className={styles.confirmarDescarte} role="status">
+              <p className={styles.confirmarTexto}>
+                Se cambió el motor a {etiquetaMotorDiagrama(motorCambiado.a)} porque «
+                {etiquetaTipoDiagrama(motorCambiado.tipo)}» no existe en{' '}
+                {etiquetaMotorDiagrama(motorCambiado.de)}. Tu código sigue igual y puede que ya no se
+                dibuje; para recuperarlo, vuelve a elegir un tipo de{' '}
+                {etiquetaMotorDiagrama(motorCambiado.de)} en el selector de arriba.
+              </p>
+              <div className={styles.itemAcciones}>
+                <button type="button" className={styles.btnMini} onClick={() => setMotorCambiado(null)}>
+                  Entendido
                 </button>
               </div>
             </div>

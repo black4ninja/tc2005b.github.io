@@ -22,7 +22,18 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     que el envío del alumno se rechaza.
   - Cada tipo trae su **esqueleto de arranque**, y una prueba pasa todas las
     plantillas de Mermaid por el parser real: una plantilla rota no falla en el
-    build, falla en la cara del alumno que abre el editor.
+    build, falla en la cara del alumno que abre el editor. Las de PlantUML no se
+    pueden validar en CI —su motor está compilado con TeaVM y no corre en Node—,
+    así que se añade el arnés manual
+    `packages/web/herramientas/verificar-plantuml.html`, que las pinta con el
+    motor real del navegador y detecta el cartel de error que PlantUML dibuja
+    DENTRO del SVG en vez de lanzar.
+  - El **editor de autoría** ya no permite emparejar un tipo con un motor que el
+    juez no sabe leer, y el API rechaza el par con 400. Antes se podía guardar
+    un ejercicio de «Paquetes» en Mermaid: se guardaba sin protestar y **cada
+    envío de alumno respondía 500**, dejando el ejercicio irresoluble para todo
+    el grupo. El caso peor era en un diagrama de contexto, donde el juez lanza
+    antes siquiera de mirar el diagrama del alumno.
   - Se anota que `er` y `flujo` **no son notación UML** (Chen y diagrama de
     flujo); se conservan por su uso en el curso, con `actividad` como el
     equivalente UML de este último.
@@ -728,9 +739,16 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 - **El taller de diagramas guardaba mal el tipo.** El API acotaba `tipoDiagrama`
   a los ocho tipos del juez y convertía **en silencio** cualquier otro a
   `clases`, así que un diagrama guardado con un tipo del catálogo se recuperaba
-  mal etiquetado y con un motor que podía no corresponderle. Ahora se valida
-  contra el catálogo, y el motor se acota a los que saben dibujar ESE tipo —tanto
-  en el servidor como en los selectores de la pantalla—.
+  mal etiquetado y con un motor que podía no corresponderle. Ahora un tipo
+  desconocido se rechaza con 400 —adivinar era la corrupción silenciosa que había
+  que quitar—, y el motor se acota a los que saben dibujar ESE tipo, en el
+  servidor y en los selectores. Al cambiar de tipo sobre un diagrama ya escrito,
+  el taller **avisa** de que ha cambiado el motor y de cómo deshacerlo, en vez de
+  dejar la vista previa fallando sobre un texto que el alumno no tocó.
+- **La plantilla de topología de red no se dibujaba.** `nwdiag` necesita
+  `@startnwdiag`, no `@startuml`; con `@startuml` el motor pinta un cartel de
+  error. Lo encontró la primera pasada del arnés de verificación, que la
+  comprobación estructural daba por buena.
 - **El juez declaraba ambigua una máquina de estados escrita correctamente.** Las
   guardas se comparaban con `clave()`, que borra todo lo que no sea letra o
   dígito —y en una guarda los operadores son justo lo que la distingue de su

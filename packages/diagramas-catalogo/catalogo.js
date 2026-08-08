@@ -526,3 +526,97 @@ export const TIPOS = [
     motoresJuez: [],
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Consultas
+//
+// Viven aquí, junto a las definiciones, y NO en el barrel: quien solo necesita
+// un rótulo —el listado del alumno, el solver, la tabla de autoría— importa
+// `@tc2005b/diagramas-catalogo/catalogo` y no arrastra la tabla de plantillas,
+// que son varias decenas de kilobytes de esqueletos que esas pantallas no
+// pintan nunca.
+// ---------------------------------------------------------------------------
+
+export const MOTORES = [
+  { key: 'mermaid', label: 'Mermaid' },
+  { key: 'plantuml', label: 'PlantUML' },
+];
+
+const POR_KEY = new Map(TIPOS.map((t) => [t.key, t]));
+
+/** Todas las claves, en el orden canónico del catálogo. */
+export const KEYS = TIPOS.map((t) => t.key);
+
+/**
+ * Claves que el JUEZ sabe evaluar en al menos un motor.
+ *
+ * Es lo que valida el controlador al dar de alta un ejercicio: un ejercicio de
+ * un tipo sin normalizador no se puede corregir, así que no debe poder crearse.
+ * El modo libre NO usa esta lista —ahí vale cualquier tipo con plantilla—.
+ */
+export const KEYS_JUZGABLES = TIPOS.filter((t) => t.motoresJuez.length > 0).map((t) => t.key);
+
+/** La definición de un tipo, o `undefined` si la clave no existe. */
+export function tipoDiagrama(key) {
+  return POR_KEY.get(key);
+}
+
+export function esTipoConocido(key) {
+  return POR_KEY.has(key);
+}
+
+/**
+ * Rótulo visible de un tipo. Cae a la clave cruda si no se conoce, para que un
+ * dato más nuevo que este cliente se lea raro pero no rompa la pantalla.
+ */
+export function etiquetaTipo(key) {
+  return POR_KEY.get(key)?.label ?? key;
+}
+
+export function etiquetaMotor(key) {
+  return MOTORES.find((m) => m.key === key)?.label ?? key;
+}
+
+/** Si el juez sabe evaluar ese tipo en ese motor. */
+export function esJuzgable(key, motor) {
+  return POR_KEY.get(key)?.motoresJuez.includes(motor) ?? false;
+}
+
+const POSICION = new Map(TIPOS.map((t, i) => [t.key, i]));
+
+/**
+ * Posición de un tipo en el orden del catálogo, para ordenar listas que vienen
+ * del servidor. Los tipos que este cliente aún no conozca van al final en vez
+ * de desaparecer.
+ */
+export function posicionDeTipo(key) {
+  return POSICION.get(key) ?? TIPOS.length;
+}
+
+/**
+ * El catálogo agrupado tal y como se navega: primero los bloques del curso, en
+ * el orden del temario, y después los grupos del catálogo adicional.
+ *
+ * Se construye aquí y no en la pantalla porque el listado de ejercicios, el
+ * selector del modo libre y el editor de autoría tienen que ofrecer el MISMO
+ * agrupado; tres derivaciones independientes acabarían divergiendo.
+ *
+ * Se calcula UNA vez: el catálogo es estático y el taller lo consulta en cada
+ * render de su `<select>`.
+ */
+const AGRUPADO = (() => {
+  const grupo = (ambito, nombres) =>
+    nombres
+      .map((nombre) => ({
+        ambito,
+        nombre,
+        tipos: TIPOS.filter((t) => t.ambito === ambito && t.agrupacion === nombre),
+      }))
+      .filter((g) => g.tipos.length > 0);
+
+  return [...grupo('curso', BLOQUES_CURSO), ...grupo('catalogo', GRUPOS_CATALOGO)];
+})();
+
+export function agrupado() {
+  return AGRUPADO;
+}

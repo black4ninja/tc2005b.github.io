@@ -7,7 +7,8 @@
 export { evaluarDiagrama, parsear, type OpcionesEvaluacion, type DiagramaContexto } from './evaluar.js';
 export { CATALOGO, TIPOS_ASERCION, esTipoDeAsercionValido, nodosDuplicados } from './catalogo.js';
 export { describir } from './describir.js';
-export { normalizarMermaid } from './normalizar-mermaid.js';
+export { normalizarMermaid, SOPORTADOS_MERMAID } from './normalizar-mermaid.js';
+export { SOPORTADOS_PLANTUML } from './normalizar-plantuml.js';
 export {
   ErrorSintaxisDiagrama, TIPOS_DIAGRAMA, ROTULO_OCULTA, CODIGO_MAX,
   type Asercion, type Arista, type ContextoEvaluacion, type Mensaje, type Miembro,

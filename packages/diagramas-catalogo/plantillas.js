@@ -13,10 +13,17 @@
  * no tener plantilla: el alumno abre el editor y lo primero que ve es un error
  * que no escribió él.
  *
- * Las de PlantUML solo se comprueban estructuralmente (`@start…`/`@end…`
- * emparejados): el motor oficial está compilado con TeaVM y no corre en Node,
- * así que aquí no hay parser contra el que validarlas. Ver la cabecera de
- * `normalizar-plantuml.ts` para el detalle de por qué.
+ * Las de PlantUML no se pueden comprobar en CI: su motor está compilado con
+ * TeaVM y no corre en Node (ver la cabecera de `normalizar-plantuml.ts`). La
+ * prueba automática solo verifica que `@start…`/`@end…` estén emparejados, lo
+ * que NO basta —PlantUML no lanza ante una directiva que no entiende, dibuja un
+ * cartel de error dentro del propio SVG—.
+ *
+ * Por eso existe el arnés manual `packages/web/herramientas/verificar-plantuml.html`:
+ * levanta el motor real en el navegador, pinta las 23 plantillas y detecta ese
+ * cartel. **Hay que pasarlo al añadir o tocar una plantilla de PlantUML.** Su
+ * primera pasada ya encontró una que el regex daba por buena: `red` necesitaba
+ * `@startnwdiag`, no `@startuml`.
  */
 
 /** @type {Record<string, { mermaid?: string, plantuml?: string }>} */
@@ -284,7 +291,7 @@ stop
 
   flujo: {
     mermaid: `flowchart TD
-    inicio([Inicio]) --> validar{"Datos completos?"}
+    inicio([Inicio]) --> validar{"¿Datos completos?"}
     validar -- No --> avisar["Mostrar error"]
     validar -- Si --> registrar["Registrar solicitud"]
     registrar --> fin([Fin])
@@ -586,8 +593,14 @@ Project starts 2026-02-02
 `,
   },
 
+  /**
+   * Topología de red. Va con `@startnwdiag`, NO con `@startuml`: verificado
+   * contra el build de `@plantuml/core` que sirve el navegador, donde envolver
+   * el bloque `nwdiag { … }` en `@startuml` dibuja un cartel de error en vez
+   * del diagrama.
+   */
   red: {
-    plantuml: `@startuml
+    plantuml: `@startnwdiag
 nwdiag {
   network interna {
     address = "10.0.0.x"
@@ -600,7 +613,7 @@ nwdiag {
     baseDatos [address = "10.0.1.20"];
   }
 }
-@enduml
+@endnwdiag
 `,
   },
 
@@ -727,3 +740,43 @@ lineas:
 `,
   },
 };
+
+// ---------------------------------------------------------------------------
+// Consultas que dependen de las plantillas
+//
+// Separadas de `catalogo.js` a propósito: importarlas arrastra la tabla de
+// arriba, y solo el modo libre y el editor de autoría la necesitan.
+// ---------------------------------------------------------------------------
+import { MOTORES, tipoDiagrama } from './catalogo.js';
+
+const CLAVES_MOTOR = MOTORES.map((m) => m.key);
+
+/**
+ * Motores en los que el tipo se DIBUJA, es decir, en los que tiene plantilla.
+ * No confundir con `motoresJuez`; ver la cabecera de `catalogo.js`.
+ */
+export function motoresDe(key) {
+  const p = PLANTILLAS[key];
+  return p ? CLAVES_MOTOR.filter((m) => typeof p[m] === 'string') : [];
+}
+
+/** Esqueleto de arranque, o cadena vacía si esa combinación no se dibuja. */
+export function plantilla(key, motor) {
+  return PLANTILLAS[key]?.[motor] ?? '';
+}
+
+/**
+ * Motor por omisión de un tipo: el primero que el juez acepta y, si no hay
+ * ninguno, el primero que lo dibuja.
+ *
+ * El orden importa. Elegir el motor de dibujo antes que el del juez dejaría al
+ * alumno arrancando un ejercicio de clases en PlantUML —que se dibuja— para que
+ * el envío se rechazara después. Por el mismo motivo, cualquier código que
+ * tenga que ELEGIR un motor debe llamar aquí y no a `motoresDe(...)[0]`: los
+ * tres tipos de arquitectura se dibujan en Mermaid con una aproximación en
+ * `flowchart` que sus ejercicios rechazan.
+ */
+export function motorPorOmision(key) {
+  const def = tipoDiagrama(key);
+  return def?.motoresJuez[0] ?? motoresDe(key)[0] ?? 'mermaid';
+}

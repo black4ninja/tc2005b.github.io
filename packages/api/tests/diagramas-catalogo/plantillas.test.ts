@@ -17,10 +17,16 @@ import { instalarDom } from '../../src/services/juez-diagramas/entorno-dom.js';
  * build, falla en la cara del alumno que abre el editor y ve un error que no
  * escribió él.
  *
- * Las de Mermaid se pasan por el PARSER REAL, el mismo que usa el juez. Las de
- * PlantUML solo se comprueban estructuralmente: su motor está compilado con
- * TeaVM y no corre en Node (ver la cabecera de `normalizar-plantuml.ts`), así
- * que aquí no hay contra qué validarlas.
+ * Las de Mermaid se pasan por el PARSER REAL, el mismo que usa el juez.
+ *
+ * Las de PlantUML NO se pueden comprobar aquí: su motor está compilado con TeaVM
+ * y no corre en Node (ver la cabecera de `normalizar-plantuml.ts`). Lo que sigue
+ * es solo estructura —`@start…`/`@end…` emparejados— y **no basta**: PlantUML no
+ * lanza ante una directiva que no entiende, dibuja un cartel de error dentro del
+ * SVG. Para eso está el arnés manual
+ * `packages/web/herramientas/verificar-plantuml.html`, que las pinta con el
+ * motor real del navegador y hay que pasar al tocarlas. Su primera pasada
+ * encontró una que esta prueba daba por buena: `red` necesitaba `@startnwdiag`.
  */
 
 const conMermaid = KEYS.filter((k) => typeof PLANTILLAS[k]?.mermaid === 'string');

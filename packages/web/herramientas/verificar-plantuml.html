@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Verificación de plantillas PlantUML</title>
+    <style>
+      body { font: 14px/1.5 system-ui, sans-serif; margin: 24px; }
+      .ok { color: #047857; }
+      .mal { color: #b91c1c; font-weight: 600; }
+      pre { white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>Verificación de plantillas PlantUML</h1>
+    <p>
+      Arnés <strong>manual</strong>: las plantillas de PlantUML no se pueden validar en CI porque su
+      motor está compilado con TeaVM y no corre en Node. Aquí se levanta el motor real del navegador
+      —el mismo que usan el taller y el solver— y se pinta cada plantilla.
+    </p>
+    <p>
+      <strong>Hay que pasarlo al añadir o tocar una plantilla de PlantUML.</strong>
+      Uso: <code>cd packages/web &amp;&amp; npx vite</code> y abrir
+      <code>/herramientas/verificar-plantuml.html</code>.
+    </p>
+    <p id="estado">Ejecutando…</p>
+    <ul id="salida"></ul>
+
+    <script type="module">
+      import { PLANTILLAS } from '@tc2005b/diagramas-catalogo/plantillas';
+      import { renderizador } from '../src/lib/diagramas/plantuml.ts';
+
+      /**
+       * PlantUML no lanza ante una directiva que no entiende: dibuja un cartel de
+       * error DENTRO del SVG, con el banner de versión y la línea culpable. Buscar
+       * «error» a secas da falsos positivos —una acción rotulada «Mostrar error» ya
+       * los provoca—, así que se busca ese banner.
+       */
+      const CARTEL = /This version of PlantUML is|Syntax Error\?|\[From (textarea|string)/i;
+
+      const estado = document.getElementById('estado');
+      const salida = document.getElementById('salida');
+      const resultados = [];
+
+      for (const [key, porMotor] of Object.entries(PLANTILLAS)) {
+        if (typeof porMotor.plantuml !== 'string') continue;
+        const caja = document.createElement('div');
+        caja.style.display = 'none';
+        document.body.appendChild(caja);
+        let resultado;
+        try {
+          await renderizador.pintar(porMotor.plantuml, caja, false);
+          const texto = caja.querySelector('svg')?.textContent ?? '';
+          const malo = !caja.querySelector('svg') || CARTEL.test(texto);
+          resultado = { key, ok: !malo, detalle: malo ? texto.slice(0, 200) : '' };
+        } catch (e) {
+          resultado = { key, ok: false, detalle: String(e?.message ?? e).slice(0, 200) };
+        }
+        caja.remove();
+
+        resultados.push(resultado);
+        const li = document.createElement('li');
+        li.className = resultado.ok ? 'ok' : 'mal';
+        li.textContent = `${resultado.ok ? '✓' : '✗'} ${resultado.key}`;
+        if (resultado.detalle) {
+          const pre = document.createElement('pre');
+          pre.textContent = resultado.detalle;
+          li.appendChild(pre);
+        }
+        salida.appendChild(li);
+      }
+
+      const fallan = resultados.filter((r) => !r.ok);
+      estado.className = fallan.length ? 'mal' : 'ok';
+      estado.textContent = fallan.length
+        ? `${fallan.length} de ${resultados.length} plantillas NO se dibujan: ${fallan.map((r) => r.key).join(', ')}`
+        : `Las ${resultados.length} plantillas de PlantUML se dibujan correctamente.`;
+
+      // Punto de enganche para automatizarlo desde un navegador dirigido.
+      window.__resultado = resultados;
+    </script>
+  </body>
+</html>
