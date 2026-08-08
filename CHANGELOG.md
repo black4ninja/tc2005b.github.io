@@ -8,6 +8,23 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Filtro por estado en el listado de grupos** (`/admin/grupos`): Activos —por
+  defecto—, Inactivos, Eliminados y Todos. Se resuelve en el servidor
+  (`GET /admin/grupos?estado=`), no filtrando en el cliente lo que ya se
+  descargó: de partida solo viajan los activos, y un grupo borrado solo sale del
+  servidor si se pide expresamente.
+  - Los grupos **eliminados** ahora se pueden consultar. El borrado siempre fue
+    lógico (`softDelete()` deja el registro con `active`/`exists` en false), pero
+    no había forma de ver lo borrado desde la interfaz: para comprobar qué se
+    había eliminado había que entrar a la base de datos.
+  - Un grupo eliminado se lista **sin acciones** y con su propia insignia
+    (Eliminado, distinta de Inactivo). Editar, archivar o abrir el detalle exigen
+    un grupo vivo y responderían 404, así que no se ofrecen. Restaurarlo sigue
+    siendo una operación manual sobre la base.
+  - `estado` sin valor conserva el comportamiento anterior (todo lo no
+    eliminado). No es un detalle cosmético: el sidebar y la página de detalle
+    resuelven el grupo actual desde este mismo listado, y con "activos" por
+    defecto se quedarían sin nombre al abrir un grupo inactivo.
 - **Diagrama de ACTIVIDAD de UML y diagrama de COMUNICACIÓN**, fase 4b.
   - La actividad tiene **parser propio** (`normalizar-actividad.ts`): es la única
     sintaxis imperativa del temario —se describe un recorrido, no elementos y
@@ -623,6 +640,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   exporta lo que ve un alumno, evalúa código candidato contra el ejercicio real
   y calcula métricas de carga cognitiva.
 ### Changed
+- **El listado de grupos ordena por fecha de inicio ascendente** de entrada, en
+  vez de por fecha de creación descendente. Con varios semestres dados de alta,
+  el orden de creación no dice nada: lo que se busca es el grupo que empieza
+  antes.
+  - Las dos columnas de fecha se ordenan por *timestamp*, no por el texto ISO, y
+    los grupos sin fecha caen al final en cualquier sentido. Como contrapartida,
+    quedan fuera del buscador de la tabla: su valor ya no es texto y un número de
+    época solo daría coincidencias sin sentido.
 - **El juez de diagramas monta su DOM con `linkedom` en vez de `jsdom`.** Mermaid
   parsea en Node, pero arrastra DOMPurify, que exige un `window`; aquí NO se
   renderiza nada, así que un DOM completo sobraba. jsdom 30 declara
@@ -849,6 +874,43 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   La documentación vive ahora en el CMS "Contenidos".
 
 ### Fixed
+- **Un grupo desactivado no se podía editar ni configurar.** `updateGrupo` y
+  `setAsignacionesGrupo` resolvían el grupo con `BaseModel.queryActive`, que
+  exige `active === true` además de `exists === true`, así que archivar un grupo
+  lo dejaba inmodificable: el 404 saltaba al guardar, con la edición ya escrita
+  y perdida. Ahora consultan por `exists`, como archivar y eliminar — un grupo
+  inactivo sigue siendo un grupo.
+- **Un año menor a 0100 se guardaba desplazado 1900 años.** `Date.UTC(26, …)`
+  arrastra el mapeo heredado de años de dos cifras y devuelve 1926; el campo de
+  año de Chrome produce `0026` con solo teclear «26», así que llegaba de verdad
+  desde el formulario y se guardaba sin una queja. Se comprueba que el año
+  sobrevive al viaje de ida y vuelta, lo que cubre ese mapeo y cualquier otro
+  ajuste silencioso.
+- **Las fechas de un grupo se enseñaban un día antes de la capturada.** Al
+  guardar el 10-ago, la tabla de grupos mostraba el 9-ago. La fecha nunca se
+  guardó mal: `new Date('2026-08-10')` es la medianoche **UTC**, y al pintarla
+  el navegador la traducía a hora local, donde en México (UTC-6) esa medianoche
+  cae a las 18:00 del día anterior. Por eso el formulario de edición sí enseñaba
+  el día correcto —lee en UTC— y la tabla no: cada uno interpretaba el mismo
+  dato en una zona distinta.
+  - `fechaInicio` y `fechaFin` son días de calendario, no instantes. Ahora el día
+    va anclado a UTC de punta a punta: `parseFechaDia()` lo construye con
+    `Date.UTC` al guardar y la tabla lo pinta con `timeZone: 'UTC'`. La zona del
+    servidor deja de influir en lo que se ve.
+  - De paso, un día imposible (`2026-02-31`) se rechaza con 400 en vez de
+    guardarse. `new Date` no lo considera inválido: lo **desborda** al 3 de
+    marzo, así que se guardaba una fecha que nadie escribió. La validación es
+    por componentes, con años bisiestos incluidos.
+- **No se podía quitar una fecha de un grupo una vez puesta.** Vaciar el campo
+  en el formulario no borraba nada: se mandaba `fechaInicio: undefined`, que
+  `JSON.stringify` elimina del cuerpo, y el servidor lo leía como "no toques
+  este campo". La única salida era poner otra fecha válida.
+  - El formulario manda `null` para borrar (distinguible de "ausente") y el
+    modelo hace `unset()` del campo — un `set(campo, undefined)` tampoco lo
+    quita del objeto de Parse.
+  - Cada fecha lleva un botón **Quitar** cuando tiene valor: vaciar a mano un
+    `<input type="date">` obliga a borrar día, mes y año por separado, y en
+    algunos navegadores no se puede.
 - **El taller de diagramas guardaba mal el tipo.** El API acotaba `tipoDiagrama`
   a los ocho tipos del juez y convertía **en silencio** cualquier otro a
   `clases`, así que un diagrama guardado con un tipo del catálogo se recuperaba

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { confirmar } from '../../../../utils/dialogos';
+import { confirmar, avisar } from '../../../../utils/dialogos';
 import { useNavigate } from 'react-router';
-import { createColumnHelper } from '@tanstack/react-table';
+import { createColumnHelper, type Row } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
@@ -17,6 +17,8 @@ interface GrupoData {
   fechaInicio?: string;
   fechaFin?: string;
   active: boolean;
+  /** false = borrado lógico. Solo llega así con los filtros "eliminados"/"todos". */
+  exists?: boolean;
   colecciones?: ColeccionRef[];
   admins?: AdminRef[];
   modulosDeshabilitados?: Record<string, string[]>;
@@ -24,6 +26,45 @@ interface GrupoData {
 }
 
 const API_BASE = '/api';
+
+/**
+ * Filtro de estado. Se resuelve en el SERVIDOR (`?estado=`), no en el cliente:
+ * por defecto solo se traen los activos, y los eliminados solo viajan si se
+ * piden expresamente.
+ */
+const FILTROS = [
+  { valor: 'activos', label: 'Activos' },
+  { valor: 'inactivos', label: 'Inactivos' },
+  { valor: 'eliminados', label: 'Eliminados' },
+  { valor: 'todos', label: 'Todos' },
+] as const;
+
+type FiltroEstado = (typeof FILTROS)[number]['valor'];
+
+/** Un grupo eliminado (borrado lógico) solo se muestra; ya no se opera sobre él. */
+function estaEliminado(grupo: GrupoData): boolean {
+  return grupo.exists === false;
+}
+
+/** ms de la fecha; las que faltan o no parsean van al final del orden ascendente. */
+function tiempo(valor: unknown): number {
+  if (typeof valor !== 'string' || !valor) return Number.POSITIVE_INFINITY;
+  const ms = new Date(valor).getTime();
+  return Number.isNaN(ms) ? Number.POSITIVE_INFINITY : ms;
+}
+
+/**
+ * Orden de una columna de fecha POR INSTANTE, no por el texto ISO que guarda el
+ * accessor (que está ahí para que el buscador de la tabla siga encontrando por
+ * fecha). Comparar el texto funcionaría de casualidad mientras el formato no
+ * cambie; comparar timestamps es lo que se quiere decir.
+ */
+function ordenarPorFecha(filaA: Row<GrupoData>, filaB: Row<GrupoData>, columnaId: string): number {
+  const a = tiempo(filaA.getValue(columnaId));
+  const b = tiempo(filaB.getValue(columnaId));
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
 
 export default function GruposPage() {
   const { sessionToken } = useAuth();
@@ -36,6 +77,8 @@ export default function GruposPage() {
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editGrupo, setEditGrupo] = useState<GrupoData | undefined>();
+  // Filtro de estado — no persistente (solo durante esta visita).
+  const [filtro, setFiltro] = useState<FiltroEstado>('activos');
 
   // Modal de asignaciones (colecciones + módulos por colección).
   const [asignGrupo, setAsignGrupo] = useState<GrupoData | null>(null);
@@ -49,7 +92,12 @@ export default function GruposPage() {
   const fetchGrupos = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/admin/grupos`, { headers: { 'x-session-token': sessionToken ?? '' } });
+      // Una recarga con éxito deja la pantalla en un estado coherente, así que
+      // se lleva por delante el error de la operación anterior. Si no, la banda
+      // roja sobrevive al cambio de filtro y hasta se cuela en el modal de
+      // asignaciones, que aparece "roto" antes de enviar nada.
+      setError('');
+      const res = await fetch(`${API_BASE}/admin/grupos?estado=${filtro}`, { headers: { 'x-session-token': sessionToken ?? '' } });
       if (!res.ok) throw new Error('Error al cargar grupos');
       const data = await res.json();
       setGrupos(data.grupos);
@@ -58,7 +106,7 @@ export default function GruposPage() {
     } finally {
       setLoading(false);
     }
-  }, [sessionToken]);
+  }, [sessionToken, filtro]);
 
   const fetchColecciones = useCallback(async () => {
     try {
@@ -82,11 +130,18 @@ export default function GruposPage() {
     }
   }, [sessionToken]);
 
+  // Los grupos se recargan al cambiar de filtro; los catálogos del formulario
+  // (colecciones y administradores) NO dependen del filtro. En un solo efecto,
+  // cada clic de chip volvía a pedir los tres, y `/admin/administradores` es la
+  // consulta cara.
   useEffect(() => {
     fetchGrupos();
+  }, [fetchGrupos]);
+
+  useEffect(() => {
     fetchColecciones();
     fetchAdmins();
-  }, [fetchGrupos, fetchColecciones, fetchAdmins]);
+  }, [fetchColecciones, fetchAdmins]);
 
   function openCreate() {
     setEditGrupo(undefined);
@@ -103,7 +158,8 @@ export default function GruposPage() {
     setEditGrupo(undefined);
   }
 
-  async function handleSave(data: { name: string; fechaInicio?: string; fechaFin?: string; admins?: string[]; urlAgendaEntrevistas?: string }) {
+  // `fechaInicio`/`fechaFin` en null = quitar la fecha (el servidor las borra).
+  async function handleSave(data: { name: string; fechaInicio?: string | null; fechaFin?: string | null; admins?: string[]; urlAgendaEntrevistas?: string }) {
     setSaving(true);
     setError('');
     try {
@@ -117,8 +173,20 @@ export default function GruposPage() {
         const err = await res.json();
         throw new Error(err.message || 'Error al guardar');
       }
+      const creando = !editGrupo;
       closeModal();
-      await fetchGrupos();
+      // Un grupo nace ACTIVO, así que recargar con el filtro puesto en
+      // "Eliminados" o "Inactivos" lo dejaría fuera de la lista: el admin ve
+      // que no aparece, cree que falló y lo crea otra vez. Se salta al filtro
+      // donde sí está (el cambio de filtro ya dispara la recarga).
+      if (creando && filtro !== 'activos' && filtro !== 'todos') {
+        setFiltro('activos');
+      } else {
+        await fetchGrupos();
+      }
+      if (creando) {
+        await avisar({ titulo: 'Grupo creado', texto: `"${data.name}" ya está en la lista.`, icono: 'success' });
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -154,6 +222,16 @@ export default function GruposPage() {
       const res = await fetch(`${API_BASE}/admin/grupos/${grupo.id}/archive`, { method: 'PATCH', headers });
       if (!res.ok) throw new Error(`Error al ${action.toLowerCase()}`);
       await fetchGrupos();
+      // Bajo el filtro "Activos" el grupo desactivado se cae de la lista, y una
+      // fila que se esfuma sin más es indistinguible de un borrado. Se avisa de
+      // dónde ha ido.
+      if (grupo.active && filtro === 'activos') {
+        await avisar({
+          titulo: 'Grupo desactivado',
+          texto: `"${grupo.name}" ya no aparece aquí; está en el filtro "Inactivos".`,
+          icono: 'success',
+        });
+      }
     } catch (err: any) {
       setError(err.message);
     }
@@ -170,9 +248,18 @@ export default function GruposPage() {
     }
   }
 
+  // Se pinta en UTC porque así se guarda: son días de calendario anclados a la
+  // medianoche UTC (ver `parseFechaDia()` en la API). Sin `timeZone`, el
+  // navegador las traduce a la hora local y en México (UTC-6) la medianoche del
+  // 10-ago cae el 9-ago: la tabla enseñaba el día anterior al que se capturó.
   function formatDate(value?: string): string {
     if (!value) return '—';
-    return new Date(value).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
+    return new Date(value).toLocaleDateString('es-MX', {
+      timeZone: 'UTC',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   }
 
   const columnHelper = createColumnHelper<GrupoData>();
@@ -189,35 +276,58 @@ export default function GruposPage() {
       header: 'Administradores',
       cell: (info) => info.getValue() || '—',
     }),
+    // El accessor sigue siendo el texto ISO para que el buscador de la tabla lo
+    // encuentre ("2026-08"); el orden NO puede depender de ese texto, así que va
+    // por timestamp en un sortingFn propio, con las vacías siempre al final.
     columnHelper.accessor('fechaInicio', {
       header: 'Fecha Inicio',
       cell: (info) => formatDate(info.getValue()),
+      sortingFn: ordenarPorFecha,
+      sortUndefined: 'last',
     }),
     columnHelper.accessor('fechaFin', {
       header: 'Fecha Fin',
       cell: (info) => formatDate(info.getValue()),
+      sortingFn: ordenarPorFecha,
+      sortUndefined: 'last',
     }),
-    columnHelper.accessor('active', {
+    columnHelper.accessor((row) => (estaEliminado(row) ? 'Eliminado' : row.active ? 'Activo' : 'Inactivo'), {
+      id: 'estado',
       header: 'Estado',
-      cell: (info) => (
-        <span className={`${styles.badge} ${info.getValue() ? styles.badgeActive : styles.badgeInactive}`}>
-          {info.getValue() ? 'Activo' : 'Inactivo'}
-        </span>
-      ),
+      cell: (info) => {
+        const estado = info.getValue();
+        const clase =
+          estado === 'Eliminado' ? styles.badgeDeleted : estado === 'Activo' ? styles.badgeActive : styles.badgeInactive;
+        return <span className={`${styles.badge} ${clase}`}>{estado}</span>;
+      },
     }),
   ];
 
-  const getActions = (grupo: GrupoData): ActionItem[] => [
-    { label: 'Ver', icon: 'visibility', onClick: () => navigate(`/admin/grupos/${grupo.id}`) },
-    { label: 'Editar', icon: 'edit', onClick: () => openEdit(grupo) },
-    { label: 'Asignaciones', icon: 'library_books', onClick: () => setAsignGrupo(grupo) },
-    {
-      label: grupo.active ? 'Desactivar' : 'Activar',
-      icon: grupo.active ? 'toggle_off' : 'toggle_on',
-      onClick: () => handleToggleActive(grupo),
-    },
-    { label: 'Eliminar', icon: 'delete', onClick: () => handleDelete(grupo), variant: 'danger' },
-  ];
+  const getActions = (grupo: GrupoData): ActionItem[] => {
+    // Un grupo eliminado se lista para consulta, pero no se opera: los endpoints
+    // que quedan filtran por `exists` y responderían 404. Un grupo INACTIVO sí
+    // se edita y se configura (updateGrupo y setAsignacionesGrupo consultan por
+    // `exists`, no por `active`), así que aquí solo se mira el borrado.
+    if (estaEliminado(grupo)) return [];
+    return [
+      { label: 'Ver', icon: 'visibility', onClick: () => navigate(`/admin/grupos/${grupo.id}`) },
+      { label: 'Editar', icon: 'edit', onClick: () => openEdit(grupo) },
+      { label: 'Asignaciones', icon: 'library_books', onClick: () => setAsignGrupo(grupo) },
+      {
+        label: grupo.active ? 'Desactivar' : 'Activar',
+        icon: grupo.active ? 'toggle_off' : 'toggle_on',
+        onClick: () => handleToggleActive(grupo),
+      },
+      { label: 'Eliminar', icon: 'delete', onClick: () => handleDelete(grupo), variant: 'danger' },
+    ];
+  };
+
+  const vacio =
+    filtro === 'eliminados'
+      ? 'No hay grupos eliminados'
+      : filtro === 'inactivos'
+        ? 'No hay grupos inactivos'
+        : 'No hay grupos registrados';
 
   return (
     <div className={styles.page}>
@@ -225,20 +335,39 @@ export default function GruposPage() {
 
       {error && <div className={styles.error}>{error}</div>}
 
-      {loading ? (
-        <p>Cargando...</p>
-      ) : (
-        <AdminTable
-          title="Grupos registrados"
-          columns={columns}
-          data={grupos}
-          actions={getActions}
-          onAdd={openCreate}
-          addLabel="Nuevo Grupo"
-          emptyMessage="No hay grupos registrados"
-          searchPlaceholder="Buscar grupo..."
-        />
-      )}
+      <div className={styles.filtros}>
+        <span className={styles.filtrosLabel}>
+          <span className="material-icons">filter_list</span>
+          Mostrar:
+        </span>
+        {FILTROS.map((f) => (
+          <button
+            key={f.valor}
+            type="button"
+            className={`${styles.filtroBtn} ${filtro === f.valor ? styles.filtroBtnActive : ''}`}
+            aria-pressed={filtro === f.valor}
+            onClick={() => setFiltro(f.valor)}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* La tabla se renderiza SIEMPRE, con su prop `loading`: sustituirla por
+          un "Cargando..." la desmonta en cada cambio de filtro y su estado
+          interno (búsqueda, orden, página) vuelve a cero. */}
+      <AdminTable
+        title="Grupos registrados"
+        columns={columns}
+        data={grupos}
+        loading={loading}
+        actions={getActions}
+        onAdd={openCreate}
+        addLabel="Nuevo Grupo"
+        emptyMessage={vacio}
+        searchPlaceholder="Buscar grupo..."
+        initialSorting={[{ id: 'fechaInicio', desc: false }]}
+      />
 
       <Modal isOpen={modalOpen} onClose={closeModal} title={editGrupo ? 'Editar Grupo' : 'Nuevo Grupo'}>
         <GrupoForm

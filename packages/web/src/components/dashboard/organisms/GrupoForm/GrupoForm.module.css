@@ -16,6 +16,40 @@
   color: var(--text-primary);
 }
 
+.dateRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dateRow .dateInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.clearDate {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: white;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.clearDate:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: var(--text-primary);
+}
+
+.clearDate:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .dateInput {
   padding: 10px 12px;
   border: 1px solid var(--border-color);
