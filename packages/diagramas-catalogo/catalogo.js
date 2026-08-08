@@ -83,7 +83,7 @@ export const TIPOS = [
     ambito: 'curso',
     uml: true,
     agrupacion: 'Estructura',
-    motoresJuez: [],
+    motoresJuez: ['plantuml'],
   },
   {
     key: 'er',
@@ -125,7 +125,7 @@ export const TIPOS = [
     ambito: 'curso',
     uml: true,
     agrupacion: 'Arquitectura',
-    motoresJuez: [],
+    motoresJuez: ['plantuml'],
   },
   {
     key: 'casos-de-uso',

@@ -820,6 +820,121 @@ const participanteExisteComoClase: Evaluador = (a, ctx) => {
     : ok;
 };
 
+// --- Objetos ---------------------------------------------------------------
+
+/**
+ * Clasificador del que un objeto es instancia.
+ *
+ * UML lo escribe `ana : Cliente`, así que la clase es lo que hay tras los dos
+ * puntos. Un objeto anónimo (`: Cliente`) también encaja, y uno sin dos puntos
+ * se toma entero: quien escribe `Cliente` a secas está nombrando la clase.
+ */
+function clasificadorDe(nombre: string): string {
+  const corte = nombre.indexOf(':');
+  return (corte >= 0 ? nombre.slice(corte + 1) : nombre).trim();
+}
+
+const objetoTieneValor: Evaluador = (a, { modelo }) => {
+  const nombre = texto(a, 'objeto');
+  const ranura = texto(a, 'ranura');
+  const nodo = buscarNodo(modelo, nombre);
+  if (!nodo) {
+    return falla(`No encontré el objeto «${nombre}». Hay: ${enumerar(modelo.nodos.map((n) => n.nombre))}.`);
+  }
+  const slot = nodo.atributos.find((x) => clave(x.nombre) === clave(ranura));
+  if (!slot) {
+    return falla(
+      `«${nombre}» no tiene la ranura «${ranura}». Tiene: ${enumerar(nodo.atributos.map((x) => x.nombre))}.`,
+    );
+  }
+  const esperado = textoOpcional(a, 'valor');
+  if (esperado === undefined) return ok;
+  // Un objeto sin valor en la ranura no modela una instancia concreta, que es
+  // justo lo que distingue este diagrama del de clases.
+  if (slot.valor === undefined) {
+    return falla(`«${nombre}.${ranura}» no tiene ningún valor; se esperaba «${esperado}».`);
+  }
+  return clave(slot.valor) === clave(esperado)
+    ? ok
+    : falla(`«${nombre}.${ranura}» vale «${slot.valor}» y se esperaba «${esperado}».`);
+};
+
+const enlaceEntreObjetos: Evaluador = (a, { modelo }) => {
+  const origen = texto(a, 'origen');
+  const destino = texto(a, 'destino');
+  const a1 = buscarNodo(modelo, origen);
+  const b1 = buscarNodo(modelo, destino);
+  if (!a1) return falla(`No encontré el objeto «${origen}».`);
+  if (!b1) return falla(`No encontré el objeto «${destino}».`);
+  // El enlace de un diagrama de objetos no tiene dirección semántica: es la
+  // instancia de una asociación, y exigir un sentido concreto suspendería un
+  // diagrama correcto escrito al revés.
+  const hay = modelo.aristas.some(
+    (r) =>
+      (r.origen === a1.id && r.destino === b1.id) || (r.origen === b1.id && r.destino === a1.id),
+  );
+  return hay ? ok : falla(`No hay ningún enlace entre «${origen}» y «${destino}».`);
+};
+
+/** Todo objeto tiene que ser instancia de una clase que exista de verdad. */
+const objetoEsInstanciaDe: Evaluador = (a, ctx) => {
+  const clases = contextoDe(ctx, texto(a, 'contexto'));
+  const faltan = ctx.modelo.nodos
+    .filter((n) => n.clase === 'objeto')
+    .filter((n) => !buscarNodo(clases, clasificadorDe(n.nombre)))
+    .map((n) => n.nombre);
+  return faltan.length
+    ? falla(`Estos objetos no son instancia de ninguna clase declarada: ${enumerar(faltan)}.`)
+    : ok;
+};
+
+// --- Despliegue ------------------------------------------------------------
+
+const artefactoDesplegadoEn: Evaluador = (a, { modelo }) => {
+  const artefacto = texto(a, 'artefacto');
+  const nodoNombre = texto(a, 'nodo');
+  const art = buscarNodo(modelo, artefacto);
+  if (!art) {
+    return falla(`No encontré el artefacto «${artefacto}». Hay: ${enumerar(modelo.nodos.map((n) => n.nombre))}.`);
+  }
+  const destino = buscarNodo(modelo, nodoNombre);
+  if (!destino) return falla(`No encontré el nodo «${nodoNombre}».`);
+  if (!art.contenedor) {
+    return falla(`«${artefacto}» no está dentro de ningún nodo: un artefacto suelto no está desplegado.`);
+  }
+
+  // Se sube por la cadena de contenedores, no solo el inmediato: anidar nodos
+  // —`cloud "AWS" { node "EC2" { artifact … } }`— es lo normal en esta vista, y
+  // exigir contención directa suspendería un diagrama correcto.
+  const cadena: string[] = [];
+  let actual: string | undefined = art.contenedor;
+  const visitados = new Set<string>();
+  while (actual && !visitados.has(actual)) {
+    visitados.add(actual);
+    const contenedor = modelo.nodos.find((n) => n.id === actual);
+    cadena.push(contenedor?.nombre ?? actual);
+    if (clave(actual) === clave(destino.id) || clave(contenedor?.nombre ?? '') === clave(destino.nombre)) {
+      return ok;
+    }
+    actual = contenedor?.contenedor;
+  }
+  return falla(
+    `«${artefacto}» está en ${enumerar(cadena)} y se esperaba que estuviera en «${nodoNombre}».`,
+  );
+};
+
+/** Todo artefacto desplegado tiene que corresponder a un componente del diseño. */
+const artefactoCorrespondeAComponente: Evaluador = (a, ctx) => {
+  const componentes = contextoDe(ctx, texto(a, 'contexto'));
+  const faltan = ctx.modelo.nodos
+    .filter((n) => n.clase === 'artefacto')
+    .filter((n) => !buscarNodo(componentes, n.nombre))
+    .map((n) => n.nombre);
+  return faltan.length
+    ? falla(`Estos artefactos no corresponden a ningún componente del diseño: ${enumerar(faltan)}.`)
+    : ok;
+};
+
 // --- Registro --------------------------------------------------------------
 
 export const CATALOGO: Record<string, Evaluador> = {
@@ -861,7 +976,14 @@ export const CATALOGO: Record<string, Evaluador> = {
   'contenido-en-paquete': contenidoEnPaquete,
   'sin-casos-uso-sin-actor': sinCasosUsoSinActor,
   'sin-actores-ociosos': sinActoresOciosos,
+  // objetos
+  'objeto-tiene-valor': objetoTieneValor,
+  'enlace-entre-objetos': enlaceEntreObjetos,
+  // despliegue
+  'artefacto-desplegado-en': artefactoDesplegadoEn,
   // cruzadas
+  'objeto-es-instancia-de': objetoEsInstanciaDe,
+  'artefacto-corresponde-a-componente': artefactoCorrespondeAComponente,
   'mensaje-existe-como-operacion': mensajeExisteComoOperacion,
   'disparador-existe-como-operacion': disparadorExisteComoOperacion,
   'participante-existe-como-clase': participanteExisteComoClase,
