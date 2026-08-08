@@ -802,6 +802,28 @@ export function normalizarPlantuml(tipo: TipoDiagrama, codigo: string): ModeloDi
       throw error(n, `«${linea}» parece una relación, pero no entiendo sus extremos o su flecha.`);
     }
 
+    // Miembro suelto: `Pedido : +folio : String`. Es la otra forma de escribir
+    // un compartimento en PlantUML, tan común como las llaves, y sin esto una
+    // clase escrita así daba error de sintaxis en la cara del alumno.
+    //
+    // Solo en los tipos que tienen miembros: en casos de uso o paquetes, unos
+    // dos puntos sueltos no son eso y tragárselos escondería un error real.
+    if (CON_MIEMBROS.includes(tipo)) {
+      const corte = linea.indexOf(':');
+      if (corte > 0 && !linea.endsWith('{')) {
+        const duenoTexto = linea.slice(0, corte).trim();
+        const dueno = buscar(duenoTexto, interpretarToken(duenoTexto).nombre);
+        if (dueno && (dueno.clase === 'clase' || dueno.clase === 'interfaz' || dueno.clase === 'entidad')) {
+          const leido = leerMiembro(linea.slice(corte + 1));
+          if (leido) {
+            if (leido.esOperacion) dueno.operaciones.push(leido.miembro);
+            else dueno.atributos.push(leido.miembro);
+          }
+          continue;
+        }
+      }
+    }
+
     // Apertura de contenedor: `package "Datos" {`.
     if (linea.endsWith('{')) {
       const cuerpo = linea.slice(0, -1).trim();

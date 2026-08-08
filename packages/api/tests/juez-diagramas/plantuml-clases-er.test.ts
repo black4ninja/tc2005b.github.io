@@ -131,6 +131,30 @@ enum Estado {
     expect(nodo(modelo, 'Estado')!.atributos.map((a) => a.nombre)).toEqual(['PENDIENTE', 'PAGADO']);
   });
 
+  it('acepta miembros escritos fuera de las llaves', () => {
+    // `A : miembro` es la otra forma de escribir un compartimento en PlantUML,
+    // tan común como las llaves.
+    const m = normalizarPlantuml(
+      'clases',
+      `@startuml
+class Pedido
+Pedido : +folio : String
+Pedido : +calcular() : Double
+@enduml`,
+    );
+    const pedido = nodo(m, 'Pedido')!;
+    expect(pedido.atributos.map((a) => a.nombre)).toEqual(['folio']);
+    expect(pedido.operaciones.map((o) => o.nombre)).toEqual(['calcular']);
+  });
+
+  it('no se traga unos dos puntos sueltos donde no hay caja que los reciba', () => {
+    // Sin la comprobación del dueño, cualquier línea con `:` desaparecería en
+    // silencio y un error real del alumno quedaría escondido.
+    expect(() =>
+      normalizarPlantuml('clases', '@startuml\nNoExiste : +folio\n@enduml'),
+    ).toThrow();
+  });
+
   it('avisa si el compartimento se queda sin cerrar', () => {
     expect(() =>
       normalizarPlantuml('clases', '@startuml\nclass Pedido {\n  +folio : String\n@enduml'),
