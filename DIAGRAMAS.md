@@ -13,7 +13,7 @@ Estado: **en ejecución**. Fecha: 2026-08-08.
 | 5a — Familia «jerarquía» | ✅ #87 |
 | 5b — Familias «red», «versionado» y «estrategia» | ✅ #90 |
 | 5c — Familias «planificación», «series» y «gramática» | pendiente (exigen ampliar el modelo) |
-| 6 — Contenido de los ejercicios | 1 de ~52 (muestra validada) |
+| 6 — Contenido de los ejercicios | 49 definiciones en 13 tipos; faltan los 11 del catálogo ya evaluables |
 
 Correcciones al plan descubiertas al ejecutarlo:
 

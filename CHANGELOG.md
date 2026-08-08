@@ -8,6 +8,24 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **16 ejercicios para los cuatro tipos UML que tenían juez y ningún material**:
+  Actividad, Objetos, Despliegue y Comunicación. Ejemplo resuelto más tres
+  niveles cada uno, con el mismo tratamiento que los ocho tipos originales. El
+  módulo pasa de 33 a **49 definiciones**, y de 9 a **13 tipos con ejercicios**.
+  - Los tres tipos que tienen contraparte estructural se apoyan en un **diagrama
+    de contexto**, porque su valor está en el cruce: un objeto que no es
+    instancia de ninguna clase declarada, un artefacto desplegado que nadie
+    diseñó, un mensaje que invoca una operación inexistente. Son errores que un
+    diagrama aislado no puede delatar.
+  - Cada `diagramaTrampa` reproduce el **error dominante documentado** del tipo:
+    bifurcar con una decisión lo que ocurre a la vez, poner el tipo donde va el
+    valor, conectar en vez de desplegar, numerar en plano una interacción
+    anidada.
+  - Se amplía `aplicaA` de 11 aserciones reutilizables para que el editor de
+    autoría las ofrezca en los tipos nuevos: las cinco de flujo valen igual en
+    actividad, las cinco de interacción en comunicación, y `contenido-en-paquete`,
+    `relacion-entre` y `sin-ciclos` en despliegue. Sin esto el editor las
+    escondía justo donde hacían falta.
 - **Familias «red», «versionado» y «estrategia»** del catálogo adicional: ocho
   tipos más evaluables —C4, bloques, arquitectura en la nube, paquete de red,
   ramas de Git, requisitos, mapa de Wardley y Cynefin—. Dibujan cosas sin
