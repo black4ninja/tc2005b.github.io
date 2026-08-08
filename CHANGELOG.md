@@ -8,6 +8,30 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Diagrama de ACTIVIDAD de UML y diagrama de COMUNICACIÓN**, fase 4b.
+  - La actividad tiene **parser propio** (`normalizar-actividad.ts`): es la única
+    sintaxis imperativa del temario —se describe un recorrido, no elementos y
+    relaciones—, así que no comparte nada con el parser declarativo. Cubre
+    `start`/`stop`, acciones de una o varias líneas, `if`/`elseif`/`else`/`endif`,
+    `fork`/`fork again`/`end fork`, `while`/`endwhile` y las **calles de
+    responsabilidad** (`|Cliente|`).
+  - Es lo que `flujo` no puede sustituir: a un `flowchart` le faltan las calles
+    —quién hace cada acción— y el paralelismo, que son justo lo que se evalúa en
+    esta vista.
+  - Dos aserciones nuevas: `accion-en-calle` y `fork-tiene-join`, que caza el
+    error clásico de dejar ramas paralelas que nunca se vuelven a juntar.
+  - La **comunicación** reutiliza el parser declarativo —es la misma sintaxis de
+    relaciones— y deriva encima los mensajes. El orden sale de la **numeración
+    escrita** (`1`, `1.2`, `1.10`), no del orden de las líneas: en esta vista la
+    secuencia la fija el número, y ordenar por el texto haría que mover una línea
+    cambiara el significado. Los enlaces se conservan además como aristas, que es
+    lo que esta vista destaca frente a la de secuencia.
+
+### Fixed
+- **`nodos-alcanzables` contaba los contenedores como pasos del flujo.** Una
+  calle de responsabilidad agrupa acciones, no se «alcanza», así que la
+  comprobación dejaba en rojo cualquier diagrama de actividad con calles — es
+  decir, todos.
 - **Familia «jerarquía» del catálogo adicional**, primera de las siete del plan.
   Mapa mental, mapa de árbol, árbol de ficheros y diagrama de Ishikawa dibujan
   cosas distintas y son, por debajo, el mismo árbol: se normalizan al

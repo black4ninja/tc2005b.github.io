@@ -37,6 +37,7 @@ import {
 /** Tipos que este normalizador sabe traducir hoy. */
 export const SOPORTADOS_PLANTUML: TipoDiagrama[] = [
   'casos-de-uso', 'componentes', 'paquetes', 'clases', 'er', 'objeto', 'despliegue',
+  'comunicacion',
 ];
 
 /**
@@ -46,6 +47,14 @@ export const SOPORTADOS_PLANTUML: TipoDiagrama[] = [
  * llamado «Pedido» cuyos atributos serían declaraciones sueltas.
  */
 const CON_MIEMBROS: TipoDiagrama[] = ['clases', 'er', 'objeto'];
+
+/**
+ * Numeración jerárquica al principio de la etiqueta de un mensaje de
+ * comunicación: `1:`, `1.2:`, `2.1.1:`. Es lo que ordena la interacción cuando
+ * no hay eje temporal, y por tanto lo que distingue esta vista de un simple
+ * grafo de enlaces.
+ */
+const NUMERO_MENSAJE = /^\s*([0-9]+(?:\.[0-9]+)*)\s*[:.]\s*(.*)$/;
 
 /**
  * Palabras cuya CLASE depende del tipo de diagrama.
@@ -113,6 +122,7 @@ const CLASE_IMPLICITA: Record<string, ClaseNodo> = {
   er: 'entidad',
   objeto: 'objeto',
   despliegue: 'artefacto',
+  comunicacion: 'participante',
 };
 
 /**
@@ -910,5 +920,42 @@ export function normalizarPlantuml(tipo: TipoDiagrama, codigo: string): ModeloDi
     throw new ErrorSintaxisDiagrama('Falta @enduml al final del diagrama.');
   }
 
+  if (tipo === 'comunicacion') volcarMensajes(modelo);
+
   return modelo;
+}
+
+/**
+ * Convierte las aristas de un diagrama de comunicación en MENSAJES.
+ *
+ * Los enlaces se quedan como aristas —son la estructura, que es lo que esta
+ * vista destaca frente a la de secuencia— y encima se derivan los mensajes con
+ * su orden, para que las aserciones de interacción que ya existen
+ * (`mensaje-entre`, `mensaje-existe-como-operacion`) funcionen sin tocarlas.
+ *
+ * El orden sale de la numeración escrita, no del orden de las líneas: en esta
+ * vista la secuencia la fija el número, y ordenar por el texto haría que mover
+ * una línea cambiara el significado del diagrama.
+ */
+function volcarMensajes(modelo: ModeloDiagrama): void {
+  const conNumero: Array<{ orden: string; de: string; a: string; texto: string }> = [];
+  for (const a of modelo.aristas) {
+    const m = NUMERO_MENSAJE.exec(a.etiqueta ?? '');
+    if (!m) continue;
+    conNumero.push({ orden: m[1], de: a.origen, a: a.destino, texto: m[2].trim() });
+  }
+  // Orden numérico por segmentos: `1.10` va DESPUÉS de `1.9`, que es lo que un
+  // orden alfabético se comería.
+  conNumero.sort((x, y) => {
+    const px = x.orden.split('.').map(Number);
+    const py = y.orden.split('.').map(Number);
+    for (let i = 0; i < Math.max(px.length, py.length); i++) {
+      const d = (px[i] ?? 0) - (py[i] ?? 0);
+      if (d !== 0) return d;
+    }
+    return 0;
+  });
+  conNumero.forEach((m, i) => {
+    modelo.mensajes.push({ orden: i + 1, de: m.de, a: m.a, texto: m.texto, tipo: 'sincrono' });
+  });
 }

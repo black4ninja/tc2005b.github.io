@@ -16,6 +16,12 @@ import {
 const POR_MERMAID = [...SOPORTADOS_MERMAID, ...SOPORTADOS_JERARQUIA];
 
 /**
+ * La actividad tiene parser propio —es la única sintaxis imperativa del
+ * temario— y no está en `SOPORTADOS_PLANTUML`, así que se suma aparte.
+ */
+const POR_PLANTUML = [...SOPORTADOS_PLANTUML, 'actividad'];
+
+/**
  * El juez tiene su propia unión de tipos (`juez-diagramas/tipos.ts`) porque es
  * su dominio: lo que sabe normalizar. El catálogo declara lo mismo en
  * `motoresJuez`. Son dos listas y podrían separarse.
@@ -35,24 +41,28 @@ const POR_MERMAID = [...SOPORTADOS_MERMAID, ...SOPORTADOS_JERARQUIA];
  */
 describe('el catálogo y el juez declaran los mismos tipos evaluables', () => {
   it('coinciden como conjunto', () => {
-    expect([...KEYS_JUZGABLES].sort()).toEqual([...TIPOS_DIAGRAMA].sort());
+    // La comparación NO es contra `TIPOS_DIAGRAMA`, que es el dominio del juez
+    // —los tipos que su unión admite, incluidos los que aún no sabe leer—, sino
+    // contra lo que algún normalizador maneja de verdad. Compararlo con el
+    // dominio dejaba la prueba en rojo en cuanto se declaraba un tipo antes de
+    // escribir su parser, que es el orden natural de trabajo.
+    const conNormalizador = [...new Set([...POR_MERMAID, ...POR_PLANTUML])];
+    expect([...KEYS_JUZGABLES].sort()).toEqual(conNormalizador.sort());
   });
 
   it('reparte los motores como los reparten los normalizadores', () => {
     for (const key of TIPOS_DIAGRAMA) {
       expect(esJuzgable(key, 'mermaid'), `${key} en Mermaid`).toBe(POR_MERMAID.includes(key));
       expect(esJuzgable(key, 'plantuml'), `${key} en PlantUML`).toBe(
-        SOPORTADOS_PLANTUML.includes(key),
+        POR_PLANTUML.includes(key),
       );
     }
   });
 
-  it('no deja ningún tipo evaluable sin normalizador', () => {
-    // El caso que la comprobación anterior no cubre por sí sola: un tipo cuyo
-    // `motoresJuez` esté vacío coincidiría en ambos lados con `false` y pasaría.
-    for (const key of TIPOS_DIAGRAMA) {
+  it('no declara evaluable nada que no sepa leer', () => {
+    for (const key of KEYS_JUZGABLES) {
       expect(
-        POR_MERMAID.includes(key) || SOPORTADOS_PLANTUML.includes(key),
+        POR_MERMAID.includes(key) || POR_PLANTUML.includes(key),
         `${key} se declara evaluable pero ningún normalizador lo lee`,
       ).toBe(true);
     }
@@ -65,9 +75,8 @@ describe('el catálogo y el juez declaran los mismos tipos evaluables', () => {
     // es que ningún tipo DEL CURSO se quede sin poder evaluarse.
     const delCurso = TIPOS.filter((t) => t.ambito === 'curso');
     const sinJuez = delCurso.filter((t) => t.motoresJuez.length === 0).map((t) => t.key);
-    expect(sinJuez, 'tipos del temario todavía sin normalizador').toEqual([
-      // Pendientes de la fase 4b.
-      'comunicacion', 'timing', 'actividad',
-    ]);
+    // `timing` es lo único que queda: su gramática (`robust`/`concise`, `@0`,
+    // `X is Estado`) no se parece a ninguna de las tres que ya hay.
+    expect(sinJuez, 'tipos del temario todavía sin normalizador').toEqual(['timing']);
   });
 });

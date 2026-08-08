@@ -522,6 +522,25 @@ export const METADATOS: MetadatoAsercion[] = [
     descripcion: 'Comprueba que cada disparador de la máquina de estados corresponda a una operación de su clase asociada en el diagrama de clases indicado, para que el comportamiento no se desvincule de la estructura.',
   },
   {
+    tipo: 'accion-en-calle',
+    etiqueta: 'La acción está en la calle correcta',
+    familia: 'semantica',
+    aplicaA: ['actividad'],
+    parametros: [
+      { nombre: 'accion', etiqueta: 'Acción', tipo: 'texto', requerido: true },
+      { nombre: 'calle', etiqueta: 'Calle de responsabilidad', tipo: 'texto', requerido: true },
+    ],
+    descripcion: 'Comprueba que la acción esté en la calle indicada. Las calles dicen QUIÉN hace cada cosa, que es la mitad del valor de esta vista y lo que un diagrama de flujo no puede expresar.',
+  },
+  {
+    tipo: 'fork-tiene-join',
+    etiqueta: 'Cada bifurcación paralela se vuelve a unir',
+    familia: 'semantica',
+    aplicaA: ['actividad'],
+    parametros: [],
+    descripcion: 'Comprueba que haya al menos una bifurcación paralela y que cada «fork» tenga su «end fork». Un fork sin join deja ramas que nunca se juntan, y el diagrama no dice cuándo termina la actividad.',
+  },
+  {
     tipo: 'nodo-tiene-hijo',
     etiqueta: 'Un nodo tiene cierta rama colgando',
     familia: 'semantica',

@@ -16,6 +16,7 @@ import { describir } from './describir.js';
 import { normalizarMermaid } from './normalizar-mermaid.js';
 import { normalizarPlantuml } from './normalizar-plantuml.js';
 import { normalizarJerarquia } from './normalizar-jerarquia.js';
+import { normalizarActividad } from './normalizar-actividad.js';
 import {
   ErrorSintaxisDiagrama, ROTULO_OCULTA,
   type Asercion, type ContextoEvaluacion, type Motor, type ModeloDiagrama,
@@ -57,7 +58,13 @@ export async function parsear(
   }
   // PlantUML se lee con un parser propio y síncrono: su motor oficial no corre
   // en el servidor (ver la cabecera de `normalizar-plantuml.ts`).
-  if (motor === 'plantuml') return normalizarPlantuml(tipo, codigo);
+  if (motor === 'plantuml') {
+    // La actividad es la única sintaxis IMPERATIVA del temario: se describe un
+    // recorrido, no elementos y relaciones. No comparte nada con el parser
+    // declarativo, así que tiene el suyo.
+    if (tipo === 'actividad') return normalizarActividad(codigo);
+    return normalizarPlantuml(tipo, codigo);
+  }
   throw new Error(`El motor «${motor}» todavía no tiene normalizador.`);
 }
 

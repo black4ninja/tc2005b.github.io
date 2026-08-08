@@ -8,7 +8,8 @@ Estado: **en ejecución**. Fecha: 2026-08-08.
 | 2 — Interfaz de ejercicios | ✅ #84 |
 | 3 — Motor doble en Clases y ER | ✅ #85 |
 | 4a — Objetos y Despliegue | ✅ #86 |
-| 4b — Actividad, Comunicación y Tiempos | pendiente |
+| 4b — Actividad y Comunicación | ✅ #88 |
+| 4b — Tiempos | pendiente (gramática propia, sin parecido con las otras tres) |
 | 5a — Familia «jerarquía» | ✅ #87 |
 | 5b — Familias restantes (red, versionado, estrategia, planificación, series, gramática) | pendiente |
 | 6 — Contenido de los ejercicios | 1 de ~52 (muestra validada) |

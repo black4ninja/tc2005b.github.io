@@ -22,6 +22,9 @@ export type TipoDiagrama =
   | 'paquetes'
   | 'objeto'
   | 'despliegue'
+  | 'actividad'
+  | 'comunicacion'
+  | 'timing'
   // Familia «jerarquía» del catálogo adicional: distintos dibujos, un árbol.
   | 'mapa-mental'
   | 'treemap'
@@ -30,7 +33,7 @@ export type TipoDiagrama =
 
 export const TIPOS_DIAGRAMA: TipoDiagrama[] = [
   'clases', 'secuencia', 'estados', 'er', 'flujo', 'casos-de-uso', 'componentes', 'paquetes',
-  'objeto', 'despliegue',
+  'objeto', 'despliegue', 'actividad', 'comunicacion', 'timing',
   'mapa-mental', 'treemap', 'arbol', 'ishikawa',
 ];
 

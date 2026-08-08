@@ -157,7 +157,7 @@ export const TIPOS = [
     ambito: 'curso',
     uml: true,
     agrupacion: 'Interacción',
-    motoresJuez: [],
+    motoresJuez: ['plantuml'],
   },
   {
     key: 'timing',
@@ -189,7 +189,7 @@ export const TIPOS = [
     ambito: 'curso',
     uml: true,
     agrupacion: 'Comportamiento',
-    motoresJuez: [],
+    motoresJuez: ['plantuml'],
   },
   {
     key: 'flujo',
