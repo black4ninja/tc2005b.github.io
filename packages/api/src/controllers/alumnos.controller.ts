@@ -330,6 +330,32 @@ export async function deleteAlumno(req: Request, res: Response): Promise<void> {
   }
 }
 
+/**
+ * ¿La matrícula y el correo de una fila del CSV se contradicen?
+ *
+ * En el Tec el correo institucional SE DERIVA de la matrícula
+ * (`A01278654` → `a01278654@tec.mx`), así que las dos columnas dicen lo mismo
+ * dos veces. Cuando no coinciden, no es un alumno raro: es una errata de quien
+ * editó el CSV a mano, y hoy pasa en silencio — la fila se importa con la
+ * matrícula de un alumno y el correo de otro, y como la deduplicación mira el
+ * CORREO, el alumno de esa matrícula acaba duplicado más adelante.
+ *
+ * Solo se compara la parte local, no el dominio: un correo que no sea `@tec.mx`
+ * (personal, o el `@itesm.mx` viejo) no es motivo para rechazar la fila.
+ *
+ * Devuelve el motivo a reportar, o `null` si la fila es coherente. Sin matrícula
+ * no hay nada que contrastar y se deja pasar, como hasta ahora.
+ */
+export function motivoIncoherenciaCsv(matricula: string | undefined, correo: string): string | null {
+  const m = (matricula ?? '').trim().toLowerCase();
+  if (!m) return null;
+
+  const local = correo.trim().toLowerCase().split('@')[0];
+  if (!local || local === m) return null;
+
+  return `La matrícula ${matricula!.trim()} no concuerda con el correo ${correo.trim()}; revisa la fila`;
+}
+
 export async function importAlumnosCSV(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
   const { csv } = req.body;
@@ -374,6 +400,12 @@ export async function importAlumnosCSV(req: Request, res: Response): Promise<voi
 
       if (!alumnoName || !email) {
         skipped.push({ email: email || `fila ${i + 1}`, reason: 'Datos incompletos' });
+        continue;
+      }
+
+      const incoherencia = motivoIncoherenciaCsv(matricula, email);
+      if (incoherencia) {
+        skipped.push({ email, reason: incoherencia });
         continue;
       }
 
