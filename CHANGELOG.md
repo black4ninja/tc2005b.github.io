@@ -8,6 +8,17 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **La importación de alumnos por CSV comprueba que la matrícula y el correo de
+  cada fila concuerden**, y salta —reportándola— la que no. En el Tec el correo
+  institucional se deriva de la matrícula (`A01278654` → `a01278654@tec.mx`), así
+  que las dos columnas dicen lo mismo dos veces; cuando discrepan no es un alumno
+  raro, es una errata de quien editó el CSV a mano.
+  - No es cosmético: la deduplicación del import mira el **correo**, así que una
+    fila con la matrícula de un alumno y el correo de otro se importaba como
+    usuario nuevo y dejaba al de esa matrícula duplicado más adelante.
+  - Solo se compara la parte local, no el dominio: un correo personal o el
+    `@itesm.mx` viejo siguen valiendo mientras la parte local sea la matrícula.
+    Una fila sin matrícula pasa igual que antes, porque no hay nada que contrastar.
 - **16 ejercicios para los cuatro tipos UML que tenían juez y ningún material**:
   Actividad, Objetos, Despliegue y Comunicación. Ejemplo resuelto más tres
   niveles cada uno, con el mismo tratamiento que los ocho tipos originales. El
