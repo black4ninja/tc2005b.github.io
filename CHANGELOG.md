@@ -753,6 +753,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   exporta lo que ve un alumno, evalúa código candidato contra el ejercicio real
   y calcula métricas de carga cognitiva.
 ### Changed
+- **Ajustes de la wiki (visor de contenidos)**, para alinearla con el módulo de
+  Diagramas:
+  - **«Mi panel» baja al pie del menú lateral**, con su flecha, como el «Volver
+    al sitio» de Diagramas. En el topbar quedaba perdido entre el buscador y el
+    botón de tema.
+  - **Fuera el título del topbar**: el selector ya dice en qué wiki estás, así
+    que salía dos veces. El selector se queda **siempre**, deshabilitado cuando
+    solo hay una wiki asignada — mismo criterio que el selector de grupo del
+    alumno. Si la colección abierta no está en esa lista, se pinta su nombre como
+    texto: un `select` cuyo valor no casa con ninguna opción enseñaría la
+    primera, que es otra wiki.
+  - **El índice «En esta página» se puede plegar**, con un botón al pie y una
+    pestaña en el borde para recuperarlo. Al plegarlo, el contenido ocupa esa
+    columna.
+  - El botón de ocultar el menú pierde su caja, para que se vea como el de
+    Diagramas.
 - **El menú del alumno deja de pintarse por etapas.** Salía con los ítems en
   gris, luego se activaban, y luego desaparecían Malla y Competencias cuando
   llegaba la validación de módulos: tres estados distintos en más de un segundo.

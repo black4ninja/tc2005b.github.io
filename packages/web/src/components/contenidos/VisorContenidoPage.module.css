@@ -89,6 +89,13 @@
 .cuerpo.cuerpoSinArbol {
   grid-template-columns: minmax(0, 1fr) 190px;
 }
+/* Índice plegado (o página sin índice): su columna desaparece. */
+.cuerpo.cuerpoSinToc {
+  grid-template-columns: 270px minmax(0, 1fr);
+}
+.cuerpo.cuerpoSinArbol.cuerpoSinToc {
+  grid-template-columns: minmax(0, 1fr);
+}
 .cuerpoSinArbol .arbol {
   display: none;
 }
@@ -107,19 +114,28 @@
   border-right: 1px solid var(--border-color);
   background: var(--sidebar-bg);
   padding: 16px 10px;
-  overflow-y: auto;
   position: sticky;
   top: 53px;
   height: calc(100vh - 53px);
+  /* Columna flex para que la salida quede SIEMPRE abajo y solo scrollee el
+     árbol, como el "Volver al sitio" de Diagramas. */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.arbolNodos {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 /* Scroll sin barras visibles (estorban al presentar); el scroll sigue activo. */
-.arbol,
-.toc {
+.arbolNodos,
+.tocEnlaces {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* Edge/IE */
 }
-.arbol::-webkit-scrollbar,
-.toc::-webkit-scrollbar {
+.arbolNodos::-webkit-scrollbar,
+.tocEnlaces::-webkit-scrollbar {
   width: 0;
   height: 0;
   display: none; /* WebKit */
@@ -222,7 +238,10 @@
   position: sticky;
   top: 53px;
   height: calc(100vh - 53px);
-  overflow-y: auto;
+  /* Columna flex: el botón de ocultar se ancla abajo y solo scrollea la lista. */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 .tocTitulo {
   font-size: 11px;
@@ -362,4 +381,71 @@
   border: 1px solid var(--border-color);
   border-radius: 10px;
   background: #fff;
+}
+
+/* ── Salida al pie del menú y del índice (mismo patrón que Diagramas) ── */
+.salida {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-top: 8px;
+  padding: 12px 8px 4px;
+  border-top: 1px solid var(--border-color);
+  background: none;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  width: 100%;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+}
+.salida:hover {
+  color: var(--text-primary);
+}
+.salida .material-icons {
+  font-size: 18px;
+}
+
+/* El índice también es columna flex, por el botón de ocultar del pie. */
+.tocEnlaces {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Pestaña para recuperar el índice plegado. */
+.tocPestana {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 2px;
+  border: 1px solid var(--border-color);
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+  background: var(--sidebar-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.tocPestana:hover {
+  color: var(--text-primary);
+}
+.tocPestana .material-icons {
+  font-size: 18px;
+}
+
+/* El toggle del menú se alinea con el de Diagramas: icono suelto, sin caja. */
+.arbolToggle {
+  border-color: transparent;
+}
+.arbolToggle:hover {
+  border-color: transparent;
 }
