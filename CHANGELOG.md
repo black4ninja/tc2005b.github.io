@@ -8,6 +8,24 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Cada grupo decide qué campos del perfil pide a sus alumnos.** En «Editar
+  Grupo» hay una sección nueva, *Perfil que se pide al alumno*, con una casilla
+  por campo opcional. De momento solo uno: **Repositorio individual**, porque no
+  todos los cursos trabajan con repositorio propio.
+  - Desmarcarlo hace dos cosas a la vez: el campo **desaparece** del formulario
+    del alumno y **sale de la regla** que marca el perfil como completo. Es lo
+    importante: mientras el perfil está incompleto, el alumno tiene en gris
+    Malla, Competencias, Documentación, Ejercicios y Agendar Entrevistas, así que
+    un campo que no puede rellenar le bloquea el panel entero.
+  - Experiencia, expectativas y compromiso se piden **siempre**: son el
+    compromiso mínimo con el alumno y no se pueden apagar. El servidor rechaza
+    con 400 cualquier intento de desactivar uno de ellos, y la comprobación
+    ignora la lista guardada para esos campos, por si llegara un dato viejo.
+  - Los grupos sin la lista la tienen ausente y siguen pidiéndolo todo: cero
+    migración.
+  - En la tabla de alumnos, la columna «Repositorio» desaparece en los grupos que
+    no lo piden, en vez de enseñar una columna entera de guiones.
+
 - **La importación de alumnos por CSV comprueba que la matrícula y el correo de
   cada fila concuerden**, y salta —reportándola— la que no. En el Tec el correo
   institucional se deriva de la matrícula (`A01278654` → `a01278654@tec.mx`), así
@@ -705,6 +723,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   exporta lo que ve un alumno, evalúa código candidato contra el ejercicio real
   y calcula métricas de carga cognitiva.
 ### Changed
+- **«Situaciones especiales» pasa a llamarse «Situaciones/condiciones especiales
+  o algo que debamos saber para apoyarte mejor»** en el formulario del alumno.
+  La etiqueta anterior sonaba a trámite y se prestaba a dejarla en «Ninguna»;
+  esta dice para qué sirve. En la ficha del admin se queda la versión corta
+  («Situaciones/condiciones especiales»), que ahí es una etiqueta de tabla.
 - **El listado de grupos ordena por fecha de inicio ascendente** de entrada, en
   vez de por fecha de creación descendente. Con varios semestres dados de alta,
   el orden de creación no dice nada: lo que se busca es el grupo que empieza

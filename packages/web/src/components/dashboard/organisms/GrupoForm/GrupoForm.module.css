@@ -112,3 +112,35 @@
   gap: 8px;
   margin-top: 8px;
 }
+
+/* ── Campos opcionales del perfil del alumno ── */
+.campoItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.campoItem input {
+  margin-top: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.campoTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.campoLabel {
+  font-weight: 500;
+}
+
+.campoAyuda {
+  font-size: 12px;
+  color: var(--text-secondary);
+}

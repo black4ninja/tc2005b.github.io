@@ -104,28 +104,36 @@ function buildChartData(actividades: ActividadAlumnoData[]): ChartPoint[] {
 /*  Validation                                                         */
 /* ------------------------------------------------------------------ */
 
-function validatePerfil(draft: PerfilData): Record<string, string> {
+/**
+ * Mismas reglas que `validarPerfil` de la API (`models/campos-perfil.ts`), que es
+ * quien manda; esto solo evita el viaje de ida y vuelta. Los campos que el grupo
+ * no pide se saltan: ni se enseñan ni se exigen.
+ */
+function validatePerfil(draft: PerfilData, apagados: string[]): Record<string, string> {
   const errors: Record<string, string> = {};
+  const pide = (campo: string) => !apagados.includes(campo);
 
-  if (draft.experiencia.trim().length < 10) {
+  if (pide('experiencia') && draft.experiencia.trim().length < 10) {
     errors.experiencia = 'Debe tener al menos 10 caracteres';
   }
-  if (draft.expectativas.trim().length < 10) {
+  if (pide('expectativas') && draft.expectativas.trim().length < 10) {
     errors.expectativas = 'Debe tener al menos 10 caracteres';
   }
-  if (draft.compromiso.trim().length < 10) {
+  if (pide('compromiso') && draft.compromiso.trim().length < 10) {
     errors.compromiso = 'Debe tener al menos 10 caracteres';
   }
-  if (!draft.repositorioIndividual.trim().includes('github.com')) {
-    errors.repositorioIndividual = 'Debe ser una URL válida de GitHub (github.com)';
-  } else {
-    try {
-      new URL(draft.repositorioIndividual.trim());
-    } catch {
-      errors.repositorioIndividual = 'Debe ser una URL válida';
+  if (pide('repositorioIndividual')) {
+    if (!draft.repositorioIndividual.trim().includes('github.com')) {
+      errors.repositorioIndividual = 'Debe ser una URL válida de GitHub (github.com)';
+    } else {
+      try {
+        new URL(draft.repositorioIndividual.trim());
+      } catch {
+        errors.repositorioIndividual = 'Debe ser una URL válida';
+      }
     }
   }
-  if (draft.situacionesEspeciales.trim().length < 5) {
+  if (pide('situacionesEspeciales') && draft.situacionesEspeciales.trim().length < 5) {
     errors.situacionesEspeciales = 'Debe tener al menos 5 caracteres';
   }
 
@@ -150,6 +158,8 @@ export default function AlumnoDashboard() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [perfilCompleto, setPerfilCompleto] = useState(false);
+  // Campos que ESTE grupo no pide; los manda el servidor con el perfil.
+  const [camposApagados, setCamposApagados] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState('');
 
@@ -208,6 +218,7 @@ export default function AlumnoDashboard() {
               const p = { ...PERFIL_EMPTY, ...perfilJson.perfil };
               setPerfil(p);
               setPerfilDraft(p);
+              setCamposApagados(perfilJson.perfil?.camposDeshabilitados ?? []);
               const isComplete = perfilJson.perfil?.perfilCompleto ?? false;
               setPerfilCompleto(isComplete);
               updateUser({ perfilCompleto: isComplete });
@@ -243,7 +254,7 @@ export default function AlumnoDashboard() {
     if (!grupoId) return;
 
     // Frontend validation
-    const errors = validatePerfil(perfilDraft);
+    const errors = validatePerfil(perfilDraft, camposApagados);
 
     // Password validation (only if user entered something)
     let hasPassword = false;
@@ -328,13 +339,17 @@ export default function AlumnoDashboard() {
     );
   }
 
-  const profileFields = [
+  // Lo que el grupo no pide no se pinta: ver `camposApagados`.
+  const profileFields = ([
     { key: 'experiencia' as const, label: 'Experiencia (disciplinar y extracurricular)' },
     { key: 'expectativas' as const, label: 'Expectativas de la UF' },
     { key: 'compromiso' as const, label: 'Compromiso con la UF' },
     { key: 'repositorioIndividual' as const, label: 'Repositorio individual' },
-    { key: 'situacionesEspeciales' as const, label: 'Situaciones especiales' },
-  ] as const;
+    {
+      key: 'situacionesEspeciales' as const,
+      label: 'Situaciones/condiciones especiales o algo que debamos saber para apoyarte mejor',
+    },
+  ] as const).filter((c) => !camposApagados.includes(c.key));
 
   return (
     <div className={styles.page}>

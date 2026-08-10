@@ -23,6 +23,8 @@ interface GrupoData {
   admins?: AdminRef[];
   modulosDeshabilitados?: Record<string, string[]>;
   urlAgendaEntrevistas?: string | null;
+  /** Campos del perfil que este grupo NO pide (vacío = los pide todos). */
+  camposPerfilDeshabilitados?: string[];
 }
 
 const API_BASE = '/api';
@@ -159,7 +161,7 @@ export default function GruposPage() {
   }
 
   // `fechaInicio`/`fechaFin` en null = quitar la fecha (el servidor las borra).
-  async function handleSave(data: { name: string; fechaInicio?: string | null; fechaFin?: string | null; admins?: string[]; urlAgendaEntrevistas?: string }) {
+  async function handleSave(data: { name: string; fechaInicio?: string | null; fechaFin?: string | null; admins?: string[]; urlAgendaEntrevistas?: string; camposPerfilDeshabilitados?: string[] }) {
     setSaving(true);
     setError('');
     try {

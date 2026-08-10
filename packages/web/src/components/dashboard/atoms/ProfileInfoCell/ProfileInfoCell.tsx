@@ -90,7 +90,10 @@ export default function ProfileInfoCell({ alumno }: ProfileInfoCellProps) {
           {alumno.expectativas && <div><strong>Expectativas:</strong> {alumno.expectativas}</div>}
           {alumno.compromiso && <div><strong>Compromiso:</strong> {alumno.compromiso}</div>}
           {alumno.situacionesEspeciales && (
-            <div><strong>Situaciones Especiales:</strong> {alumno.situacionesEspeciales}</div>
+            // Etiqueta corta a propósito: aquí es una ficha, no el formulario.
+            // Al alumno se le pregunta con la frase larga ("…o algo que debamos
+            // saber para apoyarte mejor"), que no cabe en un tooltip de tabla.
+            <div><strong>Situaciones/condiciones especiales:</strong> {alumno.situacionesEspeciales}</div>
           )}
         </div>,
         document.body,

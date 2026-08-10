@@ -8,8 +8,19 @@ import { PlanEvaluacion } from '../models/PlanEvaluacion.js';
 import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
+import { validarPerfil } from '../models/campos-perfil.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { registrarLog } from '../models/AuditLog.js';
+
+/**
+ * Campos del perfil que este grupo NO pide. El pointer que devuelve
+ * `validateAlumnoInGrupo` viene sin datos, así que hay que traerlo.
+ */
+async function camposApagadosDelGrupo(grupoId: string): Promise<string[]> {
+  const q = new Parse.Query<Grupo>('Grupo');
+  const grupo = await q.get(grupoId, { useMasterKey: true });
+  return grupo.getCamposPerfilDeshabilitados();
+}
 
 /* ------------------------------------------------------------------ */
 /*  Helper: validate alumno belongs to grupo                           */
@@ -312,6 +323,8 @@ export async function getMyPerfil(req: Request, res: Response): Promise<void> {
         repositorioIndividual: link.getRepositorioIndividual(),
         situacionesEspeciales: link.getSituacionesEspeciales(),
         perfilCompleto: link.getPerfilCompleto(),
+        // Para que el formulario esconda lo que este grupo no pide (y no lo exija).
+        camposDeshabilitados: await camposApagadosDelGrupo(grupoPointer.id),
       },
     });
   } catch (error) {
@@ -345,41 +358,26 @@ export async function updateMyPerfil(req: Request, res: Response): Promise<void>
 
     const { experiencia, expectativas, compromiso, repositorioIndividual, situacionesEspeciales } = req.body;
 
-    // Validation
-    const errors: Record<string, string> = {};
-
-    if (typeof experiencia !== 'string' || experiencia.trim().length < 10) {
-      errors.experiencia = 'La experiencia debe tener al menos 10 caracteres';
-    }
-    if (typeof expectativas !== 'string' || expectativas.trim().length < 10) {
-      errors.expectativas = 'Las expectativas deben tener al menos 10 caracteres';
-    }
-    if (typeof compromiso !== 'string' || compromiso.trim().length < 10) {
-      errors.compromiso = 'El compromiso debe tener al menos 10 caracteres';
-    }
-    if (typeof repositorioIndividual !== 'string' || !repositorioIndividual.trim().includes('github.com')) {
-      errors.repositorioIndividual = 'Debe ser una URL válida de GitHub (github.com)';
-    } else {
-      try {
-        new URL(repositorioIndividual.trim());
-      } catch {
-        errors.repositorioIndividual = 'Debe ser una URL válida de GitHub';
-      }
-    }
-    if (typeof situacionesEspeciales !== 'string' || situacionesEspeciales.trim().length < 5) {
-      errors.situacionesEspeciales = 'Las situaciones especiales deben tener al menos 5 caracteres';
-    }
+    // La validación vive en `campos-perfil.ts` y se salta los campos que este
+    // grupo tiene apagados: si no se piden, no pueden bloquear el perfil.
+    const apagados = await camposApagadosDelGrupo(grupoPointer.id);
+    const errors = validarPerfil(
+      { experiencia, expectativas, compromiso, repositorioIndividual, situacionesEspeciales },
+      apagados,
+    );
 
     if (Object.keys(errors).length > 0) {
       res.status(400).json({ status: 'error', message: 'Errores de validación', errors });
       return;
     }
 
-    link.setExperiencia(experiencia.trim());
-    link.setExpectativas(expectativas.trim());
-    link.setCompromiso(compromiso.trim());
-    link.setRepositorioIndividual(repositorioIndividual.trim());
-    link.setSituacionesEspeciales(situacionesEspeciales.trim());
+    // Solo se guardan los campos que el grupo pide. Un campo apagado conserva lo
+    // que ya tuviera (si el grupo vuelve a pedirlo, no se ha perdido nada).
+    if (!apagados.includes('experiencia')) link.setExperiencia(experiencia.trim());
+    if (!apagados.includes('expectativas')) link.setExpectativas(expectativas.trim());
+    if (!apagados.includes('compromiso')) link.setCompromiso(compromiso.trim());
+    if (!apagados.includes('repositorioIndividual')) link.setRepositorioIndividual(repositorioIndividual.trim());
+    if (!apagados.includes('situacionesEspeciales')) link.setSituacionesEspeciales(situacionesEspeciales.trim());
     link.setPerfilCompleto(true);
 
     await link.save(null, { useMasterKey: true });

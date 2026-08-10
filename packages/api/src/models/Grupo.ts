@@ -101,6 +101,21 @@ export class Grupo extends BaseModel {
     this.set('modulosDeshabilitados', mapa);
   }
 
+  /**
+   * Campos del perfil del alumno que ESTE grupo no pide. Ausente o vacío = los
+   * pide todos, que es el comportamiento de siempre (cero migración).
+   *
+   * Un campo apagado sale del formulario Y de la regla que marca el perfil como
+   * completo: si no se pide, no puede bloquear el acceso del alumno. Solo se
+   * pueden apagar los de `CAMPOS_DESACTIVABLES` (ver `campos-perfil.ts`).
+   */
+  getCamposPerfilDeshabilitados(): string[] {
+    return this.get('camposPerfilDeshabilitados') ?? [];
+  }
+  setCamposPerfilDeshabilitados(campos: string[]): void {
+    this.set('camposPerfilDeshabilitados', campos);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     return {
       id: this.id,
@@ -129,6 +144,8 @@ export class Grupo extends BaseModel {
       // Módulos apagados por colección (para que la UI y el sidebar sepan qué está
       // habilitado). Vacío = todo habilitado.
       modulosDeshabilitados: this.getModulosDeshabilitados(),
+      // Campos del perfil que este grupo NO pide (vacío = los pide todos).
+      camposPerfilDeshabilitados: this.getCamposPerfilDeshabilitados(),
       active: this.get('active'),
       // El borrado es lógico: con `?estado=eliminados|todos` el listado devuelve
       // grupos borrados y la UI necesita distinguirlos de un simple inactivo.

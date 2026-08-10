@@ -40,6 +40,8 @@ interface AlumnoData {
 interface GrupoInfo {
   id: string;
   name: string;
+  /** Campos del perfil que este grupo NO pide (vacío = los pide todos). */
+  camposPerfilDeshabilitados?: string[];
 }
 
 interface PeriodoInfo {
@@ -228,7 +230,13 @@ export default function GrupoDetailPage() {
       if (grupoRes.ok) {
         const grupoData = await grupoRes.json();
         const found = grupoData.grupos?.find((g: any) => g.id === id);
-        if (found) setGrupo({ id: found.id, name: found.name });
+        if (found) {
+          setGrupo({
+            id: found.id,
+            name: found.name,
+            camposPerfilDeshabilitados: found.camposPerfilDeshabilitados ?? [],
+          });
+        }
       }
 
       if (!alumnosRes.ok) throw new Error('Error al cargar alumnos');
@@ -618,6 +626,10 @@ export default function GrupoDetailPage() {
       })]
     : [];
 
+  // Un grupo que no pide repositorio tendría esa columna vacía en todas las
+  // filas; se quita en vez de enseñar una columna de guiones.
+  const pideRepositorio = !(grupo?.camposPerfilDeshabilitados ?? []).includes('repositorioIndividual');
+
   const columns = [
     columnHelper.accessor('name', { header: 'Nombre' }),
     columnHelper.accessor('email', {
@@ -639,32 +651,37 @@ export default function GrupoDetailPage() {
         </span>
       ),
     }),
-    columnHelper.accessor('repositorioIndividual', {
-      header: 'Repositorio',
-      cell: (info) => {
-        const url = info.getValue();
-        if (!url) return <span className={styles.emptyField}>—</span>;
-        return (
-          <span className={styles.repoCell}>
-            <a href={url} target="_blank" rel="noopener noreferrer" className={styles.repoLink} title={url}>
-              {url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 30)}
-              {url.replace(/^https?:\/\/(www\.)?/, '').length > 30 ? '…' : ''}
-            </a>
-            <button
-              className={styles.copyIcon}
-              title="Copiar URL"
-              onClick={() => {
-                navigator.clipboard.writeText(url);
-                setToast('URL copiada');
-                setTimeout(() => setToast(''), 2000);
-              }}
-            >
-              <span className="material-icons" style={{ fontSize: 16 }}>content_copy</span>
-            </button>
-          </span>
-        );
-      },
-    }),
+    // Solo si el grupo pide repositorio (ver `pideRepositorio`).
+    ...(pideRepositorio
+      ? [
+          columnHelper.accessor('repositorioIndividual', {
+            header: 'Repositorio',
+            cell: (info) => {
+              const url = info.getValue();
+              if (!url) return <span className={styles.emptyField}>—</span>;
+              return (
+                <span className={styles.repoCell}>
+                  <a href={url} target="_blank" rel="noopener noreferrer" className={styles.repoLink} title={url}>
+                    {url.replace(/^https?:\/\/(www\.)?/, '').slice(0, 30)}
+                    {url.replace(/^https?:\/\/(www\.)?/, '').length > 30 ? '…' : ''}
+                  </a>
+                  <button
+                    className={styles.copyIcon}
+                    title="Copiar URL"
+                    onClick={() => {
+                      navigator.clipboard.writeText(url);
+                      setToast('URL copiada');
+                      setTimeout(() => setToast(''), 2000);
+                    }}
+                  >
+                    <span className="material-icons" style={{ fontSize: 16 }}>content_copy</span>
+                  </button>
+                </span>
+              );
+            },
+          }),
+        ]
+      : []),
     columnHelper.accessor('matricula', { header: 'Matrícula' }),
     columnHelper.display({
       id: 'equipo',
