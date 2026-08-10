@@ -17,6 +17,7 @@ import { useCalendarReorder } from '@/hooks/useCalendarReorder';
 import { useCreateActividad } from '@/hooks/useCreateActividad';
 import { useUpdateActividad } from '@/hooks/useUpdateActividad';
 import { useDeleteActividad } from '@/hooks/useDeleteActividad';
+import { useArchivoActividad } from '@/hooks/useArchivoActividad';
 import { useCreateSemana } from '@/hooks/useCreateSemana';
 import { useUpdateSemana } from '@/hooks/useUpdateSemana';
 import { useReorderSemanas } from '@/hooks/useReorderSemanas';
@@ -172,7 +173,12 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
     semanaId: string;
     actividadId: string;
     initialData: ActivityFormData;
+    archivoActual?: string;
   } | null>(null);
+
+  // Adjunto de las presentaciones: va en su propia petición multipart, después
+  // de que la actividad exista (el archivo se cuelga de un id).
+  const { isSubiendoArchivo, archivoError, subirArchivo, quitarArchivo } = useArchivoActividad();
 
   // Create semana hook + modal state
   const { isCreating: isCreatingSemana, createError: createSemanaError, createSemana } = useCreateSemana();
@@ -238,6 +244,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
           setEditModalState({
             semanaId,
             actividadId,
+            archivoActual: act.archivoNombre,
             initialData: {
               tipo: act.tipo,
               titulo: act.titulo,
@@ -256,8 +263,18 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
 
   const handleSaveEdit = useCallback(async (formData: ActivityFormData) => {
     if (!editModalState) return;
-    const updated = await updateActividad(editModalState.actividadId, formData);
-    if (!updated) return;
+    const { archivo, quitarArchivo: quitar, ...campos } = formData;
+    const guardada = await updateActividad(editModalState.actividadId, campos);
+    if (!guardada) return;
+
+    // El adjunto va aparte; si falla, la actividad ya quedó guardada y el
+    // error se ve en la barra de estado — no se revierte lo demás.
+    let updated = guardada;
+    if (archivo) {
+      updated = (await subirArchivo(editModalState.actividadId, archivo)) ?? guardada;
+    } else if (quitar) {
+      updated = (await quitarArchivo(editModalState.actividadId)) ?? guardada;
+    }
 
     setApiCalendario((prev) => {
       if (!prev) return prev;
@@ -276,7 +293,15 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
           const idx = arr.findIndex((a) => a.id === editModalState.actividadId);
           if (idx !== -1) {
             const newArr = [...arr];
-            newArr[idx] = { ...newArr[idx], ...updated };
+            // Los campos del adjunto se asignan aparte: el API los omite del
+            // JSON cuando no hay archivo, y un spread no borraría el anterior.
+            newArr[idx] = {
+              ...newArr[idx],
+              ...updated,
+              archivoNombre: updated.archivoNombre,
+              archivoMime: updated.archivoMime,
+              archivoBytes: updated.archivoBytes,
+            };
             dias[dayKey] = { ...day, [section]: newArr };
             sem.dias = dias;
             next.semanas[semIdx] = sem;
@@ -287,7 +312,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       return prev;
     });
     setEditModalState(null);
-  }, [editModalState, updateActividad]);
+  }, [editModalState, updateActividad, subirArchivo, quitarArchivo]);
 
   const handleDeleteActivity = useCallback(async (semanaId: string, actividadId: string) => {
     const confirmado = await confirmar({
@@ -329,9 +354,15 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
 
   const handleSaveActivity = useCallback(async (formData: ActivityFormData) => {
     if (!addModalState) return;
-    const payload = { ...formData, semanaId: addModalState.semanaId, dia: addModalState.dayKey, isPrevio: addModalState.isPrevio };
-    const newAct = await createActividad(payload);
-    if (!newAct) return;
+    const { archivo, quitarArchivo: _quitar, ...campos } = formData;
+    const payload = { ...campos, semanaId: addModalState.semanaId, dia: addModalState.dayKey, isPrevio: addModalState.isPrevio };
+    const creada = await createActividad(payload);
+    if (!creada) return;
+
+    // El archivo se cuelga de un id, así que se sube una vez creada.
+    const newAct = archivo && creada.id
+      ? (await subirArchivo(creada.id, archivo)) ?? creada
+      : creada;
 
     setApiCalendario((prev) => {
       if (!prev) return prev;
@@ -350,7 +381,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       return next;
     });
     setAddModalState(null);
-  }, [addModalState, createActividad]);
+  }, [addModalState, createActividad, subirArchivo]);
 
   const handleReorder = useCallback(
     (weekIndex: number, updates: ReorderUpdate[], newSemana: SemanaNormal) => {
@@ -583,8 +614,8 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
     );
   }
 
-  const anyError = saveError || createError || updateError || deleteActError || createSemanaError || updateSemanaError || saveSemanaError || deleteSemanaError;
-  const anySaving = isSaving || isUpdating || isDeletingAct || isSavingSemanas || isDeletingSemana || isUpdatingSemana;
+  const anyError = saveError || createError || updateError || deleteActError || createSemanaError || updateSemanaError || saveSemanaError || deleteSemanaError || archivoError;
+  const anySaving = isSaving || isUpdating || isDeletingAct || isSavingSemanas || isDeletingSemana || isUpdatingSemana || isSubiendoArchivo;
 
   const semanaIds = semanas.map((s) => s.id ?? '').filter(Boolean);
 
@@ -687,7 +718,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
           <ActivityForm
             onSave={handleSaveActivity}
             onCancel={() => setAddModalState(null)}
-            loading={isCreating}
+            loading={isCreating || isSubiendoArchivo}
             grupoId={calendario?.grupoId}
           />
         </Modal>
@@ -698,8 +729,9 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
           <ActivityForm
             onSave={handleSaveEdit}
             onCancel={() => setEditModalState(null)}
-            loading={isUpdating}
+            loading={isUpdating || isSubiendoArchivo}
             initialData={editModalState.initialData}
+            archivoActual={editModalState.archivoActual}
             mode="edit"
             grupoId={calendario?.grupoId}
           />

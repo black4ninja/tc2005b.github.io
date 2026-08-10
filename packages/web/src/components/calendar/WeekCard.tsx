@@ -67,6 +67,7 @@ const SUMMARY_LABELS: Record<string, string> = {
   trabajo: 'Trabajo',
   discusion: 'Discusión',
   info: 'Info',
+  presentacion: 'Presentaciones',
 };
 
 /** Todos los días posibles: se recorren para no perder actividades huérfanas. */

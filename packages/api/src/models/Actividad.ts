@@ -83,6 +83,47 @@ export class Actividad extends BaseModel {
     this.set('fechaEntrega', fechaEntrega);
   }
 
+  /**
+   * Archivo de una actividad «presentación». El binario vive en el adapter de
+   * Parse; nunca se expone su URL directa (files-gate la bloquea): se sirve por
+   * el endpoint propio, que comprueba pertenencia al grupo.
+   */
+  getArchivo(): Parse.File | undefined {
+    return this.get('archivo');
+  }
+  setArchivo(archivo: Parse.File): void {
+    this.set('archivo', archivo);
+  }
+
+  getArchivoNombre(): string | undefined {
+    return this.get('archivoNombre');
+  }
+  setArchivoNombre(nombre: string): void {
+    this.set('archivoNombre', nombre);
+  }
+
+  getArchivoMime(): string | undefined {
+    return this.get('archivoMime');
+  }
+  setArchivoMime(mime: string): void {
+    this.set('archivoMime', mime);
+  }
+
+  getArchivoBytes(): number {
+    return this.get('archivoBytes') ?? 0;
+  }
+  setArchivoBytes(bytes: number): void {
+    this.set('archivoBytes', bytes);
+  }
+
+  /** Borra el adjunto y sus metadatos (el binario queda en el adapter). */
+  quitarArchivo(): void {
+    this.unset('archivo');
+    this.unset('archivoNombre');
+    this.unset('archivoMime');
+    this.unset('archivoBytes');
+  }
+
   getEnlacesExtra(): Array<{ texto: string; url: string }> | undefined {
     return this.get('enlacesExtra');
   }
@@ -105,6 +146,10 @@ export class Actividad extends BaseModel {
       duracion: this.getDuracion(),
       fechaEntrega: this.getFechaEntrega(),
       enlacesExtra: this.getEnlacesExtra(),
+      // Metadatos del adjunto, nunca la URL del binario.
+      archivoNombre: this.getArchivoNombre(),
+      archivoMime: this.getArchivoMime(),
+      archivoBytes: this.getArchivoBytes() || undefined,
       active: this.get('active'),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,

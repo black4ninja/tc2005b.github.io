@@ -34,6 +34,7 @@ const TIPO_CONFIG: Record<ActividadTipo, { label: string; color: string; bg: str
   discusion: { label: 'Discusión', color: 'var(--color-discusion)', bg: 'var(--color-discusion-light)' },
   info: { label: 'Info', color: 'var(--color-info)', bg: 'var(--color-info-light)' },
   actividad: { label: 'Actividad', color: 'var(--color-actividad)', bg: 'var(--color-actividad-light)' },
+  presentacion: { label: 'Presentación', color: 'var(--color-presentacion)', bg: 'var(--color-presentacion-light)' },
 };
 
 const TIPOS_AGREGAR: ActividadTipo[] = [

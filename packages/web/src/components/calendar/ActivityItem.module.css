@@ -80,6 +80,7 @@
 .activity[data-type="trabajo"] { --activity-color: var(--color-trabajo); }
 .activity[data-type="discusion"] { --activity-color: var(--color-discusion); }
 .activity[data-type="info"] { --activity-color: var(--color-info); }
+.activity[data-type="presentacion"] { --activity-color: var(--color-presentacion); }
 
 .activity[data-type="break"] {
   --activity-color: var(--color-break);
@@ -90,4 +91,12 @@
   margin: 4px 0;
   color: var(--text-muted);
   font-size: 0.75rem;
+}
+
+/* Icono que distingue «abre» de «descarga» en las presentaciones con archivo. */
+.archivoIcon {
+  font-size: 13px;
+  margin-left: 3px;
+  vertical-align: -2px;
+  opacity: 0.7;
 }

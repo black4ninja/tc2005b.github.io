@@ -136,5 +136,12 @@ function actividadToJSON(act: Actividad): Record<string, any> {
   if (act.getFechaEntrega()) obj.fechaEntrega = act.getFechaEntrega();
   const extras = act.getEnlacesExtra();
   if (extras && extras.length > 0) obj.enlacesExtra = extras;
+  // Solo metadatos del adjunto: el binario se pide al endpoint con sesión.
+  if (act.getArchivo()) {
+    obj.archivoNombre = act.getArchivoNombre();
+    obj.archivoMime = act.getArchivoMime();
+    const bytes = act.getArchivoBytes();
+    if (bytes > 0) obj.archivoBytes = bytes;
+  }
   return obj;
 }

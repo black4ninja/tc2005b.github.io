@@ -14,6 +14,7 @@ const FILTER_PILLS: FilterPillData[] = [
   { type: 'proyecto', label: 'Proyecto', icon: 'stars' },
   { type: 'evaluacion', label: 'Evaluación', icon: 'check_circle' },
   { type: 'trabajo', label: 'Trabajo', icon: 'work' },
+  { type: 'presentacion', label: 'Presentaciones', icon: 'slideshow' },
   { type: 'break', label: 'Recesos', icon: 'free_breakfast' },
   { type: 'actividad', label: 'Actividades', icon: 'assignment' },
 ];

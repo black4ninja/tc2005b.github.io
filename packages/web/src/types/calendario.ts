@@ -1,7 +1,7 @@
 export type ActividadTipo =
   | 'lab' | 'lectura' | 'ejercicio' | 'proyecto'
   | 'evaluacion' | 'break' | 'asueto' | 'trabajo'
-  | 'discusion' | 'info' | 'actividad';
+  | 'discusion' | 'info' | 'actividad' | 'presentacion';
 
 export interface EnlaceExtra {
   texto: string;
@@ -18,6 +18,10 @@ export interface Actividad {
   duracion?: string;
   fechaEntrega?: string;
   enlacesExtra?: EnlaceExtra[];
+  /** Adjunto de una presentación. Solo metadatos: el binario va por su endpoint. */
+  archivoNombre?: string;
+  archivoMime?: string;
+  archivoBytes?: number;
 }
 
 export interface Dia {

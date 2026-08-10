@@ -11,6 +11,12 @@
   gap: 4px;
 }
 
+/* `display: flex` gana al `[hidden]` del navegador: sin esto, ocultar un campo
+   con el atributo no surte efecto. */
+.field[hidden] {
+  display: none;
+}
+
 .field label {
   font-size: 0.8125rem;
   font-weight: 600;
@@ -283,4 +289,62 @@
   gap: var(--space-sm);
   padding-top: var(--space-sm);
   border-top: 1px solid var(--border-color);
+}
+
+/* Presentación: elegir entre enlace y archivo subido */
+.fuenteRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.radioOption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.archivoActual {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-page);
+  font-size: 0.8125rem;
+}
+
+.archivoActual .material-icons {
+  font-size: 16px;
+  color: var(--text-muted);
+}
+
+.archivoNombre {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.archivoQuitar {
+  border: none;
+  background: transparent;
+  color: var(--color-evaluacion);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.archivoHint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.archivoError {
+  font-size: 0.75rem;
+  color: var(--color-evaluacion);
 }
