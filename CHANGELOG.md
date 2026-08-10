@@ -8,6 +8,18 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- **Las listas del wiki vuelven a tener viñeta, número y sangría.** El reset de
+  `globals.css` quita la marca a toda la aplicación (`ul, ol { list-style: none }`),
+  que es lo que quieren los menús, y la hoja del contenido renderizado nunca la
+  devolvía: un `- punto` del Markdown salía como una línea suelta, una lista
+  numerada perdía hasta los números y los niveles anidados se veían igual que
+  los de primer nivel. Los labs ya lo resolvían en su `.instruccionesHtml`; ahora
+  `.contenido-render` hace lo mismo, así que aplica al visor y al preview del
+  editor por igual.
+  - Cubre también los casos que se rompen solos: listas «sueltas» (con línea en
+    blanco entre puntos, donde remark envuelve cada uno en `<p>`) y las casillas
+    de GFM, que se alinean con su checkbox pero conservan la sangría de sus
+    subtareas.
 - **Un grupo bloqueado (`active: false`) deja de dar acceso a sus alumnos.** El
   bloqueo solo se respetaba en el CMS: el resto de caminos miraba únicamente si
   el grupo existía, así que el alumno seguía viéndolo en su selector, entrando a
