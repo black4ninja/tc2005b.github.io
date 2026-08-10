@@ -253,3 +253,11 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Explica si el cambio de contraseña es obligatorio o solo una opción. */
+.passwordHint {
+  margin: -4px 0 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}

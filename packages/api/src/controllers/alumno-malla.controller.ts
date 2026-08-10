@@ -428,6 +428,9 @@ export async function changeMyPassword(req: Request, res: Response): Promise<voi
 
     const hash = await bcrypt.hash(newPassword, 10);
     alumno.set('passwordHash', hash);
+    // La eligió la persona: se levanta la marca de "contraseña de fábrica" para
+    // no volver a exigirle el cambio al entrar a otro grupo.
+    alumno.setPasswordAsignada(false);
     await alumno.save(null, { useMasterKey: true });
 
     res.json({ status: 'ok', message: 'Contraseña actualizada exitosamente' });

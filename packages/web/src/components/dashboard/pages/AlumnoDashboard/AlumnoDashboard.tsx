@@ -160,6 +160,8 @@ export default function AlumnoDashboard() {
   const [perfilCompleto, setPerfilCompleto] = useState(false);
   // Campos que ESTE grupo no pide; los manda el servidor con el perfil.
   const [camposApagados, setCamposApagados] = useState<string[]>([]);
+  // La marca vive en el USUARIO, no en el vínculo al grupo.
+  const passwordAsignada = user?.passwordAsignada === true;
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState('');
 
@@ -267,9 +269,11 @@ export default function AlumnoDashboard() {
       }
     }
 
-    // If profile is not complete, password is required
-    if (!perfilCompleto && !hasPassword) {
-      errors.newPassword = 'Debes establecer una contraseña';
+    // Se exige solo a quien nunca ha elegido la suya (la que tiene se la dio el
+    // sistema). Antes se miraba `perfilCompleto`, que es POR GRUPO: al alumno con
+    // contraseña propia que entra a un grupo nuevo se le pedía cambiarla otra vez.
+    if (passwordAsignada && !hasPassword) {
+      errors.newPassword = 'Debes establecer tu propia contraseña';
     }
 
     setFieldErrors(errors);
@@ -309,7 +313,7 @@ export default function AlumnoDashboard() {
         setPerfilDraft(p);
         setEditingProfile(false);
         setPerfilCompleto(true);
-        updateUser({ perfilCompleto: true });
+        updateUser({ perfilCompleto: true, ...(hasPassword ? { passwordAsignada: false } : {}) });
         setNewPassword('');
         setConfirmPassword('');
         setFieldErrors({});
@@ -485,8 +489,13 @@ export default function AlumnoDashboard() {
           {editingProfile && (
             <div className={styles.passwordSection}>
               <h4 className={styles.passwordTitle}>
-                {perfilCompleto ? 'Cambiar contraseña (opcional)' : 'Establecer contraseña'}
+                {passwordAsignada ? 'Establece tu contraseña' : 'Cambiar contraseña (opcional)'}
               </h4>
+              <p className={styles.passwordHint}>
+                {passwordAsignada
+                  ? 'La que usaste para entrar te la asignamos nosotros y la conocen otras personas. Elige una propia para continuar.'
+                  : 'Ya tienes una contraseña tuya. Puedes cambiarla si quieres, pero no hace falta: deja estos campos vacíos para conservarla.'}
+              </p>
               <div className={styles.profileField}>
                 <span className={styles.profileLabel}>Nueva contraseña</span>
                 <input

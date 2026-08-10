@@ -8,6 +8,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **El alumno ve siempre en qué grupo está.** El selector de grupo del menú solo
+  aparecía con dos o más grupos, así que quien está en uno —lo normal— no leía el
+  nombre por ningún lado. Ahora sale igualmente, deshabilitado cuando no hay nada
+  que elegir, en vez de desaparecer.
+- **Solo se exige cambiar la contraseña a quien nunca ha elegido una.** Marca
+  nueva en el usuario, `AppUser.passwordAsignada`: se pone al crear el alumno
+  (alta manual o import CSV, donde la contraseña la genera el sistema) y se
+  levanta en cuanto la persona elige la suya.
+  - Antes esto se deducía de `GrupoAlumno.perfilCompleto`, que es POR GRUPO, y
+    fallaba por los dos lados: a un alumno con contraseña propia que entraba a un
+    grupo nuevo se le volvía a exigir cambiarla, y a uno con la contraseña de
+    fábrica en un grupo cuyo perfil ya había rellenado no se le exigía nunca.
+  - Al que la tiene de fábrica se le dice por qué («la conocen otras personas»);
+    al que ya tiene la suya se le ofrece cambiarla dejando claro que no hace falta.
+  - Ausente = la eligió la persona. Es el default a propósito: los usuarios
+    anteriores a esta marca no se molestan.
 - **Cada grupo decide qué campos del perfil pide a sus alumnos.** En «Editar
   Grupo» hay una sección nueva, *Perfil que se pide al alumno*, con una casilla
   por campo opcional. De momento solo uno: **Repositorio individual**, porque no

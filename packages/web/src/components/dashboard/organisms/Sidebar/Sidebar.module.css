@@ -90,6 +90,16 @@
   font-family: inherit;
   cursor: pointer;
 }
+
+/* Con un solo grupo el selector es informativo: se deja legible (nada de gris
+   de "control roto") y sin cursor de mano, porque no hay nada que desplegar.
+   `opacity: 1` es necesario: los navegadores atenúan los select deshabilitados. */
+.grupoSelect:disabled {
+  cursor: default;
+  opacity: 1;
+  color: var(--text-primary);
+  background: var(--bg-page);
+}
 .nav {
   flex: 1;
   padding: 16px 12px;

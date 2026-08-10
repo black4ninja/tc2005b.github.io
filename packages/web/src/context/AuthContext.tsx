@@ -11,6 +11,8 @@ interface AppUserData {
   attributes: Record<string, unknown>;
   lastLogin?: string;
   perfilCompleto?: boolean;
+  /** true = la contraseña la puso el sistema; hay que exigirle una propia. */
+  passwordAsignada?: boolean;
 }
 
 interface AuthContextType {

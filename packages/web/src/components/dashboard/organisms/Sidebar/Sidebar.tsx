@@ -351,13 +351,18 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             </Link>
           </div>
         )}
-        {role === 'alumno' && user?.grupos && user.grupos.length > 1 && !collapsed && (
+        {/* Con UN solo grupo el selector no sirve para elegir, pero sigue
+            apareciendo —deshabilitado— porque es donde el alumno lee en qué
+            grupo está. Antes, con un grupo, no había ni rastro del nombre. */}
+        {role === 'alumno' && user?.grupos && user.grupos.length > 0 && !collapsed && (
           <div className={styles.grupoSelector}>
             <label className={styles.grupoSelectorLabel}>Grupo</label>
             <select
               className={styles.grupoSelect}
               value={selectedGrupoId}
               onChange={(e) => setSelectedGrupoId(e.target.value)}
+              disabled={user.grupos.length === 1}
+              title={user.grupos.length === 1 ? 'Estás inscrito en un solo grupo' : undefined}
             >
               {user.grupos.map((g) => (
                 <option key={g.id} value={g.id}>{g.name}</option>
