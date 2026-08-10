@@ -164,6 +164,9 @@ export default function AlumnoDashboard() {
   const passwordAsignada = user?.passwordAsignada === true;
   // ¿Su grupo usa la malla de evaluación? Mientras no responda el servidor se
   // asume que sí, para no parpadear escondiendo la tarjeta.
+  // Sin malla en el grupo no se enseña la calificación acumulada: un 0.0 sobre
+  // 100 en un curso que no la usa solo confunde. La señal es el 404 de la propia
+  // carga de la malla, así no hace falta una petición extra para preguntarlo.
   const [usaMalla, setUsaMalla] = useState(true);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState('');
@@ -172,20 +175,6 @@ export default function AlumnoDashboard() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
-
-  // Sin malla en el grupo no se enseña la calificación acumulada: un 0.0 sobre
-  // 100 en un curso que no la usa solo confunde.
-  useEffect(() => {
-    if (!grupoId || !sessionToken) return;
-    fetch(`${API_BASE}/alumno/grupos/${grupoId}/modulos`, {
-      headers: { 'x-session-token': sessionToken },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        if (json?.modulos) setUsaMalla(json.modulos.malla !== false);
-      })
-      .catch(() => {});
-  }, [grupoId, sessionToken]);
 
   const authHeaders: Record<string, string> = {
     'x-session-token': sessionToken ?? '',
@@ -213,6 +202,7 @@ export default function AlumnoDashboard() {
         // No es un error que enseñarle al alumno: simplemente no hay malla, y
         // la tarjeta de calificación tampoco se pinta.
         const sinMalla = mallaRes.status === 404 && planRes.status === 404;
+        if (!cancelled) setUsaMalla(!sinMalla);
         if (!sinMalla) {
           if (!mallaRes.ok) throw new Error('Error al cargar malla');
           if (!planRes.ok) throw new Error('Error al cargar plan de evaluación');
