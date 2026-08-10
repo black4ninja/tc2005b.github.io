@@ -22,8 +22,17 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     rechazado por la API: las actividades quedarían fuera del calendario sin
     forma de recuperarlas. Un día con contenido se sigue mostrando aunque no
     esté marcado.
-  - Las semanas anteriores al campo no cambian: sus días se deducen del rango de
-    fechas y de los días con contenido, que para todas ellas da lunes–jueves.
+  - Las semanas anteriores al campo conservan lunes–jueves. No se deduce del
+    rango de fechas a propósito: hay semanas viejas con un `fechaFin` que se pasa
+    del jueves y ampliarlas solas cambiaría calendarios que nadie tocó. Como el
+    rango de la cabecera ahora sale de los días con clase, esas semanas muestran
+    «10 al 13 de agosto» en vez del `fechaFin` desfasado.
+- **El importador de Docusaurus admite material de clase**, no solo imágenes y
+  PDFs: `.py`, `.ipynb`, `.pptx`/`.pptm`/`.ppt`, `.docx`, `.xlsx`, `.txt` y
+  `.json`. Antes, una página que enlazara un `.py` o una presentación se
+  importaba con el enlace apuntando a la ruta del sitio viejo, y el alumno se
+  encontraba un 404 sin que nada lo avisara — solo aparecía como «extensión no
+  manejada» en el reporte.
 - **La malla y las competencias del alumno respetan los módulos de su grupo.** El
   menú metía «Malla» y «Competencias» SIEMPRE, sin mirar las asignaciones: con el
   módulo apagado el alumno veía la sección igualmente y entraba a una pantalla

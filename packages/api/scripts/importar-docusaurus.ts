@@ -87,6 +87,10 @@ const DIR_STATIC = path.join(RAIZ_DOCUSAURUS, 'static');
 const EXT_ASSET = new Set([
   'png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg', 'pdf', 'zip', 'html',
   'sql', 'css', 'js', 'mp3', 'wav', 'mp4', 'mov', 'webm', 'csv',
+  // Material de clase y código de ejemplo que los cursos enlazan desde sus
+  // páginas. Sin estas, el enlace se quedaba apuntando a la ruta del sitio
+  // viejo (`/ia/BirdBrain.py`) y el alumno se encontraba un 404.
+  'py', 'ipynb', 'pptx', 'pptm', 'ppt', 'docx', 'doc', 'xlsx', 'xls', 'txt', 'json',
 ]);
 
 function slugify(texto: string): string {
