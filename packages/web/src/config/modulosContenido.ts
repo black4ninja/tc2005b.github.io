@@ -22,7 +22,10 @@ export const MODULOS_CONTENIDO: ModuloContenido[] = [
   { key: 'documentacion', label: 'Documentación', icon: 'menu_book' },
   { key: 'paginas', label: 'Páginas', icon: 'article' },
   { key: 'competencias', label: 'Competencias', icon: 'emoji_events' },
-  { key: 'actividades', label: 'Actividades', icon: 'assignment' },
+  // "Actividades" es también la fuente de la malla del alumno y de su
+  // calificación acumulada: apagarlo le quita las tres cosas. La etiqueta lo
+  // dice para que no haya que saberse el modelo de datos.
+  { key: 'actividades', label: 'Actividades y malla', icon: 'assignment' },
   { key: 'ejercicios', label: 'Ejercicios', icon: 'terminal', optIn: true },
   { key: 'diagramas', label: 'Diagramas', icon: 'schema', optIn: true },
 ];

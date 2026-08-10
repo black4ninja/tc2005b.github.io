@@ -103,3 +103,19 @@ export async function plantillasDeGrupo(grupoId: string): Promise<PlantillasDeGr
 
   return { plantillas, sinColecciones: false };
 }
+
+/**
+ * ¿El grupo comparte este módulo con sus alumnos?
+ *
+ * Es "tiene al menos una colección con el módulo encendido". Sin colecciones no
+ * hay nada que compartir, así que responde false: un grupo sin colección no
+ * tiene de dónde sacar competencias ni actividades.
+ *
+ * Lo usan el menú del alumno y los endpoints de su malla y sus competencias, que
+ * antes no lo miraban: el ítem salía en el menú y la URL respondía aunque el
+ * módulo estuviera apagado.
+ */
+export async function moduloActivoEnGrupo(grupoId: string, modulo: ModuloContenido): Promise<boolean> {
+  const colecciones = await coleccionesDeGrupo(grupoId, modulo);
+  return colecciones.length > 0;
+}

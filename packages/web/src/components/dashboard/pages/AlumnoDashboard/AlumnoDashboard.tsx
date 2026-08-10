@@ -162,6 +162,9 @@ export default function AlumnoDashboard() {
   const [camposApagados, setCamposApagados] = useState<string[]>([]);
   // La marca vive en el USUARIO, no en el vínculo al grupo.
   const passwordAsignada = user?.passwordAsignada === true;
+  // ¿Su grupo usa la malla de evaluación? Mientras no responda el servidor se
+  // asume que sí, para no parpadear escondiendo la tarjeta.
+  const [usaMalla, setUsaMalla] = useState(true);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState('');
 
@@ -169,6 +172,20 @@ export default function AlumnoDashboard() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  // Sin malla en el grupo no se enseña la calificación acumulada: un 0.0 sobre
+  // 100 en un curso que no la usa solo confunde.
+  useEffect(() => {
+    if (!grupoId || !sessionToken) return;
+    fetch(`${API_BASE}/alumno/grupos/${grupoId}/modulos`, {
+      headers: { 'x-session-token': sessionToken },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (json?.modulos) setUsaMalla(json.modulos.malla !== false);
+      })
+      .catch(() => {});
+  }, [grupoId, sessionToken]);
 
   const authHeaders: Record<string, string> = {
     'x-session-token': sessionToken ?? '',
@@ -192,16 +209,25 @@ export default function AlumnoDashboard() {
           fetch(`${API_BASE}/alumno/grupos/${grupoId}/plan-evaluacion`, { headers: authHeaders }),
         ]);
 
-        if (!mallaRes.ok) throw new Error('Error al cargar malla');
-        if (!planRes.ok) throw new Error('Error al cargar plan de evaluación');
+        // 404 = el grupo no usa la malla (módulo "Actividades y malla" apagado).
+        // No es un error que enseñarle al alumno: simplemente no hay malla, y
+        // la tarjeta de calificación tampoco se pinta.
+        const sinMalla = mallaRes.status === 404 && planRes.status === 404;
+        if (!sinMalla) {
+          if (!mallaRes.ok) throw new Error('Error al cargar malla');
+          if (!planRes.ok) throw new Error('Error al cargar plan de evaluación');
 
-        const [mallaJson, planJson] = await Promise.all([mallaRes.json(), planRes.json()]);
+          const [mallaJson, planJson] = await Promise.all([mallaRes.json(), planRes.json()]);
 
-        if (cancelled) return;
+          if (cancelled) return;
 
-        setActividades(mallaJson.actividades ?? []);
-        if (planJson.plan?.periodos) {
-          setPeriodos(planJson.plan.periodos);
+          setActividades(mallaJson.actividades ?? []);
+          if (planJson.plan?.periodos) {
+            setPeriodos(planJson.plan.periodos);
+          }
+        } else if (!cancelled) {
+          setActividades([]);
+          setPeriodos([]);
         }
 
         // Fetch competencias and perfil (both optional)
@@ -389,16 +415,20 @@ export default function AlumnoDashboard() {
           </div>
         ))}
 
-        <div className={styles.statCard}>
-          <span className={`material-icons ${styles.statIcon}`} style={{ color: '#13deb9' }}>
-            emoji_events
-          </span>
-          <div className={styles.statContent}>
-            <span className={styles.statTitle}>Calificación Acumulada</span>
-            <span className={styles.statValue}>{calificacionActual.toFixed(1)}</span>
-            <span className={styles.statSub}>sobre 100</span>
+        {/* Sin malla no hay calificación que enseñar: un 0.0 sobre 100 en un
+            curso que no la usa solo confunde. */}
+        {usaMalla && (
+          <div className={styles.statCard}>
+            <span className={`material-icons ${styles.statIcon}`} style={{ color: '#13deb9' }}>
+              emoji_events
+            </span>
+            <div className={styles.statContent}>
+              <span className={styles.statTitle}>Calificación Acumulada</span>
+              <span className={styles.statValue}>{calificacionActual.toFixed(1)}</span>
+              <span className={styles.statSub}>sobre 100</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Chart + Profile row */}

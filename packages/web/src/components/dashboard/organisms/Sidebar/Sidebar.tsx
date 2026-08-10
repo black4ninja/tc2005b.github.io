@@ -80,12 +80,30 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   // Agenda de entrevistas del grupo abierto (admin). La del alumno sale del
   // payload de sesión (user.grupos), no requiere fetch.
   const [agendaGrupoHref, setAgendaGrupoHref] = useState<string | null>(null);
+  // Secciones que el grupo del alumno comparte. `undefined` hasta que responde
+  // el servidor: se asume que sí, para no parpadear quitando ítems.
+  const [modulosGrupo, setModulosGrupo] = useState<{ malla?: boolean; competencias?: boolean }>({});
 
   useEffect(() => {
     if (role === 'alumno' && user?.grupos?.length) {
       setSelectedGrupoId(user.grupos[0].id);
     }
   }, [role, user?.grupos]);
+
+  // Qué secciones comparte el grupo del alumno (malla y competencias). Sin esto
+  // el menú ofrecía ítems que el servidor responde con 404.
+  useEffect(() => {
+    if (role !== 'alumno' || !selectedGrupoId || !sessionToken) {
+      setModulosGrupo({});
+      return;
+    }
+    fetch(`/api/alumno/grupos/${selectedGrupoId}/modulos`, {
+      headers: { 'x-session-token': sessionToken },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => setModulosGrupo(json?.modulos ?? {}))
+      .catch(() => {});
+  }, [role, selectedGrupoId, sessionToken]);
 
   // Link "Documentación" del alumno: el visor de su primera colección del
   // CMS; sin colecciones asignadas, el ítem se oculta (docsHref = null).
@@ -284,6 +302,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         docsHref,
         agendaAlumnoHref,
         ejerciciosHref,
+        modulosGrupo,
       );
 
   return (

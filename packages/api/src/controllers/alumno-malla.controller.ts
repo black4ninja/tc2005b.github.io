@@ -9,8 +9,24 @@ import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { validarPerfil } from '../models/campos-perfil.js';
+import { moduloActivoEnGrupo } from '../services/grupo-colecciones.service.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { registrarLog } from '../models/AuditLog.js';
+
+/**
+ * Corta con 404 si el grupo no comparte ese módulo con sus alumnos. 404 y no 403
+ * a propósito: para el alumno ese contenido no existe, igual que responde el
+ * visor de Contenidos cuando la colección no le toca.
+ */
+async function moduloDisponible(
+  grupoId: string,
+  modulo: 'competencias' | 'actividades',
+  res: Response,
+): Promise<boolean> {
+  if (await moduloActivoEnGrupo(grupoId, modulo)) return true;
+  res.status(404).json({ status: 'error', message: 'Esta sección no está disponible en tu grupo' });
+  return false;
+}
 
 /**
  * Campos del perfil que este grupo NO pide. El pointer que devuelve
@@ -64,6 +80,7 @@ export async function getMyMalla(req: Request, res: Response): Promise<void> {
   try {
     const grupoPointer = await validateAlumnoInGrupo(req, res);
     if (!grupoPointer) return;
+    if (!(await moduloDisponible(grupoPointer.id, 'actividades', res))) return;
 
     const alumnoId = (req as any).appUser.id;
     const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId) as AppUser;
@@ -104,6 +121,7 @@ export async function getMyPlanEvaluacion(req: Request, res: Response): Promise<
   try {
     const grupoPointer = await validateAlumnoInGrupo(req, res);
     if (!grupoPointer) return;
+    if (!(await moduloDisponible(grupoPointer.id, 'actividades', res))) return;
 
     const { grupoId } = req.params;
 
@@ -131,6 +149,7 @@ export async function updateMyActividad(req: Request, res: Response): Promise<vo
   try {
     const grupoPointer = await validateAlumnoInGrupo(req, res);
     if (!grupoPointer) return;
+    if (!(await moduloDisponible(grupoPointer.id, 'actividades', res))) return;
 
     const { actividadId } = req.params;
     const alumnoId = (req as any).appUser.id;
@@ -210,6 +229,7 @@ export async function getMyCompetencias(req: Request, res: Response): Promise<vo
   try {
     const grupoPointer = await validateAlumnoInGrupo(req, res);
     if (!grupoPointer) return;
+    if (!(await moduloDisponible(grupoPointer.id, 'competencias', res))) return;
 
     const alumnoId = (req as any).appUser.id;
     const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId) as AppUser;
@@ -249,6 +269,7 @@ export async function updateMyCompetenciaEvidencias(req: Request, res: Response)
   try {
     const grupoPointer = await validateAlumnoInGrupo(req, res);
     if (!grupoPointer) return;
+    if (!(await moduloDisponible(grupoPointer.id, 'competencias', res))) return;
 
     const { compAlumnoId } = req.params;
     const alumnoId = (req as any).appUser.id;
@@ -293,6 +314,29 @@ export async function updateMyCompetenciaEvidencias(req: Request, res: Response)
 /* ------------------------------------------------------------------ */
 /*  GET /alumno/grupos/:grupoId/perfil                                 */
 /* ------------------------------------------------------------------ */
+
+/**
+ * GET /alumno/grupos/:grupoId/modulos — qué secciones comparte el grupo con sus
+ * alumnos. Lo consume el menú para no ofrecer lo que luego responde 404, y el
+ * panel para no enseñar una calificación de una malla que el grupo no usa.
+ */
+export async function getMyModulos(req: Request, res: Response): Promise<void> {
+  try {
+    const grupoPointer = await validateAlumnoInGrupo(req, res);
+    if (!grupoPointer) return;
+
+    const [competencias, actividades] = await Promise.all([
+      moduloActivoEnGrupo(grupoPointer.id, 'competencias'),
+      moduloActivoEnGrupo(grupoPointer.id, 'actividades'),
+    ]);
+
+    // `malla` sale del mismo interruptor que las actividades: es de donde se
+    // estampa. Se nombra aparte para que el consumidor no tenga que saberlo.
+    res.json({ status: 'ok', modulos: { competencias, actividades, malla: actividades } });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Error al obtener los módulos del grupo' });
+  }
+}
 
 export async function getMyPerfil(req: Request, res: Response): Promise<void> {
   try {

@@ -14,6 +14,13 @@ export function getSidebarItems(
   docsHref: string | null = null,
   agendaHref: string | null = null,
   ejerciciosHref: string | null = null,
+  /**
+   * Secciones que el grupo comparte con sus alumnos. Malla y Competencias se
+   * metían SIEMPRE, sin mirar los módulos: el alumno veía "Competencias" con el
+   * módulo apagado, y el enlace llevaba a una pantalla vacía.
+   * Por defecto en true: quien no pase el dato (el admin) no pierde ítems.
+   */
+  modulosGrupo: { malla?: boolean; competencias?: boolean } = {},
 ): SidebarItem[] {
   if (role === 'admin') {
     return [
@@ -39,7 +46,7 @@ export function getSidebarItems(
     });
   }
   items.push({ label: 'Dashboard', icon: 'dashboard', path: '/alumno' });
-  if (selectedGrupoId) {
+  if (selectedGrupoId && modulosGrupo.malla !== false) {
     items.push({
       label: 'Malla',
       icon: 'grid_view',
@@ -47,7 +54,7 @@ export function getSidebarItems(
       disabled: !perfilCompleto,
     });
   }
-  if (selectedGrupoId) {
+  if (selectedGrupoId && modulosGrupo.competencias !== false) {
     items.push({
       label: 'Competencias',
       icon: 'emoji_events',

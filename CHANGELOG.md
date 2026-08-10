@@ -8,6 +8,20 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **La malla y las competencias del alumno respetan los módulos de su grupo.** El
+  menú metía «Malla» y «Competencias» SIEMPRE, sin mirar las asignaciones: con el
+  módulo apagado el alumno veía la sección igualmente y entraba a una pantalla
+  vacía. Ahora el ítem desaparece, y sus endpoints responden 404 en vez de
+  servir datos de un módulo que el grupo no comparte — esconder el enlace sin
+  cerrar la puerta habría sido cosmético.
+  - **Un grupo que no usa la malla tampoco enseña la «Calificación Acumulada»**
+    en el panel del alumno: un 0.0 sobre 100 en un curso que no la evalúa así
+    solo confunde. El panel distingue «este grupo no usa malla» de «falló la
+    carga», que antes se veían igual.
+  - No hace falta un interruptor nuevo: el módulo **Actividades** ya era la
+    fuente de la malla (`ActividadEvaluacion` → `ActividadEvaluacionGrupo` →
+    `ActividadEvaluacionAlumno`). Se renombra a **«Actividades y malla»** en el
+    modal de asignaciones para que se entienda sin conocer el modelo de datos.
 - **El alumno ve siempre en qué grupo está.** El selector de grupo del menú solo
   aparecía con dos o más grupos, así que quien está en uno —lo normal— no leía el
   nombre por ningún lado. Ahora sale igualmente, deshabilitado cuando no hay nada
