@@ -230,7 +230,7 @@ export default function GrupoForm({ grupo, admins = [], onSave, onCancel, loadin
         <p className={styles.hint}>
           Experiencia, expectativas y compromiso se piden siempre. Lo que desmarques aquí
           desaparece del formulario del alumno y deja de bloquearle el acceso a Malla,
-          Competencias, Documentación y Ejercicios.
+          Competencias, Wiki y Ejercicios.
         </p>
         <div className={styles.checkboxList}>
           {CAMPOS_PERFIL_OPCIONALES.map((campo) => (

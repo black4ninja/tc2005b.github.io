@@ -32,7 +32,7 @@ export default function HomePage() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <span className={styles.linkTitle}>Documentación</span>
+            <span className={styles.linkTitle}>Wiki</span>
             <span className={styles.linkDesc}>
               Material del curso y guías de laboratorio
             </span>

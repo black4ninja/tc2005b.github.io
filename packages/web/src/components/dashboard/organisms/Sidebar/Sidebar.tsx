@@ -105,7 +105,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       .catch(() => {});
   }, [role, selectedGrupoId, sessionToken]);
 
-  // Link "Documentación" del alumno: el visor de su primera colección del
+  // Link "Wiki" del alumno: el visor de su primera colección del
   // CMS; sin colecciones asignadas, el ítem se oculta (docsHref = null).
   // El admin no lleva este ítem — su acceso es la sección "Contenidos".
   useEffect(() => {
@@ -222,8 +222,10 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
 
     return [
       {
+        // Mismo módulo que el alumno ve como "Wiki": el enlace lleva al mismo
+        // visor. La key interna sigue siendo 'documentacion' (la usa el backend).
         key: 'contenido',
-        titulo: 'Contenido',
+        titulo: 'Wiki',
         icono: 'menu_book',
         items: enlaces('documentacion', (c) => `/contenidos/${c.slug}/`, 'doc', true),
       },

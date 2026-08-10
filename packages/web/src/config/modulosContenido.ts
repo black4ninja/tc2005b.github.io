@@ -19,7 +19,9 @@ export interface ModuloContenido {
 }
 
 export const MODULOS_CONTENIDO: ModuloContenido[] = [
-  { key: 'documentacion', label: 'Documentación', icon: 'menu_book' },
+  // La key sigue siendo `documentacion` (la usa el backend); solo cambia cómo
+  // se llama en pantalla.
+  { key: 'documentacion', label: 'Wiki', icon: 'menu_book' },
   { key: 'paginas', label: 'Páginas', icon: 'article' },
   { key: 'competencias', label: 'Competencias', icon: 'emoji_events' },
   // "Actividades" es también la fuente de la malla del alumno y de su

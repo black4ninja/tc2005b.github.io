@@ -62,9 +62,9 @@ export function getSidebarItems(
       disabled: !perfilCompleto,
     });
   }
-  // Sin colecciones asignadas no hay documentación que enlazar.
+  // Sin colecciones asignadas no hay wiki que enlazar.
   if (docsHref) {
-    items.push({ label: 'Documentación', icon: 'menu_book', path: docsHref, external: true, disabled: !perfilCompleto });
+    items.push({ label: 'Wiki', icon: 'menu_book', path: docsHref, external: true, disabled: !perfilCompleto });
   }
   // Solo si algún grupo del alumno tiene Ejercicios habilitado y con contenido.
   // No es `external`: el módulo vive dentro del shell, como el resto del menú.
@@ -73,7 +73,7 @@ export function getSidebarItems(
   }
   // Ídem para Diagramas, que se enciende por separado: un grupo puede tener uno
   // de los dos módulos y no el otro.
-  // Sin URL en su grupo, no hay agenda que enlazar (igual que "Documentación").
+  // Sin URL en su grupo, no hay agenda que enlazar (igual que "Wiki").
   if (agendaHref) {
     items.push({
       label: 'Agendar Entrevistas',

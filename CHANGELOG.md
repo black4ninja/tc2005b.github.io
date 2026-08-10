@@ -753,6 +753,15 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   exporta lo que ve un alumno, evalúa código candidato contra el ejercicio real
   y calcula métricas de carga cognitiva.
 ### Changed
+- **«Documentación» pasa a llamarse «Wiki»** en toda la interfaz: el ítem del menú
+  del alumno, la casilla del modal de asignaciones, la sección del menú de grupo
+  —que se llamaba «Contenido» y apunta al mismo visor—, la acción «Abrir wiki» de
+  una colección y la tarjeta de la portada. Solo cambian las etiquetas: la key
+  interna del módulo sigue siendo `documentacion`, así que no hay que migrar
+  nada ni tocar el backend.
+  - «Contenidos» (la sección del admin donde se administra) se queda como está:
+    ahí dentro viven también Páginas, Competencias, Actividades, Ejercicios y
+    Diagramas, así que no es sinónimo de la wiki.
 - **«Situaciones especiales» pasa a llamarse «Situaciones/condiciones especiales
   o algo que debamos saber para apoyarte mejor»** en el formulario del alumno.
   La etiqueta anterior sonaba a trámite y se prestaba a dejarla en «Ninguna»;
