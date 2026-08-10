@@ -36,6 +36,18 @@ export function seccionDeLaRuta(pathname: string): string | null {
   return m ? m[1] : null;
 }
 
+/**
+ * `/alumno/grupos/<id>/...` → el id, o null si la ruta no cuelga de un grupo.
+ *
+ * Sirve para detectar que el alumno está mirando un grupo que ya no es suyo
+ * —le dieron de baja, o el grupo quedó bloqueado— y sacarlo de ahí antes de
+ * que el API le responda 403 en cada petición.
+ */
+export function grupoDeLaRuta(pathname: string): string | null {
+  const m = /^\/alumno\/grupos\/([^/]+)(?:\/|$)/.exec(pathname);
+  return m ? m[1] : null;
+}
+
 export function GrupoActivoProvider({ children }: { children: ReactNode }) {
   const { user, sessionToken } = useAuth();
   const navigate = useNavigate();
@@ -58,6 +70,24 @@ export function GrupoActivoProvider({ children }: { children: ReactNode }) {
       return grupos[0].id;
     });
   }, [grupos, user?.ultimoGrupoId]);
+
+  // La URL puede haberse quedado en un grupo que ya no está disponible: un
+  // enlace guardado, o el grupo que el alumno tenía abierto cuando lo
+  // bloquearon. Sin esto, el menú apuntaría al grupo nuevo mientras la página
+  // insiste con el viejo y el API le contesta 403 a todo.
+  useEffect(() => {
+    if (!grupoActivoId || grupos.length === 0) return;
+    const enLaRuta = grupoDeLaRuta(pathname);
+    if (!enLaRuta || enLaRuta === grupoActivoId) return;
+    if (grupos.some((g) => g.id === enLaRuta)) return;
+
+    const seccion = seccionDeLaRuta(pathname);
+    // `replace`: el grupo viejo no debe quedar en el historial, o el botón de
+    // atrás devolvería al alumno justo a la ruta rota.
+    navigate(seccion ? `/alumno/grupos/${grupoActivoId}/${seccion}` : '/alumno', {
+      replace: true,
+    });
+  }, [grupoActivoId, grupos, pathname, navigate]);
 
   const cambiarGrupo = useCallback(
     (grupoId: string) => {

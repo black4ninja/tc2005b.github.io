@@ -7,6 +7,28 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **Un grupo bloqueado (`active: false`) deja de dar acceso a sus alumnos.** El
+  bloqueo solo se respetaba en el CMS: el resto de caminos miraba únicamente si
+  el grupo existía, así que el alumno seguía viéndolo en su selector, entrando a
+  sus secciones y abriendo su calendario —que además era público— como si nada.
+  Ahora un grupo bloqueado es, para el alumno, un grupo que no existe.
+  - La regla se concentra en `grupoDaAccesoAlumno` y la usan todos los caminos
+    del alumno (selector, login, secciones de `/alumno/grupos/:grupoId`, módulos
+    de contenido y adjuntos de las presentaciones). Estaba copiada en cada uno, y
+    bastaba con que a uno se le olvidara para que el bloqueo no sirviera.
+  - **El staff conserva el acceso**: bloquear cierra la puerta a la clase, no al
+    profesor que necesita su material del semestre pasado. Por eso el calendario
+    de un grupo bloqueado deja de ser público pero sigue abriéndose —y
+    editándose— con sesión de staff.
+  - **A quien solo le quedan grupos bloqueados no se le deja entrar**, igual que
+    al alumno sin grupos: el login ya no cuenta los grupos bloqueados.
+  - **Si el alumno tenía ese grupo abierto, al recargar salta al primero
+    disponible.** La lista se recalcula en cada arranque (`/auth/me`), y si la
+    URL se quedó apuntando al grupo bloqueado se le redirige a la misma sección
+    del grupo nuevo con `replace`, para que el botón de atrás no lo devuelva a
+    una pantalla que responde 403 a todo.
+
 ### Added
 - **Nuevo tipo de actividad «Presentación»**, que apunta a una URL **o** a un
   archivo subido desde el propio modal. Un `.html` autocontenido se abre en una
