@@ -11,6 +11,7 @@ import {
 import type { DragStartEvent, DragEndEvent, DragOverEvent } from '@dnd-kit/core';
 import type { Semana, SemanaNormal, ActividadTipo } from '@/types/calendario';
 import type { ReorderUpdate } from '@/hooks/useCalendarReorder';
+import { DIA_KEYS, DIA_OFFSETS, diasDeSemana, sumarDias, type DiaKey } from '@/utils/diasSemana';
 import DayColumn from './DayColumn';
 import DaySummaryCell from './DaySummaryCell';
 import { DragOverlayActivityItem } from './SortableActivityItem';
@@ -29,6 +30,9 @@ function formatDateRange(start: string, end: string): string {
   const eDay = e.getDate();
   const sMonth = MONTHS_ES[s.getMonth()];
   const eMonth = MONTHS_ES[e.getMonth()];
+  if (start === end) {
+    return `${sDay} de ${sMonth}`;
+  }
   if (sMonth === eMonth) {
     return `${sDay} al ${eDay} de ${sMonth}`;
   }
@@ -65,9 +69,10 @@ const SUMMARY_LABELS: Record<string, string> = {
   info: 'Info',
 };
 
-const DAY_KEYS = ['lunes', 'martes', 'miercoles', 'jueves'] as const;
+/** Todos los días posibles: se recorren para no perder actividades huérfanas. */
+const DAY_KEYS = DIA_KEYS;
 
-type DayKey = typeof DAY_KEYS[number];
+type DayKey = DiaKey;
 
 interface DragHandleProps {
   listeners: any;
@@ -99,6 +104,7 @@ interface WeekCardProps {
   onEditActivity?: (semanaId: string, actividadId: string) => void;
   onDeleteActivity?: (semanaId: string, actividadId: string) => void;
   onDeleteWeek?: (semanaId: string) => void;
+  onEditWeek?: (semanaId: string) => void;
   dragHandleProps?: DragHandleProps;
 }
 
@@ -138,12 +144,21 @@ export default function WeekCard({
   onEditActivity,
   onDeleteActivity,
   onDeleteWeek,
+  onEditWeek,
   dragHandleProps,
 }: WeekCardProps) {
   const cardRef = useRef<HTMLElement>(null);
   const isSpecial = semana.tipo === 'especial';
   const weekLabel = isSpecial ? semana.titulo : `Semana ${semana.numero}`;
-  const dateRange = formatDateRange(semana.fechaInicio, semana.fechaFin);
+  // En semanas normales el rango sale de los días con clase —fechaInicio es solo
+  // el ancla (lunes)— y no de fechaFin, que en semanas viejas se pasa del último día.
+  const diasConClase = isSpecial ? [] : diasDeSemana(semana);
+  const dateRange = isSpecial
+    ? formatDateRange(semana.fechaInicio, semana.fechaFin)
+    : formatDateRange(
+        sumarDias(semana.fechaInicio, DIA_OFFSETS[diasConClase[0]]),
+        sumarDias(semana.fechaInicio, DIA_OFFSETS[diasConClase[diasConClase.length - 1]]),
+      );
 
   const cardClasses = [
     styles.weekCard,
@@ -344,31 +359,55 @@ export default function WeekCard({
     const sem = displaySemana;
     if (!sem) return null;
 
+    const dayKeys = diasDeSemana(sem);
+
+    // El grid coloca los días en la primera fila y sus resúmenes en la segunda.
+    // En tablet/móvil las media queries reordenan con estas variables para
+    // dejar cada resumen junto a su día sin depender de un número fijo de columnas.
+    const ordenDia = (i: number) => ({
+      '--ord-desktop': i,
+      '--ord-tablet': Math.floor(i / 2) * 4 + (i % 2),
+      '--ord-mobile': i * 2,
+    } as React.CSSProperties);
+    const ordenResumen = (i: number) => ({
+      '--ord-desktop': dayKeys.length + i,
+      '--ord-tablet': Math.floor(i / 2) * 4 + 2 + (i % 2),
+      '--ord-mobile': i * 2 + 1,
+    } as React.CSSProperties);
+
     const grid = (
-      <div className={styles.dayGrid}>
-        {DAY_KEYS.map((dayKey) => (
-          <DayColumn
-            key={dayKey}
-            dayKey={dayKey}
-            day={sem.dias[dayKey]}
-            activeFilters={activeFilters}
-            editable={editable}
-            fechaInicio={sem.fechaInicio}
-            onAddActivity={editable && onAddActivity && sem.id
-              ? (day, isPrevio) => onAddActivity(sem.id!, day, isPrevio)
-              : undefined}
-            onEditActivity={editable && onEditActivity && sem.id
-              ? (actId) => onEditActivity(sem.id!, actId)
-              : undefined}
-            onDeleteActivity={editable && onDeleteActivity && sem.id
-              ? (actId) => onDeleteActivity(sem.id!, actId)
-              : undefined}
-          />
+      <div
+        className={styles.dayGrid}
+        style={{ '--day-count': dayKeys.length } as React.CSSProperties}
+      >
+        {dayKeys.map((dayKey, i) => (
+          <div key={dayKey} className={styles.gridCell} style={ordenDia(i)}>
+            <DayColumn
+              dayKey={dayKey}
+              day={sem.dias[dayKey]}
+              activeFilters={activeFilters}
+              editable={editable}
+              fechaInicio={sem.fechaInicio}
+              onAddActivity={editable && onAddActivity && sem.id
+                ? (day, isPrevio) => onAddActivity(sem.id!, day, isPrevio)
+                : undefined}
+              onEditActivity={editable && onEditActivity && sem.id
+                ? (actId) => onEditActivity(sem.id!, actId)
+                : undefined}
+              onDeleteActivity={editable && onDeleteActivity && sem.id
+                ? (actId) => onDeleteActivity(sem.id!, actId)
+                : undefined}
+            />
+          </div>
         ))}
-        {DAY_KEYS.map((dayKey) => {
+        {dayKeys.map((dayKey, i) => {
           const day = sem.dias[dayKey];
           const sessions = computeSessionSummaries(day?.actividades ?? []);
-          return <DaySummaryCell key={`${dayKey}-summary`} sessions={sessions} />;
+          return (
+            <div key={`${dayKey}-summary`} className={styles.gridCell} style={ordenResumen(i)}>
+              <DaySummaryCell sessions={sessions} />
+            </div>
+          );
         })}
       </div>
     );
@@ -443,6 +482,19 @@ export default function WeekCard({
                 ));
             })()}
           </div>
+        )}
+
+        {editable && onEditWeek && semana.id && (
+          <span
+            className={styles.weekEditBtn}
+            title="Editar semana (fechas y días con clase)"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditWeek(semana.id!);
+            }}
+          >
+            <i className="material-icons">edit</i>
+          </span>
         )}
 
         {editable && onDeleteWeek && semana.id && isSemanaEmpty(semana) && (

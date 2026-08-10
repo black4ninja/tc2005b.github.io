@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { Actividad } from '../models/Actividad.js';
+import { DIAS_SEMANA } from '../constants/dias.js';
 
 interface ReorderUpdate {
   actividadId: string;
@@ -17,7 +18,7 @@ export async function reorderActividades(req: Request, res: Response): Promise<v
     return;
   }
 
-  const validDias = ['lunes', 'martes', 'miercoles', 'jueves'];
+  const validDias: readonly string[] = DIAS_SEMANA;
   for (const u of updates) {
     if (!u.actividadId || !validDias.includes(u.dia) || typeof u.orden !== 'number') {
       res.status(400).json({ status: 'error', message: `Update inválido: ${JSON.stringify(u)}` });

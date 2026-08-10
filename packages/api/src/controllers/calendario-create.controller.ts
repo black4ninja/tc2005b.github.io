@@ -1,8 +1,9 @@
 import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { Actividad } from '../models/Actividad.js';
+import { DIAS_SEMANA } from '../constants/dias.js';
 
-const VALID_DIAS = ['lunes', 'martes', 'miercoles', 'jueves'];
+const VALID_DIAS: readonly string[] = DIAS_SEMANA;
 const VALID_TIPOS = [
   'lab', 'lectura', 'ejercicio', 'proyecto',
   'evaluacion', 'break', 'asueto', 'trabajo',

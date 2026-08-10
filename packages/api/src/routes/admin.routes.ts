@@ -5,7 +5,7 @@ import { requireStaff } from '../middlewares/grupo-scope.middleware.js';
 import { reorderActividades } from '../controllers/calendario-reorder.controller.js';
 import { createActividad } from '../controllers/calendario-create.controller.js';
 import { updateActividad, deleteActividad } from '../controllers/calendario-update.controller.js';
-import { createSemana, reorderSemanas, deleteSemana } from '../controllers/semana.controller.js';
+import { createSemana, updateSemana, reorderSemanas, deleteSemana } from '../controllers/semana.controller.js';
 import { changeAdminPassword, listAdmins, createAdmin, updateAdmin, setGruposDeAdmin } from '../controllers/admin.controller.js';
 import { copyCalendario } from '../controllers/calendario-copy.controller.js';
 
@@ -31,6 +31,8 @@ router.put('/admin/calendario/actividad/:actividadId', ...soloAdmin, updateActiv
 router.delete('/admin/calendario/actividad/:actividadId', ...soloAdmin, deleteActividad);
 router.post('/admin/calendario/semana', ...soloAdmin, createSemana);
 router.put('/admin/calendario/semana/reorder', ...soloAdmin, reorderSemanas);
+// Debe ir DESPUÉS de /semana/reorder: si no, 'reorder' entraría como :semanaId.
+router.put('/admin/calendario/semana/:semanaId', ...soloAdmin, updateSemana);
 router.delete('/admin/calendario/semana/:semanaId', ...soloAdmin, deleteSemana);
 router.post('/admin/calendario/copy', ...soloAdmin, copyCalendario);
 router.get('/admin/administradores', ...soloAdmin, listAdmins);

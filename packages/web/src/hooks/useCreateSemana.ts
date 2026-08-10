@@ -8,6 +8,7 @@ export interface CreateSemanaPayload {
   tipo: 'normal' | 'especial';
   fechaInicio: string;
   fechaFin: string;
+  diasActivos?: string[];
   titulo?: string;
   mensaje?: string;
   mensajeImportante?: string;
@@ -19,6 +20,7 @@ interface CreateSemanaResult {
   fechaInicio: string;
   fechaFin: string;
   tipo: string;
+  diasActivos?: string[];
   titulo?: string;
   mensaje?: string;
   mensajeImportante?: string;

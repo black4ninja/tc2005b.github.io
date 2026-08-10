@@ -1,32 +1,13 @@
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { Dia, ActividadTipo } from '@/types/calendario';
+import { DIA_NOMBRES, diaDelMes, type DiaKey } from '@/utils/diasSemana';
 import ActivityItem from './ActivityItem';
 import SortableActivityItem from './SortableActivityItem';
 import styles from './DayColumn.module.css';
 
-const DAY_NAMES: Record<string, string> = {
-  lunes: 'Lunes',
-  martes: 'Martes',
-  miercoles: 'Miércoles',
-  jueves: 'Jueves',
-};
-
-const DAY_OFFSETS: Record<string, number> = {
-  lunes: 0,
-  martes: 1,
-  miercoles: 2,
-  jueves: 3,
-};
-
-function getDayDate(fechaInicio: string, dayKey: string): number {
-  const date = new Date(fechaInicio + 'T00:00:00');
-  date.setDate(date.getDate() + DAY_OFFSETS[dayKey]);
-  return date.getDate();
-}
-
 interface DayColumnProps {
-  dayKey: 'lunes' | 'martes' | 'miercoles' | 'jueves';
+  dayKey: DiaKey;
   day: Dia | undefined;
   activeFilters: Set<ActividadTipo>;
   editable?: boolean;
@@ -49,7 +30,12 @@ function DroppableZone({ id, children, isEmpty }: { id: string; children?: React
 }
 
 export default function DayColumn({ dayKey, day, activeFilters, editable, onAddActivity, onEditActivity, onDeleteActivity, fechaInicio }: DayColumnProps) {
-  if (!day && !editable) return null;
+  const dayHeader = (
+    <h3 className={styles.dayName}>
+      {DIA_NOMBRES[dayKey]}
+      {fechaInicio && <span className={styles.dayDate}> {diaDelMes(fechaInicio, dayKey)}</span>}
+    </h3>
+  );
 
   const isFiltered = (tipo: ActividadTipo): boolean => {
     if (activeFilters.size === 0) return false;
@@ -66,7 +52,7 @@ export default function DayColumn({ dayKey, day, activeFilters, editable, onAddA
     // Empty day in editable mode — show drop zones
     return (
       <div className={styles.dayColumn}>
-        <h3 className={styles.dayName}>{DAY_NAMES[dayKey]}{fechaInicio && <span className={styles.dayDate}> {getDayDate(fechaInicio, dayKey)}</span>}</h3>
+        {dayHeader}
         <DroppableZone id={`${dayKey}-previo`} isEmpty>
           <div className={styles.preSession}>
             <div className={styles.preSessionLabel}>Previo a la sesión</div>
@@ -85,9 +71,9 @@ export default function DayColumn({ dayKey, day, activeFilters, editable, onAddA
 
   return (
     <div className={styles.dayColumn}>
-      <h3 className={styles.dayName}>{DAY_NAMES[dayKey]}</h3>
+      {dayHeader}
 
-      {day!.nota && <div className={styles.dayNote}>{day!.nota}</div>}
+      {day?.nota && <div className={styles.dayNote}>{day.nota}</div>}
 
       {editable ? (
         <>

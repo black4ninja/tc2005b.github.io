@@ -32,11 +32,14 @@ export interface SemanaNormal {
   fechaInicio: string;
   fechaFin: string;
   tipo: 'normal';
+  /** Días con clase de esta semana. Ausente en semanas anteriores al campo. */
+  diasActivos?: string[];
   dias: {
     lunes?: Dia;
     martes?: Dia;
     miercoles?: Dia;
     jueves?: Dia;
+    viernes?: Dia;
   };
 }
 

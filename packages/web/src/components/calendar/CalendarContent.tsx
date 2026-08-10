@@ -18,9 +18,11 @@ import { useCreateActividad } from '@/hooks/useCreateActividad';
 import { useUpdateActividad } from '@/hooks/useUpdateActividad';
 import { useDeleteActividad } from '@/hooks/useDeleteActividad';
 import { useCreateSemana } from '@/hooks/useCreateSemana';
+import { useUpdateSemana } from '@/hooks/useUpdateSemana';
 import { useReorderSemanas } from '@/hooks/useReorderSemanas';
 import { useDeleteSemana } from '@/hooks/useDeleteSemana';
 import type { ReorderUpdate } from '@/hooks/useCalendarReorder';
+import { DIA_KEYS, diasDeSemana, type DiaKey } from '@/utils/diasSemana';
 import type { ActivityFormData } from './ActivityForm';
 import type { WeekFormData } from './WeekForm';
 import FilterBar from './FilterBar';
@@ -176,6 +178,14 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
   const { isCreating: isCreatingSemana, createError: createSemanaError, createSemana } = useCreateSemana();
   const [showWeekModal, setShowWeekModal] = useState(false);
 
+  // Update semana hook + modal state
+  const { isUpdatingSemana, updateSemanaError, updateSemana } = useUpdateSemana();
+  const [editWeekState, setEditWeekState] = useState<{
+    semanaId: string;
+    initialData: WeekFormData;
+    diasBloqueados: DiaKey[];
+  } | null>(null);
+
   // Reorder semanas hook
   const {
     isSaving: isSavingSemanas,
@@ -218,7 +228,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
     if (!sem || sem.tipo !== 'normal') return;
     const normal = sem as SemanaNormal;
 
-    for (const dayKey of ['lunes', 'martes', 'miercoles', 'jueves'] as const) {
+    for (const dayKey of DIA_KEYS) {
       const day = normal.dias[dayKey];
       if (!day) continue;
       for (const section of ['previo', 'actividades'] as const) {
@@ -257,7 +267,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       const sem = { ...next.semanas[semIdx] } as SemanaNormal;
       const dias = { ...sem.dias };
 
-      for (const dayKey of ['lunes', 'martes', 'miercoles', 'jueves'] as const) {
+      for (const dayKey of DIA_KEYS) {
         const day = dias[dayKey];
         if (!day) continue;
         for (const section of ['previo', 'actividades'] as const) {
@@ -298,7 +308,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       const sem = { ...next.semanas[semIdx] } as SemanaNormal;
       const dias = { ...sem.dias };
 
-      for (const dayKey of ['lunes', 'martes', 'miercoles', 'jueves'] as const) {
+      for (const dayKey of DIA_KEYS) {
         const day = dias[dayKey];
         if (!day) continue;
         for (const section of ['previo', 'actividades'] as const) {
@@ -380,6 +390,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
         fechaInicio: result.fechaInicio,
         fechaFin: result.fechaFin,
         tipo: 'normal',
+        diasActivos: result.diasActivos ?? formData.diasActivos,
         dias: {},
       } as SemanaNormal;
     }
@@ -390,6 +401,82 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
     });
     setShowWeekModal(false);
   }, [calendario?.grupoId, createSemana]);
+
+  const handleEditWeek = useCallback((semanaId: string) => {
+    const sem = semanas.find((s) => s.id === semanaId);
+    if (!sem) return;
+
+    if (sem.tipo === 'especial') {
+      setEditWeekState({
+        semanaId,
+        initialData: {
+          tipo: 'especial',
+          fechaInicio: sem.fechaInicio,
+          fechaFin: sem.fechaFin,
+          titulo: sem.titulo,
+          mensaje: sem.mensaje,
+          mensajeImportante: sem.mensajeImportante,
+        },
+        diasBloqueados: [],
+      });
+      return;
+    }
+
+    // Un día con actividades no se puede desmarcar: quedarían huérfanas.
+    const conActividades = DIA_KEYS.filter((d) => {
+      const dia = sem.dias[d];
+      return (dia?.previo?.length ?? 0) > 0 || (dia?.actividades?.length ?? 0) > 0;
+    });
+
+    setEditWeekState({
+      semanaId,
+      initialData: {
+        tipo: 'normal',
+        fechaInicio: sem.fechaInicio,
+        fechaFin: sem.fechaFin,
+        diasActivos: diasDeSemana(sem),
+      },
+      diasBloqueados: conActividades,
+    });
+  }, [semanas]);
+
+  const handleUpdateWeek = useCallback(async (formData: WeekFormData) => {
+    if (!editWeekState) return;
+    const result = await updateSemana(editWeekState.semanaId, {
+      fechaInicio: formData.fechaInicio,
+      fechaFin: formData.fechaFin,
+      diasActivos: formData.diasActivos,
+      titulo: formData.titulo,
+      mensaje: formData.mensaje,
+      mensajeImportante: formData.mensajeImportante,
+    });
+    if (!result) return;
+
+    setApiCalendario((prev) => {
+      if (!prev) return prev;
+      const semanasNext = prev.semanas.map((s) => {
+        if (s.id !== editWeekState.semanaId) return s;
+        if (s.tipo === 'especial') {
+          return {
+            ...s,
+            fechaInicio: result.fechaInicio,
+            fechaFin: result.fechaFin,
+            titulo: result.titulo ?? s.titulo,
+            mensaje: result.mensaje ?? s.mensaje,
+            mensajeImportante: result.mensajeImportante,
+          } as SemanaEspecial;
+        }
+        return {
+          ...s,
+          fechaInicio: result.fechaInicio,
+          fechaFin: result.fechaFin,
+          diasActivos: result.diasActivos ?? s.diasActivos,
+        } as SemanaNormal;
+      });
+      return { ...prev, semanas: semanasNext };
+    });
+    setEditWeekState(null);
+  }, [editWeekState, updateSemana]);
 
   const handleWeekDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
@@ -496,8 +583,8 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
     );
   }
 
-  const anyError = saveError || createError || updateError || deleteActError || createSemanaError || saveSemanaError || deleteSemanaError;
-  const anySaving = isSaving || isUpdating || isDeletingAct || isSavingSemanas || isDeletingSemana;
+  const anyError = saveError || createError || updateError || deleteActError || createSemanaError || updateSemanaError || saveSemanaError || deleteSemanaError;
+  const anySaving = isSaving || isUpdating || isDeletingAct || isSavingSemanas || isDeletingSemana || isUpdatingSemana;
 
   const semanaIds = semanas.map((s) => s.id ?? '').filter(Boolean);
 
@@ -518,6 +605,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
           onEditActivity={editable ? handleEditActivity : undefined}
           onDeleteActivity={editable ? handleDeleteActivity : undefined}
           onDeleteWeek={editable ? handleDeleteWeek : undefined}
+          onEditWeek={editable ? handleEditWeek : undefined}
           dragHandleProps={dragHandleProps}
         />
       );
@@ -624,6 +712,19 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
             onSave={handleSaveWeek}
             onCancel={() => setShowWeekModal(false)}
             loading={isCreatingSemana}
+          />
+        </Modal>
+      )}
+
+      {editWeekState && (
+        <Modal isOpen onClose={() => setEditWeekState(null)} title="Editar semana">
+          <WeekForm
+            mode="edit"
+            initialData={editWeekState.initialData}
+            diasBloqueados={editWeekState.diasBloqueados}
+            onSave={handleUpdateWeek}
+            onCancel={() => setEditWeekState(null)}
+            loading={isUpdatingSemana}
           />
         </Modal>
       )}
