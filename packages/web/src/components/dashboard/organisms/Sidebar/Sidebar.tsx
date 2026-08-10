@@ -9,6 +9,7 @@ import { getSidebarItems, getGrupoDetailItems } from './sidebarConfig';
 import styles from './Sidebar.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
 import { useAuth } from '../../../../context/AuthContext';
+import { useGrupoActivo } from '../../../../context/GrupoActivoContext';
 import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import { useDiagramasNav } from '../../../../context/DiagramasNavContext';
 import { APP_NAME } from '../../../../config/app';
@@ -69,7 +70,9 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const isDiagramas = diagramasNav.activo;
 
   const [grupoName, setGrupoName] = useState('');
-  const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
+  // El grupo activo del alumno es COMPARTIDO (contexto): antes era estado local
+  // de este componente y el panel no se enteraba de los cambios.
+  const { grupoActivoId: selectedGrupoId, cambiarGrupo } = useGrupoActivo();
   const [docsHref, setDocsHref] = useState<string | null>(null);
   const [ejerciciosHref, setEjerciciosHref] = useState<string | null>(null);
   const [diagramasHref, setDiagramasHref] = useState<string | null>(null);
@@ -86,12 +89,6 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   // Hasta que el menú del alumno esté resuelto se pinta un esqueleto: es
   // preferible a enseñar ítems que van a cambiar en cuanto llegue la respuesta.
   const [menuCargado, setMenuCargado] = useState(false);
-
-  useEffect(() => {
-    if (role === 'alumno' && user?.grupos?.length) {
-      setSelectedGrupoId(user.grupos[0].id);
-    }
-  }, [role, user?.grupos]);
 
   // TODO el menú del alumno en UNA petición. Antes eran cinco efectos sueltos
   // (perfil, módulos, colecciones, ejercicios, diagramas) de entre 0,5 y 1,5 s
@@ -347,7 +344,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             <select
               className={styles.grupoSelect}
               value={selectedGrupoId}
-              onChange={(e) => setSelectedGrupoId(e.target.value)}
+              onChange={(e) => cambiarGrupo(e.target.value)}
               disabled={user.grupos.length === 1}
               title={user.grupos.length === 1 ? 'Estás inscrito en un solo grupo' : undefined}
             >

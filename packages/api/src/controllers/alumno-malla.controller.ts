@@ -410,6 +410,37 @@ export async function getMyMenu(req: Request, res: Response): Promise<void> {
   }
 }
 
+/**
+ * PUT /alumno/grupos/:grupoId/activo — recuerda que este es el grupo con el que
+ * el alumno estaba trabajando, para reabrirle el panel donde lo dejó.
+ *
+ * Pasa por `validateAlumnoInGrupo`, así que solo puede apuntar a un grupo suyo:
+ * aunque es solo una preferencia, dejar escribir cualquier id sería dejar que
+ * el cliente meta basura en el usuario.
+ */
+export async function setMyGrupoActivo(req: Request, res: Response): Promise<void> {
+  try {
+    const grupoPointer = await validateAlumnoInGrupo(req, res);
+    if (!grupoPointer) return;
+
+    const user = (req as any).appUser as AppUser;
+    // Ya es el suyo: nada que escribir.
+    if (user.getUltimoGrupoId() === grupoPointer.id) {
+      res.json({ status: 'ok' });
+      return;
+    }
+
+    const query = new Parse.Query<AppUser>('AppUser');
+    const alumno = await query.get(user.id, { useMasterKey: true });
+    alumno.setUltimoGrupoId(grupoPointer.id);
+    await alumno.save(null, { useMasterKey: true });
+
+    res.json({ status: 'ok' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Error al guardar el grupo activo' });
+  }
+}
+
 export async function getMyPerfil(req: Request, res: Response): Promise<void> {
   try {
     const grupoPointer = await validateAlumnoInGrupo(req, res);

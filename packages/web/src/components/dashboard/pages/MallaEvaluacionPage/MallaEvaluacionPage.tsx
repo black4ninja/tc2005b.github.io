@@ -195,6 +195,12 @@ export default function MallaEvaluacionPage() {
           fetch(`${API_BASE}/alumno/grupos/${grupoId}/plan-evaluacion`, { headers: authHeaders }),
         ]);
 
+        // 404 en ambos = el grupo no usa malla (módulo "Actividades y malla"
+        // apagado). Se dice tal cual en vez de "error al cargar": al cambiar de
+        // grupo se puede aterrizar aquí.
+        if (mallaRes.status === 404 && planRes.status === 404) {
+          throw new Error('Esta sección no está disponible en tu grupo.');
+        }
         if (!mallaRes.ok) throw new Error('Error al cargar malla');
         if (!planRes.ok) throw new Error('Error al cargar plan de evaluación');
 

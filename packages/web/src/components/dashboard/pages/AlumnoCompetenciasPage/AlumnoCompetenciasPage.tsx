@@ -60,11 +60,19 @@ export default function AlumnoCompetenciasPage() {
     fetch(`/api/alumno/grupos/${grupoId}/competencias`, {
       headers: { 'x-session-token': sessionToken },
     })
-      .then((r) => r.ok ? r.json() : Promise.reject('Error'))
+      // 404 = el grupo no comparte competencias. No es un fallo: es que ahí no
+      // existe esa sección, y al cambiar de grupo se puede caer en ella.
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status === 404 ? 'no-disponible' : 'Error')))
       .then((json) => {
         setCompetencias(json.competencias ?? []);
       })
-      .catch(() => setError('Error al cargar las competencias.'))
+      .catch((motivo) =>
+        setError(
+          motivo === 'no-disponible'
+            ? 'Esta sección no está disponible en tu grupo.'
+            : 'Error al cargar las competencias.',
+        ),
+      )
       .finally(() => setLoading(false));
   }, [grupoId, sessionToken]);
 

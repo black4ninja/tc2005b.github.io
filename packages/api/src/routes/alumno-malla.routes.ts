@@ -10,6 +10,7 @@ import {
   getIndicacionesMalla,
   getMyPerfil,
   getMyMenu,
+  setMyGrupoActivo,
   updateMyPerfil,
   changeMyPassword,
 } from '../controllers/alumno-malla.controller.js';
@@ -31,6 +32,7 @@ router.put('/alumno/grupos/:grupoId/competencias/:compAlumnoId', updateMyCompete
 
 // Perfil del alumno
 router.get('/alumno/grupos/:grupoId/menu', getMyMenu);
+router.put('/alumno/grupos/:grupoId/activo', setMyGrupoActivo);
 router.get('/alumno/grupos/:grupoId/perfil', getMyPerfil);
 router.put('/alumno/grupos/:grupoId/perfil', updateMyPerfil);
 router.put('/alumno/grupos/:grupoId/cambiar-password', changeMyPassword);
