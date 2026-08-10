@@ -158,6 +158,25 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     lo que esta vista destaca frente a la de secuencia.
 
 ### Fixed
+- **Con varios grupos, el panel del alumno enseñaba los datos de otro grupo.** El
+  grupo elegido vivía en el estado local del menú y el panel leía siempre
+  `user.grupos[0]`, así que menú y panel podían estar mirando grupos distintos:
+  el menú dejaba la Wiki en gris —correcto, ese grupo tenía el perfil
+  incompleto— mientras el panel enseñaba el perfil completo del primero. Los dos
+  decían la verdad, pero de grupos distintos.
+  - El grupo activo pasa a un contexto compartido, así que menú y panel siempre
+    coinciden.
+  - **Se recuerda cuál fue el último**, en el servidor (`AppUser.ultimoGrupoId`),
+    no en `localStorage`: al volver se retoma donde se dejó, también desde otro
+    navegador. Antes cada recarga volvía al primero de la lista. Es solo una
+    preferencia: no da acceso a nada, y si el alumno ya no pertenece a ese grupo
+    se cae al primero sin romperse.
+  - **Cambiar de grupo estando dentro de una sección lleva a la misma sección del
+    grupo nuevo.** Antes el menú apuntaba al grupo nuevo pero la página seguía
+    enseñando el anterior.
+  - Si esa sección no existe en el grupo nuevo, se dice **«Esta sección no está
+    disponible en tu grupo»** en vez de «Error al cargar»: no es un fallo, es que
+    ahí no existe. Aplica también a quien llegue por una URL a mano.
 - **`nodos-alcanzables` contaba los contenedores como pasos del flujo.** Una
   calle de responsabilidad agrupa acciones, no se «alcanza», así que la
   comprobación dejaba en rojo cualquier diagrama de actividad con calles — es

@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { calcCalificacion, type PeriodoConfig } from '@tc2005b/evaluacion';
 import { useAuth } from '../../../../context/AuthContext';
+import { useGrupoActivo } from '../../../../context/GrupoActivoContext';
 import styles from './AlumnoDashboard.module.css';
 
 /* ------------------------------------------------------------------ */
@@ -146,7 +147,11 @@ function validatePerfil(draft: PerfilData, apagados: string[]): Record<string, s
 
 export default function AlumnoDashboard() {
   const { user, sessionToken, updateUser } = useAuth();
-  const grupoId = user?.grupos?.[0]?.id;
+  // El grupo ACTIVO, no el primero de la lista: con varios grupos, el panel
+  // enseñaba el perfil y las calificaciones del primero aunque el menú tuviera
+  // otro seleccionado.
+  const { grupoActivoId } = useGrupoActivo();
+  const grupoId = grupoActivoId || undefined;
 
   const [periodos, setPeriodos] = useState<PeriodoConfig[]>([]);
   const [actividades, setActividades] = useState<ActividadAlumnoData[]>([]);

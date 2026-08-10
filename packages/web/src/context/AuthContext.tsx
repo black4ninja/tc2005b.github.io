@@ -13,6 +13,8 @@ interface AppUserData {
   perfilCompleto?: boolean;
   /** true = la contraseña la puso el sistema; hay que exigirle una propia. */
   passwordAsignada?: boolean;
+  /** Último grupo que tenía abierto; con qué grupo se le reabre el panel. */
+  ultimoGrupoId?: string;
 }
 
 interface AuthContextType {

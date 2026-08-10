@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
+import { GrupoActivoProvider } from './context/GrupoActivoContext';
 import './styles/variables.css';
 import './styles/globals.css';
 
@@ -14,7 +15,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <GrupoActivoProvider>
+          <App />
+        </GrupoActivoProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

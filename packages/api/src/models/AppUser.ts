@@ -76,6 +76,23 @@ export class AppUser extends BaseModel {
     this.set('passwordAsignada', v);
   }
 
+  /**
+   * Último grupo que el alumno tenía abierto. Solo es una preferencia de
+   * navegación: no da acceso a nada (el acceso lo decide `GrupoAlumno`), así que
+   * un id obsoleto o de un grupo del que se le dio de baja simplemente se ignora
+   * y se cae al primero de su lista.
+   *
+   * Se guarda en el usuario y no en `localStorage` para que la sesión se retome
+   * igual desde otro navegador.
+   */
+  getUltimoGrupoId(): string {
+    return this.get('ultimoGrupoId') ?? '';
+  }
+
+  setUltimoGrupoId(id: string): void {
+    this.set('ultimoGrupoId', id);
+  }
+
   getLastLogin(): Date | undefined {
     return this.get('lastLogin');
   }
@@ -115,6 +132,8 @@ export class AppUser extends BaseModel {
       lastLogin: this.getLastLogin(),
       // Para que el panel del alumno sepa si debe EXIGIR el cambio o solo ofrecerlo.
       passwordAsignada: this.getPasswordAsignada(),
+      // Preferencia de navegación: con qué grupo se le abre el panel.
+      ultimoGrupoId: this.getUltimoGrupoId(),
       active: this.get('active'),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
