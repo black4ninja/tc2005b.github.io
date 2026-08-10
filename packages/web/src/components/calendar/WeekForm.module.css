@@ -51,6 +51,61 @@
   flex: 1;
 }
 
+.dayPicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.dayChip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 68px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dayChip:hover:not(:disabled) {
+  border-color: var(--color-lab);
+  color: var(--color-lab);
+}
+
+.dayChipActive {
+  border-color: var(--color-lab);
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--color-lab);
+  font-weight: 600;
+}
+
+.dayChip:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.dayChipName {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dayChipDate {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--color-evaluacion);
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;

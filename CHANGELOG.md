@@ -8,6 +8,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Los días con clase de cada semana se eligen a mano, de lunes a viernes.** El
+  calendario daba por hecho que toda semana era lunes–jueves: el rango estaba
+  cableado en el modelo, en la API y en la retícula, así que un grupo que ve
+  clase martes y viernes no tenía dónde ponerla. Ahora la semana guarda sus
+  `diasActivos` y el alta/edición de semana los marca con chips (Lu Ma Mi Ju Vi),
+  de modo que combinaciones como lu-mi-ju-vi o lu-ma-mi-ju son válidas y la
+  retícula dibuja tantas columnas como días tenga.
+  - **Se pueden editar las semanas ya creadas** (botón de lápiz en la cabecera):
+    antes solo se podía crear o borrar, y borrar exige que la semana esté vacía,
+    así que cambiar los días de un calendario en marcha era imposible.
+  - Quitar un día que ya tiene actividades queda bloqueado en el formulario y
+    rechazado por la API: las actividades quedarían fuera del calendario sin
+    forma de recuperarlas. Un día con contenido se sigue mostrando aunque no
+    esté marcado.
+  - Las semanas anteriores al campo no cambian: sus días se deducen del rango de
+    fechas y de los días con contenido, que para todas ellas da lunes–jueves.
 - **La malla y las competencias del alumno respetan los módulos de su grupo.** El
   menú metía «Malla» y «Competencias» SIEMPRE, sin mirar las asignaciones: con el
   módulo apagado el alumno veía la sección igualmente y entraba a una pantalla

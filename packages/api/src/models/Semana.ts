@@ -62,6 +62,14 @@ export class Semana extends BaseModel {
     this.set('mensajeImportante', mensajeImportante);
   }
 
+  /** Días con clase. Ausente en semanas creadas antes de este campo. */
+  getDiasActivos(): string[] | undefined {
+    return this.get('diasActivos');
+  }
+  setDiasActivos(diasActivos: string[]): void {
+    this.set('diasActivos', diasActivos);
+  }
+
   getNotas(): Record<string, string> | undefined {
     return this.get('notas');
   }
@@ -87,6 +95,7 @@ export class Semana extends BaseModel {
       titulo: this.getTitulo(),
       mensaje: this.getMensaje(),
       mensajeImportante: this.getMensajeImportante(),
+      diasActivos: this.getDiasActivos(),
       notas: this.getNotas(),
       orden: this.getOrden(),
       active: this.get('active'),

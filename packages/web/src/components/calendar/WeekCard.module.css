@@ -148,6 +148,7 @@
   color: var(--chip-color, var(--text-secondary));
 }
 
+.weekEditBtn,
 .weekDeleteBtn {
   display: flex;
   align-items: center;
@@ -162,8 +163,15 @@
   flex-shrink: 0;
 }
 
+.weekCard:hover .weekEditBtn,
 .weekCard:hover .weekDeleteBtn {
   opacity: 0.7;
+}
+
+.weekEditBtn:hover {
+  opacity: 1 !important;
+  color: var(--color-lab);
+  background: rgba(59, 130, 246, 0.08);
 }
 
 .weekDeleteBtn:hover {
@@ -172,6 +180,7 @@
   background: rgba(220, 38, 38, 0.08);
 }
 
+.weekEditBtn .material-icons,
 .weekDeleteBtn .material-icons {
   font-size: 20px;
 }
@@ -201,13 +210,27 @@
   overflow: hidden;
 }
 
-/* Day Grid */
+/* Day Grid — una columna por día con clase (--day-count) */
 .dayGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--day-count, 4), 1fr);
   gap: 1px;
   background: var(--border-color);
   border-top: 1px solid var(--border-color);
+}
+
+/* Cada celda es un día o su resumen; el orden lo fija el componente por
+   breakpoint para que el resumen quede junto a su día en pantallas angostas. */
+.gridCell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg-card);
+  order: var(--ord-desktop, 0);
+}
+
+.gridCell > * {
+  flex: 1 1 auto;
 }
 
 /* Special Content */
@@ -239,15 +262,10 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  /* Tablet: day-summary pairs in 2-col layout */
-  .dayGrid > :nth-child(1) { order: 1; }
-  .dayGrid > :nth-child(2) { order: 2; }
-  .dayGrid > :nth-child(5) { order: 3; }
-  .dayGrid > :nth-child(6) { order: 4; }
-  .dayGrid > :nth-child(3) { order: 5; }
-  .dayGrid > :nth-child(4) { order: 6; }
-  .dayGrid > :nth-child(7) { order: 7; }
-  .dayGrid > :nth-child(8) { order: 8; }
+  /* Tablet: cada par de días va seguido de sus dos resúmenes */
+  .gridCell {
+    order: var(--ord-tablet, 0);
+  }
 
   .weekSummary {
     display: none;
@@ -260,15 +278,10 @@
     grid-template-columns: 1fr;
   }
 
-  /* Mobile: each day immediately followed by its summary */
-  .dayGrid > :nth-child(1) { order: 1; }
-  .dayGrid > :nth-child(5) { order: 2; }
-  .dayGrid > :nth-child(2) { order: 3; }
-  .dayGrid > :nth-child(6) { order: 4; }
-  .dayGrid > :nth-child(3) { order: 5; }
-  .dayGrid > :nth-child(7) { order: 6; }
-  .dayGrid > :nth-child(4) { order: 7; }
-  .dayGrid > :nth-child(8) { order: 8; }
+  /* Móvil: cada día seguido de su resumen */
+  .gridCell {
+    order: var(--ord-mobile, 0);
+  }
 
   .weekHeader {
     padding: var(--space-sm) var(--space-md);

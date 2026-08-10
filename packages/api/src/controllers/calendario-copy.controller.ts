@@ -94,6 +94,8 @@ export async function copyCalendario(req: Request, res: Response): Promise<void>
       if (mensajeImportante) sem.setMensajeImportante(mensajeImportante);
       const notas = src.getNotas();
       if (notas) sem.setNotas(notas);
+      const diasActivos = src.getDiasActivos();
+      if (diasActivos) sem.setDiasActivos(diasActivos);
 
       newSemanas.push(sem);
       semanaMap.set(src.id!, sem);

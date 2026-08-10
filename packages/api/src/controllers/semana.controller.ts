@@ -2,9 +2,10 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { Semana } from '../models/Semana.js';
 import { Actividad } from '../models/Actividad.js';
+import { DIAS_POR_DEFECTO, normalizarDias } from '../constants/dias.js';
 
 export async function createSemana(req: Request, res: Response): Promise<void> {
-  const { grupoId, tipo, fechaInicio, fechaFin, titulo, mensaje, mensajeImportante } = req.body;
+  const { grupoId, tipo, fechaInicio, fechaFin, diasActivos, titulo, mensaje, mensajeImportante } = req.body;
 
   if (!grupoId || typeof grupoId !== 'string') {
     res.status(400).json({ status: 'error', message: 'grupoId es requerido' });
@@ -21,6 +22,15 @@ export async function createSemana(req: Request, res: Response): Promise<void> {
   if (tipo === 'especial') {
     if (!titulo || !mensaje) {
       res.status(400).json({ status: 'error', message: 'titulo y mensaje son requeridos para semanas especiales' });
+      return;
+    }
+  }
+
+  let dias: string[] = [];
+  if (tipo === 'normal') {
+    dias = diasActivos === undefined ? [...DIAS_POR_DEFECTO] : normalizarDias(diasActivos);
+    if (dias.length === 0) {
+      res.status(400).json({ status: 'error', message: 'diasActivos debe incluir al menos un día válido (lunes a viernes)' });
       return;
     }
   }
@@ -62,6 +72,7 @@ export async function createSemana(req: Request, res: Response): Promise<void> {
     semana.setFechaFin(fechaFin);
     semana.setTipo(tipo);
     semana.setOrden(orden);
+    if (tipo === 'normal') semana.setDiasActivos(dias);
 
     if (titulo) semana.setTitulo(titulo);
     if (mensaje) semana.setMensaje(mensaje);
@@ -73,6 +84,79 @@ export async function createSemana(req: Request, res: Response): Promise<void> {
   } catch (error) {
     console.error('Error creating semana:', error);
     res.status(500).json({ status: 'error', message: 'Error al crear semana' });
+  }
+}
+
+export async function updateSemana(req: Request, res: Response): Promise<void> {
+  const { semanaId } = req.params;
+  const { fechaInicio, fechaFin, diasActivos, titulo, mensaje, mensajeImportante } = req.body;
+
+  try {
+    const semana = await new Parse.Query<Semana>('Semana').get(semanaId, { useMasterKey: true });
+    if (!semana || !semana.isActive()) {
+      res.status(404).json({ status: 'error', message: 'Semana no encontrada' });
+      return;
+    }
+
+    const esNormal = semana.getTipo() === 'normal';
+
+    if (fechaInicio !== undefined) {
+      if (!fechaInicio) {
+        res.status(400).json({ status: 'error', message: 'fechaInicio no puede estar vacía' });
+        return;
+      }
+      semana.setFechaInicio(fechaInicio);
+    }
+    if (fechaFin !== undefined) {
+      if (!fechaFin) {
+        res.status(400).json({ status: 'error', message: 'fechaFin no puede estar vacía' });
+        return;
+      }
+      semana.setFechaFin(fechaFin);
+    }
+
+    if (esNormal && diasActivos !== undefined) {
+      const dias = normalizarDias(diasActivos);
+      if (dias.length === 0) {
+        res.status(400).json({ status: 'error', message: 'diasActivos debe incluir al menos un día válido (lunes a viernes)' });
+        return;
+      }
+
+      // No se pueden quitar días con actividades: quedarían fuera del calendario.
+      const actQuery = new Parse.Query<Actividad>('Actividad');
+      actQuery.equalTo('semana', semana);
+      actQuery.equalTo('active' as any, true as any);
+      actQuery.notContainedIn('dia', dias);
+      actQuery.limit(1000);
+      const huerfanas = await actQuery.find({ useMasterKey: true });
+
+      if (huerfanas.length > 0) {
+        const diasConActividades = [...new Set(huerfanas.map((a) => a.getDia()))];
+        res.status(400).json({
+          status: 'error',
+          message: `No se pueden quitar días con actividades: ${diasConActividades.join(', ')}`,
+        });
+        return;
+      }
+
+      semana.setDiasActivos(dias);
+    }
+
+    if (!esNormal) {
+      if (titulo !== undefined && titulo !== '') semana.setTitulo(titulo);
+      if (mensaje !== undefined && mensaje !== '') semana.setMensaje(mensaje);
+      if (mensajeImportante !== undefined) {
+        if (mensajeImportante === '') semana.unset('mensajeImportante');
+        else semana.setMensajeImportante(mensajeImportante);
+      }
+    }
+
+    await semana.save(null, { useMasterKey: true });
+
+    res.json({ status: 'ok', semana: semana.toSafeJSON() });
+  } catch (error) {
+    console.error('Error updating semana:', error);
+    res.status(500).json({ status: 'error', message: 'Error al actualizar semana' });
   }
 }
 

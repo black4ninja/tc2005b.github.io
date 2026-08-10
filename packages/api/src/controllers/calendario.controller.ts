@@ -3,6 +3,7 @@ import Parse from 'parse/node';
 import { Grupo } from '../models/Grupo.js';
 import { Semana } from '../models/Semana.js';
 import { Actividad } from '../models/Actividad.js';
+import { DIAS_SEMANA, normalizarDias } from '../constants/dias.js';
 
 export async function getCalendarioByGrupo(req: Request, res: Response): Promise<void> {
   const { grupoIdentifier } = req.params;
@@ -78,9 +79,8 @@ export async function getCalendarioByGrupo(req: Request, res: Response): Promise
       const semanaActividades = actividadesBySemana.get(semana.id!) ?? [];
       const notas = semana.getNotas() ?? {};
       const dias: Record<string, any> = {};
-      const diasOrden = ['lunes', 'martes', 'miercoles', 'jueves'];
 
-      for (const dia of diasOrden) {
+      for (const dia of DIAS_SEMANA) {
         const diaActividades = semanaActividades.filter((a) => a.getDia() === dia);
         if (diaActividades.length === 0 && !notas[dia]) continue;
 
@@ -99,12 +99,15 @@ export async function getCalendarioByGrupo(req: Request, res: Response): Promise
         dias[dia] = diaObj;
       }
 
+      const diasActivos = normalizarDias(semana.getDiasActivos());
+
       return {
         id: semana.id,
         numero,
         fechaInicio: semana.getFechaInicio(),
         fechaFin: semana.getFechaFin(),
         tipo: 'normal' as const,
+        ...(diasActivos.length > 0 ? { diasActivos } : {}),
         dias,
       };
     });
