@@ -119,3 +119,30 @@ export async function moduloActivoEnGrupo(grupoId: string, modulo: ModuloConteni
   const colecciones = await coleccionesDeGrupo(grupoId, modulo);
   return colecciones.length > 0;
 }
+
+/**
+ * Igual que `moduloActivoEnGrupo` pero para VARIOS módulos con UNA sola lectura
+ * del grupo. Preguntarlos por separado traía el mismo grupo con sus colecciones
+ * una vez por módulo, y esa consulta es la cara.
+ */
+export async function modulosActivosEnGrupo(
+  grupoId: string,
+  modulos: readonly ModuloContenido[],
+): Promise<Record<string, boolean>> {
+  const query = new Parse.Query('Grupo');
+  query.equalTo('exists' as any, true as any);
+  query.include('colecciones' as any);
+  let grupo: Parse.Object;
+  try {
+    grupo = await query.get(grupoId, { useMasterKey: true });
+  } catch {
+    return Object.fromEntries(modulos.map((m) => [m, false]));
+  }
+  const cols = ((grupo.get('colecciones') ?? []) as Parse.Object[])
+    .filter((c) => c && c.get('exists') !== false);
+  const apagados = grupo.get('modulosDeshabilitados') as Record<string, string[]> | undefined;
+
+  return Object.fromEntries(
+    modulos.map((m) => [m, cols.some((c) => moduloHabilitado(apagados, c.id!, m))]),
+  );
+}

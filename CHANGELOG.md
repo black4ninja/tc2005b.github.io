@@ -753,6 +753,20 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   exporta lo que ve un alumno, evalúa código candidato contra el ejercicio real
   y calcula métricas de carga cognitiva.
 ### Changed
+- **El menú del alumno deja de pintarse por etapas.** Salía con los ítems en
+  gris, luego se activaban, y luego desaparecían Malla y Competencias cuando
+  llegaba la validación de módulos: tres estados distintos en más de un segundo.
+  - La causa eran **cinco peticiones sueltas** (perfil, módulos, colecciones,
+    ejercicios, diagramas), cada una desde su propio efecto y cada una de entre
+    0,5 y 1,5 s. Ahora hay **una sola**, `GET /alumno/grupos/:grupoId/menu`, que
+    resuelve lo mismo en paralelo en el servidor reutilizando los mismos helpers
+    —el alcance de cada dato no cambia—, y mientras tanto se enseña un esqueleto.
+  - De paso se quitan dos consultas repetidas: los dos módulos salen de UNA
+    lectura del grupo, y `perfilCompleto` sale del vínculo que la validación ya
+    había traído.
+  - La latencia total es parecida a la que tenía la más lenta de las cinco: el
+    coste está en la autenticación por petición y en resolver las colecciones
+    permitidas, no en el número de viajes. Lo que se arregla es el parpadeo.
 - **«Documentación» pasa a llamarse «Wiki»** en toda la interfaz: el ítem del menú
   del alumno, la casilla del modal de asignaciones, la sección del menú de grupo
   —que se llamaba «Contenido» y apunta al mismo visor—, la acción «Abrir wiki» de

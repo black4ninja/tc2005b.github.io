@@ -9,7 +9,10 @@ import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { validarPerfil } from '../models/campos-perfil.js';
-import { moduloActivoEnGrupo } from '../services/grupo-colecciones.service.js';
+import { moduloActivoEnGrupo, modulosActivosEnGrupo } from '../services/grupo-colecciones.service.js';
+import { getColeccionesPermitidas } from '../services/contenidos.service.js';
+import { coleccionesConEjerciciosPublicados } from '../services/ejercicios-alumno.service.js';
+import { coleccionesConDiagramasPublicados } from '../services/diagramas-alumno.service.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { registrarLog } from '../models/AuditLog.js';
 
@@ -70,6 +73,45 @@ async function validateAlumnoInGrupo(
   }
 
   return grupoPointer;
+}
+
+/**
+ * Igual que `validateAlumnoInGrupo`, pero devuelve TAMBIÉN el vínculo que la
+ * validación ya trajo de la BD. Para quien necesita leer algo de él (el menú lee
+ * `perfilCompleto`) y si no repetiría la misma consulta.
+ *
+ * Va como función aparte y no como variable compartida de módulo: el servidor
+ * atiende varias peticiones a la vez, y un `let` global haría que un alumno
+ * acabara leyendo el vínculo de otro.
+ */
+async function validateAlumnoInGrupoConLink(
+  req: Request,
+  res: Response,
+): Promise<{ grupo: Grupo; link: GrupoAlumno } | null> {
+  const { grupoId } = req.params;
+  const alumnoId = (req as any).appUser?.id;
+
+  if (!alumnoId || !grupoId) {
+    res.status(400).json({ status: 'error', message: 'Datos incompletos' });
+    return null;
+  }
+
+  const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId) as AppUser;
+  const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
+
+  const query = new Parse.Query<GrupoAlumno>('GrupoAlumno');
+  query.equalTo('exists' as any, true as any);
+  query.equalTo('active' as any, true as any);
+  query.equalTo('alumno' as any, alumnoPointer as any);
+  query.equalTo('grupo' as any, grupoPointer as any);
+  const link = await query.first({ useMasterKey: true });
+
+  if (!link) {
+    res.status(403).json({ status: 'error', message: 'No perteneces a este grupo' });
+    return null;
+  }
+
+  return { grupo: grupoPointer, link };
 }
 
 /* ------------------------------------------------------------------ */
@@ -316,25 +358,55 @@ export async function updateMyCompetenciaEvidencias(req: Request, res: Response)
 /* ------------------------------------------------------------------ */
 
 /**
- * GET /alumno/grupos/:grupoId/modulos — qué secciones comparte el grupo con sus
- * alumnos. Lo consume el menú para no ofrecer lo que luego responde 404, y el
- * panel para no enseñar una calificación de una malla que el grupo no usa.
+ * GET /alumno/grupos/:grupoId/menu — TODO lo que el menú del alumno necesita
+ * para pintarse una sola vez.
+ *
+ * Antes el sidebar lo sacaba de cinco peticiones sueltas (perfil, módulos,
+ * colecciones, ejercicios, diagramas), cada una desde su propio efecto. Como
+ * tardan entre medio segundo y segundo y medio, el menú se pintaba por etapas y
+ * los ítems aparecían y desaparecían mientras llegaban las respuestas.
+ *
+ * Aquí se resuelve lo mismo en paralelo y en un viaje. Se reutilizan los helpers
+ * de siempre, no copias: el alcance de cada dato no cambia. Ojo con eso —
+ * `colecciones`, `ejercicios` y `diagramas` son de TODOS los grupos del alumno
+ * (así funciona el visor), mientras que `modulos` y `perfilCompleto` son de ESTE
+ * grupo.
  */
-export async function getMyModulos(req: Request, res: Response): Promise<void> {
+export async function getMyMenu(req: Request, res: Response): Promise<void> {
   try {
-    const grupoPointer = await validateAlumnoInGrupo(req, res);
-    if (!grupoPointer) return;
+    // Con vínculo: `perfilCompleto` sale de él y así no se consulta dos veces.
+    const validado = await validateAlumnoInGrupoConLink(req, res);
+    if (!validado) return;
+    const { grupo: grupoPointer, link } = validado;
 
-    const [competencias, actividades] = await Promise.all([
-      moduloActivoEnGrupo(grupoPointer.id, 'competencias'),
-      moduloActivoEnGrupo(grupoPointer.id, 'actividades'),
+    const user = (req as any).appUser as AppUser;
+
+    // Los dos módulos salen de UNA lectura del grupo: preguntarlos por separado
+    // traía el mismo grupo con sus colecciones dos veces.
+    const [modulos, colecciones, ejercicios, diagramas] = await Promise.all([
+      modulosActivosEnGrupo(grupoPointer.id, ['competencias', 'actividades']),
+      getColeccionesPermitidas(user),
+      coleccionesConEjerciciosPublicados(user),
+      coleccionesConDiagramasPublicados(user),
     ]);
+    const competencias = modulos.competencias === true;
+    const actividades = modulos.actividades === true;
 
-    // `malla` sale del mismo interruptor que las actividades: es de donde se
-    // estampa. Se nombra aparte para que el consumidor no tenga que saberlo.
-    res.json({ status: 'ok', modulos: { competencias, actividades, malla: actividades } });
+    res.json({
+      status: 'ok',
+      menu: {
+        // `malla` sale del mismo interruptor que las actividades: es de donde se
+        // estampa. Se nombra aparte para que el consumidor no tenga que saberlo.
+        modulos: { competencias, actividades, malla: actividades },
+        perfilCompleto: link.getPerfilCompleto(),
+        // Solo el slug de la primera: es lo único que el menú usa para enlazar.
+        coleccionSlug: colecciones[0]?.slug ?? null,
+        ejerciciosSlug: ejercicios[0]?.slug ?? null,
+        diagramasSlug: diagramas[0]?.slug ?? null,
+      },
+    });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: 'Error al obtener los módulos del grupo' });
+    res.status(500).json({ status: 'error', message: 'Error al obtener el menú' });
   }
 }
 

@@ -83,6 +83,9 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   // Secciones que el grupo del alumno comparte. `undefined` hasta que responde
   // el servidor: se asume que sí, para no parpadear quitando ítems.
   const [modulosGrupo, setModulosGrupo] = useState<{ malla?: boolean; competencias?: boolean }>({});
+  // Hasta que el menú del alumno esté resuelto se pinta un esqueleto: es
+  // preferible a enseñar ítems que van a cambiar en cuanto llegue la respuesta.
+  const [menuCargado, setMenuCargado] = useState(false);
 
   useEffect(() => {
     if (role === 'alumno' && user?.grupos?.length) {
@@ -90,79 +93,42 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
     }
   }, [role, user?.grupos]);
 
-  // Qué secciones comparte el grupo del alumno (malla y competencias). Sin esto
-  // el menú ofrecía ítems que el servidor responde con 404.
-  useEffect(() => {
-    if (role !== 'alumno' || !selectedGrupoId || !sessionToken) {
-      setModulosGrupo({});
-      return;
-    }
-    fetch(`/api/alumno/grupos/${selectedGrupoId}/modulos`, {
-      headers: { 'x-session-token': sessionToken },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => setModulosGrupo(json?.modulos ?? {}))
-      .catch(() => {});
-  }, [role, selectedGrupoId, sessionToken]);
-
-  // Link "Wiki" del alumno: el visor de su primera colección del
-  // CMS; sin colecciones asignadas, el ítem se oculta (docsHref = null).
-  // El admin no lleva este ítem — su acceso es la sección "Contenidos".
-  useEffect(() => {
-    if (!sessionToken || role !== 'alumno') return;
-    fetch('/api/me/colecciones', { headers: { 'x-session-token': sessionToken } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        const colecciones: { slug: string }[] = json?.colecciones ?? [];
-        setDocsHref(colecciones.length > 0 ? `/contenidos/${colecciones[0].slug}/` : null);
-      })
-      .catch(() => {});
-  }, [sessionToken, role]);
-
-  // Ejercicios del ALUMNO: solo si alguna colección suya tiene el módulo encendido
-  // y con ejercicios publicados (el backend aplica ambos filtros). El enlace del
-  // profesor/admin en modo grupo se calcula aparte, acotado al grupo abierto.
-  useEffect(() => {
-    if (!sessionToken || role !== 'alumno') return;
-    fetch('/api/me/ejercicios/colecciones', { headers: { 'x-session-token': sessionToken } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        const cols: { slug: string }[] = json?.colecciones ?? [];
-        setEjerciciosHref(cols.length > 0 ? rutaEjerciciosAlumno(cols[0].slug) : null);
-      })
-      .catch(() => {});
-  }, [sessionToken, role]);
-
-  // Diagramas del ALUMNO: mismo criterio que Ejercicios, con su propio endpoint
-  // porque el módulo se enciende por separado y puede tener contenido publicado
-  // cuando el otro no.
-  useEffect(() => {
-    if (!sessionToken || role !== 'alumno') return;
-    fetch('/api/me/diagramas/colecciones', { headers: { 'x-session-token': sessionToken } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        const cols: { slug: string }[] = json?.colecciones ?? [];
-        setDiagramasHref(cols.length > 0 ? rutaDiagramasAlumno(cols[0].slug) : null);
-        // El taller no cuelga de una colección, pero solo se ofrece si el
-        // módulo está activo para el alumno: sin él no pinta nada en el menú.
-        setTallerHref(cols.length > 0 ? rutaTallerAlumno() : null);
-      })
-      .catch(() => {});
-  }, [sessionToken, role]);
-
+  // TODO el menú del alumno en UNA petición. Antes eran cinco efectos sueltos
+  // (perfil, módulos, colecciones, ejercicios, diagramas) de entre 0,5 y 1,5 s
+  // cada uno: el menú se pintaba por etapas y los ítems aparecían y desaparecían
+  // según iban llegando. Ahora no se pinta nada hasta tenerlo todo.
   useEffect(() => {
     if (role !== 'alumno' || !selectedGrupoId || !sessionToken) return;
-    fetch(`/api/alumno/grupos/${selectedGrupoId}/perfil`, {
+    let cancelado = false;
+    setMenuCargado(false);
+    fetch(`/api/alumno/grupos/${selectedGrupoId}/menu`, {
       headers: { 'x-session-token': sessionToken },
     })
-      .then((r) => r.ok ? r.json() : null)
+      .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
-        if (json?.perfil) {
-          updateUser({ perfilCompleto: json.perfil.perfilCompleto ?? false });
+        if (cancelado) return;
+        const menu = json?.menu;
+        if (menu) {
+          setModulosGrupo(menu.modulos ?? {});
+          updateUser({ perfilCompleto: menu.perfilCompleto ?? false });
+          setDocsHref(menu.coleccionSlug ? `/contenidos/${menu.coleccionSlug}/` : null);
+          setEjerciciosHref(menu.ejerciciosSlug ? rutaEjerciciosAlumno(menu.ejerciciosSlug) : null);
+          setDiagramasHref(menu.diagramasSlug ? rutaDiagramasAlumno(menu.diagramasSlug) : null);
+          // El taller no cuelga de una colección, pero solo se ofrece si el
+          // módulo está activo para el alumno: sin él no pinta nada en el menú.
+          setTallerHref(menu.diagramasSlug ? rutaTallerAlumno() : null);
         }
+        // Cargado aunque falle: con un error de red es mejor un menú incompleto
+        // que un esqueleto eterno.
+        setMenuCargado(true);
       })
-      .catch(() => {});
-  }, [role, selectedGrupoId, sessionToken]);
+      .catch(() => {
+        if (!cancelado) setMenuCargado(true);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [role, selectedGrupoId, sessionToken, updateUser]);
 
   useEffect(() => {
     if (!grupoId || !sessionToken) return;
@@ -417,6 +383,14 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             // Colapsado (70px) el árbol es ilegible: se oculta y queda solo el
             // botón de volver, que es la salida.
             !collapsed && <ArbolContenidos coleccionId={coleccionId} />
+          ) : role === 'alumno' && !menuCargado ? (
+            // Esqueleto mientras se resuelve el menú: sin esto el alumno veía
+            // aparecer y desaparecer ítems durante más de un segundo.
+            <div className={styles.menuSkeleton} aria-busy="true" aria-label="Cargando el menú">
+              {[0, 1, 2, 3].map((i) => (
+                <span key={i} className={styles.menuSkeletonItem} />
+              ))}
+            </div>
           ) : (
             <>
               {items.map(item => (
