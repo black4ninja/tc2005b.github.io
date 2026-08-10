@@ -2,13 +2,9 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { Actividad } from '../models/Actividad.js';
 import { DIAS_SEMANA } from '../constants/dias.js';
+import { esTipoActividad } from '../constants/actividades.js';
 
 const VALID_DIAS: readonly string[] = DIAS_SEMANA;
-const VALID_TIPOS = [
-  'lab', 'lectura', 'ejercicio', 'proyecto',
-  'evaluacion', 'break', 'asueto', 'trabajo',
-  'discusion', 'info',
-];
 
 export async function createActividad(req: Request, res: Response): Promise<void> {
   const {
@@ -30,7 +26,7 @@ export async function createActividad(req: Request, res: Response): Promise<void
     res.status(400).json({ status: 'error', message: 'isPrevio es requerido (boolean)' });
     return;
   }
-  if (!VALID_TIPOS.includes(tipo)) {
+  if (!esTipoActividad(tipo)) {
     res.status(400).json({ status: 'error', message: `tipo inválido: ${tipo}` });
     return;
   }

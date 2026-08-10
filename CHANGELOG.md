@@ -8,6 +8,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Nuevo tipo de actividad «Presentación»**, que apunta a una URL **o** a un
+  archivo subido desde el propio modal. Un `.html` autocontenido se abre en una
+  pestaña; cualquier otro formato (PDF, PPTX…) lo descarga el navegador. Hasta
+  50 MB.
+  - **El HTML se sirve con `Content-Security-Policy: sandbox`**, que lo mete en
+    un origen opaco. El CMS ya había descartado servir HTML inline por ser XSS
+    en el origen del sitio (`recursos.controller.ts`); el sandbox es lo que
+    permite abrirlo sin reabrir ese agujero: la presentación se ve y su JS
+    corre, pero no puede leer la cookie de sesión ni llamar al API en nombre de
+    quien la abre.
+  - **El archivo solo lo abre quien pertenece al grupo** (alumno con inscripción
+    activa, profesor del grupo o admin), aunque el calendario en sí siga siendo
+    público. A quien no pertenece se le responde 404, no 403: así tampoco
+    averigua si el archivo existe.
+  - El enlace funciona como navegación normal del navegador porque la sesión
+    viaja también en cookie; no hizo falta meter el token en la URL.
 - **Los días con clase de cada semana se eligen a mano, de lunes a viernes.** El
   calendario daba por hecho que toda semana era lunes–jueves: el rango estaba
   cableado en el modelo, en la API y en la retícula, así que un grupo que ve

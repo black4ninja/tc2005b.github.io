@@ -1,12 +1,7 @@
 import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { Actividad } from '../models/Actividad.js';
-
-const VALID_TIPOS = [
-  'lab', 'lectura', 'ejercicio', 'proyecto',
-  'evaluacion', 'break', 'asueto', 'trabajo',
-  'discusion', 'info',
-];
+import { esTipoActividad } from '../constants/actividades.js';
 
 export async function updateActividad(req: Request, res: Response): Promise<void> {
   const { actividadId } = req.params;
@@ -25,7 +20,7 @@ export async function updateActividad(req: Request, res: Response): Promise<void
     }
 
     if (tipo !== undefined) {
-      if (!VALID_TIPOS.includes(tipo)) {
+      if (!esTipoActividad(tipo)) {
         res.status(400).json({ status: 'error', message: `tipo inválido: ${tipo}` });
         return;
       }

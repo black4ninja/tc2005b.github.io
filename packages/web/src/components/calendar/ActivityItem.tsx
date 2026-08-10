@@ -13,7 +13,14 @@ const ICON_MAP: Record<ActividadTipo, string> = {
   discusion: 'forum',
   info: 'info_outline',
   actividad: 'assignment',
+  presentacion: 'slideshow',
 };
+
+/** Extensiones que el API sirve inline; el resto se descarga. */
+function abreEnElNavegador(nombre: string): boolean {
+  const n = nombre.toLowerCase();
+  return n.endsWith('.html') || n.endsWith('.htm');
+}
 
 interface ActivityItemProps {
   actividad: Actividad;
@@ -23,6 +30,16 @@ interface ActivityItemProps {
 export default function ActivityItem({ actividad, isFilteredOut }: ActivityItemProps) {
   const icon = ICON_MAP[actividad.tipo] || 'info_outline';
 
+  // Presentación con archivo: el enlace apunta al endpoint que lo sirve. Un
+  // HTML abre en pestaña nueva; cualquier otro formato lo descarga el navegador.
+  const archivo = actividad.archivoNombre && actividad.id
+    ? {
+        url: `/api/calendario/actividad/${actividad.id}/archivo`,
+        nombre: actividad.archivoNombre,
+        inline: abreEnElNavegador(actividad.archivoNombre),
+      }
+    : null;
+
   return (
     <div
       className={`${styles.activity} ${isFilteredOut ? styles.filteredOut : ''}`}
@@ -30,7 +47,20 @@ export default function ActivityItem({ actividad, isFilteredOut }: ActivityItemP
     >
       <i className="material-icons">{icon}</i>
       <div className={styles.activityBody}>
-        {actividad.enlace ? (
+        {archivo ? (
+          <a
+            href={archivo.url}
+            target={archivo.inline ? '_blank' : undefined}
+            rel={archivo.inline ? 'noopener noreferrer' : undefined}
+            download={archivo.inline ? undefined : archivo.nombre}
+            title={archivo.inline ? 'Abrir la presentación' : `Descargar ${archivo.nombre}`}
+          >
+            {actividad.titulo || archivo.nombre}
+            <i className={`material-icons ${styles.archivoIcon}`}>
+              {archivo.inline ? 'open_in_new' : 'download'}
+            </i>
+          </a>
+        ) : actividad.enlace ? (
           <a
             href={actividad.enlace}
             target={actividad.externo ? '_blank' : undefined}

@@ -143,6 +143,15 @@ export async function copyCalendario(req: Request, res: Response): Promise<void>
         if (fechaEntrega) act.setFechaEntrega(fechaEntrega);
         const enlacesExtra = srcAct.getEnlacesExtra();
         if (enlacesExtra && enlacesExtra.length > 0) act.setEnlacesExtra(enlacesExtra);
+        // El adjunto se comparte por referencia: el binario no se duplica y
+        // nada lo borra (quitar el archivo de una actividad solo desapunta).
+        const adjunto = srcAct.getArchivo();
+        if (adjunto) {
+          act.setArchivo(adjunto);
+          act.setArchivoNombre(srcAct.getArchivoNombre() ?? 'presentacion');
+          act.setArchivoMime(srcAct.getArchivoMime() ?? 'application/octet-stream');
+          act.setArchivoBytes(srcAct.getArchivoBytes());
+        }
 
         newActividades.push(act);
       }

@@ -31,6 +31,7 @@ const TIPO_OPTIONS: { value: ActividadTipo; label: string }[] = [
   { value: 'trabajo', label: 'Trabajo en clase' },
   { value: 'discusion', label: 'Discusión / Resolución de dudas' },
   { value: 'info', label: 'Información / Caso de estudio' },
+  { value: 'presentacion', label: 'Presentación' },
   { value: 'break', label: 'Descanso' },
   { value: 'asueto', label: 'Asueto' },
 ];
@@ -43,6 +44,10 @@ export interface ActivityFormData {
   externo?: boolean;
   duracion?: string;
   fechaEntrega?: string;
+  /** Presentación: archivo nuevo por subir tras guardar la actividad. */
+  archivo?: File | null;
+  /** Presentación: quitar el adjunto que ya tenía. */
+  quitarArchivo?: boolean;
 }
 
 interface ActivityFormProps {
@@ -57,9 +62,36 @@ interface ActivityFormProps {
    * todas las páginas publicadas del sitio.
    */
   grupoId?: string;
+  /** Nombre del adjunto que ya tiene la actividad (solo en edición). */
+  archivoActual?: string;
 }
 
-export default function ActivityForm({ onSave, onCancel, loading, initialData, mode = 'create', grupoId }: ActivityFormProps) {
+/** Quita las cadenas vacías: al crear solo se mandan los campos con contenido. */
+function limpiarVacios(data: ActivityFormData): ActivityFormData {
+  const limpio: ActivityFormData = { tipo: data.tipo };
+  if (data.titulo) limpio.titulo = data.titulo;
+  if (data.descripcion) limpio.descripcion = data.descripcion;
+  if (data.enlace) {
+    limpio.enlace = data.enlace;
+    limpio.externo = data.externo;
+  }
+  if (data.duracion) limpio.duracion = data.duracion;
+  if (data.fechaEntrega) limpio.fechaEntrega = data.fechaEntrega;
+  if (data.archivo) limpio.archivo = data.archivo;
+  if (data.quitarArchivo) limpio.quitarArchivo = data.quitarArchivo;
+  return limpio;
+}
+
+/** Tamaño máximo del adjunto, igual que el límite de multer en el API. */
+const ARCHIVO_MAX_BYTES = 50 * 1024 * 1024;
+
+function formatearBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export default function ActivityForm({ onSave, onCancel, loading, initialData, mode = 'create', grupoId, archivoActual }: ActivityFormProps) {
   const [tipo, setTipo] = useState<ActividadTipo>(initialData?.tipo ?? 'lab');
   const [titulo, setTitulo] = useState(initialData?.titulo ?? '');
   const [descripcion, setDescripcion] = useState(initialData?.descripcion ?? '');
@@ -67,6 +99,30 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
   const [externo, setExterno] = useState(initialData?.externo ?? false);
   const [duracion, setDuracion] = useState(initialData?.duracion ?? '');
   const [fechaEntrega, setFechaEntrega] = useState(initialData?.fechaEntrega ?? '');
+
+  // Presentación: enlace o archivo, nunca los dos.
+  const [fuente, setFuente] = useState<'enlace' | 'archivo'>(
+    archivoActual ? 'archivo' : 'enlace',
+  );
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [archivoError, setArchivoError] = useState<string | null>(null);
+  // El adjunto existente se quita al guardar, no antes: cancelar no debe borrarlo.
+  const [archivoQuitado, setArchivoQuitado] = useState(false);
+
+  const esPresentacion = tipo === 'presentacion';
+  const usaArchivo = esPresentacion && fuente === 'archivo';
+  const archivoVigente = archivoQuitado ? undefined : archivoActual;
+
+  function elegirArchivo(file: File | null) {
+    setArchivoError(null);
+    if (file && file.size > ARCHIVO_MAX_BYTES) {
+      setArchivo(null);
+      setArchivoError(`El archivo pesa ${formatearBytes(file.size)}; el máximo son 50 MB.`);
+      return;
+    }
+    setArchivo(file);
+    if (file) setArchivoQuitado(false);
+  }
 
   // Page picker state
   const [paginas, setPaginas] = useState<PaginaResumen[]>([]);
@@ -284,6 +340,23 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
     e.preventDefault();
     const data: ActivityFormData = { tipo };
 
+    if (usaArchivo) {
+      // Con archivo no hay enlace: el propio adjunto es el destino del clic.
+      data.titulo = titulo.trim();
+      data.descripcion = descripcion.trim();
+      data.enlace = '';
+      data.externo = false;
+      data.duracion = duracion.trim();
+      data.fechaEntrega = fechaEntrega.trim();
+      if (archivo) data.archivo = archivo;
+      if (archivoQuitado && !archivo) data.quitarArchivo = true;
+      onSave(mode === 'edit' ? data : limpiarVacios(data));
+      return;
+    }
+
+    // Cambiar de «archivo» a «enlace» en una presentación quita el adjunto.
+    if (esPresentacion && archivoActual) data.quitarArchivo = true;
+
     if (mode === 'edit') {
       // En modo edición, enviar todos los campos para permitir limpiarlos
       data.titulo = titulo.trim();
@@ -337,7 +410,67 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
         />
       </div>
 
-      <div className={styles.field}>
+      {esPresentacion && (
+        <div className={styles.field}>
+          <label>¿De dónde sale la presentación?</label>
+          <div className={styles.fuenteRow}>
+            <label className={styles.radioOption}>
+              <input
+                type="radio"
+                name="fuente-presentacion"
+                checked={fuente === 'enlace'}
+                onChange={() => setFuente('enlace')}
+              />
+              Enlace a una URL
+            </label>
+            <label className={styles.radioOption}>
+              <input
+                type="radio"
+                name="fuente-presentacion"
+                checked={fuente === 'archivo'}
+                onChange={() => setFuente('archivo')}
+              />
+              Subir un archivo
+            </label>
+          </div>
+        </div>
+      )}
+
+      {usaArchivo && (
+        <div className={styles.field}>
+          <label>Archivo</label>
+          {archivoVigente && !archivo && (
+            <div className={styles.archivoActual}>
+              <span className="material-icons">attach_file</span>
+              <span className={styles.archivoNombre}>{archivoVigente}</span>
+              <button
+                type="button"
+                className={styles.archivoQuitar}
+                onClick={() => setArchivoQuitado(true)}
+              >
+                Quitar
+              </button>
+            </div>
+          )}
+          <input
+            type="file"
+            onChange={(e) => elegirArchivo(e.target.files?.[0] ?? null)}
+          />
+          {archivo && (
+            <span className={styles.archivoHint}>
+              {archivo.name} · {formatearBytes(archivo.size)}
+            </span>
+          )}
+          {archivoError && <span className={styles.archivoError}>{archivoError}</span>}
+          <span className={styles.archivoHint}>
+            Un <code>.html</code> autocontenido se abre en el navegador; cualquier otro
+            formato (PDF, PPTX…) se descarga. Máximo 50 MB. Solo lo abren las personas
+            del grupo.
+          </span>
+        </div>
+      )}
+
+      <div className={styles.field} hidden={usaArchivo}>
         <label>Enlace</label>
         <div className={styles.enlaceWrapper} ref={pickerRef}>
           <div className={styles.enlaceInputRow}>
@@ -560,7 +693,7 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
         </div>
       </div>
 
-      {enlace.trim() && (
+      {enlace.trim() && !usaArchivo && (
         <div className={`${styles.field} ${styles.checkboxField}`}>
           <input
             type="checkbox"
