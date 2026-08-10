@@ -14,6 +14,13 @@ export function getSidebarItems(
   docsHref: string | null = null,
   agendaHref: string | null = null,
   ejerciciosHref: string | null = null,
+  /**
+   * Secciones que el grupo comparte con sus alumnos. Malla y Competencias se
+   * metían SIEMPRE, sin mirar los módulos: el alumno veía "Competencias" con el
+   * módulo apagado, y el enlace llevaba a una pantalla vacía.
+   * Por defecto en true: quien no pase el dato (el admin) no pierde ítems.
+   */
+  modulosGrupo: { malla?: boolean; competencias?: boolean } = {},
 ): SidebarItem[] {
   if (role === 'admin') {
     return [
@@ -39,7 +46,7 @@ export function getSidebarItems(
     });
   }
   items.push({ label: 'Dashboard', icon: 'dashboard', path: '/alumno' });
-  if (selectedGrupoId) {
+  if (selectedGrupoId && modulosGrupo.malla !== false) {
     items.push({
       label: 'Malla',
       icon: 'grid_view',
@@ -47,7 +54,7 @@ export function getSidebarItems(
       disabled: !perfilCompleto,
     });
   }
-  if (selectedGrupoId) {
+  if (selectedGrupoId && modulosGrupo.competencias !== false) {
     items.push({
       label: 'Competencias',
       icon: 'emoji_events',
@@ -55,9 +62,9 @@ export function getSidebarItems(
       disabled: !perfilCompleto,
     });
   }
-  // Sin colecciones asignadas no hay documentación que enlazar.
+  // Sin colecciones asignadas no hay wiki que enlazar.
   if (docsHref) {
-    items.push({ label: 'Documentación', icon: 'menu_book', path: docsHref, external: true, disabled: !perfilCompleto });
+    items.push({ label: 'Wiki', icon: 'menu_book', path: docsHref, external: true, disabled: !perfilCompleto });
   }
   // Solo si algún grupo del alumno tiene Ejercicios habilitado y con contenido.
   // No es `external`: el módulo vive dentro del shell, como el resto del menú.
@@ -66,7 +73,7 @@ export function getSidebarItems(
   }
   // Ídem para Diagramas, que se enciende por separado: un grupo puede tener uno
   // de los dos módulos y no el otro.
-  // Sin URL en su grupo, no hay agenda que enlazar (igual que "Documentación").
+  // Sin URL en su grupo, no hay agenda que enlazar (igual que "Wiki").
   if (agendaHref) {
     items.push({
       label: 'Agendar Entrevistas',

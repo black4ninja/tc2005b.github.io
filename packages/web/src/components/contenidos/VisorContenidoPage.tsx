@@ -103,6 +103,8 @@ export default function VisorContenidoPage() {
 
   const path = (pathParam ?? '').replace(/\/+$/, '');
   const rutaPanel = user?.userType === 'admin' ? '/admin' : '/alumno';
+  // Índice de la derecha plegable, para quien quiera toda la pantalla.
+  const [tocOculto, setTocOculto] = useState(false);
 
   function toggleTema() {
     setOscuro((v) => {
@@ -386,6 +388,8 @@ export default function VisorContenidoPage() {
   }
 
   const arbolVacio = !cargando && !noEncontrado && !errorCarga && arbol.length === 0;
+  /** ¿La colección abierta está entre las del selector? Ver el comentario del topbar. */
+  const enLista = misColecciones.some((c) => c.slug === slug);
 
   return (
     <div className={`${styles.visor} ${oscuro ? `${styles.oscuro} tema-oscuro` : ''}`}>
@@ -400,15 +404,19 @@ export default function VisorContenidoPage() {
         >
           <span className="material-icons">{arbolOculto ? 'menu' : 'menu_open'}</span>
         </button>
-        <span className={styles.brand} title={coleccion?.nombre}>
-          📘 {coleccion ? `${coleccion.clave ? `${coleccion.clave} — ` : ''}${coleccion.nombre}` : '…'}
-        </span>
-        {misColecciones.length > 1 && (
+        {/* El título salía repetido: el selector ya dice en qué wiki estás. Con
+            una sola asignada el selector se queda, deshabilitado, porque es
+            donde se lee el nombre (mismo criterio que el de grupo del alumno).
+            Si la colección abierta NO está en la lista —o esta aún no ha
+            llegado— se pinta su nombre como texto: un `select` cuyo `value` no
+            casa con ninguna opción enseñaría la primera, que es otra wiki. */}
+        {enLista ? (
           <select
             className={styles.switcher}
             value={slug}
             onChange={(e) => navigate(`/contenidos/${e.target.value}/`)}
-            title="Cambiar de colección"
+            disabled={misColecciones.length === 1}
+            title={misColecciones.length === 1 ? 'Tienes una sola wiki asignada' : 'Cambiar de wiki'}
           >
             {misColecciones.map((c) => (
               <option key={c.slug} value={c.slug}>
@@ -416,6 +424,10 @@ export default function VisorContenidoPage() {
               </option>
             ))}
           </select>
+        ) : (
+          <span className={styles.brand} title={coleccion?.nombre}>
+            {coleccion ? `${coleccion.clave ? `${coleccion.clave} — ` : ''}${coleccion.nombre}` : '…'}
+          </span>
         )}
         <div className={styles.buscador}>
           <input
@@ -458,13 +470,24 @@ export default function VisorContenidoPage() {
         <button type="button" className={styles.temaBtn} onClick={toggleTema} title="Cambiar tema">
           {oscuro ? '☀️' : '🌙'}
         </button>
-        <Link to={rutaPanel} className={styles.panelLink}>Mi panel</Link>
       </header>
 
-      <div className={`${styles.cuerpo} ${arbolOculto ? styles.cuerpoSinArbol : ''}`}>
+      <div
+        className={`${styles.cuerpo} ${arbolOculto ? styles.cuerpoSinArbol : ''} ${
+          tocOculto || !pagina || pagina.toc.length === 0 ? styles.cuerpoSinToc : ''
+        }`}
+      >
         <nav className={styles.arbol}>
           <div className={styles.arbolTitulo}>Contenido</div>
-          {cargando ? <p className={styles.hint}>Cargando…</p> : arbol.map((n) => renderNodo(n, '', 0))}
+          <div className={styles.arbolNodos}>
+            {cargando ? <p className={styles.hint}>Cargando…</p> : arbol.map((n) => renderNodo(n, '', 0))}
+          </div>
+          {/* La salida vive al pie del menú, como en Diagramas. En el topbar se
+              perdía entre el buscador y el tema. */}
+          <Link to={rutaPanel} className={styles.salida}>
+            <span className="material-icons">arrow_back</span>
+            Mi panel
+          </Link>
         </nav>
 
         <main className={styles.main}>
@@ -530,15 +553,34 @@ export default function VisorContenidoPage() {
           )}
         </main>
 
-        {pagina && pagina.toc.length > 0 && (
+        {pagina && pagina.toc.length > 0 && !tocOculto && (
           <aside className={styles.toc}>
             <div className={styles.tocTitulo}>En esta página</div>
-            {pagina.toc.map((t) => (
-              <a key={t.id} href={`#${t.id}`} className={t.nivel === 3 ? styles.tocSub : ''}>
-                {t.titulo}
-              </a>
-            ))}
+            <div className={styles.tocEnlaces}>
+              {pagina.toc.map((t) => (
+                <a key={t.id} href={`#${t.id}`} className={t.nivel === 3 ? styles.tocSub : ''}>
+                  {t.titulo}
+                </a>
+              ))}
+            </div>
+            <button type="button" className={styles.salida} onClick={() => setTocOculto(true)}>
+              <span className="material-icons">chevron_right</span>
+              Ocultar índice
+            </button>
           </aside>
+        )}
+        {/* Oculto, queda una pestaña para traerlo de vuelta: si no, no habría
+            forma de recuperarlo sin recargar. */}
+        {pagina && pagina.toc.length > 0 && tocOculto && (
+          <button
+            type="button"
+            className={styles.tocPestana}
+            onClick={() => setTocOculto(false)}
+            title="Mostrar el índice de la página"
+            aria-label="Mostrar el índice de la página"
+          >
+            <span className="material-icons">chevron_left</span>
+          </button>
         )}
       </div>
     </div>

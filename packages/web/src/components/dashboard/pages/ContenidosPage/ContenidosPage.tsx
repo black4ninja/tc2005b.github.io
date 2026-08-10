@@ -122,10 +122,10 @@ export default function ContenidosPage() {
   ];
 
   const getActions = (coleccion: ColeccionData): ActionItem[] => [
-    // "Abrir" = el árbol de documentación (Documento). "Páginas" = las páginas de
+    // "Abrir" = el árbol de la wiki (Documento). "Páginas" = las páginas de
     // bloques (Pagina) que se sirven en /paginas/:slug. Son dos contenidos
     // distintos de la misma colección; de ahí las dos acciones.
-    { label: 'Abrir documentación', icon: 'account_tree', onClick: () => navigate(`/admin/contenidos/${coleccion.id}`) },
+    { label: 'Abrir wiki', icon: 'account_tree', onClick: () => navigate(`/admin/contenidos/${coleccion.id}`) },
     { label: 'Páginas', icon: 'article', onClick: () => navigate(`/admin/paginas?coleccion=${coleccion.id}`) },
     { label: 'Competencias', icon: 'emoji_events', onClick: () => navigate(`/admin/competencias?coleccion=${coleccion.id}`) },
     { label: 'Actividades', icon: 'assignment', onClick: () => navigate(`/admin/actividades?coleccion=${coleccion.id}`) },

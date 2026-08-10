@@ -104,28 +104,36 @@ function buildChartData(actividades: ActividadAlumnoData[]): ChartPoint[] {
 /*  Validation                                                         */
 /* ------------------------------------------------------------------ */
 
-function validatePerfil(draft: PerfilData): Record<string, string> {
+/**
+ * Mismas reglas que `validarPerfil` de la API (`models/campos-perfil.ts`), que es
+ * quien manda; esto solo evita el viaje de ida y vuelta. Los campos que el grupo
+ * no pide se saltan: ni se enseñan ni se exigen.
+ */
+function validatePerfil(draft: PerfilData, apagados: string[]): Record<string, string> {
   const errors: Record<string, string> = {};
+  const pide = (campo: string) => !apagados.includes(campo);
 
-  if (draft.experiencia.trim().length < 10) {
+  if (pide('experiencia') && draft.experiencia.trim().length < 10) {
     errors.experiencia = 'Debe tener al menos 10 caracteres';
   }
-  if (draft.expectativas.trim().length < 10) {
+  if (pide('expectativas') && draft.expectativas.trim().length < 10) {
     errors.expectativas = 'Debe tener al menos 10 caracteres';
   }
-  if (draft.compromiso.trim().length < 10) {
+  if (pide('compromiso') && draft.compromiso.trim().length < 10) {
     errors.compromiso = 'Debe tener al menos 10 caracteres';
   }
-  if (!draft.repositorioIndividual.trim().includes('github.com')) {
-    errors.repositorioIndividual = 'Debe ser una URL válida de GitHub (github.com)';
-  } else {
-    try {
-      new URL(draft.repositorioIndividual.trim());
-    } catch {
-      errors.repositorioIndividual = 'Debe ser una URL válida';
+  if (pide('repositorioIndividual')) {
+    if (!draft.repositorioIndividual.trim().includes('github.com')) {
+      errors.repositorioIndividual = 'Debe ser una URL válida de GitHub (github.com)';
+    } else {
+      try {
+        new URL(draft.repositorioIndividual.trim());
+      } catch {
+        errors.repositorioIndividual = 'Debe ser una URL válida';
+      }
     }
   }
-  if (draft.situacionesEspeciales.trim().length < 5) {
+  if (pide('situacionesEspeciales') && draft.situacionesEspeciales.trim().length < 5) {
     errors.situacionesEspeciales = 'Debe tener al menos 5 caracteres';
   }
 
@@ -150,6 +158,16 @@ export default function AlumnoDashboard() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [perfilCompleto, setPerfilCompleto] = useState(false);
+  // Campos que ESTE grupo no pide; los manda el servidor con el perfil.
+  const [camposApagados, setCamposApagados] = useState<string[]>([]);
+  // La marca vive en el USUARIO, no en el vínculo al grupo.
+  const passwordAsignada = user?.passwordAsignada === true;
+  // ¿Su grupo usa la malla de evaluación? Mientras no responda el servidor se
+  // asume que sí, para no parpadear escondiendo la tarjeta.
+  // Sin malla en el grupo no se enseña la calificación acumulada: un 0.0 sobre
+  // 100 en un curso que no la usa solo confunde. La señal es el 404 de la propia
+  // carga de la malla, así no hace falta una petición extra para preguntarlo.
+  const [usaMalla, setUsaMalla] = useState(true);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState('');
 
@@ -180,16 +198,26 @@ export default function AlumnoDashboard() {
           fetch(`${API_BASE}/alumno/grupos/${grupoId}/plan-evaluacion`, { headers: authHeaders }),
         ]);
 
-        if (!mallaRes.ok) throw new Error('Error al cargar malla');
-        if (!planRes.ok) throw new Error('Error al cargar plan de evaluación');
+        // 404 = el grupo no usa la malla (módulo "Actividades y malla" apagado).
+        // No es un error que enseñarle al alumno: simplemente no hay malla, y
+        // la tarjeta de calificación tampoco se pinta.
+        const sinMalla = mallaRes.status === 404 && planRes.status === 404;
+        if (!cancelled) setUsaMalla(!sinMalla);
+        if (!sinMalla) {
+          if (!mallaRes.ok) throw new Error('Error al cargar malla');
+          if (!planRes.ok) throw new Error('Error al cargar plan de evaluación');
 
-        const [mallaJson, planJson] = await Promise.all([mallaRes.json(), planRes.json()]);
+          const [mallaJson, planJson] = await Promise.all([mallaRes.json(), planRes.json()]);
 
-        if (cancelled) return;
+          if (cancelled) return;
 
-        setActividades(mallaJson.actividades ?? []);
-        if (planJson.plan?.periodos) {
-          setPeriodos(planJson.plan.periodos);
+          setActividades(mallaJson.actividades ?? []);
+          if (planJson.plan?.periodos) {
+            setPeriodos(planJson.plan.periodos);
+          }
+        } else if (!cancelled) {
+          setActividades([]);
+          setPeriodos([]);
         }
 
         // Fetch competencias and perfil (both optional)
@@ -208,6 +236,7 @@ export default function AlumnoDashboard() {
               const p = { ...PERFIL_EMPTY, ...perfilJson.perfil };
               setPerfil(p);
               setPerfilDraft(p);
+              setCamposApagados(perfilJson.perfil?.camposDeshabilitados ?? []);
               const isComplete = perfilJson.perfil?.perfilCompleto ?? false;
               setPerfilCompleto(isComplete);
               updateUser({ perfilCompleto: isComplete });
@@ -243,7 +272,7 @@ export default function AlumnoDashboard() {
     if (!grupoId) return;
 
     // Frontend validation
-    const errors = validatePerfil(perfilDraft);
+    const errors = validatePerfil(perfilDraft, camposApagados);
 
     // Password validation (only if user entered something)
     let hasPassword = false;
@@ -256,9 +285,11 @@ export default function AlumnoDashboard() {
       }
     }
 
-    // If profile is not complete, password is required
-    if (!perfilCompleto && !hasPassword) {
-      errors.newPassword = 'Debes establecer una contraseña';
+    // Se exige solo a quien nunca ha elegido la suya (la que tiene se la dio el
+    // sistema). Antes se miraba `perfilCompleto`, que es POR GRUPO: al alumno con
+    // contraseña propia que entra a un grupo nuevo se le pedía cambiarla otra vez.
+    if (passwordAsignada && !hasPassword) {
+      errors.newPassword = 'Debes establecer tu propia contraseña';
     }
 
     setFieldErrors(errors);
@@ -298,7 +329,7 @@ export default function AlumnoDashboard() {
         setPerfilDraft(p);
         setEditingProfile(false);
         setPerfilCompleto(true);
-        updateUser({ perfilCompleto: true });
+        updateUser({ perfilCompleto: true, ...(hasPassword ? { passwordAsignada: false } : {}) });
         setNewPassword('');
         setConfirmPassword('');
         setFieldErrors({});
@@ -328,13 +359,17 @@ export default function AlumnoDashboard() {
     );
   }
 
-  const profileFields = [
+  // Lo que el grupo no pide no se pinta: ver `camposApagados`.
+  const profileFields = ([
     { key: 'experiencia' as const, label: 'Experiencia (disciplinar y extracurricular)' },
     { key: 'expectativas' as const, label: 'Expectativas de la UF' },
     { key: 'compromiso' as const, label: 'Compromiso con la UF' },
     { key: 'repositorioIndividual' as const, label: 'Repositorio individual' },
-    { key: 'situacionesEspeciales' as const, label: 'Situaciones especiales' },
-  ] as const;
+    {
+      key: 'situacionesEspeciales' as const,
+      label: 'Situaciones/condiciones especiales o algo que debamos saber para apoyarte mejor',
+    },
+  ] as const).filter((c) => !camposApagados.includes(c.key));
 
   return (
     <div className={styles.page}>
@@ -370,16 +405,20 @@ export default function AlumnoDashboard() {
           </div>
         ))}
 
-        <div className={styles.statCard}>
-          <span className={`material-icons ${styles.statIcon}`} style={{ color: '#13deb9' }}>
-            emoji_events
-          </span>
-          <div className={styles.statContent}>
-            <span className={styles.statTitle}>Calificación Acumulada</span>
-            <span className={styles.statValue}>{calificacionActual.toFixed(1)}</span>
-            <span className={styles.statSub}>sobre 100</span>
+        {/* Sin malla no hay calificación que enseñar: un 0.0 sobre 100 en un
+            curso que no la usa solo confunde. */}
+        {usaMalla && (
+          <div className={styles.statCard}>
+            <span className={`material-icons ${styles.statIcon}`} style={{ color: '#13deb9' }}>
+              emoji_events
+            </span>
+            <div className={styles.statContent}>
+              <span className={styles.statTitle}>Calificación Acumulada</span>
+              <span className={styles.statValue}>{calificacionActual.toFixed(1)}</span>
+              <span className={styles.statSub}>sobre 100</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Chart + Profile row */}
@@ -470,8 +509,13 @@ export default function AlumnoDashboard() {
           {editingProfile && (
             <div className={styles.passwordSection}>
               <h4 className={styles.passwordTitle}>
-                {perfilCompleto ? 'Cambiar contraseña (opcional)' : 'Establecer contraseña'}
+                {passwordAsignada ? 'Establece tu contraseña' : 'Cambiar contraseña (opcional)'}
               </h4>
+              <p className={styles.passwordHint}>
+                {passwordAsignada
+                  ? 'La que usaste para entrar te la asignamos nosotros y la conocen otras personas. Elige una propia para continuar.'
+                  : 'Ya tienes una contraseña tuya. Puedes cambiarla si quieres, pero no hace falta: deja estos campos vacíos para conservarla.'}
+              </p>
               <div className={styles.profileField}>
                 <span className={styles.profileLabel}>Nueva contraseña</span>
                 <input

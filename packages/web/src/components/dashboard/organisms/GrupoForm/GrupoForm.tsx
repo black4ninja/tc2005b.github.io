@@ -17,10 +17,29 @@ interface GrupoData {
   fechaFin?: string;
   admins?: AdminRef[];
   urlAgendaEntrevistas?: string | null;
+  /** Campos del perfil que este grupo NO pide. Vacío = los pide todos. */
+  camposPerfilDeshabilitados?: string[];
 }
+
+/**
+ * Campos del perfil del alumno que un grupo puede no pedir. Espeja
+ * `CAMPOS_DESACTIVABLES` de la API (`models/campos-perfil.ts`), que es quien
+ * manda: si aquí apareciera uno que allí no es desactivable, el guardado da 400.
+ *
+ * Los que no están en esta lista (experiencia, expectativas, compromiso) se
+ * piden siempre: son el compromiso mínimo con el alumno.
+ */
+const CAMPOS_PERFIL_OPCIONALES = [
+  {
+    key: 'repositorioIndividual',
+    label: 'Repositorio individual',
+    ayuda: 'URL de GitHub del alumno. Apágalo en los grupos que no trabajan con repositorio propio.',
+  },
+] as const;
 
 interface GrupoSavePayload {
   name: string;
+  camposPerfilDeshabilitados?: string[];
   /** `null` = quitar la fecha. NO `undefined`: JSON.stringify lo borra del
    *  cuerpo y el servidor no puede distinguirlo de "no toques este campo". */
   fechaInicio?: string | null;
@@ -61,9 +80,18 @@ export default function GrupoForm({ grupo, admins = [], onSave, onCancel, loadin
     (grupo?.admins ?? []).map((a) => a.id),
   );
   const [agendaUrl, setAgendaUrl] = useState(grupo?.urlAgendaEntrevistas ?? '');
+  // Se guarda al revés de como se pinta: la casilla marcada = campo PEDIDO, y lo
+  // que viaja al servidor es la lista de los apagados (ausente = todo pedido).
+  const [camposApagados, setCamposApagados] = useState<string[]>(
+    grupo?.camposPerfilDeshabilitados ?? [],
+  );
   const [error, setError] = useState('');
   const [errorAgenda, setErrorAgenda] = useState('');
 
+
+  function togglePedido(key: string) {
+    setCamposApagados((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+  }
 
   function toggleAdmin(id: string) {
     setAdminsSel((prev) =>
@@ -92,6 +120,7 @@ export default function GrupoForm({ grupo, admins = [], onSave, onCancel, loadin
       fechaInicio: fechaInicio || null,
       fechaFin: fechaFin || null,
       admins: adminsSel,
+      camposPerfilDeshabilitados: camposApagados,
       // Cadena vacía = quitar el enlace del grupo.
       urlAgendaEntrevistas: url,
     });
@@ -194,6 +223,30 @@ export default function GrupoForm({ grupo, admins = [], onSave, onCancel, loadin
               Quitar
             </button>
           )}
+        </div>
+      </div>
+      <div className={styles.field}>
+        <label className={styles.label}>Perfil que se pide al alumno</label>
+        <p className={styles.hint}>
+          Experiencia, expectativas y compromiso se piden siempre. Lo que desmarques aquí
+          desaparece del formulario del alumno y deja de bloquearle el acceso a Malla,
+          Competencias, Wiki y Ejercicios.
+        </p>
+        <div className={styles.checkboxList}>
+          {CAMPOS_PERFIL_OPCIONALES.map((campo) => (
+            <label key={campo.key} className={styles.campoItem}>
+              <input
+                type="checkbox"
+                checked={!camposApagados.includes(campo.key)}
+                onChange={() => togglePedido(campo.key)}
+                disabled={loading}
+              />
+              <span className={styles.campoTexto}>
+                <span className={styles.campoLabel}>{campo.label}</span>
+                <span className={styles.campoAyuda}>{campo.ayuda}</span>
+              </span>
+            </label>
+          ))}
         </div>
       </div>
       <div className={styles.actions}>

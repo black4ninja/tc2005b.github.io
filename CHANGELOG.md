@@ -8,6 +8,54 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **La malla y las competencias del alumno respetan los módulos de su grupo.** El
+  menú metía «Malla» y «Competencias» SIEMPRE, sin mirar las asignaciones: con el
+  módulo apagado el alumno veía la sección igualmente y entraba a una pantalla
+  vacía. Ahora el ítem desaparece, y sus endpoints responden 404 en vez de
+  servir datos de un módulo que el grupo no comparte — esconder el enlace sin
+  cerrar la puerta habría sido cosmético.
+  - **Un grupo que no usa la malla tampoco enseña la «Calificación Acumulada»**
+    en el panel del alumno: un 0.0 sobre 100 en un curso que no la evalúa así
+    solo confunde. El panel distingue «este grupo no usa malla» de «falló la
+    carga», que antes se veían igual.
+  - No hace falta un interruptor nuevo: el módulo **Actividades** ya era la
+    fuente de la malla (`ActividadEvaluacion` → `ActividadEvaluacionGrupo` →
+    `ActividadEvaluacionAlumno`). Se renombra a **«Actividades y malla»** en el
+    modal de asignaciones para que se entienda sin conocer el modelo de datos.
+- **El alumno ve siempre en qué grupo está.** El selector de grupo del menú solo
+  aparecía con dos o más grupos, así que quien está en uno —lo normal— no leía el
+  nombre por ningún lado. Ahora sale igualmente, deshabilitado cuando no hay nada
+  que elegir, en vez de desaparecer.
+- **Solo se exige cambiar la contraseña a quien nunca ha elegido una.** Marca
+  nueva en el usuario, `AppUser.passwordAsignada`: se pone al crear el alumno
+  (alta manual o import CSV, donde la contraseña la genera el sistema) y se
+  levanta en cuanto la persona elige la suya.
+  - Antes esto se deducía de `GrupoAlumno.perfilCompleto`, que es POR GRUPO, y
+    fallaba por los dos lados: a un alumno con contraseña propia que entraba a un
+    grupo nuevo se le volvía a exigir cambiarla, y a uno con la contraseña de
+    fábrica en un grupo cuyo perfil ya había rellenado no se le exigía nunca.
+  - Al que la tiene de fábrica se le dice por qué («la conocen otras personas»);
+    al que ya tiene la suya se le ofrece cambiarla dejando claro que no hace falta.
+  - Ausente = la eligió la persona. Es el default a propósito: los usuarios
+    anteriores a esta marca no se molestan.
+- **Cada grupo decide qué campos del perfil pide a sus alumnos.** En «Editar
+  Grupo» hay una sección nueva, *Perfil que se pide al alumno*, con una casilla
+  por campo opcional. De momento solo uno: **Repositorio individual**, porque no
+  todos los cursos trabajan con repositorio propio.
+  - Desmarcarlo hace dos cosas a la vez: el campo **desaparece** del formulario
+    del alumno y **sale de la regla** que marca el perfil como completo. Es lo
+    importante: mientras el perfil está incompleto, el alumno tiene en gris
+    Malla, Competencias, Documentación, Ejercicios y Agendar Entrevistas, así que
+    un campo que no puede rellenar le bloquea el panel entero.
+  - Experiencia, expectativas y compromiso se piden **siempre**: son el
+    compromiso mínimo con el alumno y no se pueden apagar. El servidor rechaza
+    con 400 cualquier intento de desactivar uno de ellos, y la comprobación
+    ignora la lista guardada para esos campos, por si llegara un dato viejo.
+  - Los grupos sin la lista la tienen ausente y siguen pidiéndolo todo: cero
+    migración.
+  - En la tabla de alumnos, la columna «Repositorio» desaparece en los grupos que
+    no lo piden, en vez de enseñar una columna entera de guiones.
+
 - **La importación de alumnos por CSV comprueba que la matrícula y el correo de
   cada fila concuerden**, y salta —reportándola— la que no. En el Tec el correo
   institucional se deriva de la matrícula (`A01278654` → `a01278654@tec.mx`), así
@@ -705,6 +753,50 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   exporta lo que ve un alumno, evalúa código candidato contra el ejercicio real
   y calcula métricas de carga cognitiva.
 ### Changed
+- **Ajustes de la wiki (visor de contenidos)**, para alinearla con el módulo de
+  Diagramas:
+  - **«Mi panel» baja al pie del menú lateral**, con su flecha, como el «Volver
+    al sitio» de Diagramas. En el topbar quedaba perdido entre el buscador y el
+    botón de tema.
+  - **Fuera el título del topbar**: el selector ya dice en qué wiki estás, así
+    que salía dos veces. El selector se queda **siempre**, deshabilitado cuando
+    solo hay una wiki asignada — mismo criterio que el selector de grupo del
+    alumno. Si la colección abierta no está en esa lista, se pinta su nombre como
+    texto: un `select` cuyo valor no casa con ninguna opción enseñaría la
+    primera, que es otra wiki.
+  - **El índice «En esta página» se puede plegar**, con un botón al pie y una
+    pestaña en el borde para recuperarlo. Al plegarlo, el contenido ocupa esa
+    columna.
+  - El botón de ocultar el menú pierde su caja, para que se vea como el de
+    Diagramas.
+- **El menú del alumno deja de pintarse por etapas.** Salía con los ítems en
+  gris, luego se activaban, y luego desaparecían Malla y Competencias cuando
+  llegaba la validación de módulos: tres estados distintos en más de un segundo.
+  - La causa eran **cinco peticiones sueltas** (perfil, módulos, colecciones,
+    ejercicios, diagramas), cada una desde su propio efecto y cada una de entre
+    0,5 y 1,5 s. Ahora hay **una sola**, `GET /alumno/grupos/:grupoId/menu`, que
+    resuelve lo mismo en paralelo en el servidor reutilizando los mismos helpers
+    —el alcance de cada dato no cambia—, y mientras tanto se enseña un esqueleto.
+  - De paso se quitan dos consultas repetidas: los dos módulos salen de UNA
+    lectura del grupo, y `perfilCompleto` sale del vínculo que la validación ya
+    había traído.
+  - La latencia total es parecida a la que tenía la más lenta de las cinco: el
+    coste está en la autenticación por petición y en resolver las colecciones
+    permitidas, no en el número de viajes. Lo que se arregla es el parpadeo.
+- **«Documentación» pasa a llamarse «Wiki»** en toda la interfaz: el ítem del menú
+  del alumno, la casilla del modal de asignaciones, la sección del menú de grupo
+  —que se llamaba «Contenido» y apunta al mismo visor—, la acción «Abrir wiki» de
+  una colección y la tarjeta de la portada. Solo cambian las etiquetas: la key
+  interna del módulo sigue siendo `documentacion`, así que no hay que migrar
+  nada ni tocar el backend.
+  - «Contenidos» (la sección del admin donde se administra) se queda como está:
+    ahí dentro viven también Páginas, Competencias, Actividades, Ejercicios y
+    Diagramas, así que no es sinónimo de la wiki.
+- **«Situaciones especiales» pasa a llamarse «Situaciones/condiciones especiales
+  o algo que debamos saber para apoyarte mejor»** en el formulario del alumno.
+  La etiqueta anterior sonaba a trámite y se prestaba a dejarla en «Ninguna»;
+  esta dice para qué sirve. En la ficha del admin se queda la versión corta
+  («Situaciones/condiciones especiales»), que ahí es una etiqueta de tabla.
 - **El listado de grupos ordena por fecha de inicio ascendente** de entrada, en
   vez de por fecha de creación descendente. Con varios semestres dados de alta,
   el orden de creación no dice nada: lo que se busca es el grupo que empieza

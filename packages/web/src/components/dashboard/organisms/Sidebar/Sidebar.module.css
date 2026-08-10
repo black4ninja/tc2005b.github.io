@@ -90,6 +90,16 @@
   font-family: inherit;
   cursor: pointer;
 }
+
+/* Con un solo grupo el selector es informativo: se deja legible (nada de gris
+   de "control roto") y sin cursor de mano, porque no hay nada que desplegar.
+   `opacity: 1` es necesario: los navegadores atenúan los select deshabilitados. */
+.grupoSelect:disabled {
+  cursor: default;
+  opacity: 1;
+  color: var(--text-primary);
+  background: var(--bg-page);
+}
 .nav {
   flex: 1;
   padding: 16px 12px;
@@ -133,5 +143,33 @@
   }
   .mobileOpen {
     transform: translateX(0);
+  }
+}
+
+/* Esqueleto del menú del alumno mientras se resuelve qué secciones le tocan.
+   Mismas alturas que un NavItem para que no salte el layout al reemplazarlo. */
+.menuSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menuSkeletonItem {
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--bg-page) 25%, var(--sidebar-border) 50%, var(--bg-page) 75%);
+  background-size: 200% 100%;
+  animation: menuSkeletonBrillo 1.2s ease-in-out infinite;
+}
+
+@keyframes menuSkeletonBrillo {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* Sin animación para quien la haya desactivado en su sistema. */
+@media (prefers-reduced-motion: reduce) {
+  .menuSkeletonItem {
+    animation: none;
   }
 }

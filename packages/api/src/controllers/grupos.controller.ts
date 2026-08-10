@@ -3,6 +3,7 @@ import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { Grupo } from '../models/Grupo.js';
 import { esModuloValido } from '../models/modulos-contenido.js';
+import { esCampoDesactivable } from '../models/campos-perfil.js';
 import { invalidateColeccionesPermitidas } from '../services/contenidos.service.js';
 import { invalidateAccesoModulos } from '../services/acceso-modulos.service.js';
 import { getGruposDeStaff } from '../services/grupo-admin.service.js';
@@ -174,6 +175,19 @@ export function parseFechaDia(valor: unknown): Date | null | 'invalida' {
   return fecha;
 }
 
+/**
+ * `camposPerfilDeshabilitados` del body → lista limpia, o 'invalido' (400).
+ * `null`/ausente = no se toca. Solo se admiten campos DESACTIVABLES: si alguien
+ * manda `experiencia`, es que está intentando saltarse el mínimo común.
+ */
+function resolverCamposPerfil(valor: unknown): string[] | 'invalido' | null {
+  if (valor === undefined) return null;
+  if (!Array.isArray(valor)) return 'invalido';
+  const campos = [...new Set(valor)];
+  if (!campos.every((c) => esCampoDesactivable(c))) return 'invalido';
+  return campos as string[];
+}
+
 export async function createGrupo(req: Request, res: Response): Promise<void> {
   const { name, fechaInicio, fechaFin, urlAgendaEntrevistas } = req.body;
 
@@ -195,12 +209,19 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  const campos = resolverCamposPerfil(req.body.camposPerfilDeshabilitados);
+  if (campos === 'invalido') {
+    res.status(400).json({ status: 'error', message: 'camposPerfilDeshabilitados solo admite campos opcionales del perfil' });
+    return;
+  }
+
   try {
     const grupo = new Grupo().initDefaults();
     grupo.setName(name.trim());
     if (inicio) grupo.setFechaInicio(inicio);
     if (fin) grupo.setFechaFin(fin);
     if (url) grupo.setUrlAgendaEntrevistas(url);
+    if (campos) grupo.setCamposPerfilDeshabilitados(campos);
 
     // Las colecciones (y sus módulos) NO se asignan aquí: van por la acción
     // "Asignaciones" (PUT /admin/grupos/:id/asignaciones). Un grupo nace vacío.
@@ -271,6 +292,14 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
       // '' limpia el campo: así se puede quitar el enlace de un grupo.
       if (url) grupo.setUrlAgendaEntrevistas(url);
       else grupo.unset('urlAgendaEntrevistas');
+    }
+    if (req.body.camposPerfilDeshabilitados !== undefined) {
+      const campos = resolverCamposPerfil(req.body.camposPerfilDeshabilitados);
+      if (campos === 'invalido') {
+        res.status(400).json({ status: 'error', message: 'camposPerfilDeshabilitados solo admite campos opcionales del perfil' });
+        return;
+      }
+      grupo.setCamposPerfilDeshabilitados(campos ?? []);
     }
     // Los administradores del grupo son CONFIGURACIÓN: solo el admin los reasigna
     // (un profesor edita nombre/fechas/agenda, no esto — se ignora si lo manda).

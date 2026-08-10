@@ -234,6 +234,9 @@ export async function createAlumno(req: Request, res: Response): Promise<void> {
     alumno.setMatricula(matricula.trim());
     alumno.setUserType('alumno');
     alumno.setPasswordHash(hash);
+    // La contraseña la genera el sistema: hasta que el alumno elija la suya, el
+    // panel se la va a exigir.
+    alumno.setPasswordAsignada(true);
     alumno.setAttributes({});
 
     await alumno.save(null, { useMasterKey: true });
@@ -444,6 +447,7 @@ export async function importAlumnosCSV(req: Request, res: Response): Promise<voi
       alumno.setMatricula(matricula || '');
       alumno.setUserType('alumno');
       alumno.setPasswordHash(hash);
+      alumno.setPasswordAsignada(true); // generada aquí, no elegida por el alumno
       alumno.setAttributes({});
 
       await alumno.save(null, { useMasterKey: true });

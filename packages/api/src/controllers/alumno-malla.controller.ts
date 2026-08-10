@@ -8,8 +8,38 @@ import { PlanEvaluacion } from '../models/PlanEvaluacion.js';
 import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
+import { validarPerfil } from '../models/campos-perfil.js';
+import { moduloActivoEnGrupo, modulosActivosEnGrupo } from '../services/grupo-colecciones.service.js';
+import { getColeccionesPermitidas } from '../services/contenidos.service.js';
+import { coleccionesConEjerciciosPublicados } from '../services/ejercicios-alumno.service.js';
+import { coleccionesConDiagramasPublicados } from '../services/diagramas-alumno.service.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { registrarLog } from '../models/AuditLog.js';
+
+/**
+ * Corta con 404 si el grupo no comparte ese módulo con sus alumnos. 404 y no 403
+ * a propósito: para el alumno ese contenido no existe, igual que responde el
+ * visor de Contenidos cuando la colección no le toca.
+ */
+async function moduloDisponible(
+  grupoId: string,
+  modulo: 'competencias' | 'actividades',
+  res: Response,
+): Promise<boolean> {
+  if (await moduloActivoEnGrupo(grupoId, modulo)) return true;
+  res.status(404).json({ status: 'error', message: 'Esta sección no está disponible en tu grupo' });
+  return false;
+}
+
+/**
+ * Campos del perfil que este grupo NO pide. El pointer que devuelve
+ * `validateAlumnoInGrupo` viene sin datos, así que hay que traerlo.
+ */
+async function camposApagadosDelGrupo(grupoId: string): Promise<string[]> {
+  const q = new Parse.Query<Grupo>('Grupo');
+  const grupo = await q.get(grupoId, { useMasterKey: true });
+  return grupo.getCamposPerfilDeshabilitados();
+}
 
 /* ------------------------------------------------------------------ */
 /*  Helper: validate alumno belongs to grupo                           */
@@ -45,6 +75,45 @@ async function validateAlumnoInGrupo(
   return grupoPointer;
 }
 
+/**
+ * Igual que `validateAlumnoInGrupo`, pero devuelve TAMBIÉN el vínculo que la
+ * validación ya trajo de la BD. Para quien necesita leer algo de él (el menú lee
+ * `perfilCompleto`) y si no repetiría la misma consulta.
+ *
+ * Va como función aparte y no como variable compartida de módulo: el servidor
+ * atiende varias peticiones a la vez, y un `let` global haría que un alumno
+ * acabara leyendo el vínculo de otro.
+ */
+async function validateAlumnoInGrupoConLink(
+  req: Request,
+  res: Response,
+): Promise<{ grupo: Grupo; link: GrupoAlumno } | null> {
+  const { grupoId } = req.params;
+  const alumnoId = (req as any).appUser?.id;
+
+  if (!alumnoId || !grupoId) {
+    res.status(400).json({ status: 'error', message: 'Datos incompletos' });
+    return null;
+  }
+
+  const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId) as AppUser;
+  const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
+
+  const query = new Parse.Query<GrupoAlumno>('GrupoAlumno');
+  query.equalTo('exists' as any, true as any);
+  query.equalTo('active' as any, true as any);
+  query.equalTo('alumno' as any, alumnoPointer as any);
+  query.equalTo('grupo' as any, grupoPointer as any);
+  const link = await query.first({ useMasterKey: true });
+
+  if (!link) {
+    res.status(403).json({ status: 'error', message: 'No perteneces a este grupo' });
+    return null;
+  }
+
+  return { grupo: grupoPointer, link };
+}
+
 /* ------------------------------------------------------------------ */
 /*  GET /alumno/grupos/:grupoId/malla                                  */
 /* ------------------------------------------------------------------ */
@@ -53,6 +122,7 @@ export async function getMyMalla(req: Request, res: Response): Promise<void> {
   try {
     const grupoPointer = await validateAlumnoInGrupo(req, res);
     if (!grupoPointer) return;
+    if (!(await moduloDisponible(grupoPointer.id, 'actividades', res))) return;
 
     const alumnoId = (req as any).appUser.id;
     const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId) as AppUser;
@@ -93,6 +163,7 @@ export async function getMyPlanEvaluacion(req: Request, res: Response): Promise<
   try {
     const grupoPointer = await validateAlumnoInGrupo(req, res);
     if (!grupoPointer) return;
+    if (!(await moduloDisponible(grupoPointer.id, 'actividades', res))) return;
 
     const { grupoId } = req.params;
 
@@ -120,6 +191,7 @@ export async function updateMyActividad(req: Request, res: Response): Promise<vo
   try {
     const grupoPointer = await validateAlumnoInGrupo(req, res);
     if (!grupoPointer) return;
+    if (!(await moduloDisponible(grupoPointer.id, 'actividades', res))) return;
 
     const { actividadId } = req.params;
     const alumnoId = (req as any).appUser.id;
@@ -199,6 +271,7 @@ export async function getMyCompetencias(req: Request, res: Response): Promise<vo
   try {
     const grupoPointer = await validateAlumnoInGrupo(req, res);
     if (!grupoPointer) return;
+    if (!(await moduloDisponible(grupoPointer.id, 'competencias', res))) return;
 
     const alumnoId = (req as any).appUser.id;
     const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId) as AppUser;
@@ -238,6 +311,7 @@ export async function updateMyCompetenciaEvidencias(req: Request, res: Response)
   try {
     const grupoPointer = await validateAlumnoInGrupo(req, res);
     if (!grupoPointer) return;
+    if (!(await moduloDisponible(grupoPointer.id, 'competencias', res))) return;
 
     const { compAlumnoId } = req.params;
     const alumnoId = (req as any).appUser.id;
@@ -283,6 +357,59 @@ export async function updateMyCompetenciaEvidencias(req: Request, res: Response)
 /*  GET /alumno/grupos/:grupoId/perfil                                 */
 /* ------------------------------------------------------------------ */
 
+/**
+ * GET /alumno/grupos/:grupoId/menu — TODO lo que el menú del alumno necesita
+ * para pintarse una sola vez.
+ *
+ * Antes el sidebar lo sacaba de cinco peticiones sueltas (perfil, módulos,
+ * colecciones, ejercicios, diagramas), cada una desde su propio efecto. Como
+ * tardan entre medio segundo y segundo y medio, el menú se pintaba por etapas y
+ * los ítems aparecían y desaparecían mientras llegaban las respuestas.
+ *
+ * Aquí se resuelve lo mismo en paralelo y en un viaje. Se reutilizan los helpers
+ * de siempre, no copias: el alcance de cada dato no cambia. Ojo con eso —
+ * `colecciones`, `ejercicios` y `diagramas` son de TODOS los grupos del alumno
+ * (así funciona el visor), mientras que `modulos` y `perfilCompleto` son de ESTE
+ * grupo.
+ */
+export async function getMyMenu(req: Request, res: Response): Promise<void> {
+  try {
+    // Con vínculo: `perfilCompleto` sale de él y así no se consulta dos veces.
+    const validado = await validateAlumnoInGrupoConLink(req, res);
+    if (!validado) return;
+    const { grupo: grupoPointer, link } = validado;
+
+    const user = (req as any).appUser as AppUser;
+
+    // Los dos módulos salen de UNA lectura del grupo: preguntarlos por separado
+    // traía el mismo grupo con sus colecciones dos veces.
+    const [modulos, colecciones, ejercicios, diagramas] = await Promise.all([
+      modulosActivosEnGrupo(grupoPointer.id, ['competencias', 'actividades']),
+      getColeccionesPermitidas(user),
+      coleccionesConEjerciciosPublicados(user),
+      coleccionesConDiagramasPublicados(user),
+    ]);
+    const competencias = modulos.competencias === true;
+    const actividades = modulos.actividades === true;
+
+    res.json({
+      status: 'ok',
+      menu: {
+        // `malla` sale del mismo interruptor que las actividades: es de donde se
+        // estampa. Se nombra aparte para que el consumidor no tenga que saberlo.
+        modulos: { competencias, actividades, malla: actividades },
+        perfilCompleto: link.getPerfilCompleto(),
+        // Solo el slug de la primera: es lo único que el menú usa para enlazar.
+        coleccionSlug: colecciones[0]?.slug ?? null,
+        ejerciciosSlug: ejercicios[0]?.slug ?? null,
+        diagramasSlug: diagramas[0]?.slug ?? null,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Error al obtener el menú' });
+  }
+}
+
 export async function getMyPerfil(req: Request, res: Response): Promise<void> {
   try {
     const grupoPointer = await validateAlumnoInGrupo(req, res);
@@ -312,6 +439,8 @@ export async function getMyPerfil(req: Request, res: Response): Promise<void> {
         repositorioIndividual: link.getRepositorioIndividual(),
         situacionesEspeciales: link.getSituacionesEspeciales(),
         perfilCompleto: link.getPerfilCompleto(),
+        // Para que el formulario esconda lo que este grupo no pide (y no lo exija).
+        camposDeshabilitados: await camposApagadosDelGrupo(grupoPointer.id),
       },
     });
   } catch (error) {
@@ -345,41 +474,26 @@ export async function updateMyPerfil(req: Request, res: Response): Promise<void>
 
     const { experiencia, expectativas, compromiso, repositorioIndividual, situacionesEspeciales } = req.body;
 
-    // Validation
-    const errors: Record<string, string> = {};
-
-    if (typeof experiencia !== 'string' || experiencia.trim().length < 10) {
-      errors.experiencia = 'La experiencia debe tener al menos 10 caracteres';
-    }
-    if (typeof expectativas !== 'string' || expectativas.trim().length < 10) {
-      errors.expectativas = 'Las expectativas deben tener al menos 10 caracteres';
-    }
-    if (typeof compromiso !== 'string' || compromiso.trim().length < 10) {
-      errors.compromiso = 'El compromiso debe tener al menos 10 caracteres';
-    }
-    if (typeof repositorioIndividual !== 'string' || !repositorioIndividual.trim().includes('github.com')) {
-      errors.repositorioIndividual = 'Debe ser una URL válida de GitHub (github.com)';
-    } else {
-      try {
-        new URL(repositorioIndividual.trim());
-      } catch {
-        errors.repositorioIndividual = 'Debe ser una URL válida de GitHub';
-      }
-    }
-    if (typeof situacionesEspeciales !== 'string' || situacionesEspeciales.trim().length < 5) {
-      errors.situacionesEspeciales = 'Las situaciones especiales deben tener al menos 5 caracteres';
-    }
+    // La validación vive en `campos-perfil.ts` y se salta los campos que este
+    // grupo tiene apagados: si no se piden, no pueden bloquear el perfil.
+    const apagados = await camposApagadosDelGrupo(grupoPointer.id);
+    const errors = validarPerfil(
+      { experiencia, expectativas, compromiso, repositorioIndividual, situacionesEspeciales },
+      apagados,
+    );
 
     if (Object.keys(errors).length > 0) {
       res.status(400).json({ status: 'error', message: 'Errores de validación', errors });
       return;
     }
 
-    link.setExperiencia(experiencia.trim());
-    link.setExpectativas(expectativas.trim());
-    link.setCompromiso(compromiso.trim());
-    link.setRepositorioIndividual(repositorioIndividual.trim());
-    link.setSituacionesEspeciales(situacionesEspeciales.trim());
+    // Solo se guardan los campos que el grupo pide. Un campo apagado conserva lo
+    // que ya tuviera (si el grupo vuelve a pedirlo, no se ha perdido nada).
+    if (!apagados.includes('experiencia')) link.setExperiencia(experiencia.trim());
+    if (!apagados.includes('expectativas')) link.setExpectativas(expectativas.trim());
+    if (!apagados.includes('compromiso')) link.setCompromiso(compromiso.trim());
+    if (!apagados.includes('repositorioIndividual')) link.setRepositorioIndividual(repositorioIndividual.trim());
+    if (!apagados.includes('situacionesEspeciales')) link.setSituacionesEspeciales(situacionesEspeciales.trim());
     link.setPerfilCompleto(true);
 
     await link.save(null, { useMasterKey: true });
@@ -430,6 +544,9 @@ export async function changeMyPassword(req: Request, res: Response): Promise<voi
 
     const hash = await bcrypt.hash(newPassword, 10);
     alumno.set('passwordHash', hash);
+    // La eligió la persona: se levanta la marca de "contraseña de fábrica" para
+    // no volver a exigirle el cambio al entrar a otro grupo.
+    alumno.setPasswordAsignada(false);
     await alumno.save(null, { useMasterKey: true });
 
     res.json({ status: 'ok', message: 'Contraseña actualizada exitosamente' });
