@@ -8,6 +8,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **El importador de Docusaurus admite material de clase**, no solo imágenes y
+  PDFs: `.py`, `.ipynb`, `.pptx`/`.pptm`/`.ppt`, `.docx`, `.xlsx`, `.txt` y
+  `.json`. Antes, una página que enlazara un `.py` o una presentación se
+  importaba con el enlace apuntando a la ruta del sitio viejo, y el alumno se
+  encontraba un 404 sin que nada lo avisara — solo aparecía como «extensión no
+  manejada» en el reporte.
 - **La malla y las competencias del alumno respetan los módulos de su grupo.** El
   menú metía «Malla» y «Competencias» SIEMPRE, sin mirar las asignaciones: con el
   módulo apagado el alumno veía la sección igualmente y entraba a una pantalla
