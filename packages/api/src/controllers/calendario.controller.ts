@@ -4,6 +4,8 @@ import { Grupo } from '../models/Grupo.js';
 import { Semana } from '../models/Semana.js';
 import { Actividad } from '../models/Actividad.js';
 import { DIAS_SEMANA, normalizarDias } from '../constants/dias.js';
+import { usuarioOpcional } from '../utils/usuario-opcional.js';
+import { perteneceAlGrupo } from '../services/pertenencia-grupo.service.js';
 
 export async function getCalendarioByGrupo(req: Request, res: Response): Promise<void> {
   const { grupoIdentifier } = req.params;
@@ -25,6 +27,17 @@ export async function getCalendarioByGrupo(req: Request, res: Response): Promise
     if (!grupo) {
       res.status(404).json({ status: 'error', message: 'Grupo no encontrado' });
       return;
+    }
+
+    // Grupo bloqueado (active=false): su calendario deja de ser público. El
+    // staff y sus propios alumnos sí lo siguen viendo —el admin necesita poder
+    // editarlo—, y a nadie más se le confirma siquiera que exista.
+    if (grupo.get('active') === false) {
+      const user = await usuarioOpcional(req);
+      if (!user || !(await perteneceAlGrupo(user, grupo.id!))) {
+        res.status(404).json({ status: 'error', message: 'Grupo no encontrado' });
+        return;
+      }
     }
 
     // Query 1: All semanas for this grupo, ordered by orden

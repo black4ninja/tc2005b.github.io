@@ -56,20 +56,51 @@ export async function getAlumnosDeGrupo(
 }
 
 /**
- * True si el alumno tiene al menos un GrupoAlumno activo (i.e. NO ha sido dado de
- * baja de todos sus grupos). Usado por el flujo de login para bloquear el acceso
- * de alumnos sin grupos activos.
+ * ¿Este grupo sigue dando acceso a sus alumnos?
+ *
+ * Un grupo con `active: false` está BLOQUEADO: para el alumno es como si no
+ * existiera (no aparece en su selector, sus secciones responden 403 y su
+ * contenido deja de verse), pero sigue en la BD para el staff. Es la misma
+ * regla que el CMS ya aplicaba a las colecciones en `contenidos.service.ts`;
+ * aquí se usa en todos los caminos del alumno para que no diverjan.
+ */
+export function grupoDaAccesoAlumno(grupo: Parse.Object | undefined): boolean {
+  if (!grupo) return false;
+  return grupo.get('exists') !== false && grupo.get('active') !== false;
+}
+
+/**
+ * True si el alumno tiene al menos un grupo que le dé acceso: vínculo activo Y
+ * grupo sin bloquear. Usado por el login — a quien solo le quedan grupos
+ * bloqueados se le trata como al que no tiene ninguno.
  */
 export async function hasAnyActiveGrupoForAlumno(alumnoId: string): Promise<boolean> {
+  const grupos = await getGruposDeAlumno(alumnoId);
+  return grupos.length > 0;
+}
+
+/**
+ * Vínculo del alumno con un grupo que le dé acceso, o `null`. Reúne las dos
+ * condiciones que antes se comprobaban por separado —vínculo activo y grupo no
+ * bloqueado— para que ningún endpoint del alumno se deje una.
+ */
+export async function getVinculoConGrupoActivo(
+  alumnoId: string,
+  grupoId: string,
+): Promise<GrupoAlumno | null> {
   const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId) as AppUser;
+  const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
 
   const query = new Parse.Query<GrupoAlumno>('GrupoAlumno');
   query.equalTo('exists' as any, true as any);
   query.equalTo('active' as any, true as any);
   query.equalTo('alumno' as any, alumnoPointer as any);
-  query.limit(1);
-  const count = await query.count({ useMasterKey: true });
-  return count > 0;
+  query.equalTo('grupo' as any, grupoPointer as any);
+  query.include('grupo' as any);
+  const link = await query.first({ useMasterKey: true });
+
+  if (!link || !grupoDaAccesoAlumno(link.getGrupo())) return null;
+  return link;
 }
 
 /**
@@ -100,7 +131,10 @@ export async function findGrupoAlumnoLink(
 }
 
 /**
- * Obtiene los grupos activos de un alumno vía GrupoAlumno.
+ * Grupos que el alumno puede usar: vínculo activo y grupo sin bloquear. Un
+ * grupo bloqueado desaparece de aquí, y con ello del selector del alumno: al
+ * recargar, `GrupoActivoContext` ve que su grupo recordado ya no está en la
+ * lista y salta al primero disponible.
  */
 export async function getGruposDeAlumno(alumnoId: string): Promise<Grupo[]> {
   const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId) as AppUser;
@@ -116,8 +150,8 @@ export async function getGruposDeAlumno(alumnoId: string): Promise<Grupo[]> {
   const grupos: Grupo[] = [];
   for (const link of links) {
     const grupo = link.getGrupo() as Grupo | undefined;
-    if (grupo && grupo.get('exists') === true) {
-      grupos.push(grupo);
+    if (grupoDaAccesoAlumno(grupo)) {
+      grupos.push(grupo!);
     }
   }
   return grupos;

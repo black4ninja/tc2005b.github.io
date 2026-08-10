@@ -4,6 +4,7 @@ import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { Coleccion } from '../models/Coleccion.js';
 import type { ModuloContenido } from '../models/modulos-contenido.js';
 import { getGruposDeStaff } from './grupo-admin.service.js';
+import { grupoDaAccesoAlumno } from './grupo-alumno.service.js';
 import { getColeccionesPorSlug, coleccionVisiblePorModulo, type ColeccionInfo } from './contenidos.service.js';
 import { TtlMap } from '../utils/ttl-cache.js';
 
@@ -75,7 +76,8 @@ async function gruposDeAcceso(user: AppUser): Promise<Parse.Object[]> {
   q.include('grupo.colecciones' as any);
   q.limit(1000);
   const links = await q.find({ useMasterKey: true });
-  return links.map((l) => l.get('grupo')).filter(Boolean) as Parse.Object[];
+  // Un grupo bloqueado (active=false) deja de dar acceso a sus módulos.
+  return links.map((l) => l.get('grupo')).filter(grupoDaAccesoAlumno) as Parse.Object[];
 }
 
 /** Mapa slug→acceso de las colecciones con ese módulo habilitado para el user. */

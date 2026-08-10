@@ -9,6 +9,7 @@ import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { validarPerfil } from '../models/campos-perfil.js';
+import { getVinculoConGrupoActivo } from '../services/grupo-alumno.service.js';
 import { moduloActivoEnGrupo, modulosActivosEnGrupo } from '../services/grupo-colecciones.service.js';
 import { getColeccionesPermitidas } from '../services/contenidos.service.js';
 import { coleccionesConEjerciciosPublicados } from '../services/ejercicios-alumno.service.js';
@@ -57,15 +58,8 @@ async function validateAlumnoInGrupo(
     return null;
   }
 
-  const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId) as AppUser;
   const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
-
-  const query = new Parse.Query<GrupoAlumno>('GrupoAlumno');
-  query.equalTo('exists' as any, true as any);
-  query.equalTo('active' as any, true as any);
-  query.equalTo('alumno' as any, alumnoPointer as any);
-  query.equalTo('grupo' as any, grupoPointer as any);
-  const link = await query.first({ useMasterKey: true });
+  const link = await getVinculoConGrupoActivo(alumnoId, grupoId);
 
   if (!link) {
     res.status(403).json({ status: 'error', message: 'No perteneces a este grupo' });
@@ -96,15 +90,8 @@ async function validateAlumnoInGrupoConLink(
     return null;
   }
 
-  const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId) as AppUser;
   const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
-
-  const query = new Parse.Query<GrupoAlumno>('GrupoAlumno');
-  query.equalTo('exists' as any, true as any);
-  query.equalTo('active' as any, true as any);
-  query.equalTo('alumno' as any, alumnoPointer as any);
-  query.equalTo('grupo' as any, grupoPointer as any);
-  const link = await query.first({ useMasterKey: true });
+  const link = await getVinculoConGrupoActivo(alumnoId, grupoId);
 
   if (!link) {
     res.status(403).json({ status: 'error', message: 'No perteneces a este grupo' });
