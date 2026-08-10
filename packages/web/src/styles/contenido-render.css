@@ -94,6 +94,60 @@
   color: var(--text-secondary);
 }
 
+/* ── Listas ──
+   `globals.css` quita la viñeta a TODA la aplicación (`ul, ol { list-style:
+   none }`), que es lo que quieren los menús y las barras de la interfaz. El
+   contenido del wiki es texto, no interfaz: aquí hay que devolvérsela, o un
+   `- punto` del Markdown sale como una línea suelta y una lista numerada
+   pierde hasta los números. Es lo mismo que ya hace `.instruccionesHtml` en
+   los labs. */
+.contenido-render ul,
+.contenido-render ol {
+  padding-left: 1.5rem;
+  margin: 10px 0;
+}
+.contenido-render ul { list-style: disc; }
+.contenido-render ol { list-style: decimal; }
+
+/* Los niveles anidados cambian de marca para que se distingan del padre; el
+   navegador solo lo hace solo cuando nadie fija `list-style`. */
+.contenido-render ul ul { list-style: circle; }
+.contenido-render ul ul ul { list-style: square; }
+
+.contenido-render li { margin: 4px 0; }
+
+/* Listas anidadas: pegadas a su punto padre, sin el margen de una lista suelta. */
+.contenido-render li > ul,
+.contenido-render li > ol {
+  margin: 4px 0;
+}
+
+/* Lista "suelta" (con línea en blanco entre puntos): remark envuelve cada
+   punto en <p>, y con el margen normal de párrafo la lista se desmonta. */
+.contenido-render li > p {
+  margin: 0 0 4px;
+}
+.contenido-render li > p:last-child {
+  margin-bottom: 0;
+}
+
+/* Casillas de GFM (`- [ ] tarea`): la marca la pone el checkbox. */
+.contenido-render .contains-task-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+/* Una lista de tareas anidada sí lleva sangría: sin ella, las subtareas
+   quedan alineadas con su tarea padre y se pierde la jerarquía. */
+.contenido-render li > .contains-task-list {
+  padding-left: 1.5rem;
+}
+/* Sin `display: flex` a propósito: pondría la sublista de una tarea en la
+   misma línea que su texto, en vez de debajo. */
+.contenido-render .task-list-item > input[type='checkbox'] {
+  margin-right: 6px;
+}
+
 /* ── Admonitions (clases que emite el pipeline) ── */
 .contenido-render .admonition {
   border-left: 4px solid var(--dash-info);
