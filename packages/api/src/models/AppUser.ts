@@ -93,6 +93,25 @@ export class AppUser extends BaseModel {
     this.set('ultimoGrupoId', id);
   }
 
+  /**
+   * Tema de la interfaz: 'claro' | 'oscuro' | 'auto'.
+   *
+   * Vive en el usuario y no solo en el navegador para que le siga entre el
+   * portátil y el laboratorio. El navegador guarda una copia, pero solo para
+   * pintar el tema correcto antes de saber quién eres; en cuanto hay sesión,
+   * manda este campo.
+   *
+   * Por defecto 'auto': quien nunca lo ha tocado hereda lo que pida su sistema,
+   * que es lo que la gente espera hoy.
+   */
+  getPreferenciaTema(): string {
+    return this.get('preferenciaTema') ?? 'auto';
+  }
+
+  setPreferenciaTema(preferencia: string): void {
+    this.set('preferenciaTema', preferencia);
+  }
+
   getLastLogin(): Date | undefined {
     return this.get('lastLogin');
   }
@@ -134,6 +153,7 @@ export class AppUser extends BaseModel {
       passwordAsignada: this.getPasswordAsignada(),
       // Preferencia de navegación: con qué grupo se le abre el panel.
       ultimoGrupoId: this.getUltimoGrupoId(),
+      preferenciaTema: this.getPreferenciaTema(),
       active: this.get('active'),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,

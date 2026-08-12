@@ -14,6 +14,8 @@ interface AppUserData {
     /** Categoría desplegada; de ella sale el color en el selector. */
     categoria?: { id: string; nombre: string; color: string } | null;
   }[];
+  /** Tema elegido: 'claro' | 'oscuro' | 'auto'. Le sigue entre dispositivos. */
+  preferenciaTema?: string;
   attributes: Record<string, unknown>;
   lastLogin?: string;
   perfilCompleto?: boolean;

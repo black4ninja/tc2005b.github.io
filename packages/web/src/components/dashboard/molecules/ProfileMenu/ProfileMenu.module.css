@@ -45,3 +45,11 @@
   border-top: 1px solid var(--border-color);
   margin: 4px 0;
 }
+
+/* Separa el ajuste de tema de la acción de salir: son cosas distintas y
+   pegadas se pulsa una por otra. */
+.separador {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--border-color);
+}

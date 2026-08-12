@@ -75,7 +75,7 @@
   font-size: 13px;
   font-family: inherit;
   color: var(--text-primary);
-  background: white;
+  background: var(--bg-card);
 }
 
 .field input:focus,
@@ -104,7 +104,7 @@
 }
 
 .slugPreview code {
-  background: #f1f5f9;
+  background: var(--dash-bg-subtle);
   padding: 1px 6px;
   border-radius: 4px;
   font-size: 11px;
@@ -160,7 +160,7 @@
 .previewWrapper {
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: white;
+  background: var(--bg-card);
   max-height: 60vh;
   overflow-y: auto;
 }

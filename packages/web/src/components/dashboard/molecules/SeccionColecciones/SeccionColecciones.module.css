@@ -34,8 +34,8 @@
 /* Sección aplanada a enlace directo: se marca como cualquier NavItem activo. */
 .headerActive,
 .headerActive:hover {
-  background: var(--sidebar-active-bg, #eef2ff);
-  color: var(--sidebar-active-color, #4f46e5);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
   font-weight: 600;
 }
 
@@ -92,7 +92,7 @@
 /* Enlace interno activo (la colección que se está viendo). */
 .linkActive,
 .linkActive:hover {
-  background: var(--sidebar-active-bg, #eef2ff);
-  color: var(--sidebar-active-color, #4f46e5);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
   font-weight: 600;
 }

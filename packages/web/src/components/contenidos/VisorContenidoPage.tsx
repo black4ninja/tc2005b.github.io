@@ -2,13 +2,13 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import type { TocEntry } from '@tc2005b/contenido-pipeline';
 import { useAuth } from '../../context/AuthContext';
+import { useTema } from '../../context/TemaContext';
 import Icon from '../dashboard/atoms/Icon/Icon';
 import '../../styles/contenido-render.css';
 import { useDiagramas } from '../../lib/diagramas/useDiagramas';
 import styles from './VisorContenidoPage.module.css';
 
 const API_BASE = '/api';
-const TEMA_KEY = 'contenidos-tema';
 const ARBOL_KEY = 'contenidos-arbol-oculto';
 
 interface NodoVisor {
@@ -60,7 +60,11 @@ export default function VisorContenidoPage() {
   const [paginaNoEncontrada, setPaginaNoEncontrada] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
-  const [oscuro, setOscuro] = useState(() => localStorage.getItem(TEMA_KEY) === 'oscuro');
+  // El tema ya no es del visor: es el del sitio. Antes tenía su propio
+  // interruptor y su propia clave en el navegador, y quedaban dos ajustes
+  // peleándose por la misma pantalla.
+  const { tema, preferencia, cambiarTema } = useTema();
+  const oscuro = tema === 'oscuro';
   // Árbol lateral colapsable: útil al presentar contenido con alumnos (estorba).
   const [arbolOculto, setArbolOculto] = useState(() => localStorage.getItem(ARBOL_KEY) === '1');
   const [reintento, setReintento] = useState(0);
@@ -106,11 +110,13 @@ export default function VisorContenidoPage() {
   // Índice de la derecha plegable, para quien quiera toda la pantalla.
   const [tocOculto, setTocOculto] = useState(false);
 
+  /**
+   * Atajo del visor: alterna claro/oscuro sin abrir el menú de usuario, que es
+   * donde vive el ajuste completo (con «automático»). Desde «automático» salta
+   * a lo contrario de lo que se esté viendo, que es lo que se espera al pulsar.
+   */
   function toggleTema() {
-    setOscuro((v) => {
-      localStorage.setItem(TEMA_KEY, v ? 'claro' : 'oscuro');
-      return !v;
-    });
+    cambiarTema(oscuro ? 'claro' : 'oscuro');
   }
 
   function toggleArbol() {
@@ -362,7 +368,7 @@ export default function VisorContenidoPage() {
   /* ── 404 de colección: no existe o no tienes acceso — indistinguible ── */
   if (!cargando && noEncontrado) {
     return (
-      <div className={`${styles.visor} ${oscuro ? `${styles.oscuro} tema-oscuro` : ''}`}>
+      <div className={styles.visor}>
         <div className={styles.notFound}>
           <h1>404</h1>
           <p>Página no encontrada.</p>
@@ -375,7 +381,7 @@ export default function VisorContenidoPage() {
   /* ── Error transitorio (500/red): distinto de 404, con reintento ── */
   if (!cargando && errorCarga) {
     return (
-      <div className={`${styles.visor} ${oscuro ? `${styles.oscuro} tema-oscuro` : ''}`}>
+      <div className={styles.visor}>
         <div className={styles.notFound}>
           <h1>😵</h1>
           <p>No se pudo cargar el contenido. Puede ser un problema temporal.</p>
@@ -392,7 +398,7 @@ export default function VisorContenidoPage() {
   const enLista = misColecciones.some((c) => c.slug === slug);
 
   return (
-    <div className={`${styles.visor} ${oscuro ? `${styles.oscuro} tema-oscuro` : ''}`}>
+    <div className={styles.visor}>
       <header className={styles.topbar}>
         <button
           type="button"
@@ -467,7 +473,17 @@ export default function VisorContenidoPage() {
           )}
         </div>
         <span style={{ flex: 1 }} />
-        <button type="button" className={styles.temaBtn} onClick={toggleTema} title="Cambiar tema">
+        <button
+          type="button"
+          className={styles.temaBtn}
+          onClick={toggleTema}
+          title={
+            preferencia === 'auto'
+              ? 'Tema automático (sigue a tu sistema). Pulsa para fijarlo.'
+              : 'Cambiar tema'
+          }
+          aria-label="Cambiar tema"
+        >
           {oscuro ? '☀️' : '🌙'}
         </button>
       </header>

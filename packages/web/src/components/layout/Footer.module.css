@@ -24,7 +24,7 @@
 }
 
 .links a {
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 0.875rem;
   text-decoration: none;
   transition: color 0.2s;
@@ -38,8 +38,8 @@
 .copyright {
   margin-top: var(--space-xl);
   padding-top: var(--space-md);
-  border-top: 1px solid #1e293b;
+  border-top: 1px solid var(--border-color);
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--text-secondary);
   text-align: center;
 }

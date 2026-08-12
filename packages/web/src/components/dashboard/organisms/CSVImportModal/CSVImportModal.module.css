@@ -41,12 +41,12 @@
 }
 
 .resultSuccess {
-  color: #2e7d32;
+  color: var(--estado-exito-color);
   font-weight: 500;
 }
 
 .resultSkipped {
-  color: #e65100;
+  color: var(--estado-aviso-color);
   font-weight: 500;
 }
 
@@ -97,7 +97,7 @@
 
 .error {
   padding: 12px 16px;
-  background: #fdecea;
+  background: var(--estado-error-bg);
   color: var(--dash-danger);
   border-radius: 8px;
   font-size: 14px;

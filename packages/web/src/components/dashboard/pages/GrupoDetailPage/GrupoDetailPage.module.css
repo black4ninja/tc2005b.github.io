@@ -49,18 +49,18 @@
 }
 
 .badgeActive {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
 }
 
 .badgeInactive {
-  background: #fff3e0;
-  color: #e65100;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
 }
 
 .rowInactive {
   opacity: 0.55;
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--dash-bg-subtle);
 }
 
 .rowInactive:hover {
@@ -102,7 +102,7 @@
 }
 
 .equipoFilterSelect:focus {
-  border-color: var(--accent, #2563eb);
+  border-color: var(--accent);
 }
 
 .equipoFilterCount {
@@ -185,7 +185,7 @@
 
 /* position/top/left son inyectados inline: portal al body con position: fixed */
 .profileTooltip {
-  background: #fff;
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 12px 16px;
@@ -235,23 +235,23 @@
 }
 
 .gradeRed {
-  background: #fdecea;
-  color: #c62828;
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
 }
 
 .gradeOrange {
-  background: #fff3e0;
-  color: #e65100;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
 }
 
 .gradeGreen {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
 }
 
 .error {
   padding: 12px 16px;
-  background: #fdecea;
+  background: var(--estado-error-bg);
   color: var(--dash-danger);
   border-radius: 8px;
   font-size: 14px;

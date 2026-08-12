@@ -180,15 +180,17 @@
 .contenido-render .hljs-tag { color: #94a3b8; }
 .contenido-render .hljs-name { color: #7dd3fc; }
 
-/* ── Tema oscuro del visor: hereda variables redefinidas por el contenedor ── */
-.tema-oscuro .contenido-render code { background: #1e293b; }
-.tema-oscuro .contenido-render th { background: #1e293b; }
-.tema-oscuro .contenido-render .admonition-note { background: #172554; }
-.tema-oscuro .contenido-render .admonition-tip,
-.tema-oscuro .contenido-render .admonition-info { background: #052e2b; }
-.tema-oscuro .contenido-render .admonition-warning,
-.tema-oscuro .contenido-render .admonition-caution { background: #422006; }
-.tema-oscuro .contenido-render .admonition-danger { background: #450a0a; }
+/* ── Tema oscuro: cuelga del tema GLOBAL (`data-theme` en <html>), no de una
+     clase del visor. Antes solo se aplicaba dentro del visor, así que la vista
+     previa del editor seguía en claro con el resto del sitio en oscuro. ── */
+:root[data-theme='dark'] .contenido-render code { background: #1e293b; }
+:root[data-theme='dark'] .contenido-render th { background: #1e293b; }
+:root[data-theme='dark'] .contenido-render .admonition-note { background: #172554; }
+:root[data-theme='dark'] .contenido-render .admonition-tip,
+:root[data-theme='dark'] .contenido-render .admonition-info { background: #052e2b; }
+:root[data-theme='dark'] .contenido-render .admonition-warning,
+:root[data-theme='dark'] .contenido-render .admonition-caution { background: #422006; }
+:root[data-theme='dark'] .contenido-render .admonition-danger { background: #450a0a; }
 
 /* --- Diagramas-como-código -------------------------------------------------
    El bloque ```mermaid (o el PlantUML ya escrito en el wiki) se sustituye por su

@@ -15,8 +15,8 @@
 .error {
   padding: 8px 12px;
   border-radius: 8px;
-  background: rgb(220 38 38 / 12%);
-  color: #b91c1c;
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
   font-size: 13px;
 }
 

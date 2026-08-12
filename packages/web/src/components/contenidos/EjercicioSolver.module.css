@@ -36,7 +36,7 @@
   word-wrap: break-word;
 }
 .enunciado :global(pre) {
-  background: #f6f8fa;
+  background: var(--dash-bg-subtle);
   padding: 12px;
   border-radius: 8px;
   overflow-x: auto;
@@ -50,7 +50,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  border: 1px solid #d0d7de;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 10px 12px;
 }
@@ -66,7 +66,7 @@
   font-size: 13px;
   white-space: pre-wrap;
   word-break: break-word;
-  background: #f6f8fa;
+  background: var(--dash-bg-subtle);
   padding: 6px 8px;
   border-radius: 6px;
 }
@@ -113,7 +113,7 @@
   font-size: 14px;
   padding: 6px 10px;
   border-radius: 6px;
-  border: 1px solid #d0d7de;
+  border: 1px solid var(--border-color);
 }
 .lengFijo { display: inline-block; font-weight: 600; color: #1f2328; border-style: dashed; }
 
@@ -124,8 +124,8 @@
   padding: 9px 16px;
   border-radius: 8px;
   cursor: pointer;
-  border: 1px solid #d0d7de;
-  background: #fff;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
   color: #1f2328;
 }
 .btnPri { background: #4f46e5; border-color: #4f46e5; color: #fff; }
@@ -134,7 +134,7 @@
 .errorBox {
   margin-top: 14px;
   padding: 10px 12px;
-  background: #fdecea;
+  background: var(--estado-error-bg);
   color: #b42318;
   border-radius: 8px;
   font-size: 14px;
@@ -143,7 +143,7 @@
 .colaBox {
   margin-top: 14px;
   padding: 10px 12px;
-  background: #eef2ff;
+  background: var(--estado-info-bg);
   color: #3730a3;
   border-radius: 8px;
   font-size: 14px;
@@ -173,7 +173,7 @@
   font-size: 13px;
   white-space: pre-wrap;
   word-break: break-word;
-  background: #f6f8fa;
+  background: var(--dash-bg-subtle);
   padding: 10px;
   border-radius: 6px;
   max-height: 260px;
@@ -181,7 +181,7 @@
 }
 
 .caso {
-  border: 1px solid #d0d7de;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 8px 12px;
   margin-bottom: 8px;
@@ -217,8 +217,8 @@
   padding: 5px 10px;
   font-size: 13px;
   color: #57606a;
-  background: #fff;
-  border: 1px solid #d0d7de;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
 }

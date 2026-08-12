@@ -15,16 +15,16 @@
   align-items: center;
   gap: 0.25rem;
   background: none;
-  border: 1px solid var(--color-border, #ddd);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 0.4rem 0.75rem;
   cursor: pointer;
   font-size: 0.875rem;
-  color: var(--color-text, #333);
+  color: var(--color-text);
 }
 
 .backBtn:hover {
-  background: var(--color-bg-hover, #f5f5f5);
+  background: var(--color-bg-hover);
 }
 
 .title {
@@ -34,8 +34,8 @@
 }
 
 .error {
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
   padding: 0.75rem 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
@@ -44,7 +44,7 @@
 
 .gridWrapper {
   overflow-x: auto;
-  border: 1px solid var(--color-border, #ddd);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   max-width: 100%;
 }
@@ -74,7 +74,7 @@
 }
 
 .grid thead th {
-  background: var(--color-bg-subtle, #f8f9fa);
+  background: var(--color-bg-subtle);
   font-weight: 600;
   font-size: 0.875rem;
   position: sticky;
@@ -85,7 +85,7 @@
 .cellCompName {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--color-text, #333);
+  color: var(--color-text);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -96,7 +96,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  background: var(--bg-card, #fff);
+  background: var(--bg-card);
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
   padding: 16px;
@@ -105,7 +105,7 @@
 .cellLabel {
   font-size: 0.6875rem;
   font-weight: 600;
-  color: var(--color-text-muted, #666);
+  color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   margin-top: 0.25rem;
@@ -118,14 +118,14 @@
 .cellSelect {
   width: 100%;
   padding: 0.4rem;
-  border: 1px solid var(--color-border, #ddd);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 0.8125rem;
-  background: white;
+  background: var(--bg-card);
 }
 
 .cellSelectLevel {
-  border-color: var(--dash-primary, #5d87ff);
+  border-color: var(--dash-primary);
   border-width: 2px;
 }
 
@@ -133,7 +133,7 @@
   width: 100%;
   min-height: 60px;
   padding: 0.4rem;
-  border: 1px solid var(--color-border, #ddd);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 0.8125rem;
   resize: vertical;
@@ -150,7 +150,7 @@
 
 .currentValue {
   font-size: 0.6875rem;
-  color: var(--dash-primary, #5d87ff);
+  color: var(--dash-primary);
   font-weight: 500;
   flex: 1;
 }
@@ -159,7 +159,7 @@
   width: 100%;
   padding: 0.45rem 0.75rem;
   font-size: 0.8125rem;
-  background: var(--dash-primary, #5d87ff);
+  background: var(--dash-primary);
   color: white;
   border: none;
   border-radius: 4px;
@@ -184,7 +184,7 @@
 
 .periodoBadge {
   display: inline-block;
-  background: var(--dash-primary, #5d87ff);
+  background: var(--dash-primary);
   color: #fff;
   font-size: 0.6875rem;
   font-weight: 600;
@@ -224,7 +224,7 @@
 }
 
 .evidenciasBadge {
-  background: var(--dash-primary, #5d87ff);
+  background: var(--dash-primary);
   color: #fff;
   font-size: 0.625rem;
   font-weight: 700;
@@ -248,7 +248,7 @@
 }
 
 .modal {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 1.5rem;
   max-width: 520px;
@@ -275,24 +275,24 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--color-text-muted, #666);
+  color: var(--color-text-muted);
   padding: 0.25rem;
   border-radius: 4px;
 }
 
 .modalClose:hover {
-  background: var(--color-bg-hover, #f5f5f5);
+  background: var(--color-bg-hover);
 }
 
 .modalSubtitle {
   font-size: 0.8125rem;
-  color: var(--color-text-muted, #666);
+  color: var(--color-text-muted);
   margin: 0 0 1rem 0;
 }
 
 .modalEmpty {
   font-size: 0.875rem;
-  color: var(--color-text-muted, #666);
+  color: var(--color-text-muted);
   text-align: center;
   padding: 1.5rem 0;
 }
@@ -308,12 +308,12 @@
 
 .modalList li {
   padding: 0.5rem 0.75rem;
-  background: var(--color-bg-subtle, #f8f9fa);
+  background: var(--color-bg-subtle);
   border-radius: 6px;
 }
 
 .modalLink {
-  color: var(--dash-primary, #5d87ff);
+  color: var(--dash-primary);
   font-size: 0.8125rem;
   text-decoration: none;
   word-break: break-all;
@@ -335,7 +335,7 @@
 
 .profesorTextMuted {
   font-size: 0.75rem;
-  color: var(--color-text-muted, #999);
+  color: var(--color-text-muted);
   font-style: italic;
   padding: 0.2rem 0;
 }
@@ -344,7 +344,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: #d1fae5;
+  background: var(--estado-exito-bg);
   color: #065f46;
   padding: 0.75rem 1rem;
   border-radius: 8px;

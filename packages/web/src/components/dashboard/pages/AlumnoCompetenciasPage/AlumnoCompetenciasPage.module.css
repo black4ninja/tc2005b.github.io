@@ -21,9 +21,9 @@
 }
 
 .error {
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+  border: 1px solid var(--estado-error-border);
   border-radius: 8px;
 }
 

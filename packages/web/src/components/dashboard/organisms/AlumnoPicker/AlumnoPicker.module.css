@@ -12,7 +12,7 @@
 
 .error {
   padding: 10px 12px;
-  background: #fdecea;
+  background: var(--estado-error-bg);
   color: var(--dash-danger);
   border-radius: 8px;
   font-size: 13px;

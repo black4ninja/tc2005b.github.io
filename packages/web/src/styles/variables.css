@@ -67,4 +67,119 @@
   --dash-warning: #ffae1f;
   --dash-danger: #fa896b;
   --dash-info: #539bff;
+  /* Fondo tenue para hover, chips y zonas apagadas. Estaba usándose con valor
+     de respaldo en varios sitios sin llegar a existir; ahora es un token. */
+  --dash-bg-subtle: #f1f5f9;
+  --dash-surface: #ffffff;
+
+  /* Estados. Son los fondos y textos de avisos, errores y confirmaciones, que
+     estaban escritos a mano con una docena de tintes distintos para lo mismo.
+     Como token, cambian de golpe con el tema: en claro son pasteles y en oscuro
+     el mismo matiz translúcido sobre el fondo, que es lo que evita el
+     deslumbre. */
+  --estado-error-bg: #fef2f2;
+  --estado-error-color: #b91c1c;
+  --estado-error-border: #fecaca;
+  --estado-aviso-bg: #fffbeb;
+  --estado-aviso-color: #b45309;
+  --estado-aviso-border: #fde68a;
+  --estado-exito-bg: #ecfdf5;
+  --estado-exito-color: #047857;
+  --estado-exito-border: #a7f3d0;
+  --estado-info-bg: #eff6ff;
+  --estado-info-color: #1d4ed8;
+  --estado-info-border: #bfdbfe;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TEMA OSCURO
+   ═══════════════════════════════════════════════════════════════════════
+   Se activa con `data-theme="dark"` en <html>. Lo estampa el cliente, que es
+   quien resuelve la preferencia: «claro», «oscuro» o «automático» —y en
+   automático mira `prefers-color-scheme`—. Por eso aquí NO hay ninguna
+   `@media (prefers-color-scheme)`: si la hubiera, elegir «claro» a mano no
+   podría ganarle al sistema.
+
+   La regla para el resto de la hoja de estilos: NUNCA un color de fondo, de
+   texto o de borde escrito a mano. Todo sale de estos tokens, que es lo que
+   permite cambiar el sitio entero desde un solo sitio.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root[data-theme='dark'] {
+  /* Superficies. `--bg-page` es el fondo de la página y `--bg-card` el de las
+     tarjetas, que en oscuro va MÁS CLARO que el fondo: al revés que en claro.
+     Es lo que hace que una tarjeta siga leyéndose como algo que flota encima. */
+  --bg-page: #0b1120;
+  --bg-card: #111c33;
+  --bg-header: #060b16;
+  --bg-pre-session: #171430;
+
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-color: #24324a;
+
+  /* Las sombras de la paleta clara son negro translúcido y sobre un fondo
+     oscuro no se ven. Se suben de opacidad para que sigan separando planos. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.55), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+
+  /* Panel */
+  --sidebar-bg: #111c33;
+  --sidebar-border: #24324a;
+  --sidebar-active-bg: #1e3a8a4d;
+  --sidebar-active-color: #7dd3fc;
+  --dash-bg-subtle: #1c2942;
+  --dash-surface: #111c33;
+
+  --estado-error-bg: #7f1d1d40;
+  --estado-error-color: #fca5a5;
+  --estado-error-border: #7f1d1d;
+  --estado-aviso-bg: #78350f40;
+  --estado-aviso-color: #fcd34d;
+  --estado-aviso-border: #78350f;
+  --estado-exito-bg: #064e3b40;
+  --estado-exito-color: #6ee7b7;
+  --estado-exito-border: #064e3b;
+  --estado-info-bg: #1e3a8a40;
+  --estado-info-color: #93c5fd;
+  --estado-info-border: #1e3a8a;
+
+  /* Los acentos se aclaran: los tonos de la paleta clara están pensados para
+     contrastar contra blanco y sobre un fondo oscuro pierden legibilidad. */
+  --dash-primary: #7ea2ff;
+  --dash-success: #3ae6c4;
+  --dash-warning: #ffc04d;
+  --dash-danger: #ff9e85;
+  --dash-info: #79b3ff;
+
+  /* Colores de tipo de actividad: mismos matices, subidos de luminosidad. */
+  --color-lab: #60a5fa;
+  --color-lectura: #a78bfa;
+  --color-ejercicio: #34d399;
+  --color-proyecto: #fbbf24;
+  --color-evaluacion: #f87171;
+  --color-break: #94a3b8;
+  --color-asueto: #fcd34d;
+  --color-trabajo: #a78bfa;
+  --color-discusion: #22d3ee;
+  --color-info: #818cf8;
+  --color-actividad: #fb7185;
+  --color-presentacion: #f472b6;
+
+  /* Las variantes «light» son fondos de insignia. En claro son pasteles; en
+     oscuro un pastel deslumbra, así que pasan a ser el mismo matiz translúcido
+     sobre el fondo. Se mantiene el nombre para no tocar quien las usa. */
+  --color-lab-light: #1d4ed84d;
+  --color-lectura-light: #6d28d94d;
+  --color-ejercicio-light: #0478694d;
+  --color-proyecto-light: #b453094d;
+  --color-evaluacion-light: #b91c1c4d;
+  --color-break-light: #47556933;
+  --color-asueto-light: #a162074d;
+  --color-trabajo-light: #6d28d94d;
+  --color-discusion-light: #0e74904d;
+  --color-info-light: #4338ca4d;
+  --color-actividad-light: #be123c4d;
+  --color-presentacion-light: #9d174d4d;
 }
