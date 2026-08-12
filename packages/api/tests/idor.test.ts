@@ -22,6 +22,17 @@ const PARSE_APP_ID = '311a4db6e0de89ee6db248791a6535d9';
 const PARSE_SERVER_URL = 'http://localhost:3006/parse';
 const PARSE_MASTER_KEY = 'a8cec955a1b0732085fdbb6869448b2c47e55ffbdc90d39653eba6db7d489fad';
 
+/**
+ * Estas pruebas son de INTEGRACIÓN: cada `it` hace una petición HTTP real al API
+ * y cada petición acaba en un Mongo remoto. Rondan los 3-4 s, así que el límite
+ * de 5 s por defecto de vitest no da margen y el más lento fallaba por tiempo
+ * agotado —no por la aserción—, que es un rojo que no dice nada.
+ *
+ * Se sube solo en este fichero. Subirlo en la configuración global taparía la
+ * lentitud de los tests unitarios, que sí deben ser instantáneos.
+ */
+const TIMEOUT_RED = 20_000;
+
 // Test state
 let grupoId: string;
 let alumnoA_Id: string;
@@ -55,7 +66,33 @@ beforeAll(async () => {
   (Parse as any).serverURL = PARSE_SERVER_URL;
   (Parse as any).masterKey = PARSE_MASTER_KEY;
 
-  // 1. Find or create a test grupo
+  // 1. Colección del grupo de prueba.
+  //
+  // El grupo la NECESITA aunque estos tests no vayan de contenidos: los
+  // endpoints del alumno solo sirven un módulo ("actividades", "competencias")
+  // si alguna colección del grupo lo tiene encendido, y sin colección responden
+  // 404 antes de llegar a la comprobación de propiedad. Sin esto, los tests de
+  // IDOR pasaban por 404 y no verificaban nada de lo que dicen verificar.
+  //
+  // Se deja SIN publicar a propósito: el gate solo mira que exista, y una
+  // colección publicada se colaría en el listado de Contenidos mientras el test
+  // corre. Se destruye en el `afterAll`, como el resto.
+  const coleccionQuery = new Parse.Query('Coleccion');
+  coleccionQuery.equalTo('slug', '__test_idor__');
+  const coleccionExistente = await coleccionQuery.first({ useMasterKey: true });
+  const coleccionId =
+    coleccionExistente?.id ??
+    (await createParseObject('Coleccion', {
+      nombre: 'Test IDOR',
+      slug: '__test_idor__',
+      clave: '__TEST_IDOR__',
+      publicada: false,
+      active: true,
+      exists: true,
+    }));
+  const coleccionPointer = Parse.Object.extend('Coleccion').createWithoutData(coleccionId);
+
+  // 2. Find or create a test grupo
   const grupoQuery = new Parse.Query('Grupo');
   grupoQuery.equalTo('name', '__test_idor__');
   let grupo = await grupoQuery.first({ useMasterKey: true });
@@ -66,17 +103,25 @@ beforeAll(async () => {
       curso: 'TEST',
       nombreCurso: 'Test IDOR',
       salon: 'TEST',
+      colecciones: [coleccionPointer],
       active: true,
       exists: true,
     });
   } else {
     grupoId = grupo.id;
+    // Un grupo reaprovechado de una corrida que no llegó a limpiar puede venir
+    // sin colección, o bloqueado (`active: false`), y entonces el alumno no
+    // entra: se normaliza en vez de dar por bueno lo que haya en la BD.
+    grupo.set('colecciones', [coleccionPointer]);
+    grupo.set('active', true);
+    grupo.set('exists', true);
+    await grupo.save(null, { useMasterKey: true });
   }
 
   const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId);
   const passwordHash = await bcrypt.hash('test12345', 10);
 
-  // 2. Create two test alumnos
+  // 3. Create two test alumnos
   alumnoA_Id = await createParseObject('AppUser', {
     email: '__test_alumnoA@test.com',
     name: 'Test Alumno A',
@@ -98,7 +143,7 @@ beforeAll(async () => {
   const alumnoA_Pointer = Parse.Object.extend('AppUser').createWithoutData(alumnoA_Id);
   const alumnoB_Pointer = Parse.Object.extend('AppUser').createWithoutData(alumnoB_Id);
 
-  // 3. Enroll both alumnos in the grupo (GrupoAlumno)
+  // 4. Enroll both alumnos in the grupo (GrupoAlumno)
   await createParseObject('GrupoAlumno', {
     grupo: grupoPointer,
     alumno: alumnoA_Pointer,
@@ -113,7 +158,7 @@ beforeAll(async () => {
     exists: true,
   });
 
-  // 4. Create a test ActividadEvaluacionGrupo (shared template)
+  // 5. Create a test ActividadEvaluacionGrupo (shared template)
   const actGrupoId = await createParseObject('ActividadEvaluacionGrupo', {
     nombre: '__test_actividad__',
     tipo: 'lab',
@@ -126,7 +171,7 @@ beforeAll(async () => {
   });
   const actGrupoPointer = Parse.Object.extend('ActividadEvaluacionGrupo').createWithoutData(actGrupoId);
 
-  // 5. Create ActividadEvaluacionAlumno for each alumno
+  // 6. Create ActividadEvaluacionAlumno for each alumno
   actividadAlumnoA_Id = await createParseObject('ActividadEvaluacionAlumno', {
     grupo: grupoPointer,
     alumno: alumnoA_Pointer,
@@ -151,7 +196,7 @@ beforeAll(async () => {
     exists: true,
   });
 
-  // 6. Create a test Competencia
+  // 7. Create a test Competencia
   const compId = await createParseObject('Competencia', {
     competencia: '__test_comp__',
     nivel: 'Test',
@@ -163,7 +208,7 @@ beforeAll(async () => {
   });
   const compPointer = Parse.Object.extend('Competencia').createWithoutData(compId);
 
-  // 7. Create CompetenciaAlumno for each alumno
+  // 8. Create CompetenciaAlumno for each alumno
   compAlumnoA_Id = await createParseObject('CompetenciaAlumno', {
     grupo: grupoPointer,
     alumno: alumnoA_Pointer,
@@ -199,7 +244,7 @@ beforeAll(async () => {
     compAlumnoA_Id,
     compAlumnoB_Id,
   });
-});
+}, TIMEOUT_RED * 3);
 
 afterAll(async () => {
   // Cleanup: delete all test objects
@@ -211,6 +256,8 @@ afterAll(async () => {
     'Competencia',
     'AppUser',
     'Grupo',
+    // Después del Grupo: mientras exista, la apunta con un pointer.
+    'Coleccion',
   ];
 
   for (const className of classesToClean) {
@@ -218,6 +265,8 @@ afterAll(async () => {
 
     if (className === 'Grupo') {
       query.equalTo('name', '__test_idor__');
+    } else if (className === 'Coleccion') {
+      query.equalTo('slug', '__test_idor__');
     } else if (className === 'AppUser') {
       query.startsWith('email', '__test_');
     } else if (className === 'Competencia') {
@@ -237,7 +286,7 @@ afterAll(async () => {
   }
 
   console.log('Test data cleaned up');
-});
+}, TIMEOUT_RED * 3);
 
 // ─── IDOR Tests: Malla (ActividadEvaluacionAlumno) ──────────────
 
@@ -255,7 +304,7 @@ describe('IDOR: PUT /alumno/grupos/:grupoId/malla/:actividadId', () => {
     expect(res.status).toBe(403);
     const data = await res.json();
     expect(data.status).toBe('error');
-  });
+  }, TIMEOUT_RED);
 
   it('should ALLOW alumno A to modify their own actividad (200)', async () => {
     const res = await fetch(
@@ -270,7 +319,7 @@ describe('IDOR: PUT /alumno/grupos/:grupoId/malla/:actividadId', () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.status).toBe('ok');
-  });
+  }, TIMEOUT_RED);
 
   it('should DENY alumno B from modifying alumno A actividad (403)', async () => {
     const res = await fetch(
@@ -283,7 +332,7 @@ describe('IDOR: PUT /alumno/grupos/:grupoId/malla/:actividadId', () => {
     );
 
     expect(res.status).toBe(403);
-  });
+  }, TIMEOUT_RED);
 });
 
 // ─── IDOR Tests: Competencias (CompetenciaAlumno) ───────────────
@@ -302,7 +351,7 @@ describe('IDOR: PUT /alumno/grupos/:grupoId/competencias/:compAlumnoId', () => {
     expect(res.status).toBe(403);
     const data = await res.json();
     expect(data.status).toBe('error');
-  });
+  }, TIMEOUT_RED);
 
   it('should ALLOW alumno A to modify their own competencia evidencias (200)', async () => {
     const res = await fetch(
@@ -317,7 +366,7 @@ describe('IDOR: PUT /alumno/grupos/:grupoId/competencias/:compAlumnoId', () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.status).toBe('ok');
-  });
+  }, TIMEOUT_RED);
 
   it('should DENY alumno B from modifying alumno A competencia evidencias (403)', async () => {
     const res = await fetch(
@@ -330,7 +379,7 @@ describe('IDOR: PUT /alumno/grupos/:grupoId/competencias/:compAlumnoId', () => {
     );
 
     expect(res.status).toBe(403);
-  });
+  }, TIMEOUT_RED);
 });
 
 // ─── Role Isolation: Alumno cannot access Admin endpoints ───────

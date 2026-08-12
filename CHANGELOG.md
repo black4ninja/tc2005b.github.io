@@ -7,6 +7,23 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **Los tests de IDOR vuelven a comprobar lo que dicen comprobar.** Sus seis
+  casos llevaban tiempo en rojo y, lo importante, ya no verificaban nada: el
+  grupo de prueba no tenía colección asignada, y desde que los endpoints del
+  alumno exigen que el módulo esté encendido en alguna, respondían 404 **antes**
+  de llegar a la comprobación de propiedad. El 403 esperado nunca se ejercitaba.
+  - El fixture crea ahora una colección para el grupo, sin publicar (el gate solo
+    mira que exista) y se destruye al terminar, como el resto de datos de prueba.
+  - Un grupo reaprovechado de una corrida que no llegó a limpiar se normaliza en
+    vez de darse por bueno: podía venir sin colección o bloqueado.
+  - **No había ningún agujero de seguridad**: el 404 negaba el acceso igual. Lo
+    que fallaba era la prueba, que pasaba por el camino equivocado.
+- **Un test de integración dejó de fallar por tiempo agotado.** Cada caso hace
+  una petición HTTP real contra un Mongo remoto y ronda los 3-4 s, así que el
+  límite de 5 s de vitest no daba margen. Se sube solo en ese fichero: hacerlo en
+  la configuración global taparía la lentitud de los tests unitarios.
+
 ### Added
 - **Categorías de grupo con color, para distinguir de un vistazo grupos que se
   llaman casi igual.** Nace de un error real: dos alumnos acabaron en
