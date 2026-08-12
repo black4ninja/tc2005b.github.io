@@ -96,3 +96,30 @@
   border-radius: 8px;
   font-size: 14px;
 }
+
+/* Punto de color dentro de un chip de filtro. */
+.puntoFiltro {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* Chip de la columna Categoría: fondo del color propio y texto blanco. Los
+   tonos de la paleta son oscuros a propósito para que el blanco contraste. */
+.chipCategoria {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.sinCategoria {
+  font-size: 12px;
+  opacity: 0.55;
+}

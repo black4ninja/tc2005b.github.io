@@ -1,0 +1,125 @@
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 320px;
+}
+
+.ayuda {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.error {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgb(220 38 38 / 12%);
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.vacio {
+  padding: 8px 0;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.fila:hover {
+  background: var(--dash-bg-subtle, rgba(127, 127, 127, 0.1));
+}
+
+.punto {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.nombre {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accion {
+  flex: none;
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.accion:hover {
+  opacity: 1;
+  background: var(--dash-bg-subtle, rgba(127, 127, 127, 0.16));
+}
+
+.accion .material-icons {
+  font-size: 18px;
+}
+
+.accionPeligro:hover {
+  color: #b91c1c;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.paleta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.muestra {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* El anillo, y no un cambio de tono, marca el elegido: alterar el color de la
+   muestra mentiría sobre el color que se va a guardar. */
+.muestraActiva {
+  border-color: var(--text-color, #111);
+  box-shadow: 0 0 0 2px var(--dash-surface, #fff) inset;
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

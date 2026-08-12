@@ -83,6 +83,7 @@ export async function listGrupos(req: Request, res: Response): Promise<void> {
     aplicarFiltroEstado(query, estado);
     query.include('colecciones' as any);
     query.include('admins' as any);
+    query.include('categoria' as any);
     query.descending('createdAt');
     const grupos = await query.find({ useMasterKey: true });
 
@@ -188,6 +189,27 @@ function resolverCamposPerfil(valor: unknown): string[] | 'invalido' | null {
   return campos as string[];
 }
 
+/**
+ * id de categoría → pointer VALIDADO.
+ *
+ * Distingue tres cosas que el cliente expresa distinto y aquí se confundirían:
+ * `undefined` (no viene en el cuerpo) = no tocar; `null` o `''` = quitarle la
+ * categoría al grupo; un id = asignarla. Un id que no existe es 'invalido' y
+ * sale como 400, no como un silencioso "se quedó sin categoría".
+ */
+async function resolverCategoria(
+  valor: unknown,
+): Promise<Parse.Object | null | 'invalido' | undefined> {
+  if (valor === undefined) return undefined;
+  if (valor === null || valor === '') return null;
+  if (typeof valor !== 'string') return 'invalido';
+
+  const q = new Parse.Query('CategoriaGrupo');
+  q.equalTo('exists' as any, true as any);
+  const categoria = await q.get(valor, { useMasterKey: true }).catch(() => null);
+  return categoria ?? 'invalido';
+}
+
 export async function createGrupo(req: Request, res: Response): Promise<void> {
   const { name, fechaInicio, fechaFin, urlAgendaEntrevistas } = req.body;
 
@@ -232,6 +254,13 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
     }
     if (adminsPtrs) grupo.setAdmins(adminsPtrs);
 
+    const categoria = await resolverCategoria(req.body.categoriaId);
+    if (categoria === 'invalido') {
+      res.status(400).json({ status: 'error', message: 'La categoría indicada no existe' });
+      return;
+    }
+    if (categoria !== undefined) grupo.setCategoria(categoria);
+
     await grupo.save(null, { useMasterKey: true });
 
     res.status(201).json({ status: 'ok', grupo: grupo.toSafeJSON() });
@@ -255,6 +284,7 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
     // respondería nulls (y no podría filtrar soft-deleted).
     query.include('colecciones' as any);
     query.include('admins' as any);
+    query.include('categoria' as any);
     const grupo = await query.get(id, { useMasterKey: true });
 
     if (name !== undefined) {
@@ -301,6 +331,12 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
       }
       grupo.setCamposPerfilDeshabilitados(campos ?? []);
     }
+    const categoria = await resolverCategoria(req.body.categoriaId);
+    if (categoria === 'invalido') {
+      res.status(400).json({ status: 'error', message: 'La categoría indicada no existe' });
+      return;
+    }
+    if (categoria !== undefined) grupo.setCategoria(categoria);
     // Los administradores del grupo son CONFIGURACIÓN: solo el admin los reasigna
     // (un profesor edita nombre/fechas/agenda, no esto — se ignora si lo manda).
     // Las COLECCIONES y sus módulos ya no van por aquí: viven en la acción
@@ -369,6 +405,7 @@ export async function setAsignacionesGrupo(req: Request, res: Response): Promise
     query.equalTo('exists' as any, true as any);
     query.include('colecciones' as any);
     query.include('admins' as any);
+    query.include('categoria' as any);
     const grupo = await query.get(id, { useMasterKey: true });
 
     const coleccionesPtrs = await resolverColecciones(coleccionIds);
@@ -407,6 +444,7 @@ export async function archiveGrupo(req: Request, res: Response): Promise<void> {
     const query = new Parse.Query<Grupo>('Grupo');
     query.equalTo('exists' as any, true as any);
     query.include('colecciones' as any);
+    query.include('categoria' as any);
     const grupo = await query.get(id, { useMasterKey: true });
 
     if (grupo.get('active')) {

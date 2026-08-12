@@ -7,6 +7,9 @@ import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
 import GrupoForm, { type AdminRef } from '../../organisms/GrupoForm/GrupoForm';
 import AsignacionesModal, { type Asignacion } from '../../organisms/AsignacionesModal/AsignacionesModal';
+import CategoriasGrupoModal from '../../organisms/CategoriasGrupoModal/CategoriasGrupoModal';
+import NombreGrupo, { type CategoriaRef } from '../../atoms/NombreGrupo/NombreGrupo';
+import DashButton from '../../atoms/DashButton/DashButton';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import type { ColeccionRef } from '../../../../types/contenidos';
 import styles from './GruposPage.module.css';
@@ -25,6 +28,8 @@ interface GrupoData {
   urlAgendaEntrevistas?: string | null;
   /** Campos del perfil que este grupo NO pide (vacío = los pide todos). */
   camposPerfilDeshabilitados?: string[];
+  /** Categoría desplegada (de ella sale el color). null = sin clasificar. */
+  categoria?: CategoriaRef | null;
 }
 
 const API_BASE = '/api';
@@ -86,6 +91,14 @@ export default function GruposPage() {
   const [asignGrupo, setAsignGrupo] = useState<GrupoData | null>(null);
   const [savingAsign, setSavingAsign] = useState(false);
 
+  // Catálogo de categorías: alimenta el formulario, los chips y su propio modal.
+  const [categorias, setCategorias] = useState<CategoriaRef[]>([]);
+  const [categoriasModalOpen, setCategoriasModalOpen] = useState(false);
+  // '' = todas. A diferencia del filtro de estado, este se resuelve en el
+  // cliente: la categoría ya viaja dentro de cada grupo y pedirlos otra vez al
+  // servidor solo por filtrar sería un viaje de más.
+  const [categoriaFiltro, setCategoriaFiltro] = useState('');
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'x-session-token': sessionToken ?? '',
@@ -132,6 +145,17 @@ export default function GruposPage() {
     }
   }, [sessionToken]);
 
+  const fetchCategorias = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/categorias-grupo`, { headers: { 'x-session-token': sessionToken ?? '' } });
+      if (!res.ok) return;
+      const data = await res.json();
+      setCategorias(data.categorias ?? []);
+    } catch {
+      // El catálogo es opcional: sin él la tabla se pinta igual, en gris.
+    }
+  }, [sessionToken]);
+
   // Los grupos se recargan al cambiar de filtro; los catálogos del formulario
   // (colecciones y administradores) NO dependen del filtro. En un solo efecto,
   // cada clic de chip volvía a pedir los tres, y `/admin/administradores` es la
@@ -143,7 +167,8 @@ export default function GruposPage() {
   useEffect(() => {
     fetchColecciones();
     fetchAdmins();
-  }, [fetchColecciones, fetchAdmins]);
+    fetchCategorias();
+  }, [fetchColecciones, fetchAdmins, fetchCategorias]);
 
   function openCreate() {
     setEditGrupo(undefined);
@@ -161,7 +186,7 @@ export default function GruposPage() {
   }
 
   // `fechaInicio`/`fechaFin` en null = quitar la fecha (el servidor las borra).
-  async function handleSave(data: { name: string; fechaInicio?: string | null; fechaFin?: string | null; admins?: string[]; urlAgendaEntrevistas?: string; camposPerfilDeshabilitados?: string[] }) {
+  async function handleSave(data: { name: string; fechaInicio?: string | null; fechaFin?: string | null; admins?: string[]; urlAgendaEntrevistas?: string; camposPerfilDeshabilitados?: string[]; categoriaId?: string | null }) {
     setSaving(true);
     setError('');
     try {
@@ -267,7 +292,28 @@ export default function GruposPage() {
   const columnHelper = createColumnHelper<GrupoData>();
 
   const columns = [
-    columnHelper.accessor('name', { header: 'Nombre' }),
+    // El accessor sigue siendo el nombre plano: es lo que busca el filtro global
+    // de la tabla. Lo que cambia es cómo se PINTA — franja de color y sección
+    // destacada — para que dos grupos que comparten prefijo no se confundan.
+    columnHelper.accessor('name', {
+      header: 'Nombre',
+      cell: (info) => (
+        <NombreGrupo nombre={info.getValue()} categoria={info.row.original.categoria} marca="barra" />
+      ),
+    }),
+    columnHelper.accessor((row) => row.categoria?.nombre ?? '', {
+      id: 'categoria',
+      header: 'Categoría',
+      cell: (info) => {
+        const categoria = info.row.original.categoria;
+        if (!categoria) return <span className={styles.sinCategoria}>Sin categoría</span>;
+        return (
+          <span className={styles.chipCategoria} style={{ background: categoria.color }}>
+            {categoria.nombre}
+          </span>
+        );
+      },
+    }),
     columnHelper.accessor((row) => (row.colecciones ?? []).map((c) => c.clave ?? c.slug).join(', '), {
       id: 'colecciones',
       header: 'Colecciones',
@@ -324,8 +370,18 @@ export default function GruposPage() {
     ];
   };
 
-  const vacio =
-    filtro === 'eliminados'
+  // El filtro de categoría se aplica sobre lo que ya trajo el de estado: son
+  // independientes y se acumulan.
+  const gruposVisibles = categoriaFiltro
+    ? grupos.filter((g) => g.categoria?.id === categoriaFiltro)
+    : grupos;
+
+  // Con el filtro de categoría puesto, el mensaje tiene que hablar de ÉL: decir
+  // "no hay grupos registrados" cuando sí los hay, pero de otra categoría, haría
+  // pensar que se perdieron.
+  const vacio = categoriaFiltro
+    ? `Ningún grupo de "${categorias.find((c) => c.id === categoriaFiltro)?.nombre ?? 'esta categoría'}" con este estado`
+    : filtro === 'eliminados'
       ? 'No hay grupos eliminados'
       : filtro === 'inactivos'
         ? 'No hay grupos inactivos'
@@ -355,31 +411,83 @@ export default function GruposPage() {
         ))}
       </div>
 
+      {/* La fila de categorías solo aparece cuando hay catálogo: sin él sería
+          un filtro con una sola opción y un botón perdido. */}
+      <div className={styles.filtros}>
+        <span className={styles.filtrosLabel}>
+          <span className="material-icons">label</span>
+          Categoría:
+        </span>
+        <button
+          type="button"
+          className={`${styles.filtroBtn} ${categoriaFiltro === '' ? styles.filtroBtnActive : ''}`}
+          aria-pressed={categoriaFiltro === ''}
+          onClick={() => setCategoriaFiltro('')}
+        >
+          Todas
+        </button>
+        {categorias.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            className={`${styles.filtroBtn} ${categoriaFiltro === c.id ? styles.filtroBtnActive : ''}`}
+            aria-pressed={categoriaFiltro === c.id}
+            onClick={() => setCategoriaFiltro(categoriaFiltro === c.id ? '' : c.id)}
+          >
+            <span className={styles.puntoFiltro} style={{ background: c.color }} aria-hidden="true" />
+            {c.nombre}
+          </button>
+        ))}
+        <DashButton variant="outline" onClick={() => setCategoriasModalOpen(true)}>
+          Administrar categorías
+        </DashButton>
+      </div>
+
       {/* La tabla se renderiza SIEMPRE, con su prop `loading`: sustituirla por
           un "Cargando..." la desmonta en cada cambio de filtro y su estado
           interno (búsqueda, orden, página) vuelve a cero. */}
       <AdminTable
         title="Grupos registrados"
         columns={columns}
-        data={grupos}
+        data={gruposVisibles}
         loading={loading}
         actions={getActions}
         onAdd={openCreate}
         addLabel="Nuevo Grupo"
         emptyMessage={vacio}
         searchPlaceholder="Buscar grupo..."
-        initialSorting={[{ id: 'fechaInicio', desc: false }]}
+        // El nombre desempata: los grupos de un mismo semestre comparten fecha
+        // de inicio, y sin segundo criterio salían en un orden arbitrario que
+        // ponía el 101 debajo del 102. Ahora quedan en orden numérico.
+        initialSorting={[
+          { id: 'fechaInicio', desc: false },
+          { id: 'name', desc: false },
+        ]}
       />
 
       <Modal isOpen={modalOpen} onClose={closeModal} title={editGrupo ? 'Editar Grupo' : 'Nuevo Grupo'}>
         <GrupoForm
           grupo={editGrupo}
           admins={admins}
+          categorias={categorias}
           onSave={handleSave}
           onCancel={closeModal}
           loading={saving}
         />
       </Modal>
+
+      <CategoriasGrupoModal
+        isOpen={categoriasModalOpen}
+        onClose={() => setCategoriasModalOpen(false)}
+        sessionToken={sessionToken ?? ''}
+        categorias={categorias}
+        onCambio={async () => {
+          // Renombrar o recolorear una categoría cambia cómo se pinta la tabla,
+          // así que hay que recargar las dos cosas, no solo el catálogo.
+          await fetchCategorias();
+          await fetchGrupos();
+        }}
+      />
 
       <AsignacionesModal
         isOpen={asignGrupo !== null}

@@ -7,6 +7,33 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Categorías de grupo con color, para distinguir de un vistazo grupos que se
+  llaman casi igual.** Nace de un error real: dos alumnos acabaron en
+  «AgoDic26 TC2008B 101» cuando iban al 102. Los dos nombres comparten 17 de sus
+  20 caracteres, y en una lista —o dentro del modal de alta, donde el nombre del
+  grupo ni siquiera se veía— se leen igual.
+  - **Catálogo administrable** (`CategoriaGrupo`) con nombre y color: «Móviles»,
+    «Gráficas», «IA», «6to»… Es dinámico porque cambia cada semestre con lo que
+    se asigne. Se gestiona desde el botón «Administrar categorías» de Grupos.
+  - **El color vive en la categoría, no en el grupo**: hay una sola fuente de
+    verdad y recolorear «IA» repinta todos sus grupos de golpe. El nombre no se
+    puede repetir (ignorando mayúsculas y espacios de sobra) y el color solo
+    admite hexadecimal, porque acaba en un atributo `style` del cliente.
+  - **La sección del nombre se pinta destacada y aparte** (`AgoDic26 TC2008B`
+    ⟦101⟧). Es la otra mitad del problema: dos secciones de la misma materia
+    comparten categoría, y por tanto color, así que el color solo no las separa.
+  - **El selector de grupo deja de ser un `<select>` nativo** —dentro de un
+    `<option>` no se puede pintar ni el color ni la insignia— y pasa a un
+    listbox propio, en el sidebar del alumno y en el del profesor.
+  - **El modal de «Agregar alumno» dice a qué grupo va**, sin poder cambiarlo:
+    solo para corroborar antes de dar de alta.
+  - **Filtro por categoría** en la lista de grupos, y el **nombre desempata el
+    orden** cuando la fecha de inicio coincide: los grupos de un mismo semestre
+    salían en orden arbitrario, con el 101 debajo del 102.
+  - Borrar una categoría en uso se rechaza y se dice qué grupos la tienen, en
+    vez de dejarlos apuntando a un pointer muerto.
+
 ### Fixed
 - **Las listas del wiki vuelven a tener viñeta, número y sangría.** El reset de
   `globals.css` quita la marca a toda la aplicación (`ul, ol { list-style: none }`),

@@ -286,3 +286,23 @@
   color: var(--dash-primary);
   border-bottom-color: var(--dash-primary);
 }
+
+/* Banda de confirmación del grupo destino dentro del modal de alta de alumno. */
+.grupoDestino {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--dash-bg-subtle, rgba(127, 127, 127, 0.08));
+}
+
+.grupoDestinoLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.65;
+}

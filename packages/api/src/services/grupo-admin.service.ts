@@ -16,6 +16,9 @@ export async function getGruposDeStaff(userId: string): Promise<Grupo[]> {
   query.equalTo('admins' as any, userPointer as any);
   query.include('colecciones' as any);
   query.include('admins' as any);
+  // Sin esto el profesor vería su selector de grupos en gris: el color viaja
+  // dentro de la categoría, y un pointer sin desplegar no lo trae.
+  query.include('categoria' as any);
   query.descending('createdAt');
   query.limit(1000);
   return query.find({ useMasterKey: true });

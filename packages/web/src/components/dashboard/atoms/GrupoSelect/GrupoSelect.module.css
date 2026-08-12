@@ -1,0 +1,87 @@
+.contenedor {
+  position: relative;
+  width: 100%;
+}
+
+.disparador {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--dash-surface, transparent);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.disparador:hover:not(:disabled) {
+  border-color: var(--dash-primary);
+}
+
+/* Con un solo grupo el control sigue visible —dice en cuál estás— pero deja
+   claro que no hay nada que elegir. */
+.disparador:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.flecha {
+  flex: none;
+  font-size: 18px;
+  opacity: 0.6;
+}
+
+.lista {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--dash-surface, #fff);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+  /* Con muchos grupos la lista no puede empujar la página. */
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.opcion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.opcion:hover,
+.opcion:focus-visible {
+  background: var(--dash-bg-subtle, rgba(127, 127, 127, 0.14));
+}
+
+.opcionActiva {
+  font-weight: 600;
+}
+
+.palomita {
+  flex: none;
+  font-size: 18px;
+  color: var(--dash-primary);
+}

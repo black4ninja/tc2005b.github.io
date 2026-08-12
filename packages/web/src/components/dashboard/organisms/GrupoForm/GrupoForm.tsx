@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
+import type { CategoriaRef } from '../../atoms/NombreGrupo/NombreGrupo';
 import styles from './GrupoForm.module.css';
 
 /** Administrador asignable a un grupo (subconjunto de lo que expone el API). */
@@ -17,6 +18,7 @@ interface GrupoData {
   fechaFin?: string;
   admins?: AdminRef[];
   urlAgendaEntrevistas?: string | null;
+  categoria?: CategoriaRef | null;
   /** Campos del perfil que este grupo NO pide. Vacío = los pide todos. */
   camposPerfilDeshabilitados?: string[];
 }
@@ -46,6 +48,8 @@ interface GrupoSavePayload {
   fechaFin?: string | null;
   admins?: string[];
   urlAgendaEntrevistas?: string;
+  /** id de la categoría, o `null` para quitársela. */
+  categoriaId?: string | null;
 }
 
 interface GrupoFormProps {
@@ -53,6 +57,8 @@ interface GrupoFormProps {
   /** Administradores dados de alta, para asignarlos al grupo (asociación).
    *  Las COLECCIONES se asignan aparte, en la acción "Asignaciones". */
   admins?: AdminRef[];
+  /** Catálogo de categorías para el desplegable. Vacío = solo "Sin categoría". */
+  categorias?: CategoriaRef[];
   onSave: (data: GrupoSavePayload) => void;
   onCancel: () => void;
   loading?: boolean;
@@ -72,7 +78,7 @@ function toDateString(value?: string | Date): string {
   return d.toISOString().split('T')[0];
 }
 
-export default function GrupoForm({ grupo, admins = [], onSave, onCancel, loading }: GrupoFormProps) {
+export default function GrupoForm({ grupo, admins = [], categorias = [], onSave, onCancel, loading }: GrupoFormProps) {
   const [name, setName] = useState(grupo?.name ?? '');
   const [fechaInicio, setFechaInicio] = useState(toDateString(grupo?.fechaInicio));
   const [fechaFin, setFechaFin] = useState(toDateString(grupo?.fechaFin));
@@ -80,6 +86,7 @@ export default function GrupoForm({ grupo, admins = [], onSave, onCancel, loadin
     (grupo?.admins ?? []).map((a) => a.id),
   );
   const [agendaUrl, setAgendaUrl] = useState(grupo?.urlAgendaEntrevistas ?? '');
+  const [categoriaId, setCategoriaId] = useState(grupo?.categoria?.id ?? '');
   // Se guarda al revés de como se pinta: la casilla marcada = campo PEDIDO, y lo
   // que viaja al servidor es la lista de los apagados (ausente = todo pedido).
   const [camposApagados, setCamposApagados] = useState<string[]>(
@@ -121,6 +128,9 @@ export default function GrupoForm({ grupo, admins = [], onSave, onCancel, loadin
       fechaFin: fechaFin || null,
       admins: adminsSel,
       camposPerfilDeshabilitados: camposApagados,
+      // '' = sin categoría → null, que es lo que el servidor entiende por
+      // quitársela. Un `undefined` se caería del JSON y la dejaría puesta.
+      categoriaId: categoriaId || null,
       // Cadena vacía = quitar el enlace del grupo.
       urlAgendaEntrevistas: url,
     });
@@ -142,6 +152,35 @@ export default function GrupoForm({ grupo, admins = [], onSave, onCancel, loadin
         error={error}
         disabled={loading}
       />
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="grupo-categoria">
+          Categoría
+        </label>
+        <div className={styles.categoriaFila}>
+          {/* La muestra repite el color del elegido: sin ella hay que abrir el
+              desplegable para saber de qué color va a salir el grupo. */}
+          <span
+            className={styles.categoriaPunto}
+            style={{ background: categorias.find((c) => c.id === categoriaId)?.color }}
+            aria-hidden="true"
+          />
+          <select
+            id="grupo-categoria"
+            className={styles.select}
+            value={categoriaId}
+            onChange={(e) => setCategoriaId(e.target.value)}
+            disabled={loading}
+          >
+            <option value="">Sin categoría</option>
+            {categorias.map((c) => (
+              <option key={c.id} value={c.id}>{c.nombre}</option>
+            ))}
+          </select>
+        </div>
+        <span className={styles.hint}>
+          La materia o el nivel. De ella sale el color con que se distingue el grupo en las listas.
+        </span>
+      </div>
       <div className={styles.field}>
         <label className={styles.label}>Administradores del grupo</label>
         <div className={styles.checkboxList}>
