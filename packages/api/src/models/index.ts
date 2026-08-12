@@ -17,6 +17,7 @@ export type { PeriodoConfig } from './PlanEvaluacion.js';
 export { ActividadEvaluacionAlumno } from './ActividadEvaluacionAlumno.js';
 export { Equipo } from './Equipo.js';
 export { GrupoAlumno } from './GrupoAlumno.js';
+export { AccesoWikiAlumno } from './AccesoWikiAlumno.js';
 export { Entrevista } from './Entrevista.js';
 export { EvaluacionEntrevista } from './EvaluacionEntrevista.js';
 export { CompetenciaAlumno } from './CompetenciaAlumno.js';

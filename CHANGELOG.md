@@ -7,6 +7,33 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Acceso individual a una wiki, para el alumno cuyo grupo no se la da.** Hasta
+  ahora el contenido colgaba solo del grupo: si una alumna necesitaba los
+  laboratorios de TC2005B y su grupo no tenía esa colección, no había forma de
+  dársela sin meterla en un grupo que no le corresponde.
+  - **Nueva pantalla «Alumnos»**, debajo de Grupos: el padrón entero del sistema,
+    con búsqueda y paginación resueltas en el servidor. Es el único listado de
+    alumnos que no cuelga de un grupo.
+  - **Es exclusivo del wiki.** No abre competencias, ni actividades, ni
+    ejercicios, ni diagramas: esos siguen colgando del grupo y solo del grupo.
+  - **Suma, nunca resta.** Se acumula con lo que dan sus grupos y no lo duplica;
+    si el alumno pierde el grupo que le daba esa colección, la conserva por el
+    permiso; y si entra a un grupo que ya la tiene, la sigue viendo una vez. En
+    la pantalla, lo que ya viene del grupo sale marcado y no se puede tocar.
+  - **No salta la publicación**: una colección en borrador no se ve ni con
+    permiso. El permiso sustituye a «pertenece a un grupo con este contenido», no
+    a «este contenido está listo para leerse».
+  - Queda registrado **quién lo otorgó y cuándo**, y se muestra al lado de cada
+    acceso.
+  - Se guarda el conjunto entero de colecciones, no altas y bajas sueltas, así
+    que dos pestañas abiertas a la vez no dejan los permisos a medias. Revocar
+    da de baja el permiso en vez de borrarlo: volver a otorgarlo lo reactiva y
+    conserva el rastro original.
+  - **Ojo con el login**: el permiso no habilita a entrar al sistema. Un alumno
+    sin ningún grupo activo sigue sin poder iniciar sesión, y entonces el
+    permiso no le sirve de nada.
+
 ### Fixed
 - **Los tests de IDOR vuelven a comprobar lo que dicen comprobar.** Sus seis
   casos llevaban tiempo en rojo y, lo importante, ya no verificaban nada: el

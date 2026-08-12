@@ -26,6 +26,9 @@ export function getSidebarItems(
     return [
       { label: 'Dashboard', icon: 'dashboard', path: '/admin' },
       { label: 'Grupos', icon: 'groups', path: '/admin/grupos' },
+      // Debajo de Grupos a propósito: es el padrón entero, la vista que se usa
+      // cuando lo que hace falta NO cabe en un grupo.
+      { label: 'Alumnos', icon: 'school', path: '/admin/alumnos' },
       { label: 'Administradores', icon: 'admin_panel_settings', path: '/admin/administradores' },
       // "Páginas", "Competencias" y "Actividades" ya no son entradas propias: se
       // llega a ellas desde Contenidos, que es donde viven (las tres pertenecen a

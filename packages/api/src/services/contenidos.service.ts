@@ -109,7 +109,52 @@ export async function getColeccionesPermitidas(user: AppUser): Promise<Coleccion
       }
     }
   }
+
+  // Permisos INDIVIDUALES sobre el wiki, encima de lo que dan los grupos.
+  //
+  // Se suman al final y sobre el mismo mapa por slug: si la colección ya venía
+  // de un grupo, no se duplica; y si el alumno pierde ese grupo, la sigue
+  // teniendo por aquí. Es la propiedad que se busca — el permiso suma y nunca
+  // resta.
+  for (const c of await coleccionesPorPermisoIndividual(user.id)) {
+    const slug = c.get('slug');
+    if (slug && !permitidas.has(slug)) {
+      permitidas.set(slug, {
+        id: c.id,
+        slug,
+        nombre: c.get('nombre') ?? slug,
+        clave: c.get('clave') ?? null,
+      });
+    }
+  }
+
   return [...permitidas.values()].sort((a, b) => a.nombre.localeCompare(b.nombre));
+}
+
+/**
+ * Colecciones que el alumno tiene abiertas por permiso individual.
+ *
+ * Exige `exists` y `publicada`, igual que el camino por grupo: el permiso
+ * sustituye a «pertenece a un grupo con este contenido», no a «este contenido
+ * está listo para leerse». Un borrador no se ve ni con permiso.
+ *
+ * NO mira `modulosDeshabilitados`: ese mapa apaga módulos POR GRUPO, y aquí no
+ * hay grupo. Este permiso es exclusivo del wiki, así que no hay nada más que
+ * consultar.
+ */
+async function coleccionesPorPermisoIndividual(alumnoId: string): Promise<Parse.Object[]> {
+  const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId);
+  const q = new Parse.Query('AccesoWikiAlumno');
+  q.equalTo('exists' as any, true as any);
+  q.equalTo('active' as any, true as any);
+  q.equalTo('alumno' as any, alumnoPointer as any);
+  q.include('coleccion' as any);
+  q.limit(1000);
+  const permisos = await q.find({ useMasterKey: true });
+
+  return permisos
+    .map((p) => p.get('coleccion') as Parse.Object | undefined)
+    .filter((c): c is Parse.Object => !!c && c.get('exists') !== false && c.get('publicada') === true);
 }
 
 /* ── Cache corto por-usuario de slugs permitidos (60 s) ── */

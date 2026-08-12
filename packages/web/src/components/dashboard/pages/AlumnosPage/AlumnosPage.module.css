@@ -1,0 +1,72 @@
+.page {
+  padding: 24px;
+}
+
+.pageTitle {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.intro {
+  margin: 0 0 20px;
+  font-size: 14px;
+  opacity: 0.75;
+  max-width: 70ch;
+}
+
+.error {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgb(220 38 38 / 12%);
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.buscador {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+/* El campo manda en el ancho; los botones se quedan con lo suyo. */
+.buscador > *:first-child {
+  flex: 1;
+  min-width: 240px;
+}
+
+.resultado {
+  margin: 0 0 12px;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.chipAcceso {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--dash-bg-subtle, rgba(127, 127, 127, 0.16));
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sinAcceso {
+  opacity: 0.45;
+}
+
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.paginaActual {
+  font-size: 13px;
+  opacity: 0.75;
+}
