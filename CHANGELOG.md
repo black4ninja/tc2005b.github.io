@@ -42,9 +42,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   - **La columna de acciones se ancla a la derecha** (`position: sticky`) en
     todas las tablas de administración: el scroll mueve el resto y ella se
     queda, con una sombra que insinúa que hay más columnas detrás.
-  - **Los botones se agrupan tras un menú ⋮.** Cinco iconos por fila se comían
-    ~180 px fijos; ahora ocupan 32 px. El menú se pinta en un portal, porque
-    dentro del contenedor con scroll se recortaba contra el borde.
+  - **Los iconos siguen todos a la vista**, sin menú de por medio: son las
+    operaciones del día a día y esconderlas cuesta un clic en cada una. El ancho
+    que ocupan ya no empuja nada fuera de la pantalla, que era el problema.
+  - Cada botón gana un `aria-label` con el nombre de su fila («Editar AgoDic26
+    TC2008B 101»). Antes su único contenido era la ligadura de Material Icons,
+    que se anuncia como «edit» y repetida en todas las filas.
   - En móvil, donde la tabla ya se convierte en tarjetas apiladas, el anclaje se
     desactiva: sacaría la celda de su tarjeta.
 - **La lista de grupos cabe en menos ancho.** Las dos columnas de fecha se

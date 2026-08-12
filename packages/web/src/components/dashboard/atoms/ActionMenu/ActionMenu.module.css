@@ -1,69 +1,58 @@
-.disparador {
-  display: inline-flex;
+.wrapper {
+  position: relative;
+}
+
+.trigger {
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
-  padding: 0;
   border: none;
-  border-radius: 8px;
   background: transparent;
-  color: var(--text-secondary);
+  border-radius: 8px;
   cursor: pointer;
+  color: var(--text-secondary);
+  transition: background 0.2s;
 }
 
-.disparador:hover,
-.disparador[aria-expanded='true'] {
-  background: var(--dash-bg-subtle, rgba(127, 127, 127, 0.14));
-  color: var(--text-color, inherit);
+.trigger:hover {
+  background: var(--bg-page);
 }
 
-.disparador .material-icons {
-  font-size: 20px;
-}
-
-/* En un portal sobre <body>: posición fija, colocada desde el componente. */
-.menu {
-  position: fixed;
-  z-index: 1000;
-  min-width: 190px;
-  padding: 4px;
-  background: var(--dash-surface, #fff);
+.dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: var(--sidebar-bg);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 20%);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  min-width: 160px;
+  z-index: 100;
+  overflow: hidden;
 }
 
 .item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   padding: 8px 12px;
   border: none;
-  border-radius: 6px;
   background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
   cursor: pointer;
-  white-space: nowrap;
+  font-size: 14px;
+  color: var(--text-primary);
+  transition: background 0.15s;
+  text-align: left;
 }
 
-.item:hover,
-.item:focus-visible {
-  background: var(--dash-bg-subtle, rgba(127, 127, 127, 0.14));
+.item:hover {
+  background: var(--bg-page);
 }
 
-.item .material-icons {
-  font-size: 18px;
-  opacity: 0.75;
-}
-
-.itemPeligro {
-  color: #b91c1c;
-}
-
-.itemPeligro:hover {
-  background: rgb(220 38 38 / 12%);
+.danger {
+  color: var(--dash-danger);
 }
