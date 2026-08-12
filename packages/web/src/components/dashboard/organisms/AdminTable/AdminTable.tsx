@@ -12,6 +12,7 @@ import {
   type VisibilityState,
 } from '@tanstack/react-table';
 import DashButton from '../../atoms/DashButton/DashButton';
+import ActionMenu from '../../atoms/ActionMenu/ActionMenu';
 import styles from './AdminTable.module.css';
 
 export interface ActionItem {
@@ -43,6 +44,12 @@ interface AdminTableProps<T> {
    * Without this prop the toggle is hidden.
    */
   tableId?: string;
+  /**
+   * Nombre de la fila para el `aria-label` del botón de acciones. Sin esto todas
+   * las filas anuncian el mismo "Acciones" y con un lector de pantalla no hay
+   * forma de saber a cuál pertenece cada botón.
+   */
+  etiquetaDeFila?: (row: T) => string;
 }
 
 const STORAGE_PREFIX = 'adminTable';
@@ -84,6 +91,7 @@ export default function AdminTable<T>({
   initialSorting = [],
   getRowClassName,
   tableId,
+  etiquetaDeFila,
 }: AdminTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -159,24 +167,13 @@ export default function AdminTable<T>({
           enableHiding: false,
           cell: ({ row }) => {
             const items = actions(row.original);
+            if (items.length === 0) return null;
+            // Detrás de un ⋮: con cinco acciones por fila, los iconos en línea
+            // se comían ~180 px fijos de ancho y empujaban el resto de columnas
+            // fuera de la pantalla.
             return (
               <div className={styles.rowActions}>
-                {items.map((action) => (
-                  <button
-                    key={action.label}
-                    className={`${styles.actionBtn} ${action.icon ? '' : styles.actionText} ${action.variant === 'danger' ? styles.actionDanger : ''}`}
-                    onClick={action.onClick}
-                    title={action.label}
-                  >
-                    {action.icon ? (
-                      <span className="material-icons" style={{ fontSize: 18 }}>{action.icon}</span>
-                    ) : (
-                      // Sin icono: se muestra el texto del label (si no, el botón
-                      // quedaría vacío e invisible).
-                      action.label
-                    )}
-                  </button>
-                ))}
+                <ActionMenu actions={items} etiqueta={etiquetaDeFila?.(row.original)} />
               </div>
             );
           },

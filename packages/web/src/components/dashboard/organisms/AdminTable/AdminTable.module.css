@@ -64,7 +64,12 @@
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  /* `separate` y no `collapse` a propósito: con los bordes colapsados, Chrome
+     deja de pintar el borde de las celdas `position: sticky`, y la columna de
+     acciones anclada se quedaba sin la línea que separa las filas. Con
+     `border-spacing: 0` se ve exactamente igual que antes. */
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .table th {
@@ -95,6 +100,12 @@
   background: var(--bg-page);
 }
 
+/* Sin esto la celda anclada se queda con su fondo base y la fila se ve partida
+   en dos al pasar el cursor. */
+.table tbody tr:hover .actionsCol {
+  background: var(--bg-page);
+}
+
 .sortable {
   cursor: pointer;
 }
@@ -118,10 +129,43 @@
   opacity: 0.8;
 }
 
+/* Columna de acciones ANCLADA a la derecha del área que se desplaza.
+   La tabla tiene bastantes columnas y llegaba a salirse de la pantalla: había
+   que arrastrar el scroll hasta el final solo para pulsar "Editar". Ahora el
+   scroll mueve el resto y esta columna se queda.
+
+   El fondo tiene que ser OPACO —el del propio contenedor— o el contenido que
+   pasa por debajo se transparenta. Por eso no se hereda del `tr`: los
+   modificadores de fila (p. ej. `.rowInactive`) usan colores translúcidos. La
+   diferencia de tono en esas filas es de un 2 % y no se aprecia. */
 .actionsCol {
   width: 1%;
   white-space: nowrap;
   text-align: right;
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: var(--sidebar-bg);
+}
+
+/* Insinúa que hay más columnas a la izquierda del ancla. Es un pseudo-elemento
+   y no un `box-shadow` de la celda para que la sombra caiga solo hacia dentro y
+   no se derrame sobre el borde de la tarjeta. */
+.actionsCol::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 10px;
+  transform: translateX(-100%);
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, rgb(0 0 0 / 8%));
+}
+
+/* La cabecera va por encima de las celdas al desplazarse. */
+.table th.actionsCol {
+  z-index: 2;
 }
 
 .rowActions {
@@ -385,8 +429,16 @@
     text-align: right;
   }
 
+  /* En móvil la tabla se convierte en tarjetas apiladas y ya no hay scroll
+     horizontal: anclar la celda aquí la sacaría de su tarjeta. */
   .actionsCol {
     width: auto;
     text-align: right;
+    position: static;
+    background: transparent;
+  }
+
+  .actionsCol::before {
+    display: none;
   }
 }

@@ -34,6 +34,28 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   - Borrar una categoría en uso se rechaza y se dice qué grupos la tienen, en
     vez de dejarlos apuntando a un pointer muerto.
 
+### Changed
+- **Las acciones de una fila dejan de quedarse al otro lado del scroll.** En las
+  tablas anchas —Grupos es la peor— había que arrastrar la barra horizontal
+  hasta el final solo para pulsar «Editar», y por el camino se perdía de vista
+  de qué fila se trataba.
+  - **La columna de acciones se ancla a la derecha** (`position: sticky`) en
+    todas las tablas de administración: el scroll mueve el resto y ella se
+    queda, con una sombra que insinúa que hay más columnas detrás.
+  - **Los botones se agrupan tras un menú ⋮.** Cinco iconos por fila se comían
+    ~180 px fijos; ahora ocupan 32 px. El menú se pinta en un portal, porque
+    dentro del contenedor con scroll se recortaba contra el borde.
+  - En móvil, donde la tabla ya se convierte en tarjetas apiladas, el anclaje se
+    desactiva: sacaría la celda de su tarjeta.
+- **La lista de grupos cabe en menos ancho.** Las dos columnas de fecha se
+  fusionan en un «Periodo» que comparte el año cuando ambas caen en el mismo
+  («10 ago – 23 oct 2026»); «Administradores» muestra el primero y un contador,
+  con la lista completa en el `title`; y se habilita el menú «Columnas», que ya
+  existía en la tabla pero esta pantalla no activaba, para apagar las que no se
+  miren (la elección se recuerda).
+  - Las búsquedas siguen encontrando por lo que NO se ve: los accessors
+    conservan la lista completa de administradores y la fecha en ISO.
+
 ### Fixed
 - **Las listas del wiki vuelven a tener viñeta, número y sangría.** El reset de
   `globals.css` quita la marca a toda la aplicación (`ul, ol { list-style: none }`),

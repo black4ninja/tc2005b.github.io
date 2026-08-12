@@ -123,3 +123,20 @@
   font-size: 12px;
   opacity: 0.55;
 }
+
+/* Administradores: solo el primero cabe; el resto va en el contador y la lista
+   completa en el `title`. */
+.admins {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.adminsMas {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--dash-bg-subtle, rgba(127, 127, 127, 0.14));
+  font-size: 12px;
+  font-weight: 600;
+}

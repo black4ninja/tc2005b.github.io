@@ -12,6 +12,7 @@ import NombreGrupo, { type CategoriaRef } from '../../atoms/NombreGrupo/NombreGr
 import DashButton from '../../atoms/DashButton/DashButton';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import type { ColeccionRef } from '../../../../types/contenidos';
+import { formatPeriodo } from '../../../../utils/periodoGrupo';
 import styles from './GruposPage.module.css';
 
 interface GrupoData {
@@ -275,20 +276,6 @@ export default function GruposPage() {
     }
   }
 
-  // Se pinta en UTC porque así se guarda: son días de calendario anclados a la
-  // medianoche UTC (ver `parseFechaDia()` en la API). Sin `timeZone`, el
-  // navegador las traduce a la hora local y en México (UTC-6) la medianoche del
-  // 10-ago cae el 9-ago: la tabla enseñaba el día anterior al que se capturó.
-  function formatDate(value?: string): string {
-    if (!value) return '—';
-    return new Date(value).toLocaleDateString('es-MX', {
-      timeZone: 'UTC',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  }
-
   const columnHelper = createColumnHelper<GrupoData>();
 
   const columns = [
@@ -319,23 +306,31 @@ export default function GruposPage() {
       header: 'Colecciones',
       cell: (info) => info.getValue() || '—',
     }),
+    // El accessor sigue siendo la lista COMPLETA: es lo que busca el filtro de
+    // la tabla, y buscar por el segundo administrador tiene que seguir dando con
+    // la fila aunque en pantalla solo se lea el primero.
     columnHelper.accessor((row) => (row.admins ?? []).map((a) => a.name || a.email).join(', '), {
       id: 'admins',
       header: 'Administradores',
-      cell: (info) => info.getValue() || '—',
+      cell: (info) => {
+        const nombres = (info.row.original.admins ?? []).map((a) => a.name || a.email);
+        if (nombres.length === 0) return '—';
+        return (
+          <span className={styles.admins} title={nombres.join(', ')}>
+            {nombres[0]}
+            {nombres.length > 1 && <span className={styles.adminsMas}>+{nombres.length - 1}</span>}
+          </span>
+        );
+      },
     }),
-    // El accessor sigue siendo el texto ISO para que el buscador de la tabla lo
-    // encuentre ("2026-08"); el orden NO puede depender de ese texto, así que va
-    // por timestamp en un sortingFn propio, con las vacías siempre al final.
+    // Las dos fechas en UNA columna: se leen como un rango y por separado
+    // ocupaban el doble. El accessor sigue siendo el ISO de la fecha de inicio
+    // para que el buscador encuentre por "2026-08" y el orden sea por inicio;
+    // el fin es información de apoyo, no un criterio de orden.
     columnHelper.accessor('fechaInicio', {
-      header: 'Fecha Inicio',
-      cell: (info) => formatDate(info.getValue()),
-      sortingFn: ordenarPorFecha,
-      sortUndefined: 'last',
-    }),
-    columnHelper.accessor('fechaFin', {
-      header: 'Fecha Fin',
-      cell: (info) => formatDate(info.getValue()),
+      id: 'periodo',
+      header: 'Periodo',
+      cell: (info) => formatPeriodo(info.getValue(), info.row.original.fechaFin),
       sortingFn: ordenarPorFecha,
       sortUndefined: 'last',
     }),
@@ -456,11 +451,15 @@ export default function GruposPage() {
         addLabel="Nuevo Grupo"
         emptyMessage={vacio}
         searchPlaceholder="Buscar grupo..."
+        // Habilita el menú "Columnas" y recuerda lo que se apague.
+        tableId="grupos"
+        etiquetaDeFila={(g) => g.name}
         // El nombre desempata: los grupos de un mismo semestre comparten fecha
         // de inicio, y sin segundo criterio salían en un orden arbitrario que
         // ponía el 101 debajo del 102. Ahora quedan en orden numérico.
         initialSorting={[
-          { id: 'fechaInicio', desc: false },
+          // 'periodo' es el id de la columna de fechas: ordena por la de inicio.
+          { id: 'periodo', desc: false },
           { id: 'name', desc: false },
         ]}
       />
