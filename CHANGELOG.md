@@ -33,6 +33,17 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     salían en orden arbitrario, con el 101 debajo del 102.
   - Borrar una categoría en uso se rechaza y se dice qué grupos la tienen, en
     vez de dejarlos apuntando a un pointer muerto.
+  - **El catálogo se ordena arrastrando**, y ese orden manda en el desplegable
+    del grupo, en los chips de filtro y en el propio catálogo. Las categorías
+    nuevas entran al final, para no colarse en medio de un orden puesto a mano.
+    - También se reordena **con el teclado**: enfocar el asa, espacio y flechas.
+      Dejarlo solo al ratón excluye a quien no lo usa.
+    - El servidor recibe la lista COMPLETA de ids, no un «mueve este de la 3 a
+      la 1»: así la operación es idempotente y dos pestañas arrastrando a la vez
+      no dejan el orden a medias. Una lista parcial, con repetidos o con un id
+      desconocido se rechaza entera.
+    - En pantalla el orden se aplica antes de que conteste el servidor; si la
+      petición falla, se deshace y se dice por qué.
 
 ### Changed
 - **Las acciones de una fila dejan de quedarse al otro lado del scroll.** En las

@@ -7,6 +7,7 @@ import {
   createCategoriaGrupo,
   updateCategoriaGrupo,
   deleteCategoriaGrupo,
+  reordenarCategoriasGrupo,
 } from '../controllers/categorias-grupo.controller.js';
 
 const router = Router();
@@ -18,6 +19,8 @@ router.use('/admin/categorias-grupo', identifyUser);
 router.get('/admin/categorias-grupo', requireStaff, listCategoriasGrupo);
 // Mantener el catálogo es configuración global, no de un grupo: solo admin.
 router.post('/admin/categorias-grupo', requireAdmin, createCategoriaGrupo);
+// Antes que `/:id`: si no, Express casa "orden" como si fuera un id.
+router.put('/admin/categorias-grupo/orden', requireAdmin, reordenarCategoriasGrupo);
 router.put('/admin/categorias-grupo/:id', requireAdmin, updateCategoriaGrupo);
 router.delete('/admin/categorias-grupo/:id', requireAdmin, deleteCategoriaGrupo);
 

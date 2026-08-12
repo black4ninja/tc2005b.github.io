@@ -35,11 +35,26 @@ export class CategoriaGrupo extends BaseModel {
     this.set('color', color);
   }
 
+  /**
+   * Posición en el catálogo, tal y como la ordena el usuario arrastrando.
+   *
+   * Las categorías creadas antes de que existiera este campo no lo tienen, y
+   * `?? 0` las manda a todas al mismo sitio: quien ordene debe desempatar por
+   * nombre, o su orden relativo depende del capricho de la consulta.
+   */
+  getOrden(): number {
+    return this.get('orden') ?? 0;
+  }
+  setOrden(orden: number): void {
+    this.set('orden', orden);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     return {
       id: this.id,
       nombre: this.getNombre(),
       color: this.getColor(),
+      orden: this.getOrden(),
       active: this.get('active'),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,

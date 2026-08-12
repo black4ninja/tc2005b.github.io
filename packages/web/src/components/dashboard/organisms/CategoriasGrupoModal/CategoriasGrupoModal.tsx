@@ -1,4 +1,20 @@
 import { useEffect, useState } from 'react';
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import CategoriaOrdenable from './CategoriaOrdenable';
 import Modal from '../../atoms/Modal/Modal';
 import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
@@ -35,6 +51,26 @@ export default function CategoriasGrupoModal({
   const [editandoId, setEditandoId] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
+  /**
+   * Copia local del orden. La lista se pinta desde AQUÍ y no desde la prop:
+   * al soltar hay que recolocar la fila en el acto, sin esperar al viaje al
+   * servidor, o el elemento vuelve a su sitio y parece que el arrastre falló.
+   */
+  const [orden, setOrden] = useState<CategoriaRef[]>(categorias);
+
+  // La prop manda cuando cambia de verdad (alta, edición, borrado o recarga
+  // tras reordenar). Sin esto, la copia local se quedaría congelada.
+  useEffect(() => {
+    setOrden(categorias);
+  }, [categorias]);
+
+  const sensores = useSensors(
+    // Con 10 px de holgura, un clic en el asa sigue siendo un clic y no
+    // arranca un arrastre de un pixel.
+    useSensor(PointerSensor, { activationConstraint: { distance: 10 } }),
+    // Reordenar solo con el ratón deja fuera a quien navega con teclado.
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const headers = {
     'Content-Type': 'application/json',
@@ -106,6 +142,42 @@ export default function CategoriasGrupoModal({
     }
   }
 
+  /**
+   * Fija el orden nuevo en pantalla y lo manda al servidor.
+   *
+   * Se pinta ANTES de que responda: esperar al viaje deja la fila volviendo a su
+   * sitio medio segundo, que se lee como que el arrastre no funcionó. Si la
+   * petición falla se deshace y se dice por qué, en vez de dejar la pantalla
+   * enseñando un orden que no está guardado.
+   */
+  async function alSoltar(evento: DragEndEvent) {
+    const { active, over } = evento;
+    if (!over || active.id === over.id) return;
+
+    const desde = orden.findIndex((c) => c.id === active.id);
+    const hasta = orden.findIndex((c) => c.id === over.id);
+    if (desde === -1 || hasta === -1) return;
+
+    const anterior = orden;
+    const nuevo = arrayMove(orden, desde, hasta);
+    setOrden(nuevo);
+    setError('');
+
+    try {
+      const res = await fetch('/api/admin/categorias-grupo/orden', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ ids: nuevo.map((c) => c.id) }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'Error al guardar el orden');
+      await onCambio();
+    } catch (err: any) {
+      setOrden(anterior);
+      setError(err.message);
+    }
+  }
+
   async function borrar(categoria: CategoriaRef) {
     if (
       !(await confirmar({
@@ -135,7 +207,7 @@ export default function CategoriasGrupoModal({
 
   /** Primer color de la paleta que no esté ya en uso; si todos lo están, el primero. */
   function sugerirColor(): string {
-    const usados = new Set(categorias.map((c) => c.color));
+    const usados = new Set(orden.map((c) => c.color));
     return paleta.find((c) => !usados.has(c)) ?? paleta[0] ?? '#64748b';
   }
 
@@ -149,33 +221,61 @@ export default function CategoriasGrupoModal({
 
         {error && <div className={styles.error}>{error}</div>}
 
-        <ul className={styles.lista}>
-          {categorias.length === 0 && (
-            <li className={styles.vacio}>Todavía no hay categorías.</li>
-          )}
-          {categorias.map((categoria) => (
-            <li key={categoria.id} className={styles.fila}>
-              <span className={styles.punto} style={{ background: categoria.color }} aria-hidden="true" />
-              <span className={styles.nombre}>{categoria.nombre}</span>
-              <button
-                type="button"
-                className={styles.accion}
-                onClick={() => editar(categoria)}
-                aria-label={`Editar ${categoria.nombre}`}
-              >
-                <span className="material-icons">edit</span>
-              </button>
-              <button
-                type="button"
-                className={`${styles.accion} ${styles.accionPeligro}`}
-                onClick={() => borrar(categoria)}
-                aria-label={`Eliminar ${categoria.nombre}`}
-              >
-                <span className="material-icons">delete</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        {orden.length === 0 ? (
+          <p className={styles.vacio}>Todavía no hay categorías.</p>
+        ) : (
+          <>
+            <p className={styles.ayudaOrden}>
+              Arrastra para cambiar el orden en que aparecen. También puedes mover una con el
+              teclado: enfoca su asa, pulsa espacio y usa las flechas.
+            </p>
+            <DndContext sensors={sensores} collisionDetection={closestCenter} onDragEnd={alSoltar}>
+              <SortableContext items={orden.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                <ul className={styles.lista}>
+                  {orden.map((categoria) => (
+                    <CategoriaOrdenable key={categoria.id} id={categoria.id}>
+                      {({ listeners, attributes }) => (
+                        <li className={styles.fila}>
+                          <button
+                            type="button"
+                            className={styles.asa}
+                            aria-label={`Reordenar ${categoria.nombre}`}
+                            {...attributes}
+                            {...listeners}
+                          >
+                            <span className="material-icons" aria-hidden="true">drag_indicator</span>
+                          </button>
+                          <span
+                            className={styles.punto}
+                            style={{ background: categoria.color }}
+                            aria-hidden="true"
+                          />
+                          <span className={styles.nombre}>{categoria.nombre}</span>
+                          <button
+                            type="button"
+                            className={styles.accion}
+                            onClick={() => editar(categoria)}
+                            aria-label={`Editar ${categoria.nombre}`}
+                          >
+                            <span className="material-icons" aria-hidden="true">edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`${styles.accion} ${styles.accionPeligro}`}
+                            onClick={() => borrar(categoria)}
+                            aria-label={`Eliminar ${categoria.nombre}`}
+                          >
+                            <span className="material-icons" aria-hidden="true">delete</span>
+                          </button>
+                        </li>
+                      )}
+                    </CategoriaOrdenable>
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
+          </>
+        )}
 
         <div className={styles.formulario}>
           <TextInput

@@ -40,11 +40,40 @@ async function nombreRepetido(nombre: string, exceptoId?: string): Promise<boole
   return todas.some((c) => c.id !== exceptoId && c.getNombre().trim().toLowerCase() === buscado);
 }
 
+/**
+ * ¿La lista recibida es una permutación EXACTA de las categorías que existen?
+ *
+ * Aparte como función pura para poder probarla: es donde se decide si un
+ * payload raro reordena medio catálogo o se rechaza entero. Falla si sobra algo,
+ * si falta algo o si un id viene repetido.
+ */
+export function esOrdenCompleto(ids: string[], existentes: string[]): boolean {
+  const unicos = new Set(ids);
+  if (unicos.size !== ids.length) return false;
+  if (unicos.size !== existentes.length) return false;
+  const vivos = new Set(existentes);
+  return [...unicos].every((id) => vivos.has(id));
+}
+
+/** Posición para una categoría nueva: detrás de la última que haya. */
+async function siguienteOrden(): Promise<number> {
+  const q = new Parse.Query<CategoriaGrupo>('CategoriaGrupo');
+  q.equalTo('exists' as any, true as any);
+  q.descending('orden');
+  q.limit(1);
+  const ultima = await q.first({ useMasterKey: true });
+  return ultima ? ultima.getOrden() + 1 : 0;
+}
+
 export async function listCategoriasGrupo(_req: Request, res: Response): Promise<void> {
   try {
     const q = new Parse.Query<CategoriaGrupo>('CategoriaGrupo');
     q.equalTo('exists' as any, true as any);
-    q.ascending('nombre');
+    // Por `orden` y, a igualdad, por nombre: las categorías anteriores al campo
+    // valen todas 0, y sin el desempate su orden entre sí quedaría al capricho
+    // de la consulta y bailaría entre recargas.
+    q.ascending('orden');
+    q.addAscending('nombre' as any);
     q.limit(1000);
     const categorias = await q.find({ useMasterKey: true });
 
@@ -82,6 +111,9 @@ export async function createCategoriaGrupo(req: Request, res: Response): Promise
     const categoria = new CategoriaGrupo().initDefaults();
     categoria.setNombre(validado.nombre);
     categoria.setColor(color);
+    // Al final de la lista: aparecer en medio de un orden que el usuario ya
+    // colocó a mano sería desconcertante.
+    categoria.setOrden(await siguienteOrden());
     await categoria.save(null, { useMasterKey: true });
 
     res.status(201).json({ status: 'ok', categoria: categoria.toSafeJSON() });
@@ -128,6 +160,62 @@ export async function updateCategoriaGrupo(req: Request, res: Response): Promise
       return;
     }
     res.status(500).json({ status: 'error', message: 'Error al actualizar la categoría' });
+  }
+}
+
+/**
+ * `PUT /admin/categorias-grupo/orden` — reordena el catálogo entero.
+ *
+ * Recibe TODOS los ids en el orden nuevo, no un «mueve este de la 3 a la 1».
+ * Mandar la lista completa hace la operación idempotente y deja el resultado a
+ * salvo de que dos pestañas arrastren a la vez: la última en llegar gana con un
+ * orden coherente, en vez de aplicarse sobre posiciones que ya cambiaron.
+ *
+ * Se exige que la lista coincida EXACTAMENTE con las categorías vivas. Aceptar
+ * una parcial dejaría a las que faltan con su orden viejo, intercaladas donde
+ * nadie las puso.
+ */
+export async function reordenarCategoriasGrupo(req: Request, res: Response): Promise<void> {
+  const { ids } = req.body;
+
+  if (!Array.isArray(ids) || ids.some((id) => typeof id !== 'string')) {
+    res.status(400).json({ status: 'error', message: 'Se requiere la lista de ids en el orden nuevo' });
+    return;
+  }
+
+  try {
+    const q = new Parse.Query<CategoriaGrupo>('CategoriaGrupo');
+    q.equalTo('exists' as any, true as any);
+    q.limit(1000);
+    const categorias = await q.find({ useMasterKey: true });
+
+    const porId = new Map(categorias.map((c) => [c.id, c]));
+
+    if (!esOrdenCompleto(ids as string[], [...porId.keys()])) {
+      res.status(400).json({
+        status: 'error',
+        message: 'La lista debe traer exactamente una vez cada categoría existente',
+      });
+      return;
+    }
+
+    const cambiadas: CategoriaGrupo[] = [];
+    (ids as string[]).forEach((id, indice) => {
+      const categoria = porId.get(id)!;
+      // Solo las que se mueven: guardar las 30 en cada arrastre son 30
+      // escrituras para cambiar dos.
+      if (categoria.getOrden() === indice) return;
+      categoria.setOrden(indice);
+      cambiadas.push(categoria);
+    });
+
+    if (cambiadas.length > 0) {
+      await Parse.Object.saveAll(cambiadas, { useMasterKey: true });
+    }
+
+    res.json({ status: 'ok', actualizadas: cambiadas.length });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Error al reordenar las categorías' });
   }
 }
 

@@ -123,3 +123,39 @@
   justify-content: flex-end;
   gap: 8px;
 }
+
+.ayudaOrden {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+/* Asa de arrastre. `touch-action: none` es obligatorio para dnd-kit con
+   PointerSensor: sin ella, en táctil el navegador se queda el gesto para
+   desplazar la página y el arrastre nunca empieza. */
+.asa {
+  flex: none;
+  display: inline-flex;
+  padding: 2px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: grab;
+  opacity: 0.45;
+  touch-action: none;
+}
+
+.asa:hover,
+.asa:focus-visible {
+  opacity: 0.9;
+  background: var(--dash-bg-subtle, rgba(127, 127, 127, 0.16));
+}
+
+.asa:active {
+  cursor: grabbing;
+}
+
+.asa .material-icons {
+  font-size: 18px;
+}
