@@ -15,7 +15,7 @@
 .blockCard {
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: #fafbfc;
+  background: var(--bg-page);
   overflow: hidden;
 }
 
@@ -24,13 +24,13 @@
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  background: #f1f5f9;
+  background: var(--dash-bg-subtle);
   cursor: pointer;
   user-select: none;
 }
 
 .blockHeader:hover {
-  background: #e8ecf1;
+  background: var(--dash-bg-subtle);
 }
 
 .blockIcon {
@@ -66,7 +66,7 @@
 }
 
 .blockActionBtn:hover {
-  background: #dde1e7;
+  background: var(--dash-bg-subtle);
   color: var(--text-primary);
 }
 
@@ -75,7 +75,7 @@
 }
 
 .blockActionBtnDanger:hover {
-  background: #fdecea;
+  background: var(--estado-error-bg);
   color: var(--dash-danger);
 }
 
@@ -109,7 +109,7 @@
 .addBlockBtn:hover {
   border-color: var(--dash-primary);
   color: var(--dash-primary);
-  background: #f0f5ff;
+  background: var(--estado-info-bg);
 }
 
 .addBlockBtn .material-icons {
@@ -122,7 +122,7 @@
   left: 0;
   right: 0;
   margin-top: 4px;
-  background: white;
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -149,7 +149,7 @@
 }
 
 .dropdownItem:hover {
-  background: #f1f5f9;
+  background: var(--dash-bg-subtle);
   color: var(--text-primary);
 }
 
@@ -185,7 +185,7 @@
   font-size: 13px;
   font-family: inherit;
   color: var(--text-primary);
-  background: white;
+  background: var(--bg-card);
 }
 
 .field input:focus,
@@ -213,7 +213,7 @@
   padding: 8px 12px;
   border: 1px solid var(--dash-primary);
   border-radius: 6px;
-  background: white;
+  background: var(--bg-card);
   color: var(--dash-primary);
   font-size: 12.5px;
   font-weight: 600;
@@ -273,7 +273,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #e8ecf1;
+  background: var(--dash-bg-subtle);
   color: var(--text-muted);
   font-size: 11px;
   font-weight: 700;
@@ -296,7 +296,7 @@
 }
 
 .removeBtn:hover {
-  background: #fdecea;
+  background: var(--estado-error-bg);
   color: var(--dash-danger);
 }
 
@@ -335,7 +335,7 @@
   padding: 10px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  background: white;
+  background: var(--bg-card);
 }
 
 .recursoFields {

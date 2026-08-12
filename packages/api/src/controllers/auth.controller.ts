@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import Parse from 'parse/node';
 import { AppUser } from '../models/index.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { getGruposDeAlumno } from '../services/grupo-alumno.service.js';
@@ -91,4 +92,47 @@ export async function getCurrentUser(req: Request, res: Response): Promise<void>
 
   const extras = await buildGruposExtras(req.appUser);
   res.json({ status: 'ok', user: req.appUser.toSafeJSON(extras) });
+}
+
+/** Preferencias de tema admitidas. Espeja `PreferenciaTema` del cliente. */
+const TEMAS = ['claro', 'oscuro', 'auto'] as const;
+
+/**
+ * `PUT /me/preferencias/tema` — guarda el tema elegido en la ficha del usuario.
+ *
+ * Es de CUALQUIER usuario con sesión, no solo del staff: es una preferencia
+ * suya, no una configuración del sistema. Solo puede tocar la propia — el id
+ * sale de la sesión, nunca del cuerpo.
+ */
+export async function setPreferenciaTema(req: Request, res: Response): Promise<void> {
+  const { tema } = req.body;
+
+  if (!TEMAS.includes(tema)) {
+    res.status(400).json({ status: 'error', message: `tema debe ser uno de: ${TEMAS.join(', ')}` });
+    return;
+  }
+
+  try {
+    const actual = req.appUser as AppUser | undefined;
+    if (!actual) {
+      res.status(401).json({ status: 'error', message: 'Not authenticated' });
+      return;
+    }
+
+    // Nada que escribir: ahorra un viaje a la BD en cada carga que reafirma lo
+    // que ya estaba guardado.
+    if (actual.getPreferenciaTema() === tema) {
+      res.json({ status: 'ok', tema });
+      return;
+    }
+
+    const query = new Parse.Query<AppUser>('AppUser');
+    const usuario = await query.get(actual.id, { useMasterKey: true });
+    usuario.setPreferenciaTema(tema);
+    await usuario.save(null, { useMasterKey: true });
+
+    res.json({ status: 'ok', tema });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Error al guardar la preferencia' });
+  }
 }

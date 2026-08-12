@@ -13,10 +13,10 @@
 .error {
   padding: 12px 16px;
   border-radius: 8px;
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
   font-size: 0.875rem;
-  border: 1px solid #fecaca;
+  border: 1px solid var(--estado-error-border);
 }
 
 /* Profile banner */
@@ -26,11 +26,11 @@
   gap: 10px;
   padding: 14px 18px;
   border-radius: 8px;
-  background: #fff7ed;
+  background: var(--estado-aviso-bg);
   color: #c2410c;
   font-size: 0.875rem;
   font-weight: 500;
-  border: 1px solid #fed7aa;
+  border: 1px solid var(--estado-aviso-border);
 }
 .profileBanner .material-icons {
   font-size: 20px;
@@ -131,7 +131,7 @@
   font-family: inherit;
   font-size: 0.875rem;
   padding: 8px 12px;
-  border: 1px solid var(--border-color, #e0e0e0);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   resize: vertical;
   min-height: 48px;
@@ -140,21 +140,21 @@
 }
 .profileTextarea:focus {
   outline: none;
-  border-color: #5d87ff;
+  border-color: var(--dash-primary);
   box-shadow: 0 0 0 2px rgba(93, 135, 255, 0.15);
 }
 .profileInput {
   font-family: inherit;
   font-size: 0.875rem;
   padding: 8px 12px;
-  border: 1px solid var(--border-color, #e0e0e0);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   background: var(--bg-card);
   color: var(--text-primary);
 }
 .profileInput:focus {
   outline: none;
-  border-color: #5d87ff;
+  border-color: var(--dash-primary);
   box-shadow: 0 0 0 2px rgba(93, 135, 255, 0.15);
 }
 .inputError {
@@ -214,7 +214,7 @@
 /* Field errors */
 .fieldError {
   font-size: 0.75rem;
-  color: #dc2626;
+  color: var(--estado-error-color);
   margin-top: 2px;
 }
 
@@ -222,8 +222,8 @@
 .repoWarning {
   font-size: 0.75rem;
   color: #c2410c;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
+  background: var(--estado-aviso-bg);
+  border: 1px solid var(--estado-aviso-border);
   border-radius: 4px;
   padding: 8px 10px;
   margin-top: 4px;
@@ -232,7 +232,7 @@
 
 /* Password section */
 .passwordSection {
-  border-top: 1px solid var(--border-color, #e0e0e0);
+  border-top: 1px solid var(--border-color);
   padding-top: 16px;
   display: flex;
   flex-direction: column;

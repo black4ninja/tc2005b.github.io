@@ -167,7 +167,7 @@
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 500;
-  background: #f1f5f9;
+  background: var(--dash-bg-subtle);
   color: var(--text-secondary);
 }
 
@@ -176,21 +176,21 @@
 }
 
 .infoBadgeDate {
-  background: rgba(239, 68, 68, 0.15);
-  color: #dc2626;
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
   font-weight: 600;
 }
 
 .infoBadgeTag {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
   font-family: 'Courier New', monospace;
   font-weight: 600;
 }
 
 .infoBadgeWarning {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
 }
 
 /* --- Section Cards --- */
@@ -275,7 +275,7 @@
   border-left: 3px solid var(--color-lab);
   padding: var(--space-md) var(--space-lg);
   margin-bottom: var(--space-md);
-  background: #fafbfd;
+  background: var(--bg-page);
   border-radius: 0 8px 8px 0;
 }
 
@@ -311,7 +311,7 @@
 }
 
 .instructionContent a:hover {
-  color: #1d4ed8;
+  color: var(--estado-info-color);
   text-decoration: underline;
 }
 
@@ -384,17 +384,17 @@
 }
 
 .entregaExtraVideo {
-  background: #ede9fe;
+  background: var(--estado-info-bg);
   color: #5b21b6;
 }
 
 .entregaExtraCoeval {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
 }
 
 .entregaExtraCoeval a {
-  color: #991b1b;
+  color: var(--estado-error-color);
   font-weight: 600;
 }
 
@@ -474,7 +474,7 @@
 
   .sectionCard {
     box-shadow: none;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     break-inside: avoid;
   }
 }

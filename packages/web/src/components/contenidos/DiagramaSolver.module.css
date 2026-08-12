@@ -33,7 +33,7 @@
 .meta {
   font-size: 12px;
   color: #57606a;
-  background: #eaeef2;
+  background: var(--dash-bg-subtle);
   padding: 2px 10px;
   border-radius: 999px;
 }
@@ -58,7 +58,7 @@
   word-wrap: break-word;
 }
 .enunciado :global(pre) {
-  background: #f6f8fa;
+  background: var(--dash-bg-subtle);
   padding: 12px;
   border-radius: 8px;
   overflow-x: auto;
@@ -95,7 +95,7 @@
 .comprobacion {
   font-size: 14px;
   color: #1f2328;
-  border: 1px solid #d0d7de;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 8px 12px;
 }
@@ -153,8 +153,8 @@
   padding: 9px 16px;
   border-radius: 8px;
   cursor: pointer;
-  border: 1px solid #d0d7de;
-  background: #fff;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
   color: #1f2328;
 }
 .btnPri { background: #4f46e5; border-color: #4f46e5; color: #fff; }
@@ -165,7 +165,7 @@
 .errorBox {
   margin-top: 14px;
   padding: 10px 12px;
-  background: #fdecea;
+  background: var(--estado-error-bg);
   color: #b42318;
   border-radius: 8px;
   font-size: 14px;
@@ -192,7 +192,7 @@
   font-size: 13px;
   white-space: pre-wrap;
   word-break: break-word;
-  background: #f6f8fa;
+  background: var(--dash-bg-subtle);
   padding: 10px;
   border-radius: 6px;
   max-height: 260px;
@@ -200,7 +200,7 @@
 }
 
 .caso {
-  border: 1px solid #d0d7de;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 8px 12px;
   margin-bottom: 8px;
@@ -221,7 +221,7 @@
   font-size: 11px;
   font-weight: 600;
   color: #57606a;
-  background: #eaeef2;
+  background: var(--dash-bg-subtle);
   padding: 1px 8px;
   border-radius: 999px;
   margin-right: 6px;
@@ -250,7 +250,7 @@
   justify-content: space-between;
   gap: 12px;
   font-size: 13px;
-  border: 1px solid #d0d7de;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 8px 12px;
 }
@@ -271,10 +271,10 @@
 .avisoEjemplo {
   margin: 8px 0 0;
   padding: 10px 14px;
-  border: 1px solid #c7b8f5;
+  border: 1px solid var(--estado-info-border);
   border-left-width: 4px;
   border-radius: 6px;
-  background: #faf8ff;
+  background: var(--bg-pre-session);
   color: #3c3255;
   font-size: 13px;
   line-height: 1.5;
@@ -289,7 +289,7 @@
   letter-spacing: 0.02em;
   padding: 3px 10px;
   border-radius: 999px;
-  background: #ede9fe;
+  background: var(--estado-info-bg);
   color: #5b21b6;
   white-space: nowrap;
 }
@@ -313,8 +313,8 @@
   padding: 5px 10px;
   font-size: 13px;
   color: #57606a;
-  background: #fff;
-  border: 1px solid #d0d7de;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
 }
@@ -325,8 +325,8 @@
   align-items: center;
   gap: 2px;
   padding: 2px;
-  background: #f6f8fa;
-  border: 1px solid #d0d7de;
+  background: var(--dash-bg-subtle);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
 }
 .vistaGrupo button {
@@ -342,7 +342,7 @@
 .vistaGrupo button:hover { color: #1f2328; }
 .vistaActiva,
 .vistaGrupo button.vistaActiva:hover {
-  background: #fff;
+  background: var(--bg-card);
   color: #4f46e5;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }

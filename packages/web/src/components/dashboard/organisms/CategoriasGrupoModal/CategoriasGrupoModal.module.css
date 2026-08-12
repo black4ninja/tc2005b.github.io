@@ -14,8 +14,8 @@
 .error {
   padding: 8px 12px;
   border-radius: 8px;
-  background: rgb(220 38 38 / 12%);
-  color: #b91c1c;
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
   font-size: 13px;
 }
 
@@ -85,7 +85,7 @@
 }
 
 .accionPeligro:hover {
-  color: #b91c1c;
+  color: var(--estado-error-color);
 }
 
 .formulario {
@@ -114,7 +114,7 @@
 /* El anillo, y no un cambio de tono, marca el elegido: alterar el color de la
    muestra mentiría sobre el color que se va a guardar. */
 .muestraActiva {
-  border-color: var(--text-color, #111);
+  border-color: var(--text-color);
   box-shadow: 0 0 0 2px var(--dash-surface, #fff) inset;
 }
 

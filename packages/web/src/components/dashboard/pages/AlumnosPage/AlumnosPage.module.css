@@ -19,8 +19,8 @@
   margin-bottom: 16px;
   padding: 10px 14px;
   border-radius: 8px;
-  background: rgb(220 38 38 / 12%);
-  color: #b91c1c;
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
   font-size: 14px;
 }
 

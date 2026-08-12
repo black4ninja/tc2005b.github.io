@@ -80,7 +80,7 @@
 
 .dayChipActive {
   border-color: var(--color-lab);
-  background: rgba(59, 130, 246, 0.08);
+  background: var(--estado-info-bg);
   color: var(--color-lab);
   font-weight: 600;
 }

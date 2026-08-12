@@ -44,7 +44,7 @@
   padding: 8px 10px;
   font-size: 13px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  background: #fdecea;
+  background: var(--estado-error-bg);
   color: var(--dash-danger);
   border-radius: 6px;
   white-space: pre-wrap;

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { identifyUserEndpoint, getCurrentUser } from '../controllers/auth.controller.js';
+import { identifyUserEndpoint, getCurrentUser, setPreferenciaTema } from '../controllers/auth.controller.js';
 import { requestMagicLink, verifyMagicLink, logout } from '../controllers/magiclink.controller.js';
 import { loginWithPassword } from '../controllers/password.controller.js';
 import { identifyUser } from '../middlewares/auth.middleware.js';
@@ -14,6 +14,9 @@ router.post('/auth/login', loginWithPassword);
 // Authenticated routes
 router.post('/auth/logout', identifyUser, logout);
 router.get('/auth/me', identifyUser, getCurrentUser);
+// Preferencia propia de cualquier usuario con sesión (no es configuración del
+// sistema): el id sale de la sesión, nunca del cuerpo.
+router.put('/me/preferencias/tema', identifyUser, setPreferenciaTema);
 
 // Dev route (identify by email)
 router.post('/auth/identify', identifyUserEndpoint);

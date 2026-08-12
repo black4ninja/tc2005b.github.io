@@ -27,8 +27,8 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
   border-radius: 6px;
   font-size: 0.8125rem;
   font-weight: 500;
@@ -56,8 +56,8 @@
   gap: 8px;
   margin: 0;
   padding: 10px 14px;
-  background: #fef2f2;
-  color: #991b1b;
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
   border-radius: 6px;
   font-size: 0.8125rem;
   line-height: 1.5;
@@ -93,7 +93,7 @@
 
 .copyError {
   margin: 0;
-  color: #dc2626;
+  color: var(--estado-error-color);
   font-size: 0.8125rem;
   font-weight: 500;
 }
@@ -118,7 +118,7 @@
 }
 
 .saveError {
-  color: #dc2626;
+  color: var(--estado-error-color);
   font-weight: 500;
 }
 
@@ -144,7 +144,7 @@
 .addWeekBtn:hover {
   border-color: var(--color-lab);
   color: var(--color-lab);
-  background: rgba(59, 130, 246, 0.04);
+  background: var(--estado-info-bg);
 }
 
 .addWeekBtn .material-icons {

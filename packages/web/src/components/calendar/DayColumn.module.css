@@ -27,13 +27,13 @@
   font-style: italic;
   margin-bottom: var(--space-sm);
   padding: 4px 8px;
-  background: #f0f9ff;
+  background: var(--estado-info-bg);
   border-radius: 6px;
 }
 
 .preSession {
   background: var(--bg-pre-session);
-  border: 1px solid #e9d5ff;
+  border: 1px solid var(--estado-info-border);
   border-radius: 8px;
   padding: var(--space-sm);
   margin-bottom: var(--space-sm);
@@ -86,7 +86,7 @@
 .addActivityBtn:hover {
   border-color: var(--color-lab);
   color: var(--color-lab);
-  background: rgba(59, 130, 246, 0.04);
+  background: var(--estado-info-bg);
 }
 
 .addActivityBtn .material-icons {

@@ -8,6 +8,41 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Modo oscuro en todo el sitio, no solo en el wiki.** Hasta ahora solo el visor
+  de contenidos tenía tema oscuro, con su propio interruptor y su propia
+  preferencia guardada aparte.
+  - **Tres opciones: claro, oscuro y automático**, en el menú de usuario, encima
+    de «Cerrar sesión». En automático sigue al sistema operativo y cambia con él
+    mientras dure la sesión.
+  - **La preferencia vive en el usuario**, así que le sigue entre el portátil y
+    el laboratorio. El navegador guarda una copia, pero solo para pintar el tema
+    correcto antes de saber quién eres: sin ella la página aparece en blanco y
+    salta a oscuro un instante después.
+  - **El tema lo resuelve el código, no la hoja de estilos.** No hay ninguna
+    `@media (prefers-color-scheme)`: si la hubiera, elegir «claro» a mano no
+    podría ganarle al sistema.
+  - **El interruptor del wiki sigue ahí** como atajo, pero ya cambia el tema
+    global en vez de tener el suyo. Antes eran dos ajustes peleándose por la
+    misma pantalla.
+  - El contenido renderizado del wiki cuelga ahora del tema global, así que la
+    vista previa del editor también se ve en oscuro; antes se quedaba en claro
+    con el resto del sitio oscuro.
+
+### Changed
+- **Los colores del sitio pasan a ser tokens.** Había 813 colores escritos a mano
+  repartidos en 79 hojas de estilo, y un tema oscuro no puede existir mientras
+  cada pantalla decida su propio blanco.
+  - Se convirtieron ~470 declaraciones de fondo, texto y borde. Lo que queda
+    escrito a mano son acentos sólidos y velos negros translúcidos, que ya
+    funcionan igual en los dos temas.
+  - Se añaden **tokens de estado** (`--estado-error-*`, `--estado-aviso-*`,
+    `--estado-exito-*`, `--estado-info-*`) donde antes había una docena de
+    tintes distintos para decir lo mismo. En claro son pasteles; en oscuro, el
+    mismo matiz translúcido sobre el fondo, que es lo que evita el deslumbre.
+  - Los `var(--token, #respaldo)` pierden el respaldo: el token está definido en
+    los dos temas y dejarlo invitaba a editarlo creyendo que servía de algo.
+
+### Added
 - **Acceso individual a una wiki, para el alumno cuyo grupo no se la da.** Hasta
   ahora el contenido colgaba solo del grupo: si una alumna necesitaba los
   laboratorios de TC2005B y su grupo no tenía esa colección, no había forma de

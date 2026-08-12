@@ -20,7 +20,7 @@
 }
 .track {
   height: 6px;
-  background: #f0f0f0;
+  background: var(--dash-bg-subtle);
   border-radius: 3px;
   overflow: hidden;
 }

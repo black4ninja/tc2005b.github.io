@@ -21,19 +21,19 @@
 .error {
   padding: 12px 16px;
   border-radius: 8px;
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
   font-size: 0.875rem;
-  border: 1px solid #fecaca;
+  border: 1px solid var(--estado-error-border);
 }
 
 .success {
   padding: 12px 16px;
   border-radius: 8px;
-  background: #f0fdf4;
+  background: var(--estado-exito-bg);
   color: #16a34a;
   font-size: 0.875rem;
-  border: 1px solid #bbf7d0;
+  border: 1px solid var(--estado-exito-border);
 }
 
 /* Periodo card */
@@ -49,7 +49,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: var(--bg-surface, #f9fafb);
+  background: var(--bg-surface);
   border-bottom: 1px solid var(--border-color);
   gap: 12px;
 }
@@ -80,8 +80,8 @@
 }
 
 .removeBtn:hover {
-  color: #dc2626;
-  background: #fef2f2;
+  color: var(--estado-error-color);
+  background: var(--estado-error-bg);
 }
 
 /* Form fields */
@@ -173,8 +173,8 @@
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 10px;
-  background: var(--color-lab-light, #e0f2fe);
-  color: var(--color-lab, #0284c7);
+  background: var(--color-lab-light);
+  color: var(--color-lab);
 }
 
 /* Competencias list */
@@ -187,7 +187,7 @@
   padding: 8px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: var(--bg-surface, #f9fafb);
+  background: var(--bg-surface);
 }
 
 .competenciaItem {
@@ -218,7 +218,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: var(--bg-surface, #f9fafb);
+  background: var(--bg-surface);
   cursor: pointer;
   user-select: none;
   gap: 8px;
@@ -305,8 +305,8 @@
   font-size: 0.65rem;
   padding: 1px 6px;
   border-radius: 8px;
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
   white-space: nowrap;
 }
 
@@ -314,7 +314,7 @@
   font-size: 0.65rem;
   padding: 1px 6px;
   border-radius: 8px;
-  background: #ede9fe;
+  background: var(--estado-info-bg);
   color: #6d28d9;
   white-space: nowrap;
   flex-shrink: 0;
@@ -366,13 +366,13 @@
 .addPeriodoBtn:hover {
   border-color: var(--color-lab);
   color: var(--color-lab);
-  background: var(--color-lab-light, #e0f2fe);
+  background: var(--color-lab-light);
 }
 
 /* Calificación Final card */
 .finalCard {
   background: var(--bg-card);
-  border: 2px solid var(--color-lab, #0284c7);
+  border: 2px solid var(--color-lab);
   border-radius: 12px;
   padding: 20px;
   display: flex;
@@ -384,7 +384,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--color-lab, #0284c7);
+  color: var(--color-lab);
 }
 
 .finalTitle {
@@ -396,7 +396,7 @@
 
 .finalFormula {
   padding: 12px 16px;
-  background: var(--bg-surface, #f9fafb);
+  background: var(--bg-surface);
   border-radius: 8px;
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 0.9rem;
@@ -420,7 +420,7 @@
   flex-direction: column;
   gap: 2px;
   padding: 12px;
-  background: var(--bg-surface, #f9fafb);
+  background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: 8px;
 }
@@ -449,7 +449,7 @@
   flex-direction: column;
   gap: 2px;
   padding: 12px;
-  background: var(--bg-surface, #f9fafb);
+  background: var(--bg-surface);
   border: 2px solid var(--border-color);
   border-radius: 8px;
   min-width: 100px;
@@ -464,12 +464,12 @@
 .finalWeightError {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #dc2626;
+  color: var(--estado-error-color);
 }
 
 .finalWeightWarn {
   font-size: 0.7rem;
-  color: #dc2626;
+  color: var(--estado-error-color);
   font-weight: 500;
 }
 
@@ -478,7 +478,7 @@
   flex-direction: column;
   gap: 6px;
   padding: 12px 16px;
-  background: var(--bg-surface, #f9fafb);
+  background: var(--bg-surface);
   border-radius: 8px;
 }
 

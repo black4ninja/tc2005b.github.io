@@ -46,7 +46,7 @@
   align-items: center;
   padding: 1px 8px;
   border-radius: 10px;
-  background: #f1f5f9;
+  background: var(--dash-bg-subtle);
   color: var(--text-secondary);
   font-size: 0.6875rem;
   font-weight: 500;
@@ -64,7 +64,7 @@
   background: rgba(239, 68, 68, 0.12);
   border: 1px solid rgba(239, 68, 68, 0.25);
   border-radius: 6px;
-  color: #dc2626;
+  color: var(--estado-error-color);
   font-size: 0.7rem;
   font-weight: 600;
   flex-wrap: wrap;

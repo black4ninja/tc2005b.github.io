@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router';
 import Avatar from '../../atoms/Avatar/Avatar';
 import DropdownMenu from '../DropdownMenu/DropdownMenu';
+import SelectorTema from '../SelectorTema/SelectorTema';
 import { useAuth } from '../../../../context/AuthContext';
 import styles from './ProfileMenu.module.css';
 
@@ -32,6 +33,8 @@ export default function ProfileMenu({ name, role, avatar }: ProfileMenuProps) {
       }
     >
       <div className={styles.menuContent}>
+        <SelectorTema />
+        <div className={styles.separador} />
         <button className={styles.menuItem} onClick={handleLogout}>Cerrar Sesión</button>
       </div>
     </DropdownMenu>

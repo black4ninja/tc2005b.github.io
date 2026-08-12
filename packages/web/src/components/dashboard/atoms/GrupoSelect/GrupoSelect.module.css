@@ -12,7 +12,7 @@
   padding: 8px 10px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: var(--dash-surface, transparent);
+  background: var(--dash-surface);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -46,7 +46,7 @@
   margin: 0;
   padding: 4px;
   list-style: none;
-  background: var(--dash-surface, #fff);
+  background: var(--dash-surface);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgb(0 0 0 / 18%);

@@ -1,25 +1,14 @@
 .visor {
   min-height: 100vh;
-  background: var(--bg-card, #fff);
+  background: var(--bg-card);
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
 }
 
-/* Tema oscuro: redefinimos las variables que consume todo lo de adentro
-   (incluido .contenido-render, que hereda estos tokens). */
-.oscuro {
-  --bg-card: #0f172a;
-  --bg-page: #1e293b;
-  --text-primary: #e2e8f0;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --border-color: #334155;
-  --sidebar-bg: #1e293b;
-  --sidebar-active-bg: #1e3a8a33;
-  --sidebar-active-color: #7dd3fc;
-  background: var(--bg-card);
-}
+/* El tema oscuro ya no se define aquí: lo dan los tokens globales de
+   `variables.css` a través de `data-theme` en <html>. El visor tenía su
+   propia paleta y no coincidía con la del resto del sitio. */
 
 /* ── Topbar ── */
 .topbar {
@@ -380,7 +369,7 @@
   min-height: calc(100vh - 160px);
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  background: #fff;
+  background: var(--bg-card);
 }
 
 /* ── Salida al pie del menú y del índice (mismo patrón que Diagramas) ── */

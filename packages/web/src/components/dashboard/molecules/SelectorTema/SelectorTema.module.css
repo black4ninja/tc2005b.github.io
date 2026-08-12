@@ -1,0 +1,50 @@
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 12px;
+}
+
+.titulo {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.opciones {
+  display: flex;
+  gap: 4px;
+}
+
+.opcion {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.opcion:hover {
+  background: var(--dash-bg-subtle);
+  color: var(--text-primary);
+}
+
+.opcion .material-icons {
+  font-size: 18px;
+}
+
+.opcionActiva {
+  border-color: var(--dash-primary);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
+}

@@ -53,7 +53,7 @@
   font-weight: 600;
   color: #fff;
   background: #4f46e5;
-  border: 1px solid #4f46e5;
+  border: 1px solid var(--dash-primary);
   border-radius: 8px;
   cursor: pointer;
 }
@@ -69,15 +69,15 @@
 }
 
 .item {
-  border: 1px solid #d0d7de;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 8px 10px;
-  background: #fff;
+  background: var(--bg-card);
 }
 /* El diagrama abierto se distingue con la misma marca de acento que el resto de
    los estados activos del panel. */
 .itemActivo {
-  border-color: #4f46e5;
+  border-color: var(--dash-primary);
   box-shadow: inset 3px 0 0 #4f46e5;
 }
 
@@ -106,9 +106,9 @@
 .btnMini {
   font-size: 12px;
   padding: 3px 10px;
-  border: 1px solid #d0d7de;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  background: #fff;
+  background: var(--bg-card);
   color: #57606a;
   cursor: pointer;
 }
@@ -131,10 +131,10 @@
 
 /* --- Estado vacío --- */
 .vacio {
-  border: 1px dashed #d0d7de;
+  border: 1px dashed var(--border-color);
   border-radius: 8px;
   padding: 14px;
-  background: #f6f8fa;
+  background: var(--dash-bg-subtle);
 }
 .vacioTitulo { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #1f2328; }
 .vacioTexto { margin: 0 0 8px; font-size: 13px; line-height: 1.5; color: #57606a; }
@@ -160,9 +160,9 @@
   font-family: inherit;
   color: #1f2328;
   padding: 6px 10px;
-  border: 1px solid #d0d7de;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: #fff;
+  background: var(--bg-card);
   min-width: 0;
 }
 .campo:focus { outline: 2px solid #4f46e5; outline-offset: 1px; }
@@ -185,8 +185,8 @@
   align-items: center;
   gap: 2px;
   padding: 2px;
-  background: #f6f8fa;
-  border: 1px solid #d0d7de;
+  background: var(--dash-bg-subtle);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
 }
 .vistaGrupo button {
@@ -202,7 +202,7 @@
 .vistaGrupo button:hover { color: #1f2328; }
 .vistaActiva,
 .vistaGrupo button.vistaActiva:hover {
-  background: #fff;
+  background: var(--bg-card);
   color: #4f46e5;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
@@ -249,8 +249,8 @@
   padding: 9px 16px;
   border-radius: 8px;
   cursor: pointer;
-  border: 1px solid #d0d7de;
-  background: #fff;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
   color: #1f2328;
 }
 .btnPri { background: #4f46e5; border-color: #4f46e5; color: #fff; }
@@ -262,7 +262,7 @@
   font-size: 13px;
   font-weight: 600;
   color: #9a6700;
-  background: #fff8e5;
+  background: var(--estado-aviso-bg);
   border-radius: 999px;
   padding: 4px 12px;
 }
@@ -275,7 +275,7 @@
 .errorBox {
   margin-top: 14px;
   padding: 10px 12px;
-  background: #fdecea;
+  background: var(--estado-error-bg);
   color: #b42318;
   border-radius: 8px;
   font-size: 14px;
@@ -298,10 +298,10 @@
 .confirmarDescarte {
   margin-bottom: 12px;
   padding: 10px 14px;
-  border: 1px solid #e5c07b;
+  border: 1px solid var(--estado-aviso-border);
   border-left-width: 4px;
   border-radius: 6px;
-  background: #fff8e5;
+  background: var(--estado-aviso-bg);
 }
 
 @media (max-width: 1024px) {
@@ -324,8 +324,8 @@
   padding: 5px 10px;
   font-size: 13px;
   color: #57606a;
-  background: #fff;
-  border: 1px solid #d0d7de;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
   white-space: nowrap;

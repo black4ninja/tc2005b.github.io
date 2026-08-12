@@ -61,7 +61,7 @@
 
 .error {
   padding: 12px 16px;
-  background: #fdecea;
+  background: var(--estado-error-bg);
   color: var(--dash-danger);
   border-radius: 8px;
   font-size: 14px;
@@ -69,7 +69,7 @@
 
 /* ── Panel de metadatos (colapsable) ── */
 .metaPanel {
-  background: var(--bg-card, #fff);
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 12px 16px;
@@ -203,12 +203,12 @@
   flex-shrink: 0;
 }
 .estadoPub {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
 }
 .estadoBorr {
-  background: #fff3e0;
-  color: #e65100;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
 }
 
 /* ── Panel de detalle ── */

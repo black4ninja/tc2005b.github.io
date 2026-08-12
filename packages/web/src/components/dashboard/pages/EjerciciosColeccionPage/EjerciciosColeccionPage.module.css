@@ -44,7 +44,7 @@
   padding: 8px 14px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: #fff;
+  background: var(--bg-card);
   color: var(--text-primary);
   cursor: pointer;
 }
@@ -53,7 +53,7 @@
 .error {
   padding: 10px 12px;
   margin-bottom: 12px;
-  background: #fdecea;
+  background: var(--estado-error-bg);
   color: var(--dash-danger);
   border-radius: 8px;
   font-size: 14px;
@@ -75,10 +75,10 @@
   font-weight: 600;
 }
 .badgeActive {
-  background: #e6f4ea;
+  background: var(--estado-exito-bg);
   color: #1e7e34;
 }
 .badgeDraft {
-  background: #f1f3f4;
+  background: var(--dash-bg-subtle);
   color: var(--text-secondary);
 }

@@ -55,7 +55,7 @@
 
 .errorText {
   font-size: 13px;
-  color: var(--dash-error, #e53e3e);
+  color: var(--dash-error);
   margin: 0;
   line-height: 1.4;
 }

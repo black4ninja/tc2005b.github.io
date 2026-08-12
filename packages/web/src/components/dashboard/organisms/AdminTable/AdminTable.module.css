@@ -194,8 +194,8 @@
 }
 
 .actionDanger:hover {
-  background: #fde8e8;
-  color: #dc2626;
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
 }
 
 /* Acción sin icono: botón de texto (ancho automático en vez del cuadro 32px). */
@@ -274,7 +274,7 @@
 }
 
 .columnsBtnDirty {
-  border-color: var(--accent, #2563eb);
+  border-color: var(--accent);
 }
 
 .columnsBadge {
@@ -285,7 +285,7 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 9px;
-  background: var(--accent, #2563eb);
+  background: var(--accent);
   color: white;
   font-size: 11px;
   font-weight: 600;
@@ -322,7 +322,7 @@
 .columnsResetBtn {
   border: none;
   background: transparent;
-  color: var(--accent, #2563eb);
+  color: var(--accent);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
