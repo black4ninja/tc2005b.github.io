@@ -8,7 +8,14 @@ import { config } from '../config/index.js';
 
 async function buildGruposExtras(
   user: AppUser,
-): Promise<{ grupos: { id: string; name: string; urlAgendaEntrevistas: string | null }[] }> {
+): Promise<{
+  grupos: {
+    id: string;
+    name: string;
+    urlAgendaEntrevistas: string | null;
+    categoria: { id: string; nombre: string; color: string } | null;
+  }[];
+}> {
   // Alumno: sus grupos vía GrupoAlumno. Profesor: los grupos donde está asignado
   // (Grupo.admins) — el front lo manda directo a su grupo al loguear, igual que
   // al alumno. Admin: sin grupos aquí (entra al panel global).
@@ -24,6 +31,11 @@ async function buildGruposExtras(
       // El menú enlaza a la agenda de SU grupo; sin URL, el ítem no se muestra
       // (mismo criterio que "Documentación" sin colecciones).
       urlAgendaEntrevistas: g.get('urlAgendaEntrevistas') ?? null,
+      // El color del selector de grupo. Se reusa el serializador del grupo para
+      // no repetir aquí el filtro de categorías borradas.
+      categoria: (g.toSafeJSON().categoria ?? null) as
+        | { id: string; nombre: string; color: string }
+        | null,
     })),
   };
 }

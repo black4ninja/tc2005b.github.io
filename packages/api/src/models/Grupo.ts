@@ -1,5 +1,6 @@
 import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
+import { COLOR_POR_DEFECTO } from './CategoriaGrupo.js';
 
 export class Grupo extends BaseModel {
   constructor(attributes?: Parse.Attributes) {
@@ -45,6 +46,23 @@ export class Grupo extends BaseModel {
   }
   setSalon(salon: string): void {
     this.set('salon', salon);
+  }
+
+  /**
+   * Categoría a la que pertenece el grupo (la materia o el nivel). De ella sale
+   * el color con que se pinta el grupo en tablas y selectores.
+   *
+   * Es OPCIONAL, y tiene que seguir siéndolo: los grupos creados antes de que
+   * existiera el catálogo no tienen ninguna, y deben poder editarse y usarse sin
+   * asignarles una. `setCategoria(null)` hace `unset` — un `set(campo, null)`
+   * dejaría el campo puesto a null y el `include` traería un pointer roto.
+   */
+  getCategoria(): Parse.Object | undefined {
+    return this.get('categoria');
+  }
+  setCategoria(categoria: Parse.Object | null): void {
+    if (categoria) this.set('categoria', categoria);
+    else this.unset('categoria');
   }
 
   /**
@@ -124,6 +142,10 @@ export class Grupo extends BaseModel {
       fechaFin: this.getFechaFin(),
       salon: this.getSalon(),
       urlAgendaEntrevistas: this.getUrlAgendaEntrevistas() ?? null,
+      // Requiere query.include('categoria'). Se manda desplegada (y no solo el
+      // id) porque quien pinta la lista necesita el color en el mismo viaje: si
+      // no, la tabla aparece en gris y se recolorea después.
+      categoria: categoriaSafeJSON(this.getCategoria()),
       // Requiere query.include('colecciones'); las soft-deleted no se exponen.
       colecciones: this.getColecciones()
         .filter((c) => c && c.get('exists') !== false)
@@ -154,6 +176,26 @@ export class Grupo extends BaseModel {
       updatedAt: this.updatedAt,
     };
   }
+}
+
+/**
+ * La categoría tal y como la consume la interfaz, o `null`.
+ *
+ * Devuelve `null` también cuando la categoría fue borrada (`exists: false`):
+ * el pointer sobrevive al borrado lógico y sin este filtro un grupo seguiría
+ * pintándose con el color de una categoría que ya no está en el catálogo.
+ */
+function categoriaSafeJSON(
+  categoria: Parse.Object | undefined,
+): { id: string; nombre: string; color: string } | null {
+  if (!categoria || categoria.get('exists') === false) return null;
+  // Sin `include` llega el pointer sin datos: mejor null que una fila en blanco.
+  if (!categoria.get('nombre')) return null;
+  return {
+    id: categoria.id!,
+    nombre: categoria.get('nombre'),
+    color: categoria.get('color') ?? COLOR_POR_DEFECTO,
+  };
 }
 
 Parse.Object.registerSubclass('Grupo', Grupo);

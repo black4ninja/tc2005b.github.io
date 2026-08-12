@@ -3,6 +3,7 @@ import { Link, useMatch, useSearchParams, useNavigate } from 'react-router';
 import NavItem from '../../molecules/NavItem/NavItem';
 import SeccionColecciones, { type EnlaceColeccion } from '../../molecules/SeccionColecciones/SeccionColecciones';
 import Icon from '../../atoms/Icon/Icon';
+import GrupoSelect from '../../atoms/GrupoSelect/GrupoSelect';
 import ArbolContenidos from './ArbolContenidos';
 import ArbolDiagramas from './ArbolDiagramas';
 import { getSidebarItems, getGrupoDetailItems } from './sidebarConfig';
@@ -341,32 +342,26 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         {role === 'alumno' && user?.grupos && user.grupos.length > 0 && !collapsed && (
           <div className={styles.grupoSelector}>
             <label className={styles.grupoSelectorLabel}>Grupo</label>
-            <select
-              className={styles.grupoSelect}
-              value={selectedGrupoId}
-              onChange={(e) => cambiarGrupo(e.target.value)}
+            <GrupoSelect
+              grupos={user.grupos}
+              valor={selectedGrupoId}
+              onCambiar={cambiarGrupo}
               disabled={user.grupos.length === 1}
+              etiqueta="Grupo"
               title={user.grupos.length === 1 ? 'Estás inscrito en un solo grupo' : undefined}
-            >
-              {user.grupos.map((g) => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
+            />
           </div>
         )}
         {esProfesor && user?.grupos && user.grupos.length > 1 && !collapsed && (
           // Profesor con varios grupos: cambiar de grupo = navegar a su detalle.
           <div className={styles.grupoSelector}>
             <label className={styles.grupoSelectorLabel}>Grupo</label>
-            <select
-              className={styles.grupoSelect}
-              value={grupoId ?? ''}
-              onChange={(e) => navigate(`/admin/grupos/${e.target.value}`)}
-            >
-              {user.grupos.map((g) => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
+            <GrupoSelect
+              grupos={user.grupos}
+              valor={grupoId ?? ''}
+              onCambiar={(id) => navigate(`/admin/grupos/${id}`)}
+              etiqueta="Grupo"
+            />
           </div>
         )}
         <nav

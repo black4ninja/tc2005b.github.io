@@ -144,6 +144,9 @@ export async function getGruposDeAlumno(alumnoId: string): Promise<Grupo[]> {
   query.equalTo('active' as any, true as any);
   query.equalTo('alumno' as any, alumnoPointer as any);
   query.include('grupo' as any);
+  // Dos niveles: el color del selector vive en la categoría del grupo, y sin
+  // esto llegaría como pointer sin desplegar (y el selector, en gris).
+  query.include('grupo.categoria' as any);
   query.limit(1000);
   const links = await query.find({ useMasterKey: true });
 

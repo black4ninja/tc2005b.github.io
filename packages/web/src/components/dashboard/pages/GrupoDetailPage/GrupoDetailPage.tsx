@@ -10,6 +10,7 @@ import AlumnoPicker, { type AlumnoEncontrado } from '../../organisms/AlumnoPicke
 import CSVImportModal from '../../organisms/CSVImportModal/CSVImportModal';
 import CompetenciasQuickModal from '../../organisms/CompetenciasQuickModal/CompetenciasQuickModal';
 import ProfileInfoCell from '../../atoms/ProfileInfoCell/ProfileInfoCell';
+import NombreGrupo, { type CategoriaRef } from '../../atoms/NombreGrupo/NombreGrupo';
 import DashButton from '../../atoms/DashButton/DashButton';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import {
@@ -42,6 +43,8 @@ interface GrupoInfo {
   name: string;
   /** Campos del perfil que este grupo NO pide (vacío = los pide todos). */
   camposPerfilDeshabilitados?: string[];
+  /** Categoría desplegada; de ella sale el color del grupo. */
+  categoria?: CategoriaRef | null;
 }
 
 interface PeriodoInfo {
@@ -235,6 +238,7 @@ export default function GrupoDetailPage() {
             id: found.id,
             name: found.name,
             camposPerfilDeshabilitados: found.camposPerfilDeshabilitados ?? [],
+            categoria: found.categoria ?? null,
           });
         }
       }
@@ -774,7 +778,18 @@ export default function GrupoDetailPage() {
         <button className={styles.backBtn} onClick={() => navigate('/admin/grupos')}>
           <span className="material-icons">arrow_back</span>
         </button>
-        <h1 className={styles.pageTitle}>{grupo?.name ?? 'Detalle del Grupo'}</h1>
+        <h1 className={styles.pageTitle}>
+          {grupo ? (
+            <NombreGrupo
+              nombre={grupo.name}
+              categoria={grupo.categoria}
+              marca="barra"
+              mostrarCategoria
+            />
+          ) : (
+            'Detalle del Grupo'
+          )}
+        </h1>
       </div>
 
       {error && <div className={styles.error}>{error}</div>}
@@ -899,6 +914,15 @@ export default function GrupoDetailPage() {
         onClose={closeAlumnoModal}
         title={editAlumno ? 'Editar Alumno' : 'Agregar Alumno'}
       >
+        {/* A qué grupo va el alumno. Solo para corroborar: no se elige aquí.
+            Va porque dos alumnos acabaron en el 101 yendo al 102, y una vez
+            abierto el modal el nombre del grupo se quedaba fuera de la vista. */}
+        {grupo && (
+          <div className={styles.grupoDestino}>
+            <span className={styles.grupoDestinoLabel}>Se agregará a</span>
+            <NombreGrupo nombre={grupo.name} categoria={grupo.categoria} mostrarCategoria />
+          </div>
+        )}
         {/* Al EDITAR no hay pestañas: solo se dan a elegir al agregar. */}
         {!editAlumno && (
           <div className={styles.altaTabs} role="tablist">

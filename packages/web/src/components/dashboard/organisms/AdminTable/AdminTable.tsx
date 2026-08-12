@@ -43,6 +43,12 @@ interface AdminTableProps<T> {
    * Without this prop the toggle is hidden.
    */
   tableId?: string;
+  /**
+   * Nombre de la fila para el `aria-label` del botón de acciones. Sin esto todas
+   * las filas anuncian el mismo "Acciones" y con un lector de pantalla no hay
+   * forma de saber a cuál pertenece cada botón.
+   */
+  etiquetaDeFila?: (row: T) => string;
 }
 
 const STORAGE_PREFIX = 'adminTable';
@@ -84,6 +90,7 @@ export default function AdminTable<T>({
   initialSorting = [],
   getRowClassName,
   tableId,
+  etiquetaDeFila,
 }: AdminTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -159,6 +166,11 @@ export default function AdminTable<T>({
           enableHiding: false,
           cell: ({ row }) => {
             const items = actions(row.original);
+            // Los iconos van SIEMPRE a la vista, sin menú de por medio: son las
+            // operaciones del día a día y esconderlas cuesta un clic en todas.
+            // El ancho que ocupan ya no empuja nada fuera de la pantalla porque
+            // la columna está anclada a la derecha (ver `.actionsCol`).
+            const nombreFila = etiquetaDeFila?.(row.original);
             return (
               <div className={styles.rowActions}>
                 {items.map((action) => (
@@ -167,9 +179,13 @@ export default function AdminTable<T>({
                     className={`${styles.actionBtn} ${action.icon ? '' : styles.actionText} ${action.variant === 'danger' ? styles.actionDanger : ''}`}
                     onClick={action.onClick}
                     title={action.label}
+                    // El contenido del botón es la ligadura de Material Icons, que
+                    // un lector de pantalla anuncia como «edit» y repetida en cada
+                    // fila. Con la etiqueta de fila queda "Editar <grupo>".
+                    aria-label={nombreFila ? `${action.label} ${nombreFila}` : action.label}
                   >
                     {action.icon ? (
-                      <span className="material-icons" style={{ fontSize: 18 }}>{action.icon}</span>
+                      <span className="material-icons" style={{ fontSize: 18 }} aria-hidden="true">{action.icon}</span>
                     ) : (
                       // Sin icono: se muestra el texto del label (si no, el botón
                       // quedaría vacío e invisible).

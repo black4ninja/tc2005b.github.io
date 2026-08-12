@@ -7,7 +7,13 @@ interface AppUserData {
   name: string;
   userType: string;
   grupo: string;
-  grupos: { id: string; name: string; urlAgendaEntrevistas?: string | null }[];
+  grupos: {
+    id: string;
+    name: string;
+    urlAgendaEntrevistas?: string | null;
+    /** Categoría desplegada; de ella sale el color en el selector. */
+    categoria?: { id: string; nombre: string; color: string } | null;
+  }[];
   attributes: Record<string, unknown>;
   lastLogin?: string;
   perfilCompleto?: boolean;

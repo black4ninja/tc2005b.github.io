@@ -7,6 +7,69 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Categorías de grupo con color, para distinguir de un vistazo grupos que se
+  llaman casi igual.** Nace de un error real: dos alumnos acabaron en
+  «AgoDic26 TC2008B 101» cuando iban al 102. Los dos nombres comparten 17 de sus
+  20 caracteres, y en una lista —o dentro del modal de alta, donde el nombre del
+  grupo ni siquiera se veía— se leen igual.
+  - **Catálogo administrable** (`CategoriaGrupo`) con nombre y color: «Móviles»,
+    «Gráficas», «IA», «6to»… Es dinámico porque cambia cada semestre con lo que
+    se asigne. Se gestiona desde el botón «Administrar categorías» de Grupos.
+  - **El color vive en la categoría, no en el grupo**: hay una sola fuente de
+    verdad y recolorear «IA» repinta todos sus grupos de golpe. El nombre no se
+    puede repetir (ignorando mayúsculas y espacios de sobra) y el color solo
+    admite hexadecimal, porque acaba en un atributo `style` del cliente.
+  - **La sección del nombre se pinta destacada y aparte** (`AgoDic26 TC2008B`
+    ⟦101⟧). Es la otra mitad del problema: dos secciones de la misma materia
+    comparten categoría, y por tanto color, así que el color solo no las separa.
+  - **El selector de grupo deja de ser un `<select>` nativo** —dentro de un
+    `<option>` no se puede pintar ni el color ni la insignia— y pasa a un
+    listbox propio, en el sidebar del alumno y en el del profesor.
+  - **El modal de «Agregar alumno» dice a qué grupo va**, sin poder cambiarlo:
+    solo para corroborar antes de dar de alta.
+  - **Filtro por categoría** en la lista de grupos, y el **nombre desempata el
+    orden** cuando la fecha de inicio coincide: los grupos de un mismo semestre
+    salían en orden arbitrario, con el 101 debajo del 102.
+  - Borrar una categoría en uso se rechaza y se dice qué grupos la tienen, en
+    vez de dejarlos apuntando a un pointer muerto.
+  - **El catálogo se ordena arrastrando**, y ese orden manda en el desplegable
+    del grupo, en los chips de filtro y en el propio catálogo. Las categorías
+    nuevas entran al final, para no colarse en medio de un orden puesto a mano.
+    - También se reordena **con el teclado**: enfocar el asa, espacio y flechas.
+      Dejarlo solo al ratón excluye a quien no lo usa.
+    - El servidor recibe la lista COMPLETA de ids, no un «mueve este de la 3 a
+      la 1»: así la operación es idempotente y dos pestañas arrastrando a la vez
+      no dejan el orden a medias. Una lista parcial, con repetidos o con un id
+      desconocido se rechaza entera.
+    - En pantalla el orden se aplica antes de que conteste el servidor; si la
+      petición falla, se deshace y se dice por qué.
+
+### Changed
+- **Las acciones de una fila dejan de quedarse al otro lado del scroll.** En las
+  tablas anchas —Grupos es la peor— había que arrastrar la barra horizontal
+  hasta el final solo para pulsar «Editar», y por el camino se perdía de vista
+  de qué fila se trataba.
+  - **La columna de acciones se ancla a la derecha** (`position: sticky`) en
+    todas las tablas de administración: el scroll mueve el resto y ella se
+    queda, con una sombra que insinúa que hay más columnas detrás.
+  - **Los iconos siguen todos a la vista**, sin menú de por medio: son las
+    operaciones del día a día y esconderlas cuesta un clic en cada una. El ancho
+    que ocupan ya no empuja nada fuera de la pantalla, que era el problema.
+  - Cada botón gana un `aria-label` con el nombre de su fila («Editar AgoDic26
+    TC2008B 101»). Antes su único contenido era la ligadura de Material Icons,
+    que se anuncia como «edit» y repetida en todas las filas.
+  - En móvil, donde la tabla ya se convierte en tarjetas apiladas, el anclaje se
+    desactiva: sacaría la celda de su tarjeta.
+- **La lista de grupos cabe en menos ancho.** Las dos columnas de fecha se
+  fusionan en un «Periodo» que comparte el año cuando ambas caen en el mismo
+  («10 ago – 23 oct 2026»); «Administradores» muestra el primero y un contador,
+  con la lista completa en el `title`; y se habilita el menú «Columnas», que ya
+  existía en la tabla pero esta pantalla no activaba, para apagar las que no se
+  miren (la elección se recuerda).
+  - Las búsquedas siguen encontrando por lo que NO se ve: los accessors
+    conservan la lista completa de administradores y la fecha en ISO.
+
 ### Fixed
 - **Las listas del wiki vuelven a tener viñeta, número y sangría.** El reset de
   `globals.css` quita la marca a toda la aplicación (`ul, ol { list-style: none }`),

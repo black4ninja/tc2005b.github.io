@@ -144,3 +144,29 @@
   font-size: 12px;
   color: var(--text-secondary);
 }
+
+.categoriaFila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Sin categoría elegida cae al gris del tema, igual que en las listas. */
+.categoriaPunto {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--border-color);
+}
+
+.select {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--dash-surface, transparent);
+  color: inherit;
+  font: inherit;
+}

@@ -1,0 +1,59 @@
+.envoltorio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Sin color de categoría, ambas marcas caen a este gris del tema. */
+.punto,
+.barra {
+  flex: none;
+  background: var(--border-color);
+}
+
+.punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Franja lateral para las filas de una tabla: se lee como margen de color. */
+.barra {
+  width: 4px;
+  align-self: stretch;
+  min-height: 20px;
+  border-radius: 2px;
+}
+
+.texto {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* La parte compartida cede el espacio: si algo se recorta, que sea esta. */
+.prefijo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* La sección es lo único que distingue 101 de 102: nunca se recorta. */
+.seccion {
+  flex: none;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--dash-bg-subtle, rgba(127, 127, 127, 0.14));
+}
+
+.categoria {
+  flex: none;
+  font-size: 12px;
+  opacity: 0.7;
+  white-space: nowrap;
+}
