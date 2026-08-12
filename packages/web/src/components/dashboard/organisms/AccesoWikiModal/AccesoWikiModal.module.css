@@ -1,0 +1,86 @@
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 340px;
+  max-width: 520px;
+}
+
+.ayuda {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.error {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgb(220 38 38 / 12%);
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.vacio {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.opcion:hover {
+  background: var(--dash-bg-subtle, rgba(127, 127, 127, 0.1));
+}
+
+/* La que ya viene del grupo se muestra marcada pero no se puede tocar: dar un
+   permiso individual para algo que ya ve no cambiaría nada. */
+.opcionBloqueada {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.opcionBloqueada:hover {
+  background: transparent;
+}
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nombre {
+  font-size: 14px;
+}
+
+.meta {
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}

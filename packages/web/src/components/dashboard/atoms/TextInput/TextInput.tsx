@@ -12,9 +12,11 @@ interface TextInputProps {
   onChange: (value: string) => void;
   disabled?: boolean;
   error?: string;
+  /** Para los campos de búsqueda, donde Enter dispara la consulta. */
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
-export default function TextInput({ label, type = 'text', placeholder, icon, endIcon, onEndIconClick, value, onChange, disabled, error }: TextInputProps) {
+export default function TextInput({ label, type = 'text', placeholder, icon, endIcon, onEndIconClick, value, onChange, disabled, error, onKeyDown }: TextInputProps) {
   return (
     <div className={styles.wrapper}>
       {label && <label className={styles.label}>{label}</label>}
@@ -26,6 +28,7 @@ export default function TextInput({ label, type = 'text', placeholder, icon, end
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onKeyDown={onKeyDown}
           disabled={disabled}
         />
         {endIcon && (
