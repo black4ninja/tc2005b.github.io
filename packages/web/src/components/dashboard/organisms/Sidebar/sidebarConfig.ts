@@ -47,6 +47,14 @@ export function getSidebarItems(
       icon: 'calendar_month',
       path: `/alumno/grupos/${selectedGrupoId}/calendario`,
     });
+    // Junto al calendario porque sale de él: el mismo material, ordenado para
+    // reencontrarlo en vez de para saber qué toca esta semana. No se bloquea
+    // por perfil incompleto, igual que el calendario del que se deriva.
+    items.push({
+      label: 'Hub',
+      icon: 'inventory_2',
+      path: `/alumno/grupos/${selectedGrupoId}/hub`,
+    });
   }
   items.push({ label: 'Dashboard', icon: 'dashboard', path: '/alumno' });
   if (selectedGrupoId && modulosGrupo.malla !== false) {
@@ -104,6 +112,10 @@ export function getGrupoDetailItems(
 ): SidebarItem[] {
   const items: SidebarItem[] = [
     { label: 'Calendario', icon: 'calendar_month', path: `/admin/grupos/${grupoId}/calendario` },
+    // Junto al calendario, del que sale. El profesor ve exactamente lo mismo que
+    // sus alumnos: sirve para comprobar qué material les está llegando, no para
+    // editarlo — eso se sigue haciendo en el calendario.
+    { label: 'Hub', icon: 'inventory_2', path: `/admin/grupos/${grupoId}/hub` },
     { label: 'Alumnos', icon: 'people', path: `/admin/grupos/${grupoId}` },
     { label: 'Actividades Evaluación', icon: 'assignment', path: `/admin/grupos/${grupoId}/actividades-evaluacion` },
     { label: 'Plan de Evaluación', icon: 'checklist', path: `/admin/grupos/${grupoId}/plan-evaluacion` },

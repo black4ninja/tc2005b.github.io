@@ -209,3 +209,57 @@ ul, ol { list-style: none; }
   font-size: 0.75rem;
   color: var(--text-muted);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Actividad señalada al llegar desde el Hub.
+   ─────────────────────────────────────────────────────────────────────────
+   Global y no un módulo CSS porque la aplica código imperativo (`classList`)
+   desde CalendarContent, y los módulos alteran el nombre de la clase.
+
+   Se desvanece sola: llamar la atención un momento es el objetivo; dejarla
+   marcada para siempre convierte el destaque en parte del diseño y deja de
+   señalar nada.
+
+   El anillo va HACIA DENTRO (`inset`) a propósito. La actividad se pinta
+   dentro de `.sortableInner`, que recorta con `overflow: hidden` para la
+   revelación de los botones de editar y borrar: un anillo hacia fuera se
+   recortaba ENTERO y del realce solo sobrevivía el fondo, casi invisible en
+   una columna llena. Un `outline` tampoco vale —lo recorta igual—, así que el
+   realce tiene que caber dentro de la propia caja.
+
+   Y parpadea al llegar: en una semana de veinte actividades el ojo va al
+   movimiento antes que al color, y la página acaba de dar un salto de scroll. */
+@keyframes actividad-destacada-pulso {
+  /* Tres parpadeos (~1,5 s), luego se mantiene y al final se desvanece. */
+  0%, 12%, 24%, 36% {
+    box-shadow: inset 0 0 0 3px var(--destacado-anillo), 0 0 18px 2px var(--destacado-halo);
+    background: var(--destacado-fondo);
+  }
+  6%, 18%, 30% {
+    box-shadow: inset 0 0 0 3px var(--destacado-halo), 0 0 0 0 transparent;
+    background: var(--destacado-fondo);
+  }
+  85% {
+    box-shadow: inset 0 0 0 3px var(--destacado-anillo), 0 0 18px 2px var(--destacado-halo);
+    background: var(--destacado-fondo);
+  }
+  100% {
+    box-shadow: inset 0 0 0 3px transparent, 0 0 0 0 transparent;
+    background: transparent;
+  }
+}
+
+.actividad-destacada {
+  border-radius: 8px;
+  animation: actividad-destacada-pulso 4.5s ease-out forwards;
+}
+
+/* Quien prefiere no ver movimiento igual necesita saber CUÁL es: se queda el
+   realce, sin la animación. */
+@media (prefers-reduced-motion: reduce) {
+  .actividad-destacada {
+    animation: none;
+    box-shadow: inset 0 0 0 3px var(--destacado-anillo), 0 0 18px 2px var(--destacado-halo);
+    background: var(--destacado-fondo);
+  }
+}
