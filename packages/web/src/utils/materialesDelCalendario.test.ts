@@ -14,6 +14,8 @@ import {
   materialesDelCalendario,
   tiposPresentes,
   filtrarMateriales,
+  fechaDelDia,
+  formatFechaCorta,
 } from './materialesDelCalendario';
 import type { Calendario } from '../types/calendario';
 
@@ -181,5 +183,55 @@ describe('filtrarMateriales', () => {
   it('combina texto y tipo', () => {
     expect(filtrarMateriales(materiales, 'unity', new Set(['lab']))).toHaveLength(1);
     expect(filtrarMateriales(materiales, 'unity', new Set(['lectura']))).toHaveLength(0);
+  });
+});
+
+describe('fechaDelDia', () => {
+  it('deduce el día exacto desde el inicio de la semana', () => {
+    // Semana que arranca el lunes 10-ago-2026.
+    expect(fechaDelDia('2026-08-10', 'lunes')).toBe('2026-08-10');
+    expect(fechaDelDia('2026-08-10', 'martes')).toBe('2026-08-11');
+    expect(fechaDelDia('2026-08-10', 'viernes')).toBe('2026-08-14');
+  });
+
+  it('no asume que la semana empieza en lunes', () => {
+    // Semana que arranca el miércoles 12: el jueves es el 13, y el lunes cae
+    // en el siguiente ciclo (18), no antes del inicio.
+    expect(fechaDelDia('2026-08-12', 'jueves')).toBe('2026-08-13');
+    expect(fechaDelDia('2026-08-12', 'lunes')).toBe('2026-08-17');
+  });
+
+  it('no se corre un día por la zona horaria', () => {
+    // La trampa: `new Date('2026-08-10')` es medianoche UTC, que en México
+    // (UTC-6) es el 9 a las 18:00. Todo el cálculo va en UTC.
+    expect(fechaDelDia('2026-08-10', 'lunes')).toBe('2026-08-10');
+    expect(fechaDelDia('2026-01-01', 'jueves')).toBe('2026-01-01');
+  });
+
+  it('devuelve vacío cuando no hay con qué calcular', () => {
+    expect(fechaDelDia(undefined, 'lunes')).toBe('');
+    expect(fechaDelDia('', 'lunes')).toBe('');
+    expect(fechaDelDia('no es fecha', 'lunes')).toBe('');
+    expect(fechaDelDia('2026-08-10', 'sabado')).toBe('');
+  });
+});
+
+describe('formatFechaCorta', () => {
+  it('pinta el día capturado, no el anterior', () => {
+    expect(formatFechaCorta('2026-08-10')).toContain('10');
+  });
+
+  it('devuelve vacío sin fecha', () => {
+    expect(formatFechaCorta('')).toBe('');
+    expect(formatFechaCorta('vaya')).toBe('');
+  });
+});
+
+describe('la fecha llega a cada material', () => {
+  it('cada material sabe el día exacto en que ocurre', () => {
+    const materiales = materialesDelCalendario(CALENDARIO);
+    expect(materiales.find((m) => m.id === 'a2')?.fecha).toBe('2026-08-10'); // lunes sem 1
+    expect(materiales.find((m) => m.id === 'a4')?.fecha).toBe('2026-08-11'); // martes sem 1
+    expect(materiales.find((m) => m.id === 'a5')?.fecha).toBe('2026-08-27'); // jueves sem 3
   });
 });

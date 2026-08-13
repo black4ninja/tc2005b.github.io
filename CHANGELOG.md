@@ -13,8 +13,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   pregunta que se hace el alumno es la contraria —«¿dónde estaba aquel
   laboratorio?»— y eso obliga a rebuscar semana por semana.
   - Nueva entrada **Hub** en el menú del alumno, junto al Calendario, con la
-    lista en el **orden del calendario** y una columna con la **semana y el día**
-    de cada material: es la referencia temporal que se pierde al aplanar.
+    lista en el **orden del calendario** y una columna con la **semana y la
+    fecha exacta** de cada material: es la referencia temporal que se pierde al
+    aplanar. La fecha se deduce del día de la semana, porque el calendario la
+    guarda por SEMANA y no por actividad.
+  - Cada material enlaza **de vuelta al calendario, en su semana**
+    (`?semana=<n>`): la lista sirve para encontrarlo y el calendario para ver
+    cuándo tocaba.
   - **Buscador** por nombre, descripción y texto de los enlaces —el título de un
     laboratorio no siempre trae la palabra que uno recuerda— y **filtros por
     tipo**, que solo ofrecen los tipos que ese grupo tiene: proponer

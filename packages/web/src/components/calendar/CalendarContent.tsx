@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect, useLayoutEffect } from 'react';
+import { useState, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router';
 import { confirmar } from '@/utils/dialogos';
 import {
   DndContext,
@@ -546,6 +547,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
   });
   const [allExpanded, setAllExpanded] = useState(false);
   const [activeNavIndex, setActiveNavIndex] = useState(currentWeekIndex);
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     try {
@@ -560,11 +562,14 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
   }, []);
 
   useLayoutEffect(() => {
+    // Con `?semana=` la intención es explícita —se viene del Hub a una semana
+    // concreta— y restaurar dónde se había quedado la pelea y gana casi siempre.
+    if (searchParams.get('semana')) return;
     const saved = sessionStorage.getItem('cal-scroll');
     if (saved) {
       window.scrollTo(0, parseInt(saved, 10));
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (currentWeekIndex >= 0) {
@@ -592,6 +597,45 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       return next;
     });
   }, [semanas.length]);
+
+  /**
+   * Abre el calendario en una semana concreta, si viene en la URL
+   * (`?semana=<numero>`). Lo usa el Hub para devolver un material a su contexto
+   * temporal: la lista sirve para encontrarlo, el calendario para ver cuándo
+   * tocaba.
+   *
+   * Se hace UNA sola vez por carga: si se repitiera en cada render, el usuario
+   * no podría desplazarse a otra semana sin que lo devolviera de un tirón.
+   */
+  const semanaAplicada = useRef(false);
+  useEffect(() => {
+    if (semanaAplicada.current || semanas.length === 0) return;
+    const pedida = searchParams.get('semana');
+    if (!pedida) return;
+
+    const indice = semanas.findIndex((s) => String(s.numero) === pedida);
+    if (indice === -1) return;
+
+    semanaAplicada.current = true;
+    setActiveNavIndex(indice);
+    setExpandedMap((prev) => ({ ...prev, [indice]: true }));
+
+    // Instantáneo y con un reintento, en vez de suave y una vez.
+    //
+    // El calendario sigue acomodándose después de montar —la semana se
+    // despliega y las tarjetas toman su altura— y cada reflow CANCELA un scroll
+    // suave en curso: se quedaba a tres píxeles del principio. Instantáneo no
+    // se puede interrumpir, y el segundo intento corrige si la posición se
+    // movió mientras tanto.
+    const irALaSemana = () => {
+      document
+        .getElementById(`semana-${indice}`)
+        ?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    };
+    requestAnimationFrame(irALaSemana);
+    const reintento = setTimeout(irALaSemana, 300);
+    return () => clearTimeout(reintento);
+  }, [semanas, searchParams]);
 
   const handleSelectWeek = useCallback((index: number) => {
     setActiveNavIndex(index);

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router';
+import { Link, useLocation, useParams } from 'react-router';
 import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Icon from '../../atoms/Icon/Icon';
@@ -8,6 +8,7 @@ import {
   filtrarMateriales,
   tiposPresentes,
   etiquetaTipo,
+  formatFechaCorta,
   type Material,
 } from '../../../../utils/materialesDelCalendario';
 import type { Calendario } from '../../../../types/calendario';
@@ -38,6 +39,13 @@ const DIA_LABEL: Record<string, string> = {
  */
 export default function HubPage() {
   const { id: grupoId } = useParams<{ id: string }>();
+  const { pathname } = useLocation();
+  // La misma vista vive en dos sitios (`/alumno/...` y `/admin/...`); el enlace
+  // al calendario tiene que quedarse en el que corresponda, o el alumno saldría
+  // disparado a una pantalla de administración.
+  const rutaCalendario = pathname.startsWith('/admin/')
+    ? `/admin/grupos/${grupoId}/calendario`
+    : `/alumno/grupos/${grupoId}/calendario`;
   const [calendario, setCalendario] = useState<Calendario | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
@@ -145,7 +153,7 @@ export default function HubPage() {
           </p>
           <ul className={styles.lista}>
             {visibles.map((m) => (
-              <FilaMaterial key={m.id} material={m} />
+              <FilaMaterial key={m.id} material={m} rutaCalendario={rutaCalendario} />
             ))}
           </ul>
         </>
@@ -160,14 +168,24 @@ function abreEnElNavegador(nombre: string): boolean {
   return n.endsWith('.html') || n.endsWith('.htm');
 }
 
-function FilaMaterial({ material }: { material: Material }) {
+function FilaMaterial({
+  material, rutaCalendario,
+}: {
+  material: Material;
+  rutaCalendario: string;
+}) {
   return (
     <li className={styles.fila}>
-      {/* La semana es la referencia temporal que pediste: el calendario no
-          guarda fecha por actividad, pero sí en qué semana cae. */}
-      <span className={styles.semana} title={`Semana ${material.semana} · ${DIA_LABEL[material.dia] ?? material.dia}`}>
+      {/* Rótulo arriba y número grande debajo: solo, el número no se sabía de
+          qué era. Y la fecha exacta, que es lo que de verdad ubica: el
+          calendario la guarda por semana, aquí se deduce con el día. */}
+      <span className={styles.semana}>
+        <span className={styles.semanaRotulo}>Semana</span>
         <span className={styles.semanaNum}>{material.semana}</span>
-        <span className={styles.semanaDia}>{DIA_LABEL[material.dia] ?? material.dia}</span>
+        <span className={styles.semanaFecha}>
+          {DIA_LABEL[material.dia] ?? material.dia}
+          {material.fecha && ` ${formatFechaCorta(material.fecha)}`}
+        </span>
       </span>
 
       <span
@@ -180,7 +198,11 @@ function FilaMaterial({ material }: { material: Material }) {
       <span className={styles.datos}>
         <span className={styles.nombre}>
           {material.titulo}
-          {material.previo && <span className={styles.previo} title="Para llevar preparado">previo</span>}
+          {material.previo && (
+            <span className={styles.previo} title="Hay que llevarlo preparado">
+              previo a la sesión
+            </span>
+          )}
         </span>
         {material.descripcion && <span className={styles.descripcion}>{material.descripcion}</span>}
         {material.fechaEntrega && (
@@ -216,6 +238,17 @@ function FilaMaterial({ material }: { material: Material }) {
             {material.archivoNombre}
           </a>
         )}
+        {/* Devuelve el material a su contexto temporal: abre el calendario en
+            SU semana. Es la otra mitad de la idea — esta lista sirve para
+            encontrarlo, el calendario para ver cuándo tocaba. */}
+        <Link
+          className={`${styles.accion} ${styles.accionSecundaria}`}
+          to={`${rutaCalendario}?semana=${encodeURIComponent(String(material.semana))}`}
+          title={`Ver la semana ${material.semana} en el calendario`}
+        >
+          <Icon name="calendar_month" size="sm" />
+          En el calendario
+        </Link>
         {material.enlacesExtra.map((e) => (
           <a
             key={e.url}

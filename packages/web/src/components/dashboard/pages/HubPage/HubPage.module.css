@@ -108,26 +108,38 @@
   background: var(--bg-card);
 }
 
-/* Columna de la semana: la referencia temporal que sustituye a la fecha. */
+/* Columna de la semana: rótulo arriba, número grande y la fecha exacta debajo.
+   El número solo no decía de qué era, y «lunes» sin fecha no ubica en el año. */
 .semana {
   flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 62px;
+  width: 84px;
   padding-top: 2px;
+  text-align: center;
+}
+
+.semanaRotulo {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.55;
+  line-height: 1.4;
 }
 
 .semanaNum {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
+  line-height: 1.05;
 }
 
-.semanaDia {
+.semanaFecha {
   font-size: 11px;
-  opacity: 0.6;
+  opacity: 0.65;
+  white-space: nowrap;
 }
 
 .tipo {
@@ -157,16 +169,16 @@
   font-weight: 600;
 }
 
-/* «previo» = material de preparación, antes de la sesión. */
+/* Material de preparación, para llevar antes de la sesión. Sin versalitas: el
+   texto completo en mayúsculas se leía peor y ocupaba de más. */
 .previo {
-  padding: 1px 7px;
+  padding: 1px 8px;
   border-radius: 999px;
   background: var(--dash-bg-subtle);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   opacity: 0.8;
+  white-space: nowrap;
 }
 
 .descripcion {
@@ -210,6 +222,12 @@
 .accion:hover {
   background: var(--dash-bg-subtle);
   text-decoration: none;
+}
+
+/* Volver al calendario es apoyo, no la acción principal: la que importa es
+   abrir el material. */
+.accionSecundaria {
+  color: var(--text-secondary);
 }
 
 /* En pantallas estrechas la fila se apila: la columna de acciones a la derecha

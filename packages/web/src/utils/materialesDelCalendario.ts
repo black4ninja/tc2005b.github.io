@@ -19,8 +19,14 @@ export interface Material {
   descripcion?: string;
   /** Número de semana tal y como lo muestra el calendario. */
   semana: number | string;
-  /** Para ordenar y para el título de la columna: "Semana 3 · martes". */
+  /** Clave del día: lunes…viernes. */
   dia: string;
+  /**
+   * Fecha exacta en que ocurre, en `YYYY-MM-DD`, o `''` si la semana no trae
+   * fecha de inicio. El calendario guarda la fecha por SEMANA, no por
+   * actividad: esta se deduce del día de la semana.
+   */
+  fecha: string;
   /** Antes de la sesión (material de preparación). */
   previo: boolean;
   fechaEntrega?: string;
@@ -91,6 +97,7 @@ export function materialesDelCalendario(calendario: Calendario | null | undefine
             descripcion: actividad.descripcion,
             semana: semana.numero,
             dia,
+            fecha: fechaDelDia(semana.fechaInicio, dia),
             previo,
             fechaEntrega: actividad.fechaEntrega,
             duracion: actividad.duracion,
@@ -107,6 +114,42 @@ export function materialesDelCalendario(calendario: Calendario | null | undefine
   }
 
   return materiales;
+}
+
+/** Posición de cada día dentro de la semana (1 = lunes, como `getUTCDay`). */
+const INDICE_DIA: Record<string, number> = {
+  lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5,
+};
+
+/**
+ * Fecha exacta de un día de clase, a partir del inicio de su semana.
+ *
+ * Todo en UTC a propósito: `new Date('2026-08-10')` se interpreta como
+ * medianoche UTC, y leerlo o pintarlo en la zona del navegador lo corre al día
+ * anterior en todo México. Es la misma trampa que ya mordió en las fechas de
+ * los grupos.
+ *
+ * El avance se calcula módulo 7 desde el día en que ARRANCA la semana, no
+ * asumiendo que empieza en lunes: hay semanas que arrancan a media semana.
+ */
+export function fechaDelDia(fechaInicio: string | undefined, dia: string): string {
+  const objetivo = INDICE_DIA[dia];
+  if (!fechaInicio || !objetivo) return '';
+
+  const inicio = new Date(`${fechaInicio}T00:00:00Z`);
+  if (Number.isNaN(inicio.getTime())) return '';
+
+  const avance = (objetivo - inicio.getUTCDay() + 7) % 7;
+  const fecha = new Date(inicio.getTime() + avance * 86400000);
+  return fecha.toISOString().slice(0, 10);
+}
+
+/** "10 ago" — corto, para la columna. Vacío si no hay fecha. */
+export function formatFechaCorta(fecha: string): string {
+  if (!fecha) return '';
+  const d = new Date(`${fecha}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('es-MX', { timeZone: 'UTC', day: 'numeric', month: 'short' });
 }
 
 /** Nombre legible de cada tipo. Espeja las etiquetas del calendario. */
