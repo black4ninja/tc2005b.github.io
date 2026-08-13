@@ -8,6 +8,15 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Copiar el enlace público de una página desde el árbol.** Junto al botón del
+  slug —que es de donde sale la URL— hay otro que copia la dirección completa
+  en `groups.meeplab.com`, con toda la ruta de carpetas, para abrir la página
+  tal como la ve el alumno o pasársela a alguien. Antes había que recomponerla
+  a mano juntando el slug de la colección con el de cada carpeta.
+  - Solo en páginas: una carpeta no tiene dirección propia en el wiki —en el
+    visor solo abre y cierra—, así que copiarla daría un enlace roto.
+  - El dominio es fijo a propósito: en desarrollo, `location.origin` sería
+    `localhost` y el enlace copiado no le serviría a nadie.
 - **El árbol de contenidos se puede reorganizar sin ratón.** Mover era
   exclusivamente un arrastre: quien no usa ratón —o simplemente no puede
   arrastrar con precisión— no tenía forma ninguna de cambiar el orden ni la

@@ -16,7 +16,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import Icon from '../../atoms/Icon/Icon';
 import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
-import { confirmar, pedirTexto, escapar } from '../../../../utils/dialogos';
+import { avisar, confirmar, pedirTexto, escapar } from '../../../../utils/dialogos';
 import { slugify } from '../../../../utils/slug';
 import {
   aplanar, idsDeSubarbol, proyectar, ordenDestino, coordenadasTecladoArbol, type NodoPlano,
@@ -25,6 +25,14 @@ import type { DocumentoTipo } from '../../../../types/contenidos';
 import styles from './ArbolContenidos.module.css';
 
 const SANGRIA = 14;
+
+/**
+ * Dónde vive el wiki de verdad.
+ *
+ * Fijo a propósito: el enlace se copia para abrirlo o mandárselo a alguien, y
+ * en desarrollo `location.origin` sería `localhost`, que no le sirve a nadie.
+ */
+const SITIO_PUBLICO = 'https://groups.meeplab.com';
 
 const ICONO_TIPO: Record<DocumentoTipo, string> = {
   md: 'article',
@@ -48,6 +56,9 @@ interface NodoProps {
   onTogglePublicacion: (nodo: NodoPlano) => void;
   /** Empieza a crear DENTRO de esta carpeta. Solo lo reciben las categorías. */
   onCrearDentro: (padreId: string, tipo: 'md' | 'categoria') => void;
+  onCopiarEnlace: (nodo: NodoPlano) => void;
+  /** Se acaba de copiar SU enlace: el botón lo confirma un momento. */
+  enlaceCopiado: boolean;
   /**
    * Esta carpeta es la que va a RECIBIR lo que se está arrastrando.
    *
@@ -71,6 +82,7 @@ function Nodo({
   nodo, activo, expandido, profundidadProyectada, editando,
   onSeleccionar, onToggle, onEmpezarRename, onRenombrar, onCancelarRename,
   onCambiarSlug, onEliminar, onTogglePublicacion, onCrearDentro, esDestino,
+  onCopiarEnlace, enlaceCopiado,
 }: NodoProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: nodo.id,
@@ -211,6 +223,24 @@ function Nodo({
             >
               <Icon name="link" size="sm" />
             </button>
+            {/* Junto al slug, que es de lo que sale la URL. Solo en páginas: una
+                carpeta no tiene dirección propia en el wiki —en el visor solo
+                abre y cierra—, así que copiarla daría un enlace roto. */}
+            {!nodo.esCategoria && (
+              <button
+                type="button"
+                className={styles.accion}
+                title={
+                  enlaceCopiado
+                    ? '¡Copiado!'
+                    : 'Copiar el enlace público de la página (para abrirla en el wiki)'
+                }
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); onCopiarEnlace(nodo); }}
+              >
+                <Icon name={enlaceCopiado ? 'check' : 'content_copy'} size="sm" />
+              </button>
+            )}
             <button
               type="button"
               className={`${styles.accion} ${styles.accionPeligro}`}
@@ -320,6 +350,7 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
   const [offsetX, setOffsetX] = useState(0);
   const [overId, setOverId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [enlaceCopiadoId, setEnlaceCopiadoId] = useState<string | null>(null);
   /**
    * Creación en curso: dónde va y de qué tipo. `null` = no se está creando.
    * Se pinta como una fila más del árbol, con su campo de texto, en vez de
@@ -444,6 +475,27 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
       actual = padre;
     }
     return `/contenidos/${coleccion?.slug ?? '…'}${segmentos.length ? '/' + segmentos.join('/') : ''}`;
+  }
+
+  /** La dirección real de la página en el wiki, la misma que ve el alumno. */
+  function urlPublica(nodo: NodoPlano): string {
+    return `${SITIO_PUBLICO}${rutaAncestros(nodo.id)}/${nodo.slug}`;
+  }
+
+  async function handleCopiarEnlace(nodo: NodoPlano) {
+    const url = urlPublica(nodo);
+    try {
+      await navigator.clipboard.writeText(url);
+      setEnlaceCopiadoId(nodo.id);
+      // El check vuelve a ser un icono de copiar: es un acuse, no un estado.
+      window.setTimeout(() => {
+        setEnlaceCopiadoId((actual) => (actual === nodo.id ? null : actual));
+      }, 1800);
+    } catch {
+      // Sin permiso de portapapeles (o sin HTTPS) no hay forma de copiarlo por
+      // nosotros: al menos que se pueda leer y seleccionar a mano.
+      await avisar({ titulo: 'Copia el enlace a mano', html: `<code>${escapar(url)}</code>` });
+    }
   }
 
   async function handleCambiarSlug(nodo: NodoPlano) {
@@ -753,6 +805,8 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
                 onEliminar={handleEliminar}
                 onTogglePublicacion={handleTogglePublicacion}
                 onCrearDentro={empezarCrear}
+                onCopiarEnlace={handleCopiarEnlace}
+                enlaceCopiado={enlaceCopiadoId === n.id}
                 // La proyección ya sabía dónde iba a caer; solo faltaba decirlo.
                 esDestino={!!activeId && !!proyeccion?.padreId && proyeccion.padreId === n.id}
               />
