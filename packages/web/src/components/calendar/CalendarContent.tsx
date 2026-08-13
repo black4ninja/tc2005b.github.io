@@ -651,7 +651,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
     const limpieza = setTimeout(() => {
       if (!actividadId) return;
       document.getElementById(`actividad-${actividadId}`)?.classList.remove('actividad-destacada');
-    }, 4000);
+    }, 5000);
 
     return () => {
       clearTimeout(reintento);
