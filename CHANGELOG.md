@@ -8,11 +8,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
-- **El editor de contenidos deja de enlazar a Ejercicios y a Diagramas.** Los dos
-  botones vivían en la cabecera del editor del árbol y se leían como parte de su
-  navegación, pero llevaban a catálogos distintos y sacaban del editor sin
-  avisar. Se sigue llegando a ambos desde la lista de Contenidos, que es donde
-  cuelgan de su colección.
+- **La cabecera del editor de contenidos se queda solo con lo suyo.** Tenía tres
+  cosas que no le pertenecían y le comían el ancho al nombre de la colección:
+  - **Ejercicios** y **Diagramas** se leían como parte de la navegación del
+    editor, pero llevan a catálogos distintos y sacaban de él sin avisar. Se
+    sigue llegando a ambos desde la lista de Contenidos, que es donde cuelgan de
+    su colección.
+  - **«← Contenidos»** era una segunda salida al mismo sitio a dos centímetros
+    de la que ya tiene el sidebar arriba del todo.
 - **El árbol explica cómo se mueve.** Arrastrar para reordenar y para cambiar de
   nivel ya funcionaba —también para meter algo en una carpeta VACÍA—, pero es un
   gesto invisible y no había dónde descubrirlo: la única nota vivía en el panel
