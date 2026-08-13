@@ -200,3 +200,38 @@ ul, ol { list-style: none; }
   font-size: 0.75rem;
   color: var(--text-muted);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Actividad señalada al llegar desde el Hub.
+   ─────────────────────────────────────────────────────────────────────────
+   Global y no un módulo CSS porque la aplica código imperativo (`classList`)
+   desde CalendarContent, y los módulos alteran el nombre de la clase.
+
+   Se desvanece sola: llamar la atención un momento es el objetivo; dejarla
+   marcada para siempre convierte el destaque en parte del diseño y deja de
+   señalar nada. */
+@keyframes actividad-destacada-pulso {
+  0%, 55% {
+    box-shadow: 0 0 0 3px var(--dash-primary);
+    background: var(--sidebar-active-bg);
+  }
+  100% {
+    box-shadow: 0 0 0 3px transparent;
+    background: transparent;
+  }
+}
+
+.actividad-destacada {
+  border-radius: 8px;
+  animation: actividad-destacada-pulso 3.5s ease-out forwards;
+}
+
+/* Quien prefiere no ver movimiento igual necesita saber CUÁL es: se queda el
+   realce, sin la animación. */
+@media (prefers-reduced-motion: reduce) {
+  .actividad-destacada {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--dash-primary);
+    background: var(--sidebar-active-bg);
+  }
+}
