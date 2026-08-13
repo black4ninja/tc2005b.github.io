@@ -42,6 +42,9 @@ export default function ActivityItem({ actividad, isFilteredOut }: ActivityItemP
 
   return (
     <div
+      // Ancla para llegar desde el Hub: al volver al calendario se resalta la
+      // actividad concreta, no solo su semana.
+      id={actividad.id ? `actividad-${actividad.id}` : undefined}
       className={`${styles.activity} ${isFilteredOut ? styles.filteredOut : ''}`}
       data-type={actividad.tipo}
     >

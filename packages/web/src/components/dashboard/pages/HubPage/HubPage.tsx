@@ -98,8 +98,7 @@ export default function HubPage() {
     <div className={styles.page}>
       <h1 className={styles.titulo}>Hub</h1>
       <p className={styles.intro}>
-        Todo el material del curso en un solo sitio, en el orden del calendario. Para consultarlo:
-        lo que se ve aquí sale del calendario, y ahí es donde se cambia.
+        Todo el material del curso en un solo sitio, en el orden del calendario.
       </p>
 
       {error && <div className={styles.error}>{error}</div>}
@@ -243,8 +242,11 @@ function FilaMaterial({
             encontrarlo, el calendario para ver cuándo tocaba. */}
         <Link
           className={`${styles.accion} ${styles.accionSecundaria}`}
-          to={`${rutaCalendario}?semana=${encodeURIComponent(String(material.semana))}`}
-          title={`Ver la semana ${material.semana} en el calendario`}
+          to={
+            `${rutaCalendario}?semana=${encodeURIComponent(String(material.semana))}` +
+            `&actividad=${encodeURIComponent(material.id)}`
+          }
+          title={`Ver «${material.titulo}» en el calendario, en su semana`}
         >
           <Icon name="calendar_month" size="sm" />
           En el calendario

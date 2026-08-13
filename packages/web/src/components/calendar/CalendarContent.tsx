@@ -627,14 +627,36 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
     // suave en curso: se quedaba a tres píxeles del principio. Instantáneo no
     // se puede interrumpir, y el segundo intento corrige si la posición se
     // movió mientras tanto.
-    const irALaSemana = () => {
-      document
-        .getElementById(`semana-${indice}`)
-        ?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    //
+    // Con `?actividad=` se apunta a ELLA y se la señala unos segundos: una
+    // semana llena tiene veinte cosas, y llegar a la semana correcta no es
+    // llegar a lo que se buscaba.
+    const actividadId = searchParams.get('actividad');
+
+    const ubicar = () => {
+      const objetivo = actividadId ? document.getElementById(`actividad-${actividadId}`) : null;
+      if (objetivo) {
+        // `center`: pegada arriba queda debajo de la cabecera fija.
+        objetivo.scrollIntoView({ behavior: 'auto', block: 'center' });
+        objetivo.classList.add('actividad-destacada');
+        return;
+      }
+      document.getElementById(`semana-${indice}`)?.scrollIntoView({ behavior: 'auto', block: 'start' });
     };
-    requestAnimationFrame(irALaSemana);
-    const reintento = setTimeout(irALaSemana, 300);
-    return () => clearTimeout(reintento);
+
+    requestAnimationFrame(ubicar);
+    const reintento = setTimeout(ubicar, 300);
+    // La clase se quita cuando la animación ya terminó. Si se quedara puesta, el
+    // realce pasaría a ser parte del diseño y dejaría de señalar nada.
+    const limpieza = setTimeout(() => {
+      if (!actividadId) return;
+      document.getElementById(`actividad-${actividadId}`)?.classList.remove('actividad-destacada');
+    }, 4000);
+
+    return () => {
+      clearTimeout(reintento);
+      clearTimeout(limpieza);
+    };
   }, [semanas, searchParams]);
 
   const handleSelectWeek = useCallback((index: number) => {

@@ -17,9 +17,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     fecha exacta** de cada material: es la referencia temporal que se pierde al
     aplanar. La fecha se deduce del día de la semana, porque el calendario la
     guarda por SEMANA y no por actividad.
-  - Cada material enlaza **de vuelta al calendario, en su semana**
-    (`?semana=<n>`): la lista sirve para encontrarlo y el calendario para ver
-    cuándo tocaba.
+  - Cada material enlaza **de vuelta al calendario**, que se abre en su semana y
+    **lo señala con un realce que se desvanece solo** (`?semana=<n>&actividad=<id>`).
+    Llevar a la semana no basta: una semana cargada tiene veinte cosas y hay que
+    volver a buscar la que se venía a ver.
   - **Buscador** por nombre, descripción y texto de los enlaces —el título de un
     laboratorio no siempre trae la palabra que uno recuerda— y **filtros por
     tipo**, que solo ofrecen los tipos que ese grupo tiene: proponer
