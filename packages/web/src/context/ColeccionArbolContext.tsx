@@ -1,6 +1,7 @@
 import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react';
 import { useMatch } from 'react-router';
 import { useAuth } from './AuthContext';
+import { slugify } from '../utils/slug';
 import { buildArbol, type DocumentoData, type ColeccionData, type DocumentoNodo } from '../types/contenidos';
 
 /**
@@ -32,6 +33,15 @@ interface ColeccionArbolValue {
    * al renombrar los rompería en silencio.
    */
   renombrar: (docId: string, titulo: string) => Promise<string | null>;
+
+  /**
+   * Crea una página o una carpeta DENTRO de `padreId` (null = raíz).
+   *
+   * El slug se deriva del título, como en el alta por formulario: al crear no
+   * hay nada apuntando todavía, así que generarlo es gratis. Cambiarlo después
+   * sí mueve la URL pública, y para eso está la acción del nodo.
+   */
+  crear: (titulo: string, tipo: 'md' | 'categoria', padreId: string | null) => Promise<string | null>;
   /** Cambiar el slug SÍ cambia la URL pública: la UI debe advertirlo. */
   cambiarSlug: (docId: string, slug: string) => Promise<string | null>;
   mover: (docId: string, padreId: string | null, orden: number) => Promise<string | null>;
@@ -56,6 +66,7 @@ const VACIO: ColeccionArbolValue = {
   cargando: false,
   error: '',
   refetch: async () => {},
+  crear: NO_OP,
   renombrar: NO_OP,
   cambiarSlug: NO_OP,
   mover: NO_OP,
@@ -146,6 +157,24 @@ export function ColeccionArbolProvider({ children }: { children: React.ReactNode
     [mutar],
   );
 
+  const crear = useCallback(
+    (titulo: string, tipo: 'md' | 'categoria', padreId: string | null) => {
+      const limpio = titulo.trim();
+      if (!limpio) return Promise.resolve('El título es requerido');
+      const slug = slugify(limpio);
+      // Un título que se queda sin slug (solo símbolos, o solo acentos que se
+      // pierden al normalizar) llegaría al servidor como un 400 poco claro.
+      if (!slug) return Promise.resolve('Ese nombre no genera una URL válida; usa letras o números');
+      return mutar(`/api/admin/colecciones/${coleccionId}/documentos`, 'POST', {
+        titulo: limpio,
+        slug,
+        tipo,
+        padreId: padreId ?? undefined,
+      });
+    },
+    [mutar, coleccionId],
+  );
+
   const cambiarSlug = useCallback(
     (docId: string, slug: string) => mutar(`/api/admin/documentos/${docId}`, 'PUT', { slug }),
     [mutar],
@@ -171,10 +200,10 @@ export function ColeccionArbolProvider({ children }: { children: React.ReactNode
   const value = useMemo<ColeccionArbolValue>(
     () => ({
       coleccionId, coleccion, documentos, arbol, cargando, error, refetch,
-      renombrar, cambiarSlug, mover, eliminar, cambiarPublicacion,
+      crear, renombrar, cambiarSlug, mover, eliminar, cambiarPublicacion,
     }),
     [coleccionId, coleccion, documentos, arbol, cargando, error, refetch,
-     renombrar, cambiarSlug, mover, eliminar, cambiarPublicacion],
+     crear, renombrar, cambiarSlug, mover, eliminar, cambiarPublicacion],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

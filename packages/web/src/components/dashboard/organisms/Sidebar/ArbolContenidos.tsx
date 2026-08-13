@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import {
   DndContext,
@@ -43,6 +43,8 @@ interface NodoProps {
   onCambiarSlug: (nodo: NodoPlano) => void;
   onEliminar: (nodo: NodoPlano) => void;
   onTogglePublicacion: (nodo: NodoPlano) => void;
+  /** Empieza a crear DENTRO de esta carpeta. Solo lo reciben las categorías. */
+  onCrearDentro: (padreId: string, tipo: 'md' | 'categoria') => void;
 }
 
 /**
@@ -57,7 +59,7 @@ function esVisible(nodo: NodoPlano): boolean {
 function Nodo({
   nodo, activo, expandido, profundidadProyectada, editando,
   onSeleccionar, onToggle, onEmpezarRename, onRenombrar, onCancelarRename,
-  onCambiarSlug, onEliminar, onTogglePublicacion,
+  onCambiarSlug, onEliminar, onTogglePublicacion, onCrearDentro,
 }: NodoProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: nodo.id,
@@ -128,6 +130,31 @@ function Nodo({
           <span className={styles.titulo}>{nodo.titulo}</span>
 
           <span className={styles.acciones}>
+            {/* Crear DENTRO de esta carpeta. Solo en categorías: una página no
+                puede tener hijos, y el servidor lo rechaza. Van los primeros
+                porque es lo que más se hace al organizar contenido. */}
+            {nodo.esCategoria && (
+              <>
+                <button
+                  type="button"
+                  className={styles.accion}
+                  title={`Nueva página dentro de "${nodo.titulo}"`}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); onCrearDentro(nodo.id, 'md'); }}
+                >
+                  <Icon name="note_add" size="sm" />
+                </button>
+                <button
+                  type="button"
+                  className={styles.accion}
+                  title={`Nueva carpeta dentro de "${nodo.titulo}"`}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); onCrearDentro(nodo.id, 'categoria'); }}
+                >
+                  <Icon name="create_new_folder" size="sm" />
+                </button>
+              </>
+            )}
             {/* El interruptor es distinto según el tipo (una carpeta no tiene
                 publicación propia: se esconde con un candado sobre su subárbol),
                 pero para quien lo usa es el mismo gesto: mostrar / ocultar. */}
@@ -201,6 +228,47 @@ function Nodo({
 }
 
 /**
+ * Fila temporal con el campo de nombre, mientras se crea.
+ *
+ * Es un nodo más del árbol —misma sangría, mismo icono según el tipo— para que
+ * se vea exactamente dónde va a caer lo que se está creando. Enter confirma,
+ * Escape cancela, y salir del campo también: el gesto es el de VS Code.
+ */
+function FilaCreando({
+  tipo, profundidad, ocupado, onConfirmar, onCancelar,
+}: {
+  tipo: 'md' | 'categoria';
+  profundidad: number;
+  ocupado: boolean;
+  onConfirmar: (titulo: string) => void;
+  onCancelar: () => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => { ref.current?.focus(); }, []);
+
+  return (
+    <div className={styles.fila} style={{ paddingLeft: profundidad * SANGRIA + 8 }}>
+      <span className={styles.chevronHueco} />
+      <Icon name={ICONO_TIPO[tipo]} size="sm" />
+      <input
+        ref={ref}
+        className={styles.renameInput}
+        placeholder={tipo === 'categoria' ? 'Nombre de la carpeta' : 'Nombre de la página'}
+        disabled={ocupado}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === 'Enter') onConfirmar((e.target as HTMLInputElement).value);
+          if (e.key === 'Escape') onCancelar();
+        }}
+        // Al perder el foco se confirma con lo escrito; vacío = cancelar. Es lo
+        // mismo que hace el renombrado de al lado.
+        onBlur={(e) => onConfirmar(e.target.value)}
+      />
+    </div>
+  );
+}
+
+/**
  * Árbol de páginas de la colección, en el sidebar.
  *
  * - La selección vive en la URL (`?doc=<id>`): recargar o compartir el enlace
@@ -213,7 +281,7 @@ function Nodo({
 export default function ArbolContenidos({ coleccionId }: { coleccionId: string }) {
   const {
     arbol, documentos, coleccion, cargando,
-    mover, renombrar, cambiarSlug, eliminar, cambiarPublicacion,
+    crear, mover, renombrar, cambiarSlug, eliminar, cambiarPublicacion,
   } = useColeccionArbol();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -225,6 +293,14 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
   const [offsetX, setOffsetX] = useState(0);
   const [overId, setOverId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  /**
+   * Creación en curso: dónde va y de qué tipo. `null` = no se está creando.
+   * Se pinta como una fila más del árbol, con su campo de texto, en vez de
+   * abrir un modal: así se ve el sitio exacto donde va a caer, que es lo que se
+   * pierde cuando hay que elegir el padre en un desplegable.
+   */
+  const [creando, setCreando] = useState<{ padreId: string | null; tipo: 'md' | 'categoria' } | null>(null);
+  const [creandoOcupado, setCreandoOcupado] = useState(false);
 
   // Arrastrar debe poder empezar sin bloquear el clic simple ni el doble clic.
   const sensors = useSensors(
@@ -381,6 +457,35 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
     if (seleccionadoId === nodo.id) navigate(`/admin/contenidos/${coleccionId}`);
   }
 
+  /** Abre la fila de creación dentro de una carpeta y la despliega. */
+  function empezarCrear(padreId: string | null, tipo: 'md' | 'categoria') {
+    setError('');
+    // Sin esto, lo recién creado nace dentro de una rama cerrada y parece que
+    // no pasó nada.
+    if (padreId) setExpandidos((prev) => new Set(prev).add(padreId));
+    setCreando({ padreId, tipo });
+  }
+
+  async function confirmarCrear(titulo: string) {
+    if (!creando || creandoOcupado) return;
+    const limpio = titulo.trim();
+    // Sin nombre se entiende como «me arrepentí», igual que en VS Code.
+    if (!limpio) {
+      setCreando(null);
+      return;
+    }
+    setCreandoOcupado(true);
+    const err = await crear(limpio, creando.tipo, creando.padreId);
+    setCreandoOcupado(false);
+    if (err) {
+      // El campo se queda abierto con lo escrito: el error más común es un slug
+      // repetido en ese nivel, y así se corrige el nombre sin volver a empezar.
+      setError(err);
+      return;
+    }
+    setCreando(null);
+  }
+
   function onDragStart(e: DragStartEvent) {
     setActiveId(String(e.active.id));
     setOverId(String(e.active.id));
@@ -424,11 +529,84 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
     return <p className={styles.vacio}>Cargando árbol…</p>;
   }
   if (documentos.length === 0) {
-    return <p className={styles.vacio}>Esta colección no tiene páginas todavía.</p>;
+    return (
+      <div className={styles.wrap}>
+      {/* Crear en la RAÍZ de la colección. Va arriba y siempre visible, no al
+          pasar el cursor: es el único sitio desde el que se puede empezar
+          cuando la colección todavía está vacía. */}
+      <div className={styles.cabecera}>
+        <span className={styles.cabeceraTitulo}>Contenido</span>
+        <span className={styles.cabeceraAcciones}>
+          <button
+            type="button"
+            className={styles.accion}
+            title="Nueva página en la raíz"
+            onClick={() => empezarCrear(null, 'md')}
+          >
+            <Icon name="note_add" size="sm" />
+          </button>
+          <button
+            type="button"
+            className={styles.accion}
+            title="Nueva carpeta en la raíz"
+            onClick={() => empezarCrear(null, 'categoria')}
+          >
+            <Icon name="create_new_folder" size="sm" />
+          </button>
+        </span>
+      </div>
+
+        {creando ? (
+          <div className={styles.arbol}>
+            <FilaCreando
+              tipo={creando.tipo}
+              profundidad={0}
+              ocupado={creandoOcupado}
+              onConfirmar={confirmarCrear}
+              onCancelar={() => setCreando(null)}
+            />
+          </div>
+        ) : (
+          <p className={styles.vacio}>
+            Esta colección no tiene páginas todavía. Crea la primera con los botones de arriba.
+          </p>
+        )}
+        {error && (
+          <div className={styles.error} onClick={() => setError('')} title="Descartar">
+            {error}
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
     <div className={styles.wrap}>
+      {/* Crear en la RAÍZ de la colección. Va arriba y siempre visible, no al
+          pasar el cursor: es el único sitio desde el que se puede empezar
+          cuando la colección todavía está vacía. */}
+      <div className={styles.cabecera}>
+        <span className={styles.cabeceraTitulo}>Contenido</span>
+        <span className={styles.cabeceraAcciones}>
+          <button
+            type="button"
+            className={styles.accion}
+            title="Nueva página en la raíz"
+            onClick={() => empezarCrear(null, 'md')}
+          >
+            <Icon name="note_add" size="sm" />
+          </button>
+          <button
+            type="button"
+            className={styles.accion}
+            title="Nueva carpeta en la raíz"
+            onClick={() => empezarCrear(null, 'categoria')}
+          >
+            <Icon name="create_new_folder" size="sm" />
+          </button>
+        </span>
+      </div>
+
       {error && (
         <div className={styles.error} onClick={() => setError('')} title="Descartar">
           {error}
@@ -446,6 +624,7 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
         <SortableContext items={visibles.map((n) => n.id)} strategy={verticalListSortingStrategy}>
           <div className={styles.arbol}>
             {visibles.map((n) => (
+              <React.Fragment key={n.id}>
               <Nodo
                 key={n.id}
                 nodo={n}
@@ -461,8 +640,31 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
                 onCambiarSlug={handleCambiarSlug}
                 onEliminar={handleEliminar}
                 onTogglePublicacion={handleTogglePublicacion}
+                onCrearDentro={empezarCrear}
               />
+              {/* Justo debajo de su carpeta, y con un nivel más de sangría:
+                  ahí es donde va a quedar. */}
+              {creando && creando.padreId === n.id && (
+                <FilaCreando
+                  tipo={creando.tipo}
+                  profundidad={n.profundidad + 1}
+                  ocupado={creandoOcupado}
+                  onConfirmar={confirmarCrear}
+                  onCancelar={() => setCreando(null)}
+                />
+              )}
+              </React.Fragment>
             ))}
+            {/* En la raíz de la colección va al final de todo. */}
+            {creando && creando.padreId === null && (
+              <FilaCreando
+                tipo={creando.tipo}
+                profundidad={0}
+                ocupado={creandoOcupado}
+                onConfirmar={confirmarCrear}
+                onCancelar={() => setCreando(null)}
+              />
+            )}
           </div>
         </SortableContext>
 
