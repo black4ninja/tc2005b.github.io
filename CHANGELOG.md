@@ -21,6 +21,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     Va en una línea y apagado, con el mismo peso que los atajos del editor
     (`⌘S guardar · ⌘⇧P publicar`): es una ayuda para no adivinar, no un cartel.
     La frase completa vive en su `title`.
+  - **La carpeta que va a recibir lo arrastrado se resalta** mientras dura el
+    gesto. La proyección ya sabía a dónde iba a caer, pero solo lo decía
+    moviendo la sangría del elemento arrastrado 14 px, y nadie mira eso mientras
+    arrastra: se acababa soltando encima o debajo de la carpeta en vez de
+    dentro. El anillo va por dentro para no empujar las filas vecinas justo
+    cuando se está apuntando.
   - Se añaden pruebas de `proyectar`, que es quien decide a qué carpeta cae lo
     arrastrado: meter en una carpeta vacía, sacar de una carpeta, no poder
     anidar bajo una página, y no dejar huérfano al de abajo.

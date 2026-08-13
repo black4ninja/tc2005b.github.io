@@ -52,6 +52,18 @@
   opacity: 0.35;
 }
 
+/* Carpeta que va a RECIBIR lo que se arrastra.
+   El anillo va por dentro (`inset`) para no desplazar la fila ni empujar a las
+   vecinas: un borde de verdad movería el árbol entero un píxel justo mientras
+   se apunta, que es el peor momento para que algo se mueva.
+   Y el fondo, además del anillo, porque durante un arrastre el ojo está en el
+   elemento que viaja y un contorno fino se pierde. */
+.nodoDestino {
+  background: var(--sidebar-active-bg);
+  box-shadow: inset 0 0 0 2px var(--dash-primary);
+  color: var(--sidebar-active-color);
+}
+
 .overlay {
   display: flex;
   align-items: center;

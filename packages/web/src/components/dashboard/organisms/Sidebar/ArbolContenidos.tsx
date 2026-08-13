@@ -45,6 +45,14 @@ interface NodoProps {
   onTogglePublicacion: (nodo: NodoPlano) => void;
   /** Empieza a crear DENTRO de esta carpeta. Solo lo reciben las categorías. */
   onCrearDentro: (padreId: string, tipo: 'md' | 'categoria') => void;
+  /**
+   * Esta carpeta es la que va a RECIBIR lo que se está arrastrando.
+   *
+   * Sin esto el arrastre era a ciegas: la sangría del nodo movido cambiaba, pero
+   * nadie mira una sangría de 14 px mientras arrastra, y se acababa soltando
+   * encima o debajo de la carpeta en vez de dentro.
+   */
+  esDestino?: boolean;
 }
 
 /**
@@ -59,7 +67,7 @@ function esVisible(nodo: NodoPlano): boolean {
 function Nodo({
   nodo, activo, expandido, profundidadProyectada, editando,
   onSeleccionar, onToggle, onEmpezarRename, onRenombrar, onCancelarRename,
-  onCambiarSlug, onEliminar, onTogglePublicacion, onCrearDentro,
+  onCambiarSlug, onEliminar, onTogglePublicacion, onCrearDentro, esDestino,
 }: NodoProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: nodo.id,
@@ -85,7 +93,7 @@ function Nodo({
         transition,
         paddingLeft: 6 + profundidad * SANGRIA,
       }}
-      className={`${styles.nodo} ${activo ? styles.nodoActivo : ''} ${isDragging ? styles.nodoArrastrando : ''}`}
+      className={`${styles.nodo} ${activo ? styles.nodoActivo : ''} ${isDragging ? styles.nodoArrastrando : ''} ${esDestino ? styles.nodoDestino : ''}`}
       onClick={() => !editando && onSeleccionar(nodo.id)}
       onDoubleClick={(e) => {
         e.stopPropagation();
@@ -671,6 +679,8 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
                 onEliminar={handleEliminar}
                 onTogglePublicacion={handleTogglePublicacion}
                 onCrearDentro={empezarCrear}
+                // La proyección ya sabía dónde iba a caer; solo faltaba decirlo.
+                esDestino={!!activeId && !!proyeccion?.padreId && proyeccion.padreId === n.id}
               />
               {/* Justo debajo de su carpeta, y con un nivel más de sangría:
                   ahí es donde va a quedar. */}
