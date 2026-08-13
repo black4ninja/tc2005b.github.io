@@ -25,6 +25,9 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   - Es **solo consulta**: no se crea, ni se edita, ni se borra. La gobernanza
     sigue siendo del calendario, y dos sitios donde se toca lo mismo acabarían
     en dos verdades.
+  - **También en el menú del grupo para el staff**, con la misma vista: sirve
+    para comprobar qué material les está llegando a los alumnos, sin tener que
+    entrar como uno de ellos.
   - Sin API nueva: se lee el mismo calendario del grupo, con el mismo control de
     acceso, y la lista se deriva en el cliente.
 

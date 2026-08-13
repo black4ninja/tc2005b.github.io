@@ -112,6 +112,10 @@ export function getGrupoDetailItems(
 ): SidebarItem[] {
   const items: SidebarItem[] = [
     { label: 'Calendario', icon: 'calendar_month', path: `/admin/grupos/${grupoId}/calendario` },
+    // Junto al calendario, del que sale. El profesor ve exactamente lo mismo que
+    // sus alumnos: sirve para comprobar qué material les está llegando, no para
+    // editarlo — eso se sigue haciendo en el calendario.
+    { label: 'Hub', icon: 'inventory_2', path: `/admin/grupos/${grupoId}/hub` },
     { label: 'Alumnos', icon: 'people', path: `/admin/grupos/${grupoId}` },
     { label: 'Actividades Evaluación', icon: 'assignment', path: `/admin/grupos/${grupoId}/actividades-evaluacion` },
     { label: 'Plan de Evaluación', icon: 'checklist', path: `/admin/grupos/${grupoId}/plan-evaluacion` },

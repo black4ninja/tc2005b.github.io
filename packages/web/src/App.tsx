@@ -154,6 +154,8 @@ export default function App() {
         <Route path="admin/grupos/:id/entrevistas" element={<EntrevistasPage />} />
         <Route path="admin/grupos/:id/entrevistas/:entrevistaId/evaluacion" element={<EvaluacionEntrevistaPage />} />
         <Route path="admin/grupos/:id/calendario" element={<AdminCalendarioPage />} />
+        {/* Misma vista que la del alumno: el profesor comprueba lo que ellos ven. */}
+        <Route path="admin/grupos/:id/hub" element={<HubPage />} />
         {/* Ejercicios como los ve el alumno, colgando del grupo para conservar su
             sidebar. `:slug` es la colección. */}
         <Route
