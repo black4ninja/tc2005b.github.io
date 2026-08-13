@@ -15,19 +15,6 @@
   flex-wrap: wrap;
 }
 
-.volver {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-}
-.volver:hover {
-  color: var(--text-primary);
-}
-
 .pageTitle {
   font-size: 22px;
   font-weight: 700;
@@ -45,18 +32,6 @@
   display: flex;
   align-items: center;
   gap: 14px;
-}
-
-.ejerciciosLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 14px;
-  color: var(--text-secondary);
-  text-decoration: none;
-}
-.ejerciciosLink:hover {
-  color: var(--text-primary);
 }
 
 .error {

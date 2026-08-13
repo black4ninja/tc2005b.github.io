@@ -1,5 +1,5 @@
 import { useState, useMemo, Suspense, lazy } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router';
+import { useParams, useSearchParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import Modal from '../../atoms/Modal/Modal';
@@ -75,22 +75,18 @@ export default function ColeccionDetailPage() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <Link to="/admin/contenidos" className={styles.volver}>
-          <Icon name="arrow_back" size="sm" />
-          <span>Contenidos</span>
-        </Link>
+        {/* Sin «volver a Contenidos» aquí: el sidebar ya lo tiene arriba del
+            todo, y dos salidas hacia el mismo sitio a dos centímetros una de
+            otra solo restaban ancho al título de la colección. */}
         <h1 className={styles.pageTitle}>
           {coleccion ? `${coleccion.clave ? `${coleccion.clave} — ` : ''}${coleccion.nombre}` : id}
         </h1>
         <div className={styles.headerActions}>
-          <Link to={`/admin/contenidos/${id}/ejercicios`} className={styles.ejerciciosLink}>
-            <Icon name="terminal" size="sm" />
-            <span>Ejercicios</span>
-          </Link>
-          <Link to={`/admin/contenidos/${id}/diagramas`} className={styles.ejerciciosLink}>
-            <Icon name="schema" size="sm" />
-            <span>Diagramas</span>
-          </Link>
+          {/* Ejercicios y Diagramas ya NO se enlazan desde aquí. Esta pantalla
+              es el editor del árbol de páginas, y los dos llevaban a catálogos
+              distintos: se leían como parte de la navegación del editor y
+              sacaban de él sin avisar. Se llega a ambos desde la lista de
+              Contenidos, que es donde cuelgan de su colección. */}
           <DashButton onClick={() => { setModalError(''); setModalOpen(true); }}>+ Página / Categoría</DashButton>
         </div>
       </div>

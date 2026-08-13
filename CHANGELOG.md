@@ -8,6 +8,76 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Copiar el enlace público de una página desde el árbol.** Junto al botón del
+  slug —que es de donde sale la URL— hay otro que copia la dirección completa
+  en `groups.meeplab.com`, con toda la ruta de carpetas, para abrir la página
+  tal como la ve el alumno o pasársela a alguien. Antes había que recomponerla
+  a mano juntando el slug de la colección con el de cada carpeta.
+  - Solo en páginas: una carpeta no tiene dirección propia en el wiki —en el
+    visor solo abre y cierra—, así que copiarla daría un enlace roto.
+  - El dominio es fijo a propósito: en desarrollo, `location.origin` sería
+    `localhost` y el enlace copiado no le serviría a nadie.
+- **El árbol de contenidos se puede reorganizar sin ratón.** Mover era
+  exclusivamente un arrastre: quien no usa ratón —o simplemente no puede
+  arrastrar con precisión— no tenía forma ninguna de cambiar el orden ni la
+  jerarquía. Con el foco en una fila (con el tabulador): **Espacio** la coge,
+  **↑↓** la ordenan, **→** la mete en la carpeta de arriba, **←** la saca,
+  **Espacio** la suelta y **Escape** cancela. El paso horizontal es literalmente
+  el mismo desplazamiento que haría el ratón, así que decide el mismo destino y
+  la carpeta que va a recibirla se resalta igual.
+  - **Enter abre la página.** La fila es un `div` con `role="button"` y el
+    navegador no le dispara el clic al pulsar Enter: hasta ahora solo se podía
+    abrir con el ratón.
+  - Lo que pasa durante el movimiento se **anuncia en español** (a dónde caería,
+    dónde acabó, si se canceló). Las dos únicas señales que había —el resaltado
+    de la carpeta y la sangría— son visuales, así que moverlo con el teclado
+    habría sido moverlo a ciegas.
+  - La pista del árbol dice ahora también el atajo: un atajo que no se anuncia
+    no existe.
+
+### Changed
+- **El editor dice qué versión estás editando.** Siempre se escribe en el
+  borrador —ver o restaurar una versión antigua nunca muta el pasado—, pero eso
+  no se decía en ninguna parte: después de restaurar, el editor volvía a verse
+  exactamente igual que antes y no había forma de saber si lo que se escribía a
+  continuación caía sobre la versión vieja, sobre la publicada o sobre otra
+  cosa. Ahora la cabecera lo dice junto al estado de guardado:
+  - `v3 publicada · sin cambios` cuando el borrador coincide con lo publicado, y
+    `v3 publicada · con cambios` —en ámbar— cuando hay algo que los alumnos aún
+    no ven. El número va primero porque la cabecera recorta por la derecha y
+    «v3» es justo el dato que no puede perderse; la frase completa vive en el
+    `title`.
+  - Al restaurar aparece qué pasó (`El borrador ahora tiene el contenido de la
+    v1. Publica para que los alumnos lo vean.`), descartable al pulsarlo.
+  - La vista de una versión antigua se marca como **solo lectura**, que es lo
+    que siempre fue.
+- **La cabecera del editor de contenidos se queda solo con lo suyo.** Tenía tres
+  cosas que no le pertenecían y le comían el ancho al nombre de la colección:
+  - **Ejercicios** y **Diagramas** se leían como parte de la navegación del
+    editor, pero llevan a catálogos distintos y sacaban de él sin avisar. Se
+    sigue llegando a ambos desde la lista de Contenidos, que es donde cuelgan de
+    su colección.
+  - **«← Contenidos»** era una segunda salida al mismo sitio a dos centímetros
+    de la que ya tiene el sidebar arriba del todo.
+- **El árbol explica cómo se mueve.** Arrastrar para reordenar y para cambiar de
+  nivel ya funcionaba —también para meter algo en una carpeta VACÍA—, pero es un
+  gesto invisible y no había dónde descubrirlo: la única nota vivía en el panel
+  de la derecha, que desaparece en cuanto se abre una página. Ahora el aviso está
+  junto al árbol, donde se usa.
+    Va en una línea y apagado, con el mismo peso que los atajos del editor
+    (`⌘S guardar · ⌘⇧P publicar`): es una ayuda para no adivinar, no un cartel.
+    La frase completa vive en su `title`.
+  - **La carpeta que va a recibir lo arrastrado se resalta** mientras dura el
+    gesto. La proyección ya sabía a dónde iba a caer, pero solo lo decía
+    moviendo la sangría del elemento arrastrado 14 px, y nadie mira eso mientras
+    arrastra: se acababa soltando encima o debajo de la carpeta en vez de
+    dentro. El anillo va por dentro para no empujar las filas vecinas justo
+    cuando se está apuntando.
+  - Se añaden pruebas de `proyectar`, que es quien decide a qué carpeta cae lo
+    arrastrado: meter en una carpeta vacía, sacar de una carpeta, no poder
+    anidar bajo una página, y no dejar huérfano al de abajo.
+
+### Added
 - **Hub: todo el material del curso en una lista, para reencontrarlo.** El
   calendario responde «¿qué toca esta semana?»; con el semestre avanzado, la
   pregunta que se hace el alumno es la contraria —«¿dónde estaba aquel

@@ -4,6 +4,7 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   closestCenter,
@@ -15,13 +16,23 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import Icon from '../../atoms/Icon/Icon';
 import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
-import { confirmar, pedirTexto, escapar } from '../../../../utils/dialogos';
+import { avisar, confirmar, pedirTexto, escapar } from '../../../../utils/dialogos';
 import { slugify } from '../../../../utils/slug';
-import { aplanar, idsDeSubarbol, proyectar, ordenDestino, type NodoPlano } from './arbol-dnd';
+import {
+  aplanar, idsDeSubarbol, proyectar, ordenDestino, coordenadasTecladoArbol, type NodoPlano,
+} from './arbol-dnd';
 import type { DocumentoTipo } from '../../../../types/contenidos';
 import styles from './ArbolContenidos.module.css';
 
 const SANGRIA = 14;
+
+/**
+ * Dónde vive el wiki de verdad.
+ *
+ * Fijo a propósito: el enlace se copia para abrirlo o mandárselo a alguien, y
+ * en desarrollo `location.origin` sería `localhost`, que no le sirve a nadie.
+ */
+const SITIO_PUBLICO = 'https://groups.meeplab.com';
 
 const ICONO_TIPO: Record<DocumentoTipo, string> = {
   md: 'article',
@@ -45,6 +56,17 @@ interface NodoProps {
   onTogglePublicacion: (nodo: NodoPlano) => void;
   /** Empieza a crear DENTRO de esta carpeta. Solo lo reciben las categorías. */
   onCrearDentro: (padreId: string, tipo: 'md' | 'categoria') => void;
+  onCopiarEnlace: (nodo: NodoPlano) => void;
+  /** Se acaba de copiar SU enlace: el botón lo confirma un momento. */
+  enlaceCopiado: boolean;
+  /**
+   * Esta carpeta es la que va a RECIBIR lo que se está arrastrando.
+   *
+   * Sin esto el arrastre era a ciegas: la sangría del nodo movido cambiaba, pero
+   * nadie mira una sangría de 14 px mientras arrastra, y se acababa soltando
+   * encima o debajo de la carpeta en vez de dentro.
+   */
+  esDestino?: boolean;
 }
 
 /**
@@ -59,12 +81,16 @@ function esVisible(nodo: NodoPlano): boolean {
 function Nodo({
   nodo, activo, expandido, profundidadProyectada, editando,
   onSeleccionar, onToggle, onEmpezarRename, onRenombrar, onCancelarRename,
-  onCambiarSlug, onEliminar, onTogglePublicacion, onCrearDentro,
+  onCambiarSlug, onEliminar, onTogglePublicacion, onCrearDentro, esDestino,
+  onCopiarEnlace, enlaceCopiado,
 }: NodoProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: nodo.id,
     // Renombrando no se arrastra: el ratón tiene que poder seleccionar texto.
     disabled: editando,
+    // dnd-kit anuncia «sortable» en inglés; el lector de pantalla lo lee en
+    // medio de una interfaz que está entera en español.
+    attributes: { roleDescription: `${nodo.esCategoria ? 'Carpeta' : 'Página'}, se puede mover` },
   });
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -85,7 +111,7 @@ function Nodo({
         transition,
         paddingLeft: 6 + profundidad * SANGRIA,
       }}
-      className={`${styles.nodo} ${activo ? styles.nodoActivo : ''} ${isDragging ? styles.nodoArrastrando : ''}`}
+      className={`${styles.nodo} ${activo ? styles.nodoActivo : ''} ${isDragging ? styles.nodoArrastrando : ''} ${esDestino ? styles.nodoDestino : ''}`}
       onClick={() => !editando && onSeleccionar(nodo.id)}
       onDoubleClick={(e) => {
         e.stopPropagation();
@@ -94,6 +120,19 @@ function Nodo({
       title={editando ? undefined : `${nodo.titulo}  ·  /${nodo.slug}`}
       {...attributes}
       {...(editando ? {} : listeners)}
+      /* Después de los listeners, y llamándolos a mano: el `onKeyDown` de
+         dnd-kit —el que coge el nodo con Espacio— vive ahí dentro, y ponerlo
+         antes lo dejaría sin efecto.
+
+         La fila es un `div` con `role="button"`, y el navegador NO le dispara
+         el clic al pulsar Enter: sin esto solo se podría abrir con el ratón.
+         Mientras se mueve, las teclas son del arrastre. */
+      onKeyDown={(e) => {
+        if (!editando) listeners?.onKeyDown?.(e);
+        if (editando || isDragging || e.key !== 'Enter') return;
+        e.preventDefault();
+        onSeleccionar(nodo.id);
+      }}
     >
       {nodo.esCategoria ? (
         <button
@@ -184,6 +223,24 @@ function Nodo({
             >
               <Icon name="link" size="sm" />
             </button>
+            {/* Junto al slug, que es de lo que sale la URL. Solo en páginas: una
+                carpeta no tiene dirección propia en el wiki —en el visor solo
+                abre y cierra—, así que copiarla daría un enlace roto. */}
+            {!nodo.esCategoria && (
+              <button
+                type="button"
+                className={styles.accion}
+                title={
+                  enlaceCopiado
+                    ? '¡Copiado!'
+                    : 'Copiar el enlace público de la página (para abrirla en el wiki)'
+                }
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); onCopiarEnlace(nodo); }}
+              >
+                <Icon name={enlaceCopiado ? 'check' : 'content_copy'} size="sm" />
+              </button>
+            )}
             <button
               type="button"
               className={`${styles.accion} ${styles.accionPeligro}`}
@@ -293,6 +350,7 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
   const [offsetX, setOffsetX] = useState(0);
   const [overId, setOverId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [enlaceCopiadoId, setEnlaceCopiadoId] = useState<string | null>(null);
   /**
    * Creación en curso: dónde va y de qué tipo. `null` = no se está creando.
    * Se pinta como una fila más del árbol, con su campo de texto, en vez de
@@ -305,6 +363,14 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
   // Arrastrar debe poder empezar sin bloquear el clic simple ni el doble clic.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    // Mover era exclusivo del ratón: sin esto, quien no lo usa no podía
+    // reorganizar el árbol de ninguna manera.
+    useSensor(KeyboardSensor, {
+      coordinateGetter: coordenadasTecladoArbol(SANGRIA),
+      // Enter NO coge el nodo —es abrir la página, y es lo que más se hace—.
+      // Espacio coge y suelta; Escape deja las cosas como estaban.
+      keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space'] },
+    }),
   );
 
   // Al entrar por enlace directo, abrir las categorías que llevan a la página:
@@ -336,6 +402,44 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
     if (!activeId || !overId) return null;
     return proyectar(visibles, activeId, overId, offsetX, SANGRIA);
   }, [visibles, activeId, overId, offsetX]);
+
+  /**
+   * Lo que oye quien no ve el árbol.
+   *
+   * El resaltado de la carpeta destino y la sangría que se mueve son las dos
+   * únicas señales de a dónde va a caer el nodo, y las dos son visuales. Sin
+   * decirlo en voz alta, mover con el teclado sería mover a ciegas.
+   */
+  const proyeccionRef = useRef(proyeccion);
+  useEffect(() => { proyeccionRef.current = proyeccion; }, [proyeccion]);
+
+  const tituloDe = (id: string | number) =>
+    documentos.find((d) => d.id === String(id))?.titulo ?? 'el elemento';
+
+  function dondeCaeria(): string {
+    const p = proyeccionRef.current;
+    if (!p) return 'donde estaba';
+    if (!p.padreId) return 'en la raíz de la colección';
+    return `dentro de «${tituloDe(p.padreId)}»`;
+  }
+
+  const accesibilidad = useMemo(() => ({
+    screenReaderInstructions: {
+      draggable:
+        'Pulsa Espacio para coger esta página o carpeta. Con las flechas arriba y abajo la ordenas; ' +
+        'con la flecha derecha la metes en la carpeta de arriba y con la izquierda la sacas. ' +
+        'Espacio la suelta y Escape cancela.',
+    },
+    announcements: {
+      onDragStart: ({ active }: any) => `Has cogido «${tituloDe(active.id)}».`,
+      onDragOver: () => `Se colocaría ${dondeCaeria()}.`,
+      onDragEnd: ({ active }: any) => `«${tituloDe(active.id)}» se movió ${dondeCaeria()}.`,
+      onDragCancel: ({ active }: any) => `Movimiento cancelado. «${tituloDe(active.id)}» vuelve a su sitio.`,
+    },
+    // `documentos` solo se usa para poner nombre a los avisos; recrear el objeto
+    // en cada render haría que dnd-kit se resuscribiera sin motivo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [documentos]);
 
   function toggle(id: string) {
     setExpandidos((prev) => {
@@ -371,6 +475,27 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
       actual = padre;
     }
     return `/contenidos/${coleccion?.slug ?? '…'}${segmentos.length ? '/' + segmentos.join('/') : ''}`;
+  }
+
+  /** La dirección real de la página en el wiki, la misma que ve el alumno. */
+  function urlPublica(nodo: NodoPlano): string {
+    return `${SITIO_PUBLICO}${rutaAncestros(nodo.id)}/${nodo.slug}`;
+  }
+
+  async function handleCopiarEnlace(nodo: NodoPlano) {
+    const url = urlPublica(nodo);
+    try {
+      await navigator.clipboard.writeText(url);
+      setEnlaceCopiadoId(nodo.id);
+      // El check vuelve a ser un icono de copiar: es un acuse, no un estado.
+      window.setTimeout(() => {
+        setEnlaceCopiadoId((actual) => (actual === nodo.id ? null : actual));
+      }, 1800);
+    } catch {
+      // Sin permiso de portapapeles (o sin HTTPS) no hay forma de copiarlo por
+      // nosotros: al menos que se pueda leer y seleccionar a mano.
+      await avisar({ titulo: 'Copia el enlace a mano', html: `<code>${escapar(url)}</code>` });
+    }
   }
 
   async function handleCambiarSlug(nodo: NodoPlano) {
@@ -556,6 +681,21 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
         </span>
       </div>
 
+      {/* El arrastre ya movía y cambiaba de nivel desde el principio, pero no
+          había forma de saberlo: es un gesto invisible. El aviso vive aquí, al
+          lado del árbol, y no en el panel de la derecha —donde ya había una
+          nota— porque ese panel desaparece en cuanto se abre una página.
+
+          En una línea y apagado, como los atajos del editor: es una ayuda para
+          no adivinar, no un cartel. La frase completa va en el `title`, para
+          quien la necesite. */}
+      <p
+        className={styles.pista}
+        title="Arrastra una página o carpeta para ordenarla. Hacia la derecha la mete dentro de la carpeta de arriba; hacia la izquierda la saca."
+      >
+        Arrastra · <span aria-hidden="true">→</span> dentro · <span aria-hidden="true">←</span> fuera
+      </p>
+
         {creando ? (
           <div className={styles.arbol}>
             <FilaCreando
@@ -607,6 +747,29 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
         </span>
       </div>
 
+      {/* El arrastre ya movía y cambiaba de nivel desde el principio, pero no
+          había forma de saberlo: es un gesto invisible. El aviso vive aquí, al
+          lado del árbol, y no en el panel de la derecha —donde ya había una
+          nota— porque ese panel desaparece en cuanto se abre una página.
+
+          En una línea y apagado, como los atajos del editor: es una ayuda para
+          no adivinar, no un cartel. La frase completa va en el `title`, para
+          quien la necesite. */}
+      <p
+        className={styles.pista}
+        title="Arrastra una página o carpeta para ordenarla. Hacia la derecha la mete dentro de la carpeta de arriba; hacia la izquierda la saca."
+      >
+        Arrastra · <span aria-hidden="true">→</span> dentro · <span aria-hidden="true">←</span> fuera
+      </p>
+      {/* Mover también se puede sin ratón, pero un atajo que no se anuncia no
+          existe: nadie va a pulsar Espacio sobre una fila a ver qué pasa. */}
+      <p
+        className={styles.pista}
+        title="Con el foco puesto en una fila (con el tabulador): Espacio la coge, ↑↓ la ordenan, → la mete en la carpeta de arriba, ← la saca, Espacio la suelta y Escape cancela. Enter abre la página."
+      >
+        Teclado: Espacio coge · flechas mueven
+      </p>
+
       {error && (
         <div className={styles.error} onClick={() => setError('')} title="Descartar">
           {error}
@@ -615,6 +778,7 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
 
       <DndContext
         sensors={sensors}
+        accessibility={accesibilidad}
         collisionDetection={closestCenter}
         onDragStart={onDragStart}
         onDragMove={onDragMove}
@@ -641,6 +805,10 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
                 onEliminar={handleEliminar}
                 onTogglePublicacion={handleTogglePublicacion}
                 onCrearDentro={empezarCrear}
+                onCopiarEnlace={handleCopiarEnlace}
+                enlaceCopiado={enlaceCopiadoId === n.id}
+                // La proyección ya sabía dónde iba a caer; solo faltaba decirlo.
+                esDestino={!!activeId && !!proyeccion?.padreId && proyeccion.padreId === n.id}
               />
               {/* Justo debajo de su carpeta, y con un nivel más de sangría:
                   ahí es donde va a quedar. */}
