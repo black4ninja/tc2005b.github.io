@@ -8,6 +8,27 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Hub: todo el material del curso en una lista, para reencontrarlo.** El
+  calendario responde «¿qué toca esta semana?»; con el semestre avanzado, la
+  pregunta que se hace el alumno es la contraria —«¿dónde estaba aquel
+  laboratorio?»— y eso obliga a rebuscar semana por semana.
+  - Nueva entrada **Hub** en el menú del alumno, junto al Calendario, con la
+    lista en el **orden del calendario** y una columna con la **semana y el día**
+    de cada material: es la referencia temporal que se pierde al aplanar.
+  - **Buscador** por nombre, descripción y texto de los enlaces —el título de un
+    laboratorio no siempre trae la palabra que uno recuerda— y **filtros por
+    tipo**, que solo ofrecen los tipos que ese grupo tiene: proponer
+    «Evaluación» donde no hay ninguna es prometer un filtro que sale vacío.
+  - **Solo entra lo que se puede abrir** (enlace, adjunto o enlaces extra). Un
+    receso o un aviso sin enlace es calendario, no material: en una lista para
+    reencontrar cosas, una fila que no lleva a ningún sitio es ruido.
+  - Es **solo consulta**: no se crea, ni se edita, ni se borra. La gobernanza
+    sigue siendo del calendario, y dos sitios donde se toca lo mismo acabarían
+    en dos verdades.
+  - Sin API nueva: se lee el mismo calendario del grupo, con el mismo control de
+    acceso, y la lista se deriva en el cliente.
+
+### Added
 - **Modo oscuro en todo el sitio, no solo en el wiki.** Hasta ahora solo el visor
   de contenidos tenía tema oscuro, con su propio interruptor y su propia
   preferencia guardada aparte.

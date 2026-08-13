@@ -1,0 +1,228 @@
+.page {
+  padding: 24px;
+}
+
+.titulo {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.intro {
+  margin: 0 0 20px;
+  font-size: 14px;
+  opacity: 0.75;
+  max-width: 70ch;
+}
+
+.error {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+  font-size: 14px;
+}
+
+.controles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.controles > *:first-child {
+  flex: 1;
+  min-width: 240px;
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--text-primary);
+  background: var(--dash-bg-subtle);
+}
+
+.chipActivo {
+  border-color: var(--dash-primary);
+  color: var(--text-primary);
+  background: var(--sidebar-active-bg);
+}
+
+.punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.conteo {
+  margin: 0 0 8px;
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.vacio {
+  margin: 24px 0;
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fila {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-card);
+}
+
+/* Columna de la semana: la referencia temporal que sustituye a la fecha. */
+.semana {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 62px;
+  padding-top: 2px;
+}
+
+.semanaNum {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.semanaDia {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.tipo {
+  flex: none;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.datos {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.nombre {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* «previo» = material de preparación, antes de la sesión. */
+.previo {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--dash-bg-subtle);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+
+.descripcion {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.entrega {
+  font-size: 12px;
+  color: var(--estado-aviso-color);
+}
+
+.acciones {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  max-width: 240px;
+}
+
+.accion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dash-primary);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accion:hover {
+  background: var(--dash-bg-subtle);
+  text-decoration: none;
+}
+
+/* En pantallas estrechas la fila se apila: la columna de acciones a la derecha
+   dejaba el nombre en una tira de dos palabras. */
+@media (max-width: 720px) {
+  .fila {
+    flex-wrap: wrap;
+  }
+  .acciones {
+    align-items: flex-start;
+    max-width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+}

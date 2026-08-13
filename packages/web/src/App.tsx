@@ -25,6 +25,7 @@ import AvancesEquipoPage from './components/dashboard/pages/AvancesEquipoPage/Av
 import EntrevistasPage from './components/dashboard/pages/EntrevistasPage/EntrevistasPage';
 import EvaluacionEntrevistaPage from './components/dashboard/pages/EvaluacionEntrevistaPage/EvaluacionEntrevistaPage';
 import AlumnoCalendarioPage from './components/dashboard/pages/AlumnoCalendarioPage/AlumnoCalendarioPage';
+import HubPage from './components/dashboard/pages/HubPage/HubPage';
 import AlumnoCompetenciasPage from './components/dashboard/pages/AlumnoCompetenciasPage/AlumnoCompetenciasPage';
 import PaginaPage from './components/paginas/PaginaPage';
 import PaginasPage from './components/dashboard/pages/PaginasPage/PaginasPage';
@@ -240,6 +241,7 @@ export default function App() {
       <Route element={<DashboardLayout role="alumno" />}>
         <Route path="alumno" element={<AlumnoDashboard />} />
         <Route path="alumno/grupos/:id/calendario" element={<AlumnoCalendarioPage />} />
+        <Route path="alumno/grupos/:id/hub" element={<HubPage />} />
         <Route path="alumno/grupos/:id/malla" element={<MallaEvaluacionPage />} />
         <Route path="alumno/grupos/:id/competencias" element={<AlumnoCompetenciasPage />} />
         {/* Ejercicios es sección de primer nivel del alumno: no cuelga de un grupo

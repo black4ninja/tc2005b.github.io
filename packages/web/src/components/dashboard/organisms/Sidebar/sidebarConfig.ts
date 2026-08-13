@@ -47,6 +47,14 @@ export function getSidebarItems(
       icon: 'calendar_month',
       path: `/alumno/grupos/${selectedGrupoId}/calendario`,
     });
+    // Junto al calendario porque sale de él: el mismo material, ordenado para
+    // reencontrarlo en vez de para saber qué toca esta semana. No se bloquea
+    // por perfil incompleto, igual que el calendario del que se deriva.
+    items.push({
+      label: 'Hub',
+      icon: 'inventory_2',
+      path: `/alumno/grupos/${selectedGrupoId}/hub`,
+    });
   }
   items.push({ label: 'Dashboard', icon: 'dashboard', path: '/alumno' });
   if (selectedGrupoId && modulosGrupo.malla !== false) {
