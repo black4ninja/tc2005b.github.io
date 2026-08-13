@@ -41,6 +41,31 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     entrar como uno de ellos.
   - Sin API nueva: se lee el mismo calendario del grupo, con el mismo control de
     acceso, y la lista se deriva en el cliente.
+- **Crear páginas y carpetas desde el propio árbol, como en un explorador de
+  archivos.** Ya se podían crear —con el botón «+ Página / Categoría»—, pero
+  desde un modal donde el destino se elegía en un desplegable de «Ubicación»: no
+  se veía dónde iba a caer, y la carpeta como concepto quedaba escondida detrás
+  de la palabra «Categoría».
+  - Cada carpeta muestra al pasar el cursor **«nueva página aquí»** y **«nueva
+    carpeta aquí»**, y crea dentro de ella. Una página no los muestra: no puede
+    tener hijos, y el servidor lo rechaza.
+  - Aparece una **fila con su campo de nombre en el sitio exacto** donde va a
+    quedar, con la sangría de su nivel. Enter confirma, Escape cancela y salir
+    del campo también — el mismo gesto que el renombrado que ya existía.
+  - La cabecera del árbol lleva los dos botones para crear en la **raíz**. Van
+    siempre visibles porque son la única puerta de entrada cuando la colección
+    está vacía, que antes era un callejón sin salida: el mensaje decía que no
+    había páginas y no ofrecía crear ninguna.
+  - Al crear dentro de una carpeta cerrada, se despliega sola; si no, lo recién
+    creado nacía escondido y parecía que no había pasado nada.
+  - El slug se deriva del nombre, como en el alta por formulario.
+
+### Fixed
+- **Los diálogos de confirmación se veían en blanco en tema oscuro.** El título
+  y el cuerpo sí usaban tokens, pero el fondo lo pinta SweetAlert2 con su propio
+  blanco: quedaba texto gris claro sobre blanco, casi ilegible. Ahora el popup,
+  su campo de texto y el recuadro de aviso salen del tema. Se coló en la
+  revisión del modo oscuro porque no llegué a abrir ningún diálogo.
 
 ### Added
 - **Modo oscuro en todo el sitio, no solo en el wiki.** Hasta ahora solo el visor

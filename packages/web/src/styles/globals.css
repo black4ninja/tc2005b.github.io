@@ -38,6 +38,11 @@ ul, ol { list-style: none; }
   border-radius: 14px;
   padding: 24px;
   font-family: inherit;
+  /* El fondo lo pinta SweetAlert2 con su propio blanco, así que en tema oscuro
+     el diálogo salía blanco con el texto casi ilegible: el título y el cuerpo sí
+     usan tokens y quedaban gris claro sobre blanco. */
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
 }
 
 .swal-title {
@@ -57,8 +62,8 @@ ul, ol { list-style: none; }
   display: block;
   margin-top: 10px;
   padding: 10px 12px;
-  background: #fff3e0;
-  color: #8a4b00;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
   border-radius: 8px;
   font-size: 0.82rem;
   text-align: left;
@@ -70,6 +75,10 @@ ul, ol { list-style: none; }
   border-radius: 8px;
   border: 1px solid var(--border-color);
   box-shadow: none;
+  /* Igual que el popup: sin esto el campo se queda blanco sobre el diálogo
+     oscuro, y el texto que se teclea es del color del tema (claro sobre claro). */
+  background: var(--bg-page);
+  color: var(--text-primary);
 }
 .swal-input:focus {
   border-color: var(--dash-primary);

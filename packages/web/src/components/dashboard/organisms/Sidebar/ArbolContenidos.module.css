@@ -183,3 +183,29 @@
   font-size: 0.8rem;
   color: var(--text-muted);
 }
+
+/* Cabecera del árbol: rótulo y los dos botones de crear en la raíz. Siempre
+   visibles —no al pasar el cursor como los del nodo— porque son la única puerta
+   de entrada cuando la colección está vacía. */
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 4px;
+}
+
+.cabeceraTitulo {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.cabeceraAcciones {
+  display: inline-flex;
+  gap: 2px;
+}
