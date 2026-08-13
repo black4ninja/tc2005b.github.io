@@ -83,14 +83,11 @@ export default function ColeccionDetailPage() {
           {coleccion ? `${coleccion.clave ? `${coleccion.clave} — ` : ''}${coleccion.nombre}` : id}
         </h1>
         <div className={styles.headerActions}>
-          <Link to={`/admin/contenidos/${id}/ejercicios`} className={styles.ejerciciosLink}>
-            <Icon name="terminal" size="sm" />
-            <span>Ejercicios</span>
-          </Link>
-          <Link to={`/admin/contenidos/${id}/diagramas`} className={styles.ejerciciosLink}>
-            <Icon name="schema" size="sm" />
-            <span>Diagramas</span>
-          </Link>
+          {/* Ejercicios y Diagramas ya NO se enlazan desde aquí. Esta pantalla
+              es el editor del árbol de páginas, y los dos llevaban a catálogos
+              distintos: se leían como parte de la navegación del editor y
+              sacaban de él sin avisar. Se llega a ambos desde la lista de
+              Contenidos, que es donde cuelgan de su colección. */}
           <DashButton onClick={() => { setModalError(''); setModalOpen(true); }}>+ Página / Categoría</DashButton>
         </div>
       </div>

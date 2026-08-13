@@ -209,3 +209,18 @@
   display: inline-flex;
   gap: 2px;
 }
+
+/* Pista del gesto de arrastre. Discreta pero permanente: el arrastre es
+   invisible por naturaleza y no hay dónde descubrirlo si no se dice. */
+.pista {
+  margin: 0 0 8px;
+  padding: 0 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.pista strong {
+  font-weight: 600;
+  color: var(--text-secondary);
+}

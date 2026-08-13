@@ -7,6 +7,21 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **El editor de contenidos deja de enlazar a Ejercicios y a Diagramas.** Los dos
+  botones vivían en la cabecera del editor del árbol y se leían como parte de su
+  navegación, pero llevaban a catálogos distintos y sacaban del editor sin
+  avisar. Se sigue llegando a ambos desde la lista de Contenidos, que es donde
+  cuelgan de su colección.
+- **El árbol explica cómo se mueve.** Arrastrar para reordenar y para cambiar de
+  nivel ya funcionaba —también para meter algo en una carpeta VACÍA—, pero es un
+  gesto invisible y no había dónde descubrirlo: la única nota vivía en el panel
+  de la derecha, que desaparece en cuanto se abre una página. Ahora el aviso está
+  junto al árbol, donde se usa.
+  - Se añaden pruebas de `proyectar`, que es quien decide a qué carpeta cae lo
+    arrastrado: meter en una carpeta vacía, sacar de una carpeta, no poder
+    anidar bajo una página, y no dejar huérfano al de abajo.
+
 ### Added
 - **Hub: todo el material del curso en una lista, para reencontrarlo.** El
   calendario responde «¿qué toca esta semana?»; con el semestre avanzado, la

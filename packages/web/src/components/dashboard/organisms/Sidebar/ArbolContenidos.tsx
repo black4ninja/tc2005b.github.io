@@ -556,6 +556,15 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
         </span>
       </div>
 
+      {/* El arrastre ya movía y cambiaba de nivel desde el principio, pero no
+          había forma de saberlo: es un gesto invisible. El aviso vive aquí, al
+          lado del árbol, y no en el panel de la derecha —donde ya había una
+          nota— porque ese panel desaparece en cuanto se abre una página. */}
+      <p className={styles.pista}>
+        Arrastra para ordenar. Hacia la <strong>derecha</strong> para meterlo en
+        una carpeta; hacia la <strong>izquierda</strong> para sacarlo.
+      </p>
+
         {creando ? (
           <div className={styles.arbol}>
             <FilaCreando
@@ -606,6 +615,15 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
           </button>
         </span>
       </div>
+
+      {/* El arrastre ya movía y cambiaba de nivel desde el principio, pero no
+          había forma de saberlo: es un gesto invisible. El aviso vive aquí, al
+          lado del árbol, y no en el panel de la derecha —donde ya había una
+          nota— porque ese panel desaparece en cuanto se abre una página. */}
+      <p className={styles.pista}>
+        Arrastra para ordenar. Hacia la <strong>derecha</strong> para meterlo en
+        una carpeta; hacia la <strong>izquierda</strong> para sacarlo.
+      </p>
 
       {error && (
         <div className={styles.error} onClick={() => setError('')} title="Descartar">
