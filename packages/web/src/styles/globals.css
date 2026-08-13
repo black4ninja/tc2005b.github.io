@@ -209,21 +209,40 @@ ul, ol { list-style: none; }
 
    Se desvanece sola: llamar la atención un momento es el objetivo; dejarla
    marcada para siempre convierte el destaque en parte del diseño y deja de
-   señalar nada. */
+   señalar nada.
+
+   El anillo va HACIA DENTRO (`inset`) a propósito. La actividad se pinta
+   dentro de `.sortableInner`, que recorta con `overflow: hidden` para la
+   revelación de los botones de editar y borrar: un anillo hacia fuera se
+   recortaba ENTERO y del realce solo sobrevivía el fondo, casi invisible en
+   una columna llena. Un `outline` tampoco vale —lo recorta igual—, así que el
+   realce tiene que caber dentro de la propia caja.
+
+   Y parpadea al llegar: en una semana de veinte actividades el ojo va al
+   movimiento antes que al color, y la página acaba de dar un salto de scroll. */
 @keyframes actividad-destacada-pulso {
-  0%, 55% {
-    box-shadow: 0 0 0 3px var(--dash-primary);
-    background: var(--sidebar-active-bg);
+  /* Tres parpadeos (~1,5 s), luego se mantiene y al final se desvanece. */
+  0%, 12%, 24%, 36% {
+    box-shadow: inset 0 0 0 3px var(--destacado-anillo), 0 0 18px 2px var(--destacado-halo);
+    background: var(--destacado-fondo);
+  }
+  6%, 18%, 30% {
+    box-shadow: inset 0 0 0 3px var(--destacado-halo), 0 0 0 0 transparent;
+    background: var(--destacado-fondo);
+  }
+  85% {
+    box-shadow: inset 0 0 0 3px var(--destacado-anillo), 0 0 18px 2px var(--destacado-halo);
+    background: var(--destacado-fondo);
   }
   100% {
-    box-shadow: 0 0 0 3px transparent;
+    box-shadow: inset 0 0 0 3px transparent, 0 0 0 0 transparent;
     background: transparent;
   }
 }
 
 .actividad-destacada {
   border-radius: 8px;
-  animation: actividad-destacada-pulso 3.5s ease-out forwards;
+  animation: actividad-destacada-pulso 4.5s ease-out forwards;
 }
 
 /* Quien prefiere no ver movimiento igual necesita saber CUÁL es: se queda el
@@ -231,7 +250,7 @@ ul, ol { list-style: none; }
 @media (prefers-reduced-motion: reduce) {
   .actividad-destacada {
     animation: none;
-    box-shadow: 0 0 0 3px var(--dash-primary);
-    background: var(--sidebar-active-bg);
+    box-shadow: inset 0 0 0 3px var(--destacado-anillo), 0 0 18px 2px var(--destacado-halo);
+    background: var(--destacado-fondo);
   }
 }

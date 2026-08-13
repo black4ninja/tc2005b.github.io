@@ -18,9 +18,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     aplanar. La fecha se deduce del día de la semana, porque el calendario la
     guarda por SEMANA y no por actividad.
   - Cada material enlaza **de vuelta al calendario**, que se abre en su semana y
-    **lo señala con un realce que se desvanece solo** (`?semana=<n>&actividad=<id>`).
-    Llevar a la semana no basta: una semana cargada tiene veinte cosas y hay que
-    volver a buscar la que se venía a ver.
+    **lo señala con un realce ámbar que parpadea y se desvanece solo**
+    (`?semana=<n>&actividad=<id>`). Llevar a la semana no basta: una semana
+    cargada tiene veinte cosas y hay que volver a buscar la que se venía a ver.
+    - El anillo va **hacia dentro**: la actividad se pinta dentro de un
+      contenedor con `overflow: hidden` —el que revela los botones de editar y
+      borrar— y uno hacia fuera se recortaba entero.
+    - **Ámbar y no el azul del panel**, que es el color de los enlaces y del tipo
+      «lab»: se confundía con el contenido en vez de destacar sobre él.
   - **Buscador** por nombre, descripción y texto de los enlaces —el título de un
     laboratorio no siempre trae la palabra que uno recuerda— y **filtros por
     tipo**, que solo ofrecen los tipos que ese grupo tiene: proponer

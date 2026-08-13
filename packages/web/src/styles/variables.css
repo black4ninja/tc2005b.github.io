@@ -89,6 +89,13 @@
   --estado-info-bg: #eff6ff;
   --estado-info-color: #1d4ed8;
   --estado-info-border: #bfdbfe;
+
+  /* Actividad señalada al llegar desde el Hub. Ámbar y no el azul del panel:
+     el azul ES el color de los enlaces y del tipo «lab», así que se confundía
+     con el contenido en vez de destacar sobre él. */
+  --destacado-anillo: #d97706;
+  --destacado-halo: #d9770659;
+  --destacado-fondo: #fef3c7;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -182,4 +189,10 @@
   --color-info-light: #4338ca4d;
   --color-actividad-light: #be123c4d;
   --color-presentacion-light: #9d174d4d;
+
+  /* El ámbar sube de luminosidad y el fondo pasa a ser el mismo matiz
+     translúcido: un pastel sobre el azul oscuro deslumbra y tapa el texto. */
+  --destacado-anillo: #fbbf24;
+  --destacado-halo: #fbbf2466;
+  --destacado-fondo: #78350f73;
 }
