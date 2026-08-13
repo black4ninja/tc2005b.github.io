@@ -113,6 +113,8 @@ export default function EditorContenidoPage({
   const [versiones, setVersiones] = useState<VersionInfo[]>([]);
   const [historialError, setHistorialError] = useState('');
   const [verCuerpo, setVerCuerpo] = useState<{ numero: number; cuerpo: string } | null>(null);
+  /** Qué pasó al restaurar. Se descarta al tocarlo o al publicar. */
+  const [avisoRestaurado, setAvisoRestaurado] = useState('');
 
   const [recursosOpen, setRecursosOpen] = useState(false);
   const [recursos, setRecursos] = useState<RecursoInfo[]>([]);
@@ -465,17 +467,34 @@ export default function EditorContenidoPage({
   }
 
   /* ── Historial ── */
+
+  /**
+   * Trae las versiones. Se llama al ABRIR el editor, no solo al abrir el
+   * historial: la cabecera necesita el número de la publicada para poder decir
+   * «v3 publicada», y sin eso el editor no sabe decir qué está viendo.
+   */
+  const cargarVersiones = useCallback(async () => {
+    if (!docId) return;
+    const res = await fetch(`${API_BASE}/admin/documentos/${docId}/versiones`, {
+      headers: { 'x-session-token': sessionToken ?? '' },
+    });
+    if (!res.ok) throw new Error('No se pudo cargar el historial');
+    const json = await res.json();
+    setVersiones(json.versiones ?? []);
+  }, [docId, sessionToken]);
+
+  useEffect(() => {
+    // Silencioso: es información de apoyo. Si falla, la cabecera se queda sin
+    // el número y el editor sigue funcionando igual.
+    cargarVersiones().catch(() => {});
+  }, [cargarVersiones]);
+
   async function abrirHistorial() {
     setHistorialError('');
     setVerCuerpo(null);
     setHistorialOpen(true);
     try {
-      const res = await fetch(`${API_BASE}/admin/documentos/${docId}/versiones`, {
-        headers: { 'x-session-token': sessionToken ?? '' },
-      });
-      if (!res.ok) throw new Error('No se pudo cargar el historial');
-      const json = await res.json();
-      setVersiones(json.versiones ?? []);
+      await cargarVersiones();
     } catch (err: any) {
       setHistorialError(err.message);
     }
@@ -515,6 +534,13 @@ export default function EditorContenidoPage({
       setCuerpo(json.cuerpo ?? '');
       setEstado('guardado'); // el borrador restaurado YA está en el servidor
       setHistorialOpen(false);
+      // Al cerrar el historial el editor se ve idéntico a antes, solo que con
+      // otro contenido: sin decirlo, no hay forma de saber en qué quedó la cosa.
+      setAvisoRestaurado(`El borrador ahora tiene el contenido de la v${v.numero}. Publica para que los alumnos lo vean.`);
+      // El documento cambia de estado (pasa a tener borrador): se recarga para
+      // que la cabecera deje de decir que no hay cambios sin publicar.
+      cargar();
+      cargarVersiones().catch(() => {});
     } catch (err: any) {
       setHistorialError(err.message);
     }
@@ -527,6 +553,32 @@ export default function EditorContenidoPage({
     guardando: 'Guardando…',
     error: 'Error al guardar',
   };
+
+  /**
+   * Qué se está editando, en una frase.
+   *
+   * El editor SIEMPRE escribe en el borrador —nunca sobre una versión publicada
+   * ni sobre una antigua—, pero eso no se decía en ningún sitio: al restaurar
+   * una versión vieja no había forma de saber si lo que se escribía después
+   * caía sobre ella, sobre la publicada o sobre otra cosa.
+   *
+   * `borradorId` es exactamente «hay cambios que los alumnos aún no ven», así
+   * que el estado sale del propio documento y no hace falta comparar cuerpos.
+   */
+  const versionPublicada = versiones.find((v) => v.esPublicada)?.numero ?? null;
+  const hayCambiosSinPublicar = !!documento?.borradorId;
+
+  // El número va PRIMERO: la cabecera es estrecha y recorta por la derecha, y
+  // «v2» es justo el dato que no puede perderse.
+  const laPublicada = versionPublicada ? `v${versionPublicada} publicada` : 'Publicada';
+
+  const queEstoyEditando = !documento
+    ? ''
+    : !documento.versionId
+      ? 'Nunca publicada · borrador'
+      : hayCambiosSinPublicar
+        ? `${laPublicada} · con cambios`
+        : `${laPublicada} · sin cambios`;
 
   function formatFecha(iso: string): string {
     return new Date(iso).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -559,6 +611,19 @@ export default function EditorContenidoPage({
           <span className={`${styles.dot} ${styles[`dot-${estado}`]}`} />
           {ESTADO_LABEL[estado]}
         </span>
+        {/* Lo que se edita, siempre a la vista. Va junto al estado de guardado
+            porque responden a la misma pregunta: qué pasa con lo que escribo. */}
+        {queEstoyEditando && (
+          <span
+            className={`${styles.editando} ${hayCambiosSinPublicar ? styles.editandoPendiente : ''}`}
+            title={
+              'Siempre editas el borrador: lo que escribas no toca la versión publicada hasta que pulses Publicar, ' +
+              'y restaurar una versión antigua solo reemplaza el borrador.'
+            }
+          >
+            {queEstoyEditando}
+          </span>
+        )}
         {/* Solo con una versión publicada detrás: mostrar una página que nunca se
             publicó no tendría nada que servirle al alumno (el API lo rechaza). */}
         {documento?.versionId && (
@@ -576,6 +641,19 @@ export default function EditorContenidoPage({
           Publicar
         </DashButton>
       </div>
+
+      {/* Qué pasó al restaurar. Se descarta al pulsarlo: es una confirmación,
+          no un error, y no debe quedarse ahí para siempre. */}
+      {avisoRestaurado && (
+        <div
+          className={styles.avisoRestaurado}
+          role="status"
+          onClick={() => setAvisoRestaurado('')}
+          title="Descartar"
+        >
+          {avisoRestaurado}
+        </div>
+      )}
 
       {error && (
         <div className={styles.error}>
@@ -781,6 +859,10 @@ export default function EditorContenidoPage({
             <>
               <div className={styles.verBarra}>
                 <b>v{verCuerpo.numero}</b>
+                {/* Es un `<pre>`: no se puede escribir aquí aunque se intente.
+                    Decirlo evita la duda de si lo que se teclee acabará en esta
+                    versión vieja. */}
+                <span className={styles.soloLectura}>solo lectura</span>
                 <DashButton variant="outline" onClick={() => setVerCuerpo(null)}>← Volver al historial</DashButton>
               </div>
               <pre className={styles.verCuerpo}>{verCuerpo.cuerpo}</pre>

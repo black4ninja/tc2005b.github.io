@@ -33,8 +33,10 @@
 }
 
 .tituloWrap {
-  flex: 1;
-  min-width: 0;
+  /* Se encoge, pero no hasta desaparecer: el título es la referencia de dónde
+     estás, y sin un mínimo el indicador de versión lo dejaba en dos letras. */
+  flex: 1 1 auto;
+  min-width: 110px;
   display: flex;
   flex-direction: column;
 }
@@ -49,6 +51,9 @@
 .subtitulo {
   font-size: 12px;
   color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .estado {
@@ -310,4 +315,47 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 220px;
+}
+
+/* Qué se está editando. Junto al estado de guardado porque responden a lo
+   mismo: qué pasa con lo que escribo. Apagado por defecto; solo se enciende
+   cuando hay algo que los alumnos aún no ven. */
+.editando {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 42ch;
+  /* Es corto a propósito (el número primero) para poder no encogerse: recortarlo
+     se comería justo el «v2». Lo que cede es el título, que ya tiene su mínimo. */
+  flex-shrink: 0;
+  cursor: default;
+}
+
+.editandoPendiente {
+  color: var(--estado-aviso-color);
+}
+
+/* Confirmación de lo que hizo restaurar. El editor vuelve a verse igual tras
+   cerrar el historial, así que sin esto el cambio ocurre en silencio. */
+.avisoRestaurado {
+  margin: 0 16px 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* La vista de una versión antigua es un `<pre>`; se dice para que nadie dude
+   de dónde acabaría lo que teclee. */
+.soloLectura {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--dash-bg-subtle);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
 }

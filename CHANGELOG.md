@@ -8,6 +8,21 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **El editor dice qué versión estás editando.** Siempre se escribe en el
+  borrador —ver o restaurar una versión antigua nunca muta el pasado—, pero eso
+  no se decía en ninguna parte: después de restaurar, el editor volvía a verse
+  exactamente igual que antes y no había forma de saber si lo que se escribía a
+  continuación caía sobre la versión vieja, sobre la publicada o sobre otra
+  cosa. Ahora la cabecera lo dice junto al estado de guardado:
+  - `v3 publicada · sin cambios` cuando el borrador coincide con lo publicado, y
+    `v3 publicada · con cambios` —en ámbar— cuando hay algo que los alumnos aún
+    no ven. El número va primero porque la cabecera recorta por la derecha y
+    «v3» es justo el dato que no puede perderse; la frase completa vive en el
+    `title`.
+  - Al restaurar aparece qué pasó (`El borrador ahora tiene el contenido de la
+    v1. Publica para que los alumnos lo vean.`), descartable al pulsarlo.
+  - La vista de una versión antigua se marca como **solo lectura**, que es lo
+    que siempre fue.
 - **La cabecera del editor de contenidos se queda solo con lo suyo.** Tenía tres
   cosas que no le pertenecían y le comían el ancho al nombre de la colección:
   - **Ejercicios** y **Diagramas** se leían como parte de la navegación del
