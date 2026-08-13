@@ -559,10 +559,16 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
       {/* El arrastre ya movía y cambiaba de nivel desde el principio, pero no
           había forma de saberlo: es un gesto invisible. El aviso vive aquí, al
           lado del árbol, y no en el panel de la derecha —donde ya había una
-          nota— porque ese panel desaparece en cuanto se abre una página. */}
-      <p className={styles.pista}>
-        Arrastra para ordenar. Hacia la <strong>derecha</strong> para meterlo en
-        una carpeta; hacia la <strong>izquierda</strong> para sacarlo.
+          nota— porque ese panel desaparece en cuanto se abre una página.
+
+          En una línea y apagado, como los atajos del editor: es una ayuda para
+          no adivinar, no un cartel. La frase completa va en el `title`, para
+          quien la necesite. */}
+      <p
+        className={styles.pista}
+        title="Arrastra una página o carpeta para ordenarla. Hacia la derecha la mete dentro de la carpeta de arriba; hacia la izquierda la saca."
+      >
+        Arrastra · <span aria-hidden="true">→</span> dentro · <span aria-hidden="true">←</span> fuera
       </p>
 
         {creando ? (
@@ -619,10 +625,16 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
       {/* El arrastre ya movía y cambiaba de nivel desde el principio, pero no
           había forma de saberlo: es un gesto invisible. El aviso vive aquí, al
           lado del árbol, y no en el panel de la derecha —donde ya había una
-          nota— porque ese panel desaparece en cuanto se abre una página. */}
-      <p className={styles.pista}>
-        Arrastra para ordenar. Hacia la <strong>derecha</strong> para meterlo en
-        una carpeta; hacia la <strong>izquierda</strong> para sacarlo.
+          nota— porque ese panel desaparece en cuanto se abre una página.
+
+          En una línea y apagado, como los atajos del editor: es una ayuda para
+          no adivinar, no un cartel. La frase completa va en el `title`, para
+          quien la necesite. */}
+      <p
+        className={styles.pista}
+        title="Arrastra una página o carpeta para ordenarla. Hacia la derecha la mete dentro de la carpeta de arriba; hacia la izquierda la saca."
+      >
+        Arrastra · <span aria-hidden="true">→</span> dentro · <span aria-hidden="true">←</span> fuera
       </p>
 
       {error && (

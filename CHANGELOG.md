@@ -18,6 +18,9 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   gesto invisible y no había dónde descubrirlo: la única nota vivía en el panel
   de la derecha, que desaparece en cuanto se abre una página. Ahora el aviso está
   junto al árbol, donde se usa.
+    Va en una línea y apagado, con el mismo peso que los atajos del editor
+    (`⌘S guardar · ⌘⇧P publicar`): es una ayuda para no adivinar, no un cartel.
+    La frase completa vive en su `title`.
   - Se añaden pruebas de `proyectar`, que es quien decide a qué carpeta cae lo
     arrastrado: meter en una carpeta vacía, sacar de una carpeta, no poder
     anidar bajo una página, y no dejar huérfano al de abajo.
