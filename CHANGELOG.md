@@ -7,6 +7,25 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **El árbol de contenidos se puede reorganizar sin ratón.** Mover era
+  exclusivamente un arrastre: quien no usa ratón —o simplemente no puede
+  arrastrar con precisión— no tenía forma ninguna de cambiar el orden ni la
+  jerarquía. Con el foco en una fila (con el tabulador): **Espacio** la coge,
+  **↑↓** la ordenan, **→** la mete en la carpeta de arriba, **←** la saca,
+  **Espacio** la suelta y **Escape** cancela. El paso horizontal es literalmente
+  el mismo desplazamiento que haría el ratón, así que decide el mismo destino y
+  la carpeta que va a recibirla se resalta igual.
+  - **Enter abre la página.** La fila es un `div` con `role="button"` y el
+    navegador no le dispara el clic al pulsar Enter: hasta ahora solo se podía
+    abrir con el ratón.
+  - Lo que pasa durante el movimiento se **anuncia en español** (a dónde caería,
+    dónde acabó, si se canceló). Las dos únicas señales que había —el resaltado
+    de la carpeta y la sangría— son visuales, así que moverlo con el teclado
+    habría sido moverlo a ciegas.
+  - La pista del árbol dice ahora también el atajo: un atajo que no se anuncia
+    no existe.
+
 ### Changed
 - **El editor dice qué versión estás editando.** Siempre se escribe en el
   borrador —ver o restaurar una versión antigua nunca muta el pasado—, pero eso

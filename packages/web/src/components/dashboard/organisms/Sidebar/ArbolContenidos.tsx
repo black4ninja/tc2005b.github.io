@@ -4,6 +4,7 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   closestCenter,
@@ -17,7 +18,9 @@ import Icon from '../../atoms/Icon/Icon';
 import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import { confirmar, pedirTexto, escapar } from '../../../../utils/dialogos';
 import { slugify } from '../../../../utils/slug';
-import { aplanar, idsDeSubarbol, proyectar, ordenDestino, type NodoPlano } from './arbol-dnd';
+import {
+  aplanar, idsDeSubarbol, proyectar, ordenDestino, coordenadasTecladoArbol, type NodoPlano,
+} from './arbol-dnd';
 import type { DocumentoTipo } from '../../../../types/contenidos';
 import styles from './ArbolContenidos.module.css';
 
@@ -73,6 +76,9 @@ function Nodo({
     id: nodo.id,
     // Renombrando no se arrastra: el ratón tiene que poder seleccionar texto.
     disabled: editando,
+    // dnd-kit anuncia «sortable» en inglés; el lector de pantalla lo lee en
+    // medio de una interfaz que está entera en español.
+    attributes: { roleDescription: `${nodo.esCategoria ? 'Carpeta' : 'Página'}, se puede mover` },
   });
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -102,6 +108,19 @@ function Nodo({
       title={editando ? undefined : `${nodo.titulo}  ·  /${nodo.slug}`}
       {...attributes}
       {...(editando ? {} : listeners)}
+      /* Después de los listeners, y llamándolos a mano: el `onKeyDown` de
+         dnd-kit —el que coge el nodo con Espacio— vive ahí dentro, y ponerlo
+         antes lo dejaría sin efecto.
+
+         La fila es un `div` con `role="button"`, y el navegador NO le dispara
+         el clic al pulsar Enter: sin esto solo se podría abrir con el ratón.
+         Mientras se mueve, las teclas son del arrastre. */
+      onKeyDown={(e) => {
+        if (!editando) listeners?.onKeyDown?.(e);
+        if (editando || isDragging || e.key !== 'Enter') return;
+        e.preventDefault();
+        onSeleccionar(nodo.id);
+      }}
     >
       {nodo.esCategoria ? (
         <button
@@ -313,6 +332,14 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
   // Arrastrar debe poder empezar sin bloquear el clic simple ni el doble clic.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    // Mover era exclusivo del ratón: sin esto, quien no lo usa no podía
+    // reorganizar el árbol de ninguna manera.
+    useSensor(KeyboardSensor, {
+      coordinateGetter: coordenadasTecladoArbol(SANGRIA),
+      // Enter NO coge el nodo —es abrir la página, y es lo que más se hace—.
+      // Espacio coge y suelta; Escape deja las cosas como estaban.
+      keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space'] },
+    }),
   );
 
   // Al entrar por enlace directo, abrir las categorías que llevan a la página:
@@ -344,6 +371,44 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
     if (!activeId || !overId) return null;
     return proyectar(visibles, activeId, overId, offsetX, SANGRIA);
   }, [visibles, activeId, overId, offsetX]);
+
+  /**
+   * Lo que oye quien no ve el árbol.
+   *
+   * El resaltado de la carpeta destino y la sangría que se mueve son las dos
+   * únicas señales de a dónde va a caer el nodo, y las dos son visuales. Sin
+   * decirlo en voz alta, mover con el teclado sería mover a ciegas.
+   */
+  const proyeccionRef = useRef(proyeccion);
+  useEffect(() => { proyeccionRef.current = proyeccion; }, [proyeccion]);
+
+  const tituloDe = (id: string | number) =>
+    documentos.find((d) => d.id === String(id))?.titulo ?? 'el elemento';
+
+  function dondeCaeria(): string {
+    const p = proyeccionRef.current;
+    if (!p) return 'donde estaba';
+    if (!p.padreId) return 'en la raíz de la colección';
+    return `dentro de «${tituloDe(p.padreId)}»`;
+  }
+
+  const accesibilidad = useMemo(() => ({
+    screenReaderInstructions: {
+      draggable:
+        'Pulsa Espacio para coger esta página o carpeta. Con las flechas arriba y abajo la ordenas; ' +
+        'con la flecha derecha la metes en la carpeta de arriba y con la izquierda la sacas. ' +
+        'Espacio la suelta y Escape cancela.',
+    },
+    announcements: {
+      onDragStart: ({ active }: any) => `Has cogido «${tituloDe(active.id)}».`,
+      onDragOver: () => `Se colocaría ${dondeCaeria()}.`,
+      onDragEnd: ({ active }: any) => `«${tituloDe(active.id)}» se movió ${dondeCaeria()}.`,
+      onDragCancel: ({ active }: any) => `Movimiento cancelado. «${tituloDe(active.id)}» vuelve a su sitio.`,
+    },
+    // `documentos` solo se usa para poner nombre a los avisos; recrear el objeto
+    // en cada render haría que dnd-kit se resuscribiera sin motivo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [documentos]);
 
   function toggle(id: string) {
     setExpandidos((prev) => {
@@ -644,6 +709,14 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
       >
         Arrastra · <span aria-hidden="true">→</span> dentro · <span aria-hidden="true">←</span> fuera
       </p>
+      {/* Mover también se puede sin ratón, pero un atajo que no se anuncia no
+          existe: nadie va a pulsar Espacio sobre una fila a ver qué pasa. */}
+      <p
+        className={styles.pista}
+        title="Con el foco puesto en una fila (con el tabulador): Espacio la coge, ↑↓ la ordenan, → la mete en la carpeta de arriba, ← la saca, Espacio la suelta y Escape cancela. Enter abre la página."
+      >
+        Teclado: Espacio coge · flechas mueven
+      </p>
 
       {error && (
         <div className={styles.error} onClick={() => setError('')} title="Descartar">
@@ -653,6 +726,7 @@ export default function ArbolContenidos({ coleccionId }: { coleccionId: string }
 
       <DndContext
         sensors={sensors}
+        accessibility={accesibilidad}
         collisionDetection={closestCenter}
         onDragStart={onDragStart}
         onDragMove={onDragMove}

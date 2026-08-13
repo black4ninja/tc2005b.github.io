@@ -1,3 +1,4 @@
+import type { KeyboardCoordinateGetter } from '@dnd-kit/core';
 import type { DocumentoData, DocumentoNodo } from '../../../../types/contenidos';
 
 /** Nodo del árbol aplanado a lista: es lo que consume dnd-kit. */
@@ -127,6 +128,63 @@ export function proyectar(
   }
 
   return { profundidad, padreId };
+}
+
+export interface Coordenadas {
+  x: number;
+  y: number;
+}
+
+/**
+ * A dónde lleva una tecla mientras se mueve un nodo SIN ratón.
+ *
+ * El arrastre del árbol tiene dos ejes con significados distintos, y el teclado
+ * los reproduce tal cual: ↑↓ ordenan y ←→ cambian de nivel. El horizontal es
+ * literalmente el mismo desplazamiento que haría el ratón —una sangría—, así
+ * que `proyectar` no se entera de quién lo movió.
+ *
+ * `tops` son las posiciones verticales de las filas (sin trasladar, que es como
+ * las mide dnd-kit al empezar): de ahí sale el alto de fila real, sin cablearlo,
+ * y los límites de la lista.
+ *
+ * Devuelve `null` cuando la tecla no es de las nuestras o el movimiento se
+ * saldría de la lista: al perder el `over` el árbol dejaría de saber dónde iba
+ * a caer, y el siguiente ↑ no lo devolvería a su sitio.
+ */
+export function pasoTeclado(
+  code: string,
+  coordenadas: Coordenadas,
+  topActual: number,
+  tops: number[],
+  sangria: number,
+): Coordenadas | null {
+  if (code === 'ArrowRight') return { ...coordenadas, x: coordenadas.x + sangria };
+  if (code === 'ArrowLeft') return { ...coordenadas, x: coordenadas.x - sangria };
+  if (code !== 'ArrowDown' && code !== 'ArrowUp') return null;
+
+  const ordenados = [...tops].sort((a, b) => a - b);
+  const paso = ordenados.length > 1 ? ordenados[1] - ordenados[0] : 0;
+  if (paso <= 0) return null; // una sola fila: no hay a dónde ordenar
+
+  const destino = code === 'ArrowDown' ? topActual + paso : topActual - paso;
+  const margen = paso / 2;
+  if (destino < ordenados[0] - margen) return null;
+  if (destino > ordenados[ordenados.length - 1] + margen) return null;
+
+  return { ...coordenadas, y: coordenadas.y + (destino - topActual) };
+}
+
+/** Adaptador de `pasoTeclado` a lo que espera el `KeyboardSensor` de dnd-kit. */
+export function coordenadasTecladoArbol(sangria: number): KeyboardCoordinateGetter {
+  return (event, { currentCoordinates, context: { collisionRect, droppableRects } }) => {
+    if (!collisionRect) return;
+    const tops = [...droppableRects.values()].map((r) => r.top);
+    const siguiente = pasoTeclado(event.code, currentCoordinates, collisionRect.top, tops, sangria);
+    if (!siguiente) return;
+    // Solo cuando la tecla es nuestra: si no, se comería el scroll de la página.
+    event.preventDefault();
+    return siguiente;
+  };
 }
 
 /**
