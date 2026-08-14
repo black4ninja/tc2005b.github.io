@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { authService } from '../services/auth.service.js';
-import { getGruposDeAlumno } from '../services/grupo-alumno.service.js';
+import { construirGruposDeSesion } from '../services/sesion-payload.service.js';
 import { setSessionCookie } from '../utils/session-cookie.js';
 
 export async function loginWithPassword(req: Request, res: Response): Promise<void> {
@@ -17,11 +17,11 @@ export async function loginWithPassword(req: Request, res: Response): Promise<vo
       ipAddress: req.ip ?? 'unknown',
     });
 
-    let extras: { grupos: { id: string; name: string }[] } = { grupos: [] };
-    if (user.isAlumno()) {
-      const grupos = await getGruposDeAlumno(user.id);
-      extras = { grupos: grupos.map((g) => ({ id: g.id, name: g.get('name') ?? '' })) };
-    }
+    // La MISMA lista que el enlace mágico. Esta puerta se la construía aparte y
+    // se quedaba en `{id, name}`: sin ella el alumno entraba sin saber si le
+    // falta el perfil, sin el color del selector y sin la agenda de su grupo, y
+    // el profesor entraba sin grupos —o sea, al panel global en vez de al suyo—.
+    const extras = { grupos: await construirGruposDeSesion(user) };
 
     setSessionCookie(res, session.getToken());
     res.json({

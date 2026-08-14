@@ -7,6 +7,33 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **El alumno nuevo ya no se queda mirando un menú gris sin saber qué hacer.**
+  Reportado por los propios alumnos. Hasta que rellenan el perfil del grupo, el
+  menú les deja bloqueados Malla, Competencias, Wiki, Ejercicios y Agendar
+  entrevistas; pero al entrar aterrizaban en el **calendario**, que es de lo
+  poco que no se bloquea y que no menciona el asunto por ninguna parte. Lo
+  bloqueado tampoco lo contaba: eran `div`s con `pointer-events: none`, así que
+  su explicación —un `title`— no llegaba a salir **nunca**, ni pasando el ratón.
+  Pasa igual a quien ya llevaba tiempo en la plataforma y entra a un grupo
+  NUEVO: el perfil es por grupo y vuelve a estar incompleto justo cuando ya no
+  espera tener que rellenar nada.
+  - Con el perfil a medias, entrar lleva al **panel**, que es donde está el
+    formulario (y que ya se abre en modo edición solo).
+  - En el calendario y en el Hub —las dos secciones que no se bloquean— sale un
+    aviso que nombra lo que está cerrado, dice que se rellena una sola vez por
+    grupo y lleva al panel de un clic.
+  - Los ítems bloqueados llevan un **candado** en vez de solo estar atenuados, y
+    su tooltip funciona y dice dónde se desbloquean.
+  - El grupo con el que se decide es el mismo con el que se le reabre la sesión
+    (el último que tenía abierto), no el primero de la lista: si no, el menú
+    diría un grupo y la página estaría enseñando otro.
+- **Las dos puertas de entrada devuelven los mismos datos de sesión.** Entrar
+  con contraseña —que es como entran los alumnos— construía su propia lista de
+  grupos y se quedaba en `{id, name}`: sin el color del selector, sin la URL de
+  la agenda y, para el profesor, **sin grupos**, así que acababa en el panel
+  global en vez de en su grupo. Ahora las dos salen del mismo sitio.
+
 ### Added
 - **Copiar el enlace público de una página desde el árbol.** Junto al botón del
   slug —que es de donde sale la URL— hay otro que copia la dirección completa

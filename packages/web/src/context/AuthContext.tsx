@@ -13,6 +13,12 @@ interface AppUserData {
     urlAgendaEntrevistas?: string | null;
     /** Categoría desplegada; de ella sale el color en el selector. */
     categoria?: { id: string; nombre: string; color: string } | null;
+    /**
+     * ¿Rellenó el perfil de ESTE grupo? Solo para alumnos. Decide a dónde entra
+     * al autenticarse; el estado en vivo lo lleva `perfilCompleto` de abajo, que
+     * es el del grupo activo y lo refresca el menú.
+     */
+    perfilCompleto?: boolean;
   }[];
   /** Tema elegido: 'claro' | 'oscuro' | 'auto'. Le sigue entre dispositivos. */
   preferenciaTema?: string;
