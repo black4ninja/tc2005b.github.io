@@ -1,0 +1,57 @@
+/* Aviso de ámbar, no de error: no se ha roto nada, falta un paso. */
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--estado-aviso-border);
+  border-radius: 8px;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+}
+
+.texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.titulo {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.detalle {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+/* El botón es la salida del aviso: sin él solo sería un regaño. */
+.accion {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--dash-primary);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.accion:hover {
+  filter: brightness(1.08);
+}
+
+/* En móvil el botón no cabe al lado del texto sin estrujarlo. */
+@media (max-width: 640px) {
+  .aviso {
+    flex-wrap: wrap;
+  }
+  .accion {
+    width: 100%;
+    text-align: center;
+  }
+}

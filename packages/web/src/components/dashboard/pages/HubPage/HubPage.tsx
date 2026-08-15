@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from 'react-router';
 import TextInput from '../../atoms/TextInput/TextInput';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Icon from '../../atoms/Icon/Icon';
+import AvisoPerfilIncompleto from '../../molecules/AvisoPerfilIncompleto/AvisoPerfilIncompleto';
 import {
   materialesDelCalendario,
   filtrarMateriales,
@@ -100,6 +101,10 @@ export default function HubPage() {
       <p className={styles.intro}>
         Todo el material del curso en un solo sitio, en el orden del calendario.
       </p>
+
+      {/* La otra sección que el alumno puede abrir con el perfil a medias. El
+          componente ya se calla solo cuando no toca (staff, o perfil hecho). */}
+      <AvisoPerfilIncompleto grupoId={grupoId} />
 
       {error && <div className={styles.error}>{error}</div>}
 

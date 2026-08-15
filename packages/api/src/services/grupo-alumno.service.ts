@@ -137,6 +137,21 @@ export async function findGrupoAlumnoLink(
  * lista y salta al primero disponible.
  */
 export async function getGruposDeAlumno(alumnoId: string): Promise<Grupo[]> {
+  return (await getGruposDeAlumnoConPerfil(alumnoId)).map((g) => g.grupo);
+}
+
+/**
+ * Lo mismo, pero diciendo además si el alumno YA rellenó el perfil de cada uno.
+ *
+ * El perfil es POR GRUPO: quien lleva un semestre en la plataforma y entra a un
+ * grupo nuevo vuelve a tenerlo incompleto, y con él a medias el menú le deja en
+ * gris casi todo. Ese dato lo trae el mismo vínculo que ya se está leyendo, así
+ * que sale gratis; sin él, quien decide a dónde mandar al alumno al entrar no
+ * puede saber si tiene algo que rellenar.
+ */
+export async function getGruposDeAlumnoConPerfil(
+  alumnoId: string,
+): Promise<{ grupo: Grupo; perfilCompleto: boolean }[]> {
   const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId) as AppUser;
 
   const query = new Parse.Query<GrupoAlumno>('GrupoAlumno');
@@ -150,11 +165,11 @@ export async function getGruposDeAlumno(alumnoId: string): Promise<Grupo[]> {
   query.limit(1000);
   const links = await query.find({ useMasterKey: true });
 
-  const grupos: Grupo[] = [];
+  const grupos: { grupo: Grupo; perfilCompleto: boolean }[] = [];
   for (const link of links) {
     const grupo = link.getGrupo() as Grupo | undefined;
     if (grupoDaAccesoAlumno(grupo)) {
-      grupos.push(grupo!);
+      grupos.push({ grupo: grupo!, perfilCompleto: link.getPerfilCompleto() });
     }
   }
   return grupos;

@@ -29,7 +29,20 @@
   text-overflow: ellipsis;
 }
 .disabled {
-  opacity: 0.4;
-  pointer-events: none;
+  /* 0.4 lo dejaba casi ilegible, y con `pointer-events: none` el `title` que lo
+     explicaba no llegaba a salir NUNCA: el ítem no se podía pulsar, ni leer, ni
+     preguntar. Ahora se apaga menos —el candado ya dice que está cerrado— y el
+     cursor y el tooltip funcionan. Sigue sin ser un enlace: no hay a dónde ir. */
+  opacity: 0.6;
   cursor: not-allowed;
+}
+.disabled:hover {
+  background: none;
+  color: var(--text-secondary);
+}
+
+/* Pequeño y al final de la fila: acompaña, no compite con el icono de sección. */
+.candado {
+  font-size: 15px;
+  opacity: 0.85;
 }
