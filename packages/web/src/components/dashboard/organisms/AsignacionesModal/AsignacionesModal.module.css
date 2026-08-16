@@ -4,6 +4,21 @@
   color: var(--text-secondary);
 }
 
+/* Solo aparece con dos colecciones o más, que es cuando la regla se nota. */
+.nota {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: -8px 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--estado-info-border);
+  border-radius: 8px;
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .error {
   padding: 10px 12px;
   margin-bottom: 12px;

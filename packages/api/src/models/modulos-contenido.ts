@@ -62,3 +62,22 @@ export function moduloHabilitado(
   const presente = !!lista && lista.includes(modulo);
   return moduloEsOptIn(modulo) ? presente : !presente;
 }
+
+/**
+ * Colecciones del grupo que aportan competencias.
+ *
+ * Un grupo puede tener varias colecciones —así el alumno llega al wiki de varias
+ * materias—, pero **evalúa las competencias de UNA sola**: la malla es una
+ * lista, no una por materia. Con dos encendidas, `competenciasDeGrupo` mezcla
+ * los dos catálogos y a cada alumno le nacen las competencias de ambas
+ * asignaturas, que no es lo que nadie quiere ver en una malla.
+ *
+ * Ojo con el default: `competencias` nace ENCENDIDO, así que asignar una segunda
+ * colección sin tocar nada deja las dos activas. Por eso hace falta el candado.
+ */
+export function coleccionesConCompetencias(
+  coleccionIds: readonly string[],
+  modulosDeshabilitados: Record<string, string[]> | undefined,
+): string[] {
+  return coleccionIds.filter((id) => moduloHabilitado(modulosDeshabilitados, id, 'competencias'));
+}

@@ -8,6 +8,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- **Un grupo evalúa las competencias de una sola materia.** Un grupo puede tener
+  varias colecciones asignadas —así el alumno llega al wiki de varias materias—,
+  pero la malla es UNA lista. Con dos colecciones aportando competencias, a cada
+  alumno le nacían las de las dos asignaturas mezcladas, y el módulo
+  `competencias` nace ENCENDIDO: bastaba con asignar una segunda colección, sin
+  tocar ningún ajuste, para quedar en ese estado. Es el caso real de los grupos
+  de TC2007B, que tienen asignadas TC2007B y TC2005B.
+  - El servidor rechaza guardar una asignación con dos colecciones aportando
+    competencias, y lo explica.
+  - El modal no deja llegar ahí: encender Competencias en una colección la apaga
+    en las demás, y asignar una nueva no la enciende si ya hay otra que las
+    aporta. Con dos colecciones o más, se avisa antes de que pase.
+  - Se comprueba al CONFIGURAR y no al crear la malla: ahí el error llegaría
+    tarde y disfrazado de «aparecieron competencias de otra materia».
+
+### Fixed
 - **El alumno nuevo ya no se queda mirando un menú gris sin saber qué hacer.**
   Reportado por los propios alumnos. Hasta que rellenan el perfil del grupo, el
   menú les deja bloqueados Malla, Competencias, Wiki, Ejercicios y Agendar
