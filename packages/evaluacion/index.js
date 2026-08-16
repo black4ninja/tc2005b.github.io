@@ -88,17 +88,65 @@ export function calcActividadesScore(actividades, ids) {
   };
 }
 
-/** Score de competencias: promedio simple de las del periodo. */
+/**
+ * Puntos que pesa una competencia dentro del bloque. Sin asignar = 0.
+ *
+ * Vive en el CATÁLOGO (`Competencia.puntos`), no en el plan: la misma materia
+ * debe calificar igual en todos sus grupos.
+ */
+export function parsePuntosCompetencia(puntos) {
+  const n = typeof puntos === 'number' ? puntos : Number(puntos);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/**
+ * Score de competencias del periodo: promedio PONDERADO por los puntos de cada
+ * competencia, normalizado por los puntos de las que ese periodo evalúa.
+ *
+ * Lo de normalizar no es un detalle: en el formato de TC2005B un periodo evalúa
+ * 3 de 9 competencias, así que si se dividiera entre el total del catálogo ese
+ * periodo no podría llegar a 100 ni con todo perfecto.
+ *
+ * **Sin puntos asignados sigue siendo el promedio simple de siempre**, que es lo
+ * que tienen todos los grupos existentes: si ninguna de las competencias del
+ * periodo tiene puntos, todas pesan igual y el resultado es idéntico al anterior.
+ *
+ * `sinPuntos` cuenta las que se quedaron fuera por no tener puntos habiendo
+ * otras que sí: son competencias que el profesor ve en la malla y que **no
+ * cuentan nada**, y eso hay que poder decirlo en pantalla en vez de que se
+ * descuente en silencio.
+ */
 export function calcCompetenciasScore(competencias, ids, periodoIdx) {
   const campo = campoValorPeriodo(periodoIdx);
+  const delPeriodo = competencias.filter((c) => ids.has(c.competenciaId));
+
+  const totalPuntos = delPeriodo.reduce((t, c) => t + parsePuntosCompetencia(c.puntos), 0);
+  const ponderada = totalPuntos > 0;
+
   let suma = 0;
+  let peso = 0;
   let cuenta = 0;
-  for (const comp of competencias) {
-    if (!ids.has(comp.competenciaId)) continue;
-    suma += parseValorCompetencia(comp[campo]);
+  let sinPuntos = 0;
+  for (const comp of delPeriodo) {
+    const valor = parseValorCompetencia(comp[campo]);
+    const puntos = parsePuntosCompetencia(comp.puntos);
+    if (ponderada && puntos === 0) {
+      sinPuntos++;
+      continue;
+    }
+    const p = ponderada ? puntos : 1;
+    suma += valor * p;
+    peso += p;
     cuenta++;
   }
-  return { suma, cuenta, score: cuenta === 0 ? 0 : suma / cuenta };
+
+  return {
+    suma,
+    cuenta,
+    ponderada,
+    sinPuntos,
+    score: peso === 0 ? 0 : suma / peso,
+  };
 }
 
 /** Nota de un periodo: mezcla ponderada de actividades y competencias. */
@@ -115,6 +163,10 @@ export function calcPeriodoScore(periodos, i, actividades, competencias) {
     totalGanado: act.ganado,
     actividadesContadas: act.contadas,
     competenciasContadas: comp.cuenta,
+    // Para poder avisar en pantalla: el periodo pondera, y cuántas de sus
+    // competencias no cuentan por no tener puntos.
+    competenciasPonderadas: comp.ponderada,
+    competenciasSinPuntos: comp.sinPuntos,
     pesoFinal: periodo.pesoFinal,
     pesoActividades: periodo.pesoActividades,
     pesoCompetencias: periodo.pesoCompetencias,

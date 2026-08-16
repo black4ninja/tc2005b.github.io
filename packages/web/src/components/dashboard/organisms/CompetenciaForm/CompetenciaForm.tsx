@@ -11,6 +11,8 @@ interface DependenciaRef {
 interface CompetenciaData {
   id?: string;
   orden?: number;
+  /** Cuánto pesa en la nota del bloque de competencias. 0 = sin asignar. */
+  puntos?: number;
   competencia: string;
   nivel: string;
   descripcionNivel?: string;
@@ -64,6 +66,9 @@ export default function CompetenciaForm({
     competencia?.coleccionId ?? coleccionInicial ?? '',
   );
   const [orden, setOrden] = useState<number | ''>(competencia?.orden ?? '');
+  // Vacío y 0 son lo mismo aquí: «sin asignar». No se distingue porque no hay
+  // diferencia de comportamiento — con 0 la competencia no pondera.
+  const [puntos, setPuntos] = useState<number | ''>(competencia?.puntos || '');
   const [nombre, setNombre] = useState(competencia?.competencia ?? '');
   const [nivel, setNivel] = useState(competencia?.nivel ?? '');
   const [descripcionNivel, setDescripcionNivel] = useState(competencia?.descripcionNivel ?? '');
@@ -112,6 +117,7 @@ export default function CompetenciaForm({
     onSave({
       coleccionId,
       orden: orden !== '' ? Number(orden) : undefined,
+      puntos: puntos !== '' ? Number(puntos) : 0,
       competencia: nombre.trim(),
       nivel: nivel.trim(),
       descripcionNivel: descripcionNivel.trim() || undefined,
@@ -168,6 +174,22 @@ export default function CompetenciaForm({
         onChange={(v) => { setOrden(v === '' ? '' : Number(v)); setError(''); }}
         disabled={loading}
       />
+      <div className={styles.field}>
+        <TextInput
+          label="Puntos"
+          placeholder="Ej: 20 — vacío = todas pesan igual"
+          icon="scale"
+          value={puntos === '' ? '' : String(puntos)}
+          onChange={(v) => { setPuntos(v === '' ? '' : Number(v)); setError(''); }}
+          disabled={loading}
+        />
+        <span className={styles.hint}>
+          Cuánto pesa dentro del bloque de competencias. No hace falta que sumen 100: la nota se
+          normaliza entre las que evalúa cada periodo. <strong>Si ninguna competencia de la materia
+          tiene puntos, todas pesan igual</strong> — que es como se calcula hoy. Ojo con dejar una a
+          medias: si algunas tienen puntos y otras no, las que no tienen <strong>no cuentan</strong>.
+        </span>
+      </div>
       <TextInput
         label="Competencia"
         placeholder="Ej: SICT0201 Determinación de patrones"

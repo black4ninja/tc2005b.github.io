@@ -4,6 +4,20 @@ import { BaseModel } from '../models/BaseModel.js';
 import { Competencia } from '../models/Competencia.js';
 import { coleccionesDeGrupo } from '../services/grupo-colecciones.service.js';
 
+/**
+ * Puntos de una competencia, saneados. Cualquier basura vale 0 = «sin asignar»,
+ * que es el estado en el que están hoy todas: con 0 en todas, el bloque se
+ * promedia simple y la nota no cambia.
+ *
+ * No se exige que los puntos de una colección sumen 100: el cálculo normaliza
+ * por los puntos de las competencias que ese periodo evalúa, así que forzarlo
+ * aquí impediría el caso normal de un periodo que evalúa solo una parte.
+ */
+function normalizarPuntos(valor: unknown): number {
+  const n = typeof valor === 'number' ? valor : Number(valor);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
 /** Resuelve un coleccionId a un pointer VALIDADO. `null` si no existe. */
 async function resolverColeccion(coleccionId: string): Promise<Parse.Object | null> {
   const q = new Parse.Query('Coleccion');
@@ -103,7 +117,7 @@ export async function listCompetencias(req: Request, res: Response): Promise<voi
 }
 
 export async function createCompetencia(req: Request, res: Response): Promise<void> {
-  const { competencia, nivel, descripcionNivel, guiaEvidencias, incipienteB, incipienteA, basico, solido, destacado, fechaIdealEvaluacion, orden, esCalculada, dependencias, coleccionId } = req.body;
+  const { competencia, nivel, descripcionNivel, guiaEvidencias, incipienteB, incipienteA, basico, solido, destacado, fechaIdealEvaluacion, orden, puntos, esCalculada, dependencias, coleccionId } = req.body;
 
   if (!competencia || typeof competencia !== 'string' || competencia.trim() === '') {
     res.status(400).json({ status: 'error', message: 'La competencia es requerida' });
@@ -158,6 +172,7 @@ export async function createCompetencia(req: Request, res: Response): Promise<vo
     if (destacado) comp.setDestacado(destacado.trim());
     if (fechaIdealEvaluacion) comp.setFechaIdealEvaluacion(fechaIdealEvaluacion.trim());
     if (orden !== undefined) comp.setOrden(Number(orden));
+    if (puntos !== undefined) comp.setPuntos(normalizarPuntos(puntos));
 
     comp.setEsCalculada(isCalculada);
     if (isCalculada && Array.isArray(dependencias)) {
@@ -185,7 +200,7 @@ export async function createCompetencia(req: Request, res: Response): Promise<vo
 
 export async function updateCompetencia(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { competencia, nivel, descripcionNivel, guiaEvidencias, incipienteB, incipienteA, basico, solido, destacado, fechaIdealEvaluacion, orden, esCalculada, dependencias, coleccionId } = req.body;
+  const { competencia, nivel, descripcionNivel, guiaEvidencias, incipienteB, incipienteA, basico, solido, destacado, fechaIdealEvaluacion, orden, puntos, esCalculada, dependencias, coleccionId } = req.body;
 
   try {
     const query = BaseModel.queryActive<Competencia>('Competencia');
@@ -233,6 +248,7 @@ export async function updateCompetencia(req: Request, res: Response): Promise<vo
     if (destacado !== undefined) comp.setDestacado((destacado ?? '').trim());
     if (fechaIdealEvaluacion !== undefined) comp.setFechaIdealEvaluacion((fechaIdealEvaluacion ?? '').trim());
     if (orden !== undefined) comp.setOrden(Number(orden));
+    if (puntos !== undefined) comp.setPuntos(normalizarPuntos(puntos));
 
     if (esCalculada !== undefined) {
       const isCalculada = esCalculada === true;

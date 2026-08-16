@@ -76,6 +76,24 @@ export class Competencia extends BaseModel {
     this.set('fechaIdealEvaluacion', fechaIdealEvaluacion);
   }
 
+  /**
+   * Cuánto pesa esta competencia dentro del bloque de competencias. 0 = sin
+   * asignar.
+   *
+   * Vive en el CATÁLOGO y no en el plan del grupo a propósito: la misma materia
+   * debe calificar igual en todos sus grupos. Si algún día hace falta que un
+   * grupo reparta distinto, se añade el override entonces.
+   *
+   * Si NINGUNA competencia del periodo tiene puntos, el bloque se promedia
+   * simple —que es lo que hacen hoy todos los grupos— y nada cambia.
+   */
+  getPuntos(): number {
+    return this.get('puntos') ?? 0;
+  }
+  setPuntos(puntos: number): void {
+    this.set('puntos', puntos);
+  }
+
   getOrden(): number {
     return this.get('orden') ?? 0;
   }
@@ -143,6 +161,7 @@ export class Competencia extends BaseModel {
       destacado: this.getDestacado(),
       fechaIdealEvaluacion: this.getFechaIdealEvaluacion(),
       orden: this.getOrden(),
+      puntos: this.getPuntos(),
       esCalculada: this.getEsCalculada(),
       dependencias: deps.map((d) => ({
         id: d.id,
