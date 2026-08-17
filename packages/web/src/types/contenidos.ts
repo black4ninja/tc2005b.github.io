@@ -9,6 +9,7 @@ export interface ColeccionRef {
   nombre: string;
   slug: string;
   clave: string | null;
+  permitePenalizacion?: boolean;
 }
 
 export interface ColeccionData {
@@ -19,6 +20,8 @@ export interface ColeccionData {
   descripcion: string | null;
   icono: string;
   publicada: boolean;
+  /** ¿La materia usa el nivel «Incipiente B −30 pts»? */
+  permitePenalizacion?: boolean;
   active: boolean;
 }
 

@@ -80,6 +80,8 @@ export class CompetenciaAlumno extends BaseModel {
       solido: comp?.get('solido') ?? '',
       destacado: comp?.get('destacado') ?? '',
       fechaIdealEvaluacion: comp?.get('fechaIdealEvaluacion') ?? '',
+      penalizacion: comp?.get('penalizacion') ?? '',
+      admitePenalizacion: comp?.get('admitePenalizacion') === true,
       // Lo necesitan las tres pantallas que calculan nota en el cliente (malla,
       // panel del alumno y export): sin esto ponderarían con todo a cero.
       puntos: comp?.get('puntos') ?? 0,

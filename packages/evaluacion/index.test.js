@@ -16,6 +16,9 @@ import {
   calcPeriodoScore,
   calcCalificacion,
   round1,
+  esPenalizacion,
+  contarPenalizaciones,
+  PENALIZACION_VALOR,
 } from './index.js';
 
 /** Plan como los tres de producción: P1 normal, P2 acumulativo. */
@@ -360,5 +363,162 @@ describe('round1', () => {
     expect(round1(71.25)).toBe(71.3);
     expect(round1(0)).toBe(0);
     expect(round1(99.94)).toBe(99.9);
+  });
+});
+
+/**
+ * «Incipiente B −30 pts»: la sanción por conducta.
+ *
+ * No es un nivel de logro más. Los otros cinco entran al promedio como
+ * porcentaje; esta vale 0 como nivel y además resta 30 PUNTOS DIRECTOS a la nota
+ * del periodo. Se acumulan y el suelo es 0.
+ *
+ * Cada test de aquí fija una decisión de política que se tomó a conciencia: si
+ * alguno se cae, no se "arregla" el test sin volver a decidir.
+ */
+describe('penalización Incipiente B −30', () => {
+  const PLAN_5050 = [{
+    nombre: 'Único',
+    pesoFinal: 100,
+    pesoActividades: 50,
+    pesoCompetencias: 50,
+    actividades: ['a1'],
+    competencias: ['c1', 'c2'],
+    acumulativo: false,
+  }];
+  const actividadesPerfectas = [act('a1', 10, 10)];
+
+  it('reconoce el centinela y no lo confunde con un nivel real', () => {
+    expect(esPenalizacion(PENALIZACION_VALOR)).toBe(true);
+    expect(esPenalizacion('-30')).toBe(true);
+    expect(esPenalizacion(0)).toBe(false);
+    expect(esPenalizacion(15)).toBe(false);
+    expect(esPenalizacion(100)).toBe(false);
+    expect(esPenalizacion('')).toBe(false);
+    expect(esPenalizacion(null)).toBe(false);
+  });
+
+  it('como NIVEL vale 0, igual que un Incipiente B', () => {
+    // Si entrara al promedio como −30, su efecto dependería de cuántas
+    // competencias haya. Es justo lo contrario de «30 de golpe y sin excepción».
+    expect(parseValorCompetencia(PENALIZACION_VALOR)).toBe(0);
+    expect(parseValorCompetencia('-30')).toBe(0);
+  });
+
+  it('la penalizada cuenta 0 en el promedio Y ADEMÁS resta 30 puntos', () => {
+    // Doble efecto, deliberado: es «un Incipiente B con extra».
+    const comps = [
+      { competenciaId: 'c1', valorPeriodo1: 100 },
+      { competenciaId: 'c2', valorPeriodo1: PENALIZACION_VALOR },
+    ];
+    const p = calcPeriodoScore(PLAN_5050, 0, actividadesPerfectas, comps);
+    // c2 cuenta como 0 en el promedio: comp = (100+0)/2 = 50.
+    expect(p.compScore).toBe(50);
+    expect(p.periodoScoreBruto).toBe(75); // 50 + 25
+    expect(p.puntosPenalizados).toBe(30);
+    expect(p.periodoScore).toBe(45);
+  });
+
+  it('cada una resta otros 30: se acumulan', () => {
+    const comps = [
+      { competenciaId: 'c1', valorPeriodo1: PENALIZACION_VALOR },
+      { competenciaId: 'c2', valorPeriodo1: PENALIZACION_VALOR },
+    ];
+    const p = calcPeriodoScore(PLAN_5050, 0, actividadesPerfectas, comps);
+    expect(p.penalizaciones).toBe(2);
+    expect(p.puntosPenalizados).toBe(60);
+  });
+
+  it('suelo en 0: la nota del periodo nunca es negativa', () => {
+    // Tres penalizaciones (−90) sobre un periodo que valía 50.
+    const comps = [
+      { competenciaId: 'c1', valorPeriodo1: PENALIZACION_VALOR },
+      { competenciaId: 'c2', valorPeriodo1: PENALIZACION_VALOR },
+      { competenciaId: 'c3', valorPeriodo1: PENALIZACION_VALOR },
+    ];
+    const p = calcPeriodoScore(PLAN_5050, 0, actividadesPerfectas, comps);
+    expect(p.periodoScore).toBe(0);
+    expect(p.periodoScore).not.toBeLessThan(0);
+  });
+
+  it('el castigo ARRASTRA a las actividades, no se queda en el bloque de competencias', () => {
+    // Con las competencias a 0 el periodo valdría 50 (solo actividades); una
+    // penalización lo baja a 20. Si el daño se limitara al bloque de
+    // competencias, se habría quedado en 50.
+    const comps = [
+      { competenciaId: 'c1', valorPeriodo1: 0 },
+      { competenciaId: 'c2', valorPeriodo1: PENALIZACION_VALOR },
+    ];
+    const p = calcPeriodoScore(PLAN_5050, 0, actividadesPerfectas, comps);
+    expect(p.periodoScoreBruto).toBe(50);
+    expect(p.periodoScore).toBe(20);
+  });
+
+  it('cuenta la sanción aunque la competencia NO esté en la selección del periodo', () => {
+    // Es una sanción por conducta, no la nota de esa competencia. Si se ignorara
+    // por no estar en el plan, quedaría sin efecto y nadie se enteraría.
+    const comps = [
+      { competenciaId: 'c1', valorPeriodo1: 100 },
+      { competenciaId: 'c2', valorPeriodo1: 100 },
+      { competenciaId: 'fuera-del-plan', valorPeriodo1: PENALIZACION_VALOR },
+    ];
+    const p = calcPeriodoScore(PLAN_5050, 0, actividadesPerfectas, comps);
+    expect(p.compScore).toBe(100); // la de fuera no entra al promedio
+    expect(p.penalizaciones).toBe(1);
+    expect(p.periodoScore).toBe(70);
+  });
+
+  it('la sanción es POR PERIODO: la de P1 no castiga a P2', () => {
+    const comps = [{ competenciaId: 'c1', valorPeriodo1: PENALIZACION_VALOR, valorPeriodo2: 100 }];
+    expect(contarPenalizaciones(comps, 0)).toBe(1);
+    expect(contarPenalizaciones(comps, 1)).toBe(0);
+  });
+
+  it('sin penalizaciones, la nota es exactamente la de siempre', () => {
+    // El test que protege a todos los grupos que no usan este nivel.
+    const comps = [
+      { competenciaId: 'c1', valorPeriodo1: 100 },
+      { competenciaId: 'c2', valorPeriodo1: 0 },
+    ];
+    const p = calcPeriodoScore(PLAN_5050, 0, actividadesPerfectas, comps);
+    expect(p.penalizaciones).toBe(0);
+    expect(p.periodoScore).toBe(p.periodoScoreBruto);
+    expect(p.periodoScore).toBe(75);
+  });
+
+  it('el formato de TC2007B: un periodo al 100%, todo competencias', () => {
+    // Aquí «30 puntos del periodo» y «30 de la final» son lo mismo, que es lo
+    // que se pidió: de golpe y sin excepción.
+    const plan = [{
+      nombre: 'Único', pesoFinal: 100, pesoActividades: 0, pesoCompetencias: 100,
+      actividades: [], competencias: ['c1', 'c2'], acumulativo: false,
+    }];
+    const comps = [
+      { competenciaId: 'c1', valorPeriodo1: 100, puntos: 50 },
+      { competenciaId: 'c2', valorPeriodo1: 100, puntos: 50 },
+    ];
+    const sinCastigo = calcCalificacion(plan, [], comps);
+    expect(sinCastigo.calificacionActual).toBe(100);
+
+    const conCastigo = calcCalificacion(plan, [], [
+      ...comps,
+      { competenciaId: 'c3', valorPeriodo1: PENALIZACION_VALOR },
+    ]);
+    expect(conCastigo.calificacionActual).toBe(70);
+  });
+
+  it('con puntos, la penalizada cuenta como 0 y además castiga', () => {
+    // Doble efecto, y es deliberado: es «un Incipiente B con extra».
+    const plan = [{
+      nombre: 'Único', pesoFinal: 100, pesoActividades: 0, pesoCompetencias: 100,
+      actividades: [], competencias: ['c1', 'c2'], acumulativo: false,
+    }];
+    const comps = [
+      { competenciaId: 'c1', valorPeriodo1: 100, puntos: 80 },
+      { competenciaId: 'c2', valorPeriodo1: PENALIZACION_VALOR, puntos: 20 },
+    ];
+    const p = calcPeriodoScore(plan, 0, [], comps);
+    expect(p.compScore).toBe(80); // (100*80 + 0*20) / 100
+    expect(p.periodoScore).toBe(50); // 80 − 30
   });
 });
