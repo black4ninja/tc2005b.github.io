@@ -3,6 +3,7 @@ import { useParams } from 'react-router';
 import { confirmar } from '../../../../utils/dialogos';
 import { useAuth } from '../../../../context/AuthContext';
 import DashButton from '../../atoms/DashButton/DashButton';
+import Modal from '../../atoms/Modal/Modal';
 import styles from './PlanEvaluacionPage.module.css';
 
 /* ------------------------------------------------------------------ */
@@ -64,6 +65,13 @@ export default function PlanEvaluacionPage() {
   const [expandedWeeks, setExpandedWeeks] = useState<Record<string, boolean>>({});
   const [bulkBusy, setBulkBusy] = useState<Record<number, boolean>>({});
 
+  // Copiar el plan de otro grupo. `todos` a propósito: los modelos ya probados
+  // suelen estar en grupos de semestres cerrados, que por defecto no se listan.
+  const [copiarOpen, setCopiarOpen] = useState(false);
+  const [copiando, setCopiando] = useState(false);
+  const [gruposCopia, setGruposCopia] = useState<{ id: string; name: string; active?: boolean }[]>([]);
+  const [desdeGrupoId, setDesdeGrupoId] = useState('');
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'x-session-token': sessionToken ?? '',
@@ -112,6 +120,64 @@ export default function PlanEvaluacionPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  /* ---------- Copiar el plan de otro grupo ---------- */
+
+  async function abrirCopiar() {
+    setCopiarOpen(true);
+    setDesdeGrupoId('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos?estado=todos`, { headers: authHeaders });
+      const json = await res.json();
+      setGruposCopia((json.grupos ?? []).filter((g: { id: string }) => g.id !== grupoId));
+    } catch {
+      setGruposCopia([]);
+    }
+  }
+
+  async function handleCopiar() {
+    if (!desdeGrupoId) return;
+    // Sustituye el plan entero: si ya había uno, se avisa antes.
+    if (periodos.length > 0) {
+      const ok = await confirmar({
+        titulo: '¿Reemplazar el plan de este grupo?',
+        texto: 'Se sustituyen sus periodos y pesos por los del grupo elegido. No se puede deshacer.',
+        confirmar: 'Reemplazar',
+        peligro: true,
+      });
+      if (!ok) return;
+    }
+    setCopiando(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/plan-evaluacion/copiar`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ desdeGrupoId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'No se pudo copiar el plan');
+
+      // Lo que no se pudo traducir se DICE. Las competencias de otra materia y
+      // las actividades sin equivalente se caen, y callarlo dejaría un plan que
+      // parece copiado y está a medias.
+      const avisos: string[] = [];
+      if (json.actividadesMapeadas) avisos.push(`${json.actividadesMapeadas} actividad(es) enlazadas por nombre`);
+      if (json.actividadesDescartadas) avisos.push(`${json.actividadesDescartadas} sin equivalente en este grupo`);
+      if (json.competenciasDescartadas) avisos.push(`${json.competenciasDescartadas} competencia(s) de otra materia, descartadas`);
+      setSuccess(
+        `Plan copiado de "${json.copiadoDe}": ${json.periodos} periodo(s).` +
+          (avisos.length ? ` ${avisos.join(' · ')}. Revísalo antes de guardar.` : ''),
+      );
+      setCopiarOpen(false);
+      await fetchData();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setCopiando(false);
+    }
+  }
 
   /* ---------- Actividades grouped by week ---------- */
 
@@ -395,6 +461,9 @@ export default function PlanEvaluacionPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.pageTitle}>Plan de Evaluación</h1>
+        <DashButton variant="outline" onClick={abrirCopiar} disabled={saving || copiando}>
+          Copiar de otro grupo
+        </DashButton>
         <DashButton onClick={handleSave} disabled={saving}>
           {saving ? 'Guardando...' : 'Guardar'}
         </DashButton>
@@ -760,6 +829,39 @@ export default function PlanEvaluacionPage() {
         Agregar periodo
       </button>
 
+      <Modal
+        isOpen={copiarOpen}
+        onClose={() => setCopiarOpen(false)}
+        title="Copiar plan de otro grupo"
+      >
+        <p className={styles.copiaIntro}>
+          Se traen los periodos y sus pesos. Las <strong>competencias</strong> se copian si el grupo
+          evalúa la misma materia, y las <strong>actividades</strong> se enlazan por nombre con las
+          de este grupo: lo que no case, se descarta y se te dice.
+        </p>
+        <select
+          className={styles.copiaSelect}
+          value={desdeGrupoId}
+          onChange={(e) => setDesdeGrupoId(e.target.value)}
+          disabled={copiando}
+        >
+          <option value="">Elige el grupo del que copiar…</option>
+          {gruposCopia.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+              {g.active === false ? ' (cerrado)' : ''}
+            </option>
+          ))}
+        </select>
+        <div className={styles.copiaActions}>
+          <DashButton variant="outline" onClick={() => setCopiarOpen(false)} disabled={copiando}>
+            Cancelar
+          </DashButton>
+          <DashButton onClick={handleCopiar} disabled={copiando || !desdeGrupoId}>
+            {copiando ? 'Copiando...' : 'Copiar'}
+          </DashButton>
+        </div>
+      </Modal>
     </div>
   );
 }

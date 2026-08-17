@@ -7,6 +7,8 @@ import { competenciasDeGrupo } from '../services/grupo-colecciones.service.js';
 import { ActividadEvaluacionGrupo } from '../models/ActividadEvaluacionGrupo.js';
 import { BaseModel } from '../models/BaseModel.js';
 import type { PeriodoConfig } from '../models/PlanEvaluacion.js';
+import { adaptarPlanAGrupo } from '../services/plan-evaluacion-copia.js';
+import { isStaffDeGrupo } from '../services/grupo-admin.service.js';
 
 export async function getPlanEvaluacion(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
@@ -206,4 +208,126 @@ function validatePeriodos(periodos: PeriodoConfig[]): string | null {
   }
 
   return null;
+}
+
+/**
+ * POST /admin/grupos/:grupoId/plan-evaluacion/copiar — { desdeGrupoId }
+ *
+ * Replica el plan de otro grupo, para no armar de cero un modelo ya probado.
+ * Sustituye el plan del destino: es destructivo, y quien llama debe confirmarlo.
+ *
+ * Traducir los ids es todo el trabajo: las competencias son del catálogo de la
+ * materia (misma colección = mismos ids) y las actividades son de cada grupo y
+ * solo se pueden casar por nombre. Copiar hacia otra materia no falla: deja la
+ * forma con las listas vacías, y se informa de lo que no pudo mapearse.
+ */
+export async function copiarPlanEvaluacion(req: Request, res: Response): Promise<void> {
+  const { grupoId } = req.params;
+  const { desdeGrupoId } = req.body ?? {};
+
+  if (typeof desdeGrupoId !== 'string' || !desdeGrupoId.trim()) {
+    res.status(400).json({ status: 'error', message: 'Falta el grupo del que copiar' });
+    return;
+  }
+  if (desdeGrupoId === grupoId) {
+    res.status(400).json({ status: 'error', message: 'El grupo de origen y el de destino son el mismo' });
+    return;
+  }
+
+  try {
+    const grupoQuery = BaseModel.queryActive<Grupo>('Grupo');
+    const destino = await grupoQuery.get(grupoId, { useMasterKey: true });
+
+    // El middleware solo mira el grupo DESTINO (`:grupoId`). El origen se
+    // comprueba aquí, o un profesor podría leer el plan de un grupo ajeno
+    // pasando su id en el cuerpo.
+    //
+    // `isStaffDeGrupo` solo mira grupos vivos, así que el profesor no puede
+    // copiar de uno cerrado aunque fuera suyo. Es la limitación conocida: para
+    // eso está el admin, que sí puede.
+    const usuario = req.appUser;
+    if (usuario && usuario.getUserType() !== 'admin') {
+      if (!(await isStaffDeGrupo(usuario.id, desdeGrupoId))) {
+        res.status(403).json({ status: 'error', message: 'No tienes acceso al grupo de origen' });
+        return;
+      }
+    }
+
+    // El origen se busca SIN filtro de estado, a propósito. Los modelos que uno
+    // quiere replicar están en los grupos del semestre pasado, y al cerrarlos se
+    // borran (`active` y `exists` en false): los tres planes que existen hoy en
+    // producción están justamente ahí. Filtrar por `exists` dejaría esta función
+    // sin ningún origen útil. Solo se LEE de él: su plan y los nombres de sus
+    // actividades.
+    const origenQuery = new Parse.Query<Grupo>('Grupo');
+    const origen = await origenQuery.get(desdeGrupoId, { useMasterKey: true });
+
+    const planOrigenQuery = new Parse.Query<PlanEvaluacion>('PlanEvaluacion');
+    planOrigenQuery.equalTo('exists' as any, true as any);
+    planOrigenQuery.equalTo('grupo', origen as any);
+    const planOrigen = await planOrigenQuery.first({ useMasterKey: true });
+    if (!planOrigen || planOrigen.getPeriodos().length === 0) {
+      res.status(400).json({
+        status: 'error',
+        message: `"${origen.get('name') ?? 'El grupo de origen'}" no tiene plan de evaluación que copiar.`,
+      });
+      return;
+    }
+
+    // Competencias que el DESTINO puede evaluar (las de sus colecciones).
+    const { competencias: permitidas } = await competenciasDeGrupo(grupoId);
+    const competenciasDestino = new Set(permitidas.map((c) => c.id!));
+
+    // Actividades de los dos grupos. El puente es el nombre, que es la misma
+    // identidad que usa `copiarPlantilla` para no estampar dos veces.
+    const actividadesDe = async (grupo: Grupo) => {
+      const q = new Parse.Query<ActividadEvaluacionGrupo>('ActividadEvaluacionGrupo');
+      q.equalTo('exists' as any, true as any);
+      q.equalTo('grupo' as any, grupo as any);
+      q.limit(1000);
+      return q.find({ useMasterKey: true });
+    };
+    const [actOrigen, actDestino] = await Promise.all([
+      actividadesDe(origen),
+      actividadesDe(destino),
+    ]);
+    const nombrePorActividadOrigen = new Map(actOrigen.map((a) => [a.id!, a.get('nombre') ?? '']));
+    const actividadDestinoPorNombre = new Map(actDestino.map((a) => [a.get('nombre') ?? '', a.id!]));
+
+    const adaptado = adaptarPlanAGrupo(
+      planOrigen.getPeriodos(),
+      competenciasDestino,
+      nombrePorActividadOrigen,
+      actividadDestinoPorNombre,
+    );
+
+    const planDestinoQuery = new Parse.Query<PlanEvaluacion>('PlanEvaluacion');
+    planDestinoQuery.equalTo('exists' as any, true as any);
+    planDestinoQuery.equalTo('grupo', Grupo.createWithoutData(grupoId) as any);
+    let plan = await planDestinoQuery.first({ useMasterKey: true });
+    const reemplazado = !!plan;
+    if (!plan) {
+      plan = new PlanEvaluacion().initDefaults() as PlanEvaluacion;
+      plan.setGrupo(destino);
+    }
+    plan.setPeriodos(adaptado.periodos);
+    await plan.save(null, { useMasterKey: true });
+
+    res.json({
+      status: 'ok',
+      plan: plan.toSafeJSON(),
+      copiadoDe: origen.get('name') ?? '',
+      reemplazado,
+      periodos: adaptado.periodos.length,
+      competenciasDescartadas: adaptado.competenciasDescartadas,
+      actividadesMapeadas: adaptado.actividadesMapeadas,
+      actividadesDescartadas: adaptado.actividadesDescartadas,
+    });
+  } catch (error: any) {
+    if (error?.code === Parse.Error.OBJECT_NOT_FOUND) {
+      res.status(404).json({ status: 'error', message: 'Grupo no encontrado' });
+      return;
+    }
+    res.status(500).json({ status: 'error', message: 'Error al copiar el plan de evaluación' });
+  }
 }
