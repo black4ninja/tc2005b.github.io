@@ -8,6 +8,27 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Copiar el plan de evaluación de otro grupo.** Armar un plan de cero es
+  tedioso y propenso a errores cuando ya hay modelos probados; ahora se replica
+  el de otro grupo y se ajusta lo que cambie. Se copian los periodos con sus
+  pesos, y se traducen las dos listas de ids, cada una por su motivo:
+  - Las **competencias** viven en el catálogo de la materia, así que dos grupos
+    de la misma asignatura comparten ids y se copian literales. Si el destino
+    evalúa otra materia, se descartan: dejarlas metería competencias que el
+    alumno no tiene y el cálculo las omitiría del promedio sin decir nada.
+  - Las **actividades** son de cada grupo y **no guardan referencia a su
+    plantilla**, así que el único puente es el NOMBRE — la misma identidad que ya
+    usa «copiar plantilla» para no estampar dos veces la misma.
+  - Copiar hacia un grupo de otra materia **no falla**: deja la forma con las
+    listas vacías, que es un punto de partida útil. Lo que sí no puede pasar es
+    que algo se caiga en silencio, así que se informa de cuántas competencias y
+    actividades no se pudieron traducir.
+  - El grupo de origen puede estar **cerrado**: los modelos que uno quiere
+    replicar están justamente en los grupos del semestre pasado, y al cerrarlos
+    se borran. (Un profesor solo puede copiar de grupos suyos y vivos; el admin,
+    de cualquiera.)
+  - Sustituye el plan del destino, así que se confirma antes.
+
 - **Nivel «Incipiente B −30 pts»: la sanción por conducta.** No es un nivel de
   logro más. Los otros cinco entran al promedio como porcentaje; este vale **0
   como nivel** —es un Incipiente B— y **además resta 30 puntos directos** a la
