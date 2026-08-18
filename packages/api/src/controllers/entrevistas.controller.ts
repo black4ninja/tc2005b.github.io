@@ -10,6 +10,7 @@ import { Competencia } from '../models/Competencia.js';
 import { CompetenciaAlumno } from '../models/CompetenciaAlumno.js';
 import { scopeGrupo, existeEnGrupo } from '../services/grupo-admin.service.js';
 import { PlanEvaluacion, type PeriodoConfig } from '../models/PlanEvaluacion.js';
+import { PENALIZACION_VALOR } from '@tc2005b/evaluacion';
 
 function getWeekBounds(fecha: string): { monday: string; sunday: string } {
   const d = new Date(fecha + 'T12:00:00');
@@ -218,6 +219,10 @@ export async function deleteEntrevista(req: Request, res: Response): Promise<voi
 
 const VALOR_TO_NUMBER: Record<string, number> = {
   '': 0,
+  // Centinela, no porcentaje: el cálculo lo lee como 0 y aparte descuenta 30
+  // puntos del periodo. Va aquí para que al LIBERAR la entrevista la sanción
+  // llegue a la malla igual que cualquier otro nivel.
+  'Incipiente B −30 pts': PENALIZACION_VALOR,
   'Incipiente B (0%)': 0,
   'Incipiente A (15%)': 15,
   'Básico (70%)': 70,

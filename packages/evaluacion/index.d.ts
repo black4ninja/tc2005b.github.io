@@ -27,6 +27,12 @@ export interface CompetenciaCalc {
   competenciaId: string;
   valorPeriodo1?: string | number | null;
   valorPeriodo2?: string | number | null;
+  /**
+   * Peso de la competencia dentro del bloque, del catálogo (`Competencia.puntos`).
+   * Ausente o 0 = sin asignar; si NINGUNA del periodo tiene puntos, el bloque se
+   * promedia simple, como siempre.
+   */
+  puntos?: number | null;
 }
 
 export interface PeriodoScore<A = ActividadCalc> {
@@ -37,13 +43,35 @@ export interface PeriodoScore<A = ActividadCalc> {
   totalGanado: number;
   actividadesContadas: A[];
   competenciasContadas: number;
+  /** El bloque de competencias del periodo se ponderó por puntos. */
+  competenciasPonderadas: boolean;
+  /** Competencias del periodo que NO cuentan por no tener puntos habiendo otras que sí. */
+  competenciasSinPuntos: number;
   pesoFinal: number;
   pesoActividades: number;
   pesoCompetencias: number;
+  /** Nota del periodo ANTES de descontar las penalizaciones. */
+  periodoScoreBruto: number;
+  /** Cuántas «Incipiente B −30 pts» tiene el alumno en este periodo. */
+  penalizaciones: number;
+  /** Puntos descontados por ellas (30 cada una). */
+  puntosPenalizados: number;
+  /** Nota del periodo ya penalizada, con suelo en 0. */
   periodoScore: number;
 }
 
+/** Valor centinela de «Incipiente B −30 pts» en `valorPeriodoN`. */
+export declare const PENALIZACION_VALOR: number;
+/** Puntos que resta CADA penalización a la nota del periodo. */
+export declare const PENALIZACION_PUNTOS: number;
+export declare function esPenalizacion(valor: unknown): boolean;
+export declare function contarPenalizaciones(
+  competencias: CompetenciaCalc[],
+  periodoIdx: number,
+): number;
+
 export declare function parseValorCompetencia(valor: unknown): number;
+export declare function parsePuntosCompetencia(puntos: unknown): number;
 export declare function campoValorPeriodo(periodoIdx: number): 'valorPeriodo1' | 'valorPeriodo2';
 export declare function idsActividadesDelPeriodo(periodos: PeriodoConfig[], i: number): Set<string>;
 
@@ -56,7 +84,14 @@ export declare function calcCompetenciasScore(
   competencias: CompetenciaCalc[],
   ids: Set<string>,
   periodoIdx: number,
-): { suma: number; cuenta: number; score: number };
+): {
+  /** Suma ponderada (valor × puntos); sin puntos, la suma de valores de siempre. */
+  suma: number;
+  cuenta: number;
+  ponderada: boolean;
+  sinPuntos: number;
+  score: number;
+};
 
 export declare function calcPeriodoScore<A extends ActividadCalc>(
   periodos: PeriodoConfig[],

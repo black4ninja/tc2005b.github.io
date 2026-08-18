@@ -11,6 +11,7 @@ interface ColeccionSavePayload {
   clave?: string;
   descripcion?: string;
   publicada?: boolean;
+  permitePenalizacion?: boolean;
 }
 
 interface ColeccionFormProps {
@@ -29,6 +30,7 @@ export default function ColeccionForm({ coleccion, errorExterno, onSave, onCance
   const [clave, setClave] = useState(coleccion?.clave ?? '');
   const [descripcion, setDescripcion] = useState(coleccion?.descripcion ?? '');
   const [publicada, setPublicada] = useState(coleccion?.publicada ?? false);
+  const [permitePenalizacion, setPermitePenalizacion] = useState(coleccion?.permitePenalizacion ?? false);
   const [error, setError] = useState('');
 
   function handleNombre(v: string) {
@@ -53,7 +55,7 @@ export default function ColeccionForm({ coleccion, errorExterno, onSave, onCance
       slug: slugFinal,
       clave: clave.trim() || undefined,
       descripcion: descripcion.trim() || undefined,
-      ...(coleccion ? { publicada } : {}),
+      ...(coleccion ? { publicada, permitePenalizacion } : {}),
     });
   }
 
@@ -109,6 +111,26 @@ export default function ColeccionForm({ coleccion, errorExterno, onSave, onCance
             disabled={loading}
           />
           <span>Publicada (visible para alumnos con acceso)</span>
+        </label>
+      )}
+      {coleccion && (
+        <label className={styles.checkRow}>
+          <input
+            type="checkbox"
+            checked={permitePenalizacion}
+            onChange={(e) => setPermitePenalizacion(e.target.checked)}
+            disabled={loading}
+          />
+          <span>
+            Usa el nivel <strong>Incipiente B −30 pts</strong>
+            <br />
+            <small>
+              Sanción por conducta: resta 30 puntos directos a la nota del periodo, se acumula y
+              nunca deja la nota en negativo. Solo algunas materias lo usan. Al apagarlo, las
+              competencias que lo admitían dejan de ofrecerlo; las sanciones ya puestas a un alumno
+              se respetan.
+            </small>
+          </span>
         </label>
       )}
       <div className={styles.actions}>

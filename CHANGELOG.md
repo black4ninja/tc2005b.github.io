@@ -29,6 +29,147 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     de cualquiera.)
   - Sustituye el plan del destino, así que se confirma antes.
 
+- **Nivel «Incipiente B −30 pts»: la sanción por conducta.** No es un nivel de
+  logro más. Los otros cinco entran al promedio como porcentaje; este vale **0
+  como nivel** —es un Incipiente B— y **además resta 30 puntos directos** a la
+  nota del periodo. Se acumula: cada competencia sancionada son otros 30. El
+  suelo es 0; nunca hay nota negativa.
+  - Los 30 puntos **arrastran a las actividades**, no se quedan en el bloque de
+    competencias. Si el daño se limitara a ese bloque, a partir de la segunda
+    sanción daría igual tener dos que cinco.
+  - Son 30 puntos **del periodo**. Lo que le quitan a la nota final depende del
+    peso de ese periodo; en un plan de un solo periodo al 100% —el formato de
+    TC2007B, para el que se hizo esto— las dos cosas coinciden.
+  - Cuenta **aunque la competencia no esté en la selección del plan**: es una
+    sanción por conducta, no la nota de esa competencia, y descartarla por eso
+    la dejaría sin efecto sin que nadie se entere.
+  - Se guarda como un valor centinela (`-30`), imposible entre los niveles
+    reales, para que sea inconfundible mirando la base y para que ningún
+    consumidor pueda tomarlo por una nota.
+  - **Sin sanciones, la nota es exactamente la de siempre.**
+  - Se enciende **por materia** (`Coleccion.permitePenalizacion`) y, dentro de
+    ella, competencia por competencia con una casilla explícita: un texto de
+    rúbrica en blanco no distingue «no aplica» de «se me olvidó escribirlo». La
+    materia manda: una competencia no puede admitir el nivel si su colección no
+    lo permite, aunque el payload lo pida.
+  - Al **apagarlo en una materia**, sus competencias dejan de ofrecerlo y se
+    informa de cuántas se tocaron. Las sanciones ya puestas a un alumno se
+    respetan: se asignaron cuando era válido, y borrarlas sería reescribir su
+    historial.
+
+- **Cada competencia puede pesar lo suyo en la nota.** Hasta ahora el bloque de
+  competencias era un **promedio simple**: todas valían igual. TC2007B califica
+  de otra forma —un solo bloque, sin actividades, donde cada competencia aporta
+  los puntos que tiene sobre 100— y eso no se podía expresar.
+  - `Competencia.puntos` vive en el **catálogo**, por materia, no en el plan del
+    grupo: la misma asignatura debe calificar igual en todos sus grupos.
+  - El bloque pasa a ser un **promedio ponderado normalizado** por los puntos de
+    las competencias que ese periodo evalúa. Lo de normalizar no es un detalle:
+    en el formato de TC2005B un periodo evalúa 3 de 9 competencias, y sin
+    normalizar ese periodo no podría llegar a 100 ni con todo perfecto.
+  - **Sin puntos, la nota no se mueve.** Si ninguna competencia del periodo
+    tiene puntos, todas pesan igual y el resultado es idéntico al de siempre —y
+    poner el mismo número a todas también. Es la propiedad que hace segura la
+    migración: hoy ninguna de las 16 competencias tiene puntos.
+  - Una competencia sin puntos **habiendo otras con puntos no cuenta**, ni en el
+    numerador ni en el denominador. El cálculo lo reporta (`competenciasSinPuntos`)
+    para poder decirlo en pantalla en vez de descontarlo en silencio, y el
+    formulario avisa antes.
+  - El XLSX de la malla gana la columna **Puntos**, junto al nivel.
+
+### Fixed
+- **«Crear mallas» no funcionaba.** La columna `valorPeriodo1` es numérica en la
+  base, y la creación guardaba la cadena `'0'`: Parse rechazaba el lote entero
+  con un *schema mismatch* que salía como un «Error al crear competencias de
+  alumnos» sin más pistas. Por eso los 133 alumnos de este semestre estaban a
+  cero mallas. También se arregla el camino de vuelta: «Sin evaluar» ahora
+  **quita** el campo en vez de guardar `''`, que en una columna numérica es el
+  mismo error.
+
+### Added
+- **La sanción «Incipiente B −30 pts» ya se puede asignar.**
+  - Desde la **malla**, solo en las competencias que la admiten, y pidiendo el
+    motivo por delante: resta 30 puntos de golpe y es lo primero que un alumno
+    va a reclamar. El servidor la rechaza igualmente sin retroalimentación —no
+    se fía de que el cliente pinte o no la opción— y la registra en la bitácora.
+  - Desde las **entrevistas**: al liberarlas, la sanción llega a la malla como
+    cualquier otro nivel.
+  - El alumno la **ve en su rúbrica**, con el texto de esa competencia, y solo
+    en las que la admiten: en las demás sería una amenaza que no existe.
+  - La malla explica **de dónde viene la caída** (`− 30 pts por 1 competencia en
+    Incipiente B −30 pts (50.0 → 20.0)`). Sin esa línea el desglose no cuadra:
+    quien suma los dos factores obtiene otro número.
+  - En el **XLSX** tiene etiqueta y color propios, distintos del Incipiente B
+    normal, y la leyenda aclara que no es un porcentaje.
+  - Las **competencias calculadas** no la heredan: para su mínimo vale 0. Si se
+    propagara, el alumno perdería 60 puntos por una sola falta.
+
+### Added
+- **Nivel «Incipiente B −30 pts»: la sanción por conducta.** No es un nivel de
+  logro más. Los otros cinco entran al promedio como porcentaje; este vale **0
+  como nivel** —es un Incipiente B— y **además resta 30 puntos directos** a la
+  nota del periodo. Se acumula: cada competencia sancionada son otros 30. El
+  suelo es 0; nunca hay nota negativa.
+  - Los 30 puntos **arrastran a las actividades**, no se quedan en el bloque de
+    competencias. Si el daño se limitara a ese bloque, a partir de la segunda
+    sanción daría igual tener dos que cinco.
+  - Son 30 puntos **del periodo**. Lo que le quitan a la nota final depende del
+    peso de ese periodo; en un plan de un solo periodo al 100% —el formato de
+    TC2007B, para el que se hizo esto— las dos cosas coinciden.
+  - Cuenta **aunque la competencia no esté en la selección del plan**: es una
+    sanción por conducta, no la nota de esa competencia, y descartarla por eso
+    la dejaría sin efecto sin que nadie se entere.
+  - Se guarda como un valor centinela (`-30`), imposible entre los niveles
+    reales, para que sea inconfundible mirando la base y para que ningún
+    consumidor pueda tomarlo por una nota.
+  - **Sin sanciones, la nota es exactamente la de siempre.**
+  - Se enciende **por materia** (`Coleccion.permitePenalizacion`) y, dentro de
+    ella, competencia por competencia con una casilla explícita: un texto de
+    rúbrica en blanco no distingue «no aplica» de «se me olvidó escribirlo». La
+    materia manda: una competencia no puede admitir el nivel si su colección no
+    lo permite, aunque el payload lo pida.
+  - Al **apagarlo en una materia**, sus competencias dejan de ofrecerlo y se
+    informa de cuántas se tocaron. Las sanciones ya puestas a un alumno se
+    respetan: se asignaron cuando era válido, y borrarlas sería reescribir su
+    historial.
+
+### Added
+- **Cada competencia puede pesar lo suyo en la nota.** Hasta ahora el bloque de
+  competencias era un **promedio simple**: todas valían igual. TC2007B califica
+  de otra forma —un solo bloque, sin actividades, donde cada competencia aporta
+  los puntos que tiene sobre 100— y eso no se podía expresar.
+  - `Competencia.puntos` vive en el **catálogo**, por materia, no en el plan del
+    grupo: la misma asignatura debe calificar igual en todos sus grupos.
+  - El bloque pasa a ser un **promedio ponderado normalizado** por los puntos de
+    las competencias que ese periodo evalúa. Lo de normalizar no es un detalle:
+    en el formato de TC2005B un periodo evalúa 3 de 9 competencias, y sin
+    normalizar ese periodo no podría llegar a 100 ni con todo perfecto.
+  - **Sin puntos, la nota no se mueve.** Si ninguna competencia del periodo
+    tiene puntos, todas pesan igual y el resultado es idéntico al de siempre —y
+    poner el mismo número a todas también. Es la propiedad que hace segura la
+    migración: hoy ninguna de las 16 competencias tiene puntos.
+  - Una competencia sin puntos **habiendo otras con puntos no cuenta**, ni en el
+    numerador ni en el denominador. El cálculo lo reporta (`competenciasSinPuntos`)
+    para poder decirlo en pantalla en vez de descontarlo en silencio, y el
+    formulario avisa antes.
+  - El XLSX de la malla gana la columna **Puntos**, junto al nivel.
+
+### Fixed
+- **Un grupo evalúa las competencias de una sola materia.** Un grupo puede tener
+  varias colecciones asignadas —así el alumno llega al wiki de varias materias—,
+  pero la malla es UNA lista. Con dos colecciones aportando competencias, a cada
+  alumno le nacían las de las dos asignaturas mezcladas, y el módulo
+  `competencias` nace ENCENDIDO: bastaba con asignar una segunda colección, sin
+  tocar ningún ajuste, para quedar en ese estado. Es el caso real de los grupos
+  de TC2007B, que tienen asignadas TC2007B y TC2005B.
+  - El servidor rechaza guardar una asignación con dos colecciones aportando
+    competencias, y lo explica.
+  - El modal no deja llegar ahí: encender Competencias en una colección la apaga
+    en las demás, y asignar una nueva no la enciende si ya hay otra que las
+    aporta. Con dos colecciones o más, se avisa antes de que pase.
+  - Se comprueba al CONFIGURAR y no al crear la malla: ahí el error llegaría
+    tarde y disfrazado de «aparecieron competencias de otra materia».
+
 ### Fixed
 - **El alumno nuevo ya no se queda mirando un menú gris sin saber qué hacer.**
   Reportado por los propios alumnos. Hasta que rellenan el perfil del grupo, el

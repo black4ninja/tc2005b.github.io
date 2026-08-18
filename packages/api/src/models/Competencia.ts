@@ -76,6 +76,50 @@ export class Competencia extends BaseModel {
     this.set('fechaIdealEvaluacion', fechaIdealEvaluacion);
   }
 
+  /**
+   * Cuánto pesa esta competencia dentro del bloque de competencias. 0 = sin
+   * asignar.
+   *
+   * Vive en el CATÁLOGO y no en el plan del grupo a propósito: la misma materia
+   * debe calificar igual en todos sus grupos. Si algún día hace falta que un
+   * grupo reparta distinto, se añade el override entonces.
+   *
+   * Si NINGUNA competencia del periodo tiene puntos, el bloque se promedia
+   * simple —que es lo que hacen hoy todos los grupos— y nada cambia.
+   */
+  getPuntos(): number {
+    return this.get('puntos') ?? 0;
+  }
+  setPuntos(puntos: number): void {
+    this.set('puntos', puntos);
+  }
+
+  /**
+   * Texto de rúbrica del nivel «Incipiente B −30 pts» PARA ESTA competencia.
+   *
+   * Se describe por competencia, como los otros cinco niveles: aunque la idea
+   * sea la misma, lo que se considera conducta inaceptable puede cambiar de una
+   * a otra, y decirlo con precisión es parte de que el alumno no llegue ahí.
+   */
+  getPenalizacion(): string {
+    return this.get('penalizacion') ?? '';
+  }
+  setPenalizacion(v: string): void {
+    this.set('penalizacion', v);
+  }
+
+  /**
+   * ¿Esta competencia admite la sanción? Explícito, no deducido de si el texto
+   * está vacío: un texto en blanco no distingue «no aplica» de «se me olvidó
+   * escribirlo». Nace apagada, y además la materia tiene que permitirla.
+   */
+  getAdmitePenalizacion(): boolean {
+    return this.get('admitePenalizacion') === true;
+  }
+  setAdmitePenalizacion(v: boolean): void {
+    this.set('admitePenalizacion', !!v);
+  }
+
   getOrden(): number {
     return this.get('orden') ?? 0;
   }
@@ -141,8 +185,11 @@ export class Competencia extends BaseModel {
       basico: this.getBasico(),
       solido: this.getSolido(),
       destacado: this.getDestacado(),
+      penalizacion: this.getPenalizacion(),
+      admitePenalizacion: this.getAdmitePenalizacion(),
       fechaIdealEvaluacion: this.getFechaIdealEvaluacion(),
       orden: this.getOrden(),
+      puntos: this.getPuntos(),
       esCalculada: this.getEsCalculada(),
       dependencias: deps.map((d) => ({
         id: d.id,

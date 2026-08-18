@@ -90,7 +90,7 @@ export async function createColeccion(req: Request, res: Response): Promise<void
 
 export async function updateColeccion(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { nombre, slug, clave, descripcion, icono, publicada } = req.body;
+  const { nombre, slug, clave, descripcion, icono, publicada, permitePenalizacion } = req.body;
 
   try {
     // Solo `exists`: el admin también edita colecciones desactivadas
@@ -138,12 +138,36 @@ export async function updateColeccion(req: Request, res: Response): Promise<void
     if (descripcion !== undefined) coleccion.setDescripcion(String(descripcion ?? '').trim());
     if (icono !== undefined && typeof icono === 'string' && icono.trim()) coleccion.setIcono(icono.trim());
     if (publicada !== undefined) coleccion.setPublicada(publicada === true);
+    // El nivel «Incipiente B −30 pts» se enciende por MATERIA. Solo se toca al
+    // editar: una colección nueva nace sin él.
+    let penalizacionRetirada = 0;
+    if (permitePenalizacion !== undefined) {
+      const antes = coleccion.getPermitePenalizacion();
+      const ahora = permitePenalizacion === true;
+      coleccion.setPermitePenalizacion(ahora);
+      // Al APAGARLO, las competencias que lo admitían dejan de admitirlo: si no,
+      // quedarían ofreciendo un nivel que la materia ya no reconoce. Las
+      // sanciones YA PUESTAS a un alumno se respetan —se asignaron cuando era
+      // válido, y borrarlas sería reescribir su historial—, así que se dice
+      // cuántas competencias se tocaron en vez de hacerlo en silencio.
+      if (antes && !ahora) {
+        const q = new Parse.Query('Competencia');
+        q.equalTo('exists' as any, true as any);
+        q.equalTo('coleccion' as any, coleccion as any);
+        q.equalTo('admitePenalizacion' as any, true as any);
+        q.limit(1000);
+        const afectadas = await q.find({ useMasterKey: true });
+        for (const c of afectadas) c.set('admitePenalizacion', false);
+        if (afectadas.length > 0) await Parse.Object.saveAll(afectadas, { useMasterKey: true });
+        penalizacionRetirada = afectadas.length;
+      }
+    }
 
     await coleccion.save(null, { useMasterKey: true });
     // slug/publicada pudieron cambiar → el gate del visor debe verlo ya.
     invalidarCachesVisor();
 
-    res.json({ status: 'ok', coleccion: coleccion.toSafeJSON() });
+    res.json({ status: 'ok', coleccion: coleccion.toSafeJSON(), penalizacionRetirada });
   } catch (error: any) {
     if (error?.code === Parse.Error.OBJECT_NOT_FOUND) {
       res.status(404).json({ status: 'error', message: 'Colección no encontrada' });

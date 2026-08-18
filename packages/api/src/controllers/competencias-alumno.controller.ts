@@ -7,6 +7,8 @@ import { Grupo } from '../models/Grupo.js';
 import { getAlumnosDeGrupo, findGrupoAlumnoLink } from '../services/grupo-alumno.service.js';
 import { scopeGrupo } from '../services/grupo-admin.service.js';
 import { competenciasDeGrupo } from '../services/grupo-colecciones.service.js';
+import { esPenalizacion, PENALIZACION_VALOR } from '@tc2005b/evaluacion';
+import { registrarLog } from '../models/AuditLog.js';
 
 export async function crearCompetenciasAlumno(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
@@ -67,8 +69,10 @@ export async function crearCompetenciasAlumno(req: Request, res: Response): Prom
         registro.setGrupo(grupoPointer);
         registro.setAlumno(alumno);
         registro.setCompetencia(comp);
-        registro.setValorPeriodo1('0');
-        registro.setValorPeriodo2('0');
+        // Numérico: con `'0'` Parse rechazaba el lote entero y «Crear mallas»
+        // no funcionaba en absoluto.
+        registro.setValorPeriodo1(0);
+        registro.setValorPeriodo2(0);
         registro.setRetroPeriodo1('');
         registro.setRetroPeriodo2('');
         toSave.push(registro);
@@ -217,7 +221,14 @@ async function recalcularCalculadas(
           allEvaluated = false;
           break;
         }
-        const numVal = typeof rawVal === 'number' ? rawVal : Number(rawVal);
+        // La sanción por conducta NO se hereda: para el mínimo vale 0, como el
+        // Incipiente B que es. Si se propagara, la calculada también penalizaría
+        // y el alumno perdería 60 puntos por una sola falta.
+        const numVal = esPenalizacion(rawVal)
+          ? 0
+          : typeof rawVal === 'number'
+            ? rawVal
+            : Number(rawVal);
         values.push(numVal);
       }
 
@@ -327,16 +338,75 @@ export async function updateCompetenciaAlumno(req: Request, res: Response): Prom
       }
     }
 
+    /* ── La sanción «Incipiente B −30 pts» tiene dos condiciones ──
+     *
+     * Borra 30 puntos de la nota de un golpe, así que no puede depender solo de
+     * que el front pinte o no la opción:
+     *
+     *   1. La competencia debe ADMITIRLA (y para eso su materia debe permitirla;
+     *      lo garantiza el controlador del catálogo).
+     *   2. Tiene que venir con retroalimentación. Es lo primero que un alumno va
+     *      a reclamar, y sin motivo escrito la reclamación no se puede sostener.
+     */
+    const nuevos: Array<['valorPeriodo1' | 'valorPeriodo2', unknown, unknown]> = [];
+    if (valorPeriodo1 !== undefined) nuevos.push(['valorPeriodo1', valorPeriodo1, retroPeriodo1]);
+    if (valorPeriodo2 !== undefined) nuevos.push(['valorPeriodo2', valorPeriodo2, retroPeriodo2]);
+
+    for (const [campo, valor, retro] of nuevos) {
+      if (!esPenalizacion(valor)) continue;
+      if (competenciaObj?.get('admitePenalizacion') !== true) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Esta competencia no admite el nivel «Incipiente B −30 pts».',
+        });
+        return;
+      }
+      const yaTenia = campo === 'valorPeriodo1'
+        ? registro.getRetroPeriodo1()
+        : registro.getRetroPeriodo2();
+      const texto = typeof retro === 'string' ? retro.trim() : yaTenia.trim();
+      if (!texto) {
+        res.status(400).json({
+          status: 'error',
+          message: 'Para asignar «Incipiente B −30 pts» hay que escribir la retroalimentación: es la que sostiene la sanción.',
+        });
+        return;
+      }
+    }
+
+    const antes = {
+      valorPeriodo1: registro.get('valorPeriodo1'),
+      valorPeriodo2: registro.get('valorPeriodo2'),
+    };
+
     if (valorPeriodo1 !== undefined) {
-      registro.set('valorPeriodo1', valorPeriodo1 === '' ? '' : Number(valorPeriodo1));
+      registro.setValorPeriodo1(valorPeriodo1 === '' ? undefined : Number(valorPeriodo1));
     }
     if (valorPeriodo2 !== undefined) {
-      registro.set('valorPeriodo2', valorPeriodo2 === '' ? '' : Number(valorPeriodo2));
+      registro.setValorPeriodo2(valorPeriodo2 === '' ? undefined : Number(valorPeriodo2));
     }
     if (typeof retroPeriodo1 === 'string') registro.setRetroPeriodo1(retroPeriodo1);
     if (typeof retroPeriodo2 === 'string') registro.setRetroPeriodo2(retroPeriodo2);
 
     await registro.save(null, { useMasterKey: true });
+
+    // Solo la sanción se registra en bitácora, no cada evaluación: es la única
+    // que quita 30 puntos de golpe y la única que se va a reclamar.
+    for (const [campo, valor] of nuevos) {
+      if (!esPenalizacion(valor)) continue;
+      const usuario = (req as any).appUser;
+      registrarLog({
+        entidad: 'CompetenciaAlumno',
+        entidadId: registro.id!,
+        grupoId,
+        alumnoId: registro.getAlumno()?.id ?? '',
+        usuarioId: usuario?.id ?? '',
+        usuarioNombre: usuario?.getName?.() ?? '',
+        rol: 'admin',
+        accion: 'penalizacion-incipiente-b',
+        cambios: { [campo]: { antes: antes[campo], despues: PENALIZACION_VALOR } },
+      });
+    }
 
     // Auto-recalculate computed competencias if a valor was changed
     if (valorPeriodo1 !== undefined || valorPeriodo2 !== undefined) {

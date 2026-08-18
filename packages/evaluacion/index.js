@@ -21,7 +21,31 @@
  * competencia asignada al periodo y no evaluada baja la nota. Es una decisión
  * de política, no un accidente — está fijada en los tests.
  */
+/**
+ * Valor con el que se marca «Incipiente B −30 pts» en `valorPeriodoN`.
+ *
+ * Es un centinela, no un porcentaje. Se eligió un número imposible entre los
+ * niveles reales (0/15/70/85/100) para que sea inconfundible mirando la BD y
+ * para que ningún consumidor pueda tomarlo por una nota.
+ */
+export const PENALIZACION_VALOR = -30;
+
+/** Puntos que resta CADA penalización a la nota del periodo. */
+export const PENALIZACION_PUNTOS = 30;
+
+/** ¿Este valor es la penalización por conducta, y no un nivel de logro? */
+export function esPenalizacion(valor) {
+  if (typeof valor === 'number') return valor === PENALIZACION_VALOR;
+  if (typeof valor === 'string') return valor.trim() === String(PENALIZACION_VALOR);
+  return false;
+}
+
 export function parseValorCompetencia(valor) {
+  // La penalización vale 0 COMO NIVEL —es un Incipiente B— y su castigo se
+  // aplica aparte, como puntos directos sobre la nota del periodo. Si entrara
+  // aquí como −30, su efecto dependería de cuántas competencias haya, que es
+  // justo lo contrario de «30 puntos de golpe y sin excepción».
+  if (esPenalizacion(valor)) return 0;
   if (valor === null || valor === undefined || valor === '') return 0;
   if (typeof valor === 'number') return Number.isFinite(valor) ? valor : 0;
   if (typeof valor === 'string') {
@@ -88,24 +112,102 @@ export function calcActividadesScore(actividades, ids) {
   };
 }
 
-/** Score de competencias: promedio simple de las del periodo. */
-export function calcCompetenciasScore(competencias, ids, periodoIdx) {
-  const campo = campoValorPeriodo(periodoIdx);
-  let suma = 0;
-  let cuenta = 0;
-  for (const comp of competencias) {
-    if (!ids.has(comp.competenciaId)) continue;
-    suma += parseValorCompetencia(comp[campo]);
-    cuenta++;
-  }
-  return { suma, cuenta, score: cuenta === 0 ? 0 : suma / cuenta };
+/**
+ * Puntos que pesa una competencia dentro del bloque. Sin asignar = 0.
+ *
+ * Vive en el CATÁLOGO (`Competencia.puntos`), no en el plan: la misma materia
+ * debe calificar igual en todos sus grupos.
+ */
+export function parsePuntosCompetencia(puntos) {
+  const n = typeof puntos === 'number' ? puntos : Number(puntos);
+  return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-/** Nota de un periodo: mezcla ponderada de actividades y competencias. */
+/**
+ * Score de competencias del periodo: promedio PONDERADO por los puntos de cada
+ * competencia, normalizado por los puntos de las que ese periodo evalúa.
+ *
+ * Lo de normalizar no es un detalle: en el formato de TC2005B un periodo evalúa
+ * 3 de 9 competencias, así que si se dividiera entre el total del catálogo ese
+ * periodo no podría llegar a 100 ni con todo perfecto.
+ *
+ * **Sin puntos asignados sigue siendo el promedio simple de siempre**, que es lo
+ * que tienen todos los grupos existentes: si ninguna de las competencias del
+ * periodo tiene puntos, todas pesan igual y el resultado es idéntico al anterior.
+ *
+ * `sinPuntos` cuenta las que se quedaron fuera por no tener puntos habiendo
+ * otras que sí: son competencias que el profesor ve en la malla y que **no
+ * cuentan nada**, y eso hay que poder decirlo en pantalla en vez de que se
+ * descuente en silencio.
+ */
+export function calcCompetenciasScore(competencias, ids, periodoIdx) {
+  const campo = campoValorPeriodo(periodoIdx);
+  const delPeriodo = competencias.filter((c) => ids.has(c.competenciaId));
+
+  const totalPuntos = delPeriodo.reduce((t, c) => t + parsePuntosCompetencia(c.puntos), 0);
+  const ponderada = totalPuntos > 0;
+
+  let suma = 0;
+  let peso = 0;
+  let cuenta = 0;
+  let sinPuntos = 0;
+  for (const comp of delPeriodo) {
+    const valor = parseValorCompetencia(comp[campo]);
+    const puntos = parsePuntosCompetencia(comp.puntos);
+    if (ponderada && puntos === 0) {
+      sinPuntos++;
+      continue;
+    }
+    const p = ponderada ? puntos : 1;
+    suma += valor * p;
+    peso += p;
+    cuenta++;
+  }
+
+  return {
+    suma,
+    cuenta,
+    ponderada,
+    sinPuntos,
+    score: peso === 0 ? 0 : suma / peso,
+  };
+}
+
+/**
+ * Cuántas penalizaciones «Incipiente B −30 pts» tiene el alumno en el periodo.
+ *
+ * Se cuentan sobre TODAS sus competencias, no solo las que ese periodo evalúa:
+ * es una sanción por conducta, no la nota de una competencia, y esconderla
+ * porque la competencia donde se marcó no entró en la selección del plan la
+ * dejaría sin efecto sin que nadie se entere.
+ */
+export function contarPenalizaciones(competencias, periodoIdx) {
+  const campo = campoValorPeriodo(periodoIdx);
+  let n = 0;
+  for (const comp of competencias) if (esPenalizacion(comp[campo])) n++;
+  return n;
+}
+
+/**
+ * Nota de un periodo: mezcla ponderada de actividades y competencias, menos las
+ * penalizaciones por conducta.
+ *
+ * La penalización son PUNTOS DIRECTOS sobre la nota del periodo, no un
+ * porcentaje que entre al promedio: 30 de golpe por cada una, se acumulan, y el
+ * suelo es 0 —nunca hay nota negativa—. En un grupo 50/50 con las competencias
+ * perfectas, una penalización deja el periodo en 70 y dos lo dejan en 40.
+ *
+ * Ojo con el alcance: son 30 puntos del PERIODO. Lo que le quita a la nota final
+ * depende del `pesoFinal` de ese periodo. En un plan de un solo periodo al 100%
+ * —el formato de TC2007B, que es para el que se hizo esto— las dos cosas
+ * coinciden y son 30 puntos de la final, literal.
+ */
 export function calcPeriodoScore(periodos, i, actividades, competencias) {
   const periodo = periodos[i];
   const act = calcActividadesScore(actividades, idsActividadesDelPeriodo(periodos, i));
   const comp = calcCompetenciasScore(competencias, new Set(periodo.competencias ?? []), i);
+  const penalizaciones = contarPenalizaciones(competencias, i);
+  const puntosPenalizados = penalizaciones * PENALIZACION_PUNTOS;
 
   return {
     nombre: periodo.nombre || `P${i + 1}`,
@@ -115,11 +217,24 @@ export function calcPeriodoScore(periodos, i, actividades, competencias) {
     totalGanado: act.ganado,
     actividadesContadas: act.contadas,
     competenciasContadas: comp.cuenta,
+    // Para poder avisar en pantalla: el periodo pondera, y cuántas de sus
+    // competencias no cuentan por no tener puntos.
+    competenciasPonderadas: comp.ponderada,
+    competenciasSinPuntos: comp.sinPuntos,
     pesoFinal: periodo.pesoFinal,
     pesoActividades: periodo.pesoActividades,
     pesoCompetencias: periodo.pesoCompetencias,
-    periodoScore:
+    // La nota ANTES de penalizar, para poder enseñar de dónde viene la caída.
+    // Sin esto, en pantalla la nota baja 30 puntos sin ninguna explicación.
+    periodoScoreBruto:
       (act.score * periodo.pesoActividades + comp.score * periodo.pesoCompetencias) / 100,
+    penalizaciones,
+    puntosPenalizados,
+    periodoScore: Math.max(
+      0,
+      (act.score * periodo.pesoActividades + comp.score * periodo.pesoCompetencias) / 100 -
+        puntosPenalizados,
+    ),
   };
 }
 

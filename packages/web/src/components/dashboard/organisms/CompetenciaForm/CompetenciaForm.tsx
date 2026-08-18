@@ -11,6 +11,8 @@ interface DependenciaRef {
 interface CompetenciaData {
   id?: string;
   orden?: number;
+  /** Cuánto pesa en la nota del bloque de competencias. 0 = sin asignar. */
+  puntos?: number;
   competencia: string;
   nivel: string;
   descripcionNivel?: string;
@@ -20,6 +22,8 @@ interface CompetenciaData {
   basico?: string;
   solido?: string;
   destacado?: string;
+  penalizacion?: string;
+  admitePenalizacion?: boolean;
   fechaIdealEvaluacion?: string;
   esCalculada?: boolean;
   dependencias?: DependenciaRef[];
@@ -38,6 +42,8 @@ interface ColeccionOption {
   nombre: string;
   slug: string;
   clave: string | null;
+  /** ¿Esta materia usa «Incipiente B −30 pts»? Decide si el campo se ofrece. */
+  permitePenalizacion?: boolean;
 }
 
 interface CompetenciaFormProps {
@@ -64,6 +70,9 @@ export default function CompetenciaForm({
     competencia?.coleccionId ?? coleccionInicial ?? '',
   );
   const [orden, setOrden] = useState<number | ''>(competencia?.orden ?? '');
+  // Vacío y 0 son lo mismo aquí: «sin asignar». No se distingue porque no hay
+  // diferencia de comportamiento — con 0 la competencia no pondera.
+  const [puntos, setPuntos] = useState<number | ''>(competencia?.puntos || '');
   const [nombre, setNombre] = useState(competencia?.competencia ?? '');
   const [nivel, setNivel] = useState(competencia?.nivel ?? '');
   const [descripcionNivel, setDescripcionNivel] = useState(competencia?.descripcionNivel ?? '');
@@ -73,6 +82,8 @@ export default function CompetenciaForm({
   const [basico, setBasico] = useState(competencia?.basico ?? '');
   const [solido, setSolido] = useState(competencia?.solido ?? '');
   const [destacado, setDestacado] = useState(competencia?.destacado ?? '');
+  const [penalizacion, setPenalizacion] = useState(competencia?.penalizacion ?? '');
+  const [admitePenalizacion, setAdmitePenalizacion] = useState(competencia?.admitePenalizacion ?? false);
   const [fechaIdealEvaluacion, setFechaIdealEvaluacion] = useState(competencia?.fechaIdealEvaluacion ?? '');
   const [esCalculada, setEsCalculada] = useState(competencia?.esCalculada ?? false);
   const [selectedDeps, setSelectedDeps] = useState<string[]>(
@@ -112,6 +123,7 @@ export default function CompetenciaForm({
     onSave({
       coleccionId,
       orden: orden !== '' ? Number(orden) : undefined,
+      puntos: puntos !== '' ? Number(puntos) : 0,
       competencia: nombre.trim(),
       nivel: nivel.trim(),
       descripcionNivel: descripcionNivel.trim() || undefined,
@@ -121,11 +133,18 @@ export default function CompetenciaForm({
       basico: basico.trim() || undefined,
       solido: solido.trim() || undefined,
       destacado: destacado.trim() || undefined,
+      penalizacion: penalizacion.trim() || undefined,
+      admitePenalizacion,
       fechaIdealEvaluacion: fechaIdealEvaluacion.trim() || undefined,
       esCalculada,
       dependencias: esCalculada ? selectedDeps.map((id) => ({ id, competencia: '' })) : [],
     } as any);
   }
+
+  // La materia elegida AHORA en el formulario, no la que tenía guardada: si se
+  // mueve la competencia a otra colección, manda la nueva.
+  const permiteLaMateria =
+    colecciones.find((c) => c.id === coleccionId)?.permitePenalizacion === true;
 
   function toggleDep(id: string) {
     setSelectedDeps((prev) =>
@@ -168,6 +187,22 @@ export default function CompetenciaForm({
         onChange={(v) => { setOrden(v === '' ? '' : Number(v)); setError(''); }}
         disabled={loading}
       />
+      <div className={styles.field}>
+        <TextInput
+          label="Puntos"
+          placeholder="Ej: 20 — vacío = todas pesan igual"
+          icon="scale"
+          value={puntos === '' ? '' : String(puntos)}
+          onChange={(v) => { setPuntos(v === '' ? '' : Number(v)); setError(''); }}
+          disabled={loading}
+        />
+        <span className={styles.hint}>
+          Cuánto pesa dentro del bloque de competencias. No hace falta que sumen 100: la nota se
+          normaliza entre las que evalúa cada periodo. <strong>Si ninguna competencia de la materia
+          tiene puntos, todas pesan igual</strong> — que es como se calcula hoy. Ojo con dejar una a
+          medias: si algunas tienen puntos y otras no, las que no tienen <strong>no cuentan</strong>.
+        </span>
+      </div>
       <TextInput
         label="Competencia"
         placeholder="Ej: SICT0201 Determinación de patrones"
@@ -264,6 +299,36 @@ export default function CompetenciaForm({
           />
         </div>
       </div>
+
+      {/* Solo si la MATERIA usa el nivel: ofrecerlo donde no existe invitaría a
+          sancionar con algo que el cálculo no va a aplicar. */}
+      {permiteLaMateria && (
+        <div className={styles.field}>
+          <label className={styles.checkRow}>
+            <input
+              type="checkbox"
+              checked={admitePenalizacion}
+              onChange={(e) => setAdmitePenalizacion(e.target.checked)}
+              disabled={loading}
+            />
+            <span>Esta competencia admite <strong>Incipiente B −30 pts</strong></span>
+          </label>
+          <span className={styles.hint}>
+            Explícito a propósito: dejar el texto en blanco no distingue «no aplica» de «se me
+            olvidó escribirlo».
+          </span>
+          {admitePenalizacion && (
+            <textarea
+              className={styles.textarea}
+              placeholder="Qué conducta lleva a este nivel EN ESTA competencia..."
+              value={penalizacion}
+              onChange={(e) => setPenalizacion(e.target.value)}
+              disabled={loading}
+              rows={3}
+            />
+          )}
+        </div>
+      )}
 
       <TextInput
         label="Fecha ideal de evaluación"

@@ -65,24 +65,51 @@ export default function AsignacionesModal({
   }
 
   function toggleColeccion(id: string) {
-    setAsignadas((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id); // al asignar: sin overrides = cada módulo en su default
-      return next;
-    });
+    const next = new Set(asignadas);
+    if (next.has(id)) {
+      next.delete(id);
+      setAsignadas(next);
+      return;
+    }
+    next.add(id); // al asignar: sin overrides = cada módulo en su default
+    setAsignadas(next);
+
+    // …salvo Competencias, que nace ENCENDIDA: sin esto, asignar una segunda
+    // colección dejaría al grupo con dos catálogos de competencias sin que nadie
+    // haya tocado nada. La que ya las aportaba manda; la nueva entra apagada.
+    if ([...asignadas].some((cid) => estaHabilitado(cid, 'competencias'))) {
+      const set = new Set(overrides[id] ?? []);
+      set.add('competencias'); // default-on: presente = apagada
+      setOverrides({ ...overrides, [id]: set });
+    }
   }
 
   function toggleModulo(coleccionId: string, moduloKey: string) {
     const nuevoEncendido = !estaHabilitado(coleccionId, moduloKey);
     // Se guarda la key solo si el nuevo estado DIFIERE del default del módulo.
     const debeGuardar = moduloEsOptIn(moduloKey) ? nuevoEncendido : !nuevoEncendido;
-    setOverrides((prev) => {
-      const set = new Set(prev[coleccionId] ?? []);
-      if (debeGuardar) set.add(moduloKey);
-      else set.delete(moduloKey);
-      return { ...prev, [coleccionId]: set };
-    });
+
+    const next: Record<string, Set<string>> = {};
+    for (const [cid, keys] of Object.entries(overrides)) next[cid] = new Set(keys);
+
+    const set = new Set(next[coleccionId] ?? []);
+    if (debeGuardar) set.add(moduloKey);
+    else set.delete(moduloKey);
+    next[coleccionId] = set;
+
+    // Competencias es EXCLUYENTE: el grupo evalúa una sola materia, y la malla
+    // del alumno es una lista, no una por colección. Encenderla aquí la apaga en
+    // las demás, en vez de dejar que el servidor rechace el guardado: quien lo
+    // usa no tiene por qué adivinar cuál sobra.
+    if (moduloKey === 'competencias' && nuevoEncendido) {
+      for (const otra of asignadas) {
+        if (otra === coleccionId) continue;
+        const otras = new Set(next[otra] ?? []);
+        otras.add('competencias'); // default-on: presente = apagada
+        next[otra] = otras;
+      }
+    }
+    setOverrides(next);
   }
 
   function handleSave() {
@@ -104,6 +131,15 @@ export default function AsignacionesModal({
       <p className={styles.intro}>
         Elige qué colecciones ve este grupo y, de cada una, qué partes comparte.
       </p>
+      {/* Se dice antes de que pase: encender Competencias apaga la de las demás,
+          y sin avisar parecería que se desmarcó solo. */}
+      {asignadas.size > 1 && (
+        <p className={styles.nota}>
+          <Icon name="info" size="sm" />
+          El grupo evalúa las competencias de <strong>una sola</strong> colección: la malla del
+          alumno es una lista, no una por materia. Al encenderla en una se apaga en las demás.
+        </p>
+      )}
 
       <div className={styles.lista}>
         {colecciones.length === 0 && (
