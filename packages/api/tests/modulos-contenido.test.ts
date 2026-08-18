@@ -5,7 +5,12 @@
  * apagados. Corre sin servidor.
  */
 import { describe, it, expect } from 'vitest';
-import { moduloHabilitado, esModuloValido, moduloEsOptIn } from '../src/models/modulos-contenido.js';
+import {
+  moduloHabilitado,
+  esModuloValido,
+  moduloEsOptIn,
+  coleccionesConCompetencias,
+} from '../src/models/modulos-contenido.js';
 
 describe('moduloHabilitado (default todo on, se guarda lo apagado)', () => {
   it('sin mapa → todo habilitado (grupos existentes, compatibilidad)', () => {
@@ -87,5 +92,42 @@ describe('módulos opt-in (default apagado, la lista guarda lo ENCENDIDO)', () =
     // Y en otra colección del mismo grupo siguen apagados los dos.
     expect(moduloHabilitado(ambos, 'colB', 'diagramas')).toBe(false);
     expect(moduloHabilitado(ambos, 'colB', 'ejercicios')).toBe(false);
+  });
+});
+
+/**
+ * Qué colecciones aportan competencias.
+ *
+ * Un grupo puede ver el wiki de varias materias, pero evalúa las competencias de
+ * UNA: la malla del alumno es una lista, no una por colección. El caso real es
+ * un grupo de TC2007B que tiene asignadas TC2007B y TC2005B.
+ */
+describe('coleccionesConCompetencias', () => {
+  it('una sola colección, sin overrides: la aporta ella', () => {
+    expect(coleccionesConCompetencias(['colA'], {})).toEqual(['colA']);
+  });
+
+  it('el default ON es justo el problema: dos colecciones sin tocar nada aportan las dos', () => {
+    // Por esto hace falta el candado. Asignar la segunda materia a un grupo
+    // mezclaría los dos catálogos sin que nadie haya cambiado un ajuste.
+    expect(coleccionesConCompetencias(['colA', 'colB'], {})).toEqual(['colA', 'colB']);
+  });
+
+  it('con la otra apagada queda una, que es la configuración válida', () => {
+    const mapa = { colB: ['competencias', 'actividades', 'paginas'] };
+    expect(coleccionesConCompetencias(['colA', 'colB'], mapa)).toEqual(['colA']);
+  });
+
+  it('apagadas todas: ninguna aporta (y la malla no se puede crear)', () => {
+    // Es el estado en el que estaban los tres grupos reales de TC2007B: crear la
+    // malla respondía «no tienen competencias activas» sin más pistas.
+    const mapa = { colA: ['competencias'], colB: ['competencias'] };
+    expect(coleccionesConCompetencias(['colA', 'colB'], mapa)).toEqual([]);
+  });
+
+  it('no cuenta colecciones que el grupo ya no tiene asignadas', () => {
+    // El mapa conserva entradas viejas; lo que manda es la lista de asignadas.
+    const mapa = { colVieja: [] as string[] };
+    expect(coleccionesConCompetencias(['colA'], mapa)).toEqual(['colA']);
   });
 });

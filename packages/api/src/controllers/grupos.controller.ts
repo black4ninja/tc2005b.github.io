@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { Grupo } from '../models/Grupo.js';
-import { esModuloValido } from '../models/modulos-contenido.js';
+import { esModuloValido, coleccionesConCompetencias } from '../models/modulos-contenido.js';
 import { esCampoDesactivable } from '../models/campos-perfil.js';
 import { invalidateColeccionesPermitidas } from '../services/contenidos.service.js';
 import { invalidateAccesoModulos } from '../services/acceso-modulos.service.js';
@@ -396,6 +396,20 @@ export async function setAsignacionesGrupo(req: Request, res: Response): Promise
     coleccionIds.push(coleccionId);
     const unicos = [...new Set(off as string[])];
     if (unicos.length > 0) deshabilitadosPorColeccion[coleccionId] = unicos;
+  }
+
+  // Un grupo evalúa las competencias de UNA materia. Se comprueba aquí y no al
+  // crear la malla porque para entonces el error llega tarde y disfrazado: el
+  // profesor vería aparecer competencias de otra asignatura sin saber por qué.
+  const conCompetencias = coleccionesConCompetencias(coleccionIds, deshabilitadosPorColeccion);
+  if (conCompetencias.length > 1) {
+    res.status(400).json({
+      status: 'error',
+      message:
+        'Solo una colección del grupo puede aportar competencias: la malla del alumno es una sola lista. ' +
+        'Deja el módulo Competencias encendido en la materia que se evalúa y apágalo en las demás.',
+    });
+    return;
   }
 
   try {
