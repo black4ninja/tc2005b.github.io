@@ -94,6 +94,32 @@ export class Competencia extends BaseModel {
     this.set('puntos', puntos);
   }
 
+  /**
+   * Texto de rúbrica del nivel «Incipiente B −30 pts» PARA ESTA competencia.
+   *
+   * Se describe por competencia, como los otros cinco niveles: aunque la idea
+   * sea la misma, lo que se considera conducta inaceptable puede cambiar de una
+   * a otra, y decirlo con precisión es parte de que el alumno no llegue ahí.
+   */
+  getPenalizacion(): string {
+    return this.get('penalizacion') ?? '';
+  }
+  setPenalizacion(v: string): void {
+    this.set('penalizacion', v);
+  }
+
+  /**
+   * ¿Esta competencia admite la sanción? Explícito, no deducido de si el texto
+   * está vacío: un texto en blanco no distingue «no aplica» de «se me olvidó
+   * escribirlo». Nace apagada, y además la materia tiene que permitirla.
+   */
+  getAdmitePenalizacion(): boolean {
+    return this.get('admitePenalizacion') === true;
+  }
+  setAdmitePenalizacion(v: boolean): void {
+    this.set('admitePenalizacion', !!v);
+  }
+
   getOrden(): number {
     return this.get('orden') ?? 0;
   }
@@ -159,6 +185,8 @@ export class Competencia extends BaseModel {
       basico: this.getBasico(),
       solido: this.getSolido(),
       destacado: this.getDestacado(),
+      penalizacion: this.getPenalizacion(),
+      admitePenalizacion: this.getAdmitePenalizacion(),
       fechaIdealEvaluacion: this.getFechaIdealEvaluacion(),
       orden: this.getOrden(),
       puntos: this.getPuntos(),

@@ -50,8 +50,25 @@ export interface PeriodoScore<A = ActividadCalc> {
   pesoFinal: number;
   pesoActividades: number;
   pesoCompetencias: number;
+  /** Nota del periodo ANTES de descontar las penalizaciones. */
+  periodoScoreBruto: number;
+  /** Cuántas «Incipiente B −30 pts» tiene el alumno en este periodo. */
+  penalizaciones: number;
+  /** Puntos descontados por ellas (30 cada una). */
+  puntosPenalizados: number;
+  /** Nota del periodo ya penalizada, con suelo en 0. */
   periodoScore: number;
 }
+
+/** Valor centinela de «Incipiente B −30 pts» en `valorPeriodoN`. */
+export declare const PENALIZACION_VALOR: number;
+/** Puntos que resta CADA penalización a la nota del periodo. */
+export declare const PENALIZACION_PUNTOS: number;
+export declare function esPenalizacion(valor: unknown): boolean;
+export declare function contarPenalizaciones(
+  competencias: CompetenciaCalc[],
+  periodoIdx: number,
+): number;
 
 export declare function parseValorCompetencia(valor: unknown): number;
 export declare function parsePuntosCompetencia(puntos: unknown): number;

@@ -22,6 +22,8 @@ interface CompetenciaData {
   basico?: string;
   solido?: string;
   destacado?: string;
+  penalizacion?: string;
+  admitePenalizacion?: boolean;
   fechaIdealEvaluacion?: string;
   esCalculada?: boolean;
   dependencias?: DependenciaRef[];
@@ -40,6 +42,8 @@ interface ColeccionOption {
   nombre: string;
   slug: string;
   clave: string | null;
+  /** ¿Esta materia usa «Incipiente B −30 pts»? Decide si el campo se ofrece. */
+  permitePenalizacion?: boolean;
 }
 
 interface CompetenciaFormProps {
@@ -78,6 +82,8 @@ export default function CompetenciaForm({
   const [basico, setBasico] = useState(competencia?.basico ?? '');
   const [solido, setSolido] = useState(competencia?.solido ?? '');
   const [destacado, setDestacado] = useState(competencia?.destacado ?? '');
+  const [penalizacion, setPenalizacion] = useState(competencia?.penalizacion ?? '');
+  const [admitePenalizacion, setAdmitePenalizacion] = useState(competencia?.admitePenalizacion ?? false);
   const [fechaIdealEvaluacion, setFechaIdealEvaluacion] = useState(competencia?.fechaIdealEvaluacion ?? '');
   const [esCalculada, setEsCalculada] = useState(competencia?.esCalculada ?? false);
   const [selectedDeps, setSelectedDeps] = useState<string[]>(
@@ -127,11 +133,18 @@ export default function CompetenciaForm({
       basico: basico.trim() || undefined,
       solido: solido.trim() || undefined,
       destacado: destacado.trim() || undefined,
+      penalizacion: penalizacion.trim() || undefined,
+      admitePenalizacion,
       fechaIdealEvaluacion: fechaIdealEvaluacion.trim() || undefined,
       esCalculada,
       dependencias: esCalculada ? selectedDeps.map((id) => ({ id, competencia: '' })) : [],
     } as any);
   }
+
+  // La materia elegida AHORA en el formulario, no la que tenía guardada: si se
+  // mueve la competencia a otra colección, manda la nueva.
+  const permiteLaMateria =
+    colecciones.find((c) => c.id === coleccionId)?.permitePenalizacion === true;
 
   function toggleDep(id: string) {
     setSelectedDeps((prev) =>
@@ -286,6 +299,36 @@ export default function CompetenciaForm({
           />
         </div>
       </div>
+
+      {/* Solo si la MATERIA usa el nivel: ofrecerlo donde no existe invitaría a
+          sancionar con algo que el cálculo no va a aplicar. */}
+      {permiteLaMateria && (
+        <div className={styles.field}>
+          <label className={styles.checkRow}>
+            <input
+              type="checkbox"
+              checked={admitePenalizacion}
+              onChange={(e) => setAdmitePenalizacion(e.target.checked)}
+              disabled={loading}
+            />
+            <span>Esta competencia admite <strong>Incipiente B −30 pts</strong></span>
+          </label>
+          <span className={styles.hint}>
+            Explícito a propósito: dejar el texto en blanco no distingue «no aplica» de «se me
+            olvidó escribirlo».
+          </span>
+          {admitePenalizacion && (
+            <textarea
+              className={styles.textarea}
+              placeholder="Qué conducta lleva a este nivel EN ESTA competencia..."
+              value={penalizacion}
+              onChange={(e) => setPenalizacion(e.target.value)}
+              disabled={loading}
+              rows={3}
+            />
+          )}
+        </div>
+      )}
 
       <TextInput
         label="Fecha ideal de evaluación"

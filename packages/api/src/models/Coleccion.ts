@@ -56,9 +56,28 @@ export class Coleccion extends BaseModel {
     this.set('publicada', publicada);
   }
 
+  /**
+   * ¿Esta materia usa el nivel «Incipiente B −30 pts»?
+   *
+   * Es una sanción por conducta que resta 30 puntos directos, y no existe en
+   * todas las asignaturas: en TC2005B, TC2008B y TC3009C ni siquiera se ofrece.
+   * Va en la MATERIA y no en el grupo porque las competencias ya están
+   * organizadas así, y porque la misma asignatura debe calificar igual en todos
+   * sus grupos.
+   *
+   * Nace apagado: sin el campo, nada cambia para nadie.
+   */
+  getPermitePenalizacion(): boolean {
+    return this.get('permitePenalizacion') === true;
+  }
+  setPermitePenalizacion(v: boolean): void {
+    this.set('permitePenalizacion', !!v);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     return {
       id: this.id,
+      permitePenalizacion: this.getPermitePenalizacion(),
       nombre: this.getNombre(),
       slug: this.getSlug(),
       clave: this.getClave() ?? null,

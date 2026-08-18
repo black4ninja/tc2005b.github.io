@@ -117,7 +117,7 @@ export async function listCompetencias(req: Request, res: Response): Promise<voi
 }
 
 export async function createCompetencia(req: Request, res: Response): Promise<void> {
-  const { competencia, nivel, descripcionNivel, guiaEvidencias, incipienteB, incipienteA, basico, solido, destacado, fechaIdealEvaluacion, orden, puntos, esCalculada, dependencias, coleccionId } = req.body;
+  const { competencia, nivel, descripcionNivel, guiaEvidencias, incipienteB, incipienteA, basico, solido, destacado, penalizacion, admitePenalizacion, fechaIdealEvaluacion, orden, puntos, esCalculada, dependencias, coleccionId } = req.body;
 
   if (!competencia || typeof competencia !== 'string' || competencia.trim() === '') {
     res.status(400).json({ status: 'error', message: 'La competencia es requerida' });
@@ -173,6 +173,10 @@ export async function createCompetencia(req: Request, res: Response): Promise<vo
     if (fechaIdealEvaluacion) comp.setFechaIdealEvaluacion(fechaIdealEvaluacion.trim());
     if (orden !== undefined) comp.setOrden(Number(orden));
     if (puntos !== undefined) comp.setPuntos(normalizarPuntos(puntos));
+    if (penalizacion) comp.setPenalizacion(penalizacion.trim());
+    // La materia manda: si no permite el nivel, la competencia no puede admitirlo
+    // aunque el payload lo pida. Así un dato viejo o manipulado no lo cuela.
+    comp.setAdmitePenalizacion(admitePenalizacion === true && coleccion.get('permitePenalizacion') === true);
 
     comp.setEsCalculada(isCalculada);
     if (isCalculada && Array.isArray(dependencias)) {
@@ -200,7 +204,7 @@ export async function createCompetencia(req: Request, res: Response): Promise<vo
 
 export async function updateCompetencia(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { competencia, nivel, descripcionNivel, guiaEvidencias, incipienteB, incipienteA, basico, solido, destacado, fechaIdealEvaluacion, orden, puntos, esCalculada, dependencias, coleccionId } = req.body;
+  const { competencia, nivel, descripcionNivel, guiaEvidencias, incipienteB, incipienteA, basico, solido, destacado, penalizacion, admitePenalizacion, fechaIdealEvaluacion, orden, puntos, esCalculada, dependencias, coleccionId } = req.body;
 
   try {
     const query = BaseModel.queryActive<Competencia>('Competencia');
@@ -249,6 +253,12 @@ export async function updateCompetencia(req: Request, res: Response): Promise<vo
     if (fechaIdealEvaluacion !== undefined) comp.setFechaIdealEvaluacion((fechaIdealEvaluacion ?? '').trim());
     if (orden !== undefined) comp.setOrden(Number(orden));
     if (puntos !== undefined) comp.setPuntos(normalizarPuntos(puntos));
+    if (penalizacion !== undefined) comp.setPenalizacion((penalizacion ?? '').trim());
+    if (admitePenalizacion !== undefined) {
+      // Misma regla que al crear: la materia tiene la última palabra.
+      const permite = comp.getColeccion()?.get('permitePenalizacion') === true;
+      comp.setAdmitePenalizacion(admitePenalizacion === true && permite);
+    }
 
     if (esCalculada !== undefined) {
       const isCalculada = esCalculada === true;

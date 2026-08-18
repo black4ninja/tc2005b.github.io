@@ -8,6 +8,34 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Nivel «Incipiente B −30 pts»: la sanción por conducta.** No es un nivel de
+  logro más. Los otros cinco entran al promedio como porcentaje; este vale **0
+  como nivel** —es un Incipiente B— y **además resta 30 puntos directos** a la
+  nota del periodo. Se acumula: cada competencia sancionada son otros 30. El
+  suelo es 0; nunca hay nota negativa.
+  - Los 30 puntos **arrastran a las actividades**, no se quedan en el bloque de
+    competencias. Si el daño se limitara a ese bloque, a partir de la segunda
+    sanción daría igual tener dos que cinco.
+  - Son 30 puntos **del periodo**. Lo que le quitan a la nota final depende del
+    peso de ese periodo; en un plan de un solo periodo al 100% —el formato de
+    TC2007B, para el que se hizo esto— las dos cosas coinciden.
+  - Cuenta **aunque la competencia no esté en la selección del plan**: es una
+    sanción por conducta, no la nota de esa competencia, y descartarla por eso
+    la dejaría sin efecto sin que nadie se entere.
+  - Se guarda como un valor centinela (`-30`), imposible entre los niveles
+    reales, para que sea inconfundible mirando la base y para que ningún
+    consumidor pueda tomarlo por una nota.
+  - **Sin sanciones, la nota es exactamente la de siempre.**
+  - Se enciende **por materia** (`Coleccion.permitePenalizacion`) y, dentro de
+    ella, competencia por competencia con una casilla explícita: un texto de
+    rúbrica en blanco no distingue «no aplica» de «se me olvidó escribirlo». La
+    materia manda: una competencia no puede admitir el nivel si su colección no
+    lo permite, aunque el payload lo pida.
+  - Al **apagarlo en una materia**, sus competencias dejan de ofrecerlo y se
+    informa de cuántas se tocaron. Las sanciones ya puestas a un alumno se
+    respetan: se asignaron cuando era válido, y borrarlas sería reescribir su
+    historial.
+
 - **Cada competencia puede pesar lo suyo en la nota.** Hasta ahora el bloque de
   competencias era un **promedio simple**: todas valían igual. TC2007B califica
   de otra forma —un solo bloque, sin actividades, donde cada competencia aporta
