@@ -9,9 +9,12 @@ import { CompetenciaAlumno } from '../models/CompetenciaAlumno.js';
 import { PlanEvaluacion, type PeriodoConfig } from '../models/PlanEvaluacion.js';
 import { Grupo } from '../models/Grupo.js';
 import { scopeGrupo } from '../services/grupo-admin.service.js';
+import { PENALIZACION_VALOR } from '@tc2005b/evaluacion';
 
 const NUMBER_TO_VALOR: Record<number, string> = {
   0: '',
+  // El valor negativo es el centinela de la sanción por conducta, no una nota.
+  [PENALIZACION_VALOR]: 'Incipiente B −30 pts',
   15: 'Incipiente A (15%)',
   70: 'Básico (70%)',
   85: 'Sólido (85%)',

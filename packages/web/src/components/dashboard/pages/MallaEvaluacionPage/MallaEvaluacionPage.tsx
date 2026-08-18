@@ -9,7 +9,8 @@ import TruncatedText from '../../atoms/TruncatedText/TruncatedText';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import type { ActividadTipo } from '@/types/calendario';
 import { exportMallaAlumnoXlsx } from '../../../../utils/mallaExport';
-import { calcCalificacion, type PeriodoConfig } from '@tc2005b/evaluacion';
+import { calcCalificacion, esPenalizacion, PENALIZACION_VALOR, type PeriodoConfig } from '@tc2005b/evaluacion';
+import { pedirTexto } from '../../../../utils/dialogos';
 import styles from './MallaEvaluacionPage.module.css';
 
 /* ------------------------------------------------------------------ */
@@ -67,6 +68,8 @@ interface CompetenciaAlumnoData {
   competenciaId: string;
   /** Peso de la competencia en el bloque; 0 = todas pesan igual. */
   puntos?: number;
+  /** ¿Admite «Incipiente B −30 pts»? Decide si la opción se ofrece. */
+  admitePenalizacion?: boolean;
   evidencias: string[];
 }
 
@@ -109,7 +112,13 @@ const EVALUACION_OPTIONS = [
   { value: '100', label: 'Destacado (100%)' },
 ];
 
+const PENALIZACION_LABEL = 'Incipiente B −30 pts';
+
+/** La sanción, solo para las competencias que la admiten. */
+const OPCION_PENALIZACION = { value: String(PENALIZACION_VALOR), label: PENALIZACION_LABEL };
+
 const NUMBER_TO_LABEL: Record<number, string> = {
+  [PENALIZACION_VALOR]: PENALIZACION_LABEL,
   0: 'Incipiente B (0%)',
   15: 'Incipiente A (15%)',
   70: 'Básico (70%)',
@@ -374,6 +383,27 @@ export default function MallaEvaluacionPage() {
   /* ---------- Inline eval change handler (admin only) ---------- */
 
   async function handleEvalChange(compId: string, field: 'valorPeriodo1' | 'valorPeriodo2', value: string) {
+    const campoRetro = field === 'valorPeriodo1' ? 'retroPeriodo1' : 'retroPeriodo2';
+    let retro: string | undefined;
+
+    // La sanción resta 30 puntos de golpe y es lo primero que un alumno va a
+    // reclamar: se pide el motivo ANTES de aplicarla, no después. El servidor la
+    // rechaza igualmente sin retro, esto solo evita el viaje en balde.
+    if (esPenalizacion(value)) {
+      const comp = competenciasAlumno.find((c) => c.id === compId);
+      const escrito = await pedirTexto({
+        titulo: 'Incipiente B −30 pts',
+        html:
+          'Resta <b>30 puntos</b> a la nota del periodo, se acumula con otras y no se puede ' +
+          'deshacer sin dejar rastro. Escribe el motivo: es lo que sostiene la sanción.',
+        valor: (comp?.[campoRetro] as string) ?? '',
+        confirmar: 'Aplicar la sanción',
+        validar: (v: string) => (v.trim() ? null : 'La retroalimentación es obligatoria'),
+      });
+      if (escrito === null) return; // se arrepintió: el select se repinta al refrescar
+      retro = escrito;
+    }
+
     // Optimistic update
     setCompetenciasAlumno((prev) =>
       prev.map((c) => (c.id === compId ? { ...c, [field]: value } : c)),
@@ -384,7 +414,7 @@ export default function MallaEvaluacionPage() {
         {
           method: 'PUT',
           headers: { ...authHeaders, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ [field]: value }),
+          body: JSON.stringify(retro === undefined ? { [field]: value } : { [field]: value, [campoRetro]: retro }),
         },
       );
       if (!res.ok) throw new Error('Error al guardar evaluación');
@@ -997,7 +1027,10 @@ export default function MallaEvaluacionPage() {
             value={String(info.getValue() ?? '')}
             onChange={(e) => handleEvalChange(row.id, 'valorPeriodo1', e.target.value)}
           >
-            {EVALUACION_OPTIONS.map((opt) => (
+            {(row.admitePenalizacion
+              ? [...EVALUACION_OPTIONS, OPCION_PENALIZACION]
+              : EVALUACION_OPTIONS
+            ).map((opt) => (
               <option key={opt.label} value={opt.value}>
                 {opt.label}
               </option>
@@ -1034,7 +1067,10 @@ export default function MallaEvaluacionPage() {
             value={String(info.getValue() ?? '')}
             onChange={(e) => handleEvalChange(row.id, 'valorPeriodo2', e.target.value)}
           >
-            {EVALUACION_OPTIONS.map((opt) => (
+            {(row.admitePenalizacion
+              ? [...EVALUACION_OPTIONS, OPCION_PENALIZACION]
+              : EVALUACION_OPTIONS
+            ).map((opt) => (
               <option key={opt.label} value={opt.value}>
                 {opt.label}
               </option>
@@ -1361,6 +1397,16 @@ export default function MallaEvaluacionPage() {
                   <span>Act: {ps.actScore.toFixed(1)}% × {periodos[i].pesoActividades}%</span>
                   <span>Comp: {ps.compScore.toFixed(1)}% × {periodos[i].pesoCompetencias}%</span>
                 </div>
+                {/* Sin esta línea la nota baja 30 puntos y el desglose de arriba
+                    no cuadra: el lector suma los dos factores y le sale otra cosa. */}
+                {ps.penalizaciones > 0 && (
+                  <div className={styles.penalizacionAviso}>
+                    − {ps.puntosPenalizados} pts por {ps.penalizaciones}{' '}
+                    {ps.penalizaciones === 1 ? 'competencia' : 'competencias'} en{' '}
+                    <strong>Incipiente B −30 pts</strong> ({ps.periodoScoreBruto.toFixed(1)} →{' '}
+                    {ps.periodoScore.toFixed(1)})
+                  </div>
+                )}
                 <div className={styles.currentGradeBar}>
                   <div
                     className={styles.currentGradeBarFill}

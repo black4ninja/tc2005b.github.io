@@ -7,6 +7,33 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **«Crear mallas» no funcionaba.** La columna `valorPeriodo1` es numérica en la
+  base, y la creación guardaba la cadena `'0'`: Parse rechazaba el lote entero
+  con un *schema mismatch* que salía como un «Error al crear competencias de
+  alumnos» sin más pistas. Por eso los 133 alumnos de este semestre estaban a
+  cero mallas. También se arregla el camino de vuelta: «Sin evaluar» ahora
+  **quita** el campo en vez de guardar `''`, que en una columna numérica es el
+  mismo error.
+
+### Added
+- **La sanción «Incipiente B −30 pts» ya se puede asignar.**
+  - Desde la **malla**, solo en las competencias que la admiten, y pidiendo el
+    motivo por delante: resta 30 puntos de golpe y es lo primero que un alumno
+    va a reclamar. El servidor la rechaza igualmente sin retroalimentación —no
+    se fía de que el cliente pinte o no la opción— y la registra en la bitácora.
+  - Desde las **entrevistas**: al liberarlas, la sanción llega a la malla como
+    cualquier otro nivel.
+  - El alumno la **ve en su rúbrica**, con el texto de esa competencia, y solo
+    en las que la admiten: en las demás sería una amenaza que no existe.
+  - La malla explica **de dónde viene la caída** (`− 30 pts por 1 competencia en
+    Incipiente B −30 pts (50.0 → 20.0)`). Sin esa línea el desglose no cuadra:
+    quien suma los dos factores obtiene otro número.
+  - En el **XLSX** tiene etiqueta y color propios, distintos del Incipiente B
+    normal, y la leyenda aclara que no es un porcentaje.
+  - Las **competencias calculadas** no la heredan: para su mínimo vale 0. Si se
+    propagara, el alumno perdería 60 puntos por una sola falta.
+
 ### Added
 - **Nivel «Incipiente B −30 pts»: la sanción por conducta.** No es un nivel de
   logro más. Los otros cinco entran al promedio como porcentaje; este vale **0

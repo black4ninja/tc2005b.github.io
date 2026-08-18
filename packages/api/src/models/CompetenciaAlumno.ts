@@ -28,19 +28,29 @@ export class CompetenciaAlumno extends BaseModel {
     this.set('alumno', alumno);
   }
 
-  // Campos propios
-  getValorPeriodo1(): string {
-    return this.get('valorPeriodo1') ?? '';
+  /* ── Los valores son NÚMEROS en la base ──
+   *
+   * La columna quedó tipada como `Number` (0/15/70/85/100, y ahora −30 para la
+   * sanción). Guardar un string ahí lo rechaza Parse entero, con un
+   * «schema mismatch» que subía como un 500 genérico.
+   *
+   * "Sin evaluar" se representa QUITANDO el campo, no con `''`: una cadena vacía
+   * en una columna numérica es el mismo error.
+   */
+  getValorPeriodo1(): number | undefined {
+    return this.get('valorPeriodo1');
   }
-  setValorPeriodo1(val: string): void {
-    this.set('valorPeriodo1', val);
+  setValorPeriodo1(val: number | undefined): void {
+    if (val === undefined) this.unset('valorPeriodo1');
+    else this.set('valorPeriodo1', val);
   }
 
-  getValorPeriodo2(): string {
-    return this.get('valorPeriodo2') ?? '';
+  getValorPeriodo2(): number | undefined {
+    return this.get('valorPeriodo2');
   }
-  setValorPeriodo2(val: string): void {
-    this.set('valorPeriodo2', val);
+  setValorPeriodo2(val: number | undefined): void {
+    if (val === undefined) this.unset('valorPeriodo2');
+    else this.set('valorPeriodo2', val);
   }
 
   getRetroPeriodo1(): string {
@@ -91,8 +101,10 @@ export class CompetenciaAlumno extends BaseModel {
         competencia: d.get('competencia') ?? '',
       })),
       // Campos del alumno
-      valorPeriodo1: this.getValorPeriodo1(),
-      valorPeriodo2: this.getValorPeriodo2(),
+      // `?? ''` para que el contrato hacia el cliente no cambie: «sin evaluar»
+      // se sigue viendo como cadena vacía, aunque en la base ya no exista el campo.
+      valorPeriodo1: this.getValorPeriodo1() ?? '',
+      valorPeriodo2: this.getValorPeriodo2() ?? '',
       retroPeriodo1: this.getRetroPeriodo1(),
       retroPeriodo2: this.getRetroPeriodo2(),
       evidencias: this.getEvidencias(),
