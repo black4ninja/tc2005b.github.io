@@ -36,7 +36,6 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     respetan: se asignaron cuando era válido, y borrarlas sería reescribir su
     historial.
 
-### Added
 - **Cada competencia puede pesar lo suyo en la nota.** Hasta ahora el bloque de
   competencias era un **promedio simple**: todas valían igual. TC2007B califica
   de otra forma —un solo bloque, sin actividades, donde cada competencia aporta
