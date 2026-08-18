@@ -182,6 +182,94 @@ describe('calcCompetenciasScore', () => {
   });
 });
 
+/**
+ * Promedio ponderado por los puntos de cada competencia.
+ *
+ * Es lo que necesita TC2007B: un solo bloque, sin actividades, donde cada
+ * competencia aporta los puntos que tiene asignados sobre 100. Lo importante de
+ * esta tanda es la compatibilidad: sin puntos, la nota no se mueve ni un decimal
+ * respecto a lo de siempre.
+ */
+describe('calcCompetenciasScore — ponderación por puntos', () => {
+  it('SIN puntos se comporta exactamente como el promedio simple de siempre', () => {
+    // El test que protege a los grupos que ya existen: ninguno tiene puntos.
+    const sinPuntos = [
+      { competenciaId: 'c1', valorPeriodo1: 100 },
+      { competenciaId: 'c2', valorPeriodo1: 0 },
+    ];
+    const r = calcCompetenciasScore(sinPuntos, new Set(['c1', 'c2']), 0);
+    expect(r.score).toBe(50);
+    expect(r.ponderada).toBe(false);
+  });
+
+  it('con puntos, cada competencia pesa lo suyo', () => {
+    // c1 vale 30 puntos y está al 100; c2 vale 10 y está en 0.
+    // (100*30 + 0*10) / 40 = 75
+    const comps = [
+      { competenciaId: 'c1', valorPeriodo1: 100, puntos: 30 },
+      { competenciaId: 'c2', valorPeriodo1: 0, puntos: 10 },
+    ];
+    const r = calcCompetenciasScore(comps, new Set(['c1', 'c2']), 0);
+    expect(r.score).toBe(75);
+    expect(r.ponderada).toBe(true);
+  });
+
+  it('puntos IGUALES dan el mismo resultado que sin puntos', () => {
+    // Propiedad que hace segura la migración: poner 10 a todas no cambia nada.
+    const comps = [
+      { competenciaId: 'c1', valorPeriodo1: 100, puntos: 10 },
+      { competenciaId: 'c2', valorPeriodo1: 0, puntos: 10 },
+    ];
+    expect(calcCompetenciasScore(comps, new Set(['c1', 'c2']), 0).score).toBe(50);
+  });
+
+  it('se normaliza por las competencias del PERIODO, no por el catálogo', () => {
+    // Formato TC2005B: el periodo evalúa 1 de 3. Sin normalizar, ese periodo no
+    // podría llegar a 100 ni con todo perfecto.
+    const comps = [
+      { competenciaId: 'c1', valorPeriodo1: 100, puntos: 20 },
+      { competenciaId: 'c2', valorPeriodo1: 0, puntos: 50 },
+      { competenciaId: 'c3', valorPeriodo1: 0, puntos: 30 },
+    ];
+    expect(calcCompetenciasScore(comps, new Set(['c1']), 0).score).toBe(100);
+  });
+
+  it('una competencia sin puntos, habiendo otras con puntos, NO cuenta — y se dice', () => {
+    // No entra ni al numerador ni al denominador: pesa 0. Es defendible, pero
+    // tiene que poder avisarse en pantalla, no descontarse en silencio.
+    const comps = [
+      { competenciaId: 'c1', valorPeriodo1: 100, puntos: 40 },
+      { competenciaId: 'c2', valorPeriodo1: 0 },
+    ];
+    const r = calcCompetenciasScore(comps, new Set(['c1', 'c2']), 0);
+    expect(r.score).toBe(100);
+    expect(r.sinPuntos).toBe(1);
+    expect(r.cuenta).toBe(1);
+  });
+
+  it('puntos inválidos (negativos, texto, cero) se tratan como sin asignar', () => {
+    const comps = [
+      { competenciaId: 'c1', valorPeriodo1: 100, puntos: -5 },
+      { competenciaId: 'c2', valorPeriodo1: 0, puntos: 'diez' },
+    ];
+    const r = calcCompetenciasScore(comps, new Set(['c1', 'c2']), 0);
+    // Ninguna aporta puntos → promedio simple, no una división por cero.
+    expect(r.ponderada).toBe(false);
+    expect(r.score).toBe(50);
+  });
+
+  it('el formato de TC2007B: un bloque, todo competencias, sobre 100', () => {
+    // 7 competencias con sus puntos; el alumno saca Sólido (85) en las que
+    // suman 60 puntos y Básico (70) en las que suman 40.
+    const comps = [
+      { competenciaId: 'a', valorPeriodo1: 85, puntos: 60 },
+      { competenciaId: 'b', valorPeriodo1: 70, puntos: 40 },
+    ];
+    const r = calcCompetenciasScore(comps, new Set(['a', 'b']), 0);
+    expect(r.score).toBe(79); // (85*60 + 70*40) / 100
+  });
+});
+
 describe('calcPeriodoScore', () => {
   const actividades = [act('a1', 10, 10), act('a2', 10, 0), act('a3', 20, 20)];
   const competencias = [

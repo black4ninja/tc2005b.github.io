@@ -25,6 +25,9 @@ function aCompetenciaCalc(rec: Parse.Object) {
     competenciaId: rec.get('competencia')?.id ?? '',
     valorPeriodo1: rec.get('valorPeriodo1') ?? '',
     valorPeriodo2: rec.get('valorPeriodo2') ?? '',
+    // Requiere el include('competencia') de la consulta; sin él llegaría 0 y el
+    // bloque se promediaría simple sin que nadie se entere.
+    puntos: rec.get('competencia')?.get('puntos') ?? 0,
   };
 }
 

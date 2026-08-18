@@ -24,6 +24,7 @@ interface DependenciaRef {
 interface CompetenciaData {
   id: string;
   orden?: number;
+  puntos?: number;
   competencia: string;
   nivel: string;
   descripcionNivel?: string;
@@ -245,6 +246,15 @@ export default function CompetenciasPage() {
   const compColumnHelper = createColumnHelper<CompetenciaData>();
   const compColumns = [
     compColumnHelper.accessor('orden', { header: 'Orden', cell: (info) => info.getValue() ?? '—' }),
+    compColumnHelper.accessor('puntos', {
+      header: 'Puntos',
+      // Sin puntos NO es un error: significa que todas pesan igual, que es como
+      // califican hoy todas las materias. Por eso va en gris y no en rojo.
+      cell: (info) =>
+        info.getValue()
+          ? info.getValue()
+          : <span style={{ color: 'var(--text-muted)' }} title="Sin puntos: pesa igual que las demás">—</span>,
+    }),
     compColumnHelper.accessor('competencia', { header: 'Competencia' }),
     // Solo en la vista global: filtrando, la colección ya está en el título y la
     // columna sería la misma palabra repetida en todas las filas.

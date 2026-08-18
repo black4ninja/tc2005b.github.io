@@ -65,6 +65,8 @@ interface CompetenciaAlumnoData {
   grupoId: string;
   alumnoId: string;
   competenciaId: string;
+  /** Peso de la competencia en el bloque; 0 = todas pesan igual. */
+  puntos?: number;
   evidencias: string[];
 }
 

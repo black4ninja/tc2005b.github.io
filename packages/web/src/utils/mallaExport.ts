@@ -48,6 +48,8 @@ export interface ExportCompetencia {
   destacado: string;
   evidencias: string[];
   competenciaId: string;
+  /** Peso en el bloque de competencias; 0/ausente = todas pesan igual. */
+  puntos?: number;
 }
 
 export interface ExportAlumnoInfo {
@@ -376,9 +378,9 @@ function buildActividadesSheet(wb: ExcelJS.Workbook, input: MallaExportInput) {
 function buildCompetenciasSheet(wb: ExcelJS.Workbook, input: MallaExportInput) {
   const ws = wb.addWorksheet('Competencias');
   ws.pageSetup = { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
-  const widths = [38, 11, 13, 14, 18, 45, 18, 45, 45];
+  const widths = [38, 11, 13, 10, 14, 18, 45, 18, 45, 45];
   widths.forEach((w, i) => (ws.getColumn(i + 1).width = w));
-  const LAST = 'I';
+  const LAST = 'J';
 
   let r = infoBlock(ws, input, LAST, 'Competencias');
 
@@ -414,7 +416,7 @@ function buildCompetenciasSheet(wb: ExcelJS.Workbook, input: MallaExportInput) {
   /* --- Tabla de competencias --- */
   sectionHeader(ws, r, LAST, 'EVALUACIÓN DE COMPETENCIAS');
   r++;
-  const headers = ['Competencia', 'Tipo', 'Nivel', 'Fecha Ideal', 'Evaluación P1', 'Retroalimentación P1', 'Evaluación P2', 'Retroalimentación P2', 'Evidencias'];
+  const headers = ['Competencia', 'Tipo', 'Nivel', 'Puntos', 'Fecha Ideal', 'Evaluación P1', 'Retroalimentación P1', 'Evaluación P2', 'Retroalimentación P2', 'Evidencias'];
   headers.forEach((h, i) => styleHeaderCell(Object.assign(ws.getRow(r).getCell(i + 1), { value: h })));
   r++;
 
@@ -428,6 +430,9 @@ function buildCompetenciasSheet(wb: ExcelJS.Workbook, input: MallaExportInput) {
       comp.competencia,
       comp.esCalculada ? 'Calculada *' : 'Directa',
       comp.nivel || '—',
+      // 0 no es un error: significa que todas pesan igual, como califican hoy
+      // todas las materias.
+      comp.puntos ? comp.puntos : '—',
       comp.fechaIdealEvaluacion || '—',
       p1.label,
       comp.retroPeriodo1 || '—',
@@ -440,10 +445,10 @@ function buildCompetenciasSheet(wb: ExcelJS.Workbook, input: MallaExportInput) {
       const cell = row.getCell(i + 1);
       cell.value = v;
       styleDataCell(cell, idx % 2 === 1);
-      if (i >= 1 && i <= 4 || i === 6) cell.alignment = { vertical: 'top', horizontal: 'center', wrapText: true };
+      if (i >= 1 && i <= 5 || i === 7) cell.alignment = { vertical: 'top', horizontal: 'center', wrapText: true };
     });
-    fill(row.getCell(5), EVAL_FILLS[String(p1.pct ?? 'none')] ?? EVAL_FILLS.none);
-    fill(row.getCell(7), EVAL_FILLS[String(p2.pct ?? 'none')] ?? EVAL_FILLS.none);
+    fill(row.getCell(6), EVAL_FILLS[String(p1.pct ?? 'none')] ?? EVAL_FILLS.none);
+    fill(row.getCell(8), EVAL_FILLS[String(p2.pct ?? 'none')] ?? EVAL_FILLS.none);
     r++;
   });
 

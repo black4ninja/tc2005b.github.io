@@ -7,6 +7,27 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Cada competencia puede pesar lo suyo en la nota.** Hasta ahora el bloque de
+  competencias era un **promedio simple**: todas valían igual. TC2007B califica
+  de otra forma —un solo bloque, sin actividades, donde cada competencia aporta
+  los puntos que tiene sobre 100— y eso no se podía expresar.
+  - `Competencia.puntos` vive en el **catálogo**, por materia, no en el plan del
+    grupo: la misma asignatura debe calificar igual en todos sus grupos.
+  - El bloque pasa a ser un **promedio ponderado normalizado** por los puntos de
+    las competencias que ese periodo evalúa. Lo de normalizar no es un detalle:
+    en el formato de TC2005B un periodo evalúa 3 de 9 competencias, y sin
+    normalizar ese periodo no podría llegar a 100 ni con todo perfecto.
+  - **Sin puntos, la nota no se mueve.** Si ninguna competencia del periodo
+    tiene puntos, todas pesan igual y el resultado es idéntico al de siempre —y
+    poner el mismo número a todas también. Es la propiedad que hace segura la
+    migración: hoy ninguna de las 16 competencias tiene puntos.
+  - Una competencia sin puntos **habiendo otras con puntos no cuenta**, ni en el
+    numerador ni en el denominador. El cálculo lo reporta (`competenciasSinPuntos`)
+    para poder decirlo en pantalla en vez de descontarlo en silencio, y el
+    formulario avisa antes.
+  - El XLSX de la malla gana la columna **Puntos**, junto al nivel.
+
 ### Fixed
 - **El alumno nuevo ya no se queda mirando un menú gris sin saber qué hacer.**
   Reportado por los propios alumnos. Hasta que rellenan el perfil del grupo, el
