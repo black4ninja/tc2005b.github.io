@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
+import { esPenalizacion } from '@tc2005b/evaluacion';
 import Icon from '../../atoms/Icon/Icon';
 import styles from './AlumnoCompetenciasPage.module.css';
 
@@ -17,6 +18,8 @@ interface CompetenciaData {
   solido: string;
   destacado: string;
   esCalculada: boolean;
+  penalizacion: string;
+  admitePenalizacion: boolean;
   valorPeriodo1: string | number;
   valorPeriodo2: string | number;
   retroPeriodo1: string;
@@ -25,6 +28,9 @@ interface CompetenciaData {
 }
 
 const RUBRIC_LEVELS = [
+  // La sanción va la PRIMERA, debajo de todo lo demás en severidad: si el alumno
+  // llega a verla aquí, es lo que tiene que leer antes que nada.
+  { key: 'penalizacion', label: 'Incipiente B', percent: '−30 pts' },
   { key: 'incipienteB', label: 'Incipiente B', percent: '0%' },
   { key: 'incipienteA', label: 'Incipiente A', percent: '15%' },
   { key: 'basico', label: 'Básico', percent: '70%' },
@@ -35,6 +41,10 @@ const RUBRIC_LEVELS = [
 function getActiveLevel(valor: string | number): string | null {
   const num = Number(valor);
   if (isNaN(num) || valor === '') return null;
+  // El centinela negativo es la sanción, no una nota bajísima: sin esto caía en
+  // el `return 'incipienteB'` del final y el alumno vería resaltado el nivel
+  // equivocado.
+  if (esPenalizacion(valor)) return 'penalizacion';
   if (num >= 100) return 'destacado';
   if (num >= 85) return 'solido';
   if (num >= 70) return 'basico';
@@ -44,6 +54,7 @@ function getActiveLevel(valor: string | number): string | null {
 
 function formatValor(valor: string | number): string {
   if (valor === '' || valor === undefined || valor === null) return '—';
+  if (esPenalizacion(valor)) return '−30 pts';
   return String(valor);
 }
 
@@ -124,7 +135,11 @@ export default function AlumnoCompetenciasPage() {
                 <span className={styles.infoLabel}>Rúbrica de niveles</span>
                 <div className={styles.rubricWrap}>
                   <div className={styles.rubricGrid}>
-                    {RUBRIC_LEVELS.map(({ key, label, percent }) => {
+                    {/* La columna de la sanción solo en las competencias que la
+                        admiten: en las demás sería una amenaza que no existe. */}
+                    {RUBRIC_LEVELS.filter(
+                      (n) => n.key !== 'penalizacion' || comp.admitePenalizacion,
+                    ).map(({ key, label, percent }) => {
                       const isActive = activeLevel === key;
                       return (
                         <div

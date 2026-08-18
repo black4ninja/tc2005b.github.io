@@ -7,7 +7,10 @@
  * import dinámico para no engordar el bundle principal.
  */
 import type * as ExcelJS from 'exceljs';
-import { calcCalificacion, parseValorCompetencia, round1, type PeriodoConfig } from '@tc2005b/evaluacion';
+import {
+  calcCalificacion, parseValorCompetencia, round1, esPenalizacion, PENALIZACION_VALOR,
+  type PeriodoConfig,
+} from '@tc2005b/evaluacion';
 import { APP_NAME } from '../config/app';
 
 const API_BASE = '/api';
@@ -83,8 +86,13 @@ const COLORS = {
 };
 
 /** Relleno por nivel de evaluación (clave = porcentaje). */
+const PENALIZACION_LABEL = 'Incipiente B −30 pts';
+
 const EVAL_FILLS: Record<string, string> = {
   none: 'FFE7E6E6',
+  // Más oscuro que el Incipiente B normal: en una hoja que se entrega como
+  // evidencia, la sanción tiene que distinguirse de un cero de un vistazo.
+  penalizacion: 'FFE06666',
   '0': 'FFF4CCCC',
   '15': 'FFFCE4CD',
   '70': 'FFFFF2CC',
@@ -93,6 +101,7 @@ const EVAL_FILLS: Record<string, string> = {
 };
 
 const NUMBER_TO_LABEL: Record<number, string> = {
+  [PENALIZACION_VALOR]: PENALIZACION_LABEL,
   0: 'Incipiente B (0%)',
   15: 'Incipiente A (15%)',
   70: 'Básico (70%)',
@@ -129,8 +138,13 @@ const BORDER: Partial<ExcelJS.Borders> = { top: THIN, left: THIN, bottom: THIN, 
  * la NOTA no se usa esto: se usa `parseValorCompetencia` del paquete compartido,
  * donde sin evaluar y 0 valen lo mismo.
  */
-export function evalDisplay(val: string | number | null | undefined): { label: string; pct: number | null } {
+export function evalDisplay(
+  val: string | number | null | undefined,
+): { label: string; pct: number | null; relleno?: string } {
   if (val === null || val === undefined || val === '') return { label: 'Sin evaluar', pct: null };
+  // `pct` se usa para elegir el color; la sanción tiene el suyo, y como nota
+  // vale 0 —el −30 son puntos aparte, no un porcentaje—.
+  if (esPenalizacion(val)) return { label: PENALIZACION_LABEL, pct: null, relleno: 'penalizacion' };
   const pct = parseValorCompetencia(val);
   if (typeof val === 'number') return { label: NUMBER_TO_LABEL[val] ?? `${val}%`, pct };
   const direct = Number(val);
@@ -390,13 +404,14 @@ function buildCompetenciasSheet(wb: ExcelJS.Workbook, input: MallaExportInput) {
   ws.mergeCells(`A${r}:${LAST}${r}`);
   const legendNote = ws.getCell(`A${r}`);
   legendNote.value =
-    'Cada competencia se evalúa por periodo con la siguiente escala. El porcentaje entre paréntesis es el valor que aporta a la calificación. La hoja "Rúbrica de Niveles" describe qué significa cada nivel para cada competencia.';
+    'Cada competencia se evalúa por periodo con la siguiente escala. El porcentaje entre paréntesis es el valor que aporta a la calificación. «Incipiente B −30 pts» no es un porcentaje: es una sanción por conducta que resta 30 puntos directos a la nota del periodo, y se acumula. La hoja "Rúbrica de Niveles" describe qué significa cada nivel para cada competencia.';
   legendNote.font = { italic: true, size: 9 };
   legendNote.alignment = { vertical: 'middle', wrapText: true };
   ws.getRow(r).height = 26;
   r++;
   const legend: [string, string][] = [
     ['Sin evaluar', EVAL_FILLS.none],
+    [PENALIZACION_LABEL, EVAL_FILLS.penalizacion],
     ['Incipiente B (0%)', EVAL_FILLS['0']],
     ['Incipiente A (15%)', EVAL_FILLS['15']],
     ['Básico (70%)', EVAL_FILLS['70']],
@@ -447,8 +462,8 @@ function buildCompetenciasSheet(wb: ExcelJS.Workbook, input: MallaExportInput) {
       styleDataCell(cell, idx % 2 === 1);
       if (i >= 1 && i <= 5 || i === 7) cell.alignment = { vertical: 'top', horizontal: 'center', wrapText: true };
     });
-    fill(row.getCell(6), EVAL_FILLS[String(p1.pct ?? 'none')] ?? EVAL_FILLS.none);
-    fill(row.getCell(8), EVAL_FILLS[String(p2.pct ?? 'none')] ?? EVAL_FILLS.none);
+    fill(row.getCell(6), EVAL_FILLS[p1.relleno ?? String(p1.pct ?? 'none')] ?? EVAL_FILLS.none);
+    fill(row.getCell(8), EVAL_FILLS[p2.relleno ?? String(p2.pct ?? 'none')] ?? EVAL_FILLS.none);
     r++;
   });
 

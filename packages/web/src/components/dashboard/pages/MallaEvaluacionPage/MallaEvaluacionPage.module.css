@@ -683,3 +683,14 @@
   from { opacity: 0; transform: translateX(-50%) translateY(8px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+/* De dónde viene la caída de la nota. Solo aparece si hubo sanción. */
+.penalizacionAviso {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--estado-error-bg);
+  color: var(--dash-danger);
+  font-size: 12px;
+  line-height: 1.4;
+}
