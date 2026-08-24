@@ -8,6 +8,23 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Editor de contenidos: scroll sincronizado y bloque resaltado a los dos
+  lados.** Con las dos columnas a la vista había dos scrolls independientes, así
+  que comprobar cómo queda un párrafo obligaba a buscarlo a mano en el otro
+  panel. Ahora las dos mitades se mueven juntas, el bloque bajo el cursor se
+  resalta en la fuente **y** en la vista previa, y un clic en la vista previa
+  lleva el cursor a esa línea del Markdown.
+  - El anclaje no adivina por el texto: el pipeline puede estampar `data-linea`
+    en cada bloque con la línea de la que sale, y de ahí sale una tabla de
+    correspondencias. Entre bloque y bloque se **interpola**, para que un párrafo
+    largo no dé saltos secos al recorrerlo.
+  - El resaltado, además de ubicar, es la forma de ver **dónde el mapeo no cuadra
+    del todo** — que es justo para lo que se mira esta vista.
+  - `data-linea` es **solo del preview**: lo que se publica se renderiza sin la
+    opción, así que el HTML servido a los alumnos no cambia.
+  - Se puede apagar con el botón de la barra (solo aparece en la vista de dos
+    columnas) y la preferencia se recuerda entre sesiones.
+
 - **Copiar el plan de evaluación de otro grupo.** Armar un plan de cero es
   tedioso y propenso a errores cuando ya hay modelos probados; ahora se replica
   el de otro grupo y se ajusta lo que cambie. Se copian los periodos con sus

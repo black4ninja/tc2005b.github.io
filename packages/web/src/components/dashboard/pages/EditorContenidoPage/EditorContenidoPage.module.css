@@ -156,6 +156,24 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
+/* ── Interruptor de scroll sincronizado ── */
+.syncBoton {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-page);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.syncActivo {
+  color: var(--dash-primary);
+  border-color: var(--dash-primary);
+  background: var(--bg-card);
+}
+
 /* ── Split fuente/preview ── */
 .split {
   display: grid;
@@ -209,6 +227,31 @@
   border-radius: 10px;
   padding: 18px 22px;
   overflow-y: auto;
+}
+
+/* Con la sincronización activa el preview es navegable: un clic lleva el cursor
+   de la fuente a ese bloque, así que se comporta como tal. */
+.previewSync :global(.contenido-render) > * {
+  cursor: pointer;
+}
+
+/* El bloque bajo el cursor, resaltado también aquí. Va con `:global` porque el
+   HTML del preview lo inyecta el pipeline, fuera del alcance del CSS Module.
+   El realce se pinta con un pseudo-elemento para no tocar el fondo del bloque:
+   así el color de una admonition o de un bloque de código se sigue viendo tal
+   como se publicará. */
+.previewSync :global(.bloqueActivo) {
+  position: relative;
+}
+.previewSync :global(.bloqueActivo)::before {
+  content: '';
+  position: absolute;
+  inset: -4px -10px -4px -12px;
+  border-left: 2px solid var(--dash-primary);
+  border-radius: 4px;
+  background: rgba(93, 135, 255, 0.1);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .hint {

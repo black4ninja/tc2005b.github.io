@@ -15,6 +15,7 @@ import DashButton from '../../atoms/DashButton/DashButton';
 import type { DocumentoData } from '../../../../types/contenidos';
 import '../../../../styles/contenido-render.css';
 import { useDiagramas } from '../../../../lib/diagramas/useDiagramas';
+import { useSincronizacion } from './useSincronizacion';
 import styles from './EditorContenidoPage.module.css';
 
 const API_BASE = '/api';
@@ -26,10 +27,16 @@ type EstadoGuardado = 'cargando' | 'guardado' | 'dirty' | 'guardando' | 'error';
 /** Qué mitades del split se ven. 'ambos' es el comportamiento de siempre. */
 type Vista = 'codigo' | 'ambos' | 'preview';
 const VISTA_KEY = 'cms:editor:vista';
+const SYNC_KEY = 'cms:editor:sync';
 
 function leerVista(): Vista {
   const v = localStorage.getItem(VISTA_KEY);
   return v === 'codigo' || v === 'preview' ? v : 'ambos';
+}
+
+/** Sincronizar fuente y preview: encendido salvo que se apague a mano. */
+function leerSync(): boolean {
+  return localStorage.getItem(SYNC_KEY) !== 'off';
 }
 
 interface VersionInfo {
@@ -83,6 +90,12 @@ export default function EditorContenidoPage({
   const docId = propDocId ?? params.docId;
   const { sessionToken } = useAuth();
   const editorRef = useRef<ReactCodeMirrorRef>(null);
+  // Contenedor con scroll del preview: es la mitad de la tabla de anclas que
+  // usa la sincronización (la otra la pone CodeMirror).
+  const previewRef = useRef<HTMLDivElement>(null);
+  // CodeMirror monta su `EditorView` después del primer render; hasta entonces
+  // no hay a qué engancharse.
+  const [editorListo, setEditorListo] = useState(false);
 
   const [documento, setDocumento] = useState<DocumentoData | null>(null);
   const [cuerpo, setCuerpo] = useState('');
@@ -96,9 +109,16 @@ export default function EditorContenidoPage({
   // volver a colapsar el preview cada vez que entra.
   const [vista, setVistaState] = useState<Vista>(leerVista);
 
+  const [sync, setSyncState] = useState<boolean>(leerSync);
+
   function setVista(v: Vista) {
     setVistaState(v);
     localStorage.setItem(VISTA_KEY, v);
+  }
+
+  function setSync(v: boolean) {
+    setSyncState(v);
+    localStorage.setItem(SYNC_KEY, v ? 'on' : 'off');
   }
 
   const [publicarOpen, setPublicarOpen] = useState(false);
@@ -284,10 +304,23 @@ export default function EditorContenidoPage({
   useEffect(() => {
     if (!esMd) return;
     const timer = setTimeout(() => {
-      renderMarkdown(cuerpo).then(setPreviewHtml).catch(() => {});
+      // `lineas: true` estampa `data-linea` en cada bloque: es lo que ancla la
+      // sincronización con la fuente. Solo aquí — lo que se publica lo renderiza
+      // el API sin la opción, así que el HTML servido no cambia.
+      renderMarkdown(cuerpo, { lineas: true }).then(setPreviewHtml).catch(() => {});
     }, PREVIEW_MS);
     return () => clearTimeout(timer);
   }, [cuerpo, esMd]);
+
+  /* ── Sincronización fuente ⇄ preview (solo con las dos columnas a la vista) ── */
+  const syncActivo = esMd && vista === 'ambos' && sync;
+  const { extensiones: extensionesSync } = useSincronizacion({
+    editorRef,
+    previewRef,
+    activo: syncActivo,
+    previewHtml,
+    editorListo,
+  });
 
   /* ── Atajos: ⌘S guardar · ⌘⇧P publicar ──
      Mismas guardas que los botones: sin documento cargado (o cargando/error
@@ -727,6 +760,25 @@ export default function EditorContenidoPage({
             </button>
           </div>
 
+          {/* Solo con las dos columnas: sincronizar contra una columna colapsada
+              no significa nada, y el botón sobraría en la barra. */}
+          {esMd && vista === 'ambos' && (
+            <button
+              type="button"
+              className={`${styles.syncBoton} ${sync ? styles.syncActivo : ''}`}
+              onClick={() => setSync(!sync)}
+              title={
+                sync
+                  ? 'Scroll sincronizado: activo. El bloque bajo el cursor se resalta en los dos lados.'
+                  : 'Scroll sincronizado: apagado. Cada columna se desplaza por su cuenta.'
+              }
+              aria-pressed={sync}
+              aria-label="Scroll sincronizado entre código y vista previa"
+            >
+              <Icon name={sync ? 'sync' : 'sync_disabled'} size="sm" />
+            </button>
+          )}
+
           <span className={styles.atajos}>⌘S guardar · ⌘⇧P publicar</span>
         </div>
       )}
@@ -762,15 +814,24 @@ export default function EditorContenidoPage({
                 ref={editorRef}
                 value={cuerpo}
                 onChange={onCambio}
+                onCreateEditor={() => setEditorListo(true)}
                 editable={documento !== null && estado !== 'cargando'}
                 theme={oneDark}
-                extensions={[esMd ? markdown() : html(), EditorView.lineWrapping]}
+                extensions={[
+                  esMd ? markdown() : html(),
+                  EditorView.lineWrapping,
+                  ...extensionesSync,
+                ]}
                 basicSetup={{ foldGutter: true, highlightActiveLine: true }}
                 className={styles.codemirror}
               />
             </div>
             {esMd ? (
-              <div className={`${styles.preview} ${!verPreview ? styles.oculto : ''}`} aria-hidden={!verPreview}>
+              <div
+                ref={previewRef}
+                className={`${styles.preview} ${syncActivo ? styles.previewSync : ''} ${!verPreview ? styles.oculto : ''}`}
+                aria-hidden={!verPreview}
+              >
                 {/* Seguro: previewHtml SIEMPRE sale de renderMarkdown(), cuyo pipeline
                     aplica rehype-sanitize (allowlist) — scripts/handlers/iframes se
                     eliminan. Es el mismo HTML que servirá producción (design §3). */}

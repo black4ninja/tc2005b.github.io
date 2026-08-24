@@ -80,6 +80,42 @@ function remarkAdmonitions() {
   };
 }
 
+/**
+ * Bloques a los que se les estampa `data-linea`. Es una allowlist y no "todo
+ * elemento con posición" a propósito: marcar los inline (`<em>`, `<code>`,
+ * `<a>`) multiplicaría los atributos sin dar más precisión de la que el editor
+ * puede usar — sincroniza por bloques, no por palabras.
+ */
+const BLOQUES_CON_LINEA = new Set([
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'hr',
+  'table', 'thead', 'tbody', 'tr',
+  'div', // admonitions
+]);
+
+/**
+ * Plugin rehype: anota cada bloque con la línea del Markdown en la que empieza
+ * (`data-linea`, 1-based). Es lo que permite al editor sincronizar el scroll y
+ * resaltar el bloque bajo el cursor sin adivinar por el texto.
+ *
+ * Corre al FINAL, después de `rehype-sanitize`: si corriera antes, el atributo
+ * moriría en la allowlist (y añadirlo al esquema lo abriría también al HTML
+ * inline del autor, que es justo lo que sanitize existe para recortar).
+ *
+ * Solo se enchufa en el procesador del preview. El HTML que se PUBLICA no lo
+ * lleva: es andamiaje del editor, no contenido.
+ */
+function rehypeLineas() {
+  return (tree) => {
+    visit(tree, 'element', (node) => {
+      if (!BLOQUES_CON_LINEA.has(node.tagName)) return;
+      const linea = node.position?.start?.line;
+      if (!linea) return; // nodo sintético (p. ej. el <div> de una admonition ya marcado)
+      node.properties = { ...node.properties, dataLinea: String(linea) };
+    });
+  };
+}
+
 // Allowlist: la default de rehype-sanitize + las clases que usa el pipeline
 // (admonitions y highlight). Todo lo demás (scripts, estilos, iframes,
 // handlers) se elimina — el HTML crudo de páginas tipo `html` NO pasa por
@@ -97,17 +133,29 @@ const ESQUEMA_SANITIZE = {
   },
 };
 
-const procesador = unified()
-  .use(remarkParse)
-  .use(remarkGfm)
-  .use(remarkDirective)
-  .use(remarkAdmonitions)
-  .use(remarkRecursos)
-  .use(remarkRehype)
-  .use(rehypeSanitize, ESQUEMA_SANITIZE)
-  .use(rehypeSlug)
-  .use(rehypeHighlight, { detect: false })
-  .use(rehypeStringify);
+/**
+ * Los dos procesadores son el MISMO pipeline; el del preview solo añade
+ * `rehypeLineas` al final. Se construyen una vez y se congelan: `unified()`
+ * cachea el procesador congelado, y así el preview no paga el montaje en cada
+ * pulsación.
+ */
+function construirProcesador({ lineas }) {
+  const p = unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkDirective)
+    .use(remarkAdmonitions)
+    .use(remarkRecursos)
+    .use(remarkRehype)
+    .use(rehypeSanitize, ESQUEMA_SANITIZE)
+    .use(rehypeSlug)
+    .use(rehypeHighlight, { detect: false });
+  if (lineas) p.use(rehypeLineas);
+  return p.use(rehypeStringify).freeze();
+}
+
+const procesador = construirProcesador({ lineas: false });
+const procesadorConLineas = construirProcesador({ lineas: true });
 
 // remark-directive exige el título entre corchetes (`:::note[Título]`), pero
 // Docusaurus usa `:::note Título` — y la paridad con esa sintaxis es requisito
@@ -151,10 +199,14 @@ function normalizarAdmonitions(cuerpo) {
  * Renderiza Markdown (GFM + admonitions) a HTML sanitizado con highlight
  * e ids en los headings (anclas del TOC).
  * @param {string} cuerpo - fuente Markdown
+ * @param {{ lineas?: boolean }} [opciones] - `lineas: true` estampa `data-linea`
+ *   en cada bloque con la línea del Markdown de la que sale. Solo para el
+ *   preview del editor; lo que se publica se renderiza SIN la opción.
  * @returns {Promise<string>} HTML listo para servir/mostrar
  */
-export async function renderMarkdown(cuerpo) {
-  const archivo = await procesador.process(normalizarAdmonitions(cuerpo ?? ''));
+export async function renderMarkdown(cuerpo, opciones = {}) {
+  const p = opciones.lineas ? procesadorConLineas : procesador;
+  const archivo = await p.process(normalizarAdmonitions(cuerpo ?? ''));
   return String(archivo);
 }
 
