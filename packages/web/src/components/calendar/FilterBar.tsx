@@ -1,31 +1,6 @@
 import type { ActividadTipo } from '@/types/calendario';
-import { ICON_MAP } from './ActivityItem';
+import { colorTipo, iconoTipo, pluralTipo } from '@/data/tiposActividad';
 import styles from './FilterBar.module.css';
-
-/**
- * Etiqueta de cada píldora. En plural porque el filtro habla de conjuntos
- * («muéstrame las Lecturas»), no de una actividad concreta: por eso no reusa
- * `ETIQUETA_TIPO`, que es singular y sirve para nombrar UNA.
- *
- * Están los doce tipos de `ActividadTipo`, aunque en pantalla solo salgan los
- * que el calendario use. Faltar aquí no hacía invisible el filtro: hacía que las
- * actividades de ese tipo se atenuaran al filtrar por cualquier otro y no
- * hubiera forma de volver a incluirlas.
- */
-const ETIQUETA_PILDORA: Record<ActividadTipo, string> = {
-  lab: 'Labs',
-  lectura: 'Lecturas',
-  ejercicio: 'Ejercicios',
-  proyecto: 'Proyecto',
-  evaluacion: 'Evaluación',
-  trabajo: 'Trabajo',
-  discusion: 'Discusiones',
-  info: 'Información',
-  actividad: 'Actividades',
-  presentacion: 'Presentaciones',
-  break: 'Recesos',
-  asueto: 'Asuetos',
-};
 
 interface FilterBarProps {
   activeFilters: Set<ActividadTipo>;
@@ -60,12 +35,12 @@ export default function FilterBar({
             <button
               key={tipo}
               className={`${styles.filterPill} ${activeFilters.has(tipo) ? styles.active : ''}`}
-              style={{ '--pill-color': `var(--color-${tipo})` } as React.CSSProperties}
+              style={{ '--pill-color': colorTipo(tipo) } as React.CSSProperties}
               onClick={() => onToggleFilter(tipo)}
               aria-pressed={activeFilters.has(tipo)}
             >
-              <i className="material-icons">{ICON_MAP[tipo] ?? 'label'}</i>
-              {ETIQUETA_PILDORA[tipo] ?? tipo}
+              <i className="material-icons">{iconoTipo(tipo)}</i>
+              {pluralTipo(tipo)}
             </button>
           ))}
         </>

@@ -1,4 +1,5 @@
 import type { Actividad, ActividadTipo, Calendario, Dia } from '../types/calendario';
+import { ORDEN_TIPOS, nombreTipo } from '../data/tiposActividad';
 
 /** Días de clase, en el orden en que ocurren. El calendario no guarda fecha por día. */
 const DIAS: (keyof SemanaDias)[] = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
@@ -152,25 +153,11 @@ export function formatFechaCorta(fecha: string): string {
   return d.toLocaleDateString('es-MX', { timeZone: 'UTC', day: 'numeric', month: 'short' });
 }
 
-/** Nombre legible de cada tipo. Espeja las etiquetas del calendario. */
-export const ETIQUETA_TIPO: Record<string, string> = {
-  lab: 'Laboratorio',
-  lectura: 'Lectura',
-  ejercicio: 'Ejercicio',
-  proyecto: 'Proyecto',
-  evaluacion: 'Evaluación',
-  trabajo: 'Trabajo',
-  discusion: 'Discusión',
-  info: 'Información',
-  actividad: 'Actividad',
-  presentacion: 'Presentación',
-  break: 'Receso',
-  asueto: 'Asueto',
-};
-
-export function etiquetaTipo(tipo: string): string {
-  return ETIQUETA_TIPO[tipo] ?? tipo;
-}
+/**
+ * Nombre legible de cada tipo. Reexportado desde el catálogo: el Hub ya lo
+ * importaba de aquí, y mover el import a todos sus usos no aportaría nada.
+ */
+export const etiquetaTipo = nombreTipo;
 
 /**
  * Tipos presentes en la lista, en el orden del catálogo.
@@ -219,8 +206,8 @@ export function tiposEnCalendario(calendario: Calendario | null | undefined): Ac
  * la BD que aún no se haya dado de alta aquí no debe desaparecer de los filtros.
  */
 function ordenarTipos(presentes: Set<string>): string[] {
-  const conocidos = Object.keys(ETIQUETA_TIPO).filter((t) => presentes.has(t));
-  const desconocidos = [...presentes].filter((t) => !(t in ETIQUETA_TIPO));
+  const conocidos: string[] = ORDEN_TIPOS.filter((t) => presentes.has(t));
+  const desconocidos = [...presentes].filter((t) => !ORDEN_TIPOS.includes(t as ActividadTipo));
   return [...conocidos, ...desconocidos];
 }
 

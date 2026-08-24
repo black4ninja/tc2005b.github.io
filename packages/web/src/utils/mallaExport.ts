@@ -12,6 +12,7 @@ import {
   type PeriodoConfig,
 } from '@tc2005b/evaluacion';
 import { APP_NAME } from '../config/app';
+import { cortaTipo } from '../data/tiposActividad';
 
 const API_BASE = '/api';
 
@@ -107,20 +108,6 @@ const NUMBER_TO_LABEL: Record<number, string> = {
   70: 'Básico (70%)',
   85: 'Sólido (85%)',
   100: 'Destacado (100%)',
-};
-
-const TIPO_LABEL: Record<string, string> = {
-  lab: 'Lab',
-  lectura: 'Lectura',
-  ejercicio: 'Ejercicio',
-  proyecto: 'Proyecto',
-  evaluacion: 'Evaluación',
-  break: 'Receso',
-  asueto: 'Asueto',
-  trabajo: 'Trabajo',
-  discusion: 'Discusión',
-  info: 'Info',
-  actividad: 'Actividad',
 };
 
 const THIN = { style: 'thin' as const, color: { argb: COLORS.border } };
@@ -346,7 +333,7 @@ function buildActividadesSheet(wb: ExcelJS.Workbook, input: MallaExportInput) {
     sumGanado += act.aprendizajeGanado;
     const vals: (string | number)[] = [
       idx + 1,
-      TIPO_LABEL[act.tipo] ?? act.tipo,
+      cortaTipo(act.tipo),
       act.nombre,
       act.aprendizajePlaneado,
       act.semanaPlaneada || '—',

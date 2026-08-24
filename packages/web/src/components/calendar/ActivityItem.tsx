@@ -1,21 +1,6 @@
-import type { Actividad, ActividadTipo } from '@/types/calendario';
+import type { Actividad } from '@/types/calendario';
+import { iconoTipo } from '@/data/tiposActividad';
 import styles from './ActivityItem.module.css';
-
-/** Icono de cada tipo. Exportado: la barra de filtros usa el mismo. */
-export const ICON_MAP: Record<ActividadTipo, string> = {
-  lab: 'assignment',
-  lectura: 'menu_book',
-  ejercicio: 'edit',
-  proyecto: 'stars',
-  evaluacion: 'check_circle',
-  break: 'free_breakfast',
-  asueto: 'event_busy',
-  trabajo: 'work',
-  discusion: 'forum',
-  info: 'info_outline',
-  actividad: 'assignment',
-  presentacion: 'slideshow',
-};
 
 /** Extensiones que el API sirve inline; el resto se descarga. */
 function abreEnElNavegador(nombre: string): boolean {
@@ -29,7 +14,7 @@ interface ActivityItemProps {
 }
 
 export default function ActivityItem({ actividad, isFilteredOut }: ActivityItemProps) {
-  const icon = ICON_MAP[actividad.tipo] || 'info_outline';
+  const icon = iconoTipo(actividad.tipo);
 
   // Presentación con archivo: el enlace apunta al endpoint que lo sirve. Un
   // HTML abre en pestaña nueva; cualquier otro formato lo descarga el navegador.
