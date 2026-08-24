@@ -13,6 +13,7 @@ import {
   esMaterial,
   materialesDelCalendario,
   tiposPresentes,
+  tiposEnCalendario,
   filtrarMateriales,
   fechaDelDia,
   formatFechaCorta,
@@ -233,5 +234,73 @@ describe('la fecha llega a cada material', () => {
     expect(materiales.find((m) => m.id === 'a2')?.fecha).toBe('2026-08-10'); // lunes sem 1
     expect(materiales.find((m) => m.id === 'a4')?.fecha).toBe('2026-08-11'); // martes sem 1
     expect(materiales.find((m) => m.id === 'a5')?.fecha).toBe('2026-08-27'); // jueves sem 3
+  });
+});
+
+describe('tiposEnCalendario', () => {
+  it('devuelve los tipos que el calendario usa, en el orden del catálogo', () => {
+    // El fixture tiene trabajo y lab (lunes S1), trabajo en previo y
+    // presentacion (martes S1) y lectura (jueves S3).
+    expect(tiposEnCalendario(CALENDARIO)).toEqual(['lab', 'lectura', 'trabajo', 'presentacion']);
+  });
+
+  it('cuenta el `previo`, no solo las actividades del día', () => {
+    const cal = {
+      semanas: [
+        {
+          tipo: 'normal',
+          numero: 1,
+          dias: { lunes: { previo: [{ tipo: 'lectura' }], actividades: [{ tipo: 'lab' }] } },
+        },
+      ],
+    } as unknown as Calendario;
+    expect(tiposEnCalendario(cal)).toEqual(['lab', 'lectura']);
+  });
+
+  it('cuenta lo que NO es material: en el calendario un receso es una casilla que se ve', () => {
+    const cal = {
+      semanas: [
+        { tipo: 'normal', numero: 1, dias: { lunes: { actividades: [{ tipo: 'break' }, { tipo: 'asueto' }] } } },
+      ],
+    } as unknown as Calendario;
+    // `tiposPresentes` los descarta porque no hay nada que abrir; aquí sí cuentan.
+    expect(tiposEnCalendario(cal)).toEqual(['break', 'asueto']);
+    expect(tiposPresentes(materialesDelCalendario(cal))).toEqual([]);
+  });
+
+  it('no repite un tipo que aparece muchas veces', () => {
+    const cal = {
+      semanas: [
+        { tipo: 'normal', numero: 1, dias: { lunes: { actividades: [{ tipo: 'lab' }, { tipo: 'lab' }] } } },
+        { tipo: 'normal', numero: 2, dias: { martes: { actividades: [{ tipo: 'lab' }] } } },
+      ],
+    } as unknown as Calendario;
+    expect(tiposEnCalendario(cal)).toEqual(['lab']);
+  });
+
+  it('ignora las semanas especiales, que no tienen actividades', () => {
+    const cal = {
+      semanas: [{ tipo: 'especial', numero: 1, titulo: 'Receso', mensaje: 'Sin clases' }],
+    } as unknown as Calendario;
+    expect(tiposEnCalendario(cal)).toEqual([]);
+  });
+
+  it('un tipo que aún no esté en el catálogo se conserva, al final', () => {
+    const cal = {
+      semanas: [
+        { tipo: 'normal', numero: 1, dias: { lunes: { actividades: [{ tipo: 'taller' }, { tipo: 'lab' }] } } },
+      ],
+    } as unknown as Calendario;
+    expect(tiposEnCalendario(cal)).toEqual(['lab', 'taller']);
+  });
+
+  it('aguanta un calendario vacío, nulo o con días sin nada', () => {
+    expect(tiposEnCalendario(null)).toEqual([]);
+    expect(tiposEnCalendario(undefined)).toEqual([]);
+    expect(tiposEnCalendario({ semanas: [] } as unknown as Calendario)).toEqual([]);
+    const hueco = {
+      semanas: [{ tipo: 'normal', numero: 1, dias: { lunes: {}, martes: { actividades: [] } } }],
+    } as unknown as Calendario;
+    expect(tiposEnCalendario(hueco)).toEqual([]);
   });
 });

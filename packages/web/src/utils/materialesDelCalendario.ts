@@ -181,8 +181,45 @@ export function etiquetaTipo(tipo: string): string {
  */
 export function tiposPresentes(materiales: Material[]): string[] {
   const presentes = new Set(materiales.map((m) => m.tipo));
-  const conocidos = Object.keys(ETIQUETA_TIPO).filter((t) => presentes.has(t as ActividadTipo));
-  // Un tipo nuevo en la BD que aún no esté en el catálogo no debe desaparecer.
+  return ordenarTipos(presentes);
+}
+
+/**
+ * Tipos que aparecen en el CALENDARIO, en el orden del catálogo.
+ *
+ * Hermana de `tiposPresentes`, pero contando TODO: aquí no se aplica
+ * `esMaterial`. En el Hub un receso sin enlace es ruido; en el calendario es una
+ * casilla que se ve, y por tanto un filtro que tiene sentido ofrecer.
+ *
+ * Sirve para lo mismo que su hermana: los filtros se construyen con esto y no
+ * con el catálogo completo. Ofrecer «Evaluación» a un grupo que no tiene ninguna
+ * es prometer un filtro que solo puede vaciar la pantalla.
+ *
+ * Las semanas ESPECIALES no tienen actividades, así que no aportan nada.
+ */
+export function tiposEnCalendario(calendario: Calendario | null | undefined): ActividadTipo[] {
+  const presentes = new Set<ActividadTipo>();
+
+  for (const semana of calendario?.semanas ?? []) {
+    if (semana.tipo !== 'normal') continue;
+    for (const dia of DIAS) {
+      const contenido = (semana.dias as SemanaDias)[dia];
+      if (!contenido) continue;
+      for (const actividad of [...(contenido.previo ?? []), ...(contenido.actividades ?? [])]) {
+        if (actividad?.tipo) presentes.add(actividad.tipo);
+      }
+    }
+  }
+
+  return ordenarTipos(presentes) as ActividadTipo[];
+}
+
+/**
+ * Ordena por el catálogo y deja al final lo que no esté en él: un tipo nuevo en
+ * la BD que aún no se haya dado de alta aquí no debe desaparecer de los filtros.
+ */
+function ordenarTipos(presentes: Set<string>): string[] {
+  const conocidos = Object.keys(ETIQUETA_TIPO).filter((t) => presentes.has(t));
   const desconocidos = [...presentes].filter((t) => !(t in ETIQUETA_TIPO));
   return [...conocidos, ...desconocidos];
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router';
 import { confirmar } from '@/utils/dialogos';
 import {
@@ -25,6 +25,7 @@ import { useReorderSemanas } from '@/hooks/useReorderSemanas';
 import { useDeleteSemana } from '@/hooks/useDeleteSemana';
 import type { ReorderUpdate } from '@/hooks/useCalendarReorder';
 import { DIA_KEYS, diasDeSemana, type DiaKey } from '@/utils/diasSemana';
+import { tiposEnCalendario } from '@/utils/materialesDelCalendario';
 import type { ActivityFormData } from './ActivityForm';
 import type { WeekFormData } from './WeekForm';
 import FilterBar from './FilterBar';
@@ -154,7 +155,10 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
   const calendario = apiCalendario ?? CALENDARIO_MAP[grupoKey];
   const semanas = calendario?.semanas ?? [];
   const currentWeekIndex = useWeekNavigation(semanas);
-  const { activeFilters, toggleFilter } = useCalendarFilter();
+  // Los filtros se construyen con los tipos que este calendario usa de verdad,
+  // no con el catálogo completo.
+  const tiposDisponibles = useMemo(() => tiposEnCalendario(calendario), [calendario]);
+  const { activeFilters, toggleFilter } = useCalendarFilter(tiposDisponibles);
 
   // Reorder actividades hook
   const { isSaving, saveError, reorder } = useCalendarReorder(setApiCalendario);
@@ -745,6 +749,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
         <FilterBar
           activeFilters={activeFilters}
           onToggleFilter={toggleFilter}
+          tiposDisponibles={tiposDisponibles}
           allExpanded={allExpanded}
           onToggleExpandAll={toggleExpandAll}
         />

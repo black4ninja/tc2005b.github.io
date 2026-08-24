@@ -7,6 +7,25 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **El calendario solo ofrece filtros de los tipos de actividad que usa.** La
+  barra pintaba las nueve píldoras siempre, así que un grupo sin evaluaciones ni
+  proyecto veía filtros que únicamente podían vaciarle la pantalla, y que de paso
+  le sugerían tipos de actividad que no le corresponden. Ahora se construye con
+  los tipos que ese calendario tiene de verdad, en el orden del catálogo — el
+  mismo criterio que ya seguía el Hub de materiales.
+  - Al quedarse sin tipos (un calendario vacío) desaparecen también el rótulo
+    «Filtrar:»; el expandir/colapsar se queda, que no depende de los filtros.
+  - Si el último laboratorio se borra mientras se filtra por «Labs», la selección
+    se **poda** con la píldora: si no, el filtro seguiría escondiendo cosas sin
+    ningún control con el que deshacerlo.
+
+### Fixed
+- **Discusiones, Información y Asuetos ya se pueden filtrar en el calendario.**
+  Faltaban en la barra desde siempre. El síntoma no era que no hubiera botón: era
+  que al filtrar por cualquier otro tipo, las actividades de esos tres se
+  atenuaban y no había forma de volver a incluirlas.
+
 ### Added
 - **Editor de contenidos: scroll sincronizado y bloque resaltado a los dos
   lados.** Con las dos columnas a la vista había dos scrolls independientes, así

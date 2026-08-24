@@ -1,7 +1,8 @@
 import type { Actividad, ActividadTipo } from '@/types/calendario';
 import styles from './ActivityItem.module.css';
 
-const ICON_MAP: Record<ActividadTipo, string> = {
+/** Icono de cada tipo. Exportado: la barra de filtros usa el mismo. */
+export const ICON_MAP: Record<ActividadTipo, string> = {
   lab: 'assignment',
   lectura: 'menu_book',
   ejercicio: 'edit',
