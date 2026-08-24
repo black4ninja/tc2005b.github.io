@@ -38,6 +38,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     ningún control con el que deshacerlo.
 
 ### Fixed
+- **El resumen de la semana ya cuenta las actividades del plan de evaluación.**
+  Las de tipo `actividad` no salían en los chips: una semana entera de
+  actividades enseñaba el resumen vacío, como si no trajera trabajo. Era el
+  hueco que quedaba en el mapa de rótulos del resumen.
+
 - **La exportación a Excel de la malla ya no escribe «presentacion» en crudo.**
   Ese tipo faltaba en el mapa de rótulos del exportador y la celda salía con la
   clave interna en lugar de «Presentación».
