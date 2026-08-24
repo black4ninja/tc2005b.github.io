@@ -8,6 +8,23 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **Un solo catálogo de tipos de actividad.** Había siete tablas paralelas
+  —rótulos en el Hub, en la barra de filtros, en el resumen de la semana, en el
+  formulario, en la exportación a Excel y en tres pantallas del panel— y se
+  habían desincronizado sin que nadie lo notara. El síntoma de las tablas
+  paralelas nunca es «falta un rótulo»: es que un tipo desaparece de una pantalla
+  y sigue en las demás.
+  - Los varios rótulos por tipo se conservan, porque no son redundancia: un
+    desplegable explica qué cubre el tipo («Discusión / Resolución de dudas»), un
+    filtro habla de conjuntos («Discusiones»), un chip estrecho necesita caber
+    («Eval») y el título de una actividad sin nombre tiene que leerse como un
+    nombre («Discusión»). Ahora están en columnas de una misma tabla, así que las
+    diferencias son deliberadas y no accidentales.
+  - Que un tipo no cuente en el resumen de la semana pasa a ser un campo ausente
+    y documentado, en vez de un hueco en un mapa.
+  - Los colores no se guardan: se derivan de `var(--color-<tipo>)`, que es donde
+    el tema claro y el oscuro los redefinen.
+
 - **El calendario solo ofrece filtros de los tipos de actividad que usa.** La
   barra pintaba las nueve píldoras siempre, así que un grupo sin evaluaciones ni
   proyecto veía filtros que únicamente podían vaciarle la pantalla, y que de paso
@@ -21,6 +38,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     ningún control con el que deshacerlo.
 
 ### Fixed
+- **La exportación a Excel de la malla ya no escribe «presentacion» en crudo.**
+  Ese tipo faltaba en el mapa de rótulos del exportador y la celda salía con la
+  clave interna en lugar de «Presentación».
+
 - **Discusiones, Información y Asuetos ya se pueden filtrar en el calendario.**
   Faltaban en la barra desde siempre. El síntoma no era que no hubiera botón: era
   que al filtrar por cualquier otro tipo, las actividades de esos tres se

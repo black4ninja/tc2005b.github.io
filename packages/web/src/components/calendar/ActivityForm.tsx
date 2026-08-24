@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ActividadTipo } from '@/types/calendario';
 import type { PaginaResumen } from '@/types/pagina';
+import { TIPOS_FORMULARIO_CALENDARIO, formularioTipo } from '@/data/tiposActividad';
 import DashButton from '@/components/dashboard/atoms/DashButton/DashButton';
 import styles from './ActivityForm.module.css';
 
@@ -22,19 +23,6 @@ interface EjercicioResumen {
 
 const API_BASE = '/api';
 
-const TIPO_OPTIONS: { value: ActividadTipo; label: string }[] = [
-  { value: 'lab', label: 'Laboratorio' },
-  { value: 'lectura', label: 'Lectura' },
-  { value: 'ejercicio', label: 'Ejercicio' },
-  { value: 'proyecto', label: 'Proyecto' },
-  { value: 'evaluacion', label: 'Evaluación' },
-  { value: 'trabajo', label: 'Trabajo en clase' },
-  { value: 'discusion', label: 'Discusión / Resolución de dudas' },
-  { value: 'info', label: 'Información / Caso de estudio' },
-  { value: 'presentacion', label: 'Presentación' },
-  { value: 'break', label: 'Descanso' },
-  { value: 'asueto', label: 'Asueto' },
-];
 
 export interface ActivityFormData {
   tipo: ActividadTipo;
@@ -385,8 +373,8 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
       <div className={styles.field}>
         <label>Tipo de actividad *</label>
         <select value={tipo} onChange={(e) => setTipo(e.target.value as ActividadTipo)}>
-          {TIPO_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          {TIPOS_FORMULARIO_CALENDARIO.map((t) => (
+            <option key={t} value={t}>{formularioTipo(t)}</option>
           ))}
         </select>
       </div>

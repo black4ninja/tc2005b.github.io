@@ -10,6 +10,7 @@ import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import type { ActividadTipo } from '@/types/calendario';
 import type { ColeccionRef } from '../../../../types/contenidos';
 import styles from './ActividadesPage.module.css';
+import { TIPO_CHIP, TIPOS_PLAN_EVALUACION } from '@/data/tiposActividad';
 
 interface ActividadEvaluacionData {
   id: string;
@@ -24,25 +25,7 @@ interface ActividadEvaluacionData {
 
 const API_BASE = '/api';
 
-const TIPO_CONFIG: Record<ActividadTipo, { label: string; color: string; bg: string }> = {
-  lab: { label: 'Lab', color: 'var(--color-lab)', bg: 'var(--color-lab-light)' },
-  lectura: { label: 'Lectura', color: 'var(--color-lectura)', bg: 'var(--color-lectura-light)' },
-  ejercicio: { label: 'Ejercicio', color: 'var(--color-ejercicio)', bg: 'var(--color-ejercicio-light)' },
-  proyecto: { label: 'Proyecto', color: 'var(--color-proyecto)', bg: 'var(--color-proyecto-light)' },
-  evaluacion: { label: 'Evaluación', color: 'var(--color-evaluacion)', bg: 'var(--color-evaluacion-light)' },
-  break: { label: 'Receso', color: 'var(--color-break)', bg: 'var(--color-break-light)' },
-  asueto: { label: 'Asueto', color: 'var(--color-asueto)', bg: 'var(--color-asueto-light)' },
-  trabajo: { label: 'Trabajo', color: 'var(--color-trabajo)', bg: 'var(--color-trabajo-light)' },
-  discusion: { label: 'Discusión', color: 'var(--color-discusion)', bg: 'var(--color-discusion-light)' },
-  info: { label: 'Info', color: 'var(--color-info)', bg: 'var(--color-info-light)' },
-  actividad: { label: 'Actividad', color: 'var(--color-actividad)', bg: 'var(--color-actividad-light)' },
-  presentacion: { label: 'Presentación', color: 'var(--color-presentacion)', bg: 'var(--color-presentacion-light)' },
-};
 
-const TIPOS_AGREGAR: ActividadTipo[] = [
-  'actividad', 'lab', 'lectura', 'ejercicio', 'proyecto',
-  'evaluacion', 'trabajo', 'discusion', 'info',
-];
 
 interface FormData {
   nombre: string;
@@ -214,7 +197,7 @@ export default function ActividadesPage() {
       header: 'Tipo',
       cell: (info) => {
         const tipo = info.getValue();
-        const config = TIPO_CONFIG[tipo];
+        const config = TIPO_CHIP[tipo];
         if (!config) return tipo;
         return (
           <span
@@ -336,8 +319,8 @@ export default function ActividadesPage() {
               value={form.tipo}
               onChange={(e) => setForm((f) => ({ ...f, tipo: e.target.value as ActividadTipo }))}
             >
-              {TIPOS_AGREGAR.map((t) => (
-                <option key={t} value={t}>{TIPO_CONFIG[t].label}</option>
+              {TIPOS_PLAN_EVALUACION.map((t) => (
+                <option key={t} value={t}>{TIPO_CHIP[t].label}</option>
               ))}
             </select>
           </label>

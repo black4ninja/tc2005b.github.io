@@ -12,6 +12,7 @@ import type { DragStartEvent, DragEndEvent, DragOverEvent } from '@dnd-kit/core'
 import type { Semana, SemanaNormal, ActividadTipo } from '@/types/calendario';
 import type { ReorderUpdate } from '@/hooks/useCalendarReorder';
 import { DIA_KEYS, DIA_OFFSETS, diasDeSemana, sumarDias, type DiaKey } from '@/utils/diasSemana';
+import { resumenTipo } from '@/data/tiposActividad';
 import DayColumn from './DayColumn';
 import DaySummaryCell from './DaySummaryCell';
 import { DragOverlayActivityItem } from './SortableActivityItem';
@@ -57,18 +58,6 @@ function countActivitiesByType(semana: SemanaNormal): ActivityCounts {
   }
   return counts;
 }
-
-const SUMMARY_LABELS: Record<string, string> = {
-  lab: 'Labs',
-  lectura: 'Lecturas',
-  ejercicio: 'Ejercicios',
-  proyecto: 'Proyecto',
-  evaluacion: 'Eval',
-  trabajo: 'Trabajo',
-  discusion: 'Discusión',
-  info: 'Info',
-  presentacion: 'Presentaciones',
-};
 
 /** Todos los días posibles: se recorren para no perder actividades huérfanas. */
 const DAY_KEYS = DIA_KEYS;
@@ -468,7 +457,7 @@ export default function WeekCard({
             {(() => {
               const counts = countActivitiesByType(semana as SemanaNormal);
               return Object.entries(counts)
-                .filter(([key]) => SUMMARY_LABELS[key])
+                .filter(([key]) => resumenTipo(key))
                 .map(([key, count]) => (
                   <span
                     key={key}
@@ -478,7 +467,7 @@ export default function WeekCard({
                       '--chip-color': `var(--color-${key})`,
                     } as React.CSSProperties}
                   >
-                    {count} {SUMMARY_LABELS[key]}
+                    {count} {resumenTipo(key)}
                   </span>
                 ));
             })()}
