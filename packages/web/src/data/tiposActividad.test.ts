@@ -117,10 +117,17 @@ describe('resumenTipo — era SUMMARY_LABELS (resumen de la semana)', () => {
     }
   });
 
-  it('los tres que NO salían en el resumen siguen fuera', () => {
-    // Antes era un hueco en el mapa y el `.filter()` los descartaba; ahora es
-    // un campo ausente. Mismo resultado, dicho a propósito.
-    for (const tipo of ['actividad', 'break', 'asueto']) {
+  it('`actividad` SÍ cuenta ahora — era el olvido que quedaba', () => {
+    // No salía en `SUMMARY_LABELS`, así que el `.filter()` la descartaba y una
+    // semana llena de actividades del plan enseñaba el resumen vacío. Es el
+    // único rótulo que este catálogo añade respecto al código anterior.
+    expect(resumenTipo('actividad')).toBe('Actividades');
+  });
+
+  it('los días sin clase siguen fuera del resumen', () => {
+    // El resumen mide cuánto trabajo trae la semana; un receso o un asueto no
+    // aportan nada a esa cuenta.
+    for (const tipo of ['break', 'asueto']) {
       expect(resumenTipo(tipo), tipo).toBeNull();
     }
   });

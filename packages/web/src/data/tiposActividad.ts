@@ -85,16 +85,20 @@ export const TIPOS_ACTIVIDAD: Record<ActividadTipo, TipoActividad> = {
     formulario: 'Información / Caso de estudio',
     icono: 'info_outline',
   },
-  // Sin `resumen`: los chips del resumen de semana no lo cuentan.
-  actividad: { nombre: 'Actividad', plural: 'Actividades', icono: 'assignment' },
+  actividad: {
+    nombre: 'Actividad',
+    plural: 'Actividades',
+    resumen: 'Actividades',
+    icono: 'assignment',
+  },
   presentacion: {
     nombre: 'Presentación',
     plural: 'Presentaciones',
     resumen: 'Presentaciones',
     icono: 'slideshow',
   },
-  // Los dos días sin clase tampoco cuentan en el resumen: lo que mide es cuánto
-  // trabajo trae la semana.
+  // Los días sin clase no cuentan en el resumen: lo que mide es cuánto trabajo
+  // trae la semana.
   break: { nombre: 'Receso', plural: 'Recesos', formulario: 'Descanso', icono: 'free_breakfast' },
   asueto: { nombre: 'Asueto', plural: 'Asuetos', icono: 'event_busy' },
 };
