@@ -77,3 +77,38 @@ describe('TOC', () => {
     expect(toc[1].titulo).toBe('Uso de <div>');
   });
 });
+
+describe('renderMarkdown · data-linea (preview del editor)', () => {
+  const fuente = ['# Título', '', 'Un párrafo.', '', '## Sub', '', '- uno', '- dos'].join('\n');
+
+  it('no estampa nada por defecto: lo que se publica no lleva andamiaje', async () => {
+    const html = await renderMarkdown(fuente);
+    expect(html).not.toContain('data-linea');
+  });
+
+  it('con { lineas: true } marca cada bloque con su línea de origen', async () => {
+    const html = await renderMarkdown(fuente, { lineas: true });
+    expect(html).toContain('<h1 id="título" data-linea="1">');
+    expect(html).toContain('<p data-linea="3">');
+    expect(html).toContain('<h2 id="sub" data-linea="5">');
+    expect(html).toContain('<ul data-linea="7">');
+    expect(html).toContain('<li data-linea="7">');
+    expect(html).toContain('<li data-linea="8">');
+  });
+
+  it('el HTML es idéntico salvo por los atributos data-linea', async () => {
+    const limpio = await renderMarkdown(fuente);
+    const conLineas = await renderMarkdown(fuente, { lineas: true });
+    expect(conLineas.replace(/ data-linea="\d+"/g, '')).toBe(limpio);
+  });
+
+  it('marca las admonitions, que son div sintéticos con posición', async () => {
+    const html = await renderMarkdown('Antes.\n\n:::note Ojo\nCuerpo.\n:::\n', { lineas: true });
+    expect(html).toMatch(/<div class="admonition admonition-note" data-linea="3">/);
+  });
+
+  it('sigue sin dejar pasar HTML peligroso del autor', async () => {
+    const html = await renderMarkdown('<img src=x onerror="alert(1)">\n', { lineas: true });
+    expect(html).not.toContain('onerror');
+  });
+});

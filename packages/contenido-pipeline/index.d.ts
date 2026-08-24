@@ -8,11 +8,21 @@ export interface TocEntry {
   nivel: number;
 }
 
+/** Opciones de render. */
+export interface RenderOpciones {
+  /**
+   * Estampa `data-linea` (1-based) en cada bloque con la línea del Markdown de
+   * la que sale. Es andamiaje del editor —sincronizar scroll y resaltar el
+   * bloque bajo el cursor—: lo que se publica se renderiza SIN esta opción.
+   */
+  lineas?: boolean;
+}
+
 /**
  * Renderiza Markdown (GFM + admonitions) a HTML sanitizado con highlight
  * e ids en headings. Mismo pipeline en el API (publicar) y el editor (preview).
  */
-export declare function renderMarkdown(cuerpo: string): Promise<string>;
+export declare function renderMarkdown(cuerpo: string, opciones?: RenderOpciones): Promise<string>;
 
 /** Extrae el TOC (h2/h3) del HTML renderizado por este pipeline. */
 export declare function extraerToc(html: string): TocEntry[];
