@@ -5,6 +5,7 @@ import {
   invalidateColeccionSlugsCache,
   invalidateColeccionesPermitidas,
 } from '../services/contenidos.service.js';
+import { normalizarDuracion } from '../services/preguntas.service.js';
 
 /** El conjunto/estado de colecciones cambió: invalidar caches del visor. */
 function invalidarCachesVisor(): void {
@@ -90,7 +91,7 @@ export async function createColeccion(req: Request, res: Response): Promise<void
 
 export async function updateColeccion(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { nombre, slug, clave, descripcion, icono, publicada, permitePenalizacion } = req.body;
+  const { nombre, slug, clave, descripcion, icono, publicada, permitePenalizacion, preguntasDuracionSegundos } = req.body;
 
   try {
     // Solo `exists`: el admin también edita colecciones desactivadas
@@ -141,6 +142,20 @@ export async function updateColeccion(req: Request, res: Response): Promise<void
     // El nivel «Incipiente B −30 pts» se enciende por MATERIA. Solo se toca al
     // editar: una colección nueva nace sin él.
     let penalizacionRetirada = 0;
+    if (preguntasDuracionSegundos !== undefined) {
+      // null explícito = volver al valor por defecto del módulo.
+      if (preguntasDuracionSegundos === null || preguntasDuracionSegundos === '') {
+        coleccion.setPreguntasDuracionSegundos(undefined);
+      } else {
+        const dur = normalizarDuracion(preguntasDuracionSegundos, undefined);
+        if (typeof dur === 'object') {
+          res.status(400).json({ status: 'error', message: dur.error });
+          return;
+        }
+        coleccion.setPreguntasDuracionSegundos(dur);
+      }
+    }
+
     if (permitePenalizacion !== undefined) {
       const antes = coleccion.getPermitePenalizacion();
       const ahora = permitePenalizacion === true;

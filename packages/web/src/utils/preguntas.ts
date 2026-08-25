@@ -8,6 +8,32 @@ export function formatearDuracion(segundos: number): string {
   return `${min}:${String(resto).padStart(2, '0')}`;
 }
 
+/**
+ * El rótulo con el que se reconoce una pregunta en una lista.
+ *
+ * Sustituye al título que el banco tenía al principio: mantener título y
+ * enunciado a la vez solo servía para que acabaran diciendo cosas distintas, y
+ * el enunciado recortado identifica igual de bien. Se limpian las marcas de
+ * Markdown porque en una celda de tabla no se renderizan y se leerían crudas.
+ */
+export function resumenPregunta(texto: string, maximo = 90): string {
+  const plano = texto
+    // Enlaces: se queda el texto, se va el destino.
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    // Marcas de bloque al principio de línea: encabezados, citas, viñetas.
+    .replace(/^[#>\s-]*\s*/gm, '')
+    // Énfasis y código en línea.
+    .replace(/[*_`~]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (plano.length <= maximo) return plano;
+  // Se corta por la última palabra entera: partir a media palabra se lee peor
+  // que perder dos caracteres.
+  const cortado = plano.slice(0, maximo);
+  const ultimoEspacio = cortado.lastIndexOf(' ');
+  return `${(ultimoEspacio > maximo * 0.6 ? cortado.slice(0, ultimoEspacio) : cortado).trimEnd()}…`;
+}
+
 /** "Ética, Trabajo en equipo " → ['ética', 'trabajo en equipo'] */
 export function parsearEtiquetas(texto: string): string[] {
   const salida: string[] = [];

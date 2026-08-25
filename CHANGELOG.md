@@ -68,6 +68,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     otra; atarla a la colección cerraría esa puerta sin ganar nada, porque el
     módulo ya está acotado por dónde se enciende. Cuando difieren, la interfaz lo
     señala en ámbar.
+  - El **tiempo** no es de cada pregunta: se configura una vez en la materia y el
+    grupo puede anularlo —el mismo temario no se entrevista igual en un grupo de
+    treinta y cinco que en uno de doce—. Pedírselo al autor pregunta a pregunta
+    era pedirle una decisión que siempre tomaba igual.
+  - Tampoco hay **título**. Se probó con uno y sobraba: el rótulo con el que se
+    reconoce una pregunta en una lista sale del propio enunciado recortado, y
+    mantener las dos cosas solo abría la puerta a que dijeran cosas distintas.
   - Las **etiquetas** siguen, como segundo eje por debajo de la competencia:
     matizan lo que esta no distingue —a qué perfil le va bien, de qué parcial es,
     si es dura o de calentamiento—. Los dos filtros se cruzan.
@@ -78,8 +85,8 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   - Asignar está montado sobre la restricción real —muchos alumnos y hay que
     personalizar—, así que hay tres gestos y ninguno abre un formulario: el
     **sello** (se elige una pregunta arriba y luego es un clic por alumno), el
-    **selector por fila** con búsqueda por título, competencia, etiqueta o
-    contenido, y el **reparto al azar**, que llena a los que faltan agotando el
+    **selector por fila** con búsqueda por competencia, etiqueta o contenido, y
+    el **reparto al azar**, que llena a los que faltan agotando el
     banco antes de repetir —sortear una a una deja a media clase con la misma
     pregunta, y eso se nota en cuanto el primero sale del aula—.
   - La asignación es un **historial**, no un campo que se sobrescribe: a lo largo

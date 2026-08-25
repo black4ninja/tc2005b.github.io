@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Modal from '../../atoms/Modal/Modal';
 import Icon from '../../atoms/Icon/Icon';
-import { formatearDuracion } from '../../../../utils/preguntas';
+import { resumenPregunta } from '../../../../utils/preguntas';
 import type { Pregunta } from '../../../../types/preguntas';
 import styles from './SelectorPregunta.module.css';
 
@@ -33,8 +33,7 @@ export default function SelectorPregunta({ preguntas, titulo, onElegir, onCerrar
     const q = texto.trim().toLowerCase();
     if (!q) return preguntas;
     return preguntas.filter(
-      (p) => p.titulo.toLowerCase().includes(q)
-        || p.etiquetas.some((e) => e.includes(q))
+      (p) => p.etiquetas.some((e) => e.includes(q))
       || (p.competencia?.competencia ?? '').toLowerCase().includes(q)
         || p.texto.toLowerCase().includes(q),
     );
@@ -74,7 +73,7 @@ export default function SelectorPregunta({ preguntas, titulo, onElegir, onCerrar
             type="text"
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
-            placeholder="Buscar por título, competencia, etiqueta o contenido…"
+            placeholder="Buscar por competencia, etiqueta o contenido…"
           />
         </div>
 
@@ -92,7 +91,7 @@ export default function SelectorPregunta({ preguntas, titulo, onElegir, onCerrar
                   onMouseEnter={() => setIndice(i)}
                   onClick={() => onElegir(p)}
                 >
-                  <span className={styles.opcionTitulo}>{p.titulo}</span>
+                  <span className={styles.opcionTitulo}>{resumenPregunta(p.texto)}</span>
                   <span className={styles.opcionMeta}>
                     {/* La competencia primero y con otro tinte: es el eje por
                         el que se elige, las etiquetas solo matizan. */}
@@ -100,11 +99,7 @@ export default function SelectorPregunta({ preguntas, titulo, onElegir, onCerrar
                       <span className={styles.competencia}>{p.competencia.competencia}</span>
                     )}
                     {p.etiquetas.map((e) => <span key={e} className={styles.chip}>{e}</span>)}
-                    <span className={styles.tiempo}>{formatearDuracion(p.duracionSegundos)}</span>
                   </span>
-                  {/* El texto plano, recortado: el título por sí solo rara vez
-                      basta para recordar cuál de dos variantes es cuál. */}
-                  <span className={styles.opcionTexto}>{p.texto.slice(0, 160)}</span>
                 </button>
               </li>
             ))}

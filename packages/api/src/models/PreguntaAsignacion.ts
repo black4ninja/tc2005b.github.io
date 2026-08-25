@@ -51,19 +51,6 @@ export class PreguntaAsignacion extends BaseModel {
     this.set('nota', nota);
   }
 
-  /**
-   * Duración a medida, en segundos. Ausente = la de la pregunta. Se guarda
-   * `undefined` y no un número copiado para que editar la duración de la
-   * pregunta siga alcanzando a quien no tiene ajuste propio.
-   */
-  getDuracionSegundos(): number | undefined {
-    return this.get('duracionSegundos');
-  }
-  setDuracionSegundos(segundos: number | undefined): void {
-    if (segundos === undefined) this.unset('duracionSegundos');
-    else this.set('duracionSegundos', segundos);
-  }
-
   getAsignadaPor(): AppUser | undefined {
     return this.get('asignadaPor');
   }
@@ -93,19 +80,17 @@ export class PreguntaAsignacion extends BaseModel {
       pregunta: pregunta
         ? {
             id: pregunta.id,
-            titulo: pregunta.get('titulo') ?? '',
+            texto: pregunta.get('texto') ?? '',
             etiquetas: pregunta.get('etiquetas') ?? [],
             // Requiere include('pregunta.competencia'): el roster la pinta en
             // cada fila para ver de un vistazo qué competencia se está
             // explorando en cada alumno.
             competencia: pregunta.get('competencia')?.get('competencia') ?? null,
             competenciaId: pregunta.get('competencia')?.id ?? null,
-            duracionSegundos: pregunta.get('duracionSegundos') ?? null,
             archivada: pregunta.get('archivada') === true,
           }
         : null,
       nota: this.getNota(),
-      duracionSegundos: this.getDuracionSegundos() ?? null,
       usada: this.getUsada(),
       asignadaPorId: this.getAsignadaPor()?.id ?? null,
       createdAt: this.createdAt,

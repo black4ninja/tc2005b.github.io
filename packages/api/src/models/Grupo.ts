@@ -120,6 +120,22 @@ export class Grupo extends BaseModel {
   }
 
   /**
+   * Anulación del tiempo de las preguntas de entrevista para ESTE grupo, en
+   * segundos. Ausente = el de la materia (`Coleccion.preguntasDuracionSegundos`)
+   * y, si tampoco lo tiene, el del módulo.
+   *
+   * Existe porque el mismo temario se entrevista distinto según el grupo: uno de
+   * treinta y cinco no puede dar el mismo tiempo por cabeza que uno de doce.
+   */
+  getPreguntasDuracionSegundos(): number | undefined {
+    return this.get('preguntasDuracionSegundos');
+  }
+  setPreguntasDuracionSegundos(segundos: number | undefined): void {
+    if (segundos === undefined) this.unset('preguntasDuracionSegundos');
+    else this.set('preguntasDuracionSegundos', segundos);
+  }
+
+  /**
    * Campos del perfil del alumno que ESTE grupo no pide. Ausente o vacío = los
    * pide todos, que es el comportamiento de siempre (cero migración).
    *
@@ -166,6 +182,7 @@ export class Grupo extends BaseModel {
       // Módulos apagados por colección (para que la UI y el sidebar sepan qué está
       // habilitado). Vacío = todo habilitado.
       modulosDeshabilitados: this.getModulosDeshabilitados(),
+      preguntasDuracionSegundos: this.getPreguntasDuracionSegundos() ?? null,
       // Campos del perfil que este grupo NO pide (vacío = los pide todos).
       camposPerfilDeshabilitados: this.getCamposPerfilDeshabilitados(),
       active: this.get('active'),

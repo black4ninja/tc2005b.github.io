@@ -8,6 +8,7 @@ import { PreguntaAsignacion } from '../models/PreguntaAsignacion.js';
 import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
 import { coleccionesDeGrupo } from '../services/grupo-colecciones.service.js';
 import { normalizarDuracion } from '../services/preguntas.service.js';
+import { DURACION_POR_DEFECTO } from '../constants/preguntas.js';
 
 /**
  * Asignación de preguntas a los alumnos de UN grupo.
@@ -32,6 +33,16 @@ async function coleccionesConPreguntas(grupoId: string): Promise<Parse.Object[]>
   return coleccionesDeGrupo(grupoId, 'preguntas');
 }
 
+async function cargarGrupo(grupoId: string): Promise<Grupo | null> {
+  try {
+    const q = new Parse.Query<Grupo>('Grupo');
+    q.equalTo('exists' as any, true as any);
+    return await q.get(grupoId, { useMasterKey: true });
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Guard de escritura: el grupo tiene que tener el módulo encendido en alguna
  * colección. Responde 404 y no 403 —para ese grupo la sección no existe—, igual
@@ -47,6 +58,21 @@ async function exigirModulo(grupoId: string, res: Response): Promise<Parse.Objec
     return null;
   }
   return colecciones;
+}
+
+/**
+ * Segundos que dura una pregunta: manda el grupo, si no la materia de la
+ * pregunta y, si ninguna lo dice, el valor del módulo.
+ *
+ * Se resuelve por la colección de CADA pregunta y no una vez por grupo porque un
+ * grupo puede tener el módulo encendido en dos materias con tiempos distintos;
+ * la anulación del grupo, cuando existe, se las lleva todas por delante.
+ */
+export function duracionEfectiva(
+  duracionGrupo: number | undefined,
+  duracionColeccion: number | undefined,
+): number {
+  return duracionGrupo ?? duracionColeccion ?? DURACION_POR_DEFECTO;
 }
 
 /** Todas las asignaciones vivas del grupo, de la más reciente a la más antigua. */
@@ -82,7 +108,8 @@ export async function getPreguntasGrupo(req: Request, res: Response): Promise<vo
       return;
     }
 
-    const [alumnos, asignaciones, preguntas] = await Promise.all([
+    const [grupo, alumnos, asignaciones, preguntas] = await Promise.all([
+      cargarGrupo(grupoId),
       getAlumnosDeGrupo(grupoId),
       asignacionesDelGrupo(grupoId),
       (() => {
@@ -133,9 +160,27 @@ export async function getPreguntasGrupo(req: Request, res: Response): Promise<vo
       }
     }
 
+    // Tiempo: el del grupo si lo tiene, y si no el de cada materia. Viaja ya
+    // resuelto por pregunta para que el proyector no tenga que recomponerlo.
+    const duracionGrupo = grupo?.getPreguntasDuracionSegundos();
+    const duracionPorColeccion = new Map(
+      colecciones.map((c) => [c.id!, c.get('preguntasDuracionSegundos') as number | undefined]),
+    );
+
     res.json({
       status: 'ok',
       habilitado: true,
+      // Para la cabecera del roster: qué tiempo rige y de dónde sale.
+      duracion: {
+        grupo: duracionGrupo ?? null,
+        porDefecto: DURACION_POR_DEFECTO,
+        materias: colecciones.map((c) => ({
+          id: c.id,
+          clave: c.get('clave') ?? null,
+          nombre: c.get('nombre') ?? null,
+          duracionSegundos: (c.get('preguntasDuracionSegundos') as number | undefined) ?? null,
+        })),
+      },
       alumnos: alumnos.map(({ alumno }) => ({
         id: alumno.id,
         name: alumno.get('name') ?? '',
@@ -144,7 +189,10 @@ export async function getPreguntasGrupo(req: Request, res: Response): Promise<vo
         asignacion: vigentePorAlumno.get(alumno.id!)?.toSafeJSON() ?? null,
         totalAsignaciones: totalPorAlumno.get(alumno.id!) ?? 0,
       })),
-      preguntas: [...porIdPregunta.values()].map((p) => p.toSafeJSON()),
+      preguntas: [...porIdPregunta.values()].map((p) => ({
+        ...p.toSafeJSON(),
+        duracionSegundos: duracionEfectiva(duracionGrupo, duracionPorColeccion.get(p.getColeccion()?.id ?? '')),
+      })),
       competencias: [...competencias.values()].sort((a, b) => a.nombre.localeCompare(b.nombre)),
     });
   } catch {
@@ -174,7 +222,7 @@ export async function getHistorialAlumno(req: Request, res: Response): Promise<v
 
 /**
  * POST /admin/grupos/:grupoId/preguntas/asignaciones
- * Body: `{ asignaciones: [{ alumnoId, preguntaId, nota?, duracionSegundos? }] }`
+ * Body: `{ asignaciones: [{ alumnoId, preguntaId, nota? }] }`
  *
  * SIEMPRE en bloque, aunque sea de uno. Los tres gestos de la pantalla —marcar a
  * un alumno, sellar a varios con la misma pregunta y rellenar de golpe a los que
@@ -198,7 +246,7 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
 
   // Normalizar TODO antes de tocar la BD: una entrada mala a mitad de la lista
   // dejaría media asignación hecha y el profesor no sabría por dónde iba.
-  const normalizadas: { alumnoId: string; preguntaId: string; nota: string; duracion?: number }[] = [];
+  const normalizadas: { alumnoId: string; preguntaId: string; nota: string }[] = [];
   for (const e of entradas) {
     const alumnoId = typeof e?.alumnoId === 'string' ? e.alumnoId : '';
     const preguntaId = typeof e?.preguntaId === 'string' ? e.preguntaId : '';
@@ -206,16 +254,10 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
       res.status(400).json({ status: 'error', message: 'Cada asignación necesita alumno y pregunta' });
       return;
     }
-    const dur = normalizarDuracion(e?.duracionSegundos, undefined);
-    if (typeof dur === 'object') {
-      res.status(400).json({ status: 'error', message: dur.error });
-      return;
-    }
     normalizadas.push({
       alumnoId,
       preguntaId,
       nota: typeof e?.nota === 'string' ? e.nota : '',
-      duracion: dur,
     });
   }
 
@@ -255,7 +297,6 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
       asignacion.setAlumno(AppUser.createWithoutData(n.alumnoId) as AppUser);
       asignacion.setPregunta(porId.get(n.preguntaId)!);
       asignacion.setNota(n.nota);
-      asignacion.setDuracionSegundos(n.duracion);
       asignacion.setUsada(false);
       if (autor) asignacion.setAsignadaPor(autor);
       return asignacion;
@@ -268,7 +309,7 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
   }
 }
 
-/** PUT /admin/grupos/:grupoId/preguntas/asignaciones/:id — nota, duración o «ya la hice». */
+/** PUT /admin/grupos/:grupoId/preguntas/asignaciones/:id — la nota o «ya la hice». */
 export async function actualizarAsignacion(req: Request, res: Response): Promise<void> {
   const { grupoId, id } = req.params;
   if (!(await exigirModulo(grupoId, res))) return;
@@ -286,21 +327,8 @@ export async function actualizarAsignacion(req: Request, res: Response): Promise
       return;
     }
 
-    const { nota, duracionSegundos, usada } = req.body ?? {};
+    const { nota, usada } = req.body ?? {};
     if (nota !== undefined) asignacion.setNota(typeof nota === 'string' ? nota : '');
-    if (duracionSegundos !== undefined) {
-      // null explícito = volver a la duración de la pregunta.
-      if (duracionSegundos === null || duracionSegundos === '') {
-        asignacion.setDuracionSegundos(undefined);
-      } else {
-        const dur = normalizarDuracion(duracionSegundos, undefined);
-        if (typeof dur === 'object') {
-          res.status(400).json({ status: 'error', message: dur.error });
-          return;
-        }
-        asignacion.setDuracionSegundos(dur);
-      }
-    }
     if (usada !== undefined) asignacion.setUsada(usada === true);
 
     await asignacion.save(null, { useMasterKey: true });
@@ -328,5 +356,41 @@ export async function borrarAsignacion(req: Request, res: Response): Promise<voi
     res.json({ status: 'ok' });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al quitar la asignación' });
+  }
+}
+
+/**
+ * PUT /admin/grupos/:grupoId/preguntas/configuracion
+ * Body: `{ duracionSegundos: number | null }` — null vuelve al tiempo de la materia.
+ *
+ * Va aquí y no en `updateGrupo` porque aquel es solo de admin: el tiempo de las
+ * entrevistas lo ajusta quien las hace, que es el profesor del grupo.
+ */
+export async function setConfiguracionGrupo(req: Request, res: Response): Promise<void> {
+  const { grupoId } = req.params;
+  if (!(await exigirModulo(grupoId, res))) return;
+
+  const { duracionSegundos } = req.body ?? {};
+  let duracion: number | undefined;
+  if (duracionSegundos !== null && duracionSegundos !== undefined && duracionSegundos !== '') {
+    const dur = normalizarDuracion(duracionSegundos, undefined);
+    if (typeof dur === 'object') {
+      res.status(400).json({ status: 'error', message: dur.error });
+      return;
+    }
+    duracion = dur;
+  }
+
+  try {
+    const grupo = await cargarGrupo(grupoId);
+    if (!grupo) {
+      res.status(404).json({ status: 'error', message: 'Grupo no encontrado' });
+      return;
+    }
+    grupo.setPreguntasDuracionSegundos(duracion);
+    await grupo.save(null, { useMasterKey: true });
+    res.json({ status: 'ok', duracionSegundos: duracion ?? null });
+  } catch {
+    res.status(500).json({ status: 'error', message: 'Error al guardar el tiempo del grupo' });
   }
 }

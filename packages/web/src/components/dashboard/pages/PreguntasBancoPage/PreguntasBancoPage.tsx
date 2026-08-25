@@ -9,7 +9,7 @@ import Modal from '../../atoms/Modal/Modal';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Icon from '../../atoms/Icon/Icon';
 import PreguntaProyector from '../../organisms/PreguntaProyector/PreguntaProyector';
-import { formatearDuracion, parsearEtiquetas } from '../../../../utils/preguntas';
+import { formatearDuracion, parsearEtiquetas, resumenPregunta } from '../../../../utils/preguntas';
 import type { Pregunta } from '../../../../types/preguntas';
 import styles from './PreguntasBancoPage.module.css';
 
@@ -29,15 +29,16 @@ interface CompetenciaOption {
 }
 
 interface Borrador {
-  titulo: string;
   texto: string;
   competenciaId: string;
   etiquetas: string;
-  duracionSegundos: string;
   notas: string;
 }
 
-const VACIO: Borrador = { titulo: '', texto: '', competenciaId: '', etiquetas: '', duracionSegundos: '180', notas: '' };
+const VACIO: Borrador = { texto: '', competenciaId: '', etiquetas: '', notas: '' };
+
+/** Segundos del módulo cuando ni la materia ni el grupo dicen otra cosa. */
+const DURACION_POR_DEFECTO = 180;
 
 /**
  * Banco de PREGUNTAS de una materia: lo que el profesor plantea en las
@@ -53,6 +54,10 @@ export default function PreguntasBancoPage() {
   const [preguntas, setPreguntas] = useState<Pregunta[]>([]);
   const [competencias, setCompetencias] = useState<CompetenciaOption[]>([]);
   const [nombreColeccion, setNombreColeccion] = useState('');
+  // Tiempo de la materia: es del módulo, no de cada pregunta. null = el del módulo.
+  const [duracionMateria, setDuracionMateria] = useState<number | null>(null);
+  const [editandoDuracion, setEditandoDuracion] = useState(false);
+  const [duracionBorrador, setDuracionBorrador] = useState('');
   const [verArchivadas, setVerArchivadas] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -111,13 +116,38 @@ export default function PreguntasBancoPage() {
     try {
       const res = await fetch(`${API_BASE}/admin/colecciones`, { headers: { 'x-session-token': sessionToken ?? '' } });
       if (!res.ok) return;
-      const data = (await res.json()) as { colecciones?: { id: string; nombre: string; clave: string | null }[] };
+      const data = (await res.json()) as {
+        colecciones?: { id: string; nombre: string; clave: string | null; preguntasDuracionSegundos?: number | null }[];
+      };
       const c = (data.colecciones ?? []).find((x) => x.id === coleccionId);
-      if (c) setNombreColeccion(c.clave ? `${c.clave} — ${c.nombre}` : c.nombre);
+      if (c) {
+        setNombreColeccion(c.clave ? `${c.clave} — ${c.nombre}` : c.nombre);
+        setDuracionMateria(c.preguntasDuracionSegundos ?? null);
+      }
     } catch {
       // el nombre es cosmético; ignorar
     }
   }, [coleccionId, sessionToken]);
+
+  async function guardarDuracion() {
+    const crudo = duracionBorrador.trim();
+    try {
+      const res = await fetch(`${API_BASE}/admin/colecciones/${coleccionId}`, {
+        method: 'PUT',
+        headers,
+        // Vacío = quitar el ajuste y volver al tiempo del módulo.
+        body: JSON.stringify({ preguntasDuracionSegundos: crudo === '' ? null : Number(crudo) }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message || 'Error al guardar el tiempo');
+      }
+      setEditandoDuracion(false);
+      await fetchNombre();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'Error al guardar el tiempo'));
+    }
+  }
 
   useEffect(() => {
     fetchPreguntas();
@@ -145,11 +175,9 @@ export default function PreguntasBancoPage() {
   function abrirEdicion(p: Pregunta) {
     setEditando(p);
     setBorrador({
-      titulo: p.titulo,
       texto: p.texto,
       competenciaId: p.competenciaId ?? '',
       etiquetas: p.etiquetas.join(', '),
-      duracionSegundos: String(p.duracionSegundos),
       notas: p.notas,
     });
     // Si la que tiene puesta es de otra materia, el selector se abre ya
@@ -164,11 +192,9 @@ export default function PreguntasBancoPage() {
     setModalError('');
     try {
       const cuerpo = {
-        titulo: borrador.titulo,
         texto: borrador.texto,
         competenciaId: borrador.competenciaId,
         etiquetas: parsearEtiquetas(borrador.etiquetas),
-        duracionSegundos: Number(borrador.duracionSegundos),
         notas: borrador.notas,
       };
       const res = await fetch(
@@ -204,8 +230,8 @@ export default function PreguntasBancoPage() {
 
   async function handleEliminar(p: Pregunta) {
     if (!(await confirmar({
-      titulo: `¿Eliminar «${p.titulo}»?`,
-      texto: 'Si ya se la asignaste a alguien, archívala en vez de borrarla.',
+      titulo: '¿Eliminar esta pregunta?',
+      html: `<em>${resumenPregunta(p.texto, 120)}</em>`,
       confirmar: 'Eliminar',
       peligro: true,
     }))) return;
@@ -226,7 +252,12 @@ export default function PreguntasBancoPage() {
 
   const columnHelper = createColumnHelper<Pregunta>();
   const columns = useMemo(() => [
-    columnHelper.accessor('titulo', { header: 'Título' }),
+    // El accessor devuelve el texto ENTERO para que el buscador de la tabla mire
+    // dentro de la pregunta; la celda pinta solo el arranque.
+    columnHelper.accessor('texto', {
+      header: 'Pregunta',
+      cell: (info) => <span className={styles.textoPregunta}>{resumenPregunta(info.getValue())}</span>,
+    }),
     columnHelper.accessor((row) => row.competencia?.competencia ?? '', {
       id: 'competencia',
       header: 'Competencia',
@@ -255,10 +286,6 @@ export default function PreguntasBancoPage() {
           </span>
         );
       },
-    }),
-    columnHelper.accessor('duracionSegundos', {
-      header: 'Tiempo',
-      cell: (info) => formatearDuracion(info.getValue()),
     }),
     columnHelper.accessor('archivada', {
       header: 'Estado',
@@ -295,14 +322,57 @@ export default function PreguntasBancoPage() {
             Los alumnos no las ven en ningún momento.
           </p>
         </div>
-        <label className={styles.toggleArchivadas}>
-          <input
-            type="checkbox"
-            checked={verArchivadas}
-            onChange={(e) => setVerArchivadas(e.target.checked)}
-          />
-          <span>Ver archivadas</span>
-        </label>
+        <div className={styles.headerLado}>
+          {/* El tiempo es del módulo en esta materia, no de cada pregunta: por
+              eso se configura una vez aquí arriba y no en cada formulario. */}
+          <div className={styles.duracion}>
+            <Icon name="timer" size="sm" />
+            {editandoDuracion ? (
+              <>
+                <input
+                  className={styles.duracionInput}
+                  type="number"
+                  min={15}
+                  max={3600}
+                  autoFocus
+                  value={duracionBorrador}
+                  onChange={(e) => setDuracionBorrador(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') guardarDuracion();
+                    if (e.key === 'Escape') setEditandoDuracion(false);
+                  }}
+                  placeholder="180"
+                />
+                <button className={styles.enlaceBtn} onClick={guardarDuracion}>Guardar</button>
+                <button className={styles.enlaceBtn} onClick={() => setEditandoDuracion(false)}>Cancelar</button>
+              </>
+            ) : (
+              <>
+                <span>
+                  Tiempo por pregunta: <strong>{formatearDuracion(duracionMateria ?? DURACION_POR_DEFECTO)}</strong>
+                  {duracionMateria === null && <span className={styles.duracionFuente}> (por defecto)</span>}
+                </span>
+                <button
+                  className={styles.enlaceBtn}
+                  onClick={() => {
+                    setDuracionBorrador(duracionMateria === null ? '' : String(duracionMateria));
+                    setEditandoDuracion(true);
+                  }}
+                >
+                  editar
+                </button>
+              </>
+            )}
+          </div>
+          <label className={styles.toggleArchivadas}>
+            <input
+              type="checkbox"
+              checked={verArchivadas}
+              onChange={(e) => setVerArchivadas(e.target.checked)}
+            />
+            <span>Ver archivadas</span>
+          </label>
+        </div>
       </div>
 
       {error && <div className={styles.error} onClick={() => setError('')}>{error}</div>}
@@ -318,7 +388,7 @@ export default function PreguntasBancoPage() {
           onAdd={abrirNueva}
           addLabel="Nueva Pregunta"
           emptyMessage="Esta materia todavía no tiene preguntas."
-          searchPlaceholder="Buscar por título, competencia o etiqueta..."
+          searchPlaceholder="Buscar en la pregunta, competencia o etiqueta..."
         />
       )}
 
@@ -330,18 +400,6 @@ export default function PreguntasBancoPage() {
       >
         {modalError && <div className={styles.error}>{modalError}</div>}
         <div className={styles.form}>
-          <label className={styles.campo}>
-            <span>Título</span>
-            <input
-              type="text"
-              value={borrador.titulo}
-              onChange={(e) => setBorrador({ ...borrador, titulo: e.target.value })}
-              placeholder="Conflicto en el equipo"
-              autoFocus
-            />
-            <small>El rótulo con el que la eliges en el roster. Corto.</small>
-          </label>
-
           <label className={styles.campo}>
             <span>Competencia</span>
             <select
@@ -379,6 +437,7 @@ export default function PreguntasBancoPage() {
             <span>Pregunta</span>
             <textarea
               rows={7}
+              autoFocus
               value={borrador.texto}
               onChange={(e) => setBorrador({ ...borrador, texto: e.target.value })}
               placeholder={'Se acepta Markdown.\n\nDescribe una situación en la que…'}
@@ -386,30 +445,16 @@ export default function PreguntasBancoPage() {
             <small>Esto es lo que se proyecta. Acepta Markdown (negritas, listas, código).</small>
           </label>
 
-          <div className={styles.fila}>
-            <label className={styles.campo}>
-              <span>Etiquetas</span>
-              <input
-                type="text"
-                value={borrador.etiquetas}
-                onChange={(e) => setBorrador({ ...borrador, etiquetas: e.target.value })}
-                placeholder="parcial 2, difícil, perfil técnico"
-              />
-              <small>Separadas por comas. Matizan lo que la competencia no distingue.</small>
-            </label>
-
-            <label className={`${styles.campo} ${styles.campoCorto}`}>
-              <span>Tiempo (segundos)</span>
-              <input
-                type="number"
-                min={15}
-                max={3600}
-                value={borrador.duracionSegundos}
-                onChange={(e) => setBorrador({ ...borrador, duracionSegundos: e.target.value })}
-              />
-              <small>Se puede ajustar por alumno.</small>
-            </label>
-          </div>
+          <label className={styles.campo}>
+            <span>Etiquetas</span>
+            <input
+              type="text"
+              value={borrador.etiquetas}
+              onChange={(e) => setBorrador({ ...borrador, etiquetas: e.target.value })}
+              placeholder="parcial 2, difícil, perfil técnico"
+            />
+            <small>Separadas por comas. Matizan lo que la competencia no distingue.</small>
+          </label>
 
           <label className={styles.campo}>
             <span>Notas para ti</span>
@@ -438,6 +483,7 @@ export default function PreguntasBancoPage() {
       {proyectando && (
         <PreguntaProyector
           pregunta={proyectando}
+          duracionSegundos={duracionMateria ?? DURACION_POR_DEFECTO}
           onSalir={() => setProyectando(null)}
         />
       )}

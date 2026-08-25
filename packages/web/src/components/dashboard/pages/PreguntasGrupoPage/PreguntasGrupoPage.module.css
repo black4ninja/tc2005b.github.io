@@ -354,3 +354,43 @@
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* Cabecera derecha: el tiempo vigente y el contador de asignados. */
+.headerLado {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.duracion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.duracionFuente { color: var(--text-muted); }
+
+.duracionInput {
+  width: 80px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+/* Un botón que se lee como enlace: no compite con las acciones de la barra. */
+.enlaceBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--sidebar-active-color);
+  font-size: 0.82rem;
+  text-decoration: underline;
+  cursor: pointer;
+}

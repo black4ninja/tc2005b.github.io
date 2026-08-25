@@ -7,8 +7,11 @@ import styles from './PreguntaProyector.module.css';
 
 interface PreguntaProyectorProps {
   pregunta: Pregunta;
-  /** Segundos de ESTA proyección; ausente = los de la pregunta. */
-  duracionSegundos?: number | null;
+  /**
+   * Segundos de ESTA proyección. Llega resuelto de fuera (grupo → materia →
+   * módulo): el proyector no sabe de dónde sale el tiempo, solo lo cuenta.
+   */
+  duracionSegundos: number;
   /** A quién se le está preguntando. Ausente = vista previa desde el banco. */
   alumno?: { name: string; matricula: string } | null;
   /** "3 / 28" en la barra: sitúa al profesor dentro de la sesión. */
@@ -36,7 +39,7 @@ interface PreguntaProyectorProps {
 export default function PreguntaProyector({
   pregunta, duracionSegundos, alumno, posicion, onAnterior, onSiguiente, onSalir,
 }: PreguntaProyectorProps) {
-  const total = duracionSegundos ?? pregunta.duracionSegundos;
+  const total = duracionSegundos;
   const [restante, setRestante] = useState(total);
   const [corriendo, setCorriendo] = useState(false);
   // Fin absoluto en vez de ir restando: un `setInterval` acumula deriva y a los
@@ -104,7 +107,7 @@ export default function PreguntaProyector({
               {alumno.matricula && <span className={styles.matricula}>{alumno.matricula}</span>}
             </>
           ) : (
-            <span className={styles.matricula}>Vista previa · {pregunta.titulo}</span>
+            <span className={styles.matricula}>Vista previa</span>
           )}
           {posicion && (
             <span className={styles.posicion}>{posicion.indice} / {posicion.total}</span>

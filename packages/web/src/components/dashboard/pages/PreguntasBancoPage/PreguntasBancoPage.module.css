@@ -165,3 +165,41 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* Cabecera derecha: el tiempo de la materia y el interruptor de archivadas. */
+.headerLado {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.duracion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.duracionFuente { color: var(--text-muted); }
+
+.duracionInput {
+  width: 80px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+/* El enunciado en la celda: una línea, sin partir la tabla. */
+.textoPregunta {
+  display: block;
+  max-width: 46ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -14,6 +14,7 @@ import {
   crearAsignaciones,
   actualizarAsignacion,
   borrarAsignacion,
+  setConfiguracionGrupo,
 } from '../controllers/preguntas-asignacion.controller.js';
 
 /**
@@ -42,6 +43,7 @@ router.delete('/admin/preguntas/:id', deletePregunta);
 
 // Asignación por grupo
 router.get('/admin/grupos/:grupoId/preguntas', getPreguntasGrupo);
+router.put('/admin/grupos/:grupoId/preguntas/configuracion', setConfiguracionGrupo);
 router.get('/admin/grupos/:grupoId/preguntas/alumnos/:alumnoId', getHistorialAlumno);
 router.post('/admin/grupos/:grupoId/preguntas/asignaciones', crearAsignaciones);
 router.put('/admin/grupos/:grupoId/preguntas/asignaciones/:id', actualizarAsignacion);

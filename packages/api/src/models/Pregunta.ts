@@ -3,7 +3,6 @@ import { BaseModel } from './BaseModel.js';
 import type { AppUser } from './AppUser.js';
 import type { Coleccion } from './Coleccion.js';
 import type { Competencia } from './Competencia.js';
-import { DURACION_POR_DEFECTO } from '../constants/preguntas.js';
 
 /**
  * Una pregunta del banco del módulo "Preguntas": lo que el profesor le plantea
@@ -14,6 +13,11 @@ import { DURACION_POR_DEFECTO } from '../constants/preguntas.js';
  * Asignaciones del grupo. Lo que la ata a la materia no es solo la costumbre —es
  * que su categoría es una `Competencia`, y las competencias son de una
  * colección.
+ *
+ * No tiene título. Se probó con uno y sobraba: el rótulo corto que el profesor
+ * lee para elegir sale del propio enunciado recortado, y mantener las dos cosas
+ * a la vez solo abría la puerta a que dijeran cosas distintas. El tiempo tampoco
+ * es suyo: vive en la materia y lo puede anular el grupo (ver `Coleccion`).
  *
  * El alumno NUNCA lee esta clase: no hay read-path de alumno para el módulo. Por
  * eso `notas` —lo que el profesor busca en la respuesta— puede vivir aquí sin
@@ -52,14 +56,6 @@ export class Pregunta extends BaseModel {
     else this.unset('competencia');
   }
 
-  /** Rótulo corto: es lo que el profesor lee para elegir rápido en el roster. */
-  getTitulo(): string {
-    return this.get('titulo') ?? '';
-  }
-  setTitulo(titulo: string): void {
-    this.set('titulo', titulo);
-  }
-
   /** El enunciado que se proyecta, en Markdown (fuente). */
   getTexto(): string {
     return this.get('texto') ?? '';
@@ -88,14 +84,6 @@ export class Pregunta extends BaseModel {
   }
   setEtiquetas(etiquetas: string[]): void {
     this.set('etiquetas', etiquetas);
-  }
-
-  /** Segundos que se le dan al alumno. La asignación puede sobrescribirlo. */
-  getDuracionSegundos(): number {
-    return this.get('duracionSegundos') ?? DURACION_POR_DEFECTO;
-  }
-  setDuracionSegundos(segundos: number): void {
-    this.set('duracionSegundos', segundos);
   }
 
   /**
@@ -148,11 +136,9 @@ export class Pregunta extends BaseModel {
       coleccionId: this.getColeccion()?.id ?? null,
       competenciaId: this.getCompetencia()?.id ?? null,
       competencia: this.competenciaJSON(),
-      titulo: this.getTitulo(),
       texto: this.getTexto(),
       textoHtml: this.getTextoHtml(),
       etiquetas: this.getEtiquetas(),
-      duracionSegundos: this.getDuracionSegundos(),
       notas: this.getNotas(),
       archivada: this.getArchivada(),
       autorId: this.getAutor()?.id ?? null,

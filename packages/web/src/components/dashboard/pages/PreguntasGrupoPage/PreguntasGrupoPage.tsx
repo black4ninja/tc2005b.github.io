@@ -6,9 +6,9 @@ import DashButton from '../../atoms/DashButton/DashButton';
 import Modal from '../../atoms/Modal/Modal';
 import PreguntaProyector from '../../organisms/PreguntaProyector/PreguntaProyector';
 import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta';
-import { formatearDuracion, repartirPreguntas } from '../../../../utils/preguntas';
+import { formatearDuracion, repartirPreguntas, resumenPregunta } from '../../../../utils/preguntas';
 import type {
-  AlumnoConPregunta, CompetenciaEnBanco, Pregunta, PreguntaAsignacion,
+  AlumnoConPregunta, CompetenciaEnBanco, DuracionConfig, Pregunta, PreguntaAsignacion,
 } from '../../../../types/preguntas';
 import styles from './PreguntasGrupoPage.module.css';
 
@@ -39,6 +39,9 @@ export default function PreguntasGrupoPage() {
   const [alumnos, setAlumnos] = useState<AlumnoConPregunta[]>([]);
   const [preguntas, setPreguntas] = useState<Pregunta[]>([]);
   const [competencias, setCompetencias] = useState<CompetenciaEnBanco[]>([]);
+  const [duracion, setDuracion] = useState<DuracionConfig | null>(null);
+  const [editandoDuracion, setEditandoDuracion] = useState(false);
+  const [duracionBorrador, setDuracionBorrador] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -75,11 +78,19 @@ export default function PreguntasGrupoPage() {
         alumnos?: AlumnoConPregunta[];
         preguntas?: Pregunta[];
         competencias?: CompetenciaEnBanco[];
+        duracion?: DuracionConfig;
       };
       setHabilitado(data.habilitado !== false);
       setAlumnos(data.alumnos ?? []);
-      setPreguntas([...(data.preguntas ?? [])].sort((a, b) => a.titulo.localeCompare(b.titulo)));
+      // Por competencia y dentro de ella por el enunciado: la competencia es el
+      // eje por el que se busca, así que agrupar por ella deja el selector
+      // ordenado como se piensa.
+      setPreguntas([...(data.preguntas ?? [])].sort((a, b) => {
+        const porComp = (a.competencia?.competencia ?? '~').localeCompare(b.competencia?.competencia ?? '~');
+        return porComp !== 0 ? porComp : a.texto.localeCompare(b.texto);
+      }));
       setCompetencias(data.competencias ?? []);
+      setDuracion(data.duracion ?? null);
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'Error al cargar las preguntas del grupo'));
     } finally {
@@ -117,6 +128,30 @@ export default function PreguntasGrupoPage() {
   }, [alumnos, soloSinAsignar, busqueda]);
 
   const sinAsignar = useMemo(() => alumnos.filter((a) => !a.asignacion), [alumnos]);
+
+  /**
+   * Qué tiempo rige y de dónde sale. Manda la anulación del grupo; si no la hay
+   * y todas las materias del grupo coinciden, el suyo; y si discrepan no se
+   * inventa una cifra única —cada pregunta lleva la de SU materia— y la cabecera
+   * lo dice en vez de mentir.
+   */
+  const { duracionVigente, fuenteDuracion } = useMemo(() => {
+    if (!duracion) return { duracionVigente: 180, fuenteDuracion: '' };
+    if (duracion.grupo !== null) {
+      return { duracionVigente: duracion.grupo, fuenteDuracion: 'de este grupo' };
+    }
+    const valores = new Set(duracion.materias.map((m) => m.duracionSegundos ?? duracion.porDefecto));
+    if (valores.size <= 1) {
+      const materia = duracion.materias[0];
+      return {
+        duracionVigente: [...valores][0] ?? duracion.porDefecto,
+        fuenteDuracion: materia?.duracionSegundos != null
+          ? `de ${materia.clave ?? materia.nombre ?? 'la materia'}`
+          : 'por defecto',
+      };
+    }
+    return { duracionVigente: duracion.porDefecto, fuenteDuracion: 'según cada materia' };
+  }, [duracion]);
 
   /** Alumnos proyectables (con pregunta), en el orden en que se ven. */
   const paraProyectar = useMemo(() => visibles.filter((a) => a.asignacion?.pregunta), [visibles]);
@@ -185,6 +220,27 @@ export default function PreguntasGrupoPage() {
     }
   }
 
+  async function guardarDuracion() {
+    const crudo = duracionBorrador.trim();
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/preguntas/configuracion`, {
+        method: 'PUT',
+        headers,
+        // Vacío = quitar la anulación y volver al tiempo de la materia.
+        body: JSON.stringify({ duracionSegundos: crudo === '' ? null : Number(crudo) }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message || 'Error al guardar el tiempo');
+      }
+      setEditandoDuracion(false);
+      // Recarga entera: el tiempo cambia el de TODAS las preguntas del roster.
+      await fetchTodo();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'Error al guardar el tiempo'));
+    }
+  }
+
   async function abrirHistorial(alumno: AlumnoConPregunta) {
     setHistorialDe(alumno);
     setHistorial([]);
@@ -245,9 +301,53 @@ export default function PreguntasGrupoPage() {
             La pregunta que le toca a cada alumno en su entrevista. Los alumnos no ven nada de esto.
           </p>
         </div>
-        <span className={styles.contador}>
-          {alumnos.length - sinAsignar.length} de {alumnos.length} asignados
-        </span>
+        <div className={styles.headerLado}>
+          {/* El tiempo es del módulo, no de cada pregunta: se ve y se ajusta una
+              vez, aquí, y vale para todo el grupo. */}
+          <div className={styles.duracion}>
+            <Icon name="timer" size="sm" />
+            {editandoDuracion ? (
+              <>
+                <input
+                  className={styles.duracionInput}
+                  type="number"
+                  min={15}
+                  max={3600}
+                  autoFocus
+                  value={duracionBorrador}
+                  onChange={(e) => setDuracionBorrador(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') guardarDuracion();
+                    if (e.key === 'Escape') setEditandoDuracion(false);
+                  }}
+                  placeholder={String(duracionVigente)}
+                />
+                <button className={styles.enlaceBtn} onClick={guardarDuracion}>Guardar</button>
+                <button className={styles.enlaceBtn} onClick={() => setEditandoDuracion(false)}>Cancelar</button>
+              </>
+            ) : (
+              <>
+                <span>
+                  Tiempo: <strong>{formatearDuracion(duracionVigente)}</strong>
+                  {fuenteDuracion && <span className={styles.duracionFuente}> ({fuenteDuracion})</span>}
+                </span>
+                <button
+                  className={styles.enlaceBtn}
+                  onClick={() => {
+                    setDuracionBorrador(duracion?.grupo === null || duracion?.grupo === undefined ? '' : String(duracion.grupo));
+                    setEditandoDuracion(true);
+                  }}
+                  title="Ajustar el tiempo solo para este grupo; vacío vuelve al de la materia"
+                >
+                  editar
+                </button>
+              </>
+            )}
+          </div>
+          <span className={styles.contador}>
+            {alumnos.length - sinAsignar.length} de {alumnos.length} asignados
+          </span>
+        </div>
       </div>
 
       {error && <div className={styles.error} onClick={() => setError('')}>{error}</div>}
@@ -257,7 +357,7 @@ export default function PreguntasGrupoPage() {
           <span className={styles.barraTitulo}>Pregunta activa</span>
           <button className={styles.selloBtn} onClick={() => setSelectorSello(true)}>
             <Icon name={sello ? 'edit' : 'add'} size="sm" />
-            <span>{sello ? sello.titulo : 'Elegir una…'}</span>
+            <span>{sello ? resumenPregunta(sello.texto, 70) : 'Elegir una…'}</span>
           </button>
           {sello && (
             <button className={styles.selloQuitar} onClick={() => setSelloId(null)} title="Soltar la pregunta activa">
@@ -271,7 +371,7 @@ export default function PreguntasGrupoPage() {
             variant="outline"
             onClick={handleSellarLosQueFaltan}
             disabled={!sello || sinAsignar.length === 0}
-            title={sello ? `Le pone «${sello.titulo}» a los ${sinAsignar.length} sin asignar` : 'Elige antes una pregunta activa'}
+            title={sello ? `Se la pone a los ${sinAsignar.length} sin asignar` : 'Elige antes una pregunta activa'}
           >
             Esta a los que faltan ({sinAsignar.length})
           </DashButton>
@@ -296,7 +396,7 @@ export default function PreguntasGrupoPage() {
       {sello && (
         <p className={styles.pista}>
           <Icon name="touch_app" size="sm" />
-          Haz clic en un alumno para asignarle <strong>{sello.titulo}</strong>.
+          Haz clic en un alumno para asignarle: <strong>{resumenPregunta(sello.texto, 80)}</strong>
         </p>
       )}
 
@@ -360,18 +460,15 @@ export default function PreguntasGrupoPage() {
             <th>Alumno</th>
             <th>Pregunta</th>
             <th>Nota para ti</th>
-            <th className={styles.colCorta}>Tiempo</th>
             <th className={styles.colAcciones}>Acciones</th>
           </tr>
         </thead>
         <tbody>
           {visibles.length === 0 && (
-            <tr><td colSpan={5} className={styles.vacio}>No hay alumnos que mostrar.</td></tr>
+            <tr><td colSpan={4} className={styles.vacio}>No hay alumnos que mostrar.</td></tr>
           )}
           {visibles.map((alumno) => {
             const asignacion = alumno.asignacion;
-            const pregunta = asignacion?.pregunta ? porId.get(asignacion.pregunta.id) : null;
-            const segundos = asignacion?.duracionSegundos ?? pregunta?.duracionSegundos ?? null;
             return (
               <tr key={alumno.id} className={asignacion?.usada ? styles.filaUsada : ''}>
                 <td>
@@ -384,11 +481,11 @@ export default function PreguntasGrupoPage() {
                   <button
                     className={`${styles.celdaPregunta} ${asignacion ? '' : styles.celdaVacia}`}
                     onClick={() => handleFila(alumno)}
-                    title={sello ? `Asignar «${sello.titulo}»` : 'Elegir pregunta'}
+                    title={sello ? `Asignar: ${resumenPregunta(sello.texto, 60)}` : 'Elegir pregunta'}
                   >
                     {asignacion?.pregunta ? (
                       <>
-                        <span className={styles.preguntaTitulo}>{asignacion.pregunta.titulo}</span>
+                        <span className={styles.preguntaTitulo}>{resumenPregunta(asignacion.pregunta.texto, 70)}</span>
                         {/* La competencia en la propia celda: es lo que hace
                             legible de un vistazo si el grupo está cubriendo
                             todas o si media clase lleva la misma. */}
@@ -421,7 +518,6 @@ export default function PreguntasGrupoPage() {
                     onGuardar={(nota) => actualizar(alumno, { nota })}
                   />
                 </td>
-                <td className={styles.colCorta}>{segundos !== null ? formatearDuracion(segundos) : '—'}</td>
                 <td className={styles.colAcciones}>
                   <button
                     className={styles.iconBtn}
@@ -501,7 +597,7 @@ export default function PreguntasGrupoPage() {
                 <span className={styles.historialFecha}>
                   {new Date(a.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </span>
-                <span>{a.pregunta?.titulo ?? '—'}</span>
+                <span>{a.pregunta ? resumenPregunta(a.pregunta.texto, 70) : '—'}</span>
                 {a.pregunta?.competencia && (
                   <span className={styles.competenciaTag}>{a.pregunta.competencia}</span>
                 )}
@@ -520,7 +616,7 @@ export default function PreguntasGrupoPage() {
         return (
           <PreguntaProyector
             pregunta={pregunta}
-            duracionSegundos={alumno.asignacion!.duracionSegundos}
+            duracionSegundos={pregunta.duracionSegundos ?? duracionVigente}
             alumno={{ name: alumno.name, matricula: alumno.matricula }}
             posicion={{ indice: proyectando + 1, total: paraProyectar.length }}
             onAnterior={proyectando > 0 ? () => setProyectando(proyectando - 1) : null}

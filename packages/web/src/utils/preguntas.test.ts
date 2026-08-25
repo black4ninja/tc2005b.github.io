@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatearDuracion, parsearEtiquetas, repartirPreguntas } from './preguntas';
+import { formatearDuracion, parsearEtiquetas, repartirPreguntas, resumenPregunta } from './preguntas';
 
 describe('formatearDuracion', () => {
   it('escribe minutos y segundos a dos cifras', () => {
@@ -11,6 +11,32 @@ describe('formatearDuracion', () => {
 
   it('no pinta tiempos negativos', () => {
     expect(formatearDuracion(-5)).toBe('0:00');
+  });
+});
+
+describe('resumenPregunta', () => {
+  it('deja el texto corto tal cual', () => {
+    expect(resumenPregunta('¿Qué harías?')).toBe('¿Qué harías?');
+  });
+
+  it('quita las marcas de Markdown, que en una tabla se leerían crudas', () => {
+    expect(resumenPregunta('## Caso\n\nDescribe un **conflicto** con `git`'))
+      .toBe('Caso Describe un conflicto con git');
+    expect(resumenPregunta('- Primero\n- Después')).toBe('Primero Después');
+    expect(resumenPregunta('Mira [la guía](https://x.mx/guia)')).toBe('Mira la guía');
+  });
+
+  it('corta por palabra entera y marca que sigue', () => {
+    const largo = 'palabra '.repeat(30).trim();
+    const corto = resumenPregunta(largo, 40);
+    expect(corto.endsWith('…')).toBe(true);
+    expect(corto.length).toBeLessThanOrEqual(41);
+    expect(corto).not.toMatch(/pala…$/);
+  });
+
+  it('con una sola palabra larguísima corta donde toca en vez de devolverla entera', () => {
+    const corto = resumenPregunta('x'.repeat(200), 30);
+    expect(corto).toBe(`${'x'.repeat(30)}…`);
   });
 });
 

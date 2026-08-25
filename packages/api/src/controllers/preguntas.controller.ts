@@ -6,9 +6,8 @@ import { Competencia } from '../models/Competencia.js';
 import { Pregunta } from '../models/Pregunta.js';
 import { PreguntaAsignacion } from '../models/PreguntaAsignacion.js';
 import type { AppUser } from '../models/AppUser.js';
-import { DURACION_POR_DEFECTO } from '../constants/preguntas.js';
 import { getColeccionActiva } from './cms-documentos.controller.js';
-import { normalizarEtiquetas, normalizarDuracion } from '../services/preguntas.service.js';
+import { normalizarEtiquetas } from '../services/preguntas.service.js';
 
 /**
  * CRUD del banco del módulo "Preguntas" (entrevistas personales).
@@ -73,7 +72,9 @@ export async function listPreguntas(req: Request, res: Response): Promise<void> 
     q.equalTo('exists' as any, true as any);
     if (!incluirArchivadas) q.notEqualTo('archivada' as any, true as any);
     q.include('competencia' as any);
-    q.ascending('titulo');
+    // Sin título por el que ordenar, manda la antigüedad: el banco crece por el
+    // final y así lo último escrito no se pierde en medio de la tabla.
+    q.ascending('createdAt');
     q.limit(1000);
     const preguntas = await q.find({ useMasterKey: true });
     res.json({ status: 'ok', preguntas: preguntas.map((p) => p.toSafeJSON()) });
@@ -85,12 +86,8 @@ export async function listPreguntas(req: Request, res: Response): Promise<void> 
 /** POST /admin/colecciones/:id/preguntas */
 export async function createPregunta(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { titulo, texto, etiquetas, duracionSegundos, notas, competenciaId } = req.body ?? {};
+  const { texto, etiquetas, notas, competenciaId } = req.body ?? {};
 
-  if (typeof titulo !== 'string' || !titulo.trim()) {
-    res.status(400).json({ status: 'error', message: 'El título es requerido' });
-    return;
-  }
   if (typeof texto !== 'string' || !texto.trim()) {
     res.status(400).json({ status: 'error', message: 'La pregunta no puede estar vacía' });
     return;
@@ -100,12 +97,6 @@ export async function createPregunta(req: Request, res: Response): Promise<void>
     res.status(400).json({ status: 'error', message: etiq.error });
     return;
   }
-  const dur = normalizarDuracion(duracionSegundos, DURACION_POR_DEFECTO);
-  if (typeof dur === 'object') {
-    res.status(400).json({ status: 'error', message: dur.error });
-    return;
-  }
-
   try {
     const coleccion = await getColeccionActiva(id);
     if (!coleccion) {
@@ -121,11 +112,9 @@ export async function createPregunta(req: Request, res: Response): Promise<void>
     const pregunta = new Pregunta().initDefaults();
     pregunta.setColeccion(coleccion);
     pregunta.setCompetencia(competencia);
-    pregunta.setTitulo(titulo.trim());
     pregunta.setTexto(texto);
     pregunta.setTextoHtml(await renderMarkdown(texto));
     pregunta.setEtiquetas(etiq);
-    pregunta.setDuracionSegundos(dur ?? DURACION_POR_DEFECTO);
     pregunta.setNotas(typeof notas === 'string' ? notas : '');
     pregunta.setArchivada(false);
     const autor = req.appUser as AppUser | undefined;
@@ -144,15 +133,8 @@ export async function updatePregunta(req: Request, res: Response): Promise<void>
     res.status(404).json({ status: 'error', message: 'Pregunta no encontrada' });
     return;
   }
-  const { titulo, texto, etiquetas, duracionSegundos, notas, archivada, competenciaId } = req.body ?? {};
+  const { texto, etiquetas, notas, archivada, competenciaId } = req.body ?? {};
 
-  if (titulo !== undefined) {
-    if (typeof titulo !== 'string' || !titulo.trim()) {
-      res.status(400).json({ status: 'error', message: 'El título es requerido' });
-      return;
-    }
-    pregunta.setTitulo(titulo.trim());
-  }
   if (texto !== undefined) {
     if (typeof texto !== 'string' || !texto.trim()) {
       res.status(400).json({ status: 'error', message: 'La pregunta no puede estar vacía' });
@@ -168,14 +150,6 @@ export async function updatePregunta(req: Request, res: Response): Promise<void>
       return;
     }
     pregunta.setEtiquetas(etiq);
-  }
-  if (duracionSegundos !== undefined) {
-    const dur = normalizarDuracion(duracionSegundos, undefined);
-    if (typeof dur === 'object') {
-      res.status(400).json({ status: 'error', message: dur.error });
-      return;
-    }
-    if (dur !== undefined) pregunta.setDuracionSegundos(dur);
   }
   if (competenciaId !== undefined) {
     const competencia = await resolverCompetencia(competenciaId);
