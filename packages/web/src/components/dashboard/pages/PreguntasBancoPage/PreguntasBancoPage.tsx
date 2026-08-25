@@ -37,6 +37,8 @@ interface Borrador {
 
 const VACIO: Borrador = { texto: '', competenciaId: '', etiquetas: '', notas: '' };
 
+const SIN_COMPETENCIA = 'sin-competencia';
+
 /** Segundos del módulo cuando ni la materia ni el grupo dicen otra cosa. */
 const DURACION_POR_DEFECTO = 180;
 
@@ -59,6 +61,9 @@ export default function PreguntasBancoPage() {
   const [editandoDuracion, setEditandoDuracion] = useState(false);
   const [duracionBorrador, setDuracionBorrador] = useState('');
   const [verArchivadas, setVerArchivadas] = useState(false);
+  // Con un banco de tres cifras, la tabla sin filtrar no se puede leer: la
+  // competencia es el eje por el que se busca, así que es el primer corte.
+  const [competenciaFiltro, setCompetenciaFiltro] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -154,6 +159,31 @@ export default function PreguntasBancoPage() {
     fetchCompetencias();
     fetchNombre();
   }, [fetchPreguntas, fetchCompetencias, fetchNombre]);
+
+  /**
+   * Las competencias que REALMENTE aparecen en el banco, con cuántas hay de
+   * cada una. Se derivan de las preguntas y no del catálogo de la materia: una
+   * competencia sin preguntas solo puede vaciar la tabla, y aquí pueden salir
+   * competencias de otras materias porque el enlace lo permite.
+   */
+  const competenciasDelBanco = useMemo(() => {
+    const cuenta = new Map<string, { id: string; nombre: string; total: number }>();
+    for (const p of preguntas) {
+      const id = p.competenciaId ?? SIN_COMPETENCIA;
+      const entrada = cuenta.get(id)
+        ?? { id, nombre: p.competencia?.competencia ?? 'Sin competencia', total: 0 };
+      entrada.total += 1;
+      cuenta.set(id, entrada);
+    }
+    return [...cuenta.values()].sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }, [preguntas]);
+
+  const preguntasVisibles = useMemo(
+    () => (competenciaFiltro
+      ? preguntas.filter((p) => (p.competenciaId ?? SIN_COMPETENCIA) === competenciaFiltro)
+      : preguntas),
+    [preguntas, competenciaFiltro],
+  );
 
   const propias = useMemo(
     () => competencias.filter((c) => c.coleccionId === coleccionId),
@@ -395,17 +425,40 @@ export default function PreguntasBancoPage() {
 
       {error && <div className={styles.error} onClick={() => setError('')}>{error}</div>}
 
+      {competenciasDelBanco.length > 1 && (
+        <div className={styles.filtros}>
+          <span className={styles.filtrosTitulo}>Competencia:</span>
+          <button
+            className={`${styles.chipFiltro} ${competenciaFiltro === null ? styles.chipFiltroActivo : ''}`}
+            onClick={() => setCompetenciaFiltro(null)}
+          >
+            todas <span className={styles.chipCuenta}>{preguntas.length}</span>
+          </button>
+          {competenciasDelBanco.map((c) => (
+            <button
+              key={c.id}
+              className={`${styles.chipFiltro} ${competenciaFiltro === c.id ? styles.chipFiltroActivo : ''}`}
+              onClick={() => setCompetenciaFiltro(competenciaFiltro === c.id ? null : c.id)}
+            >
+              {c.nombre} <span className={styles.chipCuenta}>{c.total}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <p>Cargando...</p>
       ) : (
         <AdminTable
           title="Banco de preguntas"
           columns={columns}
-          data={preguntas}
+          data={preguntasVisibles}
           actions={getActions}
           onAdd={abrirNueva}
           addLabel="Nueva Pregunta"
-          emptyMessage="Esta materia todavía no tiene preguntas."
+          emptyMessage={competenciaFiltro
+            ? 'No hay preguntas de esta competencia.'
+            : 'Esta materia todavía no tiene preguntas.'}
           searchPlaceholder="Buscar en la pregunta, competencia o etiqueta..."
         />
       )}
