@@ -1,28 +1,37 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Modal from '../../atoms/Modal/Modal';
 import Icon from '../../atoms/Icon/Icon';
-import { resumenPregunta } from '../../../../utils/preguntas';
-import type { Pregunta } from '../../../../types/preguntas';
+import type { CompetenciaEnBanco, Pregunta } from '../../../../types/preguntas';
 import styles from './SelectorPregunta.module.css';
 
 interface SelectorPreguntaProps {
   preguntas: Pregunta[];
   titulo: string;
+  /** Píldoras de competencia; vacío = no se ofrece el filtro. */
+  competencias?: CompetenciaEnBanco[];
+  /** Competencia con la que abrir el filtro (el hueco que se está llenando). */
+  competenciaInicial?: string | null;
   onElegir: (pregunta: Pregunta) => void;
   onCerrar: () => void;
 }
 
 /**
- * Elegir una pregunta del banco con el teclado y sin ratón: se abre con el
- * cursor puesto, se teclea y se pulsa Enter.
+ * Elegir una pregunta del banco.
  *
- * Es la pieza que hace viable personalizar con muchos alumnos. Un desplegable
- * normal obliga a leer la lista entera por cada alumno; aquí la lista se filtra
- * por título Y por etiqueta mientras se escribe, así que el gesto completo es
- * tres letras y un Enter.
+ * Se abre con el cursor puesto y responde al teclado, pero la lista muestra el
+ * enunciado ENTERO y no un recorte: para decidir si una pregunta le va a un
+ * alumno hay que leerla, y con el recorte había que abrir el banco en otra
+ * pestaña para saber cuál era cuál.
+ *
+ * Las tomadas se listan igualmente, apagadas y diciendo de quién son. Ocultarlas
+ * dejaría al profesor buscando una pregunta que él recuerda haber visto sin
+ * ninguna pista de por qué ya no está.
  */
-export default function SelectorPregunta({ preguntas, titulo, onElegir, onCerrar }: SelectorPreguntaProps) {
+export default function SelectorPregunta({
+  preguntas, titulo, competencias = [], competenciaInicial = null, onElegir, onCerrar,
+}: SelectorPreguntaProps) {
   const [texto, setTexto] = useState('');
+  const [competencia, setCompetencia] = useState<string | null>(competenciaInicial);
   const [indice, setIndice] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listaRef = useRef<HTMLUListElement>(null);
@@ -31,22 +40,30 @@ export default function SelectorPregunta({ preguntas, titulo, onElegir, onCerrar
 
   const filtradas = useMemo(() => {
     const q = texto.trim().toLowerCase();
-    if (!q) return preguntas;
-    return preguntas.filter(
-      (p) => p.etiquetas.some((e) => e.includes(q))
-      || (p.competencia?.competencia ?? '').toLowerCase().includes(q)
-        || p.texto.toLowerCase().includes(q),
-    );
-  }, [preguntas, texto]);
+    return preguntas.filter((p) => {
+      if (competencia && (p.competenciaId ?? 'sin-competencia') !== competencia) return false;
+      if (!q) return true;
+      return p.texto.toLowerCase().includes(q)
+        || p.etiquetas.some((e) => e.includes(q))
+        || (p.competencia?.competencia ?? '').toLowerCase().includes(q);
+    });
+  }, [preguntas, texto, competencia]);
 
   // Al filtrar, la selección vuelve arriba: si no, Enter elegiría una pregunta
   // que ya no está donde el profesor la vio.
-  useEffect(() => { setIndice(0); }, [texto]);
+  useEffect(() => { setIndice(0); }, [texto, competencia]);
 
   useEffect(() => {
     listaRef.current?.querySelector<HTMLElement>('[data-activo="true"]')
       ?.scrollIntoView({ block: 'nearest' });
   }, [indice]);
+
+  function elegir(p: Pregunta) {
+    // Una tomada no se puede repartir: el servidor lo rechazaría igual, pero
+    // fallar aquí en silencio sería peor que no dejar pulsar.
+    if (p.uso) return;
+    onElegir(p);
+  }
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'ArrowDown') {
@@ -58,9 +75,11 @@ export default function SelectorPregunta({ preguntas, titulo, onElegir, onCerrar
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const elegida = filtradas[indice];
-      if (elegida) onElegir(elegida);
+      if (elegida) elegir(elegida);
     }
   }
+
+  const libres = filtradas.filter((p) => !p.uso).length;
 
   return (
     <Modal isOpen onClose={onCerrar} title={titulo} wide>
@@ -77,6 +96,26 @@ export default function SelectorPregunta({ preguntas, titulo, onElegir, onCerrar
           />
         </div>
 
+        {competencias.length > 1 && (
+          <div className={styles.chips}>
+            <button
+              className={`${styles.filtroChip} ${competencia === null ? styles.filtroChipActivo : ''}`}
+              onClick={() => setCompetencia(null)}
+            >
+              todas
+            </button>
+            {competencias.map((c) => (
+              <button
+                key={c.id}
+                className={`${styles.filtroChip} ${competencia === c.id ? styles.filtroChipActivo : ''}`}
+                onClick={() => setCompetencia(competencia === c.id ? null : c.id)}
+              >
+                {c.nombre} <span className={styles.contadorChip}>{c.libres}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {filtradas.length === 0 ? (
           <p className={styles.vacio}>
             Ninguna pregunta coincide. El banco se llena en <strong>Contenidos → la materia → Preguntas</strong>.
@@ -86,12 +125,12 @@ export default function SelectorPregunta({ preguntas, titulo, onElegir, onCerrar
             {filtradas.map((p, i) => (
               <li key={p.id}>
                 <button
-                  className={`${styles.opcion} ${i === indice ? styles.opcionActiva : ''}`}
+                  className={`${styles.opcion} ${i === indice ? styles.opcionActiva : ''} ${p.uso ? styles.opcionTomada : ''}`}
                   data-activo={i === indice}
+                  disabled={!!p.uso}
                   onMouseEnter={() => setIndice(i)}
-                  onClick={() => onElegir(p)}
+                  onClick={() => elegir(p)}
                 >
-                  <span className={styles.opcionTitulo}>{resumenPregunta(p.texto)}</span>
                   <span className={styles.opcionMeta}>
                     {/* La competencia primero y con otro tinte: es el eje por
                         el que se elige, las etiquetas solo matizan. */}
@@ -99,13 +138,23 @@ export default function SelectorPregunta({ preguntas, titulo, onElegir, onCerrar
                       <span className={styles.competencia}>{p.competencia.competencia}</span>
                     )}
                     {p.etiquetas.map((e) => <span key={e} className={styles.chip}>{e}</span>)}
+                    {p.uso && (
+                      <span className={styles.tomada}>
+                        <Icon name="lock" size="sm" />
+                        {p.uso.alumnoNombre} · {p.uso.grupoNombre}
+                      </span>
+                    )}
                   </span>
+                  <span className={styles.opcionTexto}>{p.texto}</span>
                 </button>
               </li>
             ))}
           </ul>
         )}
-        <p className={styles.atajos}>↑ ↓ para moverte · Enter para elegir · Esc para cerrar</p>
+        <p className={styles.atajos}>
+          ↑ ↓ para moverte · Enter para elegir · Esc para cerrar
+          <span className={styles.libres}>{libres} libre(s) de {filtradas.length}</span>
+        </p>
       </div>
     </Modal>
   );

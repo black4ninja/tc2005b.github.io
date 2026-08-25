@@ -30,9 +30,24 @@ export interface Pregunta {
    * banco de admin no lo trae y el proyector lo recibe como prop.
    */
   duracionSegundos?: number;
+  /** Quién la tiene tomada; null = libre. Se deriva, no se guarda. */
+  uso?: UsoPregunta | null;
   /** Qué buscar en la respuesta. Nunca se proyecta. */
   notas: string;
   archivada: boolean;
+}
+
+/**
+ * Quién tiene tomada una pregunta. Mientras exista, no se puede volver a
+ * asignar: se libera al desactivar el grupo o al quitarla del roster.
+ */
+export interface UsoPregunta {
+  grupoId: string;
+  grupoNombre: string;
+  alumnoId: string;
+  alumnoNombre: string;
+  /** Ya se le planteó en la entrevista. */
+  usada: boolean;
 }
 
 /** La pregunta tal como viaja dentro de una asignación (resumida). */
@@ -48,6 +63,8 @@ export interface PreguntaDeAsignacion {
 export interface PreguntaAsignacion {
   id: string;
   alumnoId: string;
+  /** Competencia que ocupa (`sin-competencia` si la pregunta no tiene). */
+  hueco?: string;
   pregunta: PreguntaDeAsignacion | null;
   /** Ajuste para este alumno. Solo lo ve el profesor. */
   nota: string;
@@ -60,14 +77,21 @@ export interface AlumnoConPregunta {
   name: string;
   matricula: string;
   email: string;
-  asignacion: PreguntaAsignacion | null;
+  /** Una por competencia con banco. El cliente las indexa por `hueco`. */
+  asignaciones: PreguntaAsignacion[];
   totalAsignaciones: number;
 }
 
-/** Competencia presente en el banco del grupo, para las píldoras de filtro. */
+/**
+ * Competencia presente en el banco del grupo. Es a la vez la píldora de filtro y
+ * un HUECO: cada alumno lleva una pregunta de cada una.
+ */
 export interface CompetenciaEnBanco {
   id: string;
   nombre: string;
+  /** Preguntas del banco en esta competencia y cuántas siguen libres. */
+  total: number;
+  libres: number;
 }
 
 /** De dónde sale el tiempo en este grupo. Lo sirve el listado del roster. */

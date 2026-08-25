@@ -287,6 +287,24 @@ export default function PreguntasBancoPage() {
         );
       },
     }),
+    // Una pregunta asignada no se puede volver a repartir mientras el grupo
+    // siga activo: sin esta columna, el autor no tiene forma de saber cuánto
+    // banco libre le queda.
+    columnHelper.accessor((row) => (row.uso ? 'asignada' : 'libre'), {
+      id: 'uso',
+      header: 'Uso',
+      cell: (info) => {
+        const uso = info.row.original.uso;
+        if (!uso) return <span className={styles.libreTag}>Libre</span>;
+        return (
+          <span className={styles.tomadaTag} title={`${uso.alumnoNombre} · ${uso.grupoNombre}`}>
+            <Icon name="person" size="sm" />
+            {uso.alumnoNombre}
+            {uso.usada && ' · preguntada'}
+          </span>
+        );
+      },
+    }),
     columnHelper.accessor('archivada', {
       header: 'Estado',
       cell: (info) => (

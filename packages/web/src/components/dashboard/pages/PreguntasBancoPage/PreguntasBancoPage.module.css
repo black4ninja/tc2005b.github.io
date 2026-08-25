@@ -203,3 +203,28 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Uso: una pregunta asignada está fuera del fondo común hasta que se cierre el
+   grupo. Verde = disponible, ámbar = ocupada. */
+.libreTag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+  font-size: 0.75rem;
+}
+
+.tomadaTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  font-size: 0.75rem;
+  max-width: 24ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

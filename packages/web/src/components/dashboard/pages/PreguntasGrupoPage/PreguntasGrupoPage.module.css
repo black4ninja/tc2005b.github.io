@@ -394,3 +394,164 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* ── Dos vistas: por alumno y por pregunta ─────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin: var(--space-md) 0 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.tab:hover { color: var(--text-primary); }
+
+.tabActiva {
+  color: var(--sidebar-active-color);
+  border-bottom-color: var(--sidebar-active-color);
+  font-weight: 600;
+}
+
+.filtrosIzq {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.aviso {
+  padding: 10px 14px;
+  margin-bottom: var(--space-md);
+  border: 1px solid var(--estado-aviso-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  cursor: pointer;
+}
+
+/* Cuántas quedan libres: es lo que decide si hace falta escribir más banco. */
+.chipContador {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+  font-size: 0.72rem;
+}
+
+/* ── Vista de conjunto: un chip por competencia ────────────────────────── */
+.chipsHuecos {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.hueco {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px dashed var(--border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.hueco:hover { border-color: var(--sidebar-active-color); color: var(--text-primary); }
+
+.huecoLleno {
+  border-style: solid;
+  background: var(--estado-exito-bg);
+  border-color: var(--estado-exito-border);
+  color: var(--estado-exito-color);
+}
+
+.huecoNombre {
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Vista por pregunta ────────────────────────────────────────────────── */
+.listaPreguntas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.tarjeta {
+  padding: var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+.tarjetaTomada { opacity: 0.6; }
+
+.tarjetaMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-sm);
+}
+
+/* El enunciado entero y con sus saltos: es el motivo de esta vista. */
+.tarjetaTexto {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.45;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+}
+
+.tarjetaAcciones {
+  margin-top: var(--space-sm);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.chipEtiqueta {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--dash-bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.libreTag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+  font-size: 0.72rem;
+}
+
+.tomadaTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  font-size: 0.72rem;
+}
+
+.enlaceBtn:disabled {
+  color: var(--text-muted);
+  text-decoration: none;
+  cursor: default;
+}

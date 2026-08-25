@@ -82,13 +82,34 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     es que no existe el endpoint. Las notas del profesor —qué buscar en la
     respuesta, el ajuste para ese alumno— no se pintan ni siquiera en la vista
     que se proyecta, que es justo la pantalla que el alumno mira.
-  - Asignar está montado sobre la restricción real —muchos alumnos y hay que
-    personalizar—, así que hay tres gestos y ninguno abre un formulario: el
-    **sello** (se elige una pregunta arriba y luego es un clic por alumno), el
-    **selector por fila** con búsqueda por competencia, etiqueta o contenido, y
-    el **reparto al azar**, que llena a los que faltan agotando el
-    banco antes de repetir —sortear una a una deja a media clase con la misma
-    pregunta, y eso se nota en cuanto el primero sale del aula—.
+  - **Una pregunta por competencia y alumno.** Cada competencia con banco es un
+    hueco, y el filtro de competencia no es un filtro sino un modo: con «todas»
+    se ve el mapa del grupo de un vistazo y con una elegida se trabaja en ella
+    (nota, proyectar, marcar como hecha).
+  - **Ninguna pregunta se repite** mientras el grupo siga activo: ni dentro del
+    grupo ni entre grupos en curso, que es el motivo entero de que el banco
+    exista —si a dos alumnos les toca la misma, el segundo la sabe antes de
+    entrar—. El estado se DERIVA de las asignaciones vivas en grupos activos, así
+    que **desactivar el grupo al cerrar el semestre devuelve su banco al fondo
+    común** sin migrar nada. Quitar una asignación también la libera, y sustituir
+    una que aún no se había planteado devuelve la anterior: fue una corrección,
+    no historia.
+  - Por eso el gesto de «sellar» a varios alumnos con la misma pregunta
+    desaparece —lo prohíbe la regla— y **repartir pasa a ser la operación
+    natural**: una pregunta libre a cada alumno al que le falte. Cuando el banco
+    no da para todos, el reparto se queda corto **a propósito** y dice cuántos se
+    quedaron fuera, en vez de repetir en silencio.
+  - Dos vistas, porque el profesor piensa en los dos sentidos: **por alumno** y
+    **por pregunta**. La segunda enseña el enunciado entero y de ahí se elige a
+    quién le va, que es el orden natural al personalizar; antes obligaba a abrir
+    el banco en otra pestaña.
+  - El selector de preguntas enseña el **enunciado completo**, filtra por
+    competencia y lista las tomadas apagadas, diciendo de quién son: esconderlas
+    dejaba al profesor buscando una pregunta que recordaba haber visto.
+  - El banco de la materia marca qué preguntas están **libres** y cuáles
+    asignadas y a quién. Sin eso no hay forma de saber cuánto banco queda — y
+    hace falta saberlo: con la regla de no repetir, un grupo necesita tantas
+    preguntas como alumnos por cada competencia que evalúe.
   - La asignación es un **historial**, no un campo que se sobrescribe: a lo largo
     del semestre hay varias entrevistas, y lo que se le preguntó en la primera es
     justo lo que hay que consultar para no repetírselo en la segunda.

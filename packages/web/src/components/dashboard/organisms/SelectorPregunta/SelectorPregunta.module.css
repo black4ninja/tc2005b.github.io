@@ -28,7 +28,7 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 45vh;
+  max-height: 55vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -52,11 +52,6 @@
 .opcionActiva {
   background: var(--dash-bg-subtle);
   border-color: var(--border-color);
-}
-
-.opcionTitulo {
-  font-weight: 600;
-  font-size: 0.95rem;
 }
 
 .opcionMeta {
@@ -83,12 +78,66 @@
   color: var(--text-muted);
 }
 
+/* El enunciado ENTERO, con sus saltos de línea: es lo que hay que leer para
+   decidir si esta pregunta le va a este alumno. */
 .opcionTexto {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+
+.opcionTomada {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.opcionTomada:hover { background: transparent; }
+
+.tomada {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  font-size: 0.72rem;
+}
+
+.chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.filtroChip {
+  padding: 2px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.filtroChipActivo {
+  background: var(--sidebar-active-bg);
+  border-color: var(--sidebar-active-color);
+  color: var(--sidebar-active-color);
+}
+
+/* Cuántas quedan libres en esa competencia: es el dato que decide si hace falta
+   escribir más banco antes de repartir. */
+.contadorChip {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.libres {
+  float: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .vacio,

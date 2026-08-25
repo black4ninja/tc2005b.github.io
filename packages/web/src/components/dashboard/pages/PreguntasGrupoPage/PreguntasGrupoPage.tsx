@@ -6,30 +6,39 @@ import DashButton from '../../atoms/DashButton/DashButton';
 import Modal from '../../atoms/Modal/Modal';
 import PreguntaProyector from '../../organisms/PreguntaProyector/PreguntaProyector';
 import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta';
-import { formatearDuracion, repartirPreguntas, resumenPregunta } from '../../../../utils/preguntas';
+import SelectorAlumno from '../../organisms/SelectorAlumno/SelectorAlumno';
+import { formatearDuracion, planearReparto, resumenPregunta } from '../../../../utils/preguntas';
 import type {
   AlumnoConPregunta, CompetenciaEnBanco, DuracionConfig, Pregunta, PreguntaAsignacion,
 } from '../../../../types/preguntas';
 import styles from './PreguntasGrupoPage.module.css';
 
 const API_BASE = '/api';
+const SIN_COMPETENCIA = 'sin-competencia';
 
 function mensajeDeError(e: unknown, porDefecto: string): string {
   return e instanceof Error && e.message ? e.message : porDefecto;
 }
 
+type Vista = 'alumnos' | 'preguntas';
+
 /**
- * Roster de PREGUNTAS de un grupo: a quién le toca qué pregunta.
+ * Roster de PREGUNTAS de un grupo: a quién le toca qué.
  *
- * La pantalla está montada alrededor de una restricción concreta: son muchos
- * alumnos y hay que personalizar. Por eso hay tres formas de asignar y no una,
- * y ninguna abre un formulario:
- *  · el **sello** — se elige una pregunta arriba y luego un clic por alumno;
- *  · el **selector por fila** — para el alumno concreto que necesita otra cosa;
- *  · el **reparto** — llena de golpe a los que faltan sin repetir de más.
- * Guardar es inmediato y optimista: pintar antes de que responda el servidor es
- * lo que hace que sellar treinta alumnos se sienta como treinta clics y no como
- * treinta esperas.
+ * Dos reglas mandan sobre el diseño de esta pantalla:
+ *
+ *  1. **Una pregunta por competencia y alumno.** Cada competencia con banco es
+ *     un hueco, y el filtro de competencia no es un filtro sino un MODO: con
+ *     «todas» se ve el mapa del grupo de un vistazo y con una elegida se trabaja
+ *     en ella (nota, proyectar, marcar como hecha).
+ *  2. **Una pregunta no se repite** mientras siga viva en un grupo en curso. Eso
+ *     mata de raíz el gesto de «sellar» a varios alumnos con la misma —que es lo
+ *     que esta pantalla hacía antes— y lo sustituye por el reparto: repartir es
+ *     ahora la operación natural, y asignar a mano es la excepción.
+ *
+ * De ahí la segunda vista, **Por pregunta**: leer el enunciado entero y decidir
+ * a quién le va es el orden en que el profesor piensa cuando personaliza, y al
+ * revés obligaba a abrir el banco en otra pestaña.
  */
 export default function PreguntasGrupoPage() {
   const { id: grupoId } = useParams<{ id: string }>();
@@ -40,22 +49,23 @@ export default function PreguntasGrupoPage() {
   const [preguntas, setPreguntas] = useState<Pregunta[]>([]);
   const [competencias, setCompetencias] = useState<CompetenciaEnBanco[]>([]);
   const [duracion, setDuracion] = useState<DuracionConfig | null>(null);
-  const [editandoDuracion, setEditandoDuracion] = useState(false);
-  const [duracionBorrador, setDuracionBorrador] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [aviso, setAviso] = useState('');
 
-  // Sello: la pregunta activa. Con una elegida, un clic en la fila la asigna.
-  const [selloId, setSelloId] = useState<string | null>(null);
-  // Dos ejes de filtro y no uno: la competencia dice QUÉ se explora y la
-  // etiqueta, para quién sirve. Se cruzan.
-  const [competenciaFiltro, setCompetenciaFiltro] = useState<string | null>(null);
-  const [etiquetaFiltro, setEtiquetaFiltro] = useState<string | null>(null);
+  const [vista, setVista] = useState<Vista>('alumnos');
+  const [competenciaActiva, setCompetenciaActiva] = useState<string | null>(null);
   const [soloSinAsignar, setSoloSinAsignar] = useState(false);
   const [busqueda, setBusqueda] = useState('');
+  const [busquedaPregunta, setBusquedaPregunta] = useState('');
 
-  const [selectorPara, setSelectorPara] = useState<AlumnoConPregunta | null>(null);
-  const [selectorSello, setSelectorSello] = useState(false);
+  const [editandoDuracion, setEditandoDuracion] = useState(false);
+  const [duracionBorrador, setDuracionBorrador] = useState('');
+
+  // Hueco que se está llenando: alumno + competencia.
+  const [eligiendoPara, setEligiendoPara] = useState<{ alumno: AlumnoConPregunta; hueco: string | null } | null>(null);
+  // Camino inverso: pregunta elegida, falta el alumno.
+  const [eligiendoAlumno, setEligiendoAlumno] = useState<Pregunta | null>(null);
   const [historialDe, setHistorialDe] = useState<AlumnoConPregunta | null>(null);
   const [historial, setHistorial] = useState<PreguntaAsignacion[]>([]);
   const [proyectando, setProyectando] = useState<number | null>(null);
@@ -82,13 +92,7 @@ export default function PreguntasGrupoPage() {
       };
       setHabilitado(data.habilitado !== false);
       setAlumnos(data.alumnos ?? []);
-      // Por competencia y dentro de ella por el enunciado: la competencia es el
-      // eje por el que se busca, así que agrupar por ella deja el selector
-      // ordenado como se piensa.
-      setPreguntas([...(data.preguntas ?? [])].sort((a, b) => {
-        const porComp = (a.competencia?.competencia ?? '~').localeCompare(b.competencia?.competencia ?? '~');
-        return porComp !== 0 ? porComp : a.texto.localeCompare(b.texto);
-      }));
+      setPreguntas(data.preguntas ?? []);
       setCompetencias(data.competencias ?? []);
       setDuracion(data.duracion ?? null);
     } catch (err: unknown) {
@@ -101,40 +105,8 @@ export default function PreguntasGrupoPage() {
   useEffect(() => { fetchTodo(); }, [fetchTodo]);
 
   const porId = useMemo(() => new Map(preguntas.map((p) => [p.id, p])), [preguntas]);
-  const sello = selloId ? porId.get(selloId) ?? null : null;
 
-  const etiquetas = useMemo(() => {
-    const todas = new Set<string>();
-    for (const p of preguntas) for (const e of p.etiquetas) todas.add(e);
-    return [...todas].sort();
-  }, [preguntas]);
-
-  /** Las preguntas que el sello, el selector y el reparto tienen a mano. */
-  const preguntasFiltradas = useMemo(
-    () => preguntas.filter(
-      (p) => (!competenciaFiltro || p.competenciaId === competenciaFiltro)
-        && (!etiquetaFiltro || p.etiquetas.includes(etiquetaFiltro)),
-    ),
-    [preguntas, competenciaFiltro, etiquetaFiltro],
-  );
-
-  const visibles = useMemo(() => {
-    const texto = busqueda.trim().toLowerCase();
-    return alumnos.filter((a) => {
-      if (soloSinAsignar && a.asignacion) return false;
-      if (!texto) return true;
-      return a.name.toLowerCase().includes(texto) || a.matricula.toLowerCase().includes(texto);
-    });
-  }, [alumnos, soloSinAsignar, busqueda]);
-
-  const sinAsignar = useMemo(() => alumnos.filter((a) => !a.asignacion), [alumnos]);
-
-  /**
-   * Qué tiempo rige y de dónde sale. Manda la anulación del grupo; si no la hay
-   * y todas las materias del grupo coinciden, el suyo; y si discrepan no se
-   * inventa una cifra única —cada pregunta lleva la de SU materia— y la cabecera
-   * lo dice en vez de mentir.
-   */
+  /** Qué tiempo rige y de dónde sale. Ver el comentario del control. */
   const { duracionVigente, fuenteDuracion } = useMemo(() => {
     if (!duracion) return { duracionVigente: 180, fuenteDuracion: '' };
     if (duracion.grupo !== null) {
@@ -153,12 +125,53 @@ export default function PreguntasGrupoPage() {
     return { duracionVigente: duracion.porDefecto, fuenteDuracion: 'según cada materia' };
   }, [duracion]);
 
-  /** Alumnos proyectables (con pregunta), en el orden en que se ven. */
-  const paraProyectar = useMemo(() => visibles.filter((a) => a.asignacion?.pregunta), [visibles]);
+  /** Asignación de un alumno en un hueco concreto. */
+  function asignacionDe(alumno: AlumnoConPregunta, hueco: string): PreguntaAsignacion | null {
+    return alumno.asignaciones.find((a) => a.hueco === hueco) ?? null;
+  }
+
+  /** Huecos que hay que llenar: todos los de la competencia activa, o todos. */
+  const huecosVisibles = useMemo(
+    () => (competenciaActiva ? competencias.filter((c) => c.id === competenciaActiva) : competencias),
+    [competencias, competenciaActiva],
+  );
+
+  /** A quién le falta algo de lo visible. */
+  function leFalta(alumno: AlumnoConPregunta): boolean {
+    return huecosVisibles.some((c) => !asignacionDe(alumno, c.id));
+  }
+
+  const visibles = useMemo(() => {
+    const texto = busqueda.trim().toLowerCase();
+    return alumnos.filter((a) => {
+      if (soloSinAsignar && !leFalta(a)) return false;
+      if (!texto) return true;
+      return a.name.toLowerCase().includes(texto) || a.matricula.toLowerCase().includes(texto);
+    });
+    // `leFalta` depende de huecosVisibles, que ya está en las dependencias.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alumnos, soloSinAsignar, busqueda, huecosVisibles]);
+
+  const sinLlenar = useMemo(() => alumnos.filter(leFalta).length, [alumnos, huecosVisibles]);
+  const totalHuecos = alumnos.length * huecosVisibles.length;
+  const llenos = useMemo(
+    () => alumnos.reduce((n, a) => n + huecosVisibles.filter((c) => asignacionDe(a, c.id)).length, 0),
+    [alumnos, huecosVisibles],
+  );
+
+  /** Pares (alumno, asignación) proyectables, en el orden en que se ven. */
+  const paraProyectar = useMemo(
+    () => visibles.flatMap((alumno) => huecosVisibles
+      .map((c) => asignacionDe(alumno, c.id))
+      .filter((a): a is PreguntaAsignacion => !!a?.pregunta)
+      .map((a) => ({ alumno, asignacion: a }))),
+    [visibles, huecosVisibles],
+  );
 
   async function asignar(pares: { alumnoId: string; preguntaId: string }[]) {
     if (pares.length === 0 || !grupoId) return;
     setError('');
+    setAviso('');
     try {
       const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/preguntas/asignaciones`, {
         method: 'POST', headers, body: JSON.stringify({ asignaciones: pares }),
@@ -167,32 +180,23 @@ export default function PreguntasGrupoPage() {
         const err = (await res.json().catch(() => ({}))) as { message?: string };
         throw new Error(err.message || 'Error al asignar');
       }
-      const data = await res.json() as { asignaciones?: PreguntaAsignacion[] };
-      const nuevas = new Map((data.asignaciones ?? []).map((a) => [a.alumnoId, a]));
-      setAlumnos((prev) => prev.map((a) => {
-        const nueva = nuevas.get(a.id);
-        if (!nueva) return a;
-        return { ...a, asignacion: nueva, totalAsignaciones: a.totalAsignaciones + 1 };
-      }));
+      // Recarga entera y no parche local: asignar mueve el estado de OTRAS
+      // preguntas (pasan a estar tomadas) y de otros grupos.
+      await fetchTodo();
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'Error al asignar'));
-      // Se recarga para no dejar la pantalla mintiendo sobre lo que hay guardado.
       await fetchTodo();
     }
   }
 
-  async function quitar(alumno: AlumnoConPregunta) {
-    if (!alumno.asignacion || !grupoId) return;
-    const asignacionId = alumno.asignacion.id;
-    setAlumnos((prev) => prev.map((a) => (a.id === alumno.id ? { ...a, asignacion: null } : a)));
+  async function quitar(asignacionId: string) {
+    if (!grupoId) return;
     try {
       const res = await fetch(
         `${API_BASE}/admin/grupos/${grupoId}/preguntas/asignaciones/${asignacionId}`,
         { method: 'DELETE', headers },
       );
       if (!res.ok) throw new Error('Error al quitar la asignación');
-      // El historial es la fuente: quitar la vigente puede dejar visible la
-      // anterior, y eso solo lo sabe el servidor.
       await fetchTodo();
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'Error al quitar la asignación'));
@@ -200,14 +204,14 @@ export default function PreguntasGrupoPage() {
     }
   }
 
-  async function actualizar(alumno: AlumnoConPregunta, cambios: { nota?: string; usada?: boolean }) {
-    if (!alumno.asignacion || !grupoId) return;
-    const asignacionId = alumno.asignacion.id;
-    setAlumnos((prev) => prev.map((a) => (
-      a.id === alumno.id && a.asignacion
-        ? { ...a, asignacion: { ...a.asignacion, ...cambios } }
-        : a
-    )));
+  async function actualizar(asignacionId: string, cambios: { nota?: string; usada?: boolean }) {
+    if (!grupoId) return;
+    // Optimista: la nota se escribe letra a letra y el tic se pulsa en medio de
+    // una entrevista; esperar al servidor para repintar se nota.
+    setAlumnos((prev) => prev.map((a) => ({
+      ...a,
+      asignaciones: a.asignaciones.map((x) => (x.id === asignacionId ? { ...x, ...cambios } : x)),
+    })));
     try {
       const res = await fetch(
         `${API_BASE}/admin/grupos/${grupoId}/preguntas/asignaciones/${asignacionId}`,
@@ -234,7 +238,6 @@ export default function PreguntasGrupoPage() {
         throw new Error(err.message || 'Error al guardar el tiempo');
       }
       setEditandoDuracion(false);
-      // Recarga entera: el tiempo cambia el de TODAS las preguntas del roster.
       await fetchTodo();
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'Error al guardar el tiempo'));
@@ -257,22 +260,45 @@ export default function PreguntasGrupoPage() {
     }
   }
 
-  /** Clic en la fila: con sello puesto asigna; sin él, abre el selector. */
-  function handleFila(alumno: AlumnoConPregunta) {
-    if (sello) asignar([{ alumnoId: alumno.id, preguntaId: sello.id }]);
-    else setSelectorPara(alumno);
+  /**
+   * Reparto: a cada alumno sin pregunta en un hueco, una LIBRE de esa
+   * competencia. Nunca la misma dos veces, que es la regla del módulo, así que
+   * el reparto puede quedarse corto y hay que decirlo en vez de fallar a medias.
+   */
+  function repartir() {
+    const pares: { alumnoId: string; preguntaId: string }[] = [];
+    let faltaron = 0;
+    for (const competencia of huecosVisibles) {
+      const pendientes = alumnos.filter((a) => !asignacionDe(a, competencia.id));
+      const libres = preguntas.filter(
+        (p) => !p.uso && !p.archivada && (p.competenciaId ?? SIN_COMPETENCIA) === competencia.id,
+      );
+      const plan = planearReparto(pendientes.map((a) => a.id), libres.map((p) => p.id));
+      pares.push(...plan.pares);
+      faltaron += plan.faltaron;
+    }
+    if (pares.length === 0) {
+      setAviso(faltaron > 0
+        ? `No quedan preguntas libres. Faltan ${faltaron} y hay que escribirlas en el banco de la materia.`
+        : 'No hay huecos que llenar.');
+      return;
+    }
+    if (faltaron > 0) {
+      setAviso(`Repartidas ${pares.length}. Se quedaron ${faltaron} alumnos sin pregunta: el banco no da para más.`);
+    }
+    asignar(pares);
   }
 
-  function handleRepartir() {
-    const pool = preguntasFiltradas.filter((p) => !p.archivada);
-    if (pool.length === 0 || sinAsignar.length === 0) return;
-    asignar(repartirPreguntas(sinAsignar.map((a) => a.id), pool.map((p) => p.id)));
-  }
-
-  function handleSellarLosQueFaltan() {
-    if (!sello) return;
-    asignar(sinAsignar.map((a) => ({ alumnoId: a.id, preguntaId: sello.id })));
-  }
+  const preguntasDeVista = useMemo(() => {
+    const q = busquedaPregunta.trim().toLowerCase();
+    return preguntas
+      .filter((p) => !p.archivada)
+      .filter((p) => !competenciaActiva || (p.competenciaId ?? SIN_COMPETENCIA) === competenciaActiva)
+      .filter((p) => !q
+        || p.texto.toLowerCase().includes(q)
+        || p.etiquetas.some((e) => e.includes(q))
+        || (p.competencia?.competencia ?? '').toLowerCase().includes(q));
+  }, [preguntas, competenciaActiva, busquedaPregunta]);
 
   if (loading) return <div className={styles.page}><p>Cargando...</p></div>;
 
@@ -298,7 +324,8 @@ export default function PreguntasGrupoPage() {
         <div>
           <h1 className={styles.pageTitle}>Preguntas</h1>
           <p className={styles.subtitulo}>
-            La pregunta que le toca a cada alumno en su entrevista. Los alumnos no ven nada de esto.
+            Una pregunta por competencia y alumno. Ninguna se repite mientras el grupo siga activo,
+            ni aquí ni en otro grupo. Los alumnos no ven nada de esto y no afecta a su calificación.
           </p>
         </div>
         <div className={styles.headerLado}>
@@ -334,7 +361,7 @@ export default function PreguntasGrupoPage() {
                 <button
                   className={styles.enlaceBtn}
                   onClick={() => {
-                    setDuracionBorrador(duracion?.grupo === null || duracion?.grupo === undefined ? '' : String(duracion.grupo));
+                    setDuracionBorrador(duracion?.grupo == null ? '' : String(duracion.grupo));
                     setEditandoDuracion(true);
                   }}
                   title="Ajustar el tiempo solo para este grupo; vacío vuelve al de la materia"
@@ -344,242 +371,305 @@ export default function PreguntasGrupoPage() {
               </>
             )}
           </div>
-          <span className={styles.contador}>
-            {alumnos.length - sinAsignar.length} de {alumnos.length} asignados
-          </span>
+          <span className={styles.contador}>{llenos} de {totalHuecos} asignadas</span>
         </div>
       </div>
 
       {error && <div className={styles.error} onClick={() => setError('')}>{error}</div>}
+      {aviso && <div className={styles.aviso} onClick={() => setAviso('')}>{aviso}</div>}
 
-      <div className={styles.barra}>
-        <div className={styles.selloCaja}>
-          <span className={styles.barraTitulo}>Pregunta activa</span>
-          <button className={styles.selloBtn} onClick={() => setSelectorSello(true)}>
-            <Icon name={sello ? 'edit' : 'add'} size="sm" />
-            <span>{sello ? resumenPregunta(sello.texto, 70) : 'Elegir una…'}</span>
-          </button>
-          {sello && (
-            <button className={styles.selloQuitar} onClick={() => setSelloId(null)} title="Soltar la pregunta activa">
-              <Icon name="close" size="sm" />
-            </button>
-          )}
-        </div>
-
-        <div className={styles.acciones}>
-          <DashButton
-            variant="outline"
-            onClick={handleSellarLosQueFaltan}
-            disabled={!sello || sinAsignar.length === 0}
-            title={sello ? `Se la pone a los ${sinAsignar.length} sin asignar` : 'Elige antes una pregunta activa'}
-          >
-            Esta a los que faltan ({sinAsignar.length})
-          </DashButton>
-          <DashButton
-            variant="outline"
-            onClick={handleRepartir}
-            disabled={sinAsignar.length === 0 || preguntasFiltradas.length === 0}
-            title="Reparte las preguntas del filtro entre los que no tienen, sin repetir de más"
-          >
-            Repartir al azar
-          </DashButton>
-          <DashButton
-            onClick={() => setProyectando(0)}
-            disabled={paraProyectar.length === 0}
-            title="Abre la primera pregunta a pantalla completa; se avanza con ← →"
-          >
-            <Icon name="slideshow" size="sm" /> Proyectar
-          </DashButton>
-        </div>
+      <div className={styles.tabs}>
+        <button
+          className={`${styles.tab} ${vista === 'alumnos' ? styles.tabActiva : ''}`}
+          onClick={() => setVista('alumnos')}
+        >
+          <Icon name="group" size="sm" /> Por alumno
+        </button>
+        {/* El camino inverso: leer la pregunta entera y decidir a quién le va.
+            Es el orden en que se piensa cuando se personaliza. */}
+        <button
+          className={`${styles.tab} ${vista === 'preguntas' ? styles.tabActiva : ''}`}
+          onClick={() => setVista('preguntas')}
+        >
+          <Icon name="quiz" size="sm" /> Por pregunta
+        </button>
       </div>
 
-      {sello && (
-        <p className={styles.pista}>
-          <Icon name="touch_app" size="sm" />
-          Haz clic en un alumno para asignarle: <strong>{resumenPregunta(sello.texto, 80)}</strong>
-        </p>
-      )}
-
+      {/* El filtro de competencia no es un filtro: es el MODO de trabajo, y por
+          eso manda sobre las dos vistas y sobre lo que reparte el botón. */}
       <div className={styles.filtros}>
-        <input
-          className={styles.buscador}
-          type="search"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="Buscar alumno..."
-        />
-        <label className={styles.check}>
-          <input type="checkbox" checked={soloSinAsignar} onChange={(e) => setSoloSinAsignar(e.target.checked)} />
-          <span>Solo sin asignar</span>
-        </label>
-        {competencias.length > 0 && (
-          <div className={styles.chips}>
-            <span className={styles.chipsTitulo}>Competencia:</span>
-            <button
-              className={`${styles.chip} ${competenciaFiltro === null ? styles.chipActivo : ''}`}
-              onClick={() => setCompetenciaFiltro(null)}
-            >
-              todas
-            </button>
-            {competencias.map((c) => (
-              <button
-                key={c.id}
-                className={`${styles.chip} ${competenciaFiltro === c.id ? styles.chipActivo : ''}`}
-                onClick={() => setCompetenciaFiltro(competenciaFiltro === c.id ? null : c.id)}
-              >
-                {c.nombre}
-              </button>
-            ))}
-          </div>
-        )}
-        {etiquetas.length > 0 && (
-          <div className={styles.chips}>
-            <span className={styles.chipsTitulo}>Etiqueta:</span>
-            <button
-              className={`${styles.chip} ${etiquetaFiltro === null ? styles.chipActivo : ''}`}
-              onClick={() => setEtiquetaFiltro(null)}
-            >
-              todas
-            </button>
-            {etiquetas.map((e) => (
-              <button
-                key={e}
-                className={`${styles.chip} ${etiquetaFiltro === e ? styles.chipActivo : ''}`}
-                onClick={() => setEtiquetaFiltro(etiquetaFiltro === e ? null : e)}
-              >
-                {e}
-              </button>
-            ))}
-          </div>
-        )}
+        <span className={styles.chipsTitulo}>Competencia:</span>
+        <button
+          className={`${styles.chip} ${competenciaActiva === null ? styles.chipActivo : ''}`}
+          onClick={() => setCompetenciaActiva(null)}
+        >
+          todas
+        </button>
+        {competencias.map((c) => (
+          <button
+            key={c.id}
+            className={`${styles.chip} ${competenciaActiva === c.id ? styles.chipActivo : ''}`}
+            onClick={() => setCompetenciaActiva(competenciaActiva === c.id ? null : c.id)}
+            title={`${c.libres} libres de ${c.total} en el banco`}
+          >
+            {c.nombre} <span className={styles.chipContador}>{c.libres}/{c.total}</span>
+          </button>
+        ))}
       </div>
 
-      <table className={styles.tabla}>
-        <thead>
-          <tr>
-            <th>Alumno</th>
-            <th>Pregunta</th>
-            <th>Nota para ti</th>
-            <th className={styles.colAcciones}>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {visibles.length === 0 && (
-            <tr><td colSpan={4} className={styles.vacio}>No hay alumnos que mostrar.</td></tr>
-          )}
-          {visibles.map((alumno) => {
-            const asignacion = alumno.asignacion;
-            return (
-              <tr key={alumno.id} className={asignacion?.usada ? styles.filaUsada : ''}>
-                <td>
-                  <span className={styles.alumnoNombre}>{alumno.name}</span>
-                  <span className={styles.alumnoMatricula}>{alumno.matricula}</span>
-                </td>
-                <td>
-                  {/* La celda entera es el botón de asignar: con el sello puesto
-                      es un clic por alumno, que es todo el objetivo. */}
-                  <button
-                    className={`${styles.celdaPregunta} ${asignacion ? '' : styles.celdaVacia}`}
-                    onClick={() => handleFila(alumno)}
-                    title={sello ? `Asignar: ${resumenPregunta(sello.texto, 60)}` : 'Elegir pregunta'}
-                  >
-                    {asignacion?.pregunta ? (
-                      <>
-                        <span className={styles.preguntaTitulo}>{resumenPregunta(asignacion.pregunta.texto, 70)}</span>
-                        {/* La competencia en la propia celda: es lo que hace
-                            legible de un vistazo si el grupo está cubriendo
-                            todas o si media clase lleva la misma. */}
-                        {asignacion.pregunta.competencia && (
-                          <span className={styles.competenciaTag}>{asignacion.pregunta.competencia}</span>
-                        )}
-                        {asignacion.pregunta.archivada && (
-                          <span className={styles.archivadaTag} title="Esta pregunta ya no está en el banco">archivada</span>
-                        )}
-                      </>
-                    ) : (
-                      <span className={styles.sinPregunta}>Sin asignar</span>
-                    )}
-                  </button>
-                  {asignacion && (
-                    <button
-                      className={styles.cambiarBtn}
-                      onClick={() => setSelectorPara(alumno)}
-                      title="Elegir otra pregunta para este alumno"
-                    >
-                      <Icon name="swap_horiz" size="sm" />
-                    </button>
-                  )}
-                </td>
-                <td>
-                  <NotaInline
-                    key={asignacion?.id ?? 'sin'}
-                    valor={asignacion?.nota ?? ''}
-                    deshabilitado={!asignacion}
-                    onGuardar={(nota) => actualizar(alumno, { nota })}
-                  />
-                </td>
-                <td className={styles.colAcciones}>
-                  <button
-                    className={styles.iconBtn}
-                    disabled={!asignacion?.pregunta}
-                    onClick={() => {
-                      const i = paraProyectar.findIndex((a) => a.id === alumno.id);
-                      if (i >= 0) setProyectando(i);
-                    }}
-                    title="Proyectar esta pregunta"
-                  >
-                    <Icon name="slideshow" size="sm" />
-                  </button>
-                  <button
-                    className={`${styles.iconBtn} ${asignacion?.usada ? styles.iconBtnOn : ''}`}
-                    disabled={!asignacion}
-                    onClick={() => actualizar(alumno, { usada: !asignacion?.usada })}
-                    title={asignacion?.usada ? 'Marcar como pendiente' : 'Marcar como ya preguntada'}
-                  >
-                    <Icon name="check_circle" size="sm" />
-                  </button>
-                  <button
-                    className={styles.iconBtn}
-                    onClick={() => abrirHistorial(alumno)}
-                    title={`Historial (${alumno.totalAsignaciones})`}
-                  >
-                    <Icon name="history" size="sm" />
-                  </button>
-                  <button
-                    className={styles.iconBtn}
-                    disabled={!asignacion}
-                    onClick={() => quitar(alumno)}
-                    title="Quitar la asignación"
-                  >
-                    <Icon name="close" size="sm" />
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {vista === 'alumnos' ? (
+        <>
+          <div className={styles.barra}>
+            <div className={styles.filtrosIzq}>
+              <input
+                className={styles.buscador}
+                type="search"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Buscar alumno..."
+              />
+              <label className={styles.check}>
+                <input type="checkbox" checked={soloSinAsignar} onChange={(e) => setSoloSinAsignar(e.target.checked)} />
+                <span>Solo a quien le falta</span>
+              </label>
+            </div>
+            <div className={styles.acciones}>
+              <DashButton
+                variant="outline"
+                onClick={repartir}
+                disabled={sinLlenar === 0}
+                title={competenciaActiva
+                  ? 'Da una pregunta libre de esta competencia a cada alumno que no tenga'
+                  : 'Da una pregunta libre de cada competencia a cada alumno que no tenga'}
+              >
+                Repartir al grupo ({sinLlenar})
+              </DashButton>
+              <DashButton
+                onClick={() => setProyectando(0)}
+                disabled={paraProyectar.length === 0}
+                title="Abre la primera pregunta a pantalla completa; se avanza con ← →"
+              >
+                <Icon name="slideshow" size="sm" /> Proyectar
+              </DashButton>
+            </div>
+          </div>
 
-      {/* Selector para UN alumno */}
-      {selectorPara && (
+          <table className={styles.tabla}>
+            <thead>
+              <tr>
+                <th>Alumno</th>
+                <th>{competenciaActiva ? 'Pregunta' : 'Preguntas por competencia'}</th>
+                {competenciaActiva && <th>Nota para ti</th>}
+                <th className={styles.colAcciones}>{competenciaActiva ? 'Acciones' : ''}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibles.length === 0 && (
+                <tr><td colSpan={4} className={styles.vacio}>No hay alumnos que mostrar.</td></tr>
+              )}
+              {visibles.map((alumno) => {
+                const unica = competenciaActiva ? asignacionDe(alumno, competenciaActiva) : null;
+                return (
+                  <tr key={alumno.id} className={unica?.usada ? styles.filaUsada : ''}>
+                    <td>
+                      <span className={styles.alumnoNombre}>{alumno.name}</span>
+                      <span className={styles.alumnoMatricula}>{alumno.matricula}</span>
+                    </td>
+
+                    {competenciaActiva ? (
+                      <td>
+                        <button
+                          className={`${styles.celdaPregunta} ${unica ? '' : styles.celdaVacia}`}
+                          onClick={() => setEligiendoPara({ alumno, hueco: competenciaActiva })}
+                          title={unica ? 'Cambiar la pregunta' : 'Elegir pregunta'}
+                        >
+                          {unica?.pregunta ? (
+                            <>
+                              <span className={styles.preguntaTitulo}>
+                                {resumenPregunta(unica.pregunta.texto, 70)}
+                              </span>
+                              {unica.pregunta.archivada && (
+                                <span className={styles.archivadaTag} title="Esta pregunta ya no está en el banco">archivada</span>
+                              )}
+                            </>
+                          ) : (
+                            <span className={styles.sinPregunta}>Sin asignar</span>
+                          )}
+                        </button>
+                      </td>
+                    ) : (
+                      // Vista de conjunto: un chip por hueco. Sirve para ver de
+                      // un vistazo a quién le falta qué, no para trabajar.
+                      <td>
+                        <div className={styles.chipsHuecos}>
+                          {competencias.map((c) => {
+                            const a = asignacionDe(alumno, c.id);
+                            return (
+                              <button
+                                key={c.id}
+                                className={`${styles.hueco} ${a ? styles.huecoLleno : ''}`}
+                                onClick={() => setEligiendoPara({ alumno, hueco: c.id })}
+                                title={a?.pregunta ? a.pregunta.texto : `Sin pregunta de ${c.nombre}`}
+                              >
+                                <span className={styles.huecoNombre}>{c.nombre}</span>
+                                {a ? <Icon name="check" size="sm" /> : <Icon name="add" size="sm" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    )}
+
+                    {competenciaActiva && (
+                      <td>
+                        <NotaInline
+                          key={unica?.id ?? 'sin'}
+                          valor={unica?.nota ?? ''}
+                          deshabilitado={!unica}
+                          onGuardar={(nota) => unica && actualizar(unica.id, { nota })}
+                        />
+                      </td>
+                    )}
+
+                    <td className={styles.colAcciones}>
+                      {competenciaActiva ? (
+                        <>
+                          <button
+                            className={styles.iconBtn}
+                            disabled={!unica?.pregunta}
+                            onClick={() => {
+                              const i = paraProyectar.findIndex((x) => x.asignacion.id === unica?.id);
+                              if (i >= 0) setProyectando(i);
+                            }}
+                            title="Proyectar esta pregunta"
+                          >
+                            <Icon name="slideshow" size="sm" />
+                          </button>
+                          <button
+                            className={`${styles.iconBtn} ${unica?.usada ? styles.iconBtnOn : ''}`}
+                            disabled={!unica}
+                            onClick={() => unica && actualizar(unica.id, { usada: !unica.usada })}
+                            title={unica?.usada ? 'Marcar como pendiente' : 'Marcar como ya preguntada'}
+                          >
+                            <Icon name="check_circle" size="sm" />
+                          </button>
+                          <button
+                            className={styles.iconBtn}
+                            onClick={() => abrirHistorial(alumno)}
+                            title={`Historial (${alumno.totalAsignaciones})`}
+                          >
+                            <Icon name="history" size="sm" />
+                          </button>
+                          <button
+                            className={styles.iconBtn}
+                            disabled={!unica}
+                            onClick={() => unica && quitar(unica.id)}
+                            title="Quitar la asignación y devolver la pregunta al banco"
+                          >
+                            <Icon name="close" size="sm" />
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          className={styles.iconBtn}
+                          onClick={() => abrirHistorial(alumno)}
+                          title={`Historial (${alumno.totalAsignaciones})`}
+                        >
+                          <Icon name="history" size="sm" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </>
+      ) : (
+        <>
+          <div className={styles.barra}>
+            <input
+              className={styles.buscador}
+              type="search"
+              value={busquedaPregunta}
+              onChange={(e) => setBusquedaPregunta(e.target.value)}
+              placeholder="Buscar en las preguntas..."
+            />
+            <span className={styles.contador}>
+              {preguntasDeVista.filter((p) => !p.uso).length} libres de {preguntasDeVista.length}
+            </span>
+          </div>
+
+          <div className={styles.listaPreguntas}>
+            {preguntasDeVista.length === 0 && (
+              <p className={styles.vacio}>No hay preguntas que mostrar.</p>
+            )}
+            {preguntasDeVista.map((p) => (
+              <article key={p.id} className={`${styles.tarjeta} ${p.uso ? styles.tarjetaTomada : ''}`}>
+                <div className={styles.tarjetaMeta}>
+                  {p.competencia && <span className={styles.competenciaTag}>{p.competencia.competencia}</span>}
+                  {p.etiquetas.map((e) => <span key={e} className={styles.chipEtiqueta}>{e}</span>)}
+                  {p.uso ? (
+                    <span className={styles.tomadaTag}>
+                      <Icon name="person" size="sm" />
+                      {p.uso.alumnoId && p.uso.grupoId
+                        ? `${p.uso.alumnoNombre} · ${p.uso.grupoNombre}`
+                        : 'asignada'}
+                      {p.uso.usada && ' · ya preguntada'}
+                    </span>
+                  ) : (
+                    <span className={styles.libreTag}>libre</span>
+                  )}
+                </div>
+                {/* El enunciado entero: es el motivo de esta vista. */}
+                <p className={styles.tarjetaTexto}>{p.texto}</p>
+                <div className={styles.tarjetaAcciones}>
+                  <button
+                    className={styles.enlaceBtn}
+                    disabled={!!p.uso}
+                    onClick={() => setEligiendoAlumno(p)}
+                  >
+                    {p.uso ? 'Ya asignada' : 'Asignar a un alumno…'}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Alumno → pregunta */}
+      {eligiendoPara && (
         <SelectorPregunta
-          preguntas={preguntasFiltradas}
-          titulo={`Pregunta para ${selectorPara.name}`}
+          preguntas={preguntas.filter((p) => !p.archivada)}
+          competencias={competencias}
+          competenciaInicial={eligiendoPara.hueco}
+          titulo={`Pregunta para ${eligiendoPara.alumno.name}`}
           onElegir={(p) => {
-            asignar([{ alumnoId: selectorPara.id, preguntaId: p.id }]);
-            setSelectorPara(null);
+            asignar([{ alumnoId: eligiendoPara.alumno.id, preguntaId: p.id }]);
+            setEligiendoPara(null);
           }}
-          onCerrar={() => setSelectorPara(null)}
+          onCerrar={() => setEligiendoPara(null)}
         />
       )}
 
-      {/* Selector de la pregunta activa (el sello) */}
-      {selectorSello && (
-        <SelectorPregunta
-          preguntas={preguntasFiltradas}
-          titulo="Pregunta activa"
-          onElegir={(p) => { setSelloId(p.id); setSelectorSello(false); }}
-          onCerrar={() => setSelectorSello(false)}
+      {/* Pregunta → alumno */}
+      {eligiendoAlumno && (
+        <SelectorAlumno
+          alumnos={alumnos}
+          titulo="¿A quién se la asignas?"
+          // A quien ya tenga una de esta competencia se le sustituye: se avisa en
+          // la fila en vez de esconderlo, porque a veces es justo lo que se busca.
+          yaTienen={new Set(
+            alumnos
+              .filter((a) => asignacionDe(a, eligiendoAlumno.competenciaId ?? SIN_COMPETENCIA))
+              .map((a) => a.id),
+          )}
+          onElegir={(alumno) => {
+            asignar([{ alumnoId: alumno.id, preguntaId: eligiendoAlumno.id }]);
+            setEligiendoAlumno(null);
+          }}
+          onCerrar={() => setEligiendoAlumno(null)}
         />
       )}
 
@@ -609,9 +699,9 @@ export default function PreguntasGrupoPage() {
         )}
       </Modal>
 
-      {proyectando !== null && paraProyectar[proyectando]?.asignacion?.pregunta && (() => {
-        const alumno = paraProyectar[proyectando];
-        const pregunta = porId.get(alumno.asignacion!.pregunta!.id);
+      {proyectando !== null && paraProyectar[proyectando] && (() => {
+        const { alumno, asignacion } = paraProyectar[proyectando];
+        const pregunta = asignacion.pregunta ? porId.get(asignacion.pregunta.id) : null;
         if (!pregunta) return null;
         return (
           <PreguntaProyector
