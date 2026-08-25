@@ -15,6 +15,7 @@ import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import { useDiagramasNav } from '../../../../context/DiagramasNavContext';
 import { APP_NAME } from '../../../../config/app';
 import { moduloHabilitado } from '../../../../config/modulosContenido';
+import { moduloGrupoHabilitado } from '../../../../config/modulosGrupo';
 import { rutaEjerciciosAdmin, rutaEjerciciosAlumno } from '../../../../config/rutasEjercicios';
 import { rutaDiagramasAdmin, rutaDiagramasAlumno, rutaTallerAdmin, rutaTallerAlumno } from '../../../../config/rutasDiagramas';
 
@@ -80,6 +81,9 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const [tallerHref, setTallerHref] = useState<string | null>(null);
   const [colecciones, setColecciones] = useState<ColeccionGrupo[]>([]);
   // Módulos apagados por colección del grupo: filtran qué secciones aparecen.
+  // Ojo con el nombre: `modulosGrupo` (más abajo) es OTRA cosa —qué secciones
+  // comparte el grupo con el alumno—. Esto es la lista de módulos de grupo.
+  const [modulosDeGrupo, setModulosDeGrupo] = useState<string[]>([]);
   const [modulosDeshabilitados, setModulosDeshabilitados] = useState<Record<string, string[]>>({});
   // Agenda de entrevistas del grupo abierto (admin). La del alumno sale del
   // payload de sesión (user.grupos), no requiere fetch.
@@ -141,12 +145,14 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             urlAgendaEntrevistas?: string | null;
             colecciones?: { id: string; slug: string; nombre: string; clave: string | null }[];
             modulosDeshabilitados?: Record<string, string[]>;
+            modulosGrupo?: string[];
           }) => g.id === grupoId,
         );
         if (found?.name) setGrupoName(found.name);
         setAgendaGrupoHref(found?.urlAgendaEntrevistas ?? null);
         setColecciones(found?.colecciones ?? []);
         setModulosDeshabilitados(found?.modulosDeshabilitados ?? {});
+        setModulosDeGrupo(found?.modulosGrupo ?? []);
       })
       .catch(() => {});
   }, [grupoId, sessionToken]);
@@ -260,7 +266,12 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   }, [isGrupoDetail, diagramasGrupoHref, diagramasHref, tallerGrupoHref, tallerHref]);
 
   const items = isGrupoDetail
-    ? getGrupoDetailItems(grupoId!, agendaGrupoHref, ejerciciosGrupoHref)
+    ? getGrupoDetailItems(
+        grupoId!,
+        agendaGrupoHref,
+        ejerciciosGrupoHref,
+        moduloGrupoHabilitado(modulosDeGrupo, 'escenarios'),
+      )
     : getSidebarItems(
         role,
         role === 'alumno' ? selectedGrupoId : undefined,

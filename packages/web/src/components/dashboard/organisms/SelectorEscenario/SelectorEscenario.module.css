@@ -1,0 +1,99 @@
+.caja {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.buscadorFila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-muted);
+}
+
+.buscador {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 45vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.opcion {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.opcionActiva {
+  background: var(--dash-bg-subtle);
+  border-color: var(--border-color);
+}
+
+.opcionTitulo {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.opcionMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--dash-bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.opcionActiva .chip {
+  background: var(--bg-card);
+}
+
+.tiempo {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.opcionTexto {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vacio,
+.atajos {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}

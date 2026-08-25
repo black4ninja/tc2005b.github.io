@@ -3,6 +3,7 @@ import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { Grupo } from '../models/Grupo.js';
 import { esModuloValido, coleccionesConCompetencias } from '../models/modulos-contenido.js';
+import { normalizarModulosGrupo } from '../models/modulos-grupo.js';
 import { esCampoDesactivable } from '../models/campos-perfil.js';
 import { invalidateColeccionesPermitidas } from '../services/contenidos.service.js';
 import { invalidateAccesoModulos } from '../services/acceso-modulos.service.js';
@@ -372,7 +373,7 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
  */
 export async function setAsignacionesGrupo(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { asignaciones } = req.body ?? {};
+  const { asignaciones, modulosGrupo } = req.body ?? {};
 
   if (!Array.isArray(asignaciones)) {
     res.status(400).json({ status: 'error', message: 'asignaciones debe ser un arreglo' });
@@ -396,6 +397,14 @@ export async function setAsignacionesGrupo(req: Request, res: Response): Promise
     coleccionIds.push(coleccionId);
     const unicos = [...new Set(off as string[])];
     if (unicos.length > 0) deshabilitadosPorColeccion[coleccionId] = unicos;
+  }
+
+  // Módulos de GRUPO (los que no cuelgan de una colección). Ausente = no se
+  // tocan: la pantalla que los edita puede no mandarlos y no debe apagarlos.
+  const modulosGrupoLimpios = modulosGrupo === undefined ? null : normalizarModulosGrupo(modulosGrupo);
+  if (modulosGrupo !== undefined && modulosGrupoLimpios === null) {
+    res.status(400).json({ status: 'error', message: 'Módulo de grupo inválido' });
+    return;
   }
 
   // Un grupo evalúa las competencias de UNA materia. Se comprueba aquí y no al
@@ -436,6 +445,7 @@ export async function setAsignacionesGrupo(req: Request, res: Response): Promise
       if (asignadas.has(cid)) limpio[cid] = off;
     }
     grupo.setModulosDeshabilitados(limpio);
+    if (modulosGrupoLimpios) grupo.setModulosGrupo(modulosGrupoLimpios);
 
     await grupo.save(null, { useMasterKey: true });
     invalidateColeccionesPermitidas();

@@ -44,3 +44,7 @@ export type { DiagramaContextoEjercicio } from './EjercicioDiagrama.js';
 export { EnvioDiagrama } from './EnvioDiagrama.js';
 // Taller: diagramas libres del alumno, sin colección ni ejercicio detrás.
 export { DiagramaTaller } from './DiagramaTaller.js';
+// Módulo "Escenarios": banco global de preguntas de entrevista y su asignación
+// por alumno. No cuelga de una Coleccion (ver EscenarioPregunta).
+export { EscenarioPregunta } from './EscenarioPregunta.js';
+export { EscenarioAsignacion } from './EscenarioAsignacion.js';

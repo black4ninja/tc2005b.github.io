@@ -23,6 +23,8 @@ import MallaEvaluacionPage from './components/dashboard/pages/MallaEvaluacionPag
 import EquiposPage from './components/dashboard/pages/EquiposPage/EquiposPage';
 import AvancesEquipoPage from './components/dashboard/pages/AvancesEquipoPage/AvancesEquipoPage';
 import EntrevistasPage from './components/dashboard/pages/EntrevistasPage/EntrevistasPage';
+import EscenariosBancoPage from './components/dashboard/pages/EscenariosBancoPage/EscenariosBancoPage';
+import EscenariosGrupoPage from './components/dashboard/pages/EscenariosGrupoPage/EscenariosGrupoPage';
 import EvaluacionEntrevistaPage from './components/dashboard/pages/EvaluacionEntrevistaPage/EvaluacionEntrevistaPage';
 import AlumnoCalendarioPage from './components/dashboard/pages/AlumnoCalendarioPage/AlumnoCalendarioPage';
 import HubPage from './components/dashboard/pages/HubPage/HubPage';
@@ -199,6 +201,10 @@ export default function App() {
             </Suspense>
           }
         />
+        {/* Módulo "Escenarios": el banco es global (admin) y la asignación
+            cuelga del grupo (profesor de ese grupo). */}
+        <Route path="admin/escenarios" element={<EscenariosBancoPage />} />
+        <Route path="admin/grupos/:id/escenarios" element={<EscenariosGrupoPage />} />
         <Route path="admin/competencias" element={<CompetenciasPage />} />
         <Route path="admin/actividades" element={<ActividadesPage />} />
         <Route path="admin/paginas" element={<PaginasPage />} />

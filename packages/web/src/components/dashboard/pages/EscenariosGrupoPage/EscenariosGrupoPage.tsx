@@ -1,0 +1,520 @@
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useParams, Link } from 'react-router';
+import { useAuth } from '../../../../context/AuthContext';
+import Icon from '../../atoms/Icon/Icon';
+import DashButton from '../../atoms/DashButton/DashButton';
+import Modal from '../../atoms/Modal/Modal';
+import EscenarioProyector from '../../organisms/EscenarioProyector/EscenarioProyector';
+import SelectorEscenario from '../../organisms/SelectorEscenario/SelectorEscenario';
+import { formatearDuracion, repartirPreguntas } from '../../../../utils/escenarios';
+import type { AlumnoConEscenario, EscenarioAsignacion, EscenarioPregunta } from '../../../../types/escenarios';
+import styles from './EscenariosGrupoPage.module.css';
+
+const API_BASE = '/api';
+
+function mensajeDeError(e: unknown, porDefecto: string): string {
+  return e instanceof Error && e.message ? e.message : porDefecto;
+}
+
+/**
+ * Roster de ESCENARIOS de un grupo: a quién le toca qué pregunta.
+ *
+ * La pantalla está montada alrededor de una restricción concreta: son muchos
+ * alumnos y hay que personalizar. Por eso hay tres formas de asignar y no una,
+ * y ninguna abre un formulario:
+ *  · el **sello** — se elige una pregunta arriba y luego un clic por alumno;
+ *  · el **selector por fila** — para el alumno concreto que necesita otra cosa;
+ *  · el **reparto** — llena de golpe a los que faltan sin repetir de más.
+ * Guardar es inmediato y optimista: pintar antes de que responda el servidor es
+ * lo que hace que sellar treinta alumnos se sienta como treinta clics y no como
+ * treinta esperas.
+ */
+export default function EscenariosGrupoPage() {
+  const { id: grupoId } = useParams<{ id: string }>();
+  const { sessionToken } = useAuth();
+
+  const [habilitado, setHabilitado] = useState(true);
+  const [alumnos, setAlumnos] = useState<AlumnoConEscenario[]>([]);
+  const [preguntas, setPreguntas] = useState<EscenarioPregunta[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Sello: la pregunta activa. Con una elegida, un clic en la fila la asigna.
+  const [selloId, setSelloId] = useState<string | null>(null);
+  const [etiquetaFiltro, setEtiquetaFiltro] = useState<string | null>(null);
+  const [soloSinAsignar, setSoloSinAsignar] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
+
+  const [selectorPara, setSelectorPara] = useState<AlumnoConEscenario | null>(null);
+  const [selectorSello, setSelectorSello] = useState(false);
+  const [historialDe, setHistorialDe] = useState<AlumnoConEscenario | null>(null);
+  const [historial, setHistorial] = useState<EscenarioAsignacion[]>([]);
+  const [proyectando, setProyectando] = useState<number | null>(null);
+
+  const headers = useMemo<Record<string, string>>(() => ({
+    'Content-Type': 'application/json',
+    'x-session-token': sessionToken ?? '',
+  }), [sessionToken]);
+
+  const fetchTodo = useCallback(async () => {
+    if (!grupoId) return;
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/escenarios`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) throw new Error('Error al cargar los escenarios del grupo');
+      const data = await res.json() as {
+        habilitado?: boolean; alumnos?: AlumnoConEscenario[]; preguntas?: EscenarioPregunta[];
+      };
+      setHabilitado(data.habilitado !== false);
+      setAlumnos(data.alumnos ?? []);
+      setPreguntas([...(data.preguntas ?? [])].sort((a, b) => a.titulo.localeCompare(b.titulo)));
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'Error al cargar los escenarios del grupo'));
+    } finally {
+      setLoading(false);
+    }
+  }, [grupoId, sessionToken]);
+
+  useEffect(() => { fetchTodo(); }, [fetchTodo]);
+
+  const porId = useMemo(() => new Map(preguntas.map((p) => [p.id, p])), [preguntas]);
+  const sello = selloId ? porId.get(selloId) ?? null : null;
+
+  const etiquetas = useMemo(() => {
+    const todas = new Set<string>();
+    for (const p of preguntas) for (const e of p.etiquetas) todas.add(e);
+    return [...todas].sort();
+  }, [preguntas]);
+
+  /** Las preguntas que el sello, el selector y el reparto tienen a mano. */
+  const preguntasFiltradas = useMemo(
+    () => (etiquetaFiltro ? preguntas.filter((p) => p.etiquetas.includes(etiquetaFiltro)) : preguntas),
+    [preguntas, etiquetaFiltro],
+  );
+
+  const visibles = useMemo(() => {
+    const texto = busqueda.trim().toLowerCase();
+    return alumnos.filter((a) => {
+      if (soloSinAsignar && a.asignacion) return false;
+      if (!texto) return true;
+      return a.name.toLowerCase().includes(texto) || a.matricula.toLowerCase().includes(texto);
+    });
+  }, [alumnos, soloSinAsignar, busqueda]);
+
+  const sinAsignar = useMemo(() => alumnos.filter((a) => !a.asignacion), [alumnos]);
+
+  /** Alumnos proyectables (con pregunta), en el orden en que se ven. */
+  const paraProyectar = useMemo(() => visibles.filter((a) => a.asignacion?.pregunta), [visibles]);
+
+  async function asignar(pares: { alumnoId: string; preguntaId: string }[]) {
+    if (pares.length === 0 || !grupoId) return;
+    setError('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/escenarios/asignaciones`, {
+        method: 'POST', headers, body: JSON.stringify({ asignaciones: pares }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message || 'Error al asignar');
+      }
+      const data = await res.json() as { asignaciones?: EscenarioAsignacion[] };
+      const nuevas = new Map((data.asignaciones ?? []).map((a) => [a.alumnoId, a]));
+      setAlumnos((prev) => prev.map((a) => {
+        const nueva = nuevas.get(a.id);
+        if (!nueva) return a;
+        return { ...a, asignacion: nueva, totalAsignaciones: a.totalAsignaciones + 1 };
+      }));
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'Error al asignar'));
+      // Se recarga para no dejar la pantalla mintiendo sobre lo que hay guardado.
+      await fetchTodo();
+    }
+  }
+
+  async function quitar(alumno: AlumnoConEscenario) {
+    if (!alumno.asignacion || !grupoId) return;
+    const asignacionId = alumno.asignacion.id;
+    setAlumnos((prev) => prev.map((a) => (a.id === alumno.id ? { ...a, asignacion: null } : a)));
+    try {
+      const res = await fetch(
+        `${API_BASE}/admin/grupos/${grupoId}/escenarios/asignaciones/${asignacionId}`,
+        { method: 'DELETE', headers },
+      );
+      if (!res.ok) throw new Error('Error al quitar la asignación');
+      // El historial es la fuente: quitar la vigente puede dejar visible la
+      // anterior, y eso solo lo sabe el servidor.
+      await fetchTodo();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'Error al quitar la asignación'));
+      await fetchTodo();
+    }
+  }
+
+  async function actualizar(alumno: AlumnoConEscenario, cambios: { nota?: string; usada?: boolean }) {
+    if (!alumno.asignacion || !grupoId) return;
+    const asignacionId = alumno.asignacion.id;
+    setAlumnos((prev) => prev.map((a) => (
+      a.id === alumno.id && a.asignacion
+        ? { ...a, asignacion: { ...a.asignacion, ...cambios } }
+        : a
+    )));
+    try {
+      const res = await fetch(
+        `${API_BASE}/admin/grupos/${grupoId}/escenarios/asignaciones/${asignacionId}`,
+        { method: 'PUT', headers, body: JSON.stringify(cambios) },
+      );
+      if (!res.ok) throw new Error('Error al guardar el cambio');
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'Error al guardar el cambio'));
+      await fetchTodo();
+    }
+  }
+
+  async function abrirHistorial(alumno: AlumnoConEscenario) {
+    setHistorialDe(alumno);
+    setHistorial([]);
+    try {
+      const res = await fetch(
+        `${API_BASE}/admin/grupos/${grupoId}/escenarios/alumnos/${alumno.id}`,
+        { headers: { 'x-session-token': sessionToken ?? '' } },
+      );
+      if (!res.ok) return;
+      const data = await res.json() as { historial?: EscenarioAsignacion[] };
+      setHistorial(data.historial ?? []);
+    } catch {
+      // El historial es consulta: si falla, el modal se queda vacío y ya.
+    }
+  }
+
+  /** Clic en la fila: con sello puesto asigna; sin él, abre el selector. */
+  function handleFila(alumno: AlumnoConEscenario) {
+    if (sello) asignar([{ alumnoId: alumno.id, preguntaId: sello.id }]);
+    else setSelectorPara(alumno);
+  }
+
+  function handleRepartir() {
+    const pool = preguntasFiltradas.filter((p) => !p.archivada);
+    if (pool.length === 0 || sinAsignar.length === 0) return;
+    asignar(repartirPreguntas(sinAsignar.map((a) => a.id), pool.map((p) => p.id)));
+  }
+
+  function handleSellarLosQueFaltan() {
+    if (!sello) return;
+    asignar(sinAsignar.map((a) => ({ alumnoId: a.id, preguntaId: sello.id })));
+  }
+
+  if (loading) return <div className={styles.page}><p>Cargando...</p></div>;
+
+  if (!habilitado) {
+    return (
+      <div className={styles.page}>
+        <h1 className={styles.pageTitle}>Escenarios</h1>
+        <div className={styles.apagado}>
+          <Icon name="quiz" size="lg" />
+          <p>El módulo <strong>Escenarios</strong> no está encendido en este grupo.</p>
+          <p className={styles.hint}>
+            Se enciende en <Link to="/admin/grupos">Grupos → Asignaciones</Link>, en «Módulos del grupo».
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <div>
+          <h1 className={styles.pageTitle}>Escenarios</h1>
+          <p className={styles.subtitulo}>
+            La pregunta que le toca a cada alumno en su entrevista. Los alumnos no ven nada de esto.
+          </p>
+        </div>
+        <span className={styles.contador}>
+          {alumnos.length - sinAsignar.length} de {alumnos.length} asignados
+        </span>
+      </div>
+
+      {error && <div className={styles.error} onClick={() => setError('')}>{error}</div>}
+
+      <div className={styles.barra}>
+        <div className={styles.selloCaja}>
+          <span className={styles.barraTitulo}>Pregunta activa</span>
+          <button className={styles.selloBtn} onClick={() => setSelectorSello(true)}>
+            <Icon name={sello ? 'edit' : 'add'} size="sm" />
+            <span>{sello ? sello.titulo : 'Elegir una…'}</span>
+          </button>
+          {sello && (
+            <button className={styles.selloQuitar} onClick={() => setSelloId(null)} title="Soltar la pregunta activa">
+              <Icon name="close" size="sm" />
+            </button>
+          )}
+        </div>
+
+        <div className={styles.acciones}>
+          <DashButton
+            variant="outline"
+            onClick={handleSellarLosQueFaltan}
+            disabled={!sello || sinAsignar.length === 0}
+            title={sello ? `Le pone «${sello.titulo}» a los ${sinAsignar.length} sin asignar` : 'Elige antes una pregunta activa'}
+          >
+            Esta a los que faltan ({sinAsignar.length})
+          </DashButton>
+          <DashButton
+            variant="outline"
+            onClick={handleRepartir}
+            disabled={sinAsignar.length === 0 || preguntasFiltradas.length === 0}
+            title="Reparte las preguntas del filtro entre los que no tienen, sin repetir de más"
+          >
+            Repartir al azar
+          </DashButton>
+          <DashButton
+            onClick={() => setProyectando(0)}
+            disabled={paraProyectar.length === 0}
+            title="Abre la primera pregunta a pantalla completa; se avanza con ← →"
+          >
+            <Icon name="slideshow" size="sm" /> Proyectar
+          </DashButton>
+        </div>
+      </div>
+
+      {sello && (
+        <p className={styles.pista}>
+          <Icon name="touch_app" size="sm" />
+          Haz clic en un alumno para asignarle <strong>{sello.titulo}</strong>.
+        </p>
+      )}
+
+      <div className={styles.filtros}>
+        <input
+          className={styles.buscador}
+          type="search"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar alumno..."
+        />
+        <label className={styles.check}>
+          <input type="checkbox" checked={soloSinAsignar} onChange={(e) => setSoloSinAsignar(e.target.checked)} />
+          <span>Solo sin asignar</span>
+        </label>
+        {etiquetas.length > 0 && (
+          <div className={styles.chips}>
+            <span className={styles.chipsTitulo}>Etiqueta:</span>
+            <button
+              className={`${styles.chip} ${etiquetaFiltro === null ? styles.chipActivo : ''}`}
+              onClick={() => setEtiquetaFiltro(null)}
+            >
+              todas
+            </button>
+            {etiquetas.map((e) => (
+              <button
+                key={e}
+                className={`${styles.chip} ${etiquetaFiltro === e ? styles.chipActivo : ''}`}
+                onClick={() => setEtiquetaFiltro(etiquetaFiltro === e ? null : e)}
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <table className={styles.tabla}>
+        <thead>
+          <tr>
+            <th>Alumno</th>
+            <th>Pregunta</th>
+            <th>Nota para ti</th>
+            <th className={styles.colCorta}>Tiempo</th>
+            <th className={styles.colAcciones}>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {visibles.length === 0 && (
+            <tr><td colSpan={5} className={styles.vacio}>No hay alumnos que mostrar.</td></tr>
+          )}
+          {visibles.map((alumno) => {
+            const asignacion = alumno.asignacion;
+            const pregunta = asignacion?.pregunta ? porId.get(asignacion.pregunta.id) : null;
+            const segundos = asignacion?.duracionSegundos ?? pregunta?.duracionSegundos ?? null;
+            return (
+              <tr key={alumno.id} className={asignacion?.usada ? styles.filaUsada : ''}>
+                <td>
+                  <span className={styles.alumnoNombre}>{alumno.name}</span>
+                  <span className={styles.alumnoMatricula}>{alumno.matricula}</span>
+                </td>
+                <td>
+                  {/* La celda entera es el botón de asignar: con el sello puesto
+                      es un clic por alumno, que es todo el objetivo. */}
+                  <button
+                    className={`${styles.celdaPregunta} ${asignacion ? '' : styles.celdaVacia}`}
+                    onClick={() => handleFila(alumno)}
+                    title={sello ? `Asignar «${sello.titulo}»` : 'Elegir pregunta'}
+                  >
+                    {asignacion?.pregunta ? (
+                      <>
+                        <span className={styles.preguntaTitulo}>{asignacion.pregunta.titulo}</span>
+                        {asignacion.pregunta.archivada && (
+                          <span className={styles.archivadaTag} title="Esta pregunta ya no está en el banco">archivada</span>
+                        )}
+                      </>
+                    ) : (
+                      <span className={styles.sinPregunta}>Sin asignar</span>
+                    )}
+                  </button>
+                  {asignacion && (
+                    <button
+                      className={styles.cambiarBtn}
+                      onClick={() => setSelectorPara(alumno)}
+                      title="Elegir otra pregunta para este alumno"
+                    >
+                      <Icon name="swap_horiz" size="sm" />
+                    </button>
+                  )}
+                </td>
+                <td>
+                  <NotaInline
+                    key={asignacion?.id ?? 'sin'}
+                    valor={asignacion?.nota ?? ''}
+                    deshabilitado={!asignacion}
+                    onGuardar={(nota) => actualizar(alumno, { nota })}
+                  />
+                </td>
+                <td className={styles.colCorta}>{segundos !== null ? formatearDuracion(segundos) : '—'}</td>
+                <td className={styles.colAcciones}>
+                  <button
+                    className={styles.iconBtn}
+                    disabled={!asignacion?.pregunta}
+                    onClick={() => {
+                      const i = paraProyectar.findIndex((a) => a.id === alumno.id);
+                      if (i >= 0) setProyectando(i);
+                    }}
+                    title="Proyectar esta pregunta"
+                  >
+                    <Icon name="slideshow" size="sm" />
+                  </button>
+                  <button
+                    className={`${styles.iconBtn} ${asignacion?.usada ? styles.iconBtnOn : ''}`}
+                    disabled={!asignacion}
+                    onClick={() => actualizar(alumno, { usada: !asignacion?.usada })}
+                    title={asignacion?.usada ? 'Marcar como pendiente' : 'Marcar como ya preguntada'}
+                  >
+                    <Icon name="check_circle" size="sm" />
+                  </button>
+                  <button
+                    className={styles.iconBtn}
+                    onClick={() => abrirHistorial(alumno)}
+                    title={`Historial (${alumno.totalAsignaciones})`}
+                  >
+                    <Icon name="history" size="sm" />
+                  </button>
+                  <button
+                    className={styles.iconBtn}
+                    disabled={!asignacion}
+                    onClick={() => quitar(alumno)}
+                    title="Quitar la asignación"
+                  >
+                    <Icon name="close" size="sm" />
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {/* Selector para UN alumno */}
+      {selectorPara && (
+        <SelectorEscenario
+          preguntas={preguntasFiltradas}
+          titulo={`Pregunta para ${selectorPara.name}`}
+          onElegir={(p) => {
+            asignar([{ alumnoId: selectorPara.id, preguntaId: p.id }]);
+            setSelectorPara(null);
+          }}
+          onCerrar={() => setSelectorPara(null)}
+        />
+      )}
+
+      {/* Selector de la pregunta activa (el sello) */}
+      {selectorSello && (
+        <SelectorEscenario
+          preguntas={preguntasFiltradas}
+          titulo="Pregunta activa"
+          onElegir={(p) => { setSelloId(p.id); setSelectorSello(false); }}
+          onCerrar={() => setSelectorSello(false)}
+        />
+      )}
+
+      <Modal
+        isOpen={historialDe !== null}
+        onClose={() => setHistorialDe(null)}
+        title={historialDe ? `Historial — ${historialDe.name}` : 'Historial'}
+      >
+        {historial.length === 0 ? (
+          <p className={styles.hint}>Sin asignaciones previas.</p>
+        ) : (
+          <ul className={styles.historial}>
+            {historial.map((a) => (
+              <li key={a.id}>
+                <span className={styles.historialFecha}>
+                  {new Date(a.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </span>
+                <span>{a.pregunta?.titulo ?? '—'}</span>
+                {a.usada && <span className={styles.historialUsada}>preguntada</span>}
+                {a.nota && <span className={styles.historialNota}>{a.nota}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Modal>
+
+      {proyectando !== null && paraProyectar[proyectando]?.asignacion?.pregunta && (() => {
+        const alumno = paraProyectar[proyectando];
+        const pregunta = porId.get(alumno.asignacion!.pregunta!.id);
+        if (!pregunta) return null;
+        return (
+          <EscenarioProyector
+            pregunta={pregunta}
+            duracionSegundos={alumno.asignacion!.duracionSegundos}
+            alumno={{ name: alumno.name, matricula: alumno.matricula }}
+            posicion={{ indice: proyectando + 1, total: paraProyectar.length }}
+            onAnterior={proyectando > 0 ? () => setProyectando(proyectando - 1) : null}
+            onSiguiente={proyectando < paraProyectar.length - 1 ? () => setProyectando(proyectando + 1) : null}
+            onSalir={() => setProyectando(null)}
+          />
+        );
+      })()}
+    </div>
+  );
+}
+
+/**
+ * Nota por alumno. Guarda al salir del campo y no en cada tecla: es un texto
+ * corto que se escribe de una sentada, y una petición por pulsación llenaría la
+ * red de escrituras a medio escribir.
+ */
+function NotaInline({ valor, deshabilitado, onGuardar }: {
+  valor: string;
+  deshabilitado: boolean;
+  onGuardar: (nota: string) => void;
+}) {
+  const [texto, setTexto] = useState(valor);
+  const inicial = useRef(valor);
+
+  useEffect(() => { setTexto(valor); inicial.current = valor; }, [valor]);
+
+  return (
+    <input
+      className={styles.nota}
+      type="text"
+      value={texto}
+      disabled={deshabilitado}
+      placeholder={deshabilitado ? '' : 'p. ej. insistir en el conflicto…'}
+      onChange={(e) => setTexto(e.target.value)}
+      onBlur={() => { if (texto !== inicial.current) { inicial.current = texto; onGuardar(texto); } }}
+      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+    />
+  );
+}

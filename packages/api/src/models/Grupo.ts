@@ -120,6 +120,19 @@ export class Grupo extends BaseModel {
   }
 
   /**
+   * Módulos de GRUPO encendidos: los que no cuelgan de una colección
+   * (`Escenarios`). Todos nacen apagados, así que esta lista enumera lo
+   * ENCENDIDO —al revés que `modulosDeshabilitados`, donde la mayoría nace
+   * encendida—. Ausente = ninguno. Ver `src/models/modulos-grupo.ts`.
+   */
+  getModulosGrupo(): string[] {
+    return this.get('modulosGrupo') ?? [];
+  }
+  setModulosGrupo(modulos: string[]): void {
+    this.set('modulosGrupo', modulos);
+  }
+
+  /**
    * Campos del perfil del alumno que ESTE grupo no pide. Ausente o vacío = los
    * pide todos, que es el comportamiento de siempre (cero migración).
    *
@@ -166,6 +179,7 @@ export class Grupo extends BaseModel {
       // Módulos apagados por colección (para que la UI y el sidebar sepan qué está
       // habilitado). Vacío = todo habilitado.
       modulosDeshabilitados: this.getModulosDeshabilitados(),
+      modulosGrupo: this.getModulosGrupo(),
       // Campos del perfil que este grupo NO pide (vacío = los pide todos).
       camposPerfilDeshabilitados: this.getCamposPerfilDeshabilitados(),
       active: this.get('active'),

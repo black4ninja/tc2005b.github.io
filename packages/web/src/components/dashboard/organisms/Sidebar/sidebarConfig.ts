@@ -35,6 +35,9 @@ export function getSidebarItems(
       // una Coleccion). Cada colección tiene su acción, que las abre ya filtradas,
       // y esa pantalla conserva los accesos a las vistas globales.
       { label: 'Contenidos', icon: 'library_books', path: '/admin/contenidos' },
+      // El banco de escenarios NO cuelga de Contenidos: es global y no
+      // pertenece a ninguna colección, así que va como sección propia.
+      { label: 'Escenarios', icon: 'quiz', path: '/admin/escenarios' },
     ];
   }
   // El profesor nunca usa este menú global: su nav es SIEMPRE la de su grupo
@@ -109,6 +112,8 @@ export function getGrupoDetailItems(
   grupoId: string,
   agendaHref: string | null = null,
   ejerciciosHref: string | null = null,
+  /** true si el grupo tiene el módulo 'escenarios' encendido. */
+  conEscenarios = false,
 ): SidebarItem[] {
   const items: SidebarItem[] = [
     { label: 'Calendario', icon: 'calendar_month', path: `/admin/grupos/${grupoId}/calendario` },
@@ -122,6 +127,11 @@ export function getGrupoDetailItems(
     { label: 'Equipos', icon: 'group_work', path: `/admin/grupos/${grupoId}/equipos` },
     { label: 'Entrevistas', icon: 'record_voice_over', path: `/admin/grupos/${grupoId}/entrevistas` },
   ];
+  // Justo debajo de "Entrevistas", que es donde se usa: son las preguntas que
+  // se plantean en ellas. Solo si el grupo tiene el módulo encendido.
+  if (conEscenarios) {
+    items.push({ label: 'Escenarios', icon: 'quiz', path: `/admin/grupos/${grupoId}/escenarios` });
+  }
   // Probar los ejercicios del grupo como los ve el alumno. Aparece cuando el
   // grupo tiene el módulo 'ejercicios' encendido en alguna colección — tanto
   // para el profesor como para el admin que revisa. La ruta cuelga del grupo,
