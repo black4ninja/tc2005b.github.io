@@ -7,7 +7,7 @@ import Modal from '../../atoms/Modal/Modal';
 import PreguntaProyector from '../../organisms/PreguntaProyector/PreguntaProyector';
 import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta';
 import SelectorAlumno from '../../organisms/SelectorAlumno/SelectorAlumno';
-import { formatearDuracion, planearReparto, resumenPregunta } from '../../../../utils/preguntas';
+import { formatearDuracion, repartirPreguntas, resumenPregunta } from '../../../../utils/preguntas';
 import type {
   AlumnoConPregunta, CompetenciaEnBanco, DuracionConfig, Pregunta, PreguntaAsignacion,
 } from '../../../../types/preguntas';
@@ -25,16 +25,14 @@ type Vista = 'alumnos' | 'preguntas';
 /**
  * Roster de PREGUNTAS de un grupo: a quién le toca qué.
  *
- * Dos reglas mandan sobre el diseño de esta pantalla:
+ * La regla que manda sobre el diseño: **una pregunta por competencia y alumno**.
+ * Cada competencia con banco es un hueco, y el filtro de competencia no es un
+ * filtro sino un MODO: con «todas» se ve el mapa del grupo de un vistazo y con
+ * una elegida se trabaja en ella (nota, proyectar, marcar como hecha).
  *
- *  1. **Una pregunta por competencia y alumno.** Cada competencia con banco es
- *     un hueco, y el filtro de competencia no es un filtro sino un MODO: con
- *     «todas» se ve el mapa del grupo de un vistazo y con una elegida se trabaja
- *     en ella (nota, proyectar, marcar como hecha).
- *  2. **Una pregunta no se repite** mientras siga viva en un grupo en curso. Eso
- *     mata de raíz el gesto de «sellar» a varios alumnos con la misma —que es lo
- *     que esta pantalla hacía antes— y lo sustituye por el reparto: repartir es
- *     ahora la operación natural, y asignar a mano es la excepción.
+ * Repetir una pregunta está permitido —en el grupo y entre grupos—, así que el
+ * reparto puede reciclar el banco y nadie se queda sin. Lo que sí se enseña es a
+ * cuántos se la has puesto ya, para poder variar a propósito.
  *
  * De ahí la segunda vista, **Por pregunta**: leer el enunciado entero y decidir
  * a quién le va es el orden en que el profesor piensa cuando personaliza, y al
@@ -261,30 +259,25 @@ export default function PreguntasGrupoPage() {
   }
 
   /**
-   * Reparto: a cada alumno sin pregunta en un hueco, una LIBRE de esa
-   * competencia. Nunca la misma dos veces, que es la regla del módulo, así que
-   * el reparto puede quedarse corto y hay que decirlo en vez de fallar a medias.
+   * Reparto: a cada alumno sin pregunta en un hueco, una de esa competencia.
+   *
+   * `repartirPreguntas` agota el banco antes de reciclarlo, así que con más
+   * preguntas que alumnos nadie repite, y con menos las repeticiones quedan lo
+   * más espaciadas posible. Repetir está permitido, así que nadie se queda sin.
    */
   function repartir() {
     const pares: { alumnoId: string; preguntaId: string }[] = [];
-    let faltaron = 0;
     for (const competencia of huecosVisibles) {
       const pendientes = alumnos.filter((a) => !asignacionDe(a, competencia.id));
-      const libres = preguntas.filter(
-        (p) => !p.uso && !p.archivada && (p.competenciaId ?? SIN_COMPETENCIA) === competencia.id,
+      const disponibles = preguntas.filter(
+        (p) => !p.archivada && (p.competenciaId ?? SIN_COMPETENCIA) === competencia.id,
       );
-      const plan = planearReparto(pendientes.map((a) => a.id), libres.map((p) => p.id));
-      pares.push(...plan.pares);
-      faltaron += plan.faltaron;
+      pares.push(...repartirPreguntas(pendientes.map((a) => a.id), disponibles.map((p) => p.id))
+        .map((r) => ({ alumnoId: r.alumnoId, preguntaId: r.preguntaId })));
     }
     if (pares.length === 0) {
-      setAviso(faltaron > 0
-        ? `No quedan preguntas libres. Faltan ${faltaron} y hay que escribirlas en el banco de la materia.`
-        : 'No hay huecos que llenar.');
+      setAviso('No hay huecos que llenar, o esas competencias no tienen preguntas en el banco.');
       return;
-    }
-    if (faltaron > 0) {
-      setAviso(`Repartidas ${pares.length}. Se quedaron ${faltaron} alumnos sin pregunta: el banco no da para más.`);
     }
     asignar(pares);
   }
@@ -324,8 +317,8 @@ export default function PreguntasGrupoPage() {
         <div>
           <h1 className={styles.pageTitle}>Preguntas</h1>
           <p className={styles.subtitulo}>
-            Una pregunta por competencia y alumno. Ninguna se repite mientras el grupo siga activo,
-            ni aquí ni en otro grupo. Los alumnos no ven nada de esto y no afecta a su calificación.
+            Una pregunta por competencia y alumno. Los alumnos no ven nada de esto y no afecta
+            a su calificación.
           </p>
         </div>
         <div className={styles.headerLado}>
@@ -410,9 +403,9 @@ export default function PreguntasGrupoPage() {
             key={c.id}
             className={`${styles.chip} ${competenciaActiva === c.id ? styles.chipActivo : ''}`}
             onClick={() => setCompetenciaActiva(competenciaActiva === c.id ? null : c.id)}
-            title={`${c.libres} libres de ${c.total} en el banco`}
+            title={`${c.total} preguntas en el banco de esta competencia`}
           >
-            {c.nombre} <span className={styles.chipContador}>{c.libres}/{c.total}</span>
+            {c.nombre} <span className={styles.chipContador}>{c.total}</span>
           </button>
         ))}
       </div>
@@ -439,8 +432,8 @@ export default function PreguntasGrupoPage() {
                 onClick={repartir}
                 disabled={sinLlenar === 0}
                 title={competenciaActiva
-                  ? 'Da una pregunta libre de esta competencia a cada alumno que no tenga'
-                  : 'Da una pregunta libre de cada competencia a cada alumno que no tenga'}
+                  ? 'Da una pregunta de esta competencia a cada alumno que no tenga'
+                  : 'Da una pregunta de cada competencia a cada alumno que no tenga'}
               >
                 Repartir al grupo ({sinLlenar})
               </DashButton>
@@ -596,7 +589,7 @@ export default function PreguntasGrupoPage() {
               placeholder="Buscar en las preguntas..."
             />
             <span className={styles.contador}>
-              {preguntasDeVista.filter((p) => !p.uso).length} libres de {preguntasDeVista.length}
+              {preguntasDeVista.filter((p) => !p.uso).length} sin usar de {preguntasDeVista.length}
             </span>
           </div>
 
@@ -605,31 +598,25 @@ export default function PreguntasGrupoPage() {
               <p className={styles.vacio}>No hay preguntas que mostrar.</p>
             )}
             {preguntasDeVista.map((p) => (
-              <article key={p.id} className={`${styles.tarjeta} ${p.uso ? styles.tarjetaTomada : ''}`}>
+              <article key={p.id} className={styles.tarjeta}>
                 <div className={styles.tarjetaMeta}>
                   {p.competencia && <span className={styles.competenciaTag}>{p.competencia.competencia}</span>}
                   {p.etiquetas.map((e) => <span key={e} className={styles.chipEtiqueta}>{e}</span>)}
                   {p.uso ? (
-                    <span className={styles.tomadaTag}>
+                    <span className={styles.tomadaTag} title={p.uso.quienes.join('\n')}>
                       <Icon name="person" size="sm" />
-                      {p.uso.alumnoId && p.uso.grupoId
-                        ? `${p.uso.alumnoNombre} · ${p.uso.grupoNombre}`
-                        : 'asignada'}
-                      {p.uso.usada && ' · ya preguntada'}
+                      ya en {p.uso.veces} alumno{p.uso.veces === 1 ? '' : 's'}
+                      {p.uso.algunaUsada && ' · preguntada'}
                     </span>
                   ) : (
-                    <span className={styles.libreTag}>libre</span>
+                    <span className={styles.libreTag}>sin usar</span>
                   )}
                 </div>
                 {/* El enunciado entero: es el motivo de esta vista. */}
                 <p className={styles.tarjetaTexto}>{p.texto}</p>
                 <div className={styles.tarjetaAcciones}>
-                  <button
-                    className={styles.enlaceBtn}
-                    disabled={!!p.uso}
-                    onClick={() => setEligiendoAlumno(p)}
-                  >
-                    {p.uso ? 'Ya asignada' : 'Asignar a un alumno…'}
+                  <button className={styles.enlaceBtn} onClick={() => setEligiendoAlumno(p)}>
+                    Asignar a un alumno…
                   </button>
                 </div>
               </article>

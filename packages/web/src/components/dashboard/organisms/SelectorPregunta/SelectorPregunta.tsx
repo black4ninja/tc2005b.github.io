@@ -58,13 +58,6 @@ export default function SelectorPregunta({
       ?.scrollIntoView({ block: 'nearest' });
   }, [indice]);
 
-  function elegir(p: Pregunta) {
-    // Una tomada no se puede repartir: el servidor lo rechazaría igual, pero
-    // fallar aquí en silencio sería peor que no dejar pulsar.
-    if (p.uso) return;
-    onElegir(p);
-  }
-
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -75,11 +68,11 @@ export default function SelectorPregunta({
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const elegida = filtradas[indice];
-      if (elegida) elegir(elegida);
+      if (elegida) onElegir(elegida);
     }
   }
 
-  const libres = filtradas.filter((p) => !p.uso).length;
+  const sinUsar = filtradas.filter((p) => !p.uso).length;
 
   return (
     <Modal isOpen onClose={onCerrar} title={titulo} wide>
@@ -110,7 +103,7 @@ export default function SelectorPregunta({
                 className={`${styles.filtroChip} ${competencia === c.id ? styles.filtroChipActivo : ''}`}
                 onClick={() => setCompetencia(competencia === c.id ? null : c.id)}
               >
-                {c.nombre} <span className={styles.contadorChip}>{c.libres}</span>
+                {c.nombre} <span className={styles.contadorChip}>{c.total}</span>
               </button>
             ))}
           </div>
@@ -125,11 +118,10 @@ export default function SelectorPregunta({
             {filtradas.map((p, i) => (
               <li key={p.id}>
                 <button
-                  className={`${styles.opcion} ${i === indice ? styles.opcionActiva : ''} ${p.uso ? styles.opcionTomada : ''}`}
+                  className={`${styles.opcion} ${i === indice ? styles.opcionActiva : ''}`}
                   data-activo={i === indice}
-                  disabled={!!p.uso}
                   onMouseEnter={() => setIndice(i)}
-                  onClick={() => elegir(p)}
+                  onClick={() => onElegir(p)}
                 >
                   <span className={styles.opcionMeta}>
                     {/* La competencia primero y con otro tinte: es el eje por
@@ -139,9 +131,9 @@ export default function SelectorPregunta({
                     )}
                     {p.etiquetas.map((e) => <span key={e} className={styles.chip}>{e}</span>)}
                     {p.uso && (
-                      <span className={styles.tomada}>
-                        <Icon name="lock" size="sm" />
-                        {p.uso.alumnoNombre} · {p.uso.grupoNombre}
+                      <span className={styles.tomada} title={p.uso.quienes.join('\n')}>
+                        <Icon name="history" size="sm" />
+                        ya en {p.uso.veces}
                       </span>
                     )}
                   </span>
@@ -153,7 +145,7 @@ export default function SelectorPregunta({
         )}
         <p className={styles.atajos}>
           ↑ ↓ para moverte · Enter para elegir · Esc para cerrar
-          <span className={styles.libres}>{libres} libre(s) de {filtradas.length}</span>
+          <span className={styles.libres}>{sinUsar} sin usar de {filtradas.length}</span>
         </p>
       </div>
     </Modal>

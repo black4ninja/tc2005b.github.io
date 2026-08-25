@@ -87,13 +87,6 @@
   line-height: 1.4;
 }
 
-.opcionTomada {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.opcionTomada:hover { background: transparent; }
-
 .tomada {
   display: inline-flex;
   align-items: center;

@@ -30,7 +30,7 @@ export interface Pregunta {
    * banco de admin no lo trae y el proyector lo recibe como prop.
    */
   duracionSegundos?: number;
-  /** Quién la tiene tomada; null = libre. Se deriva, no se guarda. */
+  /** A cuántos se les ha puesto ya; null = a nadie. Se deriva, no se guarda. */
   uso?: UsoPregunta | null;
   /** Qué buscar en la respuesta. Nunca se proyecta. */
   notas: string;
@@ -38,16 +38,15 @@ export interface Pregunta {
 }
 
 /**
- * Quién tiene tomada una pregunta. Mientras exista, no se puede volver a
- * asignar: se libera al desactivar el grupo o al quitarla del roster.
+ * A cuántos alumnos se les ha puesto ya una pregunta. Es una PISTA para variar,
+ * no un candado: repetir está permitido, dentro del grupo y entre grupos.
+ * Solo cuenta lo vivo en grupos en curso.
  */
 export interface UsoPregunta {
-  grupoId: string;
-  grupoNombre: string;
-  alumnoId: string;
-  alumnoNombre: string;
-  /** Ya se le planteó en la entrevista. */
-  usada: boolean;
+  veces: number;
+  /** «Nombre · Grupo», hasta unos pocos. */
+  quienes: string[];
+  algunaUsada: boolean;
 }
 
 /** La pregunta tal como viaja dentro de una asignación (resumida). */
@@ -89,9 +88,8 @@ export interface AlumnoConPregunta {
 export interface CompetenciaEnBanco {
   id: string;
   nombre: string;
-  /** Preguntas del banco en esta competencia y cuántas siguen libres. */
+  /** Preguntas del banco en esta competencia. */
   total: number;
-  libres: number;
 }
 
 /** De dónde sale el tiempo en este grupo. Lo sirve el listado del roster. */

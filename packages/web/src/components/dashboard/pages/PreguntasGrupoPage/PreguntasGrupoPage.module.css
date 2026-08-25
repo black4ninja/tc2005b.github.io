@@ -498,8 +498,6 @@
   background: var(--bg-card);
 }
 
-.tarjetaTomada { opacity: 0.6; }
-
 .tarjetaMeta {
   display: flex;
   align-items: center;

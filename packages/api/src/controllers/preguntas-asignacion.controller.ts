@@ -19,10 +19,14 @@ import { DURACION_POR_DEFECTO } from '../constants/preguntas.js';
  * (`requireGrupoAccess`). Por eso el listado sirve también el banco: el profesor
  * lo necesita para asignar y no tiene permiso sobre `/admin/colecciones/...`.
  *
- * Dos reglas gobiernan el módulo y las dos viven aquí:
- *  1. **Una pregunta por competencia y alumno.** Asignar otra de la misma
- *     competencia SUSTITUYE a la anterior en vez de acumularse.
- *  2. **Una pregunta no se repite** mientras siga viva en un grupo en curso.
+ * La regla que gobierna el módulo vive aquí: **una pregunta por competencia y
+ * alumno**. Asignar otra de la misma competencia SUSTITUYE a la anterior en vez
+ * de acumularse.
+ *
+ * Lo que NO hay es unicidad: la misma pregunta puede tocarle a varios alumnos,
+ * del mismo grupo o de otros. Se probó a impedirlo y sobraba —obligaba a tener
+ * tantas preguntas como alumnos por competencia—; el sistema se limita a decir
+ * a cuántos se la has puesto ya y la decisión de variar es del profesor.
  *
  * Nada de esto tiene read-path de alumno. No es que esté oculto por permisos:
  * es que no existe el endpoint.
@@ -181,7 +185,7 @@ export async function getPreguntasGrupo(req: Request, res: Response): Promise<vo
     // para saber cuántos huecos tiene cada alumno. Se derivan de las preguntas y
     // no del catálogo de la materia a propósito: una competencia sin preguntas
     // no es un hueco que se pueda llenar, solo una columna vacía.
-    const competencias = new Map<string, { id: string; nombre: string; total: number; libres: number }>();
+    const competencias = new Map<string, { id: string; nombre: string; total: number }>();
     for (const p of porIdPregunta.values()) {
       if (p.getArchivada()) continue;
       const c = p.getCompetencia();
@@ -190,10 +194,8 @@ export async function getPreguntasGrupo(req: Request, res: Response): Promise<vo
         id,
         nombre: c ? (c.get('competencia') ?? '') : 'Sin competencia',
         total: 0,
-        libres: 0,
       };
       entrada.total += 1;
-      if (!uso.has(p.id!)) entrada.libres += 1;
       competencias.set(id, entrada);
     }
 
@@ -225,8 +227,8 @@ export async function getPreguntasGrupo(req: Request, res: Response): Promise<vo
       preguntas: [...porIdPregunta.values()].map((p) => ({
         ...p.toSafeJSON(),
         duracionSegundos: duracionEfectiva(duracionGrupo, duracionPorColeccion.get(p.getColeccion()?.id ?? '')),
-        // Quién la tiene, si alguien. Es lo que el selector necesita para no
-        // ofrecer lo que ya está pillado, y para decir por qué.
+        // A cuántos se la has puesto ya. Es una pista para variar, no un
+        // candado: repetir está permitido.
         uso: uso.get(p.id!) ?? null,
       })),
       competencias: [...competencias.values()].sort((a, b) => a.nombre.localeCompare(b.nombre)),
@@ -291,16 +293,6 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
       res.status(400).json({ status: 'error', message: 'Cada asignación necesita alumno y pregunta' });
       return;
     }
-    // La misma pregunta dos veces DENTRO de la petición: el reparto en bloque es
-    // justo donde esto podría colarse, y pasaría el guard de unicidad de abajo
-    // porque ninguna de las dos está guardada todavía.
-    if (vistas.has(preguntaId)) {
-      res.status(409).json({
-        status: 'error',
-        message: 'La misma pregunta le tocaría a dos alumnos: cada pregunta es de uno solo.',
-      });
-      return;
-    }
     vistas.add(preguntaId);
     normalizadas.push({
       alumnoId,
@@ -339,30 +331,9 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
       return;
     }
 
-    // Regla dura: una pregunta viva en un grupo en curso no se vuelve a asignar,
-    // ni aquí ni en otro grupo. Se comprueba en el servidor y no solo en la
-    // pantalla porque dos profesores repartiendo a la vez no se ven entre sí.
-    const uso = await usoDePreguntas(preguntaIds);
-    const ocupadas = normalizadas.filter((n) => {
-      const u = uso.get(n.preguntaId);
-      // Que ya la tenga ESTE mismo alumno no es un choque: es reasignarle lo
-      // mismo, y lo resuelve la sustitución de más abajo.
-      return u && u.alumnoId !== n.alumnoId;
-    });
-    if (ocupadas.length > 0) {
-      const u = uso.get(ocupadas[0].preguntaId)!;
-      res.status(409).json({
-        status: 'error',
-        message: ocupadas.length === 1
-          ? `Esa pregunta ya es de ${u.alumnoNombre} (${u.grupoNombre}). Cada pregunta se plantea una sola vez mientras el grupo siga activo.`
-          : `${ocupadas.length} de las preguntas ya están asignadas en un grupo activo. Actualiza la pantalla y vuelve a intentarlo.`,
-      });
-      return;
-    }
-
     // Sustitución: una pregunta nueva ocupa el hueco de su competencia. La que
-    // estaba se retira si NO se había planteado —fue una corrección, no historia,
-    // y dejarla viva mantendría bloqueada una pregunta que nadie llegó a oír—.
+    // estaba se retira si NO se había planteado: fue una corrección, no historia,
+    // y el historial es para saber qué se le preguntó de verdad al alumno.
     const previas = await asignacionesDelGrupo(grupoId);
     const vigentePorHueco = new Map<string, PreguntaAsignacion>();
     for (const a of previas) {

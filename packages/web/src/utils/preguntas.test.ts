@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  formatearDuracion, parsearEtiquetas, planearReparto, repartirPreguntas, resumenPregunta,
+  formatearDuracion, parsearEtiquetas, repartirPreguntas, resumenPregunta,
 } from './preguntas';
 
 describe('formatearDuracion', () => {
@@ -83,30 +83,3 @@ describe('repartirPreguntas', () => {
   });
 });
 
-describe('planearReparto', () => {
-  const primera = () => 0;
-
-  it('da una pregunta distinta a cada alumno', () => {
-    const { pares, faltaron } = planearReparto(['a1', 'a2', 'a3'], ['p1', 'p2', 'p3', 'p4'], primera);
-    expect(pares).toHaveLength(3);
-    expect(new Set(pares.map((p) => p.preguntaId)).size).toBe(3);
-    expect(faltaron).toBe(0);
-  });
-
-  it('cuando el banco no da para todos, NO repite: deja gente fuera y lo dice', () => {
-    // Es la diferencia con `repartirPreguntas`: allí la bolsa se recicla, aquí
-    // repetir está prohibido porque el segundo alumno se sabría la pregunta.
-    const { pares, faltaron } = planearReparto(['a1', 'a2', 'a3', 'a4'], ['p1', 'p2'], primera);
-    expect(pares).toHaveLength(2);
-    expect(new Set(pares.map((p) => p.preguntaId)).size).toBe(2);
-    expect(faltaron).toBe(2);
-  });
-
-  it('sin preguntas libres no reparte nada y cuenta a todos los pendientes', () => {
-    expect(planearReparto(['a1', 'a2'], [])).toEqual({ pares: [], faltaron: 2 });
-  });
-
-  it('sin pendientes no reparte aunque sobren preguntas', () => {
-    expect(planearReparto([], ['p1', 'p2'])).toEqual({ pares: [], faltaron: 0 });
-  });
-});

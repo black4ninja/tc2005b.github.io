@@ -74,23 +74,3 @@ export function repartirPreguntas<T>(
   return salida;
 }
 
-/**
- * Plan de reparto de UN hueco: a cada alumno pendiente, una pregunta libre
- * distinta.
- *
- * No recicla la bolsa —al revés que `repartirPreguntas`— porque aquí repetir
- * está prohibido: una pregunta es de un alumno y de nadie más mientras el grupo
- * siga en curso. Cuando el banco no da para todos, el reparto se queda corto a
- * propósito y devuelve cuántos se quedaron fuera, que es lo que hay que decirle
- * al profesor en vez de fallar a medias o repetir en silencio.
- */
-export function planearReparto(
-  pendientes: string[],
-  libres: string[],
-  aleatorio: () => number = Math.random,
-): { pares: { alumnoId: string; preguntaId: string }[]; faltaron: number } {
-  const alcanzan = pendientes.slice(0, libres.length);
-  const pares = repartirPreguntas(alcanzan, libres, aleatorio)
-    .map((r) => ({ alumnoId: r.alumnoId, preguntaId: r.preguntaId }));
-  return { pares, faltaron: pendientes.length - alcanzan.length };
-}

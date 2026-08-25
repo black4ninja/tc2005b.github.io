@@ -3,39 +3,40 @@ import { Pregunta } from '../models/Pregunta.js';
 import type { PreguntaAsignacion } from '../models/PreguntaAsignacion.js';
 
 /**
- * Qué preguntas están TOMADAS y por quién.
+ * A cuántos alumnos se les ha puesto ya cada pregunta.
  *
- * La regla del módulo es que una pregunta no se repite: ni dentro de un grupo ni
- * entre grupos activos. No es una manía de unicidad, es el motivo entero de que
- * el banco exista: si a dos alumnos les toca la misma, el segundo la sabe antes
- * de entrar.
+ * Es INFORMACIÓN, no un candado. Una pregunta se puede repetir cuantas veces
+ * haga falta —dentro del grupo y entre grupos—; lo que hace falta es que el
+ * profesor vea de un vistazo cuáles ya ha usado, para poder variar cuando quiera
+ * sin que el sistema decida por él.
  *
- * "Tomada" se DERIVA, no se guarda: una pregunta lo está mientras tenga una
- * asignación viva en un grupo **activo**. Por eso desactivar el grupo al cerrar
- * el semestre devuelve todo su banco al fondo común sin migrar nada ni tener que
- * acordarse de liberarlo a mano.
+ * Solo se cuentan las asignaciones vivas de grupos EN CURSO: cerrar el semestre
+ * (desactivar el grupo) deja el banco como nuevo, que es lo que uno espera al
+ * volver a empezar.
  */
 
+/** Cuántos nombres se enumeran antes de resumir. Es una pista, no un listado. */
+const MAX_NOMBRES = 6;
+
 export interface UsoPregunta {
-  grupoId: string;
-  grupoNombre: string;
-  alumnoId: string;
-  alumnoNombre: string;
-  /** Ya se le planteó en la entrevista. */
-  usada: boolean;
+  /** A cuántos alumnos se les ha asignado. */
+  veces: number;
+  /** «Nombre · Grupo», hasta `MAX_NOMBRES`. */
+  quienes: string[];
+  /** Alguna de esas veces ya se planteó en la entrevista. */
+  algunaUsada: boolean;
 }
 
-/** ¿Este grupo sigue bloqueando las preguntas que tiene asignadas? */
+/** ¿Este grupo sigue contando para el uso de sus preguntas? */
 function grupoEnCurso(grupo: Parse.Object | undefined): boolean {
   return !!grupo && grupo.get('exists') !== false && grupo.get('active') !== false;
 }
 
 /**
- * Mapa `preguntaId → quién la tiene`, mirando solo grupos en curso.
+ * Mapa `preguntaId → uso`, mirando solo grupos en curso.
  *
  * `preguntaIds` acota la consulta cuando ya se sabe qué preguntas interesan (el
- * banco de una materia); sin él mira todas, que es lo que necesita el guard al
- * validar una asignación contra el sistema entero.
+ * banco de una materia); sin él mira todas.
  */
 export async function usoDePreguntas(preguntaIds?: string[]): Promise<Map<string, UsoPregunta>> {
   const q = new Parse.Query<PreguntaAsignacion>('PreguntaAsignacion');
@@ -60,17 +61,13 @@ export async function usoDePreguntas(preguntaIds?: string[]): Promise<Map<string
     const preguntaId = a.get('pregunta')?.id;
     const alumno = a.get('alumno') as Parse.Object | undefined;
     if (!preguntaId || !alumno?.id) continue;
-    // Si hubiera varias, gana la que ya se planteó: es la que de verdad quema la
-    // pregunta, y es el dato útil de cara a quien mira por qué está bloqueada.
-    const previo = uso.get(preguntaId);
-    if (previo && previo.usada) continue;
-    uso.set(preguntaId, {
-      grupoId: grupo!.id!,
-      grupoNombre: grupo!.get('name') ?? '',
-      alumnoId: alumno.id,
-      alumnoNombre: alumno.get('name') ?? '',
-      usada: a.get('usada') === true,
-    });
+    const entrada = uso.get(preguntaId) ?? { veces: 0, quienes: [], algunaUsada: false };
+    entrada.veces += 1;
+    if (entrada.quienes.length < MAX_NOMBRES) {
+      entrada.quienes.push(`${alumno.get('name') ?? ''} · ${grupo!.get('name') ?? ''}`);
+    }
+    if (a.get('usada') === true) entrada.algunaUsada = true;
+    uso.set(preguntaId, entrada);
   }
   return uso;
 }
