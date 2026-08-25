@@ -26,7 +26,6 @@ interface GrupoData {
   colecciones?: ColeccionRef[];
   admins?: AdminRef[];
   modulosDeshabilitados?: Record<string, string[]>;
-  modulosGrupo?: string[];
   urlAgendaEntrevistas?: string | null;
   /** Campos del perfil que este grupo NO pide (vacío = los pide todos). */
   camposPerfilDeshabilitados?: string[];
@@ -223,13 +222,13 @@ export default function GruposPage() {
     }
   }
 
-  async function handleSaveAsignaciones(asignaciones: Asignacion[], modulosGrupo: string[]) {
+  async function handleSaveAsignaciones(asignaciones: Asignacion[]) {
     if (!asignGrupo) return;
     setSavingAsign(true);
     setError('');
     try {
       const res = await fetch(`${API_BASE}/admin/grupos/${asignGrupo.id}/asignaciones`, {
-        method: 'PUT', headers, body: JSON.stringify({ asignaciones, modulosGrupo }),
+        method: 'PUT', headers, body: JSON.stringify({ asignaciones }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));

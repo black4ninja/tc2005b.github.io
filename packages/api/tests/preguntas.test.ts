@@ -1,42 +1,36 @@
 import { describe, it, expect } from 'vitest';
 import {
-  MODULOS_GRUPO,
-  esModuloGrupoValido,
-  moduloGrupoHabilitado,
-  normalizarModulosGrupo,
-} from '../src/models/modulos-grupo.js';
-import { normalizarEtiquetas, normalizarDuracion } from '../src/services/escenarios.service.js';
+  MODULOS_CONTENIDO,
+  moduloEsOptIn,
+  moduloHabilitado,
+} from '../src/models/modulos-contenido.js';
+import { normalizarEtiquetas, normalizarDuracion } from '../src/services/preguntas.service.js';
 
-describe('módulos de grupo', () => {
-  it('todos nacen apagados: sin lista, nada está encendido', () => {
-    expect(moduloGrupoHabilitado(undefined, 'escenarios')).toBe(false);
-    expect(moduloGrupoHabilitado([], 'escenarios')).toBe(false);
+describe('el módulo Preguntas en el catálogo de contenido', () => {
+  it('está en el catálogo y es opt-in', () => {
+    expect(MODULOS_CONTENIDO as readonly string[]).toContain('preguntas');
+    expect(moduloEsOptIn('preguntas')).toBe(true);
   });
 
-  it('la lista guardada enumera lo ENCENDIDO', () => {
-    expect(moduloGrupoHabilitado(['escenarios'], 'escenarios')).toBe(true);
+  it('nace apagado: asignar la colección no lo enciende', () => {
+    // Es lo que separa este módulo de Wiki o Competencias: una materia con
+    // Preguntas encendida sin querer le pondría al profesor una sección vacía
+    // en el menú de su grupo.
+    expect(moduloHabilitado(undefined, 'col-1', 'preguntas')).toBe(false);
+    expect(moduloHabilitado({}, 'col-1', 'preguntas')).toBe(false);
+    expect(moduloHabilitado({ 'col-1': [] }, 'col-1', 'preguntas')).toBe(false);
   });
 
-  it('rechaza keys que no están en el catálogo', () => {
-    expect(esModuloGrupoValido('escenarios')).toBe(true);
-    expect(esModuloGrupoValido('competencias')).toBe(false);
-    expect(esModuloGrupoValido(42)).toBe(false);
-    expect(normalizarModulosGrupo(['escenarios', 'inventado'])).toBeNull();
-    expect(normalizarModulosGrupo('escenarios')).toBeNull();
+  it('para los opt-in, la lista guardada enumera lo ENCENDIDO', () => {
+    expect(moduloHabilitado({ 'col-1': ['preguntas'] }, 'col-1', 'preguntas')).toBe(true);
+    // …y solo para esa colección.
+    expect(moduloHabilitado({ 'col-1': ['preguntas'] }, 'col-2', 'preguntas')).toBe(false);
   });
 
-  it('normaliza sin repetidos', () => {
-    expect(normalizarModulosGrupo(['escenarios', 'escenarios'])).toEqual(['escenarios']);
-    expect(normalizarModulosGrupo([])).toEqual([]);
-  });
-
-  it('el catálogo no se solapa con los módulos de contenido', async () => {
-    // Las dos listas viven en mapas distintos del Grupo; una key repetida
-    // significaría que el mismo nombre se enciende en dos sitios a la vez.
-    const { MODULOS_CONTENIDO } = await import('../src/models/modulos-contenido.js');
-    for (const key of MODULOS_GRUPO) {
-      expect(MODULOS_CONTENIDO as readonly string[]).not.toContain(key);
-    }
+  it('no altera el default de los módulos que ya existían', () => {
+    expect(moduloHabilitado({ 'col-1': ['preguntas'] }, 'col-1', 'documentacion')).toBe(true);
+    expect(moduloHabilitado({ 'col-1': ['preguntas'] }, 'col-1', 'competencias')).toBe(true);
+    expect(moduloHabilitado({ 'col-1': ['preguntas'] }, 'col-1', 'diagramas')).toBe(false);
   });
 });
 

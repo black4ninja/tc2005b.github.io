@@ -53,31 +53,35 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   atenuaban y no había forma de volver a incluirlas.
 
 ### Added
-- **Módulo «Escenarios»: banco de preguntas para las entrevistas personales.** El
-  profesor guardaba en su cabeza —o en una hoja suelta— qué le iba a preguntar a
-  cada alumno, y en una entrevista de treinta personas eso se rompe siempre por
-  el mismo sitio: se repite la pregunta, o se le hace a quien no tocaba. Ahora
-  hay un banco, una asignación por alumno y una proyección con temporizador.
-  - El banco es **global** y no cuelga de una colección, al revés que Ejercicios
-    y Diagramas: estas preguntas se reciclan entre materias («cuéntame de un
-    conflicto en tu equipo» sirve igual en cuarto que en séptimo) y colgarlas de
-    la asignatura obligaría a duplicarlas. Lo que las organiza son **etiquetas**.
+- **Módulo «Preguntas»: banco para las entrevistas personales.** El profesor
+  guardaba en su cabeza —o en una hoja suelta— qué le iba a preguntar a cada
+  alumno, y en una entrevista de treinta personas eso se rompe siempre por el
+  mismo sitio: se repite la pregunta, o se le hace a quien no tocaba. Ahora hay
+  un banco, una asignación por alumno y una proyección con temporizador.
+  - Es un **módulo de contenido opt-in** más, como Ejercicios y Diagramas: el
+    banco cuelga de la materia y se enciende por grupo desde Asignaciones. No es
+    simetría: la **categoría** de una pregunta es una **competencia**, y las
+    competencias son de una colección.
+  - La competencia se puede enlazar **aunque sea de otra materia**, y el editor
+    la ofrece detrás de un «ver competencias de otras materias». Hoy solo una
+    asignatura usa el módulo, pero una competencia transversal puede vivir en
+    otra; atarla a la colección cerraría esa puerta sin ganar nada, porque el
+    módulo ya está acotado por dónde se enciende. Cuando difieren, la interfaz lo
+    señala en ámbar.
+  - Las **etiquetas** siguen, como segundo eje por debajo de la competencia:
+    matizan lo que esta no distingue —a qué perfil le va bien, de qué parcial es,
+    si es dura o de calentamiento—. Los dos filtros se cruzan.
   - **Nada de esto tiene camino de alumno.** No es que esté oculto por permisos:
     es que no existe el endpoint. Las notas del profesor —qué buscar en la
     respuesta, el ajuste para ese alumno— no se pintan ni siquiera en la vista
     que se proyecta, que es justo la pantalla que el alumno mira.
-  - Se enciende **por grupo** desde Asignaciones, en un bloque nuevo, «Módulos
-    del grupo», separado de los módulos por colección porque se guarda distinto:
-    aquellos son un mapa `colección → overrides`; este, una lista plana de lo
-    encendido (`Grupo.modulosGrupo`). Cero migración: un grupo sin el campo no
-    tiene ninguno.
   - Asignar está montado sobre la restricción real —muchos alumnos y hay que
     personalizar—, así que hay tres gestos y ninguno abre un formulario: el
     **sello** (se elige una pregunta arriba y luego es un clic por alumno), el
-    **selector por fila** con búsqueda y Enter para el alumno concreto que
-    necesita otra cosa, y el **reparto al azar**, que llena a los que faltan
-    agotando el banco antes de repetir —sortear una a una deja a media clase con
-    la misma pregunta, y eso se nota en cuanto el primero sale del aula—.
+    **selector por fila** con búsqueda por título, competencia, etiqueta o
+    contenido, y el **reparto al azar**, que llena a los que faltan agotando el
+    banco antes de repetir —sortear una a una deja a media clase con la misma
+    pregunta, y eso se nota en cuanto el primero sale del aula—.
   - La asignación es un **historial**, no un campo que se sobrescribe: a lo largo
     del semestre hay varias entrevistas, y lo que se le preguntó en la primera es
     justo lo que hay que consultar para no repetírselo en la segunda.

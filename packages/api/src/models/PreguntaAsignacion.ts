@@ -2,7 +2,7 @@ import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
 import type { AppUser } from './AppUser.js';
 import type { Grupo } from './Grupo.js';
-import { EscenarioPregunta } from './EscenarioPregunta.js';
+import { Pregunta } from './Pregunta.js';
 
 /**
  * La pregunta que un profesor le asignó a UN alumno de UN grupo.
@@ -13,9 +13,9 @@ import { EscenarioPregunta } from './EscenarioPregunta.js';
  * primera es justo lo que hay que consultar para no repetírselo en la segunda—.
  * "Quitar" la asignación es un soft-delete de la fila, no un borrado del pasado.
  */
-export class EscenarioAsignacion extends BaseModel {
+export class PreguntaAsignacion extends BaseModel {
   constructor(attributes?: Parse.Attributes) {
-    super('EscenarioAsignacion', attributes);
+    super('PreguntaAsignacion', attributes);
   }
 
   getGrupo(): Grupo | undefined {
@@ -32,10 +32,10 @@ export class EscenarioAsignacion extends BaseModel {
     this.set('alumno', alumno);
   }
 
-  getPregunta(): EscenarioPregunta | undefined {
+  getPregunta(): Pregunta | undefined {
     return this.get('pregunta');
   }
-  setPregunta(pregunta: EscenarioPregunta): void {
+  setPregunta(pregunta: Pregunta): void {
     this.set('pregunta', pregunta);
   }
 
@@ -95,6 +95,11 @@ export class EscenarioAsignacion extends BaseModel {
             id: pregunta.id,
             titulo: pregunta.get('titulo') ?? '',
             etiquetas: pregunta.get('etiquetas') ?? [],
+            // Requiere include('pregunta.competencia'): el roster la pinta en
+            // cada fila para ver de un vistazo qué competencia se está
+            // explorando en cada alumno.
+            competencia: pregunta.get('competencia')?.get('competencia') ?? null,
+            competenciaId: pregunta.get('competencia')?.id ?? null,
             duracionSegundos: pregunta.get('duracionSegundos') ?? null,
             archivada: pregunta.get('archivada') === true,
           }
@@ -109,4 +114,4 @@ export class EscenarioAsignacion extends BaseModel {
   }
 }
 
-Parse.Object.registerSubclass('EscenarioAsignacion', EscenarioAsignacion);
+Parse.Object.registerSubclass('PreguntaAsignacion', PreguntaAsignacion);

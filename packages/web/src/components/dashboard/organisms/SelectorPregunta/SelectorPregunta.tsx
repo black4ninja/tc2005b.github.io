@@ -1,14 +1,14 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Modal from '../../atoms/Modal/Modal';
 import Icon from '../../atoms/Icon/Icon';
-import { formatearDuracion } from '../../../../utils/escenarios';
-import type { EscenarioPregunta } from '../../../../types/escenarios';
-import styles from './SelectorEscenario.module.css';
+import { formatearDuracion } from '../../../../utils/preguntas';
+import type { Pregunta } from '../../../../types/preguntas';
+import styles from './SelectorPregunta.module.css';
 
-interface SelectorEscenarioProps {
-  preguntas: EscenarioPregunta[];
+interface SelectorPreguntaProps {
+  preguntas: Pregunta[];
   titulo: string;
-  onElegir: (pregunta: EscenarioPregunta) => void;
+  onElegir: (pregunta: Pregunta) => void;
   onCerrar: () => void;
 }
 
@@ -21,7 +21,7 @@ interface SelectorEscenarioProps {
  * por título Y por etiqueta mientras se escribe, así que el gesto completo es
  * tres letras y un Enter.
  */
-export default function SelectorEscenario({ preguntas, titulo, onElegir, onCerrar }: SelectorEscenarioProps) {
+export default function SelectorPregunta({ preguntas, titulo, onElegir, onCerrar }: SelectorPreguntaProps) {
   const [texto, setTexto] = useState('');
   const [indice, setIndice] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -35,6 +35,7 @@ export default function SelectorEscenario({ preguntas, titulo, onElegir, onCerra
     return preguntas.filter(
       (p) => p.titulo.toLowerCase().includes(q)
         || p.etiquetas.some((e) => e.includes(q))
+      || (p.competencia?.competencia ?? '').toLowerCase().includes(q)
         || p.texto.toLowerCase().includes(q),
     );
   }, [preguntas, texto]);
@@ -73,13 +74,13 @@ export default function SelectorEscenario({ preguntas, titulo, onElegir, onCerra
             type="text"
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
-            placeholder="Buscar por título, etiqueta o contenido…"
+            placeholder="Buscar por título, competencia, etiqueta o contenido…"
           />
         </div>
 
         {filtradas.length === 0 ? (
           <p className={styles.vacio}>
-            Ninguna pregunta coincide. Si el banco está vacío, se llena en <strong>Escenarios</strong>.
+            Ninguna pregunta coincide. El banco se llena en <strong>Contenidos → la materia → Preguntas</strong>.
           </p>
         ) : (
           <ul className={styles.lista} ref={listaRef}>
@@ -93,6 +94,11 @@ export default function SelectorEscenario({ preguntas, titulo, onElegir, onCerra
                 >
                   <span className={styles.opcionTitulo}>{p.titulo}</span>
                   <span className={styles.opcionMeta}>
+                    {/* La competencia primero y con otro tinte: es el eje por
+                        el que se elige, las etiquetas solo matizan. */}
+                    {p.competencia && (
+                      <span className={styles.competencia}>{p.competencia.competencia}</span>
+                    )}
                     {p.etiquetas.map((e) => <span key={e} className={styles.chip}>{e}</span>)}
                     <span className={styles.tiempo}>{formatearDuracion(p.duracionSegundos)}</span>
                   </span>

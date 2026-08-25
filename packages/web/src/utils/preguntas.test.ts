@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatearDuracion, parsearEtiquetas, repartirPreguntas } from './escenarios';
+import { formatearDuracion, parsearEtiquetas, repartirPreguntas } from './preguntas';
 
 describe('formatearDuracion', () => {
   it('escribe minutos y segundos a dos cifras', () => {

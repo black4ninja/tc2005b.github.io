@@ -44,7 +44,7 @@ export type { DiagramaContextoEjercicio } from './EjercicioDiagrama.js';
 export { EnvioDiagrama } from './EnvioDiagrama.js';
 // Taller: diagramas libres del alumno, sin colección ni ejercicio detrás.
 export { DiagramaTaller } from './DiagramaTaller.js';
-// Módulo "Escenarios": banco global de preguntas de entrevista y su asignación
-// por alumno. No cuelga de una Coleccion (ver EscenarioPregunta).
-export { EscenarioPregunta } from './EscenarioPregunta.js';
-export { EscenarioAsignacion } from './EscenarioAsignacion.js';
+// Módulo "Preguntas": banco de preguntas de entrevista de una Coleccion y su
+// asignación por alumno. La categoría de una pregunta es una Competencia.
+export { Pregunta } from './Pregunta.js';
+export { PreguntaAsignacion } from './PreguntaAsignacion.js';

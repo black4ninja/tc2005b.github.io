@@ -92,6 +92,7 @@
 }
 
 .campo input,
+.campo select,
 .campo textarea {
   padding: 8px 12px;
   border: 1px solid var(--border-color);
@@ -119,4 +120,48 @@
   margin-top: var(--space-lg);
   font-size: 0.82rem;
   color: var(--text-muted);
+}
+
+/* La competencia es el eje del banco: se lee como una etiqueta con peso, y
+   cuando viene de otra materia lo dice —es lo bastante raro como para que
+   convenga notarlo de un vistazo—. */
+.competencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.competenciaAjena {
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+}
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  margin-bottom: 4px;
+}
+
+.volver:hover { color: var(--text-primary); }
+
+/* Un botón que se lee como enlace: abre las competencias de otras materias sin
+   robarle peso visual al campo. */
+.enlaceBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--sidebar-active-color);
+  font-size: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }

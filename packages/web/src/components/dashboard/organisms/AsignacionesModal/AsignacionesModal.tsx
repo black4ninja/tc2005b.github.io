@@ -3,7 +3,6 @@ import Modal from '../../atoms/Modal/Modal';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Icon from '../../atoms/Icon/Icon';
 import { MODULOS_CONTENIDO, moduloEsOptIn } from '../../../../config/modulosContenido';
-import { MODULOS_GRUPO } from '../../../../config/modulosGrupo';
 import type { ColeccionRef } from '../../../../types/contenidos';
 import styles from './AsignacionesModal.module.css';
 
@@ -22,7 +21,6 @@ interface GrupoAsignaciones {
   name: string;
   colecciones?: ColeccionRef[];
   modulosDeshabilitados?: Record<string, string[]>;
-  modulosGrupo?: string[];
 }
 
 interface AsignacionesModalProps {
@@ -30,7 +28,7 @@ interface AsignacionesModalProps {
   grupo: GrupoAsignaciones | null;
   /** Todas las colecciones disponibles para asignar. */
   colecciones: ColeccionRef[];
-  onSave: (asignaciones: Asignacion[], modulosGrupo: string[]) => void;
+  onSave: (asignaciones: Asignacion[]) => void;
   onCancel: () => void;
   loading?: boolean;
   error?: string;
@@ -48,8 +46,6 @@ export default function AsignacionesModal({
   // colecciones asignadas + por colección, el set de overrides guardado (crudo).
   const [asignadas, setAsignadas] = useState<Set<string>>(new Set());
   const [overrides, setOverrides] = useState<Record<string, Set<string>>>({});
-  // Módulos del grupo: lista plana de lo ENCENDIDO, sin colección de por medio.
-  const [delGrupo, setDelGrupo] = useState<Set<string>>(new Set());
 
   // Reseed cada vez que se abre para un grupo distinto.
   useEffect(() => {
@@ -60,15 +56,7 @@ export default function AsignacionesModal({
       ov[cid] = new Set(keys);
     }
     setOverrides(ov);
-    setDelGrupo(new Set(grupo.modulosGrupo ?? []));
   }, [grupo]);
-
-  function toggleModuloGrupo(key: string) {
-    const next = new Set(delGrupo);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    setDelGrupo(next);
-  }
 
   /** ¿Está encendido el módulo para esta colección? (respeta el default por módulo) */
   function estaHabilitado(coleccionId: string, moduloKey: string): boolean {
@@ -129,7 +117,7 @@ export default function AsignacionesModal({
       coleccionId,
       deshabilitados: [...(overrides[coleccionId] ?? [])],
     }));
-    onSave(asignaciones, [...delGrupo]);
+    onSave(asignaciones);
   }
 
   return (
@@ -152,25 +140,6 @@ export default function AsignacionesModal({
           alumno es una lista, no una por materia. Al encenderla en una se apaga en las demás.
         </p>
       )}
-
-      {/* Arriba y separado de las colecciones a propósito: no cuelgan de
-          ninguna, y mezclarlos con los módulos de una colección haría pensar
-          que se encienden por materia. */}
-      <div className={styles.grupoModulos}>
-        <span className={styles.grupoModulosTitulo}>Módulos del grupo</span>
-        {MODULOS_GRUPO.map((m) => (
-          <label key={m.key} className={styles.moduloGrupo} title={m.ayuda}>
-            <input
-              type="checkbox"
-              checked={delGrupo.has(m.key)}
-              onChange={() => toggleModuloGrupo(m.key)}
-              disabled={loading}
-            />
-            <Icon name={m.icon} size="sm" />
-            <span><strong>{m.label}</strong> — {m.ayuda}</span>
-          </label>
-        ))}
-      </div>
 
       <div className={styles.lista}>
         {colecciones.length === 0 && (

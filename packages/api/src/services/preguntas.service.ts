@@ -1,7 +1,7 @@
-import { DURACION_MIN, DURACION_MAX } from '../constants/escenarios.js';
+import { DURACION_MIN, DURACION_MAX } from '../constants/preguntas.js';
 
 /**
- * Normalizadores del módulo "Escenarios".
+ * Normalizadores del módulo "Preguntas".
  *
  * Viven fuera del controlador porque son las dos reglas del módulo que hay que
  * poder probar sin levantar Express ni Parse, y porque las usan los DOS

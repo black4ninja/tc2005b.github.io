@@ -97,3 +97,14 @@
   font-size: 0.82rem;
   color: var(--text-muted);
 }
+
+/* La competencia es el eje principal del banco, así que se distingue de las
+   etiquetas en vez de perderse entre ellas. */
+.competencia {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+}

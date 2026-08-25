@@ -2,19 +2,20 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { Grupo } from '../models/Grupo.js';
 import { AppUser } from '../models/AppUser.js';
-import { EscenarioPregunta } from '../models/EscenarioPregunta.js';
-import { EscenarioAsignacion } from '../models/EscenarioAsignacion.js';
-import { moduloGrupoHabilitado } from '../models/modulos-grupo.js';
+import { Coleccion } from '../models/Coleccion.js';
+import { Pregunta } from '../models/Pregunta.js';
+import { PreguntaAsignacion } from '../models/PreguntaAsignacion.js';
 import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
-import { normalizarDuracion } from '../services/escenarios.service.js';
+import { coleccionesDeGrupo } from '../services/grupo-colecciones.service.js';
+import { normalizarDuracion } from '../services/preguntas.service.js';
 
 /**
- * Asignación de escenarios a los alumnos de UN grupo.
+ * Asignación de preguntas a los alumnos de UN grupo.
  *
  * Va aparte del CRUD del banco porque cambia el actor: el banco lo mantiene el
- * admin, y esto lo usa el PROFESOR en su grupo (`requireGrupoAccess`). Por eso
- * el listado sirve también el banco de preguntas: el profesor lo necesita para
- * asignar y no tiene permiso sobre `/admin/escenarios`.
+ * admin dentro de la colección, y esto lo usa el PROFESOR en su grupo
+ * (`requireGrupoAccess`). Por eso el listado sirve también el banco: el profesor
+ * lo necesita para asignar y no tiene permiso sobre `/admin/colecciones/...`.
  *
  * Nada de esto tiene read-path de alumno. No es que esté oculto por permisos:
  * es que no existe el endpoint.
@@ -23,71 +24,61 @@ import { normalizarDuracion } from '../services/escenarios.service.js';
 /** Tope de una asignación en bloque. Un grupo grande ronda los 40 alumnos. */
 const MAX_BULK = 500;
 
-async function cargarGrupo(grupoId: string): Promise<Grupo | null> {
-  try {
-    const q = new Parse.Query<Grupo>('Grupo');
-    q.equalTo('exists' as any, true as any);
-    return await q.get(grupoId, { useMasterKey: true });
-  } catch {
-    return null;
-  }
+/**
+ * Colecciones del grupo con el módulo "Preguntas" encendido. Lista vacía = para
+ * este grupo la sección no existe.
+ */
+async function coleccionesConPreguntas(grupoId: string): Promise<Parse.Object[]> {
+  return coleccionesDeGrupo(grupoId, 'preguntas');
 }
 
 /**
- * Grupo existente Y con el módulo encendido. Con el módulo apagado responde 404
- * y no 403: para ese grupo la sección no existe, igual que hacen los módulos de
- * contenido opt-in.
+ * Guard de escritura: el grupo tiene que tener el módulo encendido en alguna
+ * colección. Responde 404 y no 403 —para ese grupo la sección no existe—, igual
+ * que hacen los otros módulos opt-in.
  */
-async function grupoConEscenarios(
-  grupoId: string,
-  res: Response,
-): Promise<Grupo | null> {
-  const grupo = await cargarGrupo(grupoId);
-  if (!grupo) {
-    res.status(404).json({ status: 'error', message: 'Grupo no encontrado' });
-    return null;
-  }
-  if (!moduloGrupoHabilitado(grupo.getModulosGrupo(), 'escenarios')) {
+async function exigirModulo(grupoId: string, res: Response): Promise<Parse.Object[] | null> {
+  const colecciones = await coleccionesConPreguntas(grupoId);
+  if (colecciones.length === 0) {
     res.status(404).json({
       status: 'error',
-      message: 'El módulo Escenarios no está habilitado en este grupo',
+      message: 'El módulo Preguntas no está habilitado en ninguna materia de este grupo',
     });
     return null;
   }
-  return grupo;
+  return colecciones;
 }
 
 /** Todas las asignaciones vivas del grupo, de la más reciente a la más antigua. */
-async function asignacionesDelGrupo(grupoId: string): Promise<EscenarioAsignacion[]> {
-  const q = new Parse.Query<EscenarioAsignacion>('EscenarioAsignacion');
+async function asignacionesDelGrupo(grupoId: string): Promise<PreguntaAsignacion[]> {
+  const q = new Parse.Query<PreguntaAsignacion>('PreguntaAsignacion');
   q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
   q.equalTo('exists' as any, true as any);
   q.include('pregunta' as any);
+  // La competencia de la pregunta se pinta en cada fila del roster; sin este
+  // segundo nivel de include llegaría como un puntero sin nombre.
+  q.include('pregunta.competencia' as any);
   q.descending('createdAt');
   q.limit(10000);
   return q.find({ useMasterKey: true });
 }
 
 /**
- * GET /admin/grupos/:grupoId/escenarios
+ * GET /admin/grupos/:grupoId/preguntas
  *
  * TODA la pantalla en una petición: el roster con su asignación vigente, cuántas
- * lleva cada alumno, y el banco de preguntas. Son tres cosas que se pintan
- * juntas o no se pinta ninguna, y el selector de preguntas filtra en cliente
- * mientras el profesor teclea.
+ * lleva cada alumno, y el banco de las materias del grupo. Son tres cosas que se
+ * pintan juntas o no se pinta ninguna, y el selector filtra en cliente mientras
+ * el profesor teclea.
  */
-export async function getEscenariosGrupo(req: Request, res: Response): Promise<void> {
+export async function getPreguntasGrupo(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
   try {
-    const grupo = await cargarGrupo(grupoId);
-    if (!grupo) {
-      res.status(404).json({ status: 'error', message: 'Grupo no encontrado' });
-      return;
-    }
+    const colecciones = await coleccionesConPreguntas(grupoId);
     // Aquí SÍ se responde 200 con `habilitado: false`: esta es la pantalla que
     // tiene que explicar por qué está vacía y dónde se enciende el módulo.
-    if (!moduloGrupoHabilitado(grupo.getModulosGrupo(), 'escenarios')) {
-      res.json({ status: 'ok', habilitado: false, alumnos: [], preguntas: [] });
+    if (colecciones.length === 0) {
+      res.json({ status: 'ok', habilitado: false, alumnos: [], preguntas: [], competencias: [] });
       return;
     }
 
@@ -95,9 +86,14 @@ export async function getEscenariosGrupo(req: Request, res: Response): Promise<v
       getAlumnosDeGrupo(grupoId),
       asignacionesDelGrupo(grupoId),
       (() => {
-        const q = new Parse.Query<EscenarioPregunta>('EscenarioPregunta');
+        const q = new Parse.Query<Pregunta>('Pregunta');
+        q.containedIn(
+          'coleccion' as any,
+          colecciones.map((c) => Coleccion.createWithoutData(c.id!)) as any,
+        );
         q.equalTo('exists' as any, true as any);
         q.notEqualTo('archivada' as any, true as any);
+        q.include('competencia' as any);
         q.ascending('titulo');
         q.limit(1000);
         return q.find({ useMasterKey: true });
@@ -106,7 +102,7 @@ export async function getEscenariosGrupo(req: Request, res: Response): Promise<v
 
     // Vienen ordenadas de más reciente a más antigua: la primera de cada alumno
     // es la vigente y el resto es su historial.
-    const vigentePorAlumno = new Map<string, EscenarioAsignacion>();
+    const vigentePorAlumno = new Map<string, PreguntaAsignacion>();
     const totalPorAlumno = new Map<string, number>();
     for (const a of asignaciones) {
       const alumnoId = a.getAlumno()?.id;
@@ -121,8 +117,20 @@ export async function getEscenariosGrupo(req: Request, res: Response): Promise<v
     // ya estaba puesta.
     const porIdPregunta = new Map(preguntas.map((p) => [p.id!, p]));
     for (const a of asignaciones) {
-      const pregunta = a.getPregunta() as EscenarioPregunta | undefined;
+      const pregunta = a.getPregunta() as Pregunta | undefined;
       if (pregunta?.id && !porIdPregunta.has(pregunta.id)) porIdPregunta.set(pregunta.id, pregunta);
+    }
+
+    // Las competencias que aparecen en el banco, para las píldoras de filtro.
+    // Se derivan de las preguntas y no del catálogo de la materia a propósito:
+    // filtrar por una competencia sin preguntas solo puede vaciar la pantalla, y
+    // una pregunta puede apuntar a la competencia de otra materia.
+    const competencias = new Map<string, { id: string; nombre: string }>();
+    for (const p of porIdPregunta.values()) {
+      const c = p.getCompetencia();
+      if (c?.id && !competencias.has(c.id)) {
+        competencias.set(c.id, { id: c.id, nombre: c.get('competencia') ?? '' });
+      }
     }
 
     res.json({
@@ -137,23 +145,24 @@ export async function getEscenariosGrupo(req: Request, res: Response): Promise<v
         totalAsignaciones: totalPorAlumno.get(alumno.id!) ?? 0,
       })),
       preguntas: [...porIdPregunta.values()].map((p) => p.toSafeJSON()),
+      competencias: [...competencias.values()].sort((a, b) => a.nombre.localeCompare(b.nombre)),
     });
   } catch {
-    res.status(500).json({ status: 'error', message: 'Error al obtener los escenarios del grupo' });
+    res.status(500).json({ status: 'error', message: 'Error al obtener las preguntas del grupo' });
   }
 }
 
-/** GET /admin/grupos/:grupoId/escenarios/alumnos/:alumnoId — historial completo. */
+/** GET /admin/grupos/:grupoId/preguntas/alumnos/:alumnoId — historial completo. */
 export async function getHistorialAlumno(req: Request, res: Response): Promise<void> {
   const { grupoId, alumnoId } = req.params;
-  const grupo = await grupoConEscenarios(grupoId, res);
-  if (!grupo) return;
+  if (!(await exigirModulo(grupoId, res))) return;
   try {
-    const q = new Parse.Query<EscenarioAsignacion>('EscenarioAsignacion');
+    const q = new Parse.Query<PreguntaAsignacion>('PreguntaAsignacion');
     q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
     q.equalTo('alumno' as any, AppUser.createWithoutData(alumnoId) as any);
     q.equalTo('exists' as any, true as any);
     q.include('pregunta' as any);
+    q.include('pregunta.competencia' as any);
     q.descending('createdAt');
     q.limit(1000);
     const historial = await q.find({ useMasterKey: true });
@@ -164,7 +173,7 @@ export async function getHistorialAlumno(req: Request, res: Response): Promise<v
 }
 
 /**
- * POST /admin/grupos/:grupoId/escenarios/asignaciones
+ * POST /admin/grupos/:grupoId/preguntas/asignaciones
  * Body: `{ asignaciones: [{ alumnoId, preguntaId, nota?, duracionSegundos? }] }`
  *
  * SIEMPRE en bloque, aunque sea de uno. Los tres gestos de la pantalla —marcar a
@@ -174,8 +183,8 @@ export async function getHistorialAlumno(req: Request, res: Response): Promise<v
  */
 export async function crearAsignaciones(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
-  const grupo = await grupoConEscenarios(grupoId, res);
-  if (!grupo) return;
+  const colecciones = await exigirModulo(grupoId, res);
+  if (!colecciones) return;
 
   const entradas = req.body?.asignaciones;
   if (!Array.isArray(entradas) || entradas.length === 0) {
@@ -211,30 +220,37 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
   }
 
   try {
-    // Los ids se comprueban contra el grupo y el banco: sin esto, un cliente
-    // podría asignarle una pregunta a un alumno de otro grupo.
+    // Los ids se comprueban contra el grupo y contra el banco de SUS materias:
+    // sin esto, un cliente podría asignarle a un alumno una pregunta de una
+    // colección que su grupo no tiene.
     const alumnosDelGrupo = new Set((await getAlumnosDeGrupo(grupoId)).map((a) => a.alumno.id));
-    const ajenos = normalizadas.filter((n) => !alumnosDelGrupo.has(n.alumnoId));
-    if (ajenos.length > 0) {
+    if (normalizadas.some((n) => !alumnosDelGrupo.has(n.alumnoId))) {
       res.status(400).json({ status: 'error', message: 'Hay alumnos que no pertenecen a este grupo' });
       return;
     }
 
     const preguntaIds = [...new Set(normalizadas.map((n) => n.preguntaId))];
-    const qp = new Parse.Query<EscenarioPregunta>('EscenarioPregunta');
+    const qp = new Parse.Query<Pregunta>('Pregunta');
     qp.containedIn('objectId' as any, preguntaIds as any);
+    qp.containedIn(
+      'coleccion' as any,
+      colecciones.map((c) => Coleccion.createWithoutData(c.id!)) as any,
+    );
     qp.equalTo('exists' as any, true as any);
     qp.limit(1000);
     const preguntas = await qp.find({ useMasterKey: true });
     const porId = new Map(preguntas.map((p) => [p.id!, p]));
     if (porId.size !== preguntaIds.length) {
-      res.status(400).json({ status: 'error', message: 'Alguna pregunta indicada ya no existe' });
+      res.status(400).json({
+        status: 'error',
+        message: 'Alguna pregunta indicada ya no existe o no es de una materia de este grupo',
+      });
       return;
     }
 
     const autor = req.appUser as AppUser | undefined;
     const nuevas = normalizadas.map((n) => {
-      const asignacion = new EscenarioAsignacion().initDefaults();
+      const asignacion = new PreguntaAsignacion().initDefaults();
       asignacion.setGrupo(Grupo.createWithoutData(grupoId) as Grupo);
       asignacion.setAlumno(AppUser.createWithoutData(n.alumnoId) as AppUser);
       asignacion.setPregunta(porId.get(n.preguntaId)!);
@@ -248,20 +264,20 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
     await Parse.Object.saveAll(nuevas, { useMasterKey: true });
     res.status(201).json({ status: 'ok', asignaciones: nuevas.map((a) => a.toSafeJSON()) });
   } catch {
-    res.status(500).json({ status: 'error', message: 'Error al asignar los escenarios' });
+    res.status(500).json({ status: 'error', message: 'Error al asignar las preguntas' });
   }
 }
 
-/** PUT /admin/grupos/:grupoId/escenarios/asignaciones/:id — nota, duración o «ya la hice». */
+/** PUT /admin/grupos/:grupoId/preguntas/asignaciones/:id — nota, duración o «ya la hice». */
 export async function actualizarAsignacion(req: Request, res: Response): Promise<void> {
   const { grupoId, id } = req.params;
-  const grupo = await grupoConEscenarios(grupoId, res);
-  if (!grupo) return;
+  if (!(await exigirModulo(grupoId, res))) return;
 
   try {
-    const q = new Parse.Query<EscenarioAsignacion>('EscenarioAsignacion');
+    const q = new Parse.Query<PreguntaAsignacion>('PreguntaAsignacion');
     q.equalTo('exists' as any, true as any);
     q.include('pregunta' as any);
+    q.include('pregunta.competencia' as any);
     const asignacion = await q.get(id, { useMasterKey: true }).catch(() => null);
     // El grupo de la ruta tiene que ser el de la asignación: si no, el guard de
     // acceso al grupo no protegería nada (bastaría pasar un grupo propio).
@@ -294,14 +310,13 @@ export async function actualizarAsignacion(req: Request, res: Response): Promise
   }
 }
 
-/** DELETE /admin/grupos/:grupoId/escenarios/asignaciones/:id */
+/** DELETE /admin/grupos/:grupoId/preguntas/asignaciones/:id */
 export async function borrarAsignacion(req: Request, res: Response): Promise<void> {
   const { grupoId, id } = req.params;
-  const grupo = await grupoConEscenarios(grupoId, res);
-  if (!grupo) return;
+  if (!(await exigirModulo(grupoId, res))) return;
 
   try {
-    const q = new Parse.Query<EscenarioAsignacion>('EscenarioAsignacion');
+    const q = new Parse.Query<PreguntaAsignacion>('PreguntaAsignacion');
     q.equalTo('exists' as any, true as any);
     const asignacion = await q.get(id, { useMasterKey: true }).catch(() => null);
     if (!asignacion || asignacion.getGrupo()?.id !== grupoId) {

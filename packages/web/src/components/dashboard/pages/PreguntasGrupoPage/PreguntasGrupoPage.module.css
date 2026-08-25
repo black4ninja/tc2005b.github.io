@@ -342,3 +342,15 @@
   color: var(--text-secondary);
   font-style: italic;
 }
+
+/* La competencia dentro de la celda de la pregunta: el mismo tinte que en el
+   banco, para que se lea como la misma cosa en las dos pantallas. */
+.competenciaTag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}

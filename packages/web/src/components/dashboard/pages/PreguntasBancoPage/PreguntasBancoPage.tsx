@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useParams, Link } from 'react-router';
 import { createColumnHelper } from '@tanstack/react-table';
 import { confirmar, avisar } from '../../../../utils/dialogos';
 import { useAuth } from '../../../../context/AuthContext';
@@ -7,10 +8,10 @@ import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Icon from '../../atoms/Icon/Icon';
-import EscenarioProyector from '../../organisms/EscenarioProyector/EscenarioProyector';
-import { formatearDuracion, parsearEtiquetas } from '../../../../utils/escenarios';
-import type { EscenarioPregunta } from '../../../../types/escenarios';
-import styles from './EscenariosBancoPage.module.css';
+import PreguntaProyector from '../../organisms/PreguntaProyector/PreguntaProyector';
+import { formatearDuracion, parsearEtiquetas } from '../../../../utils/preguntas';
+import type { Pregunta } from '../../../../types/preguntas';
+import styles from './PreguntasBancoPage.module.css';
 
 const API_BASE = '/api';
 
@@ -18,37 +19,51 @@ function mensajeDeError(e: unknown, porDefecto: string): string {
   return e instanceof Error && e.message ? e.message : porDefecto;
 }
 
+/** Competencia del catálogo, tal como la sirve /admin/competencias. */
+interface CompetenciaOption {
+  id: string;
+  competencia: string;
+  coleccionId: string | null;
+  coleccion: { clave: string | null; nombre: string | null } | null;
+  esCalculada?: boolean;
+}
+
 interface Borrador {
   titulo: string;
   texto: string;
+  competenciaId: string;
   etiquetas: string;
   duracionSegundos: string;
   notas: string;
 }
 
-const VACIO: Borrador = { titulo: '', texto: '', etiquetas: '', duracionSegundos: '180', notas: '' };
+const VACIO: Borrador = { titulo: '', texto: '', competenciaId: '', etiquetas: '', duracionSegundos: '180', notas: '' };
 
 /**
- * Banco de ESCENARIOS: las preguntas que el profesor plantea en las entrevistas
- * personales.
+ * Banco de PREGUNTAS de una materia: lo que el profesor plantea en las
+ * entrevistas personales.
  *
- * Es GLOBAL, no de una colección: estas preguntas se reciclan entre materias y
- * lo que las organiza son las etiquetas. Por eso vive en el menú de admin y no
- * dentro de Contenidos, donde todo cuelga de una asignatura.
+ * Cuelga de la colección, como Ejercicios y Diagramas, y por una razón que no es
+ * solo de simetría: la categoría de una pregunta es una **competencia**, y las
+ * competencias son de una colección.
  */
-export default function EscenariosBancoPage() {
+export default function PreguntasBancoPage() {
+  const { id: coleccionId } = useParams<{ id: string }>();
   const { sessionToken } = useAuth();
-  const [preguntas, setPreguntas] = useState<EscenarioPregunta[]>([]);
+  const [preguntas, setPreguntas] = useState<Pregunta[]>([]);
+  const [competencias, setCompetencias] = useState<CompetenciaOption[]>([]);
+  const [nombreColeccion, setNombreColeccion] = useState('');
   const [verArchivadas, setVerArchivadas] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editando, setEditando] = useState<EscenarioPregunta | null>(null);
+  const [editando, setEditando] = useState<Pregunta | null>(null);
   const [borrador, setBorrador] = useState<Borrador>(VACIO);
+  const [verOtrasMaterias, setVerOtrasMaterias] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [modalError, setModalError] = useState('');
-  const [proyectando, setProyectando] = useState<EscenarioPregunta | null>(null);
+  const [proyectando, setProyectando] = useState<Pregunta | null>(null);
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -56,39 +71,90 @@ export default function EscenariosBancoPage() {
   };
 
   const fetchPreguntas = useCallback(async () => {
+    if (!coleccionId) return;
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/admin/escenarios?archivadas=${verArchivadas}`, {
-        headers: { 'x-session-token': sessionToken ?? '' },
-      });
-      if (!res.ok) throw new Error('Error al cargar el banco de escenarios');
-      const data = (await res.json()) as { preguntas?: EscenarioPregunta[] };
+      const res = await fetch(
+        `${API_BASE}/admin/colecciones/${coleccionId}/preguntas?archivadas=${verArchivadas}`,
+        { headers: { 'x-session-token': sessionToken ?? '' } },
+      );
+      if (!res.ok) throw new Error('Error al cargar el banco de preguntas');
+      const data = (await res.json()) as { preguntas?: Pregunta[] };
       setPreguntas(data.preguntas ?? []);
     } catch (err: unknown) {
-      setError(mensajeDeError(err, 'Error al cargar el banco de escenarios'));
+      setError(mensajeDeError(err, 'Error al cargar el banco de preguntas'));
     } finally {
       setLoading(false);
     }
-  }, [sessionToken, verArchivadas]);
+  }, [coleccionId, sessionToken, verArchivadas]);
 
-  useEffect(() => { fetchPreguntas(); }, [fetchPreguntas]);
+  /**
+   * TODAS las competencias, no solo las de esta colección: se puede enlazar una
+   * de otra materia. El selector las separa, pero el dato tiene que estar.
+   */
+  const fetchCompetencias = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/competencias`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as { competencias?: CompetenciaOption[] };
+      // Las calculadas no se evalúan en entrevista: salen de una fórmula sobre
+      // las demás, así que preguntarle al alumno por ellas no significa nada.
+      setCompetencias((data.competencias ?? []).filter((c) => !c.esCalculada));
+    } catch {
+      // El selector se queda vacío; la pregunta se puede guardar sin competencia.
+    }
+  }, [sessionToken]);
+
+  const fetchNombre = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/colecciones`, { headers: { 'x-session-token': sessionToken ?? '' } });
+      if (!res.ok) return;
+      const data = (await res.json()) as { colecciones?: { id: string; nombre: string; clave: string | null }[] };
+      const c = (data.colecciones ?? []).find((x) => x.id === coleccionId);
+      if (c) setNombreColeccion(c.clave ? `${c.clave} — ${c.nombre}` : c.nombre);
+    } catch {
+      // el nombre es cosmético; ignorar
+    }
+  }, [coleccionId, sessionToken]);
+
+  useEffect(() => {
+    fetchPreguntas();
+    fetchCompetencias();
+    fetchNombre();
+  }, [fetchPreguntas, fetchCompetencias, fetchNombre]);
+
+  const propias = useMemo(
+    () => competencias.filter((c) => c.coleccionId === coleccionId),
+    [competencias, coleccionId],
+  );
+  const ajenas = useMemo(
+    () => competencias.filter((c) => c.coleccionId !== coleccionId),
+    [competencias, coleccionId],
+  );
 
   function abrirNueva() {
     setEditando(null);
     setBorrador(VACIO);
+    setVerOtrasMaterias(false);
     setModalError('');
     setModalOpen(true);
   }
 
-  function abrirEdicion(p: EscenarioPregunta) {
+  function abrirEdicion(p: Pregunta) {
     setEditando(p);
     setBorrador({
       titulo: p.titulo,
       texto: p.texto,
+      competenciaId: p.competenciaId ?? '',
       etiquetas: p.etiquetas.join(', '),
       duracionSegundos: String(p.duracionSegundos),
       notas: p.notas,
     });
+    // Si la que tiene puesta es de otra materia, el selector se abre ya
+    // mostrándolas: si no, el campo aparecería en blanco al editar.
+    setVerOtrasMaterias(!!p.competencia && p.competencia.coleccionId !== coleccionId);
     setModalError('');
     setModalOpen(true);
   }
@@ -100,12 +166,15 @@ export default function EscenariosBancoPage() {
       const cuerpo = {
         titulo: borrador.titulo,
         texto: borrador.texto,
+        competenciaId: borrador.competenciaId,
         etiquetas: parsearEtiquetas(borrador.etiquetas),
         duracionSegundos: Number(borrador.duracionSegundos),
         notas: borrador.notas,
       };
       const res = await fetch(
-        editando ? `${API_BASE}/admin/escenarios/${editando.id}` : `${API_BASE}/admin/escenarios`,
+        editando
+          ? `${API_BASE}/admin/preguntas/${editando.id}`
+          : `${API_BASE}/admin/colecciones/${coleccionId}/preguntas`,
         { method: editando ? 'PUT' : 'POST', headers, body: JSON.stringify(cuerpo) },
       );
       if (!res.ok) {
@@ -121,9 +190,9 @@ export default function EscenariosBancoPage() {
     }
   }
 
-  async function handleArchivar(p: EscenarioPregunta) {
+  async function handleArchivar(p: Pregunta) {
     try {
-      const res = await fetch(`${API_BASE}/admin/escenarios/${p.id}`, {
+      const res = await fetch(`${API_BASE}/admin/preguntas/${p.id}`, {
         method: 'PUT', headers, body: JSON.stringify({ archivada: !p.archivada }),
       });
       if (!res.ok) throw new Error('Error al archivar');
@@ -133,7 +202,7 @@ export default function EscenariosBancoPage() {
     }
   }
 
-  async function handleEliminar(p: EscenarioPregunta) {
+  async function handleEliminar(p: Pregunta) {
     if (!(await confirmar({
       titulo: `¿Eliminar «${p.titulo}»?`,
       texto: 'Si ya se la asignaste a alguien, archívala en vez de borrarla.',
@@ -141,11 +210,11 @@ export default function EscenariosBancoPage() {
       peligro: true,
     }))) return;
     try {
-      const res = await fetch(`${API_BASE}/admin/escenarios/${p.id}`, { method: 'DELETE', headers });
+      const res = await fetch(`${API_BASE}/admin/preguntas/${p.id}`, { method: 'DELETE', headers });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { message?: string };
-        // 409 = está en uso. Es información, no un fallo: se dice y se ofrece
-        // archivar, que es lo que había que hacer.
+        // 409 = está en uso. Es información, no un fallo: se dice y se recuerda
+        // que archivar es lo que había que hacer.
         await avisar({ titulo: 'No se puede eliminar', texto: err.message || 'Error al eliminar', icono: 'warning' });
         return;
       }
@@ -155,9 +224,25 @@ export default function EscenariosBancoPage() {
     }
   }
 
-  const columnHelper = createColumnHelper<EscenarioPregunta>();
+  const columnHelper = createColumnHelper<Pregunta>();
   const columns = useMemo(() => [
     columnHelper.accessor('titulo', { header: 'Título' }),
+    columnHelper.accessor((row) => row.competencia?.competencia ?? '', {
+      id: 'competencia',
+      header: 'Competencia',
+      cell: (info) => {
+        const comp = info.row.original.competencia;
+        if (!comp) return <span className={styles.sinEtiquetas}>—</span>;
+        const deOtra = comp.coleccionId !== coleccionId;
+        return (
+          <span className={`${styles.competencia} ${deOtra ? styles.competenciaAjena : ''}`}
+            title={deOtra ? 'Competencia de otra materia' : undefined}>
+            {deOtra && <Icon name="swap_horiz" size="sm" />}
+            {comp.competencia}
+          </span>
+        );
+      },
+    }),
     columnHelper.accessor((row) => row.etiquetas.join(' '), {
       id: 'etiquetas',
       header: 'Etiquetas',
@@ -183,9 +268,9 @@ export default function EscenariosBancoPage() {
         </span>
       ),
     }),
-  ], [columnHelper]);
+  ], [columnHelper, coleccionId]);
 
-  const getActions = (p: EscenarioPregunta): ActionItem[] => [
+  const getActions = (p: Pregunta): ActionItem[] => [
     { label: 'Editar', icon: 'edit', onClick: () => abrirEdicion(p) },
     { label: 'Proyectar', icon: 'slideshow', onClick: () => setProyectando(p) },
     {
@@ -200,10 +285,14 @@ export default function EscenariosBancoPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.pageTitle}>Escenarios</h1>
+          <Link to={`/admin/contenidos/${coleccionId}`} className={styles.volver}>
+            <Icon name="arrow_back" size="sm" />
+            <span>Colección</span>
+          </Link>
+          <h1 className={styles.pageTitle}>Preguntas{nombreColeccion ? ` — ${nombreColeccion}` : ''}</h1>
           <p className={styles.subtitulo}>
-            Preguntas para las entrevistas personales. El banco es común a todas las materias:
-            lo que las organiza son las etiquetas. Los alumnos no las ven en ningún momento.
+            Preguntas para las entrevistas personales, agrupadas por la competencia que exploran.
+            Los alumnos no las ven en ningún momento.
           </p>
         </div>
         <label className={styles.toggleArchivadas}>
@@ -227,16 +316,16 @@ export default function EscenariosBancoPage() {
           data={preguntas}
           actions={getActions}
           onAdd={abrirNueva}
-          addLabel="Nuevo Escenario"
-          emptyMessage="Todavía no hay preguntas en el banco."
-          searchPlaceholder="Buscar por título o etiqueta..."
+          addLabel="Nueva Pregunta"
+          emptyMessage="Esta materia todavía no tiene preguntas."
+          searchPlaceholder="Buscar por título, competencia o etiqueta..."
         />
       )}
 
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editando ? 'Editar escenario' : 'Nuevo escenario'}
+        title={editando ? 'Editar pregunta' : 'Nueva pregunta'}
         wide
       >
         {modalError && <div className={styles.error}>{modalError}</div>}
@@ -250,7 +339,40 @@ export default function EscenariosBancoPage() {
               placeholder="Conflicto en el equipo"
               autoFocus
             />
-            <small>El rótulo con el que lo eliges en el roster. Corto.</small>
+            <small>El rótulo con el que la eliges en el roster. Corto.</small>
+          </label>
+
+          <label className={styles.campo}>
+            <span>Competencia</span>
+            <select
+              value={borrador.competenciaId}
+              onChange={(e) => setBorrador({ ...borrador, competenciaId: e.target.value })}
+            >
+              <option value="">— Sin competencia —</option>
+              <optgroup label={nombreColeccion || 'Esta materia'}>
+                {propias.map((c) => (
+                  <option key={c.id} value={c.id}>{c.competencia}</option>
+                ))}
+              </optgroup>
+              {verOtrasMaterias && (
+                <optgroup label="Otras materias">
+                  {ajenas.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {(c.coleccion?.clave || '—')} · {c.competencia}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+            <small>
+              Es la categoría de la pregunta: por ella se agrupa y se filtra al asignar.
+              Puede quedarse sin ninguna (abrir la entrevista, romper el hielo).{' '}
+              {!verOtrasMaterias && ajenas.length > 0 && (
+                <button type="button" className={styles.enlaceBtn} onClick={() => setVerOtrasMaterias(true)}>
+                  Ver competencias de otras materias
+                </button>
+              )}
+            </small>
           </label>
 
           <label className={styles.campo}>
@@ -271,9 +393,9 @@ export default function EscenariosBancoPage() {
                 type="text"
                 value={borrador.etiquetas}
                 onChange={(e) => setBorrador({ ...borrador, etiquetas: e.target.value })}
-                placeholder="trabajo en equipo, ética, tc2007b"
+                placeholder="parcial 2, difícil, perfil técnico"
               />
-              <small>Separadas por comas. Es con lo que filtras al asignar.</small>
+              <small>Separadas por comas. Matizan lo que la competencia no distingue.</small>
             </label>
 
             <label className={`${styles.campo} ${styles.campoCorto}`}>
@@ -312,9 +434,9 @@ export default function EscenariosBancoPage() {
       </Modal>
 
       {/* Proyectar desde el banco: sirve para comprobar cómo se lee y cuánto
-          ocupa antes de asignárselo a nadie. Sin alumno ni notas. */}
+          ocupa antes de asignársela a nadie. Sin alumno ni notas. */}
       {proyectando && (
-        <EscenarioProyector
+        <PreguntaProyector
           pregunta={proyectando}
           onSalir={() => setProyectando(null)}
         />
@@ -322,7 +444,8 @@ export default function EscenariosBancoPage() {
 
       <p className={styles.pie}>
         <Icon name="info" size="sm" />
-        Para usarlo en un grupo, enciende <strong>Escenarios</strong> en sus Asignaciones.
+        Para usarlas en un grupo, enciende <strong>Preguntas</strong> en esta materia desde
+        Grupos → Asignaciones.
       </p>
     </div>
   );

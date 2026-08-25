@@ -15,7 +15,6 @@ import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import { useDiagramasNav } from '../../../../context/DiagramasNavContext';
 import { APP_NAME } from '../../../../config/app';
 import { moduloHabilitado } from '../../../../config/modulosContenido';
-import { moduloGrupoHabilitado } from '../../../../config/modulosGrupo';
 import { rutaEjerciciosAdmin, rutaEjerciciosAlumno } from '../../../../config/rutasEjercicios';
 import { rutaDiagramasAdmin, rutaDiagramasAlumno, rutaTallerAdmin, rutaTallerAlumno } from '../../../../config/rutasDiagramas';
 
@@ -81,9 +80,6 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const [tallerHref, setTallerHref] = useState<string | null>(null);
   const [colecciones, setColecciones] = useState<ColeccionGrupo[]>([]);
   // Módulos apagados por colección del grupo: filtran qué secciones aparecen.
-  // Ojo con el nombre: `modulosGrupo` (más abajo) es OTRA cosa —qué secciones
-  // comparte el grupo con el alumno—. Esto es la lista de módulos de grupo.
-  const [modulosDeGrupo, setModulosDeGrupo] = useState<string[]>([]);
   const [modulosDeshabilitados, setModulosDeshabilitados] = useState<Record<string, string[]>>({});
   // Agenda de entrevistas del grupo abierto (admin). La del alumno sale del
   // payload de sesión (user.grupos), no requiere fetch.
@@ -145,14 +141,12 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             urlAgendaEntrevistas?: string | null;
             colecciones?: { id: string; slug: string; nombre: string; clave: string | null }[];
             modulosDeshabilitados?: Record<string, string[]>;
-            modulosGrupo?: string[];
           }) => g.id === grupoId,
         );
         if (found?.name) setGrupoName(found.name);
         setAgendaGrupoHref(found?.urlAgendaEntrevistas ?? null);
         setColecciones(found?.colecciones ?? []);
         setModulosDeshabilitados(found?.modulosDeshabilitados ?? {});
-        setModulosDeGrupo(found?.modulosGrupo ?? []);
       })
       .catch(() => {});
   }, [grupoId, sessionToken]);
@@ -245,6 +239,15 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
     return col ? rutaDiagramasAdmin(grupoId, col.slug) : null;
   }, [colecciones, modulosDeshabilitados, grupoId]);
 
+  // "Preguntas" del grupo abierto: no lleva slug de colección en la ruta —el
+  // roster junta el banco de TODAS las materias del grupo que lo tengan
+  // encendido—, así que basta con saber si alguna lo tiene.
+  const preguntasGrupoHref = useMemo(() => {
+    if (!grupoId) return null;
+    const alguna = colecciones.some((c) => moduloHabilitado(modulosDeshabilitados, c.id, 'preguntas'));
+    return alguna ? `/admin/grupos/${grupoId}/preguntas` : null;
+  }, [colecciones, modulosDeshabilitados, grupoId]);
+
   // El taller del admin cuelga del grupo abierto, igual que el resto del módulo,
   // y se ofrece bajo la misma condición que Diagramas.
   const tallerGrupoHref = grupoId && diagramasGrupoHref ? rutaTallerAdmin(grupoId) : null;
@@ -270,7 +273,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         grupoId!,
         agendaGrupoHref,
         ejerciciosGrupoHref,
-        moduloGrupoHabilitado(modulosDeGrupo, 'escenarios'),
+        preguntasGrupoHref,
       )
     : getSidebarItems(
         role,

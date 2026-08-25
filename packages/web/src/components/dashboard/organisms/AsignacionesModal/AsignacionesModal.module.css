@@ -113,30 +113,3 @@
   }
 }
 
-/* Módulos de GRUPO: van fuera de la lista de colecciones porque no pertenecen a
-   ninguna. El borde inferior es lo que marca que son otra cosa. */
-.grupoModulos {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  padding-bottom: var(--space-md);
-  margin-bottom: var(--space-md);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.grupoModulosTitulo {
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-}
-
-.moduloGrupo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-}

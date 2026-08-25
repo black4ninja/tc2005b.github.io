@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Icon from '../../atoms/Icon/Icon';
-import { formatearDuracion } from '../../../../utils/escenarios';
-import type { EscenarioPregunta } from '../../../../types/escenarios';
+import { formatearDuracion } from '../../../../utils/preguntas';
+import type { Pregunta } from '../../../../types/preguntas';
 import '../../../../styles/contenido-render.css';
-import styles from './EscenarioProyector.module.css';
+import styles from './PreguntaProyector.module.css';
 
-interface EscenarioProyectorProps {
-  pregunta: EscenarioPregunta;
+interface PreguntaProyectorProps {
+  pregunta: Pregunta;
   /** Segundos de ESTA proyección; ausente = los de la pregunta. */
   duracionSegundos?: number | null;
   /** A quién se le está preguntando. Ausente = vista previa desde el banco. */
@@ -33,9 +33,9 @@ interface EscenarioProyectorProps {
  * El temporizador arranca PARADO: entre que se proyecta y el alumno termina de
  * leer pasan unos segundos que no son suyos.
  */
-export default function EscenarioProyector({
+export default function PreguntaProyector({
   pregunta, duracionSegundos, alumno, posicion, onAnterior, onSiguiente, onSalir,
-}: EscenarioProyectorProps) {
+}: PreguntaProyectorProps) {
   const total = duracionSegundos ?? pregunta.duracionSegundos;
   const [restante, setRestante] = useState(total);
   const [corriendo, setCorriendo] = useState(false);

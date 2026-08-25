@@ -1,4 +1,4 @@
-/** Utilidades puras del módulo "Escenarios". */
+/** Utilidades puras del módulo "Preguntas". */
 
 /** `95` → `1:35`. El temporizador se lee en minutos, no en segundos sueltos. */
 export function formatearDuracion(segundos: number): string {

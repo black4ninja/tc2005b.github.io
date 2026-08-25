@@ -4,11 +4,13 @@ import { useAuth } from '../../../../context/AuthContext';
 import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Modal from '../../atoms/Modal/Modal';
-import EscenarioProyector from '../../organisms/EscenarioProyector/EscenarioProyector';
-import SelectorEscenario from '../../organisms/SelectorEscenario/SelectorEscenario';
-import { formatearDuracion, repartirPreguntas } from '../../../../utils/escenarios';
-import type { AlumnoConEscenario, EscenarioAsignacion, EscenarioPregunta } from '../../../../types/escenarios';
-import styles from './EscenariosGrupoPage.module.css';
+import PreguntaProyector from '../../organisms/PreguntaProyector/PreguntaProyector';
+import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta';
+import { formatearDuracion, repartirPreguntas } from '../../../../utils/preguntas';
+import type {
+  AlumnoConPregunta, CompetenciaEnBanco, Pregunta, PreguntaAsignacion,
+} from '../../../../types/preguntas';
+import styles from './PreguntasGrupoPage.module.css';
 
 const API_BASE = '/api';
 
@@ -17,7 +19,7 @@ function mensajeDeError(e: unknown, porDefecto: string): string {
 }
 
 /**
- * Roster de ESCENARIOS de un grupo: a quién le toca qué pregunta.
+ * Roster de PREGUNTAS de un grupo: a quién le toca qué pregunta.
  *
  * La pantalla está montada alrededor de una restricción concreta: son muchos
  * alumnos y hay que personalizar. Por eso hay tres formas de asignar y no una,
@@ -29,26 +31,30 @@ function mensajeDeError(e: unknown, porDefecto: string): string {
  * lo que hace que sellar treinta alumnos se sienta como treinta clics y no como
  * treinta esperas.
  */
-export default function EscenariosGrupoPage() {
+export default function PreguntasGrupoPage() {
   const { id: grupoId } = useParams<{ id: string }>();
   const { sessionToken } = useAuth();
 
   const [habilitado, setHabilitado] = useState(true);
-  const [alumnos, setAlumnos] = useState<AlumnoConEscenario[]>([]);
-  const [preguntas, setPreguntas] = useState<EscenarioPregunta[]>([]);
+  const [alumnos, setAlumnos] = useState<AlumnoConPregunta[]>([]);
+  const [preguntas, setPreguntas] = useState<Pregunta[]>([]);
+  const [competencias, setCompetencias] = useState<CompetenciaEnBanco[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   // Sello: la pregunta activa. Con una elegida, un clic en la fila la asigna.
   const [selloId, setSelloId] = useState<string | null>(null);
+  // Dos ejes de filtro y no uno: la competencia dice QUÉ se explora y la
+  // etiqueta, para quién sirve. Se cruzan.
+  const [competenciaFiltro, setCompetenciaFiltro] = useState<string | null>(null);
   const [etiquetaFiltro, setEtiquetaFiltro] = useState<string | null>(null);
   const [soloSinAsignar, setSoloSinAsignar] = useState(false);
   const [busqueda, setBusqueda] = useState('');
 
-  const [selectorPara, setSelectorPara] = useState<AlumnoConEscenario | null>(null);
+  const [selectorPara, setSelectorPara] = useState<AlumnoConPregunta | null>(null);
   const [selectorSello, setSelectorSello] = useState(false);
-  const [historialDe, setHistorialDe] = useState<AlumnoConEscenario | null>(null);
-  const [historial, setHistorial] = useState<EscenarioAsignacion[]>([]);
+  const [historialDe, setHistorialDe] = useState<AlumnoConPregunta | null>(null);
+  const [historial, setHistorial] = useState<PreguntaAsignacion[]>([]);
   const [proyectando, setProyectando] = useState<number | null>(null);
 
   const headers = useMemo<Record<string, string>>(() => ({
@@ -60,18 +66,22 @@ export default function EscenariosGrupoPage() {
     if (!grupoId) return;
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/escenarios`, {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/preguntas`, {
         headers: { 'x-session-token': sessionToken ?? '' },
       });
-      if (!res.ok) throw new Error('Error al cargar los escenarios del grupo');
+      if (!res.ok) throw new Error('Error al cargar las preguntas del grupo');
       const data = await res.json() as {
-        habilitado?: boolean; alumnos?: AlumnoConEscenario[]; preguntas?: EscenarioPregunta[];
+        habilitado?: boolean;
+        alumnos?: AlumnoConPregunta[];
+        preguntas?: Pregunta[];
+        competencias?: CompetenciaEnBanco[];
       };
       setHabilitado(data.habilitado !== false);
       setAlumnos(data.alumnos ?? []);
       setPreguntas([...(data.preguntas ?? [])].sort((a, b) => a.titulo.localeCompare(b.titulo)));
+      setCompetencias(data.competencias ?? []);
     } catch (err: unknown) {
-      setError(mensajeDeError(err, 'Error al cargar los escenarios del grupo'));
+      setError(mensajeDeError(err, 'Error al cargar las preguntas del grupo'));
     } finally {
       setLoading(false);
     }
@@ -90,8 +100,11 @@ export default function EscenariosGrupoPage() {
 
   /** Las preguntas que el sello, el selector y el reparto tienen a mano. */
   const preguntasFiltradas = useMemo(
-    () => (etiquetaFiltro ? preguntas.filter((p) => p.etiquetas.includes(etiquetaFiltro)) : preguntas),
-    [preguntas, etiquetaFiltro],
+    () => preguntas.filter(
+      (p) => (!competenciaFiltro || p.competenciaId === competenciaFiltro)
+        && (!etiquetaFiltro || p.etiquetas.includes(etiquetaFiltro)),
+    ),
+    [preguntas, competenciaFiltro, etiquetaFiltro],
   );
 
   const visibles = useMemo(() => {
@@ -112,14 +125,14 @@ export default function EscenariosGrupoPage() {
     if (pares.length === 0 || !grupoId) return;
     setError('');
     try {
-      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/escenarios/asignaciones`, {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/preguntas/asignaciones`, {
         method: 'POST', headers, body: JSON.stringify({ asignaciones: pares }),
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { message?: string };
         throw new Error(err.message || 'Error al asignar');
       }
-      const data = await res.json() as { asignaciones?: EscenarioAsignacion[] };
+      const data = await res.json() as { asignaciones?: PreguntaAsignacion[] };
       const nuevas = new Map((data.asignaciones ?? []).map((a) => [a.alumnoId, a]));
       setAlumnos((prev) => prev.map((a) => {
         const nueva = nuevas.get(a.id);
@@ -133,13 +146,13 @@ export default function EscenariosGrupoPage() {
     }
   }
 
-  async function quitar(alumno: AlumnoConEscenario) {
+  async function quitar(alumno: AlumnoConPregunta) {
     if (!alumno.asignacion || !grupoId) return;
     const asignacionId = alumno.asignacion.id;
     setAlumnos((prev) => prev.map((a) => (a.id === alumno.id ? { ...a, asignacion: null } : a)));
     try {
       const res = await fetch(
-        `${API_BASE}/admin/grupos/${grupoId}/escenarios/asignaciones/${asignacionId}`,
+        `${API_BASE}/admin/grupos/${grupoId}/preguntas/asignaciones/${asignacionId}`,
         { method: 'DELETE', headers },
       );
       if (!res.ok) throw new Error('Error al quitar la asignación');
@@ -152,7 +165,7 @@ export default function EscenariosGrupoPage() {
     }
   }
 
-  async function actualizar(alumno: AlumnoConEscenario, cambios: { nota?: string; usada?: boolean }) {
+  async function actualizar(alumno: AlumnoConPregunta, cambios: { nota?: string; usada?: boolean }) {
     if (!alumno.asignacion || !grupoId) return;
     const asignacionId = alumno.asignacion.id;
     setAlumnos((prev) => prev.map((a) => (
@@ -162,7 +175,7 @@ export default function EscenariosGrupoPage() {
     )));
     try {
       const res = await fetch(
-        `${API_BASE}/admin/grupos/${grupoId}/escenarios/asignaciones/${asignacionId}`,
+        `${API_BASE}/admin/grupos/${grupoId}/preguntas/asignaciones/${asignacionId}`,
         { method: 'PUT', headers, body: JSON.stringify(cambios) },
       );
       if (!res.ok) throw new Error('Error al guardar el cambio');
@@ -172,16 +185,16 @@ export default function EscenariosGrupoPage() {
     }
   }
 
-  async function abrirHistorial(alumno: AlumnoConEscenario) {
+  async function abrirHistorial(alumno: AlumnoConPregunta) {
     setHistorialDe(alumno);
     setHistorial([]);
     try {
       const res = await fetch(
-        `${API_BASE}/admin/grupos/${grupoId}/escenarios/alumnos/${alumno.id}`,
+        `${API_BASE}/admin/grupos/${grupoId}/preguntas/alumnos/${alumno.id}`,
         { headers: { 'x-session-token': sessionToken ?? '' } },
       );
       if (!res.ok) return;
-      const data = await res.json() as { historial?: EscenarioAsignacion[] };
+      const data = await res.json() as { historial?: PreguntaAsignacion[] };
       setHistorial(data.historial ?? []);
     } catch {
       // El historial es consulta: si falla, el modal se queda vacío y ya.
@@ -189,7 +202,7 @@ export default function EscenariosGrupoPage() {
   }
 
   /** Clic en la fila: con sello puesto asigna; sin él, abre el selector. */
-  function handleFila(alumno: AlumnoConEscenario) {
+  function handleFila(alumno: AlumnoConPregunta) {
     if (sello) asignar([{ alumnoId: alumno.id, preguntaId: sello.id }]);
     else setSelectorPara(alumno);
   }
@@ -210,12 +223,13 @@ export default function EscenariosGrupoPage() {
   if (!habilitado) {
     return (
       <div className={styles.page}>
-        <h1 className={styles.pageTitle}>Escenarios</h1>
+        <h1 className={styles.pageTitle}>Preguntas</h1>
         <div className={styles.apagado}>
           <Icon name="quiz" size="lg" />
-          <p>El módulo <strong>Escenarios</strong> no está encendido en este grupo.</p>
+          <p>Ninguna materia de este grupo tiene el módulo <strong>Preguntas</strong> encendido.</p>
           <p className={styles.hint}>
-            Se enciende en <Link to="/admin/grupos">Grupos → Asignaciones</Link>, en «Módulos del grupo».
+            Se enciende en <Link to="/admin/grupos">Grupos → Asignaciones</Link>, dentro de la materia
+            que se evalúa. El banco se llena en Contenidos → la materia → Preguntas.
           </p>
         </div>
       </div>
@@ -226,7 +240,7 @@ export default function EscenariosGrupoPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.pageTitle}>Escenarios</h1>
+          <h1 className={styles.pageTitle}>Preguntas</h1>
           <p className={styles.subtitulo}>
             La pregunta que le toca a cada alumno en su entrevista. Los alumnos no ven nada de esto.
           </p>
@@ -298,6 +312,26 @@ export default function EscenariosGrupoPage() {
           <input type="checkbox" checked={soloSinAsignar} onChange={(e) => setSoloSinAsignar(e.target.checked)} />
           <span>Solo sin asignar</span>
         </label>
+        {competencias.length > 0 && (
+          <div className={styles.chips}>
+            <span className={styles.chipsTitulo}>Competencia:</span>
+            <button
+              className={`${styles.chip} ${competenciaFiltro === null ? styles.chipActivo : ''}`}
+              onClick={() => setCompetenciaFiltro(null)}
+            >
+              todas
+            </button>
+            {competencias.map((c) => (
+              <button
+                key={c.id}
+                className={`${styles.chip} ${competenciaFiltro === c.id ? styles.chipActivo : ''}`}
+                onClick={() => setCompetenciaFiltro(competenciaFiltro === c.id ? null : c.id)}
+              >
+                {c.nombre}
+              </button>
+            ))}
+          </div>
+        )}
         {etiquetas.length > 0 && (
           <div className={styles.chips}>
             <span className={styles.chipsTitulo}>Etiqueta:</span>
@@ -355,6 +389,12 @@ export default function EscenariosGrupoPage() {
                     {asignacion?.pregunta ? (
                       <>
                         <span className={styles.preguntaTitulo}>{asignacion.pregunta.titulo}</span>
+                        {/* La competencia en la propia celda: es lo que hace
+                            legible de un vistazo si el grupo está cubriendo
+                            todas o si media clase lleva la misma. */}
+                        {asignacion.pregunta.competencia && (
+                          <span className={styles.competenciaTag}>{asignacion.pregunta.competencia}</span>
+                        )}
                         {asignacion.pregunta.archivada && (
                           <span className={styles.archivadaTag} title="Esta pregunta ya no está en el banco">archivada</span>
                         )}
@@ -426,7 +466,7 @@ export default function EscenariosGrupoPage() {
 
       {/* Selector para UN alumno */}
       {selectorPara && (
-        <SelectorEscenario
+        <SelectorPregunta
           preguntas={preguntasFiltradas}
           titulo={`Pregunta para ${selectorPara.name}`}
           onElegir={(p) => {
@@ -439,7 +479,7 @@ export default function EscenariosGrupoPage() {
 
       {/* Selector de la pregunta activa (el sello) */}
       {selectorSello && (
-        <SelectorEscenario
+        <SelectorPregunta
           preguntas={preguntasFiltradas}
           titulo="Pregunta activa"
           onElegir={(p) => { setSelloId(p.id); setSelectorSello(false); }}
@@ -462,6 +502,9 @@ export default function EscenariosGrupoPage() {
                   {new Date(a.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </span>
                 <span>{a.pregunta?.titulo ?? '—'}</span>
+                {a.pregunta?.competencia && (
+                  <span className={styles.competenciaTag}>{a.pregunta.competencia}</span>
+                )}
                 {a.usada && <span className={styles.historialUsada}>preguntada</span>}
                 {a.nota && <span className={styles.historialNota}>{a.nota}</span>}
               </li>
@@ -475,7 +518,7 @@ export default function EscenariosGrupoPage() {
         const pregunta = porId.get(alumno.asignacion!.pregunta!.id);
         if (!pregunta) return null;
         return (
-          <EscenarioProyector
+          <PreguntaProyector
             pregunta={pregunta}
             duracionSegundos={alumno.asignacion!.duracionSegundos}
             alumno={{ name: alumno.name, matricula: alumno.matricula }}
