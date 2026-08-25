@@ -11,6 +11,12 @@ interface SelectorPreguntaProps {
   competencias?: CompetenciaEnBanco[];
   /** Competencia con la que abrir el filtro (el hueco que se está llenando). */
   competenciaInicial?: string | null;
+  /**
+   * Preguntas que ESTE alumno ya tiene en la misma competencia (el otro
+   * intento). Se marcan pero no se bloquean: repetirle la misma no evalúa nada,
+   * pero la decisión sigue siendo del profesor.
+   */
+  yaDelAlumno?: Set<string>;
   onElegir: (pregunta: Pregunta) => void;
   onCerrar: () => void;
 }
@@ -28,7 +34,8 @@ interface SelectorPreguntaProps {
  * ninguna pista de por qué ya no está.
  */
 export default function SelectorPregunta({
-  preguntas, titulo, competencias = [], competenciaInicial = null, onElegir, onCerrar,
+  preguntas, titulo, competencias = [], competenciaInicial = null,
+  yaDelAlumno = new Set(), onElegir, onCerrar,
 }: SelectorPreguntaProps) {
   const [texto, setTexto] = useState('');
   const [competencia, setCompetencia] = useState<string | null>(competenciaInicial);
@@ -130,6 +137,12 @@ export default function SelectorPregunta({
                       <span className={styles.competencia}>{p.competencia.competencia}</span>
                     )}
                     {p.etiquetas.map((e) => <span key={e} className={styles.chip}>{e}</span>)}
+                    {yaDelAlumno.has(p.id) && (
+                      <span className={styles.mismoAlumno}>
+                        <Icon name="replay" size="sm" />
+                        ya se la pusiste a este alumno
+                      </span>
+                    )}
                     {p.uso && (
                       <span className={styles.tomada} title={p.uso.quienes.join('\n')}>
                         <Icon name="history" size="sm" />

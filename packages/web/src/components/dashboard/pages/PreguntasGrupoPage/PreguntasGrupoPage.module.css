@@ -553,3 +553,33 @@
   text-decoration: none;
   cursor: default;
 }
+
+/* Selector de intento: va pegado a las píldoras de competencia porque juntos
+   forman el hueco en el que se trabaja. */
+.intentos {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: var(--space-sm);
+  padding-left: var(--space-sm);
+  border-left: 1px solid var(--border-color);
+}
+
+/* Cuántos de los dos intentos lleva llenos en esa competencia. */
+.huecoCuenta {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  opacity: 0.8;
+}
+
+/* Los dos intentos puestos: se distingue de «uno sí, otro no». */
+.huecoCompleto {
+  background: var(--estado-exito-bg);
+  border-color: var(--estado-exito-color);
+}
+
+.historialIntento {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}

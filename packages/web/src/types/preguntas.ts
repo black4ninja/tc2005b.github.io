@@ -62,7 +62,9 @@ export interface PreguntaDeAsignacion {
 export interface PreguntaAsignacion {
   id: string;
   alumnoId: string;
-  /** Competencia que ocupa (`sin-competencia` si la pregunta no tiene). */
+  /** Qué entrevista de esa competencia es: 1 o 2. */
+  intento: number;
+  /** Hueco que ocupa: `<competenciaId>::<intento>`. */
   hueco?: string;
   pregunta: PreguntaDeAsignacion | null;
   /** Ajuste para este alumno. Solo lo ve el profesor. */

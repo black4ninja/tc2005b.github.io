@@ -15,6 +15,8 @@ import styles from './PreguntasGrupoPage.module.css';
 
 const API_BASE = '/api';
 const SIN_COMPETENCIA = 'sin-competencia';
+/** Espejo de `MAX_INTENTOS` del API: hasta dos entrevistas por competencia. */
+const MAX_INTENTOS = 2;
 
 function mensajeDeError(e: unknown, porDefecto: string): string {
   return e instanceof Error && e.message ? e.message : porDefecto;
@@ -25,10 +27,15 @@ type Vista = 'alumnos' | 'preguntas';
 /**
  * Roster de PREGUNTAS de un grupo: a quién le toca qué.
  *
- * La regla que manda sobre el diseño: **una pregunta por competencia y alumno**.
- * Cada competencia con banco es un hueco, y el filtro de competencia no es un
- * filtro sino un MODO: con «todas» se ve el mapa del grupo de un vistazo y con
- * una elegida se trabaja en ella (nota, proyectar, marcar como hecha).
+ * La regla que manda sobre el diseño: **una pregunta por competencia, alumno e
+ * intento**. Cada competencia admite hasta dos entrevistas, así que cada alumno
+ * tiene `competencias × 2` huecos.
+ *
+ * Competencia e intento no son filtros: son el MODO de trabajo. Con «todas» se
+ * ve el mapa del grupo de un vistazo —cuántos huecos lleva llenos cada alumno en
+ * cada competencia— y al elegir competencia + intento se trabaja en ese hueco
+ * concreto (nota, proyectar, marcar como hecha). Sin ese corte, una tabla con
+ * una columna por competencia y por intento no cabe en la pantalla.
  *
  * Repetir una pregunta está permitido —en el grupo y entre grupos—, así que el
  * reparto puede reciclar el banco y nadie se queda sin. Lo que sí se enseña es a
@@ -53,6 +60,7 @@ export default function PreguntasGrupoPage() {
 
   const [vista, setVista] = useState<Vista>('alumnos');
   const [competenciaActiva, setCompetenciaActiva] = useState<string | null>(null);
+  const [intentoActivo, setIntentoActivo] = useState(1);
   const [soloSinAsignar, setSoloSinAsignar] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [busquedaPregunta, setBusquedaPregunta] = useState('');
@@ -61,7 +69,9 @@ export default function PreguntasGrupoPage() {
   const [duracionBorrador, setDuracionBorrador] = useState('');
 
   // Hueco que se está llenando: alumno + competencia.
-  const [eligiendoPara, setEligiendoPara] = useState<{ alumno: AlumnoConPregunta; hueco: string | null } | null>(null);
+  const [eligiendoPara, setEligiendoPara] = useState<
+    { alumno: AlumnoConPregunta; competenciaId: string; intento: number } | null
+  >(null);
   // Camino inverso: pregunta elegida, falta el alumno.
   const [eligiendoAlumno, setEligiendoAlumno] = useState<Pregunta | null>(null);
   const [historialDe, setHistorialDe] = useState<AlumnoConPregunta | null>(null);
@@ -123,9 +133,30 @@ export default function PreguntasGrupoPage() {
     return { duracionVigente: duracion.porDefecto, fuenteDuracion: 'según cada materia' };
   }, [duracion]);
 
-  /** Asignación de un alumno en un hueco concreto. */
-  function asignacionDe(alumno: AlumnoConPregunta, hueco: string): PreguntaAsignacion | null {
-    return alumno.asignaciones.find((a) => a.hueco === hueco) ?? null;
+  /** Asignación de un alumno en un hueco concreto (competencia + intento). */
+  function asignacionDe(
+    alumno: AlumnoConPregunta,
+    competenciaId: string,
+    intento: number,
+  ): PreguntaAsignacion | null {
+    return alumno.asignaciones.find(
+      (a) => a.hueco === `${competenciaId}::${intento}`,
+    ) ?? null;
+  }
+
+  /** Cuántos de los dos intentos lleva llenos en esa competencia. */
+  function llenosEn(alumno: AlumnoConPregunta, competenciaId: string): number {
+    let n = 0;
+    for (let i = 1; i <= MAX_INTENTOS; i += 1) if (asignacionDe(alumno, competenciaId, i)) n += 1;
+    return n;
+  }
+
+  /** El primer intento sin pregunta, o el último si están todos llenos. */
+  function primerHuecoLibre(alumno: AlumnoConPregunta, competenciaId: string): number {
+    for (let i = 1; i <= MAX_INTENTOS; i += 1) {
+      if (!asignacionDe(alumno, competenciaId, i)) return i;
+    }
+    return MAX_INTENTOS;
   }
 
   /** Huecos que hay que llenar: todos los de la competencia activa, o todos. */
@@ -134,9 +165,15 @@ export default function PreguntasGrupoPage() {
     [competencias, competenciaActiva],
   );
 
-  /** A quién le falta algo de lo visible. */
+  /**
+   * A quién le falta algo de lo visible. Con «todas» mira los dos intentos de
+   * cada competencia; con una elegida, solo el intento en el que se trabaja.
+   */
   function leFalta(alumno: AlumnoConPregunta): boolean {
-    return huecosVisibles.some((c) => !asignacionDe(alumno, c.id));
+    if (competenciaActiva) return !asignacionDe(alumno, competenciaActiva, intentoActivo);
+    return huecosVisibles.some(
+      (c) => llenosEn(alumno, c.id) < MAX_INTENTOS,
+    );
   }
 
   const visibles = useMemo(() => {
@@ -150,23 +187,30 @@ export default function PreguntasGrupoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alumnos, soloSinAsignar, busqueda, huecosVisibles]);
 
-  const sinLlenar = useMemo(() => alumnos.filter(leFalta).length, [alumnos, huecosVisibles]);
-  const totalHuecos = alumnos.length * huecosVisibles.length;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const sinLlenar = useMemo(() => alumnos.filter(leFalta).length, [alumnos, huecosVisibles, competenciaActiva, intentoActivo]);
+  const totalHuecos = alumnos.length * huecosVisibles.length * (competenciaActiva ? 1 : MAX_INTENTOS);
   const llenos = useMemo(
-    () => alumnos.reduce((n, a) => n + huecosVisibles.filter((c) => asignacionDe(a, c.id)).length, 0),
-    [alumnos, huecosVisibles],
+    () => alumnos.reduce((n, a) => n + (competenciaActiva
+      ? (asignacionDe(a, competenciaActiva, intentoActivo) ? 1 : 0)
+      : huecosVisibles.reduce((m, c) => m + llenosEn(a, c.id), 0)), 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [alumnos, huecosVisibles, competenciaActiva, intentoActivo],
   );
 
   /** Pares (alumno, asignación) proyectables, en el orden en que se ven. */
   const paraProyectar = useMemo(
     () => visibles.flatMap((alumno) => huecosVisibles
-      .map((c) => asignacionDe(alumno, c.id))
+      .flatMap((c) => (competenciaActiva
+        ? [asignacionDe(alumno, c.id, intentoActivo)]
+        : Array.from({ length: MAX_INTENTOS }, (_, i) => asignacionDe(alumno, c.id, i + 1))))
       .filter((a): a is PreguntaAsignacion => !!a?.pregunta)
       .map((a) => ({ alumno, asignacion: a }))),
-    [visibles, huecosVisibles],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visibles, huecosVisibles, competenciaActiva, intentoActivo],
   );
 
-  async function asignar(pares: { alumnoId: string; preguntaId: string }[]) {
+  async function asignar(pares: { alumnoId: string; preguntaId: string; intento: number }[]) {
     if (pares.length === 0 || !grupoId) return;
     setError('');
     setAviso('');
@@ -266,14 +310,42 @@ export default function PreguntasGrupoPage() {
    * más espaciadas posible. Repetir está permitido, así que nadie se queda sin.
    */
   function repartir() {
-    const pares: { alumnoId: string; preguntaId: string }[] = [];
+    const pares: { alumnoId: string; preguntaId: string; intento: number }[] = [];
+    // Con una competencia elegida se reparte SU intento; con «todas», los dos de
+    // cada competencia, y el segundo después del primero para que ya sepa qué le
+    // tocó al alumno y no se lo repita.
+    const intentos = competenciaActiva
+      ? [intentoActivo]
+      : Array.from({ length: MAX_INTENTOS }, (_, i) => i + 1);
+
     for (const competencia of huecosVisibles) {
-      const pendientes = alumnos.filter((a) => !asignacionDe(a, competencia.id));
       const disponibles = preguntas.filter(
         (p) => !p.archivada && (p.competenciaId ?? SIN_COMPETENCIA) === competencia.id,
       );
-      pares.push(...repartirPreguntas(pendientes.map((a) => a.id), disponibles.map((p) => p.id))
-        .map((r) => ({ alumnoId: r.alumnoId, preguntaId: r.preguntaId })));
+      if (disponibles.length === 0) continue;
+      for (const intento of intentos) {
+        const pendientes = alumnos.filter((a) => !asignacionDe(a, competencia.id, intento));
+        const reparto = repartirPreguntas(
+          pendientes.map((a) => a.id),
+          disponibles.map((p) => p.id),
+        );
+        for (const r of reparto) {
+          // Repetirle a un alumno la MISMA pregunta en su segundo intento no
+          // evalúa nada: se le busca otra del montón, y solo si el banco tiene
+          // una sola pregunta se deja pasar.
+          const alumno = alumnos.find((a) => a.id === r.alumnoId);
+          const yaLaTiene = !!alumno && Array.from({ length: MAX_INTENTOS }, (_, i) => i + 1)
+            .some((otro) => asignacionDe(alumno, competencia.id, otro)?.pregunta?.id === r.preguntaId)
+            || pares.some((x) => x.alumnoId === r.alumnoId && x.preguntaId === r.preguntaId);
+          let preguntaId = r.preguntaId;
+          if (yaLaTiene && disponibles.length > 1) {
+            const otra = disponibles.find((p) => p.id !== r.preguntaId
+              && !pares.some((x) => x.alumnoId === r.alumnoId && x.preguntaId === p.id));
+            if (otra) preguntaId = otra.id;
+          }
+          pares.push({ alumnoId: r.alumnoId, preguntaId, intento });
+        }
+      }
     }
     if (pares.length === 0) {
       setAviso('No hay huecos que llenar, o esas competencias no tienen preguntas en el banco.');
@@ -317,8 +389,8 @@ export default function PreguntasGrupoPage() {
         <div>
           <h1 className={styles.pageTitle}>Preguntas</h1>
           <p className={styles.subtitulo}>
-            Una pregunta por competencia y alumno. Los alumnos no ven nada de esto y no afecta
-            a su calificación.
+            Una pregunta por competencia e intento: cada competencia admite hasta {MAX_INTENTOS}{' '}
+            entrevistas. Los alumnos no ven nada de esto y no afecta a su calificación.
           </p>
         </div>
         <div className={styles.headerLado}>
@@ -408,6 +480,24 @@ export default function PreguntasGrupoPage() {
             {c.nombre} <span className={styles.chipContador}>{c.total}</span>
           </button>
         ))}
+
+        {/* El intento solo tiene sentido dentro de una competencia: con «todas»
+            la tabla enseña los dos a la vez. */}
+        {competenciaActiva && (
+          <span className={styles.intentos}>
+            <span className={styles.chipsTitulo}>Intento:</span>
+            {Array.from({ length: MAX_INTENTOS }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                className={`${styles.chip} ${intentoActivo === n ? styles.chipActivo : ''}`}
+                onClick={() => setIntentoActivo(n)}
+                title={n === 1 ? 'Primera entrevista' : 'Segunda oportunidad'}
+              >
+                {n}.º
+              </button>
+            ))}
+          </span>
+        )}
       </div>
 
       {vista === 'alumnos' ? (
@@ -432,8 +522,8 @@ export default function PreguntasGrupoPage() {
                 onClick={repartir}
                 disabled={sinLlenar === 0}
                 title={competenciaActiva
-                  ? 'Da una pregunta de esta competencia a cada alumno que no tenga'
-                  : 'Da una pregunta de cada competencia a cada alumno que no tenga'}
+                  ? `Da una pregunta de esta competencia a cada alumno sin ${intentoActivo}.º intento`
+                  : 'Llena todos los huecos vacíos: cada competencia y cada intento'}
               >
                 Repartir al grupo ({sinLlenar})
               </DashButton>
@@ -451,7 +541,7 @@ export default function PreguntasGrupoPage() {
             <thead>
               <tr>
                 <th>Alumno</th>
-                <th>{competenciaActiva ? 'Pregunta' : 'Preguntas por competencia'}</th>
+                <th>{competenciaActiva ? `Pregunta · ${intentoActivo}.º intento` : 'Intentos por competencia'}</th>
                 {competenciaActiva && <th>Nota para ti</th>}
                 <th className={styles.colAcciones}>{competenciaActiva ? 'Acciones' : ''}</th>
               </tr>
@@ -461,7 +551,9 @@ export default function PreguntasGrupoPage() {
                 <tr><td colSpan={4} className={styles.vacio}>No hay alumnos que mostrar.</td></tr>
               )}
               {visibles.map((alumno) => {
-                const unica = competenciaActiva ? asignacionDe(alumno, competenciaActiva) : null;
+                const unica = competenciaActiva
+                  ? asignacionDe(alumno, competenciaActiva, intentoActivo)
+                  : null;
                 return (
                   <tr key={alumno.id} className={unica?.usada ? styles.filaUsada : ''}>
                     <td>
@@ -473,7 +565,9 @@ export default function PreguntasGrupoPage() {
                       <td>
                         <button
                           className={`${styles.celdaPregunta} ${unica ? '' : styles.celdaVacia}`}
-                          onClick={() => setEligiendoPara({ alumno, hueco: competenciaActiva })}
+                          onClick={() => setEligiendoPara({
+                            alumno, competenciaId: competenciaActiva, intento: intentoActivo,
+                          })}
                           title={unica ? 'Cambiar la pregunta' : 'Elegir pregunta'}
                         >
                           {unica?.pregunta ? (
@@ -496,16 +590,24 @@ export default function PreguntasGrupoPage() {
                       <td>
                         <div className={styles.chipsHuecos}>
                           {competencias.map((c) => {
-                            const a = asignacionDe(alumno, c.id);
+                            const llenos = llenosEn(alumno, c.id);
+                            const libre = primerHuecoLibre(alumno, c.id);
+                            const completa = llenos === MAX_INTENTOS;
                             return (
                               <button
                                 key={c.id}
-                                className={`${styles.hueco} ${a ? styles.huecoLleno : ''}`}
-                                onClick={() => setEligiendoPara({ alumno, hueco: c.id })}
-                                title={a?.pregunta ? a.pregunta.texto : `Sin pregunta de ${c.nombre}`}
+                                className={`${styles.hueco} ${llenos > 0 ? styles.huecoLleno : ''} ${completa ? styles.huecoCompleto : ''}`}
+                                // Un clic aquí llena el PRIMER intento libre; para
+                                // trabajar uno concreto se entra por su modo.
+                                onClick={() => setEligiendoPara({
+                                  alumno, competenciaId: c.id, intento: libre,
+                                })}
+                                title={completa
+                                  ? `${c.nombre}: los ${MAX_INTENTOS} intentos asignados`
+                                  : `${c.nombre}: asignar el ${libre}.º intento`}
                               >
                                 <span className={styles.huecoNombre}>{c.nombre}</span>
-                                {a ? <Icon name="check" size="sm" /> : <Icon name="add" size="sm" />}
+                                <span className={styles.huecoCuenta}>{llenos}/{MAX_INTENTOS}</span>
                               </button>
                             );
                           })}
@@ -630,10 +732,22 @@ export default function PreguntasGrupoPage() {
         <SelectorPregunta
           preguntas={preguntas.filter((p) => !p.archivada)}
           competencias={competencias}
-          competenciaInicial={eligiendoPara.hueco}
-          titulo={`Pregunta para ${eligiendoPara.alumno.name}`}
+          competenciaInicial={eligiendoPara.competenciaId}
+          titulo={`Pregunta para ${eligiendoPara.alumno.name} · ${eligiendoPara.intento}.º intento`}
+          // Las que ese alumno ya tiene en el otro intento de esta competencia:
+          // repetírselas no evalúa nada, así que se marcan.
+          yaDelAlumno={new Set(
+            eligiendoPara.alumno.asignaciones
+              .filter((a) => a.hueco?.startsWith(`${eligiendoPara.competenciaId}::`))
+              .map((a) => a.pregunta?.id)
+              .filter((id): id is string => !!id),
+          )}
           onElegir={(p) => {
-            asignar([{ alumnoId: eligiendoPara.alumno.id, preguntaId: p.id }]);
+            asignar([{
+              alumnoId: eligiendoPara.alumno.id,
+              preguntaId: p.id,
+              intento: eligiendoPara.intento,
+            }]);
             setEligiendoPara(null);
           }}
           onCerrar={() => setEligiendoPara(null)}
@@ -649,11 +763,17 @@ export default function PreguntasGrupoPage() {
           // la fila en vez de esconderlo, porque a veces es justo lo que se busca.
           yaTienen={new Set(
             alumnos
-              .filter((a) => asignacionDe(a, eligiendoAlumno.competenciaId ?? SIN_COMPETENCIA))
+              .filter((a) => llenosEn(a, eligiendoAlumno.competenciaId ?? SIN_COMPETENCIA) >= MAX_INTENTOS)
               .map((a) => a.id),
           )}
           onElegir={(alumno) => {
-            asignar([{ alumnoId: alumno.id, preguntaId: eligiendoAlumno.id }]);
+            // Cae en el primer intento libre de esa competencia; si los dos están
+            // ocupados, sustituye el último.
+            asignar([{
+              alumnoId: alumno.id,
+              preguntaId: eligiendoAlumno.id,
+              intento: primerHuecoLibre(alumno, eligiendoAlumno.competenciaId ?? SIN_COMPETENCIA),
+            }]);
             setEligiendoAlumno(null);
           }}
           onCerrar={() => setEligiendoAlumno(null)}
@@ -674,6 +794,7 @@ export default function PreguntasGrupoPage() {
                 <span className={styles.historialFecha}>
                   {new Date(a.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </span>
+                <span className={styles.historialIntento}>{a.intento}.º</span>
                 <span>{a.pregunta ? resumenPregunta(a.pregunta.texto, 70) : '—'}</span>
                 {a.pregunta?.competencia && (
                   <span className={styles.competenciaTag}>{a.pregunta.competencia}</span>

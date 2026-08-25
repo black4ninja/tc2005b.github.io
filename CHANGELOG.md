@@ -82,10 +82,17 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     es que no existe el endpoint. Las notas del profesor —qué buscar en la
     respuesta, el ajuste para ese alumno— no se pintan ni siquiera en la vista
     que se proyecta, que es justo la pantalla que el alumno mira.
-  - **Una pregunta por competencia y alumno.** Cada competencia con banco es un
-    hueco, y el filtro de competencia no es un filtro sino un modo: con «todas»
-    se ve el mapa del grupo de un vistazo y con una elegida se trabaja en ella
-    (nota, proyectar, marcar como hecha).
+  - **Una pregunta por competencia, alumno e intento.** Cada competencia admite
+    hasta **dos entrevistas** —la segunda es la oportunidad de quien no salió
+    bien en la primera—, así que cada alumno tiene `competencias × 2` huecos.
+    Competencia e intento no son filtros: son el modo de trabajo. Con «todas» se
+    ve el mapa del grupo (cuántos huecos lleva cada alumno en cada competencia) y
+    al elegir competencia + intento se trabaja en ese hueco concreto. Sin ese
+    corte, una tabla con una columna por competencia y por intento no cabría.
+  - Al repartir el segundo intento **no se le repite al alumno la pregunta que ya
+    tuvo** en el primero, y si se elige a mano el selector lo avisa: la misma
+    pregunta dos veces no evalúa nada. Repetirla entre alumnos distintos sigue
+    estando permitido.
   - **Repetir una pregunta está permitido**, en el mismo grupo y entre grupos. Se
     probó a impedirlo y la restricción salía carísima: obligaba a tener tantas
     preguntas como alumnos por cada competencia. En su lugar el sistema se limita

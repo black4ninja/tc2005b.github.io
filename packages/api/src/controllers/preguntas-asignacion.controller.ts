@@ -9,7 +9,7 @@ import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
 import { coleccionesDeGrupo } from '../services/grupo-colecciones.service.js';
 import { normalizarDuracion } from '../services/preguntas.service.js';
 import { usoDePreguntas } from '../services/preguntas-uso.service.js';
-import { DURACION_POR_DEFECTO } from '../constants/preguntas.js';
+import { DURACION_POR_DEFECTO, MAX_INTENTOS } from '../constants/preguntas.js';
 
 /**
  * Asignación de preguntas a los alumnos de UN grupo.
@@ -19,9 +19,10 @@ import { DURACION_POR_DEFECTO } from '../constants/preguntas.js';
  * (`requireGrupoAccess`). Por eso el listado sirve también el banco: el profesor
  * lo necesita para asignar y no tiene permiso sobre `/admin/colecciones/...`.
  *
- * La regla que gobierna el módulo vive aquí: **una pregunta por competencia y
- * alumno**. Asignar otra de la misma competencia SUSTITUYE a la anterior en vez
- * de acumularse.
+ * La regla que gobierna el módulo vive aquí: **una pregunta por competencia,
+ * alumno e INTENTO**. Cada competencia admite hasta `MAX_INTENTOS` entrevistas
+ * —la segunda es la oportunidad de quien no salió bien en la primera—, y asignar
+ * otra pregunta al mismo hueco sustituye a la que estaba.
  *
  * Lo que NO hay es unicidad: la misma pregunta puede tocarle a varios alumnos,
  * del mismo grupo o de otros. Se probó a impedirlo y sobraba —obligaba a tener
@@ -36,14 +37,25 @@ import { DURACION_POR_DEFECTO } from '../constants/preguntas.js';
 const MAX_BULK = 500;
 
 /**
- * Clave del hueco que ocupa una pregunta en un alumno. Las preguntas sin
- * competencia comparten un hueco propio: también son una por alumno, porque si
- * no «una por competencia» dejaría una puerta abierta sin regla.
+ * Las preguntas sin competencia comparten un hueco propio: también van por
+ * intento, porque si no «una por competencia» dejaría una puerta abierta sin
+ * regla.
  */
 const SIN_COMPETENCIA = 'sin-competencia';
 
-function huecoDe(pregunta: Parse.Object | undefined): string {
+/** Competencia de una pregunta, o el cajón de las que no tienen. */
+function competenciaDe(pregunta: Parse.Object | undefined): string {
   return pregunta?.get('competencia')?.id ?? SIN_COMPETENCIA;
+}
+
+/** Hueco que ocupa una asignación: competencia + intento. */
+function huecoDe(asignacion: PreguntaAsignacion): string {
+  return `${competenciaDe(asignacion.getPregunta())}::${asignacion.getIntento()}`;
+}
+
+/** Igual, para una pregunta que todavía no se ha asignado. */
+function huecoPara(pregunta: Parse.Object | undefined, intento: number): string {
+  return `${competenciaDe(pregunta)}::${intento}`;
 }
 
 /**
@@ -157,7 +169,7 @@ export async function getPreguntasGrupo(req: Request, res: Response): Promise<vo
     for (const a of asignaciones) {
       const alumnoId = a.getAlumno()?.id;
       if (!alumnoId) continue;
-      const clave = `${alumnoId}::${huecoDe(a.getPregunta())}`;
+      const clave = `${alumnoId}::${huecoDe(a)}`;
       if (!vigentes.has(clave)) vigentes.set(clave, a);
       totalPorAlumno.set(alumnoId, (totalPorAlumno.get(alumnoId) ?? 0) + 1);
     }
@@ -217,11 +229,14 @@ export async function getPreguntasGrupo(req: Request, res: Response): Promise<vo
         name: alumno.get('name') ?? '',
         matricula: alumno.get('matricula') ?? '',
         email: alumno.get('email') ?? '',
-        // Una por hueco (competencia). El cliente las indexa por `competenciaId`.
+        // Una por hueco: competencia × intento. El cliente las indexa por `hueco`.
         asignaciones: [...competencias.keys()]
-          .map((hueco) => vigentes.get(`${alumno.id}::${hueco}`))
+          .flatMap((competencia) => Array.from(
+            { length: MAX_INTENTOS },
+            (_, i) => vigentes.get(`${alumno.id}::${competencia}::${i + 1}`),
+          ))
           .filter((a): a is PreguntaAsignacion => !!a)
-          .map((a) => ({ ...a.toSafeJSON(), hueco: huecoDe(a.getPregunta()) })),
+          .map((a) => ({ ...a.toSafeJSON(), hueco: huecoDe(a) })),
         totalAsignaciones: totalPorAlumno.get(alumno.id!) ?? 0,
       })),
       preguntas: [...porIdPregunta.values()].map((p) => ({
@@ -232,6 +247,7 @@ export async function getPreguntasGrupo(req: Request, res: Response): Promise<vo
         uso: uso.get(p.id!) ?? null,
       })),
       competencias: [...competencias.values()].sort((a, b) => a.nombre.localeCompare(b.nombre)),
+      maxIntentos: MAX_INTENTOS,
     });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al obtener las preguntas del grupo' });
@@ -260,7 +276,7 @@ export async function getHistorialAlumno(req: Request, res: Response): Promise<v
 
 /**
  * POST /admin/grupos/:grupoId/preguntas/asignaciones
- * Body: `{ asignaciones: [{ alumnoId, preguntaId, nota? }] }`
+ * Body: `{ asignaciones: [{ alumnoId, preguntaId, intento?, nota? }] }`
  *
  * SIEMPRE en bloque, aunque sea de uno. Los gestos de la pantalla —asignarle una
  * a alguien, repartir una competencia entre el grupo entero, elegir alumno desde
@@ -284,7 +300,7 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
 
   // Normalizar TODO antes de tocar la BD: una entrada mala a mitad de la lista
   // dejaría media asignación hecha y el profesor no sabría por dónde iba.
-  const normalizadas: { alumnoId: string; preguntaId: string; nota: string }[] = [];
+  const normalizadas: { alumnoId: string; preguntaId: string; intento: number; nota: string }[] = [];
   const vistas = new Set<string>();
   for (const e of entradas) {
     const alumnoId = typeof e?.alumnoId === 'string' ? e.alumnoId : '';
@@ -293,10 +309,20 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
       res.status(400).json({ status: 'error', message: 'Cada asignación necesita alumno y pregunta' });
       return;
     }
+    // Ausente = primer intento, que es el caso normal.
+    const intento = e?.intento === undefined || e?.intento === null ? 1 : Number(e.intento);
+    if (!Number.isInteger(intento) || intento < 1 || intento > MAX_INTENTOS) {
+      res.status(400).json({
+        status: 'error',
+        message: `El intento debe estar entre 1 y ${MAX_INTENTOS}`,
+      });
+      return;
+    }
     vistas.add(preguntaId);
     normalizadas.push({
       alumnoId,
       preguntaId,
+      intento,
       nota: typeof e?.nota === 'string' ? e.nota : '',
     });
   }
@@ -339,7 +365,7 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
     for (const a of previas) {
       const alumnoId = a.getAlumno()?.id;
       if (!alumnoId) continue;
-      const clave = `${alumnoId}::${huecoDe(a.getPregunta())}`;
+      const clave = `${alumnoId}::${huecoDe(a)}`;
       if (!vigentePorHueco.has(clave)) vigentePorHueco.set(clave, a);
     }
 
@@ -347,7 +373,7 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
     const autor = req.appUser as AppUser | undefined;
     const nuevas = normalizadas.map((n) => {
       const pregunta = porId.get(n.preguntaId)!;
-      const anterior = vigentePorHueco.get(`${n.alumnoId}::${huecoDe(pregunta)}`);
+      const anterior = vigentePorHueco.get(`${n.alumnoId}::${huecoPara(pregunta, n.intento)}`);
       if (anterior && !anterior.getUsada()) {
         anterior.softDelete();
         aRetirar.push(anterior);
@@ -356,6 +382,7 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
       asignacion.setGrupo(Grupo.createWithoutData(grupoId) as Grupo);
       asignacion.setAlumno(AppUser.createWithoutData(n.alumnoId) as AppUser);
       asignacion.setPregunta(pregunta);
+      asignacion.setIntento(n.intento);
       asignacion.setNota(n.nota);
       asignacion.setUsada(false);
       if (autor) asignacion.setAsignadaPor(autor);

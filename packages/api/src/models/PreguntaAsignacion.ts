@@ -40,6 +40,21 @@ export class PreguntaAsignacion extends BaseModel {
   }
 
   /**
+   * Qué entrevista de esa competencia es: 1 o 2. Ausente = la primera, que es lo
+   * que había antes de que existiera el segundo intento (cero migración).
+   *
+   * Junto con la competencia de la pregunta forma el HUECO que ocupa: cada
+   * (alumno, competencia, intento) admite una pregunta, y asignar otra al mismo
+   * hueco sustituye a la que estaba.
+   */
+  getIntento(): number {
+    return this.get('intento') ?? 1;
+  }
+  setIntento(intento: number): void {
+    this.set('intento', intento);
+  }
+
+  /**
    * Ajuste de la pregunta para ESTE alumno: el «solo el profesor lo sabe» del
    * encargo. No se proyecta; se lee en el roster y en la vista de proyección
    * como apunte lateral del profesor.
@@ -90,6 +105,7 @@ export class PreguntaAsignacion extends BaseModel {
             archivada: pregunta.get('archivada') === true,
           }
         : null,
+      intento: this.getIntento(),
       nota: this.getNota(),
       usada: this.getUsada(),
       asignadaPorId: this.getAsignadaPor()?.id ?? null,
