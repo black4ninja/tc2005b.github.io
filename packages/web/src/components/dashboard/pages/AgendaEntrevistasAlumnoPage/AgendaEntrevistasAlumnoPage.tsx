@@ -9,6 +9,16 @@ import type { AgendaAlumno, DiaAlumno, HuecoAlumno } from '../../../../types/age
 import styles from './AgendaEntrevistasAlumnoPage.module.css';
 
 const API_BASE = '/api';
+/**
+ * Cada cuánto se relee la agenda con la pantalla abierta.
+ *
+ * No es un capricho: el límite de las 24 horas hábiles lo calcula el SERVIDOR y
+ * llega resuelto, así que con la página abierta se quedaba congelado. Un alumno
+ * que la dejó puesta veía como libre un hueco que ya había cruzado el límite, y
+ * se llevaba el rechazo con el clic dado. De paso se entera de los huecos que
+ * otros van tomando, que el día que se abre la agenda pasa a cada rato.
+ */
+const PERIODO_REFRESCO = 60000;
 
 function mensajeDeError(e: unknown, porDefecto: string): string {
   return e instanceof Error && e.message ? e.message : porDefecto;
@@ -47,23 +57,35 @@ export default function AgendaEntrevistasAlumnoPage() {
     'x-session-token': sessionToken ?? '',
   }), [sessionToken]);
 
-  const cargar = useCallback(async () => {
+  const cargar = useCallback(async (silencioso = false) => {
     if (!grupoId) return;
     try {
-      setLoading(true);
+      if (!silencioso) setLoading(true);
       const res = await fetch(`${API_BASE}/alumno/grupos/${grupoId}/agenda-entrevistas`, {
         headers: { 'x-session-token': sessionToken ?? '' },
       });
       if (!res.ok) throw new Error('No se pudo cargar la agenda');
       setAgenda(await res.json() as AgendaAlumno);
     } catch (err: unknown) {
-      setError(mensajeDeError(err, 'No se pudo cargar la agenda'));
+      // Un refresco que falla no borra lo que ya se ve: se reintenta al minuto.
+      if (!silencioso) setError(mensajeDeError(err, 'No se pudo cargar la agenda'));
     } finally {
-      setLoading(false);
+      if (!silencioso) setLoading(false);
     }
   }, [grupoId, sessionToken]);
 
   useEffect(() => { cargar(); }, [cargar]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => cargar(true), PERIODO_REFRESCO);
+    // Y al volver a la pestaña, en el acto: es cuando el retraso se nota.
+    function alVolver() { if (document.visibilityState === 'visible') cargar(true); }
+    document.addEventListener('visibilitychange', alVolver);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', alVolver);
+    };
+  }, [cargar]);
 
   async function reservar(competenciaId: string) {
     if (!eligiendo || !grupoId) return;
@@ -216,7 +238,9 @@ export default function AgendaEntrevistasAlumnoPage() {
               return (
                 <button
                   key={hueco.inicio}
-                  className={`${styles.hueco} ${styles[`hueco_${estado}`]}`}
+                  // `libre` no tiene clase propia —es el aspecto de base—, y sin
+                  // el `?? ''` acababa un "undefined" en el atributo.
+                  className={`${styles.hueco} ${styles[`hueco_${estado}`] ?? ''}`}
                   disabled={!puedo || guardando}
                   onClick={() => setEligiendo({ dia, hueco })}
                   title={{
