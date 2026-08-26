@@ -53,6 +53,34 @@ export class ProyeccionPregunta extends BaseModel {
     this.set('estado', estado);
   }
 
+  /**
+   * FOTO de lo que hay en pantalla, copiada al elegir la asignación.
+   *
+   * Está desnormalizado a propósito. Leerlo por punteros costaba 310 ms —una
+   * cadena de cinco `include` hasta la competencia y la colección— y esta fila
+   * se lee cada vez que una pantalla se conecta o cambia algo. Copiado, la
+   * lectura es una consulta plana de 70 ms.
+   *
+   * Que se quede vieja si alguien edita el enunciado a mitad de entrevista no es
+   * un defecto: lo que se proyecta es lo que se puso, y cambia al cambiar de
+   * asignación, que es cuando se vuelve a copiar.
+   */
+  getFoto(): {
+    alumnoNombre: string;
+    competencia: string | null;
+    textoHtml: string;
+    texto: string;
+    intento: number;
+    /** El tiempo de la MATERIA de esa pregunta. El del grupo manda y se lee vivo. */
+    duracionColeccion: number | null;
+  } | null {
+    return this.get('foto') ?? null;
+  }
+  setFoto(foto: ReturnType<ProyeccionPregunta['getFoto']>): void {
+    if (foto) this.set('foto', foto);
+    else this.unset('foto');
+  }
+
   /** Cuándo se pulsó «Iniciar». De aquí sale el reloj de todas las pantallas. */
   getIniciadoEn(): Date | null {
     return (this.get('iniciadoEn') as Date | undefined) ?? null;

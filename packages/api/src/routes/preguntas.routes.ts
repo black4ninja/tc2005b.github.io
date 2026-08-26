@@ -19,6 +19,7 @@ import {
 import {
   getProyeccion,
   setProyeccion,
+  streamProyeccion,
 } from '../controllers/preguntas-proyeccion.controller.js';
 
 /**
@@ -56,6 +57,8 @@ router.delete('/admin/grupos/:grupoId/preguntas/asignaciones/:id', borrarAsignac
 // Proyección: qué se está enseñando ahora. Lo escribe el panel del profesor y lo
 // lee la pantalla que se proyecta, que suele estar en OTRO aparato.
 router.get('/admin/grupos/:grupoId/preguntas/proyeccion', getProyeccion);
+// La pantalla proyectada escucha por aquí en vez de preguntar cada segundo.
+router.get('/admin/grupos/:grupoId/preguntas/proyeccion/stream', streamProyeccion);
 router.put('/admin/grupos/:grupoId/preguntas/proyeccion', setProyeccion);
 
 export default router;

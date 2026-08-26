@@ -8,11 +8,11 @@ import styles from './ProyeccionPage.module.css';
 
 const API_BASE = '/api';
 /**
- * Cuánto se espera ENTRE una respuesta y la siguiente pregunta. Encadenado y no
- * a intervalo fijo: una petición tarda casi lo mismo que el periodo, y con
- * `setInterval` se amontonarían si el servidor va lento.
+ * Red de seguridad, no la vía normal: los cambios llegan empujados por el
+ * stream. Esto solo cubre que el stream se caiga sin avisar o que algún día el
+ * API corra en más de una instancia, así que va MUY espaciado.
  */
-const PERIODO_SONDEO = 800;
+const PERIODO_SONDEO = 20000;
 /** Cada cuánto se repinta el reloj. Más fino que el segundo para que no salte. */
 const PERIODO_RELOJ = 200;
 /** Fallos seguidos antes de avisar. Uno suelto es un bache, no una desconexión. */
@@ -48,41 +48,56 @@ export default function ProyeccionPage() {
     if (!grupoId || !sessionToken) return;
     let vivo = true;
 
+    function aplicar(data: { proyeccion?: Proyeccion; serverNow?: string }) {
+      if (!vivo) return;
+      if (data.serverNow) desfaseRef.current = new Date(data.serverNow).getTime() - Date.now();
+      setProyeccion(data.proyeccion ?? null);
+      setFallos(0);
+    }
+
     async function sondear() {
       try {
         const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/preguntas/proyeccion`, {
           headers: { 'x-session-token': sessionToken ?? '' },
         });
         if (!res.ok) throw new Error('sondeo');
-        const data = await res.json() as { proyeccion?: Proyeccion; serverNow?: string };
-        if (!vivo) return;
-        if (data.serverNow) desfaseRef.current = new Date(data.serverNow).getTime() - Date.now();
-        setProyeccion(data.proyeccion ?? null);
-        setFallos(0);
+        aplicar(await res.json());
       } catch {
         if (vivo) setFallos((n) => n + 1);
       }
     }
 
-    let siguiente = 0;
-    async function bucle() {
-      await sondear();
-      if (vivo) siguiente = window.setTimeout(bucle, PERIODO_SONDEO);
-    }
-    bucle();
+    /**
+     * El camino normal: el servidor EMPUJA. Preguntar una vez por segundo
+     * costaba validar la sesión, comprobar el acceso y leer la fila —casi un
+     * segundo contra la base— para casi siempre oír «no ha cambiado nada», y al
+     * pulsar «Iniciar» el alumno lo veía hasta dos segundos después.
+     *
+     * `EventSource` no admite cabeceras, así que la sesión viaja en la cookie
+     * —la misma que ya usan las navegaciones normales— y no en la URL. Si falla,
+     * se reconecta solo, y por debajo sigue el sondeo lento de red de seguridad.
+     */
+    const fuente = new EventSource(
+      `${API_BASE}/admin/grupos/${grupoId}/preguntas/proyeccion/stream`,
+      { withCredentials: true },
+    );
+    fuente.onmessage = (e) => {
+      try { aplicar(JSON.parse(e.data)); } catch { /* trozo suelto: llegará otro */ }
+    };
+    fuente.onerror = () => { if (vivo) setFallos((n) => n + 1); };
+
+    sondear();
+    const id = window.setInterval(sondear, PERIODO_SONDEO);
     // Volver a la pestaña sondea EN EL ACTO. El navegador frena los temporizadores
-    // de las pestañas de fondo, así que al traerla al frente lo que se ve puede
-    // llevar un minuto de retraso; sin esto la pantalla del aula parecería
-    // colgada justo cuando se la mira.
-    function alVolver() {
-      if (document.visibilityState !== 'visible') return;
-      window.clearTimeout(siguiente);
-      bucle();
-    }
+    // de las pestañas de fondo y puede haber suspendido el stream; sin esto la
+    // pantalla del aula parecería colgada justo cuando se la mira.
+    function alVolver() { if (document.visibilityState === 'visible') sondear(); }
     document.addEventListener('visibilitychange', alVolver);
+
     return () => {
       vivo = false;
-      window.clearTimeout(siguiente);
+      fuente.close();
+      window.clearInterval(id);
       document.removeEventListener('visibilitychange', alVolver);
     };
   }, [grupoId, sessionToken]);

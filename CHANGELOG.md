@@ -31,6 +31,20 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   - En la pantalla proyectada **no hay controles**, y bajo el nombre va la
     **competencia** que se evalúa —fuera la matrícula y el «3 de 28», que eran
     del profesor y no del alumno—.
+  - **La pantalla proyectada escucha en vez de preguntar.** Sondear una vez por
+    segundo costaba, en cada vuelta, validar la sesión —con su escritura—,
+    comprobar el acceso al grupo y leer la fila, para contestar «no ha cambiado»
+    el 99 % de las veces; y al pulsar «Iniciar» el alumno lo veía **hasta 2,6 s
+    después**. Ahora abre una conexión (SSE) y el servidor le empuja los
+    cambios: se ven **a los 0,6 s del clic**, que es lo que tarda el guardado, y
+    el aviso no añade nada. Debajo queda un sondeo cada 20 s como red de
+    seguridad.
+  - Dos cambios más de los que se benefician también el resto de pantallas: la
+    fila de proyección guarda una **foto** de lo que hay en pantalla —resolver
+    los punteros hasta la competencia y la colección eran cinco idas y vueltas a
+    la base, 310 ms—, y la sesión deja de **reescribirse en cada petición**
+    (ahora como mucho cada cinco minutos), lo que quita unos 80 ms a *toda*
+    llamada al API.
   - **El mando contesta al instante.** Cada orden viaja al servidor y de ahí a
     la otra pantalla, y ese viaje se nota: pulsar «Iniciar» y no ver nada
     durante un segundo se lee como que el botón no funciona. Ahora el reloj
