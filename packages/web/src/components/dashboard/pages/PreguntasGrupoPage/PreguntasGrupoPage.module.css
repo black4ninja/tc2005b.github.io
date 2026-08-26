@@ -622,12 +622,15 @@
   background: var(--dash-bg-subtle);
 }
 
+/* Con el panel estrecho —media pantalla, con la proyección al lado— el nombre
+   se partía en tres líneas para dejarle sitio a los botones. Con una base
+   mínima, la barra se parte en dos filas antes que estrujar el nombre. */
 .mandoQuien {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  flex: 1;
+  flex: 1 1 14rem;
 }
 
 .mandoNombre {
@@ -655,6 +658,19 @@
   line-height: 1;
   font-variant-numeric: tabular-nums;
   color: var(--text-primary);
+}
+
+/* Solo gira el icono: si la animación va en el contenedor, el texto gira con
+   él. */
+.mandoEnviando {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--dash-primary);
+}
+
+.mandoEnviando :global(.material-icons) {
+  animation: girando 1.1s linear infinite;
 }
 
 .mandoFase {

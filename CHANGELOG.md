@@ -31,6 +31,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   - En la pantalla proyectada **no hay controles**, y bajo el nombre va la
     **competencia** que se evalúa —fuera la matrícula y el «3 de 28», que eran
     del profesor y no del alumno—.
+  - **El mando contesta al instante.** Cada orden viaja al servidor y de ahí a
+    la otra pantalla, y ese viaje se nota: pulsar «Iniciar» y no ver nada
+    durante un segundo se lee como que el botón no funciona. Ahora el reloj
+    arranca con el clic, el botón dice *Iniciando…* / *Deteniendo…* y la barra
+    marca **Enviando…** hasta que el servidor confirma; mientras tanto no admite
+    otra orden. Si falla, vuelve a lo que hay guardado.
 
 ### Changed
 - **Repartir una pregunta se hace desde la propia pregunta, y de una sentada.**

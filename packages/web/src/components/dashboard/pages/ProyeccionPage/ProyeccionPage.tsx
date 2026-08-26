@@ -7,8 +7,12 @@ import type { Proyeccion } from '../../../../types/preguntas';
 import styles from './ProyeccionPage.module.css';
 
 const API_BASE = '/api';
-/** Cada cuánto se le pregunta al servidor qué toca. */
-const PERIODO_SONDEO = 1000;
+/**
+ * Cuánto se espera ENTRE una respuesta y la siguiente pregunta. Encadenado y no
+ * a intervalo fijo: una petición tarda casi lo mismo que el periodo, y con
+ * `setInterval` se amontonarían si el servidor va lento.
+ */
+const PERIODO_SONDEO = 800;
 /** Cada cuánto se repinta el reloj. Más fino que el segundo para que no salte. */
 const PERIODO_RELOJ = 200;
 /** Fallos seguidos antes de avisar. Uno suelto es un bache, no una desconexión. */
@@ -60,17 +64,25 @@ export default function ProyeccionPage() {
       }
     }
 
-    sondear();
-    const id = window.setInterval(sondear, PERIODO_SONDEO);
+    let siguiente = 0;
+    async function bucle() {
+      await sondear();
+      if (vivo) siguiente = window.setTimeout(bucle, PERIODO_SONDEO);
+    }
+    bucle();
     // Volver a la pestaña sondea EN EL ACTO. El navegador frena los temporizadores
     // de las pestañas de fondo, así que al traerla al frente lo que se ve puede
     // llevar un minuto de retraso; sin esto la pantalla del aula parecería
     // colgada justo cuando se la mira.
-    function alVolver() { if (document.visibilityState === 'visible') sondear(); }
+    function alVolver() {
+      if (document.visibilityState !== 'visible') return;
+      window.clearTimeout(siguiente);
+      bucle();
+    }
     document.addEventListener('visibilitychange', alVolver);
     return () => {
       vivo = false;
-      window.clearInterval(id);
+      window.clearTimeout(siguiente);
       document.removeEventListener('visibilitychange', alVolver);
     };
   }, [grupoId, sessionToken]);

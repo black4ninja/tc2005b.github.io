@@ -21,11 +21,13 @@ const SIN_COMPETENCIA = 'sin-competencia';
 /** Espejo de `MAX_INTENTOS` del API: hasta dos entrevistas por competencia. */
 const MAX_INTENTOS = 2;
 /**
- * Cada cuánto se relee lo que hay proyectado. Más lento que en la pantalla
- * proyectada porque aquí el panel es quien MANDA: sondea para no mentir si el
- * profesor abrió el panel en dos sitios, no para enterarse de lo suyo.
+ * Cada cuánto se relee lo que hay proyectado. Mucho más espaciado que en la
+ * pantalla proyectada porque aquí el panel es quien MANDA: lo suyo lo pinta al
+ * pulsar y lo confirma la respuesta del PUT, así que esto solo cubre el caso de
+ * tener el panel abierto en dos sitios. Y las dos pantallas comparten servidor:
+ * sondear de más aquí le quita sitio a la que sí lo necesita.
  */
-const PERIODO_SONDEO = 2500;
+const PERIODO_SONDEO = 5000;
 /** Cada cuánto se repinta el reloj del mando. */
 const PERIODO_RELOJ = 250;
 
@@ -121,6 +123,12 @@ export default function PreguntasGrupoPage() {
   const desfaseRef = useRef(0);
   /** La pestaña proyectada, para volver a ella en vez de abrir otra. */
   const ventanaRef = useRef<Window | null>(null);
+  /**
+   * Qué orden está en vuelo. El mando escribe en el servidor y la pantalla que
+   * cambia está en otro aparato, así que sin esto pulsar «Iniciar» parece no
+   * hacer nada durante la ida y la vuelta —y el profesor vuelve a pulsar—.
+   */
+  const [mandando, setMandando] = useState<EstadoProyeccion | 'mover' | null>(null);
 
   const headers = useMemo<Record<string, string>>(() => ({
     'Content-Type': 'application/json',
@@ -193,8 +201,12 @@ export default function PreguntasGrupoPage() {
    * que el servidor guardó y no con lo que creía haber mandado: si dos panelistas
    * pulsan a la vez, gana el servidor y los dos ven lo mismo.
    */
-  async function proyectar(cambio: { asignacionId?: string | null; estado?: EstadoProyeccion }) {
+  async function proyectar(
+    cambio: { asignacionId?: string | null; estado?: EstadoProyeccion },
+    orden: EstadoProyeccion | 'mover' = cambio.estado ?? 'mover',
+  ) {
     if (!grupoId) return;
+    setMandando(orden);
     try {
       const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/preguntas/proyeccion`, {
         method: 'PUT', headers, body: JSON.stringify(cambio),
@@ -208,7 +220,31 @@ export default function PreguntasGrupoPage() {
       setProyeccion(data.proyeccion ?? null);
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'Error al cambiar la proyección'));
+      // Lo que se pintó por adelantado ya no vale: manda lo que hay guardado.
+      await leerProyeccion();
+    } finally {
+      setMandando(null);
     }
+  }
+
+  /**
+   * Cambia el estado pintándolo YA y confirmando después.
+   *
+   * El reloj del panel arranca con el clic y no con la respuesta: la orden es de
+   * las que no fallan casi nunca, y esperar a la ida y vuelta para mover el
+   * número es justo lo que hace pensar que el botón no funciona. Si algo sale
+   * mal, `proyectar` relee y deshace.
+   */
+  function mandarEstado(estado: EstadoProyeccion) {
+    setProyeccion((p) => (p ? {
+      ...p,
+      estado,
+      // En la hora del SERVIDOR, que es la que interpretan las dos pantallas.
+      iniciadoEn: estado === 'corriendo'
+        ? new Date(Date.now() + desfaseRef.current).toISOString()
+        : estado === 'espera' ? null : p.iniciadoEn,
+    } : p));
+    proyectar({ estado }, estado);
   }
 
   /**
@@ -340,10 +376,20 @@ export default function PreguntasGrupoPage() {
     const desde = indiceProyectado < 0 ? (paso > 0 ? -1 : 0) : indiceProyectado;
     const destino = Math.min(paraProyectar.length - 1, Math.max(0, desde + paso));
     const siguiente = paraProyectar[destino];
-    if (siguiente && siguiente.asignacion.id !== proyeccion?.asignacionId) {
-      // Sin `estado`: cambiar de alumno reinicia el reloj en el servidor.
-      proyectar({ asignacionId: siguiente.asignacion.id });
-    }
+    if (!siguiente || siguiente.asignacion.id === proyeccion?.asignacionId) return;
+    // Lo que el mando enseña se sabe ya de la tabla; el texto de la pregunta no
+    // se pinta aquí, así que no hay que esperarlo para cambiar de nombre.
+    setProyeccion((p) => (p ? {
+      ...p,
+      asignacionId: siguiente.asignacion.id,
+      alumno: { name: siguiente.alumno.name },
+      competencia: siguiente.asignacion.pregunta?.competencia ?? null,
+      intento: siguiente.asignacion.intento,
+      estado: 'espera',
+      iniciadoEn: null,
+    } : p));
+    // Sin `estado`: cambiar de alumno reinicia el reloj en el servidor.
+    proyectar({ asignacionId: siguiente.asignacion.id }, 'mover');
   }
 
   /**
@@ -751,14 +797,18 @@ export default function PreguntasGrupoPage() {
                 ? proyeccion.duracionSegundos
                 : enPantalla.restante,
             )}</span>
-            <span className={styles.mandoFase}>{ETIQUETA_FASE[enPantalla.fase]}</span>
+            <span className={styles.mandoFase}>
+              {mandando !== null ? (
+                <span className={styles.mandoEnviando}><Icon name="sync" size="sm" /> Enviando…</span>
+              ) : ETIQUETA_FASE[enPantalla.fase]}
+            </span>
           </div>
 
           <div className={styles.mandoBotones}>
             <button
               className={styles.iconBtn}
               onClick={() => moverProyeccion(-1)}
-              disabled={indiceProyectado <= 0}
+              disabled={indiceProyectado <= 0 || mandando !== null}
               title="Anterior de la lista"
             >
               <Icon name="chevron_left" size="sm" />
@@ -766,33 +816,40 @@ export default function PreguntasGrupoPage() {
             <button
               className={styles.iconBtn}
               onClick={() => moverProyeccion(1)}
-              disabled={indiceProyectado >= paraProyectar.length - 1}
+              disabled={indiceProyectado >= paraProyectar.length - 1 || mandando !== null}
               title="Siguiente de la lista"
             >
               <Icon name="chevron_right" size="sm" />
             </button>
 
+            {/* El botón dice lo que está pasando mientras pasa: la pantalla que
+                cambia está en otro aparato y el profesor no la tiene delante. */}
             {enPantalla.visible ? (
               <DashButton
                 variant="outline"
-                onClick={() => proyectar({ estado: 'detenido' })}
+                onClick={() => mandarEstado('detenido')}
+                disabled={mandando !== null}
                 title="Retira la pregunta de la pantalla"
               >
-                <Icon name="stop" size="sm" /> Detener
+                <Icon name={mandando === 'detenido' ? 'sync' : 'stop'} size="sm" />
+                {mandando === 'detenido' ? 'Deteniendo…' : 'Detener'}
               </DashButton>
             ) : (
               <DashButton
-                onClick={() => proyectar({ estado: 'corriendo' })}
+                onClick={() => mandarEstado('corriendo')}
+                disabled={mandando !== null}
                 title="Enseña la pregunta y arranca el reloj"
               >
-                <Icon name="play_arrow" size="sm" />
-                {enPantalla.fase === 'espera' ? 'Iniciar' : 'Otra vez'}
+                <Icon name={mandando === 'corriendo' ? 'sync' : 'play_arrow'} size="sm" />
+                {mandando === 'corriendo'
+                  ? 'Iniciando…'
+                  : enPantalla.fase === 'espera' ? 'Iniciar' : 'Otra vez'}
               </DashButton>
             )}
             <button
               className={styles.iconBtn}
-              onClick={() => proyectar({ estado: 'espera' })}
-              disabled={enPantalla.fase === 'espera'}
+              onClick={() => mandarEstado('espera')}
+              disabled={enPantalla.fase === 'espera' || mandando !== null}
               title="Deja el reloj a cero, sin enseñar la pregunta"
             >
               <Icon name="restart_alt" size="sm" />
@@ -813,7 +870,8 @@ export default function PreguntasGrupoPage() {
             </button>
             <button
               className={styles.iconBtn}
-              onClick={() => proyectar({ asignacionId: null })}
+              onClick={() => proyectar({ asignacionId: null }, 'mover')}
+              disabled={mandando !== null}
               title="Dejar la pantalla en blanco"
             >
               <Icon name="close" size="sm" />

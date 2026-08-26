@@ -38,8 +38,15 @@ function vacia(duracionSegundos: number) {
   };
 }
 
-/** El tiempo que rige en este grupo. Igual que en el roster: grupo → materia → módulo. */
-async function duracionDelGrupo(grupoId: string, grupo: Grupo | null): Promise<number> {
+/**
+ * El tiempo que rige cuando no hay pregunta puesta. Igual que en el roster:
+ * grupo → materia → módulo.
+ *
+ * Solo se llama en ese caso: mirar las colecciones del grupo es la consulta más
+ * cara de esta respuesta, y con pregunta en pantalla el tiempo sale de SU
+ * materia, que ya viene incluida.
+ */
+async function duracionSinPregunta(grupoId: string, grupo: Grupo | null): Promise<number> {
   const delGrupo = grupo?.get('preguntasDuracionSegundos') as number | undefined;
   if (delGrupo != null) return delGrupo;
   const colecciones = await coleccionesDeGrupo(grupoId, 'preguntas');
@@ -65,6 +72,10 @@ async function cargarProyeccion(grupoId: string): Promise<ProyeccionPregunta | n
   const q = new Parse.Query<ProyeccionPregunta>('ProyeccionPregunta');
   q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
   q.equalTo('exists' as any, true as any);
+  // El grupo viene con la fila y no en una consulta aparte: cada ida y vuelta a
+  // la base cuesta lo suyo, y esta respuesta se pide una vez por segundo desde
+  // la pantalla proyectada.
+  q.include('grupo' as any);
   q.include('asignacion' as any);
   q.include('asignacion.alumno' as any);
   q.include('asignacion.pregunta' as any);
@@ -80,14 +91,18 @@ async function responder(
   grupoId: string,
   proyeccion: ProyeccionPregunta | null,
 ): Promise<void> {
-  const grupo = await cargarGrupo(grupoId);
-  const duracionGrupo = await duracionDelGrupo(grupoId, grupo);
+  // Ya viene incluido salvo la primera vez de un grupo, que aún no tiene fila.
+  const grupo = (proyeccion?.getGrupo() as Grupo | undefined) ?? await cargarGrupo(grupoId);
   const serverNow = new Date().toISOString();
 
   const asignacion = proyeccion?.getAsignacion() as PreguntaAsignacion | undefined;
   const pregunta = asignacion?.getPregunta();
   if (!proyeccion || !asignacion || !pregunta) {
-    res.json({ status: 'ok', serverNow, proyeccion: vacia(duracionGrupo) });
+    res.json({
+      status: 'ok',
+      serverNow,
+      proyeccion: vacia(await duracionSinPregunta(grupoId, grupo)),
+    });
     return;
   }
 
@@ -163,6 +178,13 @@ export async function setProyeccion(req: Request, res: Response): Promise<void> 
       } else {
         const q = new Parse.Query<PreguntaAsignacion>('PreguntaAsignacion');
         q.equalTo('exists' as any, true as any);
+        // Desplegada de una vez: con esto la respuesta se arma con lo que ya
+        // está en memoria y el PUT no tiene que volver a leer. El mando se pulsa
+        // en mitad de una entrevista y cada ida y vuelta de más se nota.
+        q.include('alumno' as any);
+        q.include('pregunta' as any);
+        q.include('pregunta.competencia' as any);
+        q.include('pregunta.coleccion' as any);
         let asignacion: PreguntaAsignacion;
         try {
           asignacion = await q.get(asignacionId, { useMasterKey: true });
@@ -196,7 +218,7 @@ export async function setProyeccion(req: Request, res: Response): Promise<void> 
     }
 
     await proyeccion.save(null, { useMasterKey: true });
-    await responder(res, grupoId, await cargarProyeccion(grupoId));
+    await responder(res, grupoId, proyeccion);
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al cambiar la proyección' });
   }
