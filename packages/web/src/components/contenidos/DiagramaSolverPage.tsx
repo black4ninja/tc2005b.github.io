@@ -6,6 +6,7 @@ import { EditorView } from '@codemirror/view';
 import { useAuth } from '../../context/AuthContext';
 import { useCargaGated } from '../../hooks/useCargaGated';
 import { useDiagramasBase } from '../../config/rutasDiagramas';
+import { useTema } from '../../context/TemaContext';
 import { useDiagramas } from '../../lib/diagramas/useDiagramas';
 import { etiquetaMotorDiagrama, etiquetaTipoDiagrama } from '../../lib/diagramas/etiquetas';
 // La MISMA vista previa que ve quien redacta el ejercicio, no una copia: si el
@@ -144,7 +145,12 @@ export default function DiagramaSolverPage() {
   // Diagramas incrustados en el enunciado. Ref de CALLBACK: el solver se
   // re-renderiza mucho (editor, veredicto, historial) y React puede recrear este
   // contenedor, restaurando el HTML original y borrando el SVG ya dibujado.
-  const refEnunciado = useDiagramas([ej?.enunciadoHtml]);
+    // Sin esto el SVG se dibuja siempre con la paleta clara y sus colores van
+  // FIJOS dentro del propio SVG: sobre el fondo oscuro, los rótulos y las
+  // líneas quedan ilegibles.
+  const { tema } = useTema();
+  const oscuro = tema === 'oscuro';
+  const refEnunciado = useDiagramas([ej?.enunciadoHtml], oscuro);
 
   // Al llegar el ejercicio, el editor arranca con el código semilla del autor.
   useEffect(() => {

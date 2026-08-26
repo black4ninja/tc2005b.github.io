@@ -7,6 +7,7 @@ import { EjercicioProgramacion } from '../models/EjercicioProgramacion.js';
 import { EnvioEjercicio, type DetalleCasoEnvio } from '../models/EnvioEjercicio.js';
 import { CategoriaEjercicio } from '../models/CategoriaEjercicio.js';
 import { BloqueEjercicios } from '../models/BloqueEjercicios.js';
+import { recortarAlModulo } from '../services/agrupacion-modulo.js';
 import {
   resolverAccesoEjercicios,
   coleccionesConEjerciciosPublicados,
@@ -157,11 +158,16 @@ export async function listEjerciciosAlumno(req: Request, res: Response): Promise
     qb.equalTo('exists' as any, true as any);
     qb.ascending('orden');
     qb.limit(1000);
-    const [resueltos, categorias, bloques] = await Promise.all([
+    const [resueltos, todasCategorias, todosBloques] = await Promise.all([
       ejerciciosResueltos(user.id, ejercicios.map((e) => e.id!)),
       qc.find({ useMasterKey: true }).catch(() => [] as CategoriaEjercicio[]),
       qb.find({ useMasterKey: true }).catch(() => [] as BloqueEjercicios[]),
     ]);
+
+    // Las dos tablas las COMPARTE el módulo de Diagramas; sin recortar, aquí
+    // salían sus bloques («Comportamiento», «Estructura»…) en «0/0». Ver
+    // `agrupacion-modulo`.
+    const { categorias, bloques } = recortarAlModulo(ejercicios, todasCategorias, todosBloques);
 
     res.json({
       status: 'ok',

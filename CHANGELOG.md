@@ -102,6 +102,21 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     limita es el alumno —dos intentos por competencia—, y por eso cada fila
     enseña su `1/2` y quien los agotó queda apagado en vez de escondido.
 
+- **El sidebar del módulo Ejercicios se vuelve el índice de la colección.** Al
+  entrar al juez de programación la columna izquierda seguía siendo el menú
+  global entero —Calendario, Hub, Alumnos, Equipos, Entrevistas…— mientras el
+  enunciado y el editor de código se repartían lo que quedaba. Ahora pasa a ser
+  el árbol del módulo: las secciones de la colección con su avance, el filtro de
+  lenguaje y el buscador de ejercicios. Es el mismo patrón que ya usaba
+  Diagramas, y sigue visible mientras se resuelve, así que ir al siguiente
+  ejercicio ya no obliga a volver al listado.
+  - El filtro de lenguaje se mueve de la página al árbol porque manda sobre los
+    contadores de sección y sobre el avance del topbar: en la página, filtrar
+    por Swift dejaba al árbol contando también los de Kotlin.
+  - La página se queda con el panel principal: las categorías de la sección
+    abierta. Sin bloques definidos se comporta igual que antes, que es la
+    garantía que fija `agruparEjercicios.test.ts`.
+
 - **Las etiquetas salen de la interfaz de preguntas.** Eran un segundo eje por
   debajo de la competencia, pensado para matizar lo que esta no distingue, y en
   la práctica no se usaron: casi todas las preguntas del banco no tienen
@@ -180,6 +195,48 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     ningún control con el que deshacerlo.
 
 ### Fixed
+- **El editor de contenidos no dibujaba los diagramas de PlantUML.** Salía «No
+  se pudo dibujar el diagrama: PlantUML tardó demasiado en responder» en unos
+  paneles mientras el de al lado, con la misma sintaxis, se pintaba bien. No era
+  lentitud: el motor es una sola instancia con estado interno compartido y el
+  upstream exige serializar los renders («the engine … will silently overwrite
+  the previous result»). El editor de ejercicios de diagrama monta hasta ocho
+  vistas previas a la vez —código inicial, cada comprobación, cada referencia y
+  la trampa— y las lanzaba todas en paralelo. Medido sobre ese ejercicio: en
+  paralelo 1 de 8 y 20 s; en cola, 8 de 8 y 0,4 s.
+  - El tope de 20 s, además, se armaba al PEDIR el render y no al empezarlo, así
+    que el que esperaba detrás de otros tres agotaba su plazo sin haber dibujado
+    nada.
+- **Los diagramas se dibujaban con la paleta clara fuera del visor del alumno.**
+  Los motores meten los colores DENTRO del SVG, así que no hay CSS que los
+  rescate. El visor pasaba el tema, pero la vista previa del editor y los tres
+  listados que renderizan diagramas del enunciado lo llevaban fijo a claro: los
+  rótulos de los canales y todas las flechas de un diagrama de actividad salían
+  en `#000000` sobre el panel oscuro. Completa lo que el paso a tokens de los
+  CSS (#122) no podía alcanzar.
+- **El hover de las tarjetas y filas era ilegible en oscuro.** El `a:hover`
+  global fijaba `#1d4ed8`, un azul pensado para el tema claro, que sobre el
+  fondo de tarjeta oscuro queda en ~1,6:1. Pasa a un token que se aclara en
+  oscuro. Y como esa regla gana en especificidad a las clases de las tarjetas,
+  al pasar el ratón se volvían azules y subrayadas enteras —descripción
+  incluida—: las filas y tarjetas que son superficies, no enlaces de texto,
+  reafirman ahora su color y su ausencia de subrayado.
+- **Los dos módulos se enseñaban las secciones del otro.** `BloqueEjercicios` y
+  `CategoriaEjercicio` son tablas únicas por colección y las comparten Diagramas
+  y el juez de programación, sin ningún campo que diga a cuál pertenecen: cada
+  módulo devolvía TODOS los bloques. El árbol del juez listaba
+  «Comportamiento», «Estructura», «Arquitectura» e «Interacción» en «0/0», y el
+  de Diagramas listaba «Arquitectura MVVM» e «Introducción al lenguaje». Dos
+  módulos independientes leyéndose como uno, con secciones que prometían
+  ejercicios inexistentes.
+  - A falta de ese campo, la pertenencia se deduce de los ejercicios que ya se
+    van a devolver: una categoría es del módulo si alguno de sus ejercicios lo
+    es, y un bloque si alguna de sus categorías lo es. Sin consultas extra.
+  - Un bloque recién creado, aún sin ejercicios publicados, deja de salir en el
+    árbol —también para el admin—. Se administran en Contenidos, y el árbol del
+    módulo es una vista de consumo; antes ese bloque salía en LOS DOS árboles,
+    nunca en el suyo.
+
 - **Ejercicios y Diagramas se leían a medias en tema oscuro.** Los dos módulos
   se escribieron con la paleta clara de GitHub a mano —`#1f2328` de texto,
   `#57606a` de secundario, `#f6f8fa` de fondo— en vez de los tokens del tema, y

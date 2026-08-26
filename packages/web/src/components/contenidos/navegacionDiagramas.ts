@@ -6,6 +6,12 @@ import type { BloqueRef, CategoriaRef, EjercicioLista } from './agruparEjercicio
  * Vive aparte del contexto por el mismo motivo que `agruparEjercicios.ts`: son
  * las reglas que deciden qué ve el alumno —qué cuenta para el progreso, a qué
  * bloque pertenece un ejercicio— y a ojo no se comprueban en cada cambio.
+ *
+ * `contables`, `progresoDe` y `progresoDeBloque` los COMPARTE el módulo de
+ * Ejercicios (`EjerciciosNavContext`): operan sobre `EjercicioLista`, que ya es
+ * la forma común a los dos módulos, y duplicarlas habría dejado dos definiciones
+ * de «avance» que se separan con el tiempo. Lo específico de Diagramas es solo
+ * el tipo `Seccion`, con su clase `cat` para el catálogo.
  */
 
 /**
@@ -84,4 +90,24 @@ export function progresoDeBloque(
   return progresoDe(
     ejercicios.filter((e) => e.categoriaId !== null && suyas.has(e.categoriaId)),
   );
+}
+
+/**
+ * Bloques que se pintan en el árbol: los que ahora mismo tienen algo dentro.
+ *
+ * La pertenencia al módulo ya la resuelve el API (`agrupacion-modulo`), que solo
+ * devuelve los bloques con ejercicios DE ESTE módulo —las dos tablas las
+ * comparten Diagramas y programación y ninguna guarda a cuál pertenece—. Aquí
+ * queda el caso que el servidor no puede saber: el filtro de lenguaje del juez
+ * de programación, que puede dejar un bloque entero a cero. Un «0/0» en el árbol
+ * promete una sección que al abrirla está vacía.
+ *
+ * `total` se recibe como función porque cada módulo cuenta lo suyo: Diagramas
+ * sobre todos sus ejercicios y Ejercicios sobre los del lenguaje elegido.
+ */
+export function bloquesVisibles(
+  bloques: BloqueRef[],
+  total: (bloqueId: string) => number,
+): BloqueRef[] {
+  return bloques.filter((b) => total(b.id) > 0);
 }

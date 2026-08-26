@@ -14,6 +14,7 @@ import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
 import type { DocumentoData } from '../../../../types/contenidos';
 import '../../../../styles/contenido-render.css';
+import { useTema } from '../../../../context/TemaContext';
 import { useDiagramas } from '../../../../lib/diagramas/useDiagramas';
 import { useSincronizacion } from './useSincronizacion';
 import styles from './EditorContenidoPage.module.css';
@@ -104,7 +105,12 @@ export default function EditorContenidoPage({
   const [previewHtml, setPreviewHtml] = useState('');
   // Previsualización EN VIVO de los diagramas: el mismo hook del visor sobre el
   // panel de preview, así que reaprovecha el debounce que ya existe.
-  const refDiagramas = useDiagramas([previewHtml]);
+    // Sin esto el SVG se dibuja siempre con la paleta clara y sus colores van
+  // FIJOS dentro del propio SVG: sobre el fondo oscuro, los rótulos y las
+  // líneas quedan ilegibles.
+  const { tema } = useTema();
+  const oscuro = tema === 'oscuro';
+  const refDiagramas = useDiagramas([previewHtml], oscuro);
   // Se recuerda entre sesiones: quien escribe en una pantalla chica no quiere
   // volver a colapsar el preview cada vez que entra.
   const [vista, setVistaState] = useState<Vista>(leerVista);

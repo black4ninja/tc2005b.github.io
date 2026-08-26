@@ -63,9 +63,17 @@
   color: var(--text-primary);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
+/* Estas filas/tarjetas son SUPERFICIES, no enlaces de texto, aunque se rendericen
+   como <a>. El `a:hover` global (globals.css) declara `color` y
+   `text-decoration`, y con más especificidad que `.item`/`.tipoLibre`: sin
+   reafirmarlos aquí, al pasar el ratón la tarjeta entera se volvía azul y
+   subrayada —incluida la descripción—, que además en oscuro es justo el color
+   con menos contraste sobre el fondo de la tarjeta. */
 .item:hover {
   border-color: var(--dash-primary);
   box-shadow: 0 1px 6px rgba(79, 70, 229, 0.12);
+  color: var(--text-primary);
+  text-decoration: none;
 }
 
 .itemTitulo { font-size: 16px; font-weight: 600; }
@@ -205,6 +213,8 @@
 .tipoLibre:hover,
 .puenteCatalogo:hover {
   border-color: var(--dash-primary);
+  color: inherit;
+  text-decoration: none;
 }
 
 .puenteCatalogo {

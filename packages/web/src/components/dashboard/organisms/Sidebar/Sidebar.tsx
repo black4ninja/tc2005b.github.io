@@ -6,6 +6,7 @@ import Icon from '../../atoms/Icon/Icon';
 import GrupoSelect from '../../atoms/GrupoSelect/GrupoSelect';
 import ArbolContenidos from './ArbolContenidos';
 import ArbolDiagramas from './ArbolDiagramas';
+import ArbolEjercicios from './ArbolEjercicios';
 import { getSidebarItems, getGrupoDetailItems } from './sidebarConfig';
 import styles from './Sidebar.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
@@ -13,6 +14,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import { useGrupoActivo } from '../../../../context/GrupoActivoContext';
 import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import { useDiagramasNav } from '../../../../context/DiagramasNavContext';
+import { useEjerciciosNav } from '../../../../context/EjerciciosNavContext';
 import { APP_NAME } from '../../../../config/app';
 import { moduloHabilitado } from '../../../../config/modulosContenido';
 import { rutaEjerciciosAdmin, rutaEjerciciosAlumno } from '../../../../config/rutasEjercicios';
@@ -69,6 +71,12 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   // para que resolver un ejercicio no cueste perder la navegación.
   const diagramasNav = useDiagramasNav();
   const isDiagramas = diagramasNav.activo;
+
+  // Ídem para Ejercicios: el enunciado y el editor de código se reparten el
+  // ancho, así que el menú global entero al lado era la parte más cara de la
+  // pantalla y la menos útil mientras se resuelve.
+  const ejerciciosNav = useEjerciciosNav();
+  const isEjercicios = ejerciciosNav.activo;
 
   const [grupoName, setGrupoName] = useState('');
   // El grupo activo del alumno es COMPARTIDO (contexto): antes era estado local
@@ -303,6 +311,18 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             </Link>
             {!collapsed && <span className={styles.grupoLabel}>Diagramas</span>}
           </div>
+        ) : isEjercicios ? (
+          <div className={styles.backHeader}>
+            <Link
+              to={isGrupoDetail ? `/admin/grupos/${grupoId}` : '/alumno'}
+              className={styles.backButton}
+              onClick={onCloseMobile}
+            >
+              <Icon name="arrow_back" size="sm" />
+              {!collapsed && <span>Salir de Ejercicios</span>}
+            </Link>
+            {!collapsed && <span className={styles.grupoLabel}>Ejercicios</span>}
+          </div>
         ) : isColeccionDetail ? (
           <div className={styles.backHeader}>
             <Link to="/admin/contenidos" className={styles.backButton} onClick={onCloseMobile}>
@@ -379,12 +399,14 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
           </div>
         )}
         <nav
-          className={`${styles.nav} ${(isColeccionDetail || isDiagramas) && !collapsed ? styles.navArbol : ''}`}
+          className={`${styles.nav} ${(isColeccionDetail || isDiagramas || isEjercicios) && !collapsed ? styles.navArbol : ''}`}
         >
           {isDiagramas ? (
             // Colapsado (70px) el árbol es ilegible: se oculta y queda el botón
             // de salida, igual que en el árbol de Contenidos.
             !collapsed && <ArbolDiagramas />
+          ) : isEjercicios ? (
+            !collapsed && <ArbolEjercicios />
           ) : isColeccionDetail ? (
             // Colapsado (70px) el árbol es ilegible: se oculta y queda solo el
             // botón de volver, que es la salida.

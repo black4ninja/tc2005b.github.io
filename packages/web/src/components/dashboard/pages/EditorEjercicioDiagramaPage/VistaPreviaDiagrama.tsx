@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTema } from '../../../../context/TemaContext';
 import { cargarMotor } from '../../../../lib/diagramas/registro';
 import { ajustarAlContenedor } from '../../../../lib/diagramas/ajustar';
 import styles from './VistaPreviaDiagrama.module.css';
@@ -25,6 +26,13 @@ interface Props {
  * está escribiendo necesita saber qué falla, no perder el contexto.
  */
 export default function VistaPreviaDiagrama({ codigo, motor, altura = 220 }: Props) {
+  // Los motores dibujan el SVG con la paleta que se les diga, y lo hacen con
+  // colores FIJOS: no hay CSS que reajustar después. Pintando siempre en claro
+  // —como se hacía— los rótulos de los canales y las líneas de un diagrama de
+  // actividad salían en gris oscuro sobre el panel oscuro del editor, es decir,
+  // invisibles. El visor del alumno ya lo hacía bien; esto lo iguala.
+  const { tema } = useTema();
+  const oscuro = tema === 'oscuro';
   const lienzo = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState('');
   const [pintando, setPintando] = useState(false);
@@ -63,7 +71,7 @@ export default function VistaPreviaDiagrama({ codigo, motor, altura = 220 }: Pro
     const provisional = document.createElement('div');
 
     cargarMotor(motor)
-      .then((r) => r.pintar(fuente, provisional, false))
+      .then((r) => r.pintar(fuente, provisional, oscuro))
       .then(() => {
         if (!vigente) return;
         destino.replaceChildren(...Array.from(provisional.childNodes));
@@ -82,7 +90,7 @@ export default function VistaPreviaDiagrama({ codigo, motor, altura = 220 }: Pro
       });
 
     return () => { vigente = false; };
-  }, [codigoRetardado, motor, altura]);
+  }, [codigoRetardado, motor, altura, oscuro]);
 
   const vacio = !codigoRetardado.trim();
 

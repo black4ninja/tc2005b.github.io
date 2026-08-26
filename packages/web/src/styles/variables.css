@@ -1,6 +1,10 @@
 :root {
   /* Activity type colors */
   --color-lab: #2563eb;
+  /* Hover de enlace. Va en variable porque en oscuro tiene que ACLARARSE, no
+     oscurecerse: el valor de claro (#1d4ed8) sobre una tarjeta oscura da ~1,6:1
+     y el texto desaparece justo al pasar el ratón. */
+  --color-lab-hover: #1d4ed8;
   --color-lectura: #7c3aed;
   --color-ejercicio: #059669;
   --color-proyecto: #d97706;
@@ -162,6 +166,7 @@
 
   /* Colores de tipo de actividad: mismos matices, subidos de luminosidad. */
   --color-lab: #60a5fa;
+  --color-lab-hover: #bfdbfe;
   --color-lectura: #a78bfa;
   --color-ejercicio: #34d399;
   --color-proyecto: #fbbf24;

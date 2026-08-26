@@ -5,6 +5,7 @@ import { useSidebarCollapse } from '../../../../hooks/useSidebarCollapse';
 import { useAuth } from '../../../../context/AuthContext';
 import { ColeccionArbolProvider } from '../../../../context/ColeccionArbolContext';
 import { DiagramasNavProvider } from '../../../../context/DiagramasNavContext';
+import { EjerciciosNavProvider } from '../../../../context/EjerciciosNavContext';
 import styles from './DashboardLayout.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
 import ErrorBoundary from '../../../common/ErrorBoundary/ErrorBoundary';
@@ -40,20 +41,23 @@ export default function DashboardLayout({ role }: DashboardLayoutProps) {
           y el listado la página. Con tres consultas independientes, resolver un
           ejercicio actualizaría una y dejaría las otras dos mintiendo. */}
       <DiagramasNavProvider>
-        <div className={styles.layout}>
-          <Sidebar role={effectiveRole} collapsed={collapsed} mobileOpen={mobileOpen} onCloseMobile={closeMobile} />
-          <DashboardHeader role={effectiveRole} collapsed={collapsed} onToggleSidebar={toggle} />
-          <main
-            className={styles.content}
-            style={{ marginLeft: collapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)' }}
-          >
-            {/* Por dentro del layout, para conservar menú y cabecera: desde
-                una sección rota se puede ir a otra sin recargar. */}
-            <ErrorBoundary resetKey={pathname} ambito="esta sección">
-              <Outlet />
-            </ErrorBoundary>
-          </main>
-        </div>
+        {/* Y para Ejercicios, por lo mismo. */}
+        <EjerciciosNavProvider>
+          <div className={styles.layout}>
+            <Sidebar role={effectiveRole} collapsed={collapsed} mobileOpen={mobileOpen} onCloseMobile={closeMobile} />
+            <DashboardHeader role={effectiveRole} collapsed={collapsed} onToggleSidebar={toggle} />
+            <main
+              className={styles.content}
+              style={{ marginLeft: collapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)' }}
+            >
+              {/* Por dentro del layout, para conservar menú y cabecera: desde
+                  una sección rota se puede ir a otra sin recargar. */}
+              <ErrorBoundary resetKey={pathname} ambito="esta sección">
+                <Outlet />
+              </ErrorBoundary>
+            </main>
+          </div>
+        </EjerciciosNavProvider>
       </DiagramasNavProvider>
     </ColeccionArbolProvider>
   );
