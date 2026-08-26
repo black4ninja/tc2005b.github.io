@@ -15,11 +15,11 @@
   margin: 8px 0 0;
   font-size: 14px;
   line-height: 1.5;
-  color: #57606a;
+  color: var(--text-secondary);
   max-width: 70ch;
 }
 
-.info { color: #57606a; font-size: 15px; }
+.info { color: var(--text-secondary); font-size: 15px; }
 
 /* La lista se acota: son nombres cortos y a más ancho solo aumentaría el hueco
    entre el nombre y su fecha. El resto va al área de trabajo, que lo aprovecha
@@ -42,7 +42,7 @@
   margin-bottom: 12px;
   flex-wrap: wrap;
 }
-.listaTitulo { margin: 0; font-size: 16px; color: #1f2328; }
+.listaTitulo { margin: 0; font-size: 16px; color: var(--text-primary); }
 
 .btnNuevo {
   display: inline-flex;
@@ -52,7 +52,7 @@
   font-size: 13px;
   font-weight: 600;
   color: #fff;
-  background: #4f46e5;
+  background: var(--dash-primary);
   border: 1px solid var(--dash-primary);
   border-radius: 8px;
   cursor: pointer;
@@ -78,7 +78,7 @@
    los estados activos del panel. */
 .itemActivo {
   border-color: var(--dash-primary);
-  box-shadow: inset 3px 0 0 #4f46e5;
+  box-shadow: inset 3px 0 0 var(--dash-primary);
 }
 
 .itemAbrir {
@@ -95,11 +95,11 @@
 .itemNombre {
   font-size: 14px;
   font-weight: 600;
-  color: #1f2328;
+  color: var(--text-primary);
   overflow-wrap: anywhere;
 }
-.itemMeta { font-size: 12px; color: #57606a; }
-.itemFecha { font-size: 12px; color: #8c959f; }
+.itemMeta { font-size: 12px; color: var(--text-secondary); }
+.itemFecha { font-size: 12px; color: var(--text-muted); }
 
 .itemAcciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 
@@ -109,12 +109,12 @@
   border: 1px solid var(--border-color);
   border-radius: 6px;
   background: var(--bg-card);
-  color: #57606a;
+  color: var(--text-secondary);
   cursor: pointer;
 }
-.btnMini:hover { background: #f6f8fa; color: #1f2328; }
-.btnMiniPeligro { border-color: #f0b4ae; color: #b42318; }
-.btnMiniPeligro:hover { background: #fdecea; color: #b42318; }
+.btnMini:hover { background: var(--dash-bg-subtle); color: var(--text-primary); }
+.btnMiniPeligro { border-color: var(--estado-error-border); color: var(--estado-error-color); }
+.btnMiniPeligro:hover { background: var(--estado-error-bg); color: var(--estado-error-color); }
 
 .renombrar { display: flex; flex-direction: column; gap: 6px; }
 
@@ -125,7 +125,7 @@
   margin: 0;
   font-size: 13px;
   line-height: 1.45;
-  color: #1f2328;
+  color: var(--text-primary);
   overflow-wrap: anywhere;
 }
 
@@ -136,8 +136,8 @@
   padding: 14px;
   background: var(--dash-bg-subtle);
 }
-.vacioTitulo { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #1f2328; }
-.vacioTexto { margin: 0 0 8px; font-size: 13px; line-height: 1.5; color: #57606a; }
+.vacioTitulo { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.vacioTexto { margin: 0 0 8px; font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
 .vacioTexto:last-child { margin-bottom: 0; }
 
 /* --- Área de trabajo --- */
@@ -154,18 +154,18 @@
 
 .campos { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 .campoGrupo { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.campoLabel { font-size: 12px; color: #57606a; }
+.campoLabel { font-size: 12px; color: var(--text-secondary); }
 .campo {
   font-size: 13px;
   font-family: inherit;
-  color: #1f2328;
+  color: var(--text-primary);
   padding: 6px 10px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   background: var(--bg-card);
   min-width: 0;
 }
-.campo:focus { outline: 2px solid #4f46e5; outline-offset: 1px; }
+.campo:focus { outline: 2px solid var(--dash-primary); outline-offset: 1px; }
 
 /* Etiqueta solo para lectores de pantalla: el campo de renombrado se entiende
    por su posición, pero sin nombre accesible sería un cuadro anónimo. */
@@ -195,15 +195,15 @@
   padding: 4px 10px;
   border: 0;
   background: transparent;
-  color: #57606a;
+  color: var(--text-secondary);
   border-radius: 6px;
   cursor: pointer;
 }
-.vistaGrupo button:hover { color: #1f2328; }
+.vistaGrupo button:hover { color: var(--text-primary); }
 .vistaActiva,
 .vistaGrupo button.vistaActiva:hover {
   background: var(--bg-card);
-  color: #4f46e5;
+  color: var(--dash-primary);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
@@ -223,7 +223,7 @@
 .panelLabel {
   display: block;
   font-size: 12px;
-  color: #57606a;
+  color: var(--text-secondary);
   margin-bottom: 4px;
 }
 
@@ -251,9 +251,9 @@
   cursor: pointer;
   border: 1px solid var(--border-color);
   background: var(--bg-card);
-  color: #1f2328;
+  color: var(--text-primary);
 }
-.btnPri { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+.btnPri { background: var(--dash-primary); border-color: var(--dash-primary); color: #fff; }
 .btnSec:disabled, .btnPri:disabled { opacity: 0.55; cursor: default; }
 
 /* El estado de guardado se lee de un vistazo por el color, pero también lleva
@@ -261,14 +261,14 @@
 .marcaSinGuardar {
   font-size: 13px;
   font-weight: 600;
-  color: #9a6700;
+  color: var(--estado-aviso-color);
   background: var(--estado-aviso-bg);
   border-radius: 999px;
   padding: 4px 12px;
 }
 .marcaGuardado {
   font-size: 13px;
-  color: #57606a;
+  color: var(--text-secondary);
   padding: 4px 4px;
 }
 
@@ -276,19 +276,19 @@
   margin-top: 14px;
   padding: 10px 12px;
   background: var(--estado-error-bg);
-  color: #b42318;
+  color: var(--estado-error-color);
   border-radius: 8px;
   font-size: 14px;
 }
 
-.aviso { margin: 10px 0 0; font-size: 13px; color: #1e7e34; }
+.aviso { margin: 10px 0 0; font-size: 13px; color: var(--estado-exito-color); }
 
 .enlaceBoton {
   border: none;
   background: none;
   padding: 0;
   font: inherit;
-  color: #4f46e5;
+  color: var(--dash-primary);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -323,14 +323,14 @@
   gap: 6px;
   padding: 5px 10px;
   font-size: 13px;
-  color: #57606a;
+  color: var(--text-secondary);
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
   white-space: nowrap;
 }
-.btnLista:hover { background: #f6f8fa; color: #1f2328; }
+.btnLista:hover { background: var(--dash-bg-subtle); color: var(--text-primary); }
 
 /* Acción de la tarjeta reducida a un icono: renombrar pasó al doble clic. */
 .btnIcono {
@@ -338,10 +338,10 @@
   align-items: center;
   justify-content: center;
   padding: 4px;
-  color: #57606a;
+  color: var(--text-secondary);
   background: transparent;
   border: 0;
   border-radius: 6px;
   cursor: pointer;
 }
-.btnIcono:hover { background: #ffebe9; color: #cf222e; }
+.btnIcono:hover { background: var(--estado-error-bg); color: var(--estado-error-color); }

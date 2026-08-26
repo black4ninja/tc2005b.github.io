@@ -38,6 +38,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     ningún control con el que deshacerlo.
 
 ### Fixed
+- **Ejercicios y Diagramas se leían a medias en tema oscuro.** Los dos módulos
+  se escribieron con la paleta clara de GitHub a mano —`#1f2328` de texto,
+  `#57606a` de secundario, `#f6f8fa` de fondo— en vez de los tokens del tema, y
+  esos valores no cambian al pasar a oscuro. El resultado era texto casi negro
+  sobre fondo casi negro: los títulos de los ejercicios sin resolver, los nombres
+  de categoría y el botón «Probar casos de muestra» desaparecían, y el enunciado
+  del solver se volvía ilegible —incluidos sus bloques de código, que sí tenían
+  fondo del tema pero heredaban el texto oscuro—.
+  - El ejercicio resuelto, además, se pintaba como una tarjeta **blanca** en
+    medio de la lista oscura: su verde de fondo también estaba escrito a mano.
+  - Los 111 colores fijos de los cinco archivos pasan a tokens, que es la regla
+    que `variables.css` ya enuncia («NUNCA un color escrito a mano»). No hacen
+    falta reglas propias de tema oscuro: los tokens ya se redefinen solos.
+  - De paso el acento deja de ser un índigo propio del módulo y pasa a
+    `--dash-primary`, el mismo que usa el botón primario del panel.
+
 - **El juez de programación abría en blanco.** El editor tumbaba la pantalla
   entera con `Unrecognized extension value in extension set`: había **dos copias
   de `@codemirror/state`** instaladas, y CodeMirror identifica sus extensiones

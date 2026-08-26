@@ -10,7 +10,7 @@
 .volver {
   display: inline-block;
   font-size: 14px;
-  color: #4f46e5;
+  color: var(--dash-primary);
   text-decoration: none;
   margin-bottom: 8px;
 }
@@ -18,7 +18,7 @@
 
 .titulo { margin: 0; font-size: 24px; font-weight: 700; color: var(--text-primary); }
 
-.info { color: #57606a; font-size: 15px; }
+.info { color: var(--text-secondary); font-size: 15px; }
 
 .cols {
   display: grid;
@@ -32,7 +32,7 @@
 .enunciado {
   font-size: 15px;
   line-height: 1.6;
-  color: #24292f;
+  color: var(--text-primary);
   word-wrap: break-word;
 }
 .enunciado :global(pre) {
@@ -43,7 +43,7 @@
 }
 .enunciado :global(code) { font-family: ui-monospace, Menlo, monospace; }
 
-.subtitulo { font-size: 16px; margin: 20px 0 10px; color: #1f2328; }
+.subtitulo { font-size: 16px; margin: 20px 0 10px; color: var(--text-primary); }
 
 .muestras { display: flex; flex-direction: column; gap: 12px; }
 .muestra {
@@ -57,7 +57,7 @@
 .muestraLabel {
   display: block;
   font-size: 12px;
-  color: #57606a;
+  color: var(--text-secondary);
   margin-bottom: 4px;
 }
 .pre {
@@ -115,7 +115,7 @@
   border-radius: 6px;
   border: 1px solid var(--border-color);
 }
-.lengFijo { display: inline-block; font-weight: 600; color: #1f2328; border-style: dashed; }
+.lengFijo { display: inline-block; font-weight: 600; color: var(--text-primary); border-style: dashed; }
 
 .acciones { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .btnSec, .btnPri {
@@ -126,16 +126,16 @@
   cursor: pointer;
   border: 1px solid var(--border-color);
   background: var(--bg-card);
-  color: #1f2328;
+  color: var(--text-primary);
 }
-.btnPri { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+.btnPri { background: var(--dash-primary); border-color: var(--dash-primary); color: #fff; }
 .btnSec:disabled, .btnPri:disabled { opacity: 0.55; cursor: default; }
 
 .errorBox {
   margin-top: 14px;
   padding: 10px 12px;
   background: var(--estado-error-bg);
-  color: #b42318;
+  color: var(--estado-error-color);
   border-radius: 8px;
   font-size: 14px;
 }
@@ -144,7 +144,7 @@
   margin-top: 14px;
   padding: 10px 12px;
   background: var(--estado-info-bg);
-  color: #3730a3;
+  color: var(--estado-info-color);
   border-radius: 8px;
   font-size: 14px;
   display: flex;
@@ -155,7 +155,7 @@
 /* --- Resultados --- */
 .resultado { margin-top: 16px; }
 .veredictoRow { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.conteo { font-size: 14px; color: #57606a; }
+.conteo { font-size: 14px; color: var(--text-secondary); }
 
 .badge {
   display: inline-block;
@@ -164,8 +164,8 @@
   font-size: 13px;
   font-weight: 700;
 }
-.badgeOk { background: #e6f4ea; color: #1e7e34; }
-.badgeMal { background: #fdecea; color: #b42318; }
+.badgeOk { background: var(--estado-exito-bg); color: var(--estado-exito-color); }
+.badgeMal { background: var(--estado-error-bg); color: var(--estado-error-color); }
 
 .salidaPre {
   margin: 0;
@@ -186,14 +186,14 @@
   padding: 8px 12px;
   margin-bottom: 8px;
 }
-.casoOk { border-left: 3px solid #1e7e34; }
-.casoMal { border-left: 3px solid #b42318; }
+.casoOk { border-left: 3px solid var(--estado-exito-color); }
+.casoMal { border-left: 3px solid var(--estado-error-color); }
 .casoHead {
   display: flex;
   justify-content: space-between;
   font-size: 13px;
   font-weight: 600;
-  color: #1f2328;
+  color: var(--text-primary);
 }
 .casoDetalle {
   display: grid;
@@ -216,10 +216,10 @@
   gap: 6px;
   padding: 5px 10px;
   font-size: 13px;
-  color: #57606a;
+  color: var(--text-secondary);
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
 }
-.btnEnunciado:hover { background: #f6f8fa; color: #1f2328; }
+.btnEnunciado:hover { background: var(--dash-bg-subtle); color: var(--text-primary); }
