@@ -21,6 +21,12 @@ interface SelectorPreguntaProps {
    */
   permiteAgregar?: boolean;
   /**
+   * Hay un guardado en vuelo: la lista no admite clics hasta que vuelva. Dos
+   * altas solapadas calculan su hueco con un estado que el servidor todavía no
+   * ha visto, y lo que queda guardado no es lo que se ve.
+   */
+  guardando?: boolean;
+  /**
    * Elegir una NO seleccionada la asigna; elegir una ya seleccionada la quita.
    * El modal NO se cierra: se ve el cambio en la propia lista y se sigue.
    */
@@ -46,7 +52,7 @@ interface SelectorPreguntaProps {
  */
 export default function SelectorPregunta({
   preguntas, titulo, subtitulo, competencias = [], competenciaInicial = null,
-  seleccionadas = new Set(), permiteAgregar = true, onAlternar, onCerrar,
+  seleccionadas = new Set(), permiteAgregar = true, guardando = false, onAlternar, onCerrar,
 }: SelectorPreguntaProps) {
   const [texto, setTexto] = useState('');
   const [competencia, setCompetencia] = useState<string | null>(competenciaInicial);
@@ -86,6 +92,7 @@ export default function SelectorPregunta({
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const elegida = filtradas[indice];
+      if (guardando) return;
       if (elegida && (seleccionadas.has(elegida.id) || permiteAgregar)) onAlternar(elegida);
     }
   }
@@ -142,7 +149,7 @@ export default function SelectorPregunta({
           <ul className={styles.lista} ref={listaRef}>
             {filtradas.map((p, i) => {
               const elegida = seleccionadas.has(p.id);
-              const apagada = !elegida && !permiteAgregar;
+              const apagada = guardando || (!elegida && !permiteAgregar);
               return (
                 <li key={p.id}>
                   <button
@@ -151,11 +158,13 @@ export default function SelectorPregunta({
                     disabled={apagada}
                     onMouseEnter={() => setIndice(i)}
                     onClick={() => onAlternar(p)}
-                    title={elegida
-                      ? 'Pulsa para quitársela'
-                      : apagada
-                        ? 'Ya tiene todos sus intentos: quita una para poner esta'
-                        : 'Pulsa para asignársela'}
+                    title={guardando
+                      ? 'Guardando el cambio anterior…'
+                      : elegida
+                        ? 'Pulsa para quitársela'
+                        : apagada
+                          ? 'Ya tiene todos sus intentos: quita una para poner esta'
+                          : 'Pulsa para asignársela'}
                   >
                     <span className={styles.opcionMeta}>
                       {/* La marca de elegida va primero: es lo que contesta a
@@ -185,7 +194,13 @@ export default function SelectorPregunta({
           </ul>
         )}
         <p className={styles.atajos}>
-          ↑ ↓ para moverte · Enter para asignar o quitar · Esc para cerrar
+          {guardando ? (
+            <span className={styles.guardando}>
+              <Icon name="sync" size="sm" /> Guardando…
+            </span>
+          ) : (
+            <>↑ ↓ para moverte · Enter para asignar o quitar · Esc para cerrar</>
+          )}
           <span className={styles.libres}>{sinUsar} sin usar de {filtradas.length}</span>
         </p>
       </div>

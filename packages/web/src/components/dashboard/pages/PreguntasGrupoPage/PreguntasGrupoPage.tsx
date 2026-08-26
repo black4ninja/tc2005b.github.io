@@ -67,6 +67,16 @@ export default function PreguntasGrupoPage() {
   const [busqueda, setBusqueda] = useState('');
   const [busquedaPregunta, setBusquedaPregunta] = useState('');
 
+  /**
+   * Cuántos guardados hay en vuelo. Es un contador y no un booleano porque
+   * repartir manda uno solo pero el profesor puede encadenar clics, y con un
+   * booleano el primero en volver desbloquearía mientras el segundo sigue.
+   *
+   * Mientras haya alguno, el selector no admite clics: dos altas solapadas
+   * calculan su hueco con un estado que el servidor todavía no ha visto, y lo
+   * que queda guardado no es lo que se ve.
+   */
+  const [guardando, setGuardando] = useState(0);
   const [editandoDuracion, setEditandoDuracion] = useState(false);
   const [duracionBorrador, setDuracionBorrador] = useState('');
 
@@ -264,6 +274,7 @@ export default function PreguntasGrupoPage() {
 
     setAlumnos((prev) => aplicarAsignaciones(prev, provisionales));
     setPreguntas((prev) => ajustarUso(prev, pares.map((p) => p.preguntaId), []));
+    setGuardando((n) => n + 1);
 
     try {
       const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/preguntas/asignaciones`, {
@@ -292,6 +303,8 @@ export default function PreguntasGrupoPage() {
       setError(mensajeDeError(err, 'Error al asignar'));
       setAlumnos(foto);
       setPreguntas(fotoPreguntas);
+    } finally {
+      setGuardando((n) => n - 1);
     }
   }
 
@@ -301,6 +314,7 @@ export default function PreguntasGrupoPage() {
     const fotoPreguntas = preguntas;
     setAlumnos((prev) => quitarAsignaciones(prev, [asignacion.id]));
     setPreguntas((prev) => ajustarUso(prev, [], asignacion.pregunta ? [asignacion.pregunta.id] : []));
+    setGuardando((n) => n + 1);
     try {
       const res = await fetch(
         `${API_BASE}/admin/grupos/${grupoId}/preguntas/asignaciones/${asignacion.id}`,
@@ -315,6 +329,8 @@ export default function PreguntasGrupoPage() {
       setError(mensajeDeError(err, 'Error al quitar la asignación'));
       setAlumnos(foto);
       setPreguntas(fotoPreguntas);
+    } finally {
+      setGuardando((n) => n - 1);
     }
   }
 
@@ -592,7 +608,7 @@ export default function PreguntasGrupoPage() {
               <DashButton
                 variant="outline"
                 onClick={repartir}
-                disabled={sinLlenar === 0}
+                disabled={sinLlenar === 0 || guardando > 0}
                 title={competenciaActiva
                   ? `Da una pregunta de esta competencia a cada alumno sin ${intentoActivo}.º intento`
                   : 'Llena todos los huecos vacíos: cada competencia y cada intento'}
@@ -835,6 +851,7 @@ export default function PreguntasGrupoPage() {
               : `${nombreCompetencia} · lleva ${suyas.length} de ${MAX_INTENTOS}. Lo que elijas entra en el ${destino}.º intento.`}
             seleccionadas={new Set(suyas.map((a) => a.pregunta?.id).filter((id): id is string => !!id))}
             permiteAgregar={suyas.length < MAX_INTENTOS}
+            guardando={guardando > 0}
             onAlternar={(p) => {
               // Pulsar una que ya tiene la QUITA; pulsar otra la mete en el
               // hueco de destino, sustituyendo lo que hubiera ahí.

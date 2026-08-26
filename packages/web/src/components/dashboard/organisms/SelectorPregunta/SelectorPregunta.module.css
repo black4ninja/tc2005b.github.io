@@ -198,3 +198,24 @@
   background: var(--estado-aviso-bg);
   color: var(--estado-aviso-color);
 }
+
+/* Guardando: la lista entera queda quieta un instante. Es preferible a dejar
+   encadenar clics cuyo resultado depende de qué respuesta llegue antes. */
+.guardando {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+}
+
+.guardando :global(.material-icons) {
+  animation: girando 1.1s linear infinite;
+}
+
+@keyframes girando {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guardando :global(.material-icons) { animation: none; }
+}

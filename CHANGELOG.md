@@ -115,7 +115,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     volver a pulsarlo se lo quita. Al llegar al tope de intentos, las demás se
     **apagan** en vez de sustituir a una en silencio: pulsar y que cambie otra
     cosa sin avisar es peor que no poder pulsar. Lo mismo al revés —desde una
-    pregunta, el alumno sin intentos libres sale apagado—.
+    pregunta, el alumno sin intentos libres sale apagado—. Mientras un cambio se guarda, la
+    lista no admite clics: dos altas solapadas calculan su hueco con un estado
+    que el servidor todavía no ha visto, y lo que queda guardado deja de ser lo
+    que se ve.
   - El banco de la materia se **filtra por competencia** (con 145 preguntas la
     tabla sin filtrar no se lee) y marca cuáles llevan sin estrenarse.
   - Asignar y quitar cambian la fila **en el acto** y el servidor solo confirma o
