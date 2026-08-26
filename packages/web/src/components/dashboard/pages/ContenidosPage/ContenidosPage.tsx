@@ -7,6 +7,7 @@ import Modal from '../../atoms/Modal/Modal';
 import ColeccionForm from '../../organisms/ColeccionForm/ColeccionForm';
 import { buscarColecciones } from '../../../../utils/buscarColecciones';
 import type { ColeccionData } from '../../../../types/contenidos';
+import type { CategoriaRef } from '../../organisms/ColeccionForm/ColeccionForm';
 import styles from './ContenidosPage.module.css';
 
 const API_BASE = '/api';
@@ -37,6 +38,7 @@ export default function ContenidosPage() {
   const { sessionToken } = useAuth();
   const navigate = useNavigate();
   const [colecciones, setColecciones] = useState<ColeccionData[]>([]);
+  const [categorias, setCategorias] = useState<CategoriaRef[]>([]);
   const [consulta, setConsulta] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,9 +65,26 @@ export default function ContenidosPage() {
     }
   }, [sessionToken]);
 
+  /**
+   * El MISMO catálogo que usan los grupos. Si falla, el formulario se queda sin
+   * selector pero todo lo demás sigue: la categoría es para reconocer una
+   * materia de un vistazo, no un dato sin el que no se pueda trabajar.
+   */
+  const fetchCategorias = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/categorias-grupo`, { headers: { 'x-session-token': sessionToken ?? '' } });
+      if (!res.ok) return;
+      const data = await res.json();
+      setCategorias(data.categorias ?? []);
+    } catch {
+      // sin catálogo, sin selector
+    }
+  }, [sessionToken]);
+
   useEffect(() => {
     fetchColecciones();
-  }, [fetchColecciones]);
+    fetchCategorias();
+  }, [fetchColecciones, fetchCategorias]);
 
   const visibles = useMemo(
     () => buscarColecciones(colecciones, consulta),
@@ -192,6 +211,15 @@ export default function ContenidosPage() {
           {visibles.map((coleccion) => (
             <article key={coleccion.id} className={styles.tarjeta}>
               <div className={styles.tarjetaCabecera}>
+                {/* La banda de color va pegada a la clave: es lo primero que se
+                    lee, y con ella la materia se reconoce antes de leer nada.
+                    Mismo color que sus grupos, del mismo catálogo. */}
+                <span
+                  className={styles.categoriaBanda}
+                  style={coleccion.categoria ? { background: coleccion.categoria.color } : undefined}
+                  title={coleccion.categoria?.nombre ?? 'Sin categoría'}
+                  aria-hidden="true"
+                />
                 <span className={styles.clave}>{coleccion.clave || '—'}</span>
                 <span className={`${styles.badge} ${coleccion.publicada ? styles.badgeActive : styles.badgeDraft}`}>
                   {coleccion.publicada ? 'Publicada' : 'Borrador'}
@@ -219,7 +247,17 @@ export default function ContenidosPage() {
               </div>
 
               <p className={styles.nombre}>{coleccion.nombre}</p>
-              <code className={styles.slug}>{coleccion.slug}</code>
+              <div className={styles.pie}>
+                <code className={styles.slug}>{coleccion.slug}</code>
+                {coleccion.categoria && (
+                  <span
+                    className={styles.categoria}
+                    style={{ color: coleccion.categoria.color, borderColor: coleccion.categoria.color }}
+                  >
+                    {coleccion.categoria.nombre}
+                  </span>
+                )}
+              </div>
 
               <div className={styles.modulos}>
                 {MODULOS.map((m) => (
@@ -242,6 +280,7 @@ export default function ContenidosPage() {
       <Modal isOpen={modalOpen} onClose={closeModal} title={editColeccion ? 'Editar Colección' : 'Nueva Colección'}>
         <ColeccionForm
           coleccion={editColeccion}
+          categorias={categorias}
           errorExterno={error}
           onSave={handleSave}
           onCancel={closeModal}

@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { BaseModel } from '../models/BaseModel.js';
 import { Grupo } from '../models/Grupo.js';
+import { resolverCategoriaGrupo } from '../services/categoria-grupo.service.js';
 import { esModuloValido, coleccionesConCompetencias } from '../models/modulos-contenido.js';
 import { esCampoDesactivable } from '../models/campos-perfil.js';
 import { invalidateColeccionesPermitidas } from '../services/contenidos.service.js';
@@ -189,27 +190,6 @@ function resolverCamposPerfil(valor: unknown): string[] | 'invalido' | null {
   return campos as string[];
 }
 
-/**
- * id de categoría → pointer VALIDADO.
- *
- * Distingue tres cosas que el cliente expresa distinto y aquí se confundirían:
- * `undefined` (no viene en el cuerpo) = no tocar; `null` o `''` = quitarle la
- * categoría al grupo; un id = asignarla. Un id que no existe es 'invalido' y
- * sale como 400, no como un silencioso "se quedó sin categoría".
- */
-async function resolverCategoria(
-  valor: unknown,
-): Promise<Parse.Object | null | 'invalido' | undefined> {
-  if (valor === undefined) return undefined;
-  if (valor === null || valor === '') return null;
-  if (typeof valor !== 'string') return 'invalido';
-
-  const q = new Parse.Query('CategoriaGrupo');
-  q.equalTo('exists' as any, true as any);
-  const categoria = await q.get(valor, { useMasterKey: true }).catch(() => null);
-  return categoria ?? 'invalido';
-}
-
 export async function createGrupo(req: Request, res: Response): Promise<void> {
   const { name, fechaInicio, fechaFin, urlAgendaEntrevistas } = req.body;
 
@@ -254,7 +234,7 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
     }
     if (adminsPtrs) grupo.setAdmins(adminsPtrs);
 
-    const categoria = await resolverCategoria(req.body.categoriaId);
+    const categoria = await resolverCategoriaGrupo(req.body.categoriaId);
     if (categoria === 'invalido') {
       res.status(400).json({ status: 'error', message: 'La categoría indicada no existe' });
       return;
@@ -331,7 +311,7 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
       }
       grupo.setCamposPerfilDeshabilitados(campos ?? []);
     }
-    const categoria = await resolverCategoria(req.body.categoriaId);
+    const categoria = await resolverCategoriaGrupo(req.body.categoriaId);
     if (categoria === 'invalido') {
       res.status(400).json({ status: 'error', message: 'La categoría indicada no existe' });
       return;

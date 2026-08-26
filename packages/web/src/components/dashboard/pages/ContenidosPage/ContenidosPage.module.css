@@ -13,7 +13,6 @@
 
 .slug {
   display: inline-block;
-  margin-top: 8px;
   font-size: 12px;
   background: var(--bg-page);
   padding: 2px 7px;
@@ -293,3 +292,35 @@
 }
 
 .vacio p { margin: 0; font-size: 14px; color: var(--text-secondary); }
+
+
+/* ── Categoría (mismo catálogo que los grupos) ────────────────────────────
+   Una banda de color pegada a la clave. Sin categoría cae al gris del tema,
+   como en las listas de grupos, en vez de desaparecer: así todas las tarjetas
+   mantienen la misma anatomía. */
+.categoriaBanda {
+  flex: none;
+  width: 4px;
+  align-self: stretch;
+  min-height: 20px;
+  border-radius: 2px;
+  background: var(--border-color);
+}
+
+.pie {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+/* El nombre en el color de su categoría, con el borde a juego. Es un rótulo,
+   no un botón: no lleva fondo para no competir con los módulos. */
+.categoria {
+  padding: 1px 8px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+}

@@ -12,10 +12,20 @@ interface ColeccionSavePayload {
   descripcion?: string;
   publicada?: boolean;
   permitePenalizacion?: boolean;
+  categoriaId?: string | null;
+}
+
+/** Categoría del catálogo compartido con los grupos. */
+export interface CategoriaRef {
+  id: string;
+  nombre: string;
+  color: string;
 }
 
 interface ColeccionFormProps {
   coleccion?: ColeccionData;
+  /** El catálogo de categorías; vacío = no se ofrece el selector. */
+  categorias?: CategoriaRef[];
   /** Error del servidor (p. ej. slug duplicado) — se muestra dentro del modal. */
   errorExterno?: string;
   onSave: (data: ColeccionSavePayload) => void;
@@ -23,7 +33,7 @@ interface ColeccionFormProps {
   loading?: boolean;
 }
 
-export default function ColeccionForm({ coleccion, errorExterno, onSave, onCancel, loading }: ColeccionFormProps) {
+export default function ColeccionForm({ coleccion, categorias = [], errorExterno, onSave, onCancel, loading }: ColeccionFormProps) {
   const [nombre, setNombre] = useState(coleccion?.nombre ?? '');
   const [slug, setSlug] = useState(coleccion?.slug ?? '');
   const [slugTocado, setSlugTocado] = useState(!!coleccion);
@@ -31,6 +41,7 @@ export default function ColeccionForm({ coleccion, errorExterno, onSave, onCance
   const [descripcion, setDescripcion] = useState(coleccion?.descripcion ?? '');
   const [publicada, setPublicada] = useState(coleccion?.publicada ?? false);
   const [permitePenalizacion, setPermitePenalizacion] = useState(coleccion?.permitePenalizacion ?? false);
+  const [categoriaId, setCategoriaId] = useState(coleccion?.categoria?.id ?? '');
   const [error, setError] = useState('');
 
   function handleNombre(v: string) {
@@ -55,6 +66,7 @@ export default function ColeccionForm({ coleccion, errorExterno, onSave, onCance
       slug: slugFinal,
       clave: clave.trim() || undefined,
       descripcion: descripcion.trim() || undefined,
+      categoriaId: categoriaId || null,
       ...(coleccion ? { publicada, permitePenalizacion } : {}),
     });
   }
@@ -92,6 +104,38 @@ export default function ColeccionForm({ coleccion, errorExterno, onSave, onCance
         onChange={(v) => setClave(v.toUpperCase())}
         disabled={loading}
       />
+      {categorias.length > 0 && (
+        <div className={styles.field}>
+          <label className={styles.label} htmlFor="coleccion-categoria">
+            Categoría
+          </label>
+          <div className={styles.categoriaFila}>
+            {/* La muestra repite el color del elegido, igual que en el
+                formulario de grupo: sin ella hay que abrir el desplegable para
+                saber de qué color va a salir la materia. */}
+            <span
+              className={styles.categoriaPunto}
+              style={{ background: categorias.find((c) => c.id === categoriaId)?.color }}
+              aria-hidden="true"
+            />
+            <select
+              id="coleccion-categoria"
+              className={styles.select}
+              value={categoriaId}
+              onChange={(e) => setCategoriaId(e.target.value)}
+              disabled={loading}
+            >
+              <option value="">Sin categoría</option>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+          </div>
+          <span className={styles.hint}>
+            El mismo catálogo que usan los grupos. De ella sale el color con que se distingue la materia.
+          </span>
+        </div>
+      )}
       <div className={styles.field}>
         <label className={styles.label}>Descripción</label>
         <textarea

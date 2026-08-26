@@ -25,6 +25,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     creciendo hacia abajo hace más falta que antes.
   - Tres tarjetas por fila en el panel, dos por debajo de 1100 px y una en
     móvil.
+  - Cada materia puede llevar **categoría**, del **mismo catálogo que los
+    grupos** («Móviles», «Gráficas», «IA»). Compartirlo es el punto: la materia
+    y sus grupos se reconocen por el mismo color, y cambiarle el color a «IA» los
+    repinta todos a la vez. En la tarjeta sale como banda junto a la clave y como
+    rótulo al pie, y el buscador la encuentra —«moviles» trae las materias de
+    móviles—.
 
 - **Un solo catálogo de tipos de actividad.** Había siete tablas paralelas
   —rótulos en el Hub, en la barra de filtros, en el resumen de la semana, en el
