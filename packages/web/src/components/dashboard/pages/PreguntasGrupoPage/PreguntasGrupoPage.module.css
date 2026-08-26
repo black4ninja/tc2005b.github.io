@@ -754,3 +754,93 @@
   border-color: var(--border-color);
   background: var(--bg-page);
 }
+
+/* ── Agenda de entrevistas ─────────────────────────────────────────────── */
+.dias {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
+}
+
+.diaCabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-sm);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.diaRango {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.diaNota { color: var(--text-muted); }
+
+.diaAcciones {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* Los huecos sin cita se resumen en una fila y se apagan: están para que el
+   profesor sepa dónde tiene un respiro, no para leerlos uno a uno. */
+.filaVacia td {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  background: var(--bg-page);
+}
+
+/* Una cita sin pregunta para su intento se ve ANTES del día, no al pulsar
+   «Proyectar» con el alumno delante. */
+.sinPreguntaAviso {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  font-size: 0.78rem;
+}
+
+.formDia {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-sm);
+}
+
+.formDia label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.formDia input {
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.formAncho { flex: 1 1 100%; }
+
+.formAcciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}

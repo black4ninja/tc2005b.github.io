@@ -8,6 +8,33 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Agenda de entrevistas: el alumno elige su hora y de ahí sale el orden de la
+  proyección.** El profesor puede repartir las preguntas semanas antes, pero
+  quién pasa primero no lo decide él: lo escriben los alumnos al apuntarse, y
+  eso solo se sabe el día de la entrevista.
+  - **El profesor** abre días (fecha y franja) desde la pestaña **Agenda** de
+    Preguntas. El día se parte solo en bloques del tiempo que rige en el grupo, y
+    ese tamaño queda **congelado en el día**: cambiar el tiempo del módulo
+    después movería las citas que los alumnos ya tienen apuntadas.
+  - El día se lee como una fila: **hora, alumno, competencia, en qué intento va y
+    qué pregunta le toca**. Los huecos vacíos seguidos se resumen en una línea
+    —«Sin entrevistas hasta las 10:00 · 8 libres»—, porque cuatro horas son 48
+    bloques y lo que hace falta saber es dónde hay un respiro. **Proyectar el
+    día** usa ese orden.
+  - Una cita **sin pregunta para su intento** sale avisada en la fila, no al
+    pulsar «Proyectar» con el alumno delante.
+  - **El alumno** ve sus huecos libres, elige competencia y reserva o cancela. Es
+    lo único del módulo que ve: ni el banco, ni qué pregunta le tocará, ni la de
+    nadie más —los huecos ajenos salen como «ocupado», sin nombre—.
+  - Las reglas de la hoja de cálculo dejan de ser un texto en la cabecera y las
+    aplica el servidor: **24 horas hábiles de antelación** (el fin de semana no
+    corre), **cancelar hasta 5 minutos antes** y **2 oportunidades por
+    competencia**. Los huecos que aún no cumplen la antelación se ven apagados y
+    con su motivo, en vez de desaparecer: así el rechazo no llega con el clic ya
+    dado.
+  - El profesor puede agendar por un alumno y cancelar sin margen —para el que no
+    se presentó—; el tope de intentos rige para los dos.
+
 - **La proyección se abre en su propia pestaña y se maneja a distancia.** Antes
   era una capa sobre el panel: proyectar significaba tapar la pantalla desde la
   que se trabaja, y con un solo aparato no había forma de enseñarle la pregunta

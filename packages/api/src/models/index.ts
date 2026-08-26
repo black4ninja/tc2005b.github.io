@@ -52,3 +52,7 @@ export { PreguntaAsignacion } from './PreguntaAsignacion.js';
 // son dos aparatos distintos y se sincronizan por aquí.
 export { ProyeccionPregunta, ESTADOS_PROYECCION } from './ProyeccionPregunta.js';
 export type { EstadoProyeccion } from './ProyeccionPregunta.js';
+// Agenda de entrevistas: los días que el profesor abre y las citas que los
+// alumnos reservan. De ahí sale el ORDEN en que se proyecta.
+export { DiaEntrevistas } from './DiaEntrevistas.js';
+export { CitaEntrevista } from './CitaEntrevista.js';

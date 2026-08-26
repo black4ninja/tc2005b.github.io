@@ -371,20 +371,23 @@ export async function getMyMenu(req: Request, res: Response): Promise<void> {
     // Los dos módulos salen de UNA lectura del grupo: preguntarlos por separado
     // traía el mismo grupo con sus colecciones dos veces.
     const [modulos, colecciones, ejercicios, diagramas] = await Promise.all([
-      modulosActivosEnGrupo(grupoPointer.id, ['competencias', 'actividades']),
+      modulosActivosEnGrupo(grupoPointer.id, ['competencias', 'actividades', 'preguntas']),
       getColeccionesPermitidas(user),
       coleccionesConEjerciciosPublicados(user),
       coleccionesConDiagramasPublicados(user),
     ]);
     const competencias = modulos.competencias === true;
     const actividades = modulos.actividades === true;
+    // El alumno no ve nada del módulo "Preguntas" salvo UNA cosa: la agenda,
+    // donde elige su hora. De ahí sale el orden de las entrevistas.
+    const preguntas = modulos.preguntas === true;
 
     res.json({
       status: 'ok',
       menu: {
         // `malla` sale del mismo interruptor que las actividades: es de donde se
         // estampa. Se nombra aparte para que el consumidor no tenga que saberlo.
-        modulos: { competencias, actividades, malla: actividades },
+        modulos: { competencias, actividades, malla: actividades, preguntas },
         perfilCompleto: link.getPerfilCompleto(),
         // Solo el slug de la primera: es lo único que el menú usa para enlazar.
         coleccionSlug: colecciones[0]?.slug ?? null,

@@ -1,0 +1,218 @@
+.page {
+  padding: var(--space-lg);
+  max-width: 1000px;
+}
+
+.titulo {
+  margin: 0 0 var(--space-md);
+  font-size: 1.6rem;
+  color: var(--text-primary);
+}
+
+.subtitulo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin: 0 0 var(--space-sm);
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+/* Las reglas, arriba y siempre visibles: es la parte que se reclama después si
+   no se leyó antes. */
+.reglas {
+  margin: 0 0 var(--space-lg);
+  padding: var(--space-md) var(--space-md) var(--space-md) calc(var(--space-md) + 1.1rem);
+  border: 1px solid var(--estado-info-border, var(--border-color));
+  border-radius: var(--border-radius);
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.bloque { margin-bottom: var(--space-lg); }
+
+.diaRango,
+.diaNota,
+.hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.diaNota { margin: 0 0 var(--space-sm); }
+
+.cerrado {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  font-size: 0.72rem;
+}
+
+/* Rejilla de horas: se lee como la columna de un día de la hoja, pero cabe en
+   una pantalla de móvil. */
+.huecos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 6px;
+}
+
+.hueco {
+  padding: 8px 4px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.hueco:hover:not(:disabled) {
+  border-color: var(--dash-primary);
+  background: var(--dash-bg-subtle);
+}
+
+.hueco:disabled { cursor: not-allowed; }
+
+.hueco_mio {
+  border-color: var(--estado-exito-color);
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+  font-weight: 600;
+}
+
+/* Ocupado y pasado se apagan; «pronto» se distingue porque el hueco SÍ está
+   libre y el motivo de no poder tomarlo es la antelación, no que esté cogido. */
+.hueco_ocupado,
+.hueco_pasado {
+  opacity: 0.35;
+  background: transparent;
+}
+
+.hueco_pronto {
+  border-style: dashed;
+  color: var(--text-muted);
+  background: transparent;
+}
+
+.misCitas,
+.competencias {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.miCita {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+.miCita > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.citaHora {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.citaCompetencia,
+.citaNota {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.competencias li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 6px var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.compAgotada { opacity: 0.5; }
+
+.compCuenta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.elegirComp {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.opcionComp {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 10px var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.opcionComp:hover:not(:disabled) {
+  border-color: var(--dash-primary);
+  background: var(--dash-bg-subtle);
+}
+
+.opcionComp:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.apagado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.error,
+.aviso {
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.error {
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+}
+
+.aviso {
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+}
