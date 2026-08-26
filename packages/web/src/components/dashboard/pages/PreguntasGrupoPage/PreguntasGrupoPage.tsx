@@ -4,14 +4,15 @@ import { useAuth } from '../../../../context/AuthContext';
 import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Modal from '../../atoms/Modal/Modal';
-import PreguntaProyector from '../../organisms/PreguntaProyector/PreguntaProyector';
 import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta';
 import SelectorAlumno from '../../organisms/SelectorAlumno/SelectorAlumno';
 import {
-  aplicarAsignaciones, ajustarUso, formatearDuracion, quitarAsignaciones, repartirPreguntas, resumenPregunta,
+  aplicarAsignaciones, ajustarUso, faseProyeccion, formatearDuracion, quitarAsignaciones,
+  repartirPreguntas, resumenPregunta,
 } from '../../../../utils/preguntas';
 import type {
-  AlumnoConPregunta, CompetenciaEnBanco, DuracionConfig, Pregunta, PreguntaAsignacion,
+  AlumnoConPregunta, CompetenciaEnBanco, DuracionConfig, EstadoProyeccion, FaseProyeccion,
+  Pregunta, PreguntaAsignacion, Proyeccion,
 } from '../../../../types/preguntas';
 import styles from './PreguntasGrupoPage.module.css';
 
@@ -19,12 +20,31 @@ const API_BASE = '/api';
 const SIN_COMPETENCIA = 'sin-competencia';
 /** Espejo de `MAX_INTENTOS` del API: hasta dos entrevistas por competencia. */
 const MAX_INTENTOS = 2;
+/**
+ * Cada cuánto se relee lo que hay proyectado. Más lento que en la pantalla
+ * proyectada porque aquí el panel es quien MANDA: sondea para no mentir si el
+ * profesor abrió el panel en dos sitios, no para enterarse de lo suyo.
+ */
+const PERIODO_SONDEO = 2500;
+/** Cada cuánto se repinta el reloj del mando. */
+const PERIODO_RELOJ = 250;
 
 function mensajeDeError(e: unknown, porDefecto: string): string {
   return e instanceof Error && e.message ? e.message : porDefecto;
 }
 
 type Vista = 'alumnos' | 'preguntas';
+
+/** Cómo se llama cada fase en el mando. En la pantalla proyectada no se escribe. */
+const ETIQUETA_FASE: Record<FaseProyeccion, string> = {
+  'sin-pregunta': 'Sin pregunta',
+  espera: 'Por iniciar',
+  corriendo: 'En curso',
+  // El reloj ya está a cero pero la pregunta sigue puesta unos segundos.
+  gracia: 'Se acabó el tiempo',
+  finalizada: 'Finalizada',
+  detenida: 'Detenida',
+};
 
 /**
  * Roster de PREGUNTAS de un grupo: a quién le toca qué.
@@ -91,7 +111,16 @@ export default function PreguntasGrupoPage() {
   const [eligiendoAlumno, setEligiendoAlumno] = useState<Pregunta | null>(null);
   const [historialDe, setHistorialDe] = useState<AlumnoConPregunta | null>(null);
   const [historial, setHistorial] = useState<PreguntaAsignacion[]>([]);
-  const [proyectando, setProyectando] = useState<number | null>(null);
+  /**
+   * Lo que hay en la pantalla proyectada. El panel es el MANDO: escribe aquí y
+   * la otra pantalla —que suele estar en otro aparato— lo lee del servidor.
+   */
+  const [proyeccion, setProyeccion] = useState<Proyeccion | null>(null);
+  const [ahora, setAhora] = useState(() => Date.now());
+  /** `serverNow - Date.now()`: el reloj del mando no es el del servidor. */
+  const desfaseRef = useRef(0);
+  /** La pestaña proyectada, para volver a ella en vez de abrir otra. */
+  const ventanaRef = useRef<Window | null>(null);
 
   const headers = useMemo<Record<string, string>>(() => ({
     'Content-Type': 'application/json',
@@ -126,6 +155,73 @@ export default function PreguntasGrupoPage() {
   }, [grupoId, sessionToken]);
 
   useEffect(() => { fetchTodo(); }, [fetchTodo]);
+
+  /** La URL de la pantalla proyectada. Se abre aquí o se manda al iPad. */
+  const urlProyeccion = `${window.location.origin}/admin/grupos/${grupoId}/proyeccion`;
+
+  const leerProyeccion = useCallback(async () => {
+    if (!grupoId) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/preguntas/proyeccion`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) return;
+      const data = await res.json() as { proyeccion?: Proyeccion; serverNow?: string };
+      if (data.serverNow) desfaseRef.current = new Date(data.serverNow).getTime() - Date.now();
+      setProyeccion(data.proyeccion ?? null);
+    } catch {
+      // El mando sigue funcionando sin esto: lo que manda se guarda igual y la
+      // respuesta del PUT trae el estado. Sondear es solo para no mentir.
+    }
+  }, [grupoId, sessionToken]);
+
+  useEffect(() => {
+    leerProyeccion();
+    const id = window.setInterval(leerProyeccion, PERIODO_SONDEO);
+    return () => window.clearInterval(id);
+  }, [leerProyeccion]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setAhora(Date.now()), PERIODO_RELOJ);
+    return () => window.clearInterval(id);
+  }, []);
+
+  /**
+   * Manda un cambio a la pantalla proyectada.
+   *
+   * La respuesta trae el estado ya resuelto, así que el mando se pinta con lo
+   * que el servidor guardó y no con lo que creía haber mandado: si dos panelistas
+   * pulsan a la vez, gana el servidor y los dos ven lo mismo.
+   */
+  async function proyectar(cambio: { asignacionId?: string | null; estado?: EstadoProyeccion }) {
+    if (!grupoId) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/preguntas/proyeccion`, {
+        method: 'PUT', headers, body: JSON.stringify(cambio),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message || 'Error al cambiar la proyección');
+      }
+      const data = await res.json() as { proyeccion?: Proyeccion; serverNow?: string };
+      if (data.serverNow) desfaseRef.current = new Date(data.serverNow).getTime() - Date.now();
+      setProyeccion(data.proyeccion ?? null);
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'Error al cambiar la proyección'));
+    }
+  }
+
+  /**
+   * Abre —o trae al frente— la pestaña proyectada.
+   *
+   * Con nombre de ventana a propósito: pulsar «Proyectar» dos veces tiene que
+   * llevar a la misma pantalla, no dejar dos abiertas peleándose por el cañón.
+   */
+  function abrirPantalla() {
+    const abierta = ventanaRef.current;
+    if (abierta && !abierta.closed) { abierta.focus(); return; }
+    ventanaRef.current = window.open(urlProyeccion, `proyeccion-${grupoId}`);
+  }
 
   const porId = useMemo(() => new Map(preguntas.map((p) => [p.id, p])), [preguntas]);
 
@@ -224,6 +320,31 @@ export default function PreguntasGrupoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [visibles, huecosVisibles, competenciaActiva, intentoActivo],
   );
+
+  /** Dónde cae lo proyectado dentro de la lista que el profesor está viendo. */
+  const indiceProyectado = useMemo(
+    () => paraProyectar.findIndex((x) => x.asignacion.id === proyeccion?.asignacionId),
+    [paraProyectar, proyeccion],
+  );
+
+  /**
+   * En qué punto está la pantalla proyectada. Sale de la MISMA función pura que
+   * usa el proyector, con el reloj corregido: el mando enseña el número que se
+   * está viendo en la otra pantalla, no una aproximación suya.
+   */
+  const enPantalla = proyeccion ? faseProyeccion(proyeccion, ahora + desfaseRef.current) : null;
+
+  /** Salta a la pregunta de al lado en el orden en que se ve la tabla. */
+  function moverProyeccion(paso: number) {
+    if (paraProyectar.length === 0) return;
+    const desde = indiceProyectado < 0 ? (paso > 0 ? -1 : 0) : indiceProyectado;
+    const destino = Math.min(paraProyectar.length - 1, Math.max(0, desde + paso));
+    const siguiente = paraProyectar[destino];
+    if (siguiente && siguiente.asignacion.id !== proyeccion?.asignacionId) {
+      // Sin `estado`: cambiar de alumno reinicia el reloj en el servidor.
+      proyectar({ asignacionId: siguiente.asignacion.id });
+    }
+  }
 
   /**
    * Asigna y pinta EN EL ACTO, confirmando cuando el servidor responde.
@@ -610,6 +731,97 @@ export default function PreguntasGrupoPage() {
         )}
       </div>
 
+      {/* El MANDO. La proyección ya no es un overlay de esta pestaña: vive en
+          otra —el iPad, el cañón— y desde aquí se dirige. Por eso esta barra
+          está en las dos vistas: es el estado de la sesión, no de una lista. */}
+      {proyeccion?.asignacionId && enPantalla && (
+        <div className={styles.mando}>
+          <div className={styles.mandoQuien}>
+            <span className={styles.mandoNombre}>{proyeccion.alumno?.name}</span>
+            <span className={styles.mandoCompetencia}>
+              {proyeccion.competencia ?? 'Sin competencia'}
+              {proyeccion.intento ? ` · ${proyeccion.intento}.º intento` : ''}
+              {indiceProyectado >= 0 && ` · ${indiceProyectado + 1} de ${paraProyectar.length}`}
+            </span>
+          </div>
+
+          <div className={`${styles.mandoEstado} ${styles[`fase_${enPantalla.fase}`] ?? ''}`}>
+            <span className={styles.mandoReloj}>{formatearDuracion(
+              enPantalla.fase === 'espera' || enPantalla.fase === 'detenida'
+                ? proyeccion.duracionSegundos
+                : enPantalla.restante,
+            )}</span>
+            <span className={styles.mandoFase}>{ETIQUETA_FASE[enPantalla.fase]}</span>
+          </div>
+
+          <div className={styles.mandoBotones}>
+            <button
+              className={styles.iconBtn}
+              onClick={() => moverProyeccion(-1)}
+              disabled={indiceProyectado <= 0}
+              title="Anterior de la lista"
+            >
+              <Icon name="chevron_left" size="sm" />
+            </button>
+            <button
+              className={styles.iconBtn}
+              onClick={() => moverProyeccion(1)}
+              disabled={indiceProyectado >= paraProyectar.length - 1}
+              title="Siguiente de la lista"
+            >
+              <Icon name="chevron_right" size="sm" />
+            </button>
+
+            {enPantalla.visible ? (
+              <DashButton
+                variant="outline"
+                onClick={() => proyectar({ estado: 'detenido' })}
+                title="Retira la pregunta de la pantalla"
+              >
+                <Icon name="stop" size="sm" /> Detener
+              </DashButton>
+            ) : (
+              <DashButton
+                onClick={() => proyectar({ estado: 'corriendo' })}
+                title="Enseña la pregunta y arranca el reloj"
+              >
+                <Icon name="play_arrow" size="sm" />
+                {enPantalla.fase === 'espera' ? 'Iniciar' : 'Otra vez'}
+              </DashButton>
+            )}
+            <button
+              className={styles.iconBtn}
+              onClick={() => proyectar({ estado: 'espera' })}
+              disabled={enPantalla.fase === 'espera'}
+              title="Deja el reloj a cero, sin enseñar la pregunta"
+            >
+              <Icon name="restart_alt" size="sm" />
+            </button>
+
+            <button className={styles.iconBtn} onClick={abrirPantalla} title="Abrir o traer al frente la pantalla proyectada">
+              <Icon name="open_in_new" size="sm" />
+            </button>
+            <button
+              className={styles.iconBtn}
+              onClick={() => {
+                navigator.clipboard?.writeText(urlProyeccion);
+                setAviso(`Enlace copiado: ${urlProyeccion} — ábrelo en el iPad con tu sesión iniciada.`);
+              }}
+              title="Copiar el enlace para abrirlo en otro aparato"
+            >
+              <Icon name="link" size="sm" />
+            </button>
+            <button
+              className={styles.iconBtn}
+              onClick={() => proyectar({ asignacionId: null })}
+              title="Dejar la pantalla en blanco"
+            >
+              <Icon name="close" size="sm" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {vista === 'alumnos' ? (
         <>
           <div className={styles.barra}>
@@ -638,11 +850,18 @@ export default function PreguntasGrupoPage() {
                 Repartir al grupo ({sinLlenar})
               </DashButton>
               <DashButton
-                onClick={() => setProyectando(0)}
-                disabled={paraProyectar.length === 0}
-                title="Abre la primera pregunta a pantalla completa; se avanza con ← →"
+                onClick={() => {
+                  abrirPantalla();
+                  // Si no hay nada puesto, empieza por el primero de la lista tal
+                  // como se está viendo; si ya lo hay, solo trae la pestaña.
+                  if (!proyeccion?.asignacionId && paraProyectar[0]) {
+                    proyectar({ asignacionId: paraProyectar[0].asignacion.id });
+                  }
+                }}
+                disabled={paraProyectar.length === 0 && !proyeccion?.asignacionId}
+                title="Abre la pantalla de proyección en otra pestaña; se maneja desde aquí"
               >
-                <Icon name="slideshow" size="sm" /> Proyectar
+                <Icon name="cast" size="sm" /> Proyectar
               </DashButton>
             </div>
           </div>
@@ -665,7 +884,12 @@ export default function PreguntasGrupoPage() {
                   ? asignacionDe(alumno, competenciaActiva, intentoActivo)
                   : null;
                 return (
-                  <tr key={alumno.id} className={unica?.usada ? styles.filaUsada : ''}>
+                  <tr
+                    key={alumno.id}
+                    className={`${unica?.usada ? styles.filaUsada : ''} ${
+                      alumno.asignaciones.some((a) => a.id === proyeccion?.asignacionId)
+                        ? styles.filaProyectada : ''}`}
+                  >
                     <td>
                       <span className={styles.alumnoNombre}>{alumno.name}</span>
                       <span className={styles.alumnoMatricula}>{alumno.matricula}</span>
@@ -756,15 +980,18 @@ export default function PreguntasGrupoPage() {
                       {competenciaActiva ? (
                         <>
                           <button
-                            className={styles.iconBtn}
+                            className={`${styles.iconBtn} ${unica && unica.id === proyeccion?.asignacionId ? styles.iconBtnOn : ''}`}
                             disabled={!unica?.pregunta}
                             onClick={() => {
-                              const i = paraProyectar.findIndex((x) => x.asignacion.id === unica?.id);
-                              if (i >= 0) setProyectando(i);
+                              if (!unica) return;
+                              // Poner en pantalla es una cosa y arrancar el reloj
+                              // es otra: esto solo la pone, en «por iniciar».
+                              proyectar({ asignacionId: unica.id });
+                              abrirPantalla();
                             }}
-                            title="Proyectar esta pregunta"
+                            title="Poner esta pregunta en la pantalla proyectada"
                           >
-                            <Icon name="slideshow" size="sm" />
+                            <Icon name="cast" size="sm" />
                           </button>
                           <button
                             className={`${styles.iconBtn} ${unica?.usada ? styles.iconBtnOn : ''}`}
@@ -981,22 +1208,6 @@ export default function PreguntasGrupoPage() {
         )}
       </Modal>
 
-      {proyectando !== null && paraProyectar[proyectando] && (() => {
-        const { alumno, asignacion } = paraProyectar[proyectando];
-        const pregunta = asignacion.pregunta ? porId.get(asignacion.pregunta.id) : null;
-        if (!pregunta) return null;
-        return (
-          <PreguntaProyector
-            pregunta={pregunta}
-            duracionSegundos={pregunta.duracionSegundos ?? duracionVigente}
-            alumno={{ name: alumno.name, matricula: alumno.matricula }}
-            posicion={{ indice: proyectando + 1, total: paraProyectar.length }}
-            onAnterior={proyectando > 0 ? () => setProyectando(proyectando - 1) : null}
-            onSiguiente={proyectando < paraProyectar.length - 1 ? () => setProyectando(proyectando + 1) : null}
-            onSalir={() => setProyectando(null)}
-          />
-        );
-      })()}
     </div>
   );
 }

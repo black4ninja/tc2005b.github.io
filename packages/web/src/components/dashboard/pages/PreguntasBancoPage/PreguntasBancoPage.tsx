@@ -313,7 +313,7 @@ export default function PreguntasBancoPage() {
 
   const getActions = (p: Pregunta): ActionItem[] => [
     { label: 'Editar', icon: 'edit', onClick: () => abrirEdicion(p) },
-    { label: 'Proyectar', icon: 'slideshow', onClick: () => setProyectando(p) },
+    { label: 'Vista previa', icon: 'slideshow', onClick: () => setProyectando(p) },
     {
       label: p.archivada ? 'Devolver al banco' : 'Archivar',
       icon: p.archivada ? 'unarchive' : 'archive',
@@ -508,8 +508,14 @@ export default function PreguntasBancoPage() {
           ocupa antes de asignársela a nadie. Sin alumno ni notas. */}
       {proyectando && (
         <PreguntaProyector
-          pregunta={proyectando}
+          textoHtml={proyectando.textoHtml}
+          competencia={proyectando.competencia?.competencia ?? null}
+          // Sin reloj corriendo: aquí se mira cómo queda, no se cronometra a
+          // nadie. El tiempo se enseña para comprobar que da para leerla.
+          fase="espera"
+          restante={duracionMateria ?? DURACION_POR_DEFECTO}
           duracionSegundos={duracionMateria ?? DURACION_POR_DEFECTO}
+          visible
           onSalir={() => setProyectando(null)}
         />
       )}

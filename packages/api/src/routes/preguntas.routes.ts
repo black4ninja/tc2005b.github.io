@@ -16,6 +16,10 @@ import {
   borrarAsignacion,
   setConfiguracionGrupo,
 } from '../controllers/preguntas-asignacion.controller.js';
+import {
+  getProyeccion,
+  setProyeccion,
+} from '../controllers/preguntas-proyeccion.controller.js';
 
 /**
  * Módulo "Preguntas". Dos bloques con dos guards distintos:
@@ -48,5 +52,10 @@ router.get('/admin/grupos/:grupoId/preguntas/alumnos/:alumnoId', getHistorialAlu
 router.post('/admin/grupos/:grupoId/preguntas/asignaciones', crearAsignaciones);
 router.put('/admin/grupos/:grupoId/preguntas/asignaciones/:id', actualizarAsignacion);
 router.delete('/admin/grupos/:grupoId/preguntas/asignaciones/:id', borrarAsignacion);
+
+// Proyección: qué se está enseñando ahora. Lo escribe el panel del profesor y lo
+// lee la pantalla que se proyecta, que suele estar en OTRO aparato.
+router.get('/admin/grupos/:grupoId/preguntas/proyeccion', getProyeccion);
+router.put('/admin/grupos/:grupoId/preguntas/proyeccion', setProyeccion);
 
 export default router;

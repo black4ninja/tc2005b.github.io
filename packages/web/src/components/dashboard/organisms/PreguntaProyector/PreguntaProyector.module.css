@@ -23,9 +23,8 @@
 
 .quien {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-md);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -34,10 +33,11 @@
   font-weight: 600;
 }
 
-.matricula,
-.posicion {
-  font-size: clamp(0.85rem, 1.2vw, 1rem);
-  color: var(--text-muted);
+/* Qué se le evalúa, bajo el nombre. Es el contexto de la pregunta, así que va
+   ahí y no entre los datos del alumno. */
+.competencia {
+  font-size: clamp(0.9rem, 1.4vw, 1.2rem);
+  color: var(--text-secondary);
 }
 
 /* El reloj arriba a la derecha, en cifras tabulares para que no baile al pasar
@@ -53,18 +53,54 @@
 
 .relojApurado { color: var(--dash-warning); }
 
+/* Antes de arrancar y al detenerse el reloj enseña el total, apagado: informa
+   de cuánto habrá sin competir con el nombre. */
+.relojEnReposo { color: var(--text-muted); }
+
 .relojAgotado {
   color: var(--dash-danger);
   font-size: clamp(1.8rem, 5vw, 3.5rem);
 }
 
+/* Una rejilla de UNA celda: las dos capas caen encima y se cruzan por opacidad.
+   Con `display: flex` y un cambio de nodo habría un fotograma vacío, que a
+   pantalla completa se ve como un parpadeo. */
 .escena {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
   overflow-y: auto;
   padding: var(--space-xl) clamp(var(--space-lg), 6vw, 6rem);
+}
+
+.capa {
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+  opacity: 0;
+  /* `visibility` además de la opacidad: una capa a 0 sigue capturando el ratón y
+     la leen los lectores de pantalla. */
+  visibility: hidden;
+  transition: opacity 600ms ease, visibility 0s linear 600ms;
+}
+
+.capaVisible {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 600ms ease, visibility 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .capa,
+  .capaVisible { transition: none; }
+}
+
+/* Lo que se ve entre pregunta y pregunta: presente, pero sin robarle la
+   atención a nadie. */
+.reposo {
+  margin: 0;
+  font-size: clamp(1.2rem, 2.4vw, 2rem);
+  color: var(--text-muted);
+  text-align: center;
 }
 
 /* `contenido-render` ya trae la tipografía del wiki; aquí solo se sube la
@@ -81,16 +117,22 @@
 .texto :global(li) { margin-bottom: 0.3em; }
 .texto :global(code) { font-size: 0.85em; }
 
-.controles {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-  padding: var(--space-md) var(--space-xl);
+/* Solo estado, no control: esta pantalla no se maneja desde aquí. */
+.sinConexion {
+  margin: 0;
+  padding: var(--space-sm) var(--space-xl);
   border-top: 1px solid var(--border-color);
+  font-size: 0.85rem;
+  color: var(--estado-aviso-color);
+  background: var(--estado-aviso-bg);
 }
 
-.boton {
+/* La única pieza pulsable, y solo en la vista previa del banco: la pantalla que
+   se proyecta no lleva ninguna. */
+.salir {
+  position: absolute;
+  left: var(--space-lg);
+  bottom: var(--space-lg);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -103,25 +145,7 @@
   cursor: pointer;
 }
 
-.boton:hover {
+.salir:hover {
   color: var(--text-primary);
   background: var(--dash-bg-subtle);
-}
-
-.botonPrincipal {
-  background: var(--dash-primary);
-  border-color: var(--dash-primary);
-  color: #fff;
-}
-
-.botonPrincipal:hover {
-  background: var(--dash-primary);
-  color: #fff;
-  filter: brightness(1.05);
-}
-
-.atajos {
-  margin-left: auto;
-  font-size: 0.8rem;
-  color: var(--text-muted);
 }

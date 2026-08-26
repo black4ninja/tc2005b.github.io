@@ -110,3 +110,40 @@ export interface DuracionConfig {
     duracionSegundos: number | null;
   }[];
 }
+
+/** Lo que el profesor manda desde el panel. `finalizada` no se manda: se deduce. */
+export type EstadoProyeccion = 'espera' | 'corriendo' | 'detenido';
+
+/**
+ * Qué se está proyectando AHORA en el grupo. Lo escribe el panel del profesor y
+ * lo lee la pantalla que se proyecta, que suele estar en otro aparato.
+ *
+ * `iniciadoEn` es el instante de arranque según el SERVIDOR; el reloj no viaja,
+ * lo calcula cada pantalla. Ver `faseProyeccion`.
+ */
+export interface Proyeccion {
+  estado: EstadoProyeccion;
+  iniciadoEn: string | null;
+  asignacionId: string | null;
+  alumno: { name: string } | null;
+  /** Qué se le evalúa. Va bajo el nombre en la pantalla del alumno. */
+  competencia: string | null;
+  intento: number | null;
+  textoHtml: string | null;
+  texto: string | null;
+  duracionSegundos: number;
+  /** Segundos que la pregunta aguanta en pantalla después del cero. */
+  graciaSegundos: number;
+}
+
+/**
+ * En qué punto está la proyección. `gracia` sigue enseñando la pregunta con el
+ * reloj a cero; `finalizada` ya no.
+ */
+export type FaseProyeccion =
+  | 'sin-pregunta'
+  | 'espera'
+  | 'corriendo'
+  | 'gracia'
+  | 'finalizada'
+  | 'detenida';

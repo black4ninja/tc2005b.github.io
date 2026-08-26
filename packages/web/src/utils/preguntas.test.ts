@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  ajustarUso, aplicarAsignaciones, formatearDuracion, quitarAsignaciones,
+  ajustarUso, aplicarAsignaciones, faseProyeccion, formatearDuracion, quitarAsignaciones,
   repartirPreguntas, resumenPregunta,
 } from './preguntas';
 import type { AlumnoConPregunta, Pregunta, PreguntaAsignacion } from '../types/preguntas';
@@ -160,5 +160,55 @@ describe('ajustarUso', () => {
 
   it('nunca baja de cero aunque se resten de más', () => {
     expect(ajustarUso(banco(null), [], ['p1', 'p1'])[0].uso).toBeNull();
+  });
+});
+
+describe('faseProyeccion', () => {
+  const T0 = new Date('2026-08-26T10:00:00.000Z').getTime();
+  const base = {
+    estado: 'corriendo' as const,
+    iniciadoEn: new Date(T0).toISOString(),
+    asignacionId: 'a1',
+    duracionSegundos: 180,
+    graciaSegundos: 5,
+  };
+
+  it('sin pregunta elegida no hay nada que enseñar', () => {
+    const r = faseProyeccion({ ...base, asignacionId: null }, T0);
+    expect(r).toEqual({ fase: 'sin-pregunta', restante: 180, visible: false });
+  });
+
+  it('en espera enseña el tiempo entero pero no la pregunta', () => {
+    const r = faseProyeccion({ ...base, estado: 'espera', iniciadoEn: null }, T0);
+    expect(r).toEqual({ fase: 'espera', restante: 180, visible: false });
+  });
+
+  it('detenida a mano oculta la pregunta aunque hubiera arrancado', () => {
+    expect(faseProyeccion({ ...base, estado: 'detenido' }, T0 + 10_000).visible).toBe(false);
+    expect(faseProyeccion({ ...base, estado: 'detenido' }, T0 + 10_000).fase).toBe('detenida');
+  });
+
+  it('corriendo descuenta desde el arranque', () => {
+    expect(faseProyeccion(base, T0)).toEqual({ fase: 'corriendo', restante: 180, visible: true });
+    expect(faseProyeccion(base, T0 + 30_500).restante).toBe(150);
+  });
+
+  it('al llegar a cero la pregunta se queda los segundos de gracia', () => {
+    const enCero = faseProyeccion(base, T0 + 180_000);
+    expect(enCero).toEqual({ fase: 'gracia', restante: 0, visible: true });
+    expect(faseProyeccion(base, T0 + 184_900).visible).toBe(true);
+  });
+
+  it('pasada la gracia se retira', () => {
+    const r = faseProyeccion(base, T0 + 185_000);
+    expect(r).toEqual({ fase: 'finalizada', restante: 0, visible: false });
+  });
+
+  it('entrar a mitad calcula lo mismo que quien lleva desde el principio', () => {
+    expect(faseProyeccion(base, T0 + 120_000).restante).toBe(60);
+  });
+
+  it('un `corriendo` sin hora de arranque se trata como espera, no como reloj a cero', () => {
+    expect(faseProyeccion({ ...base, iniciadoEn: null }, T0).fase).toBe('espera');
   });
 });

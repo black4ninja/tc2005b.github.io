@@ -7,6 +7,31 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **La proyección se abre en su propia pestaña y se maneja a distancia.** Antes
+  era una capa sobre el panel: proyectar significaba tapar la pantalla desde la
+  que se trabaja, y con un solo aparato no había forma de enseñarle la pregunta
+  al alumno sin enseñarle también el roster.
+  - Ahora **Proyectar** abre `/admin/grupos/:id/proyeccion` en otra pestaña, que
+    puede vivir en otro aparato —el iPad, el cañón del aula—, y el panel se
+    convierte en el **mando**: dice qué hay en pantalla, con su reloj, y lleva
+    anterior/siguiente, iniciar, detener y reiniciar. La fila que se está
+    proyectando queda marcada en la tabla.
+  - Se sincronizan por el servidor y no por el navegador: un `BroadcastChannel`
+    habría bastado entre pestañas del mismo Chrome, pero no cruza dispositivos.
+  - **Tres estados.** *Por iniciar* y *detenida/finalizada* no enseñan la
+    pregunta —solo el nombre, la competencia y cuánto tiempo habrá—; *en curso*
+    la enseña con el reloj corriendo. Al llegar a cero la pregunta **se queda
+    cinco segundos más** antes de retirarse: que la pantalla cambie de golpe
+    mientras el alumno está cerrando la frase se vive como un portazo. Entra y
+    sale con un fundido.
+  - El reloj **no viaja**: el servidor guarda cuándo se pulsó iniciar y cada
+    pantalla calcula lo que queda corrigiendo el desfase de su propio reloj. Así
+    entrar a mitad enseña el número correcto y las dos pantallas coinciden.
+  - En la pantalla proyectada **no hay controles**, y bajo el nombre va la
+    **competencia** que se evalúa —fuera la matrícula y el «3 de 28», que eran
+    del profesor y no del alumno—.
+
 ### Changed
 - **Repartir una pregunta se hace desde la propia pregunta, y de una sentada.**
   La vista «Por pregunta» tenía un enlace *Asignar a un alumno…* que abría una

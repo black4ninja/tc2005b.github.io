@@ -1,158 +1,116 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useEffect } from 'react';
 import Icon from '../../atoms/Icon/Icon';
 import { formatearDuracion } from '../../../../utils/preguntas';
-import type { Pregunta } from '../../../../types/preguntas';
+import type { FaseProyeccion } from '../../../../types/preguntas';
 import '../../../../styles/contenido-render.css';
 import styles from './PreguntaProyector.module.css';
 
 interface PreguntaProyectorProps {
-  pregunta: Pregunta;
-  /**
-   * Segundos de ESTA proyección. Llega resuelto de fuera (grupo → materia →
-   * módulo): el proyector no sabe de dónde sale el tiempo, solo lo cuenta.
-   */
+  /** A quién se le está preguntando. */
+  alumno?: { name: string } | null;
+  /** Qué se le evalúa. Va bajo el nombre: es el contexto de la pregunta. */
+  competencia?: string | null;
+  textoHtml: string;
+  fase: FaseProyeccion;
+  /** Segundos que quedan, ya calculados fuera. */
+  restante: number;
+  /** El total, que es lo que enseña el reloj antes de arrancar. */
   duracionSegundos: number;
-  /** A quién se le está preguntando. Ausente = vista previa desde el banco. */
-  alumno?: { name: string; matricula: string } | null;
-  /** "3 / 28" en la barra: sitúa al profesor dentro de la sesión. */
-  posicion?: { indice: number; total: number } | null;
-  onAnterior?: (() => void) | null;
-  onSiguiente?: (() => void) | null;
-  onSalir: () => void;
+  /** ¿Toca enseñar el enunciado? Lo decide `faseProyeccion`, no esta pantalla. */
+  visible: boolean;
+  /** Se perdió el contacto con el panel. Aviso, no control. */
+  sinConexion?: boolean;
+  /**
+   * Solo para la VISTA PREVIA del banco, que se abre encima de su pantalla y
+   * necesita una salida. La pestaña proyectada no lo pasa: ahí no hay controles
+   * porque no se maneja desde ahí.
+   */
+  onSalir?: (() => void) | null;
+}
+
+/** Lo que se pinta cuando la pregunta no está puesta. */
+function reposo(fase: FaseProyeccion): string {
+  if (fase === 'sin-pregunta') return 'Sin pregunta en pantalla';
+  if (fase === 'finalizada') return 'Tiempo terminado';
+  return 'Preparados';
 }
 
 /**
- * La pregunta a pantalla completa con su temporizador: lo que se le proyecta al
- * alumno durante la entrevista.
+ * La pantalla que ve el alumno: su pregunta a tamaño de aula y el reloj.
  *
- * Sin diseño propio a propósito. Usa los tokens del tema, así que hereda el
- * claro/oscuro que el profesor ya tenga puesto y el contraste sale de ahí; lo
- * único que se toca es el tamaño de letra, que es lo que hace falta para leerlo
- * a tres metros.
+ * No tiene controles ni atajos, y no es un descuido: se abre en OTRO aparato
+ * —el iPad del alumno, el cañón— y se dirige desde el panel del profesor. Aquí
+ * solo se lee. Lo que llega ya viene decidido; esta pantalla ni siquiera cuenta
+ * el tiempo, lo recibe.
  *
- * ⚠️ Las NOTAS de la pregunta no se pintan aquí, ni siquiera plegadas. Esta
- * pantalla se proyecta, y son justo lo que el alumno no debe ver.
+ * Sin diseño propio a propósito: usa los tokens del tema, así que hereda el
+ * claro/oscuro y el contraste sale de ahí. Lo único que se toca es el tamaño de
+ * letra, que es lo que hace falta para leerlo a tres metros.
  *
- * El temporizador arranca PARADO: entre que se proyecta y el alumno termina de
- * leer pasan unos segundos que no son suyos.
+ * ⚠️ Las NOTAS de la pregunta no se pintan aquí, ni siquiera plegadas. Son justo
+ * lo que el alumno no debe ver.
+ *
+ * El enunciado entra y sale con un FUNDIDO, y se queda unos segundos después del
+ * cero (`GRACIA_SEGUNDOS`): que la pantalla cambie de golpe mientras el alumno
+ * está hablando se vive como un portazo.
  */
 export default function PreguntaProyector({
-  pregunta, duracionSegundos, alumno, posicion, onAnterior, onSiguiente, onSalir,
+  alumno, competencia, textoHtml, fase, restante, duracionSegundos, visible,
+  sinConexion = false, onSalir = null,
 }: PreguntaProyectorProps) {
-  const total = duracionSegundos;
-  const [restante, setRestante] = useState(total);
-  const [corriendo, setCorriendo] = useState(false);
-  // Fin absoluto en vez de ir restando: un `setInterval` acumula deriva y a los
-  // tres minutos ya va corto respecto al reloj de la pared.
-  const finRef = useRef<number>(0);
-
-  // Cambiar de alumno o de pregunta reinicia el reloj: seguir contando el tiempo
-  // del anterior sería peor que no tener temporizador.
   useEffect(() => {
-    setRestante(total);
-    setCorriendo(false);
-  }, [pregunta.id, total]);
-
-  useEffect(() => {
-    if (!corriendo) return;
-    finRef.current = Date.now() + restante * 1000;
-    const id = window.setInterval(() => {
-      const quedan = Math.max(0, Math.round((finRef.current - Date.now()) / 1000));
-      setRestante(quedan);
-      if (quedan === 0) setCorriendo(false);
-    }, 200);
-    return () => window.clearInterval(id);
-    // `restante` solo se lee al arrancar la cuenta; incluirlo reiniciaría el
-    // intervalo en cada tick.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [corriendo]);
-
-  const alternar = useCallback(() => {
-    if (restante === 0) {
-      setRestante(total);
-      setCorriendo(true);
-      return;
-    }
-    setCorriendo((c) => !c);
-  }, [restante, total]);
-
-  const reiniciar = useCallback(() => {
-    setCorriendo(false);
-    setRestante(total);
-  }, [total]);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { onSalir(); return; }
-      if (e.code === 'Space') { e.preventDefault(); alternar(); return; }
-      if (e.key === 'r' || e.key === 'R') { reiniciar(); return; }
-      if (e.key === 'ArrowRight' && onSiguiente) { onSiguiente(); return; }
-      if (e.key === 'ArrowLeft' && onAnterior) { onAnterior(); }
-    }
+    if (!onSalir) return;
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onSalir!(); }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [alternar, reiniciar, onSalir, onSiguiente, onAnterior]);
+  }, [onSalir]);
 
-  const agotado = restante === 0;
+  const agotado = fase === 'gracia' || fase === 'finalizada';
   // Últimos 30 s: el color avisa sin que haya que estar mirando el número.
-  const apurado = !agotado && restante <= 30;
+  const apurado = fase === 'corriendo' && restante <= 30;
+  const enReposo = fase === 'espera' || fase === 'detenida' || fase === 'sin-pregunta';
 
   return (
     <div className={styles.overlay}>
       <header className={styles.barra}>
         <div className={styles.quien}>
-          {alumno ? (
-            <>
-              <span className={styles.nombre}>{alumno.name}</span>
-              {alumno.matricula && <span className={styles.matricula}>{alumno.matricula}</span>}
-            </>
-          ) : (
-            <span className={styles.matricula}>Vista previa</span>
-          )}
-          {posicion && (
-            <span className={styles.posicion}>{posicion.indice} / {posicion.total}</span>
-          )}
+          {alumno?.name && <span className={styles.nombre}>{alumno.name}</span>}
+          {/* Debajo del nombre y no al lado: es de qué va la pregunta, no un
+              dato más del alumno. */}
+          {competencia && <span className={styles.competencia}>{competencia}</span>}
         </div>
 
         <div
-          className={`${styles.reloj} ${agotado ? styles.relojAgotado : ''} ${apurado ? styles.relojApurado : ''}`}
+          className={`${styles.reloj} ${agotado ? styles.relojAgotado : ''} ${apurado ? styles.relojApurado : ''} ${enReposo ? styles.relojEnReposo : ''}`}
           role="timer"
           aria-live="off"
         >
-          {agotado ? 'Tiempo' : formatearDuracion(restante)}
+          {agotado ? 'Tiempo' : formatearDuracion(enReposo ? duracionSegundos : restante)}
         </div>
       </header>
 
+      {/* Las dos capas se superponen y se cruzan por opacidad: si una sustituyera
+          a la otra, el hueco de un fotograma se vería como un parpadeo. */}
       <main className={styles.escena}>
         <div
-          className={`${styles.texto} contenido-render`}
-          dangerouslySetInnerHTML={{ __html: pregunta.textoHtml }}
+          className={`${styles.capa} ${styles.texto} contenido-render ${visible ? styles.capaVisible : ''}`}
+          aria-hidden={!visible}
+          dangerouslySetInnerHTML={{ __html: textoHtml }}
         />
+        <p className={`${styles.capa} ${styles.reposo} ${visible ? '' : styles.capaVisible}`} aria-hidden={visible}>
+          {reposo(fase)}
+        </p>
       </main>
 
-      <footer className={styles.controles}>
-        <button className={styles.boton} onClick={onSalir} title="Salir (Esc)">
-          <Icon name="close" size="sm" /> Salir
+      {onSalir && (
+        <button className={styles.salir} onClick={onSalir} title="Cerrar la vista previa (Esc)">
+          <Icon name="close" size="sm" /> Cerrar
         </button>
-        {onAnterior && (
-          <button className={styles.boton} onClick={onAnterior} title="Alumno anterior (←)">
-            <Icon name="chevron_left" size="sm" /> Anterior
-          </button>
-        )}
-        <button className={`${styles.boton} ${styles.botonPrincipal}`} onClick={alternar} title="Iniciar o pausar (Espacio)">
-          <Icon name={corriendo ? 'pause' : 'play_arrow'} size="sm" />
-          {corriendo ? 'Pausar' : agotado ? 'Otra vez' : 'Iniciar'}
-        </button>
-        <button className={styles.boton} onClick={reiniciar} title="Reiniciar el reloj (R)">
-          <Icon name="restart_alt" size="sm" /> Reiniciar
-        </button>
-        {onSiguiente && (
-          <button className={styles.boton} onClick={onSiguiente} title="Alumno siguiente (→)">
-            Siguiente <Icon name="chevron_right" size="sm" />
-          </button>
-        )}
-        <span className={styles.atajos}>Espacio · R · ← → · Esc</span>
-      </footer>
+      )}
+
+      {sinConexion && (
+        <p className={styles.sinConexion}>Sin contacto con el panel; reintentando…</p>
+      )}
     </div>
   );
 }

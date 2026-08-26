@@ -1,0 +1,12 @@
+/* Solo los estados previos al proyector; lo demás lo pinta él. Ocupa la ventana
+   entera porque esta ruta no lleva layout: la pestaña ES la pantalla. */
+.aviso {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-page);
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}

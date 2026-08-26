@@ -20,3 +20,13 @@ export const DURACION_MAX = 60 * 60;
  * repartido por el código, para que subirlo sea cambiar un número.
  */
 export const MAX_INTENTOS = 2;
+
+/**
+ * Segundos que la pregunta sigue en pantalla después de que el reloj llegue a
+ * cero, antes de retirarla.
+ *
+ * Sin ellos, el instante en que el alumno se queda sin tiempo y el instante en
+ * que pierde el enunciado son el mismo, y la pantalla le cambia justo mientras
+ * está hablando. Cinco segundos bastan para cerrar la frase.
+ */
+export const GRACIA_SEGUNDOS = 5;

@@ -25,6 +25,7 @@ import AvancesEquipoPage from './components/dashboard/pages/AvancesEquipoPage/Av
 import EntrevistasPage from './components/dashboard/pages/EntrevistasPage/EntrevistasPage';
 import PreguntasBancoPage from './components/dashboard/pages/PreguntasBancoPage/PreguntasBancoPage';
 import PreguntasGrupoPage from './components/dashboard/pages/PreguntasGrupoPage/PreguntasGrupoPage';
+import ProyeccionPage from './components/dashboard/pages/ProyeccionPage/ProyeccionPage';
 import EvaluacionEntrevistaPage from './components/dashboard/pages/EvaluacionEntrevistaPage/EvaluacionEntrevistaPage';
 import AlumnoCalendarioPage from './components/dashboard/pages/AlumnoCalendarioPage/AlumnoCalendarioPage';
 import HubPage from './components/dashboard/pages/HubPage/HubPage';
@@ -112,6 +113,11 @@ export default function App() {
         <Route path="politicas" element={<CodeReviewsPage />} />
         <Route path="paginas/:slug" element={<PaginaPage />} />
       </Route>
+
+      {/* La pantalla que se proyecta: FUERA del layout del dashboard a
+          propósito. Se abre en otra pestaña —el iPad del alumno, el cañón del
+          aula— y ahí sobran el menú y la cabecera; se guarda sola. */}
+      <Route path="admin/grupos/:id/proyeccion" element={<ProyeccionPage />} />
 
       {/* Auth */}
       <Route path="login" element={<LoginPage />} />

@@ -605,3 +605,79 @@
 @media (prefers-reduced-motion: reduce) {
   .guardando { animation: none; }
 }
+
+/* ── Mando de la proyección ────────────────────────────────────────────────
+   La pantalla proyectada vive en otra pestaña y casi siempre en otro aparato;
+   esto es el mando. Va por encima de las dos vistas porque describe la SESIÓN,
+   no la lista que se esté mirando. */
+.mando {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--dash-primary);
+  border-radius: var(--border-radius);
+  background: var(--dash-bg-subtle);
+}
+
+.mandoQuien {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mandoNombre {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mandoCompetencia {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.mandoEstado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+/* Cifras tabulares: si no, el número baila al pasar de 1:00 a 0:59 y el ojo lo
+   sigue en vez de mirar al alumno. */
+.mandoReloj {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.mandoFase {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.fase_corriendo .mandoReloj { color: var(--estado-exito-color); }
+.fase_gracia .mandoReloj,
+.fase_finalizada .mandoReloj { color: var(--dash-danger); }
+
+.mandoBotones {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* La fila que está en pantalla ahora mismo: el profesor mira la tabla, no el
+   mando, y tiene que poder situarse sin leer el nombre. */
+.filaProyectada td {
+  background: var(--dash-bg-subtle);
+  box-shadow: inset 3px 0 0 var(--dash-primary);
+}

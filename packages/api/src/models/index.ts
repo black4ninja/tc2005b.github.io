@@ -48,3 +48,7 @@ export { DiagramaTaller } from './DiagramaTaller.js';
 // asignación por alumno. La categoría de una pregunta es una Competencia.
 export { Pregunta } from './Pregunta.js';
 export { PreguntaAsignacion } from './PreguntaAsignacion.js';
+// Qué se proyecta AHORA en un grupo: el mando (panel) y la pantalla (proyector)
+// son dos aparatos distintos y se sincronizan por aquí.
+export { ProyeccionPregunta, ESTADOS_PROYECCION } from './ProyeccionPregunta.js';
+export type { EstadoProyeccion } from './ProyeccionPregunta.js';
