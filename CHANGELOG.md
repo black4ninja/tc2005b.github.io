@@ -45,6 +45,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     la base, 310 ms—, y la sesión deja de **reescribirse en cada petición**
     (ahora como mucho cada cinco minutos), lo que quita unos 80 ms a *toda*
     llamada al API.
+  - **Las notas se escriben donde se toman.** La nota del intento estaba en una
+    columna que solo existía con una competencia elegida: con «todas» no había
+    dónde escribirla, y durante la entrevista había que salir a buscarla. Ahora
+    el mando lleva su campo —la nota del intento que está en pantalla— y cada
+    fila abre las de **todos** los intentos del alumno, con su competencia, su
+    número y el enunciado, que es lo que se relee antes de la segunda entrevista.
+    El icono de la fila queda marcado cuando hay algo escrito.
   - **El mando contesta al instante.** Cada orden viaja al servidor y de ahí a
     la otra pantalla, y ese viaje se nota: pulsar «Iniciar» y no ver nada
     durante un segundo se lee como que el botón no funciona. Ahora el reloj

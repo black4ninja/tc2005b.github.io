@@ -111,6 +111,10 @@ export default function PreguntasGrupoPage() {
   >(null);
   // Camino inverso: pregunta elegida, falta el alumno.
   const [eligiendoAlumno, setEligiendoAlumno] = useState<Pregunta | null>(null);
+  // Notas de TODOS los intentos de un alumno. Con «todas» las competencias no
+  // hay columna de nota donde escribirlas —serían cuatro por fila—, y son justo
+  // lo que se relee antes de la segunda entrevista.
+  const [notasDe, setNotasDe] = useState<string | null>(null);
   const [historialDe, setHistorialDe] = useState<AlumnoConPregunta | null>(null);
   const [historial, setHistorial] = useState<PreguntaAsignacion[]>([]);
   /**
@@ -369,6 +373,13 @@ export default function PreguntasGrupoPage() {
    * está viendo en la otra pantalla, no una aproximación suya.
    */
   const enPantalla = proyeccion ? faseProyeccion(proyeccion, ahora + desfaseRef.current) : null;
+
+  /** La asignación que está proyectándose, para escribirle la nota sin buscarla. */
+  const asignacionProyectada = useMemo(
+    () => alumnos.flatMap((a) => a.asignaciones)
+      .find((a) => a.id === proyeccion?.asignacionId) ?? null,
+    [alumnos, proyeccion],
+  );
 
   /** Salta a la pregunta de al lado en el orden en que se ve la tabla. */
   function moverProyeccion(paso: number) {
@@ -877,6 +888,23 @@ export default function PreguntasGrupoPage() {
               <Icon name="close" size="sm" />
             </button>
           </div>
+
+          {/* La nota se escribe MIENTRAS se pregunta, no después: es el momento
+              en que uno se acuerda de lo que quería anotar. Va en su propia
+              línea porque es un campo, no un botón más de la fila. */}
+          {asignacionProyectada && (
+            <label className={styles.mandoNota}>
+              <Icon name="edit_note" size="sm" />
+              <NotaInline
+                key={asignacionProyectada.id}
+                valor={asignacionProyectada.nota}
+                deshabilitado={false}
+                className={styles.notaAncha}
+                placeholder="Nota de este intento: qué respondió, en qué insistir…"
+                onGuardar={(nota) => actualizar(asignacionProyectada.id, { nota })}
+              />
+            </label>
+          )}
         </div>
       )}
 
@@ -1060,6 +1088,13 @@ export default function PreguntasGrupoPage() {
                             <Icon name="check_circle" size="sm" />
                           </button>
                           <button
+                            className={`${styles.iconBtn} ${alumno.asignaciones.some((a) => a.nota) ? styles.iconBtnOn : ''}`}
+                            onClick={() => setNotasDe(alumno.id)}
+                            title="Notas de todos sus intentos"
+                          >
+                            <Icon name="edit_note" size="sm" />
+                          </button>
+                          <button
                             className={styles.iconBtn}
                             onClick={() => abrirHistorial(alumno)}
                             title={`Historial (${alumno.totalAsignaciones})`}
@@ -1076,13 +1111,24 @@ export default function PreguntasGrupoPage() {
                           </button>
                         </>
                       ) : (
-                        <button
-                          className={styles.iconBtn}
-                          onClick={() => abrirHistorial(alumno)}
-                          title={`Historial (${alumno.totalAsignaciones})`}
-                        >
-                          <Icon name="history" size="sm" />
-                        </button>
+                        <>
+                          {/* Sin competencia elegida no hay columna de nota: son
+                              cuatro huecos por fila. Se entra por aquí. */}
+                          <button
+                            className={`${styles.iconBtn} ${alumno.asignaciones.some((a) => a.nota) ? styles.iconBtnOn : ''}`}
+                            onClick={() => setNotasDe(alumno.id)}
+                            title="Notas de todos sus intentos"
+                          >
+                            <Icon name="edit_note" size="sm" />
+                          </button>
+                          <button
+                            className={styles.iconBtn}
+                            onClick={() => abrirHistorial(alumno)}
+                            title={`Historial (${alumno.totalAsignaciones})`}
+                          >
+                            <Icon name="history" size="sm" />
+                          </button>
+                        </>
                       )}
                     </td>
                   </tr>
@@ -1239,6 +1285,56 @@ export default function PreguntasGrupoPage() {
         );
       })()}
 
+      {/* Notas de un alumno, todas juntas. Es la vista que se abre antes de la
+          segunda entrevista: qué se le preguntó ya y qué se apuntó entonces. */}
+      {notasDe && (() => {
+        const alumno = alumnos.find((a) => a.id === notasDe);
+        if (!alumno) return null;
+        const huecos = competencias.flatMap((c) => Array
+          .from({ length: MAX_INTENTOS }, (_, i) => i + 1)
+          .map((intento) => ({ competencia: c, intento, asignacion: asignacionDe(alumno, c.id, intento) }))
+          .filter((h) => h.asignacion));
+        return (
+          <Modal isOpen onClose={() => setNotasDe(null)} title={`Notas — ${alumno.name}`} wide>
+            {huecos.length === 0 ? (
+              <p className={styles.hint}>Todavía no tiene ninguna pregunta asignada.</p>
+            ) : (
+              <div className={styles.notasLista}>
+                {huecos.map(({ competencia, intento, asignacion }) => (
+                  <div key={asignacion!.id} className={styles.notaBloque}>
+                    <div className={styles.notaCabecera}>
+                      <span className={styles.competenciaTag}>{competencia.nombre}</span>
+                      <span className={styles.historialIntento}>{intento}.º intento</span>
+                      {asignacion!.usada && <span className={styles.libreTag}>ya preguntada</span>}
+                      {asignacion!.id === proyeccion?.asignacionId && (
+                        <span className={styles.tomadaTag}>
+                          <Icon name="cast" size="sm" /> en pantalla
+                        </span>
+                      )}
+                    </div>
+                    <p className={styles.notaEnunciado}>
+                      {asignacion!.pregunta ? resumenPregunta(asignacion!.pregunta.texto, 160) : '—'}
+                    </p>
+                    <NotaInline
+                      key={asignacion!.id}
+                      valor={asignacion!.nota}
+                      deshabilitado={!!asignacion!.pendiente}
+                      className={styles.notaAncha}
+                      placeholder="Qué respondió, en qué insistir…"
+                      onGuardar={(nota) => actualizar(asignacion!.id, { nota })}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className={styles.hint}>
+              Se guardan al salir del campo. Solo las ves tú: no se proyectan ni afectan a la
+              calificación.
+            </p>
+          </Modal>
+        );
+      })()}
+
       <Modal
         isOpen={historialDe !== null}
         onClose={() => setHistorialDe(null)}
@@ -1275,10 +1371,12 @@ export default function PreguntasGrupoPage() {
  * corto que se escribe de una sentada, y una petición por pulsación llenaría la
  * red de escrituras a medio escribir.
  */
-function NotaInline({ valor, deshabilitado, onGuardar }: {
+function NotaInline({ valor, deshabilitado, onGuardar, className, placeholder }: {
   valor: string;
   deshabilitado: boolean;
   onGuardar: (nota: string) => void;
+  className?: string;
+  placeholder?: string;
 }) {
   const [texto, setTexto] = useState(valor);
   const inicial = useRef(valor);
@@ -1287,11 +1385,11 @@ function NotaInline({ valor, deshabilitado, onGuardar }: {
 
   return (
     <input
-      className={styles.nota}
+      className={`${styles.nota} ${className ?? ''}`}
       type="text"
       value={texto}
       disabled={deshabilitado}
-      placeholder={deshabilitado ? '' : 'p. ej. insistir en el conflicto…'}
+      placeholder={deshabilitado ? '' : (placeholder ?? 'p. ej. insistir en el conflicto…')}
       onChange={(e) => setTexto(e.target.value)}
       onBlur={() => { if (texto !== inicial.current) { inicial.current = texto; onGuardar(texto); } }}
       onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}

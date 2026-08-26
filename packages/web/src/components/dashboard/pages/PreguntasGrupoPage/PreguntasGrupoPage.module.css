@@ -697,3 +697,60 @@
   background: var(--dash-bg-subtle);
   box-shadow: inset 3px 0 0 var(--dash-primary);
 }
+
+/* La nota del intento que está en pantalla: fila propia dentro del mando, que es
+   un campo y no un botón más. */
+.mandoNota {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
+
+.notaAncha {
+  min-width: 0;
+  flex: 1;
+}
+
+/* ── Notas de un alumno ────────────────────────────────────────────────────
+   Todos sus intentos juntos: es lo que se relee antes de la segunda
+   entrevista. */
+.notasLista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.notaBloque {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+.notaCabecera {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* El enunciado recortado sitúa la nota; el entero está en la vista por pregunta
+   y aquí solo estorbaría. */
+.notaEnunciado {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.notaBloque .nota {
+  border-color: var(--border-color);
+  background: var(--bg-page);
+}
