@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router';
+import { Routes, Route, Navigate, useLocation } from 'react-router';
 import Layout from './components/layout/Layout';
 import CalendarPage from './components/calendar/CalendarPage';
 import LabPage from './components/labs/LabPage';
@@ -35,6 +35,7 @@ import ContenidosPage from './components/dashboard/pages/ContenidosPage/Contenid
 import ColeccionDetailPage from './components/dashboard/pages/ColeccionDetailPage/ColeccionDetailPage';
 import EjerciciosColeccionPage from './components/dashboard/pages/EjerciciosColeccionPage/EjerciciosColeccionPage';
 import { APP_NAME, APP_TAGLINE } from './config/app';
+import ErrorBoundary from './components/common/ErrorBoundary/ErrorBoundary';
 
 // El editor carga CodeMirror + el pipeline de render: se divide del bundle
 // principal y solo se descarga al entrar a editar.
@@ -89,6 +90,8 @@ const RedirEjerciciosLegacy = lazy(
 );
 
 export default function App() {
+  const { pathname } = useLocation();
+
   // Título del navegador como fuente única de verdad (el <title> de index.html
   // es solo un fallback pre-hidratación).
   useEffect(() => {
@@ -96,7 +99,11 @@ export default function App() {
   }, []);
 
   return (
-    <Routes>
+    // Última red. Los layouts ya llevan el suyo por dentro —así un fallo de una
+    // sección conserva el menú—; este cubre lo que quede fuera: el propio
+    // layout, el login, el visor.
+    <ErrorBoundary resetKey={pathname}>
+      <Routes>
       <Route element={<Layout />}>
         <Route index element={<Navigate to="/login" replace />} />
         <Route path="calendario/:grupoId" element={<CalendarPage />} />
@@ -299,6 +306,7 @@ export default function App() {
           }
         />
       </Route>
-    </Routes>
+      </Routes>
+    </ErrorBoundary>
   );
 }

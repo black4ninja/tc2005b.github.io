@@ -1,4 +1,4 @@
-import { Outlet, Navigate } from 'react-router';
+import { Outlet, Navigate, useLocation } from 'react-router';
 import Sidebar from '../../organisms/Sidebar/Sidebar';
 import DashboardHeader from '../../organisms/DashboardHeader/DashboardHeader';
 import { useSidebarCollapse } from '../../../../hooks/useSidebarCollapse';
@@ -7,6 +7,7 @@ import { ColeccionArbolProvider } from '../../../../context/ColeccionArbolContex
 import { DiagramasNavProvider } from '../../../../context/DiagramasNavContext';
 import styles from './DashboardLayout.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
+import ErrorBoundary from '../../../common/ErrorBoundary/ErrorBoundary';
 
 interface DashboardLayoutProps {
   role: DashboardRole;
@@ -15,6 +16,7 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ role }: DashboardLayoutProps) {
   const { isLoading, isAuthenticated, user } = useAuth();
   const { collapsed, mobileOpen, toggle, closeMobile } = useSidebarCollapse();
+  const { pathname } = useLocation();
 
   if (isLoading) {
     return <div className={styles.loading}>Cargando...</div>;
@@ -45,7 +47,11 @@ export default function DashboardLayout({ role }: DashboardLayoutProps) {
             className={styles.content}
             style={{ marginLeft: collapsed ? 'var(--sidebar-width-collapsed)' : 'var(--sidebar-width)' }}
           >
-            <Outlet />
+            {/* Por dentro del layout, para conservar menú y cabecera: desde
+                una sección rota se puede ir a otra sin recargar. */}
+            <ErrorBoundary resetKey={pathname} ambito="esta sección">
+              <Outlet />
+            </ErrorBoundary>
           </main>
         </div>
       </DiagramasNavProvider>

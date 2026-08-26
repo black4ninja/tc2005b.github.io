@@ -85,6 +85,20 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   atenuaban y no había forma de volver a incluirlas.
 
 ### Added
+- **Un fallo de render ya no deja la ventana en blanco.** No había ningún
+  `ErrorBoundary` en la aplicación, así que cualquier excepción durante el render
+  desmontaba el árbol entero de React y dejaba la pantalla vacía, sin mensaje ni
+  rastro. Todos los fallos distintos producían el MISMO síntoma, y por eso un
+  reporte no podía decir más que «no se ve nada» —costó una tarde localizar así
+  el juez de programación—.
+  - Ahora sale un aviso con qué falló, el detalle técnico plegado para copiarlo
+    en el reporte, y botones de reintentar y recargar.
+  - Va **por dentro** de los layouts: el menú y la cabecera siguen ahí, así que
+    desde una sección rota se puede ir a otra sin recargar. Navegar reinicia el
+    aviso; si el fallo sigue, reaparece solo.
+  - Queda una última red envolviendo las rutas, para cuando lo que revienta es el
+    propio layout o una pantalla que no vive dentro de ninguno.
+
 - **Módulo «Preguntas»: banco para las entrevistas personales.** El profesor
   guardaba en su cabeza —o en una hoja suelta— qué le iba a preguntar a cada
   alumno, y en una entrevista de treinta personas eso se rompe siempre por el

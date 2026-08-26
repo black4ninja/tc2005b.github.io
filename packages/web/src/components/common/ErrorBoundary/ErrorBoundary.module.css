@@ -1,0 +1,85 @@
+/* Aviso de fallo. Todo sale de los tokens: esta pantalla aparece en el momento
+   menos oportuno y sería absurdo que además se viera mal en tema oscuro. */
+.caja {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  max-width: 70ch;
+  margin: var(--space-xl) auto;
+  padding: var(--space-lg);
+  border: 1px solid var(--estado-error-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+}
+
+.titulo {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.texto {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* El mensaje del error, en monoespaciada: se copia y se pega en el reporte. */
+.mensaje {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--estado-error-color);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.85rem;
+  word-break: break-word;
+  align-self: stretch;
+}
+
+.detalle {
+  align-self: stretch;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.detalle summary { cursor: pointer; }
+
+.detalle pre {
+  margin: var(--space-sm) 0 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  font-size: 0.78rem;
+}
+
+.acciones {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.btn:hover { background: var(--dash-bg-subtle); }
+
+.btnPri {
+  background: var(--dash-primary);
+  border-color: var(--dash-primary);
+  color: #fff;
+}
+
+.btnPri:hover { filter: brightness(0.92); }
