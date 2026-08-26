@@ -441,6 +441,30 @@ export default function PreguntasGrupoPage() {
     asignar(pares);
   }
 
+  /**
+   * A quién le ha tocado ya cada pregunta EN ESTE GRUPO.
+   *
+   * El `uso` que trae el banco cuenta todos los grupos en curso; al repartir lo
+   * que hace falta es lo de casa. Además sale del mismo estado que la tabla, así
+   * que la cuenta se mueve con el clic y no cuando conteste el servidor.
+   */
+  const asignadosPorPregunta = useMemo(() => {
+    const mapa = new Map<string, AlumnoConPregunta[]>();
+    for (const alumno of alumnos) {
+      // Un alumno puede llevar la misma pregunta en sus dos intentos: cuenta una
+      // vez, que lo que se enseña son ALUMNOS, no asignaciones.
+      const suyas = new Set(
+        alumno.asignaciones.map((a) => a.pregunta?.id).filter((id): id is string => !!id),
+      );
+      for (const id of suyas) {
+        const lista = mapa.get(id) ?? [];
+        lista.push(alumno);
+        mapa.set(id, lista);
+      }
+    }
+    return mapa;
+  }, [alumnos]);
+
   const preguntasDeVista = useMemo(() => {
     const q = busquedaPregunta.trim().toLowerCase();
     return preguntas
@@ -793,7 +817,8 @@ export default function PreguntasGrupoPage() {
               placeholder="Buscar en las preguntas..."
             />
             <span className={styles.contador}>
-              {preguntasDeVista.filter((p) => !p.uso).length} sin usar de {preguntasDeVista.length}
+              {preguntasDeVista.filter((p) => !asignadosPorPregunta.has(p.id)).length} sin
+              {' '}repartir de {preguntasDeVista.length}
             </span>
           </div>
 
@@ -801,29 +826,53 @@ export default function PreguntasGrupoPage() {
             {preguntasDeVista.length === 0 && (
               <p className={styles.vacio}>No hay preguntas que mostrar.</p>
             )}
-            {preguntasDeVista.map((p) => (
-              <article key={p.id} className={styles.tarjeta}>
-                <div className={styles.tarjetaMeta}>
-                  {p.competencia && <span className={styles.competenciaTag}>{p.competencia.competencia}</span>}
-                  {p.uso ? (
-                    <span className={styles.tomadaTag} title={p.uso.quienes.join('\n')}>
-                      <Icon name="person" size="sm" />
-                      ya en {p.uso.veces} alumno{p.uso.veces === 1 ? '' : 's'}
-                      {p.uso.algunaUsada && ' · preguntada'}
-                    </span>
-                  ) : (
-                    <span className={styles.libreTag}>sin usar</span>
-                  )}
-                </div>
-                {/* El enunciado entero: es el motivo de esta vista. */}
-                <p className={styles.tarjetaTexto}>{p.texto}</p>
-                <div className={styles.tarjetaAcciones}>
-                  <button className={styles.enlaceBtn} onClick={() => setEligiendoAlumno(p)}>
-                    Asignar a un alumno…
-                  </button>
-                </div>
-              </article>
-            ))}
+            {preguntasDeVista.map((p) => {
+              const suyos = asignadosPorPregunta.get(p.id) ?? [];
+              // Lo que trae `uso` menos lo de casa: los otros grupos en curso.
+              const enOtros = Math.max(0, (p.uso?.veces ?? 0) - suyos.length);
+              const enVuelo = suyos.some((a) => a.asignaciones.some(
+                (x) => x.pregunta?.id === p.id && x.pendiente,
+              ));
+              return (
+                <article key={p.id} className={styles.tarjeta}>
+                  <div className={styles.tarjetaMeta}>
+                    {p.competencia && <span className={styles.competenciaTag}>{p.competencia.competencia}</span>}
+                    {enOtros > 0 && (
+                      <span className={styles.tomadaTag} title={p.uso?.quienes.join('\n')}>
+                        <Icon name="history" size="sm" />
+                        también en {enOtros} de otros grupos
+                      </span>
+                    )}
+                    {p.uso?.algunaUsada && <span className={styles.libreTag}>ya preguntada</span>}
+                  </div>
+                  {/* El enunciado entero: es el motivo de esta vista. */}
+                  <p className={styles.tarjetaTexto}>{p.texto}</p>
+                  <div className={styles.tarjetaAcciones}>
+                    {/* El MISMO chip que en la vista por alumno, aquí del lado de
+                        la pregunta: dice a cuántos les ha tocado y se pulsa para
+                        repartirla. No hay tope —una pregunta se repite cuantas
+                        veces haga falta—, así que la cuenta es informativa. */}
+                    <button
+                      className={`${styles.hueco} ${styles.huecoAccion} ${suyos.length > 0 ? styles.huecoLleno : ''} ${enVuelo ? styles.pendiente : ''}`}
+                      onClick={() => setEligiendoAlumno(p)}
+                      title={suyos.length === 0
+                        ? 'Elegir a quién se la asignas'
+                        : `Ya es de:\n${suyos.map((a) => a.name).join('\n')}`}
+                    >
+                      <Icon name={suyos.length > 0 ? 'group' : 'person_add'} size="sm" />
+                      <span className={styles.huecoNombre}>
+                        {suyos.length === 0 ? 'Asignar a un alumno' : 'Asignada a'}
+                      </span>
+                      {suyos.length > 0 && (
+                        <span className={styles.huecoCuenta}>
+                          {suyos.length} de {alumnos.length}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </>
       )}
@@ -865,30 +914,45 @@ export default function PreguntasGrupoPage() {
       })()}
 
       {/* Pregunta → alumno */}
-      {eligiendoAlumno && (
-        <SelectorAlumno
-          alumnos={alumnos}
-          titulo="¿A quién se la asignas?"
-          // A quien ya agotó sus intentos no se le puede añadir otra: se apaga
-          // en vez de sustituirle una en silencio.
-          sinHuecos={new Set(
-            alumnos
-              .filter((a) => llenosEn(a, eligiendoAlumno.competenciaId ?? SIN_COMPETENCIA) >= MAX_INTENTOS)
-              .map((a) => a.id),
-          )}
-          onElegir={(alumno) => {
-            // Cae en el primer intento libre de esa competencia; si los dos están
-            // ocupados, sustituye el último.
-            asignar([{
-              alumnoId: alumno.id,
-              preguntaId: eligiendoAlumno.id,
-              intento: primerHuecoLibre(alumno, eligiendoAlumno.competenciaId ?? SIN_COMPETENCIA),
-            }]);
-            setEligiendoAlumno(null);
-          }}
-          onCerrar={() => setEligiendoAlumno(null)}
-        />
-      )}
+      {eligiendoAlumno && (() => {
+        const competenciaId = eligiendoAlumno.competenciaId ?? SIN_COMPETENCIA;
+        const suyos = asignadosPorPregunta.get(eligiendoAlumno.id) ?? [];
+        return (
+          <SelectorAlumno
+            alumnos={alumnos}
+            titulo="¿A quién se la asignas?"
+            subtitulo={`${resumenPregunta(eligiendoAlumno.texto, 120)} — ${suyos.length === 0
+              ? 'todavía no es de nadie'
+              : `ya es de ${suyos.length} alumno${suyos.length === 1 ? '' : 's'}`}`}
+            seleccionados={new Set(suyos.map((a) => a.id))}
+            // A quien ya agotó sus intentos no se le puede añadir otra: se apaga
+            // en vez de sustituirle una en silencio.
+            sinHuecos={new Set(
+              alumnos
+                .filter((a) => llenosEn(a, competenciaId) >= MAX_INTENTOS)
+                .map((a) => a.id),
+            )}
+            llenosPorAlumno={new Map(alumnos.map((a) => [a.id, llenosEn(a, competenciaId)]))}
+            maxIntentos={MAX_INTENTOS}
+            guardando={guardando > 0}
+            onAlternar={(alumno) => {
+              // Pulsar a quien ya la tiene se la QUITA; a quien no, se la pone en
+              // su primer intento libre de esa competencia.
+              const ya = alumno.asignaciones.find((x) => x.pregunta?.id === eligiendoAlumno.id);
+              if (ya?.pendiente) return;
+              if (ya) quitar(ya);
+              else {
+                asignar([{
+                  alumnoId: alumno.id,
+                  preguntaId: eligiendoAlumno.id,
+                  intento: primerHuecoLibre(alumno, competenciaId),
+                }]);
+              }
+            }}
+            onCerrar={() => setEligiendoAlumno(null)}
+          />
+        );
+      })()}
 
       <Modal
         isOpen={historialDe !== null}

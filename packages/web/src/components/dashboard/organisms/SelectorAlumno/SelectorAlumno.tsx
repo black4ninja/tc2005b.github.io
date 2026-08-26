@@ -7,24 +7,48 @@ import styles from './SelectorAlumno.module.css';
 interface SelectorAlumnoProps {
   alumnos: AlumnoConPregunta[];
   titulo: string;
-  /** Quiénes ya agotaron sus intentos en esa competencia: no se les puede añadir. */
+  /** Línea bajo el título: qué pregunta se está repartiendo y a cuántos va ya. */
+  subtitulo?: string;
+  /** Quiénes ya tienen ESTA pregunta. Se marcan y volver a pulsarlos la quita. */
+  seleccionados?: Set<string>;
+  /** Quiénes agotaron sus intentos en esa competencia: no se les puede añadir. */
   sinHuecos?: Set<string>;
-  onElegir: (alumno: AlumnoConPregunta) => void;
+  /** Cuántos intentos lleva cada alumno en la competencia de la pregunta. */
+  llenosPorAlumno?: Map<string, number>;
+  maxIntentos?: number;
+  /**
+   * Hay un guardado en vuelo: la lista no admite clics hasta que vuelva. Dos
+   * altas solapadas calculan su hueco con un estado que el servidor todavía no
+   * ha visto, y lo que queda guardado no es lo que se ve.
+   */
+  guardando?: boolean;
+  /**
+   * Pulsar un alumno que NO la tiene se la asigna; pulsar uno que ya la tiene se
+   * la quita. El modal NO se cierra: la misma pregunta suele ir a varios.
+   */
+  onAlternar: (alumno: AlumnoConPregunta) => void;
   onCerrar: () => void;
 }
 
 /**
- * Elegir alumno con el teclado, el reflejo del selector de preguntas.
+ * Repartir UNA pregunta entre los alumnos del grupo.
  *
- * Existe para el camino inverso: el profesor lee una pregunta entera y decide a
- * quién le va. A quien ya agotó sus intentos en esa competencia se le apaga en
- * vez de esconderlo: hay que verlo para entender por qué no está disponible, y
- * el camino para cambiárselo es quitarle una desde su fila.
+ * Es el camino inverso al selector de preguntas: el profesor lee el enunciado
+ * entero y decide a quién le va. Y como una pregunta puede repetirse cuantas
+ * veces haga falta, es una lista de INTERRUPTORES y no un menú de un solo uso:
+ * cerrarse al primer clic obligaba a reabrirlo por cada alumno y no dejaba ver
+ * quién la tenía ya.
+ *
+ * A quien agotó sus intentos en esa competencia se le APAGA en vez de
+ * esconderlo: hay que verlo para entender por qué no está disponible, y el
+ * camino para cambiárselo es quitarle una.
  */
 export default function SelectorAlumno({
-  alumnos, titulo, sinHuecos = new Set(), onElegir, onCerrar,
+  alumnos, titulo, subtitulo, seleccionados = new Set(), sinHuecos = new Set(),
+  llenosPorAlumno, maxIntentos = 2, guardando = false, onAlternar, onCerrar,
 }: SelectorAlumnoProps) {
   const [texto, setTexto] = useState('');
+  const [soloLibres, setSoloLibres] = useState(false);
   const [indice, setIndice] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listaRef = useRef<HTMLUListElement>(null);
@@ -33,13 +57,16 @@ export default function SelectorAlumno({
 
   const filtrados = useMemo(() => {
     const q = texto.trim().toLowerCase();
-    if (!q) return alumnos;
-    return alumnos.filter(
-      (a) => a.name.toLowerCase().includes(q) || a.matricula.toLowerCase().includes(q),
-    );
-  }, [alumnos, texto]);
+    return alumnos.filter((a) => {
+      // «Solo a quien le falta» deja ver a los que ya la tienen: si no, quitarla
+      // obligaría a apagar el filtro para encontrarlos.
+      if (soloLibres && sinHuecos.has(a.id) && !seleccionados.has(a.id)) return false;
+      if (!q) return true;
+      return a.name.toLowerCase().includes(q) || a.matricula.toLowerCase().includes(q);
+    });
+  }, [alumnos, texto, soloLibres, sinHuecos, seleccionados]);
 
-  useEffect(() => { setIndice(0); }, [texto]);
+  useEffect(() => { setIndice(0); }, [texto, soloLibres]);
 
   useEffect(() => {
     listaRef.current?.querySelector<HTMLElement>('[data-activo="true"]')
@@ -55,14 +82,19 @@ export default function SelectorAlumno({
       setIndice((i) => Math.max(i - 1, 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
+      if (guardando) return;
       const elegido = filtrados[indice];
-      if (elegido && !sinHuecos.has(elegido.id)) onElegir(elegido);
+      if (elegido && (seleccionados.has(elegido.id) || !sinHuecos.has(elegido.id))) {
+        onAlternar(elegido);
+      }
     }
   }
 
   return (
     <Modal isOpen onClose={onCerrar} title={titulo}>
       <div className={styles.caja} onKeyDown={onKeyDown}>
+        {subtitulo && <p className={styles.subtitulo}>{subtitulo}</p>}
+
         <div className={styles.buscadorFila}>
           <Icon name="search" size="sm" />
           <input
@@ -73,6 +105,14 @@ export default function SelectorAlumno({
             onChange={(e) => setTexto(e.target.value)}
             placeholder="Buscar por nombre o matrícula…"
           />
+          <label className={styles.check}>
+            <input
+              type="checkbox"
+              checked={soloLibres}
+              onChange={(e) => setSoloLibres(e.target.checked)}
+            />
+            <span>Solo con hueco</span>
+          </label>
         </div>
 
         {filtrados.length === 0 ? (
@@ -80,27 +120,53 @@ export default function SelectorAlumno({
         ) : (
           <ul className={styles.lista} ref={listaRef}>
             {filtrados.map((a, i) => {
+              const elegido = seleccionados.has(a.id);
               const lleno = sinHuecos.has(a.id);
+              const apagada = guardando || (!elegido && lleno);
+              const llevados = llenosPorAlumno?.get(a.id);
               return (
                 <li key={a.id}>
                   <button
-                    className={`${styles.opcion} ${i === indice ? styles.opcionActiva : ''} ${lleno ? styles.opcionApagada : ''}`}
+                    className={`${styles.opcion} ${i === indice ? styles.opcionActiva : ''} ${elegido ? styles.opcionElegida : ''} ${apagada ? styles.opcionApagada : ''}`}
                     data-activo={i === indice}
-                    disabled={lleno}
+                    disabled={apagada}
                     onMouseEnter={() => setIndice(i)}
-                    onClick={() => onElegir(a)}
-                    title={lleno ? 'Ya tiene todos sus intentos en esta competencia' : undefined}
+                    onClick={() => onAlternar(a)}
+                    title={guardando
+                      ? 'Guardando el cambio anterior…'
+                      : elegido
+                        ? 'Pulsa para quitársela'
+                        : lleno
+                          ? 'Ya tiene todos sus intentos en esta competencia'
+                          : 'Pulsa para asignársela'}
                   >
+                    {/* La marca va primero: es lo que contesta a «¿entró o no?»
+                        sin tener que cerrar y volver a mirar. */}
+                    <span className={`${styles.marca} ${elegido ? styles.marcaOn : ''}`}>
+                      <Icon name={elegido ? 'check_circle' : 'add_circle'} size="sm" />
+                    </span>
                     <span className={styles.nombre}>{a.name}</span>
                     <span className={styles.matricula}>{a.matricula}</span>
-                    {lleno && <span className={styles.sinHueco}>sin intentos libres</span>}
+                    {llevados != null && (
+                      <span className={`${styles.intentos} ${lleno ? styles.intentosLleno : ''}`}>
+                        {llevados}/{maxIntentos}
+                      </span>
+                    )}
                   </button>
                 </li>
               );
             })}
           </ul>
         )}
-        <p className={styles.atajos}>↑ ↓ para moverte · Enter para elegir · Esc para cerrar</p>
+        <p className={styles.atajos}>
+          {guardando ? (
+            <span className={styles.guardando}>
+              <Icon name="sync" size="sm" /> Guardando…
+            </span>
+          ) : (
+            <>↑ ↓ para moverte · Enter para asignar o quitar · Esc para cerrar</>
+          )}
+        </p>
       </div>
     </Modal>
   );

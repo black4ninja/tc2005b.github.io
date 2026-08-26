@@ -4,6 +4,12 @@
   gap: var(--space-md);
 }
 
+.subtitulo {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
 .buscadorFila {
   display: flex;
   align-items: center;
@@ -24,11 +30,21 @@
   font-size: 0.95rem;
 }
 
+.check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
 .lista {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 45vh;
+  max-height: 50vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -38,7 +54,7 @@
 .opcion {
   width: 100%;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-sm);
   padding: 8px 12px;
   border: 1px solid transparent;
@@ -54,11 +70,43 @@
   border-color: var(--border-color);
 }
 
+/* Ya la tiene: el borde lo separa de un vistazo del resto de la lista, y
+   pulsarlo otra vez se la quita. */
+.opcionElegida {
+  border-color: var(--estado-exito-color);
+  background: var(--estado-exito-bg);
+}
+
+.marca {
+  display: inline-flex;
+  color: var(--text-muted);
+}
+
+.marcaOn { color: var(--estado-exito-color); }
+
 .nombre { font-size: 0.92rem; }
 
 .matricula {
   font-size: 0.78rem;
   color: var(--text-muted);
+}
+
+/* Cuántos intentos lleva en esta competencia: es lo que dice si todavía le cabe
+   otra pregunta, y el motivo de que algunos estén apagados. */
+.intentos {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.intentosLleno {
+  border-color: var(--estado-aviso-border);
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
 }
 
 /* Apagado, no escondido: hay que ver al alumno para entender por qué no se le
@@ -70,18 +118,30 @@
 
 .opcionApagada:hover { background: transparent; border-color: transparent; }
 
-.sinHueco {
-  margin-left: auto;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: var(--estado-aviso-bg);
-  color: var(--estado-aviso-color);
-  font-size: 0.72rem;
-}
-
 .vacio,
 .atajos {
   margin: 0;
   font-size: 0.82rem;
   color: var(--text-muted);
+}
+
+/* Guardando: la lista entera queda quieta un instante. Es preferible a dejar
+   encadenar clics cuyo resultado depende de qué respuesta llegue antes. */
+.guardando {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+}
+
+.guardando :global(.material-icons) {
+  animation: girando 1.1s linear infinite;
+}
+
+@keyframes girando {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guardando :global(.material-icons) { animation: none; }
 }

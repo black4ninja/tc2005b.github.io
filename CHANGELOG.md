@@ -8,6 +8,21 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **Repartir una pregunta se hace desde la propia pregunta, y de una sentada.**
+  La vista «Por pregunta» tenía un enlace *Asignar a un alumno…* que abría una
+  lista, se cerraba al primer clic y no decía nada más. Ahora cada tarjeta lleva
+  **el mismo chip que la vista por alumno**, con la cuenta de a cuántos les ha
+  tocado ya —`Asignada a 3 de 26`—, y al pulsarlo la lista se queda abierta:
+  cada alumno es un interruptor que se marca al asignársela y la quita si se
+  vuelve a pulsar.
+  - La cuenta es de **este grupo** y sale del mismo estado que la tabla, así que
+    se mueve con el clic y no cuando conteste el servidor. Lo de otros grupos
+    en curso pasa a un aviso aparte, que es lo que de verdad avisa de una
+    repetición que no se ve desde aquí.
+  - No hay tope: una pregunta se repite cuantas veces haga falta. Lo que sí
+    limita es el alumno —dos intentos por competencia—, y por eso cada fila
+    enseña su `1/2` y quien los agotó queda apagado en vez de escondido.
+
 - **Las etiquetas salen de la interfaz de preguntas.** Eran un segundo eje por
   debajo de la competencia, pensado para matizar lo que esta no distingue, y en
   la práctica no se usaron: casi todas las preguntas del banco no tienen

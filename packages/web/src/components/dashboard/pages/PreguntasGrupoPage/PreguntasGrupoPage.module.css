@@ -477,6 +477,13 @@
   color: var(--estado-exito-color);
 }
 
+/* El mismo chip, del lado de la pregunta: ahí es la acción principal de la
+   tarjeta y no una casilla más de una fila, así que respira un poco más. */
+.huecoAccion {
+  padding: 6px 12px;
+  font-size: 0.82rem;
+}
+
 .huecoNombre {
   max-width: 22ch;
   overflow: hidden;
