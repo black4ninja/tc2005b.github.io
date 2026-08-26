@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useCargaGated } from '../../hooks/useCargaGated';
 import { extensionLenguaje, NOMBRE_LENGUAJE } from '../../config/codemirrorLenguaje';
 import { useEjerciciosBase } from '../../config/rutasEjercicios';
+import { useTema } from '../../context/TemaContext';
 import { useDiagramas } from '../../lib/diagramas/useDiagramas';
 import Icon from '../dashboard/atoms/Icon/Icon';
 import styles from './EjercicioSolver.module.css';
@@ -113,7 +114,12 @@ export default function EjercicioSolverPage() {
   // Diagramas del enunciado. Ref de CALLBACK: el solver se re-renderiza mucho
   // (editor, cola del juez, veredicto) y React puede recrear este contenedor,
   // restaurando el HTML original y borrando el SVG ya dibujado.
-  const refDiagramas = useDiagramas([ej?.enunciadoHtml]);
+    // Sin esto el SVG se dibuja siempre con la paleta clara y sus colores van
+  // FIJOS dentro del propio SVG: sobre el fondo oscuro, los rótulos y las
+  // líneas quedan ilegibles.
+  const { tema } = useTema();
+  const oscuro = tema === 'oscuro';
+  const refDiagramas = useDiagramas([ej?.enunciadoHtml], oscuro);
 
   // Al llegar el ejercicio: idioma inicial y código semilla por lenguaje.
   useEffect(() => {

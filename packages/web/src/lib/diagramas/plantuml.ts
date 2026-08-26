@@ -1,5 +1,6 @@
 import type { Renderizador } from './registro';
 import { insertarSvg } from './svgSeguro';
+import { crearCarril } from './turnos';
 // `?url` en vez de importarlo: `viz-global.js` (Graphviz compilado a wasm) es un
 // script CLÁSICO que define el global `Viz`, no un módulo ESM. Vite nos da su
 // URL y emite el archivo en el build; lo cargamos con un <script> normal.
@@ -44,7 +45,14 @@ function cargarViz(): Promise<void> {
   return vizCargado;
 }
 
-let n = 0;
+/** Tope por diagrama, una vez que le toca el turno. */
+const TOPE_MS = 20000;
+
+/**
+ * Los renders van de uno en uno: el motor es una única instancia con estado
+ * compartido y dos a la vez se pisan. El porqué, en `turnos.ts`.
+ */
+const enTurno = crearCarril();
 
 export const renderizador: Renderizador = {
   async pintar(codigo, contenedor, oscuro) {
@@ -54,14 +62,17 @@ export const renderizador: Renderizador = {
     // La API recibe el diagrama como ARRAY DE LÍNEAS, no como texto.
     const lineas = codigo.replace(/\r\n/g, '\n').split('\n');
 
-    const svg = await new Promise<string>((resolve, reject) => {
+    // El tope se arma DENTRO del turno, no al pedirlo: contando desde la
+    // llamada, un diagrama que espera detrás de otros tres agotaba los 20 s
+    // sin haber empezado siquiera a dibujarse.
+    const svg = await enTurno(() => new Promise<string>((resolve, reject) => {
       let resuelto = false;
       // Si el motor nunca llama a ninguno de los dos callbacks, esto se quedaría
       // colgado y el bloque no volvería a mostrarse jamás. Con tope, falla y el
       // hook restaura el código fuente.
       const tope = window.setTimeout(() => {
         if (!resuelto) { resuelto = true; reject(new Error('PlantUML tardó demasiado en responder.')); }
-      }, 20000);
+      }, TOPE_MS);
       const fin = (fn: (v: never) => void) => (v: never) => {
         if (resuelto) return;
         resuelto = true;
@@ -79,9 +90,8 @@ export const renderizador: Renderizador = {
         window.clearTimeout(tope);
         reject(e instanceof Error ? e : new Error(String(e)));
       }
-    });
+    }));
 
     insertarSvg(contenedor, svg);
-    void n;
   },
 };

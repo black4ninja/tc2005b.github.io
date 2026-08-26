@@ -2,6 +2,7 @@ import Icon from '../../atoms/Icon/Icon';
 import ProfileMenu from '../../molecules/ProfileMenu/ProfileMenu';
 import { useAuth } from '../../../../context/AuthContext';
 import { useDiagramasNav } from '../../../../context/DiagramasNavContext';
+import { useEjerciciosNav } from '../../../../context/EjerciciosNavContext';
 import styles from './DashboardHeader.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
 
@@ -12,7 +13,7 @@ interface DashboardHeaderProps {
 }
 
 /**
- * Avance del módulo Diagramas, en la barra superior.
+ * Avance del módulo abierto —Diagramas o Ejercicios—, en la barra superior.
  *
  * Vive aquí y no en la cabecera de la página porque tiene que seguir visible
  * mientras se resuelve un ejercicio, que es cuando de verdad importa: el alumno
@@ -22,8 +23,12 @@ interface DashboardHeaderProps {
  * Sin ejercicios contables no se pinta nada: una barra al 0/0 no informa de
  * nada y ocuparía el sitio en todas las demás pantallas.
  */
-function ProgresoDiagramas() {
-  const { activo, progreso } = useDiagramasNav();
+function ProgresoModulo() {
+  // Los dos módulos con árbol propio pintan su avance en el mismo sitio. Nunca
+  // están activos a la vez: sus rutas son disjuntas.
+  const diagramas = useDiagramasNav();
+  const ejercicios = useEjerciciosNav();
+  const { activo, progreso } = diagramas.activo ? diagramas : ejercicios;
   if (!activo || progreso.total === 0) return null;
 
   const porcentaje = Math.round((progreso.resueltos / progreso.total) * 100);
@@ -63,7 +68,7 @@ export default function DashboardHeader({ role, collapsed, onToggleSidebar }: Da
         </button>
       </div>
       <div className={styles.center}>
-        <ProgresoDiagramas />
+        <ProgresoModulo />
       </div>
       <div className={styles.right}>
         <ProfileMenu name={profileName} role={profileRole} />

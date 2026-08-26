@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import Icon from '../../atoms/Icon/Icon';
 import { useDiagramasNav } from '../../../../context/DiagramasNavContext';
 import { BLOQUES_CURSO, TIPOS_CATALOGO, agrupadoDiagramas } from '../../../../lib/diagramas/etiquetas';
+import { bloquesVisibles } from '../../../contenidos/navegacionDiagramas';
 import styles from './ArbolDiagramas.module.css';
 
 /**
@@ -26,6 +27,13 @@ export default function ArbolDiagramas() {
     useDiagramasNav();
   const [busqueda, setBusqueda] = useState('');
 
+  // El API ya recorta los bloques a los de ESTE módulo; esto quita los que
+  // quedan a cero. El porqué, en `bloquesVisibles`.
+  const visibles = useMemo(
+    () => bloquesVisibles(bloques, (id) => progresoDeBloque(id).total),
+    [bloques, progresoDeBloque],
+  );
+
   /**
    * Los bloques de la colección se reparten entre las dos secciones por NOMBRE.
    *
@@ -36,10 +44,10 @@ export default function ArbolDiagramas() {
   const { deCurso, deCatalogo } = useMemo(() => {
     const esDelCurso = new Set(BLOQUES_CURSO);
     return {
-      deCurso: bloques.filter((b) => esDelCurso.has(b.nombre)),
-      deCatalogo: bloques.filter((b) => !esDelCurso.has(b.nombre)),
+      deCurso: visibles.filter((b) => esDelCurso.has(b.nombre)),
+      deCatalogo: visibles.filter((b) => !esDelCurso.has(b.nombre)),
     };
-  }, [bloques]);
+  }, [visibles]);
 
   /** Tipos que YA tienen ejercicios: no se ofrecen otra vez en el catálogo. */
   const tiposConEjercicios = useMemo(
