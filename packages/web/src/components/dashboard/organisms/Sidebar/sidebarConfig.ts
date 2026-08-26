@@ -109,6 +109,8 @@ export function getGrupoDetailItems(
   grupoId: string,
   agendaHref: string | null = null,
   ejerciciosHref: string | null = null,
+  /** Ruta del roster de Preguntas; null si ninguna materia lo tiene encendido. */
+  preguntasHref: string | null = null,
 ): SidebarItem[] {
   const items: SidebarItem[] = [
     { label: 'Calendario', icon: 'calendar_month', path: `/admin/grupos/${grupoId}/calendario` },
@@ -122,6 +124,11 @@ export function getGrupoDetailItems(
     { label: 'Equipos', icon: 'group_work', path: `/admin/grupos/${grupoId}/equipos` },
     { label: 'Entrevistas', icon: 'record_voice_over', path: `/admin/grupos/${grupoId}/entrevistas` },
   ];
+  // Justo debajo de "Entrevistas", que es donde se usan: son las preguntas que
+  // se plantean en ellas. Solo si alguna materia del grupo lo tiene encendido.
+  if (preguntasHref) {
+    items.push({ label: 'Preguntas', icon: 'quiz', path: preguntasHref });
+  }
   // Probar los ejercicios del grupo como los ve el alumno. Aparece cuando el
   // grupo tiene el módulo 'ejercicios' encendido en alguna colección — tanto
   // para el profesor como para el admin que revisa. La ruta cuelga del grupo,

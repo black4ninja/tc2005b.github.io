@@ -53,6 +53,93 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   atenuaban y no había forma de volver a incluirlas.
 
 ### Added
+- **Módulo «Preguntas»: banco para las entrevistas personales.** El profesor
+  guardaba en su cabeza —o en una hoja suelta— qué le iba a preguntar a cada
+  alumno, y en una entrevista de treinta personas eso se rompe siempre por el
+  mismo sitio: se repite la pregunta, o se le hace a quien no tocaba. Ahora hay
+  un banco, una asignación por alumno y una proyección con temporizador.
+  - Es un **módulo de contenido opt-in** más, como Ejercicios y Diagramas: el
+    banco cuelga de la materia y se enciende por grupo desde Asignaciones. No es
+    simetría: la **categoría** de una pregunta es una **competencia**, y las
+    competencias son de una colección.
+  - La competencia se puede enlazar **aunque sea de otra materia**, y el editor
+    la ofrece detrás de un «ver competencias de otras materias». Hoy solo una
+    asignatura usa el módulo, pero una competencia transversal puede vivir en
+    otra; atarla a la colección cerraría esa puerta sin ganar nada, porque el
+    módulo ya está acotado por dónde se enciende. Cuando difieren, la interfaz lo
+    señala en ámbar.
+  - El **tiempo** no es de cada pregunta: se configura una vez en la materia y el
+    grupo puede anularlo —el mismo temario no se entrevista igual en un grupo de
+    treinta y cinco que en uno de doce—. Pedírselo al autor pregunta a pregunta
+    era pedirle una decisión que siempre tomaba igual.
+  - Tampoco hay **título**. Se probó con uno y sobraba: el rótulo con el que se
+    reconoce una pregunta en una lista sale del propio enunciado recortado, y
+    mantener las dos cosas solo abría la puerta a que dijeran cosas distintas.
+  - Las **etiquetas** siguen, como segundo eje por debajo de la competencia:
+    matizan lo que esta no distingue —a qué perfil le va bien, de qué parcial es,
+    si es dura o de calentamiento—. Los dos filtros se cruzan.
+  - **Nada de esto tiene camino de alumno.** No es que esté oculto por permisos:
+    es que no existe el endpoint. Las notas del profesor —qué buscar en la
+    respuesta, el ajuste para ese alumno— no se pintan ni siquiera en la vista
+    que se proyecta, que es justo la pantalla que el alumno mira.
+  - **Una pregunta por competencia, alumno e intento.** Cada competencia admite
+    hasta **dos entrevistas** —la segunda es la oportunidad de quien no salió
+    bien en la primera—, así que cada alumno tiene `competencias × 2` huecos.
+    Competencia e intento no son filtros: son el modo de trabajo. Con «todas» se
+    ve el mapa del grupo (cuántos huecos lleva cada alumno en cada competencia) y
+    al elegir competencia + intento se trabaja en ese hueco concreto. Sin ese
+    corte, una tabla con una columna por competencia y por intento no cabría.
+  - Al repartir el segundo intento **no se le repite al alumno la pregunta que ya
+    tuvo** en el primero, y si se elige a mano el selector lo avisa: la misma
+    pregunta dos veces no evalúa nada. Repetirla entre alumnos distintos sigue
+    estando permitido.
+  - **Repetir una pregunta está permitido**, en el mismo grupo y entre grupos. Se
+    probó a impedirlo y la restricción salía carísima: obligaba a tener tantas
+    preguntas como alumnos por cada competencia. En su lugar el sistema se limita
+    a decir **a cuántos alumnos se la has puesto ya** —en el banco, en el selector
+    y en la vista por pregunta—, que es lo que permite variar a propósito en vez
+    de por accidente. El conteo mira solo grupos en curso: cerrar el semestre deja
+    el banco como nuevo.
+  - **Repartir** da una pregunta a cada alumno al que le falte, agotando el banco
+    de esa competencia antes de reciclarlo: con más preguntas que alumnos nadie
+    repite, y con menos las repeticiones quedan lo más espaciadas posible.
+  - Dos vistas, porque el profesor piensa en los dos sentidos: **por alumno** y
+    **por pregunta**. La segunda enseña el enunciado entero y de ahí se elige a
+    quién le va, que es el orden natural al personalizar; antes obligaba a abrir
+    el banco en otra pestaña.
+  - El selector de preguntas enseña el **enunciado completo**, filtra por
+    competencia y **se queda abierto**: es una lista de interruptores, no un menú
+    de un solo uso. Cada alumno lleva hasta dos preguntas por competencia, así
+    que cerrarlo en cuanto se pulsa una obligaba a reabrirlo para la segunda y no
+    dejaba ver si lo pulsado había entrado. Lo asignado se marca en verde y
+    volver a pulsarlo se lo quita. Al llegar al tope de intentos, las demás se
+    **apagan** en vez de sustituir a una en silencio: pulsar y que cambie otra
+    cosa sin avisar es peor que no poder pulsar. Lo mismo al revés —desde una
+    pregunta, el alumno sin intentos libres sale apagado—. Mientras un cambio se guarda, la
+    lista no admite clics: dos altas solapadas calculan su hueco con un estado
+    que el servidor todavía no ha visto, y lo que queda guardado deja de ser lo
+    que se ve.
+  - El banco de la materia se **filtra por competencia** (con 145 preguntas la
+    tabla sin filtrar no se lee) y marca cuáles llevan sin estrenarse.
+  - Asignar y quitar cambian la fila **en el acto** y el servidor solo confirma o
+    revierte. Antes se recargaba la tabla entera en cada clic —con la regla de
+    unicidad hacía falta, porque asignar cambiaba el estado de las demás
+    preguntas—, y el precio se veía: la lista parpadeaba y se perdía el sitio
+    donde estabas trabajando. La fila queda marcada mientras se guarda; si algo
+    falla, la tabla vuelve exactamente a como estaba.
+  - La asignación es un **historial**, no un campo que se sobrescribe: a lo largo
+    del semestre hay varias entrevistas, y lo que se le preguntó en la primera es
+    justo lo que hay que consultar para no repetírselo en la segunda.
+  - La **proyección** es la pregunta a pantalla completa con el reloj arriba a la
+    derecha, y se avanza por el grupo con ← →. No tiene diseño propio a
+    propósito: sale de los tokens del tema, así que hereda el claro/oscuro que el
+    profesor ya tenga puesto. El reloj arranca parado —entre que se proyecta y el
+    alumno termina de leer pasan unos segundos que no son suyos—, avisa en ámbar
+    en los últimos treinta y se maneja con Espacio, R y Esc.
+  - Archivar una pregunta la saca del selector pero no de las entrevistas ya
+    puestas: borrarla se rechaza si alguien la tiene asignada, para no dejar
+    huecos en el historial.
+
 - **Editor de contenidos: scroll sincronizado y bloque resaltado a los dos
   lados.** Con las dos columnas a la vista había dos scrolls independientes, así
   que comprobar cómo queda un párrafo obligaba a buscarlo a mano en el otro

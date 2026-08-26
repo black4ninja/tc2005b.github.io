@@ -1,0 +1,608 @@
+.page { padding: 24px; }
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.subtitulo {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  max-width: 60ch;
+}
+
+.contador {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.error {
+  padding: 10px 14px;
+  margin-bottom: var(--space-md);
+  border: 1px solid var(--estado-error-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+  cursor: pointer;
+}
+
+/* Barra del sello: es lo primero que se toca, así que va arriba y ancha. */
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  padding: var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+.selloCaja {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.barraTitulo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.selloBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--dash-bg-subtle);
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 42ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selloQuitar {
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.pista {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: var(--space-sm) 0 0;
+  font-size: 0.85rem;
+  color: var(--estado-info-color);
+}
+
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin: var(--space-md) 0;
+}
+
+.buscador {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  min-width: 220px;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chipsTitulo {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.chip {
+  padding: 2px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.chipActivo {
+  background: var(--sidebar-active-bg);
+  border-color: var(--sidebar-active-color);
+  color: var(--sidebar-active-color);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.tabla th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tabla td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+  color: var(--text-primary);
+}
+
+.tabla tr:last-child td { border-bottom: none; }
+
+/* Ya preguntada: se apaga en vez de esconderse. Sigue haciendo falta verla para
+   saber por dónde va la sesión. */
+.filaUsada td { opacity: 0.55; }
+
+.alumnoNombre { display: block; font-size: 0.92rem; }
+
+.alumnoMatricula {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* La celda ENTERA es el botón de asignar: es el clic que se repite treinta
+   veces, así que tiene que ser el objetivo más grande de la fila. */
+.celdaPregunta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 200px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius);
+  background: var(--dash-bg-subtle);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.celdaPregunta:hover {
+  border-color: var(--sidebar-active-color);
+}
+
+.celdaVacia { background: transparent; border-style: dashed; border-color: var(--border-color); }
+
+.sinPregunta { color: var(--text-muted); }
+
+.preguntaTitulo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.archivadaTag {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  font-size: 0.7rem;
+}
+
+.cambiarBtn,
+.iconBtn {
+  display: inline-flex;
+  padding: 5px;
+  margin-left: 2px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.cambiarBtn:hover,
+.iconBtn:hover:not(:disabled) {
+  background: var(--dash-bg-subtle);
+  color: var(--text-primary);
+}
+
+.iconBtn:disabled { opacity: 0.3; cursor: default; }
+
+.iconBtnOn { color: var(--dash-success); }
+
+.nota {
+  width: 100%;
+  min-width: 160px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.nota:hover:not(:disabled),
+.nota:focus {
+  border-color: var(--border-color);
+  background: var(--bg-page);
+  outline: none;
+}
+
+.colCorta { width: 90px; white-space: nowrap; }
+.colAcciones { width: 160px; white-space: nowrap; }
+
+.vacio {
+  padding: var(--space-xl);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.apagado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-2xl);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.hint { font-size: 0.85rem; color: var(--text-muted); }
+
+.historial {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.historial li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.historialFecha {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  min-width: 90px;
+}
+
+.historialUsada {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+  font-size: 0.72rem;
+}
+
+.historialNota {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* La competencia dentro de la celda de la pregunta: el mismo tinte que en el
+   banco, para que se lea como la misma cosa en las dos pantallas. */
+.competenciaTag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Cabecera derecha: el tiempo vigente y el contador de asignados. */
+.headerLado {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.duracion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.duracionFuente { color: var(--text-muted); }
+
+.duracionInput {
+  width: 80px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+/* Un botón que se lee como enlace: no compite con las acciones de la barra. */
+.enlaceBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--sidebar-active-color);
+  font-size: 0.82rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ── Dos vistas: por alumno y por pregunta ─────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin: var(--space-md) 0 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.tab:hover { color: var(--text-primary); }
+
+.tabActiva {
+  color: var(--sidebar-active-color);
+  border-bottom-color: var(--sidebar-active-color);
+  font-weight: 600;
+}
+
+.filtrosIzq {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.aviso {
+  padding: 10px 14px;
+  margin-bottom: var(--space-md);
+  border: 1px solid var(--estado-aviso-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  cursor: pointer;
+}
+
+/* Cuántas quedan libres: es lo que decide si hace falta escribir más banco. */
+.chipContador {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+  font-size: 0.72rem;
+}
+
+/* ── Vista de conjunto: un chip por competencia ────────────────────────── */
+.chipsHuecos {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.hueco {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px dashed var(--border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.hueco:hover { border-color: var(--sidebar-active-color); color: var(--text-primary); }
+
+.huecoLleno {
+  border-style: solid;
+  background: var(--estado-exito-bg);
+  border-color: var(--estado-exito-border);
+  color: var(--estado-exito-color);
+}
+
+.huecoNombre {
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Vista por pregunta ────────────────────────────────────────────────── */
+.listaPreguntas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.tarjeta {
+  padding: var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+.tarjetaMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-sm);
+}
+
+/* El enunciado entero y con sus saltos: es el motivo de esta vista. */
+.tarjetaTexto {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.45;
+  color: var(--text-primary);
+  font-size: 0.92rem;
+}
+
+.tarjetaAcciones {
+  margin-top: var(--space-sm);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.chipEtiqueta {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--dash-bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+}
+
+.libreTag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+  font-size: 0.72rem;
+}
+
+.tomadaTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  font-size: 0.72rem;
+}
+
+.enlaceBtn:disabled {
+  color: var(--text-muted);
+  text-decoration: none;
+  cursor: default;
+}
+
+/* Selector de intento: va pegado a las píldoras de competencia porque juntos
+   forman el hueco en el que se trabaja. */
+.intentos {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: var(--space-sm);
+  padding-left: var(--space-sm);
+  border-left: 1px solid var(--border-color);
+}
+
+/* Cuántos de los dos intentos lleva llenos en esa competencia. */
+.huecoCuenta {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  opacity: 0.8;
+}
+
+/* Los dos intentos puestos: se distingue de «uno sí, otro no». */
+.huecoCompleto {
+  background: var(--estado-exito-bg);
+  border-color: var(--estado-exito-color);
+}
+
+.historialIntento {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Guardando: la fila ya enseña el cambio, pero se marca hasta que el servidor
+   lo confirma. Discreto a propósito —el caso normal es que funcione— y sin
+   mover nada de sitio, que es lo que hacía molesto el refresco anterior. */
+.pendiente {
+  opacity: 0.65;
+}
+
+.guardando {
+  display: inline-flex;
+  color: var(--text-muted);
+  animation: girando 1.1s linear infinite;
+}
+
+@keyframes girando {
+  to { transform: rotate(360deg); }
+}
+
+/* Quien tenga el movimiento reducido ve el icono quieto; sigue diciendo lo
+   mismo. */
+@media (prefers-reduced-motion: reduce) {
+  .guardando { animation: none; }
+}

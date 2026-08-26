@@ -1,0 +1,221 @@
+.caja {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.buscadorFila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-muted);
+}
+
+.buscador {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 55vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.opcion {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.opcionActiva {
+  background: var(--dash-bg-subtle);
+  border-color: var(--border-color);
+}
+
+.opcionMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--dash-bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.opcionActiva .chip {
+  background: var(--bg-card);
+}
+
+.tiempo {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* El enunciado ENTERO, con sus saltos de línea: es lo que hay que leer para
+   decidir si esta pregunta le va a este alumno. */
+.opcionTexto {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+
+.tomada {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  font-size: 0.72rem;
+}
+
+.chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.filtroChip {
+  padding: 2px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.filtroChipActivo {
+  background: var(--sidebar-active-bg);
+  border-color: var(--sidebar-active-color);
+  color: var(--sidebar-active-color);
+}
+
+/* Cuántas quedan libres en esa competencia: es el dato que decide si hace falta
+   escribir más banco antes de repartir. */
+.contadorChip {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.libres {
+  float: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.vacio,
+.atajos {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* La competencia es el eje principal del banco, así que se distingue de las
+   etiquetas en vez de perderse entre ellas. */
+.competencia {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Ya asignada a este alumno: el borde la separa de un vistazo del resto de la
+   lista, y pulsarla otra vez se la quita. */
+.opcionElegida {
+  border-color: var(--estado-exito-color);
+  background: var(--estado-exito-bg);
+}
+
+.opcionElegida .opcionTexto,
+.opcionElegida .opcionMeta { color: var(--text-primary); }
+
+.elegidaTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-exito-color);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.subtitulo {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Al tope de intentos: apagadas, no ocultas. Ocultarlas dejaría al profesor
+   buscando una pregunta que sabe que está en el banco. */
+.opcionApagada {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.opcionApagada:hover { background: transparent; border-color: transparent; }
+
+.subtituloTope {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--estado-aviso-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+}
+
+/* Guardando: la lista entera queda quieta un instante. Es preferible a dejar
+   encadenar clics cuyo resultado depende de qué respuesta llegue antes. */
+.guardando {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+}
+
+.guardando :global(.material-icons) {
+  animation: girando 1.1s linear infinite;
+}
+
+@keyframes girando {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guardando :global(.material-icons) { animation: none; }
+}

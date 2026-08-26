@@ -1,0 +1,271 @@
+.page { padding: 24px; }
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.subtitulo {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  max-width: 70ch;
+}
+
+.toggleArchivadas {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.error {
+  padding: 10px 14px;
+  margin-bottom: var(--space-md);
+  border: 1px solid var(--estado-error-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+  cursor: pointer;
+}
+
+.chips { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+
+.chip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--dash-bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.sinEtiquetas { color: var(--text-muted); }
+
+.badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+
+.badgeActive { background: var(--estado-exito-bg); color: var(--estado-exito-color); }
+.badgeDraft { background: var(--dash-bg-subtle); color: var(--text-secondary); }
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.fila {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 220px;
+}
+
+.campoCorto { flex: 0 0 180px; min-width: 150px; }
+
+.campo > span {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.campo input,
+.campo select,
+.campo textarea {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.campo small { font-size: 0.75rem; color: var(--text-muted); }
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+.pie {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--space-lg);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* La competencia es el eje del banco: se lee como una etiqueta con peso, y
+   cuando viene de otra materia lo dice —es lo bastante raro como para que
+   convenga notarlo de un vistazo—. */
+.competencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.competenciaAjena {
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+}
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  margin-bottom: 4px;
+}
+
+.volver:hover { color: var(--text-primary); }
+
+/* Un botón que se lee como enlace: abre las competencias de otras materias sin
+   robarle peso visual al campo. */
+.enlaceBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--sidebar-active-color);
+  font-size: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Cabecera derecha: el tiempo de la materia y el interruptor de archivadas. */
+.headerLado {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.duracion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.duracionFuente { color: var(--text-muted); }
+
+.duracionInput {
+  width: 80px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+/* El enunciado en la celda: una línea, sin partir la tabla. */
+.textoPregunta {
+  display: block;
+  max-width: 46ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Uso: una pregunta asignada está fuera del fondo común hasta que se cierre el
+   grupo. Verde = disponible, ámbar = ocupada. */
+.libreTag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+  font-size: 0.75rem;
+}
+
+.tomadaTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  font-size: 0.75rem;
+  max-width: 24ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Filtro por competencia: con un banco de tres cifras es el primer corte, así
+   que va encima de la tabla y no escondido en el buscador. */
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+}
+
+.filtrosTitulo {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.chipFiltro {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.chipFiltroActivo {
+  background: var(--sidebar-active-bg);
+  border-color: var(--sidebar-active-color);
+  color: var(--sidebar-active-color);
+}
+
+/* Cuántas hay de cada una: con 145 preguntas, saberlo antes de pulsar evita
+   entrar a una lista de 76 sin querer. */
+.chipCuenta {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}

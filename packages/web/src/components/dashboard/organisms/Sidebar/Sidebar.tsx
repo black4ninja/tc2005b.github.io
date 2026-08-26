@@ -239,6 +239,15 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
     return col ? rutaDiagramasAdmin(grupoId, col.slug) : null;
   }, [colecciones, modulosDeshabilitados, grupoId]);
 
+  // "Preguntas" del grupo abierto: no lleva slug de colección en la ruta —el
+  // roster junta el banco de TODAS las materias del grupo que lo tengan
+  // encendido—, así que basta con saber si alguna lo tiene.
+  const preguntasGrupoHref = useMemo(() => {
+    if (!grupoId) return null;
+    const alguna = colecciones.some((c) => moduloHabilitado(modulosDeshabilitados, c.id, 'preguntas'));
+    return alguna ? `/admin/grupos/${grupoId}/preguntas` : null;
+  }, [colecciones, modulosDeshabilitados, grupoId]);
+
   // El taller del admin cuelga del grupo abierto, igual que el resto del módulo,
   // y se ofrece bajo la misma condición que Diagramas.
   const tallerGrupoHref = grupoId && diagramasGrupoHref ? rutaTallerAdmin(grupoId) : null;
@@ -260,7 +269,12 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   }, [isGrupoDetail, diagramasGrupoHref, diagramasHref, tallerGrupoHref, tallerHref]);
 
   const items = isGrupoDetail
-    ? getGrupoDetailItems(grupoId!, agendaGrupoHref, ejerciciosGrupoHref)
+    ? getGrupoDetailItems(
+        grupoId!,
+        agendaGrupoHref,
+        ejerciciosGrupoHref,
+        preguntasGrupoHref,
+      )
     : getSidebarItems(
         role,
         role === 'alumno' ? selectedGrupoId : undefined,

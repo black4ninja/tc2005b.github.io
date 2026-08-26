@@ -57,6 +57,23 @@ export class Coleccion extends BaseModel {
   }
 
   /**
+   * Segundos que dura una pregunta de entrevista en esta materia (módulo
+   * "Preguntas"). Ausente = el valor por defecto del módulo.
+   *
+   * Vive aquí y no en cada pregunta porque el tiempo no es una propiedad de lo
+   * que se pregunta, sino de cómo se entrevista en esta asignatura: cambiarlo
+   * pregunta a pregunta era pedirle al autor una decisión que siempre tomaba
+   * igual. Un grupo puede anularlo (`Grupo.preguntasDuracionSegundos`).
+   */
+  getPreguntasDuracionSegundos(): number | undefined {
+    return this.get('preguntasDuracionSegundos');
+  }
+  setPreguntasDuracionSegundos(segundos: number | undefined): void {
+    if (segundos === undefined) this.unset('preguntasDuracionSegundos');
+    else this.set('preguntasDuracionSegundos', segundos);
+  }
+
+  /**
    * ¿Esta materia usa el nivel «Incipiente B −30 pts»?
    *
    * Es una sanción por conducta que resta 30 puntos directos, y no existe en
@@ -78,6 +95,7 @@ export class Coleccion extends BaseModel {
     return {
       id: this.id,
       permitePenalizacion: this.getPermitePenalizacion(),
+      preguntasDuracionSegundos: this.getPreguntasDuracionSegundos() ?? null,
       nombre: this.getNombre(),
       slug: this.getSlug(),
       clave: this.getClave() ?? null,

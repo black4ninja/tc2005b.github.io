@@ -131,6 +131,7 @@ export default function ContenidosPage() {
     { label: 'Actividades', icon: 'assignment', onClick: () => navigate(`/admin/actividades?coleccion=${coleccion.id}`) },
     { label: 'Ejercicios', icon: 'terminal', onClick: () => navigate(`/admin/contenidos/${coleccion.id}/ejercicios`) },
     { label: 'Diagramas', icon: 'schema', onClick: () => navigate(`/admin/contenidos/${coleccion.id}/diagramas`) },
+    { label: 'Preguntas', icon: 'quiz', onClick: () => navigate(`/admin/contenidos/${coleccion.id}/preguntas`) },
     { label: 'Editar', icon: 'edit', onClick: () => openEdit(coleccion) },
     { label: 'Eliminar', icon: 'delete', onClick: () => handleDelete(coleccion), variant: 'danger' },
   ];

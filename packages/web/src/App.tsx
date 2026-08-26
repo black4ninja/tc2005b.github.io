@@ -23,6 +23,8 @@ import MallaEvaluacionPage from './components/dashboard/pages/MallaEvaluacionPag
 import EquiposPage from './components/dashboard/pages/EquiposPage/EquiposPage';
 import AvancesEquipoPage from './components/dashboard/pages/AvancesEquipoPage/AvancesEquipoPage';
 import EntrevistasPage from './components/dashboard/pages/EntrevistasPage/EntrevistasPage';
+import PreguntasBancoPage from './components/dashboard/pages/PreguntasBancoPage/PreguntasBancoPage';
+import PreguntasGrupoPage from './components/dashboard/pages/PreguntasGrupoPage/PreguntasGrupoPage';
 import EvaluacionEntrevistaPage from './components/dashboard/pages/EvaluacionEntrevistaPage/EvaluacionEntrevistaPage';
 import AlumnoCalendarioPage from './components/dashboard/pages/AlumnoCalendarioPage/AlumnoCalendarioPage';
 import HubPage from './components/dashboard/pages/HubPage/HubPage';
@@ -199,6 +201,10 @@ export default function App() {
             </Suspense>
           }
         />
+        {/* Módulo "Preguntas": el banco cuelga de la colección (admin) y la
+            asignación, del grupo (profesor de ese grupo). */}
+        <Route path="admin/contenidos/:id/preguntas" element={<PreguntasBancoPage />} />
+        <Route path="admin/grupos/:id/preguntas" element={<PreguntasGrupoPage />} />
         <Route path="admin/competencias" element={<CompetenciasPage />} />
         <Route path="admin/actividades" element={<ActividadesPage />} />
         <Route path="admin/paginas" element={<PaginasPage />} />

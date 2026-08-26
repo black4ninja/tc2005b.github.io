@@ -1,0 +1,87 @@
+.caja {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.buscadorFila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-muted);
+}
+
+.buscador {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 45vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.opcion {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.opcionActiva {
+  background: var(--dash-bg-subtle);
+  border-color: var(--border-color);
+}
+
+.nombre { font-size: 0.92rem; }
+
+.matricula {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Apagado, no escondido: hay que ver al alumno para entender por qué no se le
+   puede asignar. Se le cambia quitándole una desde su fila. */
+.opcionApagada {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.opcionApagada:hover { background: transparent; border-color: transparent; }
+
+.sinHueco {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  font-size: 0.72rem;
+}
+
+.vacio,
+.atajos {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}

@@ -1,0 +1,127 @@
+/* Proyector de preguntas. Todo sale de los tokens del tema: en claro es papel
+   negro sobre blanco y en oscuro al revés, sin una sola pantalla que diseñar
+   dos veces. Lo único propio es la escala: esto se lee de lejos. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-page);
+  color: var(--text-primary);
+}
+
+.barra {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding: var(--space-lg) var(--space-xl);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.quien {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.nombre {
+  font-size: clamp(1.1rem, 2vw, 1.6rem);
+  font-weight: 600;
+}
+
+.matricula,
+.posicion {
+  font-size: clamp(0.85rem, 1.2vw, 1rem);
+  color: var(--text-muted);
+}
+
+/* El reloj arriba a la derecha, en cifras tabulares para que no baile al pasar
+   de 1:00 a 0:59. */
+.reloj {
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.relojApurado { color: var(--dash-warning); }
+
+.relojAgotado {
+  color: var(--dash-danger);
+  font-size: clamp(1.8rem, 5vw, 3.5rem);
+}
+
+.escena {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: var(--space-xl) clamp(var(--space-lg), 6vw, 6rem);
+}
+
+/* `contenido-render` ya trae la tipografía del wiki; aquí solo se sube la
+   escala y se limita el ancho, que es lo que hace legible un párrafo largo. */
+.texto {
+  width: 100%;
+  max-width: 60ch;
+  font-size: clamp(1.4rem, 3.2vw, 2.6rem);
+  line-height: 1.35;
+}
+
+.texto :global(p) { margin: 0 0 0.6em; }
+.texto :global(p:last-child) { margin-bottom: 0; }
+.texto :global(li) { margin-bottom: 0.3em; }
+.texto :global(code) { font-size: 0.85em; }
+
+.controles {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  padding: var(--space-md) var(--space-xl);
+  border-top: 1px solid var(--border-color);
+}
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.boton:hover {
+  color: var(--text-primary);
+  background: var(--dash-bg-subtle);
+}
+
+.botonPrincipal {
+  background: var(--dash-primary);
+  border-color: var(--dash-primary);
+  color: #fff;
+}
+
+.botonPrincipal:hover {
+  background: var(--dash-primary);
+  color: #fff;
+  filter: brightness(1.05);
+}
+
+.atajos {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
