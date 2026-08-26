@@ -583,3 +583,26 @@
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
+
+/* Guardando: la fila ya enseña el cambio, pero se marca hasta que el servidor
+   lo confirma. Discreto a propósito —el caso normal es que funcione— y sin
+   mover nada de sitio, que es lo que hacía molesto el refresco anterior. */
+.pendiente {
+  opacity: 0.65;
+}
+
+.guardando {
+  display: inline-flex;
+  color: var(--text-muted);
+  animation: girando 1.1s linear infinite;
+}
+
+@keyframes girando {
+  to { transform: rotate(360deg); }
+}
+
+/* Quien tenga el movimiento reducido ve el icono quieto; sigue diciendo lo
+   mismo. */
+@media (prefers-reduced-motion: reduce) {
+  .guardando { animation: none; }
+}

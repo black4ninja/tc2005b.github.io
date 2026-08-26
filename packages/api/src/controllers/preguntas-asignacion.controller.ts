@@ -390,7 +390,14 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
     });
 
     await Parse.Object.saveAll([...aRetirar, ...nuevas], { useMasterKey: true });
-    res.status(201).json({ status: 'ok', asignadas: nuevas.length });
+    // Se devuelve lo creado Y lo retirado: con las dos listas el cliente puede
+    // dejar su tabla exacta sin volver a pedirla entera, que es lo que hacía
+    // parpadear la pantalla en cada asignación.
+    res.status(201).json({
+      status: 'ok',
+      asignaciones: nuevas.map((a) => a.toSafeJSON()),
+      retiradas: aRetirar.map((a) => a.id),
+    });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al asignar las preguntas' });
   }
@@ -438,6 +445,7 @@ export async function borrarAsignacion(req: Request, res: Response): Promise<voi
   try {
     const q = new Parse.Query<PreguntaAsignacion>('PreguntaAsignacion');
     q.equalTo('exists' as any, true as any);
+    q.include('pregunta' as any);
     const asignacion = await q.get(id, { useMasterKey: true }).catch(() => null);
     if (!asignacion || asignacion.getGrupo()?.id !== grupoId) {
       res.status(404).json({ status: 'error', message: 'Asignación no encontrada' });
@@ -445,7 +453,24 @@ export async function borrarAsignacion(req: Request, res: Response): Promise<voi
     }
     asignacion.softDelete();
     await asignacion.save(null, { useMasterKey: true });
-    res.json({ status: 'ok' });
+
+    // Quitar la vigente puede DESTAPAR la anterior del mismo hueco, que sigue
+    // viva en el historial. El cliente no puede saberlo solo, así que se le dice
+    // qué queda: es lo que le evita recargar la tabla entera para averiguarlo.
+    const qv = new Parse.Query<PreguntaAsignacion>('PreguntaAsignacion');
+    qv.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+    qv.equalTo('alumno' as any, asignacion.getAlumno() as any);
+    qv.equalTo('intento' as any, asignacion.getIntento() as any);
+    qv.equalTo('exists' as any, true as any);
+    qv.include('pregunta' as any);
+    qv.include('pregunta.competencia' as any);
+    qv.descending('createdAt');
+    qv.limit(20);
+    const restantes = await qv.find({ useMasterKey: true });
+    const competencia = competenciaDe(asignacion.getPregunta());
+    const vigente = restantes.find((a) => competenciaDe(a.getPregunta()) === competencia) ?? null;
+
+    res.json({ status: 'ok', vigente: vigente ? vigente.toSafeJSON() : null });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al quitar la asignación' });
   }

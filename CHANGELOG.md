@@ -112,6 +112,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     dejaba al profesor buscando una pregunta que recordaba haber visto.
   - El banco de la materia se **filtra por competencia** (con 145 preguntas la
     tabla sin filtrar no se lee) y marca cuáles llevan sin estrenarse.
+  - Asignar y quitar cambian la fila **en el acto** y el servidor solo confirma o
+    revierte. Antes se recargaba la tabla entera en cada clic —con la regla de
+    unicidad hacía falta, porque asignar cambiaba el estado de las demás
+    preguntas—, y el precio se veía: la lista parpadeaba y se perdía el sitio
+    donde estabas trabajando. La fila queda marcada mientras se guarda; si algo
+    falla, la tabla vuelve exactamente a como estaba.
   - La asignación es un **historial**, no un campo que se sobrescribe: a lo largo
     del semestre hay varias entrevistas, y lo que se le preguntó en la primera es
     justo lo que hay que consultar para no repetírselo en la segunda.

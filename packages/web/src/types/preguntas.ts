@@ -71,6 +71,11 @@ export interface PreguntaAsignacion {
   nota: string;
   usada: boolean;
   createdAt: string;
+  /**
+   * Solo en el cliente: la fila ya se pintó pero el servidor todavía no ha
+   * confirmado. Nunca viaja en la respuesta.
+   */
+  pendiente?: boolean;
 }
 
 export interface AlumnoConPregunta {

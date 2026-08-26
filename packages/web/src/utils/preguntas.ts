@@ -1,4 +1,5 @@
 /** Utilidades puras del módulo "Preguntas". */
+import type { AlumnoConPregunta, Pregunta, PreguntaAsignacion } from '../types/preguntas';
 
 /** `95` → `1:35`. El temporizador se lee en minutos, no en segundos sueltos. */
 export function formatearDuracion(segundos: number): string {
@@ -74,3 +75,68 @@ export function repartirPreguntas<T>(
   return salida;
 }
 
+/**
+ * Mete asignaciones en el roster: cada una desaloja lo que hubiera en SU hueco
+ * (mismo alumno, misma competencia, mismo intento) y se queda con él.
+ *
+ * Está fuera del componente y sin estado propio para que sea evidente que
+ * pintar y confirmar hacen exactamente lo mismo: la única diferencia entre la
+ * versión optimista y la confirmada es el id.
+ */
+export function aplicarAsignaciones(
+  alumnos: AlumnoConPregunta[],
+  nuevas: PreguntaAsignacion[],
+): AlumnoConPregunta[] {
+  if (nuevas.length === 0) return alumnos;
+  const porAlumno = new Map<string, PreguntaAsignacion[]>();
+  for (const a of nuevas) {
+    porAlumno.set(a.alumnoId, [...(porAlumno.get(a.alumnoId) ?? []), a]);
+  }
+  return alumnos.map((alumno) => {
+    const suyas = porAlumno.get(alumno.id);
+    if (!suyas) return alumno;
+    const huecos = new Set(suyas.map((a) => a.hueco));
+    return {
+      ...alumno,
+      asignaciones: [...alumno.asignaciones.filter((a) => !huecos.has(a.hueco)), ...suyas],
+      totalAsignaciones: alumno.totalAsignaciones + suyas.length,
+    };
+  });
+}
+
+/** Saca asignaciones del roster por id (revertir una optimista, o quitarla). */
+export function quitarAsignaciones(
+  alumnos: AlumnoConPregunta[],
+  ids: string[],
+): AlumnoConPregunta[] {
+  if (ids.length === 0) return alumnos;
+  const fuera = new Set(ids);
+  return alumnos.map((alumno) => (
+    alumno.asignaciones.some((a) => fuera.has(a.id))
+      ? { ...alumno, asignaciones: alumno.asignaciones.filter((a) => !fuera.has(a.id)) }
+      : alumno
+  ));
+}
+
+/**
+ * Mueve el contador de «a cuántos se la has puesto» sin ir al servidor.
+ *
+ * Es solo una pista para variar, así que llevarla en el cliente es barato y
+ * evita una recarga entera por cada clic. Se recalcula de verdad al recargar.
+ */
+export function ajustarUso(preguntas: Pregunta[], suman: string[], restan: string[]): Pregunta[] {
+  if (suman.length === 0 && restan.length === 0) return preguntas;
+  return preguntas.map((p) => {
+    const delta = suman.filter((id) => id === p.id).length - restan.filter((id) => id === p.id).length;
+    if (delta === 0) return p;
+    const veces = Math.max(0, (p.uso?.veces ?? 0) + delta);
+    return {
+      ...p,
+      uso: veces === 0 ? null : {
+        veces,
+        quienes: p.uso?.quienes ?? [],
+        algunaUsada: p.uso?.algunaUsada ?? false,
+      },
+    };
+  });
+}

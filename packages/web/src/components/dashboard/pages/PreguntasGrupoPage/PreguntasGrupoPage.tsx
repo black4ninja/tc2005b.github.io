@@ -7,7 +7,9 @@ import Modal from '../../atoms/Modal/Modal';
 import PreguntaProyector from '../../organisms/PreguntaProyector/PreguntaProyector';
 import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta';
 import SelectorAlumno from '../../organisms/SelectorAlumno/SelectorAlumno';
-import { formatearDuracion, repartirPreguntas, resumenPregunta } from '../../../../utils/preguntas';
+import {
+  aplicarAsignaciones, ajustarUso, formatearDuracion, quitarAsignaciones, repartirPreguntas, resumenPregunta,
+} from '../../../../utils/preguntas';
 import type {
   AlumnoConPregunta, CompetenciaEnBanco, DuracionConfig, Pregunta, PreguntaAsignacion,
 } from '../../../../types/preguntas';
@@ -210,10 +212,56 @@ export default function PreguntasGrupoPage() {
     [visibles, huecosVisibles, competenciaActiva, intentoActivo],
   );
 
+  /**
+   * Asigna y pinta EN EL ACTO, confirmando cuando el servidor responde.
+   *
+   * Antes esto recargaba la pantalla entera, y con razón: mientras una pregunta
+   * solo podía ser de un alumno, asignar cambiaba el estado de las demás. Ya no
+   * es así, y el precio del refresco se veía —la tabla parpadeaba y el sitio
+   * donde estabas trabajando se perdía en cada clic—.
+   *
+   * Ahora la fila cambia inmediatamente, marcada como pendiente, y el servidor
+   * solo confirma o revierte. Si falla, la tabla vuelve exactamente a como
+   * estaba: se guarda una foto antes de tocar nada.
+   */
   async function asignar(pares: { alumnoId: string; preguntaId: string; intento: number }[]) {
     if (pares.length === 0 || !grupoId) return;
     setError('');
     setAviso('');
+
+    const foto = alumnos;
+    const fotoPreguntas = preguntas;
+
+    // Optimista: se fabrica la asignación con lo que el cliente ya sabe de la
+    // pregunta. El id temporal se sustituye por el real al confirmar.
+    const provisionales = pares.map((par, i) => {
+      const p = porId.get(par.preguntaId);
+      const asignacion: PreguntaAsignacion = {
+        id: `pendiente-${i}-${par.alumnoId}`,
+        alumnoId: par.alumnoId,
+        intento: par.intento,
+        hueco: `${p?.competenciaId ?? SIN_COMPETENCIA}::${par.intento}`,
+        pregunta: p
+          ? {
+            id: p.id,
+            texto: p.texto,
+            etiquetas: p.etiquetas,
+            competencia: p.competencia?.competencia ?? null,
+            competenciaId: p.competenciaId,
+            archivada: p.archivada,
+          }
+          : null,
+        nota: '',
+        usada: false,
+        createdAt: new Date().toISOString(),
+        pendiente: true,
+      };
+      return asignacion;
+    });
+
+    setAlumnos((prev) => aplicarAsignaciones(prev, provisionales));
+    setPreguntas((prev) => ajustarUso(prev, pares.map((p) => p.preguntaId), []));
+
     try {
       const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/preguntas/asignaciones`, {
         method: 'POST', headers, body: JSON.stringify({ asignaciones: pares }),
@@ -222,27 +270,48 @@ export default function PreguntasGrupoPage() {
         const err = (await res.json().catch(() => ({}))) as { message?: string };
         throw new Error(err.message || 'Error al asignar');
       }
-      // Recarga entera y no parche local: asignar mueve el estado de OTRAS
-      // preguntas (pasan a estar tomadas) y de otros grupos.
-      await fetchTodo();
+      const data = await res.json() as { asignaciones?: PreguntaAsignacion[]; retiradas?: string[] };
+      // Confirmado: entran las reales (con su id) y salen las provisionales.
+      setAlumnos((prev) => aplicarAsignaciones(
+        quitarAsignaciones(prev, provisionales.map((a) => a.id)),
+        data.asignaciones ?? [],
+      ));
+      // Lo que el servidor retiró al sustituir deja de contar como uso.
+      const retiradas = data.retiradas ?? [];
+      if (retiradas.length > 0) {
+        const preguntasRetiradas = foto.flatMap((a) => a.asignaciones)
+          .filter((a) => retiradas.includes(a.id))
+          .map((a) => a.pregunta?.id)
+          .filter((id): id is string => !!id);
+        setPreguntas((prev) => ajustarUso(prev, [], preguntasRetiradas));
+      }
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'Error al asignar'));
-      await fetchTodo();
+      setAlumnos(foto);
+      setPreguntas(fotoPreguntas);
     }
   }
 
-  async function quitar(asignacionId: string) {
+  async function quitar(asignacion: PreguntaAsignacion) {
     if (!grupoId) return;
+    const foto = alumnos;
+    const fotoPreguntas = preguntas;
+    setAlumnos((prev) => quitarAsignaciones(prev, [asignacion.id]));
+    setPreguntas((prev) => ajustarUso(prev, [], asignacion.pregunta ? [asignacion.pregunta.id] : []));
     try {
       const res = await fetch(
-        `${API_BASE}/admin/grupos/${grupoId}/preguntas/asignaciones/${asignacionId}`,
+        `${API_BASE}/admin/grupos/${grupoId}/preguntas/asignaciones/${asignacion.id}`,
         { method: 'DELETE', headers },
       );
       if (!res.ok) throw new Error('Error al quitar la asignación');
-      await fetchTodo();
+      // Quitar la vigente puede destapar la anterior del mismo hueco: el
+      // servidor dice qué queda, y así no hay que recargar para averiguarlo.
+      const data = await res.json() as { vigente?: PreguntaAsignacion | null };
+      if (data.vigente) setAlumnos((prev) => aplicarAsignaciones(prev, [data.vigente!]));
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'Error al quitar la asignación'));
-      await fetchTodo();
+      setAlumnos(foto);
+      setPreguntas(fotoPreguntas);
     }
   }
 
@@ -564,7 +633,7 @@ export default function PreguntasGrupoPage() {
                     {competenciaActiva ? (
                       <td>
                         <button
-                          className={`${styles.celdaPregunta} ${unica ? '' : styles.celdaVacia}`}
+                          className={`${styles.celdaPregunta} ${unica ? '' : styles.celdaVacia} ${unica?.pendiente ? styles.pendiente : ''}`}
                           onClick={() => setEligiendoPara({
                             alumno, competenciaId: competenciaActiva, intento: intentoActivo,
                           })}
@@ -577,6 +646,11 @@ export default function PreguntasGrupoPage() {
                               </span>
                               {unica.pregunta.archivada && (
                                 <span className={styles.archivadaTag} title="Esta pregunta ya no está en el banco">archivada</span>
+                              )}
+                              {unica.pendiente && (
+                                <span className={styles.guardando} title="Guardando…">
+                                  <Icon name="sync" size="sm" />
+                                </span>
                               )}
                             </>
                           ) : (
@@ -593,10 +667,13 @@ export default function PreguntasGrupoPage() {
                             const llenos = llenosEn(alumno, c.id);
                             const libre = primerHuecoLibre(alumno, c.id);
                             const completa = llenos === MAX_INTENTOS;
+                            const guardando = alumno.asignaciones.some(
+                              (a) => a.pendiente && a.hueco?.startsWith(`${c.id}::`),
+                            );
                             return (
                               <button
                                 key={c.id}
-                                className={`${styles.hueco} ${llenos > 0 ? styles.huecoLleno : ''} ${completa ? styles.huecoCompleto : ''}`}
+                                className={`${styles.hueco} ${llenos > 0 ? styles.huecoLleno : ''} ${completa ? styles.huecoCompleto : ''} ${guardando ? styles.pendiente : ''}`}
                                 // Un clic aquí llena el PRIMER intento libre; para
                                 // trabajar uno concreto se entra por su modo.
                                 onClick={() => setEligiendoPara({
@@ -657,8 +734,8 @@ export default function PreguntasGrupoPage() {
                           </button>
                           <button
                             className={styles.iconBtn}
-                            disabled={!unica}
-                            onClick={() => unica && quitar(unica.id)}
+                            disabled={!unica || unica.pendiente}
+                            onClick={() => unica && quitar(unica)}
                             title="Quitar la asignación y devolver la pregunta al banco"
                           >
                             <Icon name="close" size="sm" />
