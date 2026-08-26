@@ -280,6 +280,11 @@
 }
 
 .colCorta { width: 90px; white-space: nowrap; }
+/* Reparto de la tabla de la agenda con un día lleno. El nombre pide sitio
+   —«María Fernanda Nolasco Treviño» son cuatro palabras— y el enunciado se lee
+   mejor en dos líneas anchas que en cinco estrechas. */
+.colAlumno { width: 19%; }
+.colCompetencia { width: 23%; }
 .colAcciones { width: 160px; white-space: nowrap; }
 
 .vacio {
@@ -799,6 +804,37 @@
   margin-left: auto;
   display: flex;
   gap: var(--space-sm);
+}
+
+/* Con forma de botón: como enlaces subrayados se leían como navegación, y una
+   de las dos borra el día. */
+.botonDia {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.botonDia:hover {
+  background: var(--dash-bg-subtle);
+  border-color: var(--sidebar-active-color);
+  color: var(--text-primary);
+}
+
+/* El destructivo solo se tiñe al pasar por encima: en reposo compite con el
+   otro, y en una fila de dos el que borra no es el que más llama. */
+.botonDiaPeligro:hover {
+  border-color: var(--estado-error-color);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
 }
 
 /* Los huecos sin cita se resumen en una fila y se apagan: están para que el

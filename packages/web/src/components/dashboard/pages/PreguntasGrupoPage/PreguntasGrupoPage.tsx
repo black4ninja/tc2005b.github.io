@@ -14,6 +14,7 @@ import type {
   AlumnoConPregunta, CompetenciaEnBanco, DuracionConfig, EstadoProyeccion, FaseProyeccion,
   Pregunta, PreguntaAsignacion, Proyeccion,
 } from '../../../../types/preguntas';
+import { confirmar } from '../../../../utils/dialogos';
 import { agruparVacios, fechaLarga, hora, rangoHoras } from '../../../../utils/agenda';
 import type { Agenda, DiaProfesor } from '../../../../types/agenda';
 import styles from './PreguntasGrupoPage.module.css';
@@ -228,6 +229,22 @@ export default function PreguntasGrupoPage() {
     }
   }
 
+  /**
+   * Cerrar reservas no borra nada, pero es visible para los alumnos: el día deja
+   * de admitirlos de golpe. Se pregunta por eso, no por peligro.
+   */
+  async function cerrarOReabrir(dia: DiaProfesor) {
+    const cerrando = !dia.cerrado;
+    if (!(await confirmar({
+      titulo: cerrando ? '¿Cerrar las reservas de este día?' : '¿Reabrir las reservas?',
+      texto: cerrando
+        ? `${fechaLarga(dia.inicio)}: las citas ya apuntadas se quedan, pero nadie más podrá apuntarse.`
+        : `${fechaLarga(dia.inicio)} volverá a admitir reservas en sus huecos libres.`,
+      confirmar: cerrando ? 'Cerrar reservas' : 'Reabrir',
+    }))) return;
+    await cambiarDia(dia, { cerrado: cerrando });
+  }
+
   async function cambiarDia(dia: DiaProfesor, cambios: { cerrado?: boolean }) {
     try {
       const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/dias/${dia.id}`, {
@@ -241,6 +258,16 @@ export default function PreguntasGrupoPage() {
   }
 
   async function borrarDia(dia: DiaProfesor) {
+    const citas = dia.huecos.filter((h) => h.cita).length;
+    if (!(await confirmar({
+      titulo: '¿Borrar este día?',
+      texto: citas > 0
+        // El servidor lo va a rechazar; decirlo aquí ahorra el rechazo.
+        ? `${fechaLarga(dia.inicio)} tiene ${citas} cita${citas === 1 ? '' : 's'} apuntada${citas === 1 ? '' : 's'}. Hay que cancelarlas antes.`
+        : `${fechaLarga(dia.inicio)} desaparecerá de la agenda del grupo.`,
+      confirmar: 'Borrar el día',
+      peligro: true,
+    }))) return;
     try {
       const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/dias/${dia.id}`, {
         method: 'DELETE', headers,
@@ -1126,28 +1153,40 @@ export default function PreguntasGrupoPage() {
                   {' · '}bloques de {formatearDuracion(dia.duracionSegundos)}
                 </span>
                 {dia.nota && <span className={styles.diaNota}>{dia.nota}</span>}
+                {/* Botones y no enlaces: son acciones sobre el día, y como
+                    enlaces subrayados se leían como navegación —y «Borrar el
+                    día» pesa lo mismo que «Cerrar reservas», que no es el caso—. */}
                 <span className={styles.diaAcciones}>
                   <button
-                    className={styles.enlaceBtn}
-                    onClick={() => cambiarDia(dia, { cerrado: !dia.cerrado })}
+                    className={styles.botonDia}
+                    onClick={() => cerrarOReabrir(dia)}
                     title={dia.cerrado
                       ? 'Volver a admitir reservas'
                       : 'Dejar de admitir reservas sin borrar lo agendado'}
                   >
+                    <Icon name={dia.cerrado ? 'lock_open' : 'lock'} size="sm" />
                     {dia.cerrado ? 'Reabrir' : 'Cerrar reservas'}
                   </button>
-                  <button className={styles.enlaceBtn} onClick={() => borrarDia(dia)}>
-                    Borrar el día
+                  <button
+                    className={`${styles.botonDia} ${styles.botonDiaPeligro}`}
+                    onClick={() => borrarDia(dia)}
+                    title="Borrar el día de la agenda"
+                  >
+                    <Icon name="delete" size="sm" /> Borrar el día
                   </button>
                 </span>
               </div>
 
               <table className={styles.tabla}>
                 <thead>
+                  {/* Anchos fijos: con un día lleno, dejar que la tabla
+                      reparta sola parte los nombres en cuatro líneas para
+                      hacerle sitio al chip de competencia, que es lo que menos
+                      falta hace leer entero. */}
                   <tr>
                     <th className={styles.colCorta}>Hora</th>
-                    <th>Alumno</th>
-                    <th>Competencia</th>
+                    <th className={styles.colAlumno}>Alumno</th>
+                    <th className={styles.colCompetencia}>Competencia</th>
                     <th>Pregunta que le toca</th>
                     <th className={styles.colAcciones} />
                   </tr>
@@ -1175,11 +1214,11 @@ export default function PreguntasGrupoPage() {
                         <td className={styles.colCorta}>
                           <strong>{hora(inicio)}</strong>
                         </td>
-                        <td>
+                        <td className={styles.colAlumno}>
                           <span className={styles.alumnoNombre}>{cita!.alumno?.name}</span>
                           <span className={styles.alumnoMatricula}>{cita!.alumno?.matricula}</span>
                         </td>
-                        <td>
+                        <td className={styles.colCompetencia}>
                           <span className={styles.competenciaTag}>
                             {cita!.competencia?.nombre ?? 'Sin competencia'}
                           </span>
