@@ -58,9 +58,16 @@
   color: var(--text-primary);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
+/* Estas filas son SUPERFICIES, no enlaces de texto, aunque se rendericen como
+   <a>. El `a:hover` global (globals.css) declara `color` y `text-decoration`
+   con más especificidad que `.item`: sin reafirmarlos aquí, al pasar el ratón
+   la fila entera se volvía azul y subrayada, y en oscuro ese azul es el de
+   menos contraste sobre el fondo de la tarjeta. */
 .item:hover {
   border-color: var(--dash-primary);
   box-shadow: 0 1px 6px rgba(79, 70, 229, 0.12);
+  color: var(--text-primary);
+  text-decoration: none;
 }
 
 .itemTitulo { font-size: 16px; font-weight: 600; }

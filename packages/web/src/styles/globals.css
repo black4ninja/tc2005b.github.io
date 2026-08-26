@@ -24,7 +24,7 @@ a {
 }
 
 a:hover {
-  color: #1d4ed8;
+  color: var(--color-lab-hover);
   text-decoration: underline;
 }
 
