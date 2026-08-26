@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  ajustarUso, aplicarAsignaciones, formatearDuracion, parsearEtiquetas, quitarAsignaciones,
+  ajustarUso, aplicarAsignaciones, formatearDuracion, quitarAsignaciones,
   repartirPreguntas, resumenPregunta,
 } from './preguntas';
 import type { AlumnoConPregunta, Pregunta, PreguntaAsignacion } from '../types/preguntas';
@@ -44,16 +44,6 @@ describe('resumenPregunta', () => {
   });
 });
 
-describe('parsearEtiquetas', () => {
-  it('separa por comas y normaliza', () => {
-    expect(parsearEtiquetas('Ética, Trabajo  en EQUIPO ')).toEqual(['ética', 'trabajo en equipo']);
-  });
-
-  it('ignora vacías y repetidas', () => {
-    expect(parsearEtiquetas('ética,,ÉTICA,  ')).toEqual(['ética']);
-    expect(parsearEtiquetas('')).toEqual([]);
-  });
-});
 
 describe('repartirPreguntas', () => {
   // Siempre la primera de la bolsa: hace el reparto determinista y deja ver el
@@ -149,7 +139,7 @@ describe('quitarAsignaciones', () => {
 describe('ajustarUso', () => {
   const banco = (uso: Pregunta['uso']): Pregunta[] => [{
     id: 'p1', coleccionId: null, competenciaId: null, competencia: null,
-    texto: 't', textoHtml: '', etiquetas: [], notas: '', archivada: false, uso,
+    texto: 't', textoHtml: '', notas: '', archivada: false, uso,
   }];
 
   it('estrena una pregunta sin uso previo', () => {

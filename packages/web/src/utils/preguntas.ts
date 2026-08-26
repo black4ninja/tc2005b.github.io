@@ -35,15 +35,6 @@ export function resumenPregunta(texto: string, maximo = 90): string {
   return `${(ultimoEspacio > maximo * 0.6 ? cortado.slice(0, ultimoEspacio) : cortado).trimEnd()}…`;
 }
 
-/** "Ética, Trabajo en equipo " → ['ética', 'trabajo en equipo'] */
-export function parsearEtiquetas(texto: string): string[] {
-  const salida: string[] = [];
-  for (const bruta of texto.split(',')) {
-    const limpia = bruta.trim().toLowerCase().replace(/\s+/g, ' ');
-    if (limpia && !salida.includes(limpia)) salida.push(limpia);
-  }
-  return salida;
-}
 
 /**
  * Reparte preguntas entre alumnos sin repetir mientras queden por usar.

@@ -258,8 +258,7 @@ export default function PreguntasGrupoPage() {
           ? {
             id: p.id,
             texto: p.texto,
-            etiquetas: p.etiquetas,
-            competencia: p.competencia?.competencia ?? null,
+                competencia: p.competencia?.competencia ?? null,
             competenciaId: p.competenciaId,
             archivada: p.archivada,
           }
@@ -449,7 +448,6 @@ export default function PreguntasGrupoPage() {
       .filter((p) => !competenciaActiva || (p.competenciaId ?? SIN_COMPETENCIA) === competenciaActiva)
       .filter((p) => !q
         || p.texto.toLowerCase().includes(q)
-        || p.etiquetas.some((e) => e.includes(q))
         || (p.competencia?.competencia ?? '').toLowerCase().includes(q));
   }, [preguntas, competenciaActiva, busquedaPregunta]);
 
@@ -807,7 +805,6 @@ export default function PreguntasGrupoPage() {
               <article key={p.id} className={styles.tarjeta}>
                 <div className={styles.tarjetaMeta}>
                   {p.competencia && <span className={styles.competenciaTag}>{p.competencia.competencia}</span>}
-                  {p.etiquetas.map((e) => <span key={e} className={styles.chipEtiqueta}>{e}</span>)}
                   {p.uso ? (
                     <span className={styles.tomadaTag} title={p.uso.quienes.join('\n')}>
                       <Icon name="person" size="sm" />

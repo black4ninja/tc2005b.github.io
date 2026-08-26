@@ -68,7 +68,6 @@ export default function SelectorPregunta({
       if (competencia && (p.competenciaId ?? 'sin-competencia') !== competencia) return false;
       if (!q) return true;
       return p.texto.toLowerCase().includes(q)
-        || p.etiquetas.some((e) => e.includes(q))
         || (p.competencia?.competencia ?? '').toLowerCase().includes(q);
     });
   }, [preguntas, texto, competencia]);
@@ -117,7 +116,7 @@ export default function SelectorPregunta({
             type="text"
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
-            placeholder="Buscar por competencia, etiqueta o contenido…"
+            placeholder="Buscar por competencia o contenido…"
           />
         </div>
 
@@ -178,7 +177,6 @@ export default function SelectorPregunta({
                       {p.competencia && (
                         <span className={styles.competencia}>{p.competencia.competencia}</span>
                       )}
-                      {p.etiquetas.map((e) => <span key={e} className={styles.chip}>{e}</span>)}
                       {p.uso && (
                         <span className={styles.tomada} title={p.uso.quienes.join('\n')}>
                           <Icon name="history" size="sm" />
