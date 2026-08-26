@@ -7,35 +7,37 @@ import styles from './SelectorPregunta.module.css';
 interface SelectorPreguntaProps {
   preguntas: Pregunta[];
   titulo: string;
+  /** Línea bajo el título: a qué hueco va lo que se elija. */
+  subtitulo?: string;
   /** Píldoras de competencia; vacío = no se ofrece el filtro. */
   competencias?: CompetenciaEnBanco[];
   /** Competencia con la que abrir el filtro (el hueco que se está llenando). */
   competenciaInicial?: string | null;
+  /** Las que este alumno YA tiene en esta competencia. Se marcan y se pueden quitar. */
+  seleccionadas?: Set<string>;
   /**
-   * Preguntas que ESTE alumno ya tiene en la misma competencia (el otro
-   * intento). Se marcan pero no se bloquean: repetirle la misma no evalúa nada,
-   * pero la decisión sigue siendo del profesor.
+   * Elegir una NO seleccionada la asigna; elegir una ya seleccionada la quita.
+   * El modal NO se cierra: se ve el cambio en la propia lista y se sigue.
    */
-  yaDelAlumno?: Set<string>;
-  onElegir: (pregunta: Pregunta) => void;
+  onAlternar: (pregunta: Pregunta) => void;
   onCerrar: () => void;
 }
 
 /**
- * Elegir una pregunta del banco.
+ * Elegir las preguntas de un alumno en una competencia.
  *
- * Se abre con el cursor puesto y responde al teclado, pero la lista muestra el
- * enunciado ENTERO y no un recorte: para decidir si una pregunta le va a un
- * alumno hay que leerla, y con el recorte había que abrir el banco en otra
- * pestaña para saber cuál era cuál.
+ * Es una lista de INTERRUPTORES y no un menú de un solo uso: cada alumno lleva
+ * hasta dos preguntas por competencia, así que cerrar el modal en cuanto se
+ * pulsa una obligaba a reabrirlo para poner la segunda, y no dejaba ver si lo
+ * que se acababa de pulsar había entrado. Ahora se queda abierto, lo elegido se
+ * marca, y volver a pulsarlo lo quita.
  *
- * Las tomadas se listan igualmente, apagadas y diciendo de quién son. Ocultarlas
- * dejaría al profesor buscando una pregunta que él recuerda haber visto sin
- * ninguna pista de por qué ya no está.
+ * La lista muestra el enunciado ENTERO y no un recorte: para decidir si una
+ * pregunta le va a un alumno hay que leerla.
  */
 export default function SelectorPregunta({
-  preguntas, titulo, competencias = [], competenciaInicial = null,
-  yaDelAlumno = new Set(), onElegir, onCerrar,
+  preguntas, titulo, subtitulo, competencias = [], competenciaInicial = null,
+  seleccionadas = new Set(), onAlternar, onCerrar,
 }: SelectorPreguntaProps) {
   const [texto, setTexto] = useState('');
   const [competencia, setCompetencia] = useState<string | null>(competenciaInicial);
@@ -75,7 +77,7 @@ export default function SelectorPregunta({
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const elegida = filtradas[indice];
-      if (elegida) onElegir(elegida);
+      if (elegida) onAlternar(elegida);
     }
   }
 
@@ -84,6 +86,8 @@ export default function SelectorPregunta({
   return (
     <Modal isOpen onClose={onCerrar} title={titulo} wide>
       <div className={styles.caja} onKeyDown={onKeyDown}>
+        {subtitulo && <p className={styles.subtitulo}>{subtitulo}</p>}
+
         <div className={styles.buscadorFila}>
           <Icon name="search" size="sm" />
           <input
@@ -122,42 +126,46 @@ export default function SelectorPregunta({
           </p>
         ) : (
           <ul className={styles.lista} ref={listaRef}>
-            {filtradas.map((p, i) => (
-              <li key={p.id}>
-                <button
-                  className={`${styles.opcion} ${i === indice ? styles.opcionActiva : ''}`}
-                  data-activo={i === indice}
-                  onMouseEnter={() => setIndice(i)}
-                  onClick={() => onElegir(p)}
-                >
-                  <span className={styles.opcionMeta}>
-                    {/* La competencia primero y con otro tinte: es el eje por
-                        el que se elige, las etiquetas solo matizan. */}
-                    {p.competencia && (
-                      <span className={styles.competencia}>{p.competencia.competencia}</span>
-                    )}
-                    {p.etiquetas.map((e) => <span key={e} className={styles.chip}>{e}</span>)}
-                    {yaDelAlumno.has(p.id) && (
-                      <span className={styles.mismoAlumno}>
-                        <Icon name="replay" size="sm" />
-                        ya se la pusiste a este alumno
-                      </span>
-                    )}
-                    {p.uso && (
-                      <span className={styles.tomada} title={p.uso.quienes.join('\n')}>
-                        <Icon name="history" size="sm" />
-                        ya en {p.uso.veces}
-                      </span>
-                    )}
-                  </span>
-                  <span className={styles.opcionTexto}>{p.texto}</span>
-                </button>
-              </li>
-            ))}
+            {filtradas.map((p, i) => {
+              const elegida = seleccionadas.has(p.id);
+              return (
+                <li key={p.id}>
+                  <button
+                    className={`${styles.opcion} ${i === indice ? styles.opcionActiva : ''} ${elegida ? styles.opcionElegida : ''}`}
+                    data-activo={i === indice}
+                    onMouseEnter={() => setIndice(i)}
+                    onClick={() => onAlternar(p)}
+                    title={elegida ? 'Pulsa para quitársela' : 'Pulsa para asignársela'}
+                  >
+                    <span className={styles.opcionMeta}>
+                      {/* La marca de elegida va primero: es lo que contesta a
+                          «¿entró o no?» sin tener que cerrar y volver a mirar. */}
+                      {elegida && (
+                        <span className={styles.elegidaTag}>
+                          <Icon name="check_circle" size="sm" />
+                          asignada
+                        </span>
+                      )}
+                      {p.competencia && (
+                        <span className={styles.competencia}>{p.competencia.competencia}</span>
+                      )}
+                      {p.etiquetas.map((e) => <span key={e} className={styles.chip}>{e}</span>)}
+                      {p.uso && (
+                        <span className={styles.tomada} title={p.uso.quienes.join('\n')}>
+                          <Icon name="history" size="sm" />
+                          ya en {p.uso.veces}
+                        </span>
+                      )}
+                    </span>
+                    <span className={styles.opcionTexto}>{p.texto}</span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
         <p className={styles.atajos}>
-          ↑ ↓ para moverte · Enter para elegir · Esc para cerrar
+          ↑ ↓ para moverte · Enter para asignar o quitar · Esc para cerrar
           <span className={styles.libres}>{sinUsar} sin usar de {filtradas.length}</span>
         </p>
       </div>

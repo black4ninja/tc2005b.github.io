@@ -108,8 +108,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     quién le va, que es el orden natural al personalizar; antes obligaba a abrir
     el banco en otra pestaña.
   - El selector de preguntas enseña el **enunciado completo**, filtra por
-    competencia y lista las tomadas apagadas, diciendo de quién son: esconderlas
-    dejaba al profesor buscando una pregunta que recordaba haber visto.
+    competencia y **se queda abierto**: es una lista de interruptores, no un menú
+    de un solo uso. Cada alumno lleva hasta dos preguntas por competencia, así
+    que cerrarlo en cuanto se pulsa una obligaba a reabrirlo para la segunda y no
+    dejaba ver si lo pulsado había entrado. Lo asignado se marca en verde y
+    volver a pulsarlo se lo quita.
   - El banco de la materia se **filtra por competencia** (con 145 preguntas la
     tabla sin filtrar no se lee) y marca cuáles llevan sin estrenarse.
   - Asignar y quitar cambian la fila **en el acto** y el servidor solo confirma o

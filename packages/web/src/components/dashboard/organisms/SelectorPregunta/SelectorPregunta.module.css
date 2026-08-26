@@ -151,15 +151,30 @@
   font-weight: 600;
 }
 
-/* Repetirle a un alumno la misma pregunta en su segundo intento no evalúa nada.
-   Se avisa en rojo suave, pero no se bloquea. */
-.mismoAlumno {
+/* Ya asignada a este alumno: el borde la separa de un vistazo del resto de la
+   lista, y pulsarla otra vez se la quita. */
+.opcionElegida {
+  border-color: var(--estado-exito-color);
+  background: var(--estado-exito-bg);
+}
+
+.opcionElegida .opcionTexto,
+.opcionElegida .opcionMeta { color: var(--text-primary); }
+
+.elegidaTag {
   display: inline-flex;
   align-items: center;
   gap: 3px;
   padding: 1px 8px;
   border-radius: 999px;
-  background: var(--estado-error-bg);
-  color: var(--estado-error-color);
+  background: var(--estado-exito-color);
+  color: #fff;
   font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.subtitulo {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }

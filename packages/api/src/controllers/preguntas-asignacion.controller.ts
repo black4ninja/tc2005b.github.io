@@ -48,11 +48,6 @@ function competenciaDe(pregunta: Parse.Object | undefined): string {
   return pregunta?.get('competencia')?.id ?? SIN_COMPETENCIA;
 }
 
-/** Hueco que ocupa una asignación: competencia + intento. */
-function huecoDe(asignacion: PreguntaAsignacion): string {
-  return `${competenciaDe(asignacion.getPregunta())}::${asignacion.getIntento()}`;
-}
-
 /** Igual, para una pregunta que todavía no se ha asignado. */
 function huecoPara(pregunta: Parse.Object | undefined, intento: number): string {
   return `${competenciaDe(pregunta)}::${intento}`;
@@ -169,7 +164,7 @@ export async function getPreguntasGrupo(req: Request, res: Response): Promise<vo
     for (const a of asignaciones) {
       const alumnoId = a.getAlumno()?.id;
       if (!alumnoId) continue;
-      const clave = `${alumnoId}::${huecoDe(a)}`;
+      const clave = `${alumnoId}::${a.getHueco()}`;
       if (!vigentes.has(clave)) vigentes.set(clave, a);
       totalPorAlumno.set(alumnoId, (totalPorAlumno.get(alumnoId) ?? 0) + 1);
     }
@@ -236,7 +231,7 @@ export async function getPreguntasGrupo(req: Request, res: Response): Promise<vo
             (_, i) => vigentes.get(`${alumno.id}::${competencia}::${i + 1}`),
           ))
           .filter((a): a is PreguntaAsignacion => !!a)
-          .map((a) => ({ ...a.toSafeJSON(), hueco: huecoDe(a) })),
+          .map((a) => a.toSafeJSON()),
         totalAsignaciones: totalPorAlumno.get(alumno.id!) ?? 0,
       })),
       preguntas: [...porIdPregunta.values()].map((p) => ({
@@ -365,7 +360,7 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
     for (const a of previas) {
       const alumnoId = a.getAlumno()?.id;
       if (!alumnoId) continue;
-      const clave = `${alumnoId}::${huecoDe(a)}`;
+      const clave = `${alumnoId}::${a.getHueco()}`;
       if (!vigentePorHueco.has(clave)) vigentePorHueco.set(clave, a);
     }
 

@@ -71,8 +71,11 @@ export default function PreguntasGrupoPage() {
   const [duracionBorrador, setDuracionBorrador] = useState('');
 
   // Hueco que se está llenando: alumno + competencia.
+  // Se guarda el ID y no el alumno: el modal se queda abierto mientras se
+  // asigna, así que tiene que repintarse con lo que el alumno tiene AHORA y no
+  // con la copia de cuando se abrió.
   const [eligiendoPara, setEligiendoPara] = useState<
-    { alumno: AlumnoConPregunta; competenciaId: string; intento: number } | null
+    { alumnoId: string; competenciaId: string; intentoFijo: number | null } | null
   >(null);
   // Camino inverso: pregunta elegida, falta el alumno.
   const [eligiendoAlumno, setEligiendoAlumno] = useState<Pregunta | null>(null);
@@ -635,7 +638,11 @@ export default function PreguntasGrupoPage() {
                         <button
                           className={`${styles.celdaPregunta} ${unica ? '' : styles.celdaVacia} ${unica?.pendiente ? styles.pendiente : ''}`}
                           onClick={() => setEligiendoPara({
-                            alumno, competenciaId: competenciaActiva, intento: intentoActivo,
+                            alumnoId: alumno.id,
+                            competenciaId: competenciaActiva,
+                            // Desde el modo de trabajo el intento lo eligió el
+                            // profesor arriba: lo que se elija va ahí.
+                            intentoFijo: intentoActivo,
                           })}
                           title={unica ? 'Cambiar la pregunta' : 'Elegir pregunta'}
                         >
@@ -677,7 +684,11 @@ export default function PreguntasGrupoPage() {
                                 // Un clic aquí llena el PRIMER intento libre; para
                                 // trabajar uno concreto se entra por su modo.
                                 onClick={() => setEligiendoPara({
-                                  alumno, competenciaId: c.id, intento: libre,
+                                  alumnoId: alumno.id,
+                                  competenciaId: c.id,
+                                  // Desde el mapa no hay intento elegido: cada
+                                  // pregunta cae en el primero que esté libre.
+                                  intentoFijo: null,
                                 })}
                                 title={completa
                                   ? `${c.nombre}: los ${MAX_INTENTOS} intentos asignados`
@@ -805,31 +816,36 @@ export default function PreguntasGrupoPage() {
       )}
 
       {/* Alumno → pregunta */}
-      {eligiendoPara && (
-        <SelectorPregunta
-          preguntas={preguntas.filter((p) => !p.archivada)}
-          competencias={competencias}
-          competenciaInicial={eligiendoPara.competenciaId}
-          titulo={`Pregunta para ${eligiendoPara.alumno.name} · ${eligiendoPara.intento}.º intento`}
-          // Las que ese alumno ya tiene en el otro intento de esta competencia:
-          // repetírselas no evalúa nada, así que se marcan.
-          yaDelAlumno={new Set(
-            eligiendoPara.alumno.asignaciones
-              .filter((a) => a.hueco?.startsWith(`${eligiendoPara.competenciaId}::`))
-              .map((a) => a.pregunta?.id)
-              .filter((id): id is string => !!id),
-          )}
-          onElegir={(p) => {
-            asignar([{
-              alumnoId: eligiendoPara.alumno.id,
-              preguntaId: p.id,
-              intento: eligiendoPara.intento,
-            }]);
-            setEligiendoPara(null);
-          }}
-          onCerrar={() => setEligiendoPara(null)}
-        />
-      )}
+      {eligiendoPara && (() => {
+        const alumno = alumnos.find((a) => a.id === eligiendoPara.alumnoId);
+        if (!alumno) return null;
+        const { competenciaId } = eligiendoPara;
+        // Lo que ya tiene en ESTA competencia, sea del intento que sea.
+        const suyas = alumno.asignaciones.filter((a) => a.hueco?.startsWith(`${competenciaId}::`));
+        const destino = eligiendoPara.intentoFijo ?? primerHuecoLibre(alumno, competenciaId);
+        const nombreCompetencia = competencias.find((c) => c.id === competenciaId)?.nombre ?? '';
+        return (
+          <SelectorPregunta
+            preguntas={preguntas.filter((p) => !p.archivada)}
+            competencias={competencias}
+            competenciaInicial={competenciaId}
+            titulo={`Preguntas de ${alumno.name}`}
+            subtitulo={`${nombreCompetencia} · lleva ${suyas.length} de ${MAX_INTENTOS}. Lo que elijas entra en el ${destino}.º intento.`}
+            seleccionadas={new Set(suyas.map((a) => a.pregunta?.id).filter((id): id is string => !!id))}
+            onAlternar={(p) => {
+              // Pulsar una que ya tiene la QUITA; pulsar otra la mete en el
+              // hueco de destino, sustituyendo lo que hubiera ahí.
+              const yaLaTiene = suyas.find((a) => a.pregunta?.id === p.id);
+              // Una que todavía se está guardando no tiene id real: quitarla
+              // daría un 404. Se ignora el clic hasta que confirme.
+              if (yaLaTiene?.pendiente) return;
+              if (yaLaTiene) quitar(yaLaTiene);
+              else asignar([{ alumnoId: alumno.id, preguntaId: p.id, intento: destino }]);
+            }}
+            onCerrar={() => setEligiendoPara(null)}
+          />
+        );
+      })()}
 
       {/* Pregunta → alumno */}
       {eligiendoAlumno && (

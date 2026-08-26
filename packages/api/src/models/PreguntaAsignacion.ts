@@ -85,11 +85,24 @@ export class PreguntaAsignacion extends BaseModel {
     this.set('usada', usada);
   }
 
+  /**
+   * Hueco que ocupa: `<competenciaId>::<intento>`.
+   *
+   * Se calcula aquí y no en quien serializa porque justo eso pasó: el listado lo
+   * añadía a mano y el alta no, así que una asignación recién creada llegaba al
+   * cliente sin hueco y su fila desaparecía del contador al confirmarse.
+   * Requiere include('pregunta.competencia').
+   */
+  getHueco(): string {
+    return `${this.getPregunta()?.get('competencia')?.id ?? 'sin-competencia'}::${this.getIntento()}`;
+  }
+
   toSafeJSON(): Record<string, unknown> {
     const pregunta = this.getPregunta();
     return {
       id: this.id,
       alumnoId: this.getAlumno()?.id ?? null,
+      hueco: this.getHueco(),
       // La pregunta viaja desplegada (requiere include): el roster pinta su
       // título en cada fila y sin esto serían N peticiones más.
       pregunta: pregunta
