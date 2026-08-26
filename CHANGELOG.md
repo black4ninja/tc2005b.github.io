@@ -8,6 +8,16 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **Las etiquetas salen de la interfaz de preguntas.** Eran un segundo eje por
+  debajo de la competencia, pensado para matizar lo que esta no distingue, y en
+  la práctica no se usaron: casi todas las preguntas del banco no tienen
+  ninguna. Se van el campo del formulario, los chips del selector y del roster,
+  y la búsqueda por etiqueta —que ahora mira el enunciado y la competencia, que
+  es por donde se busca de verdad—.
+  - El campo sigue en el modelo y el API lo sigue aceptando: lo que ya estaba
+    guardado no se toca, y el guardado solo escribe etiquetas si alguien las
+    manda. Se retira la interfaz, no el dato.
+
 - **El banco de preguntas se queda con lo que se usa para elegir.** Se van las
   columnas **Etiquetas** y **Uso**: la primera estaba vacía en casi todas las
   preguntas y la segunda contestaba a algo que ya no se pregunta desde ahí —a

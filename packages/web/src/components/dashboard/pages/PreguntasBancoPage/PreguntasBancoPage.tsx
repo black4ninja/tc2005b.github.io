@@ -9,7 +9,7 @@ import Modal from '../../atoms/Modal/Modal';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Icon from '../../atoms/Icon/Icon';
 import PreguntaProyector from '../../organisms/PreguntaProyector/PreguntaProyector';
-import { formatearDuracion, parsearEtiquetas, resumenPregunta } from '../../../../utils/preguntas';
+import { formatearDuracion, resumenPregunta } from '../../../../utils/preguntas';
 import type { Pregunta } from '../../../../types/preguntas';
 import styles from './PreguntasBancoPage.module.css';
 
@@ -31,11 +31,10 @@ interface CompetenciaOption {
 interface Borrador {
   texto: string;
   competenciaId: string;
-  etiquetas: string;
   notas: string;
 }
 
-const VACIO: Borrador = { texto: '', competenciaId: '', etiquetas: '', notas: '' };
+const VACIO: Borrador = { texto: '', competenciaId: '', notas: '' };
 
 const SIN_COMPETENCIA = 'sin-competencia';
 
@@ -207,7 +206,6 @@ export default function PreguntasBancoPage() {
     setBorrador({
       texto: p.texto,
       competenciaId: p.competenciaId ?? '',
-      etiquetas: p.etiquetas.join(', '),
       notas: p.notas,
     });
     // Si la que tiene puesta es de otra materia, el selector se abre ya
@@ -224,7 +222,6 @@ export default function PreguntasBancoPage() {
       const cuerpo = {
         texto: borrador.texto,
         competenciaId: borrador.competenciaId,
-        etiquetas: parsearEtiquetas(borrador.etiquetas),
         notas: borrador.notas,
       };
       const res = await fetch(
@@ -483,17 +480,6 @@ export default function PreguntasBancoPage() {
               placeholder={'Se acepta Markdown.\n\nDescribe una situación en la que…'}
             />
             <small>Esto es lo que se proyecta. Acepta Markdown (negritas, listas, código).</small>
-          </label>
-
-          <label className={styles.campo}>
-            <span>Etiquetas</span>
-            <input
-              type="text"
-              value={borrador.etiquetas}
-              onChange={(e) => setBorrador({ ...borrador, etiquetas: e.target.value })}
-              placeholder="parcial 2, difícil, perfil técnico"
-            />
-            <small>Separadas por comas. Matizan lo que la competencia no distingue.</small>
           </label>
 
           <label className={styles.campo}>

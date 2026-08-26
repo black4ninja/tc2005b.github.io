@@ -23,7 +23,6 @@ export interface Pregunta {
    */
   texto: string;
   textoHtml: string;
-  etiquetas: string[];
   /**
    * Tiempo YA RESUELTO para el grupo desde el que se pide (anulación del grupo →
    * tiempo de la materia → el del módulo). No es un campo de la pregunta: el
@@ -53,7 +52,6 @@ export interface UsoPregunta {
 export interface PreguntaDeAsignacion {
   id: string;
   texto: string;
-  etiquetas: string[];
   competencia: string | null;
   competenciaId: string | null;
   archivada: boolean;
