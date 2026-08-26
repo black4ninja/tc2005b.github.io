@@ -23,6 +23,26 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
+      /**
+       * CodeMirror EXIGE un solo ejemplar de estos módulos.
+       *
+       * Sus extensiones se identifican contra registros que viven dentro del
+       * propio módulo, así que dos copias hacen que una extensión creada por una
+       * no la reconozca el `EditorState` de la otra: «Unrecognized extension
+       * value in extension set», y el editor se lleva por delante toda la
+       * pantalla. Ya pasó una vez, y en dev NO se reproduce —Vite sirve módulos
+       * sueltos y resuelve a la misma ruta—: solo aparece en el build.
+       *
+       * La causa de aquella vez fue el lockfile, con dos resoluciones del mismo
+       * paquete. Esto es el cinturón: aunque `node_modules` acabe con dos
+       * copias, el bundle se queda con una.
+       */
+      dedupe: [
+        '@codemirror/state',
+        '@codemirror/view',
+        '@codemirror/language',
+        '@codemirror/commands',
+      ],
     },
     publicDir: path.resolve(__dirname, '../../static-legacy'),
     build: {

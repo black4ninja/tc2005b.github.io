@@ -38,6 +38,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     ningún control con el que deshacerlo.
 
 ### Fixed
+- **El juez de programación abría en blanco.** El editor tumbaba la pantalla
+  entera con `Unrecognized extension value in extension set`: había **dos copias
+  de `@codemirror/state`** instaladas, y CodeMirror identifica sus extensiones
+  contra registros que viven dentro del propio módulo, así que las que creaba
+  `@codemirror/view` con una copia no las reconocía el `EditorState` de la otra.
+  - La segunda copia la metió el lockfile en el #117: quedaron dos resoluciones
+    del mismo paquete (`^6.5.0` → 6.7.1 y el resto → 6.7.0) pudiendo servir una
+    sola a todos. En una instalación limpia eso son dos carpetas —una arriba y
+    otra anidada bajo `@codemirror/view`—, que es lo que tiene el servidor.
+  - **No se reproducía en un checkout viejo**: quien ya tenía `node_modules` de
+    antes del #117 seguía con una sola copia. Aparecía al instalar en limpio, que
+    es lo que hacen el servidor y cada worktree nuevo.
+  - Se unifica el rango que pide `packages/web` y se añade `resolve.dedupe` de la
+    familia CodeMirror en Vite: aunque `node_modules` vuelva a duplicarse, el
+    bundle se queda con una copia.
+
 - **El resumen de la semana ya cuenta las actividades del plan de evaluación.**
   Las de tipo `actividad` no salían en los chips: una semana entera de
   actividades enseñaba el resumen vacío, como si no trajera trabajo. Era el
