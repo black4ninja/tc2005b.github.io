@@ -698,10 +698,18 @@
 
 /* La fila que está en pantalla ahora mismo: el profesor mira la tabla, no el
    mando, y tiene que poder situarse sin leer el nombre. */
-.filaProyectada td {
-  background: var(--dash-bg-subtle);
+/* La fila que está en pantalla ahora mismo.
+ *
+ * El fondo va en TODAS las celdas y la marca SOLO en la primera. Estaba en cada
+ * celda, y con `border-collapse` la sombra interior se pintaba en el borde
+ * izquierdo de cada una: en vez de una fila señalada se veían cuatro columnas
+ * subrayadas, como si cada dato estuviera seleccionado por su cuenta. */
+.filaProyectada td { background: var(--dash-bg-subtle); }
+
+.filaProyectada td:first-child {
   box-shadow: inset 3px 0 0 var(--dash-primary);
 }
+
 
 /* La nota del intento que está en pantalla: fila propia dentro del mando, que es
    un campo y no un botón más. */
