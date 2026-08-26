@@ -178,3 +178,23 @@
   font-size: 0.85rem;
   color: var(--text-secondary);
 }
+
+/* Al tope de intentos: apagadas, no ocultas. Ocultarlas dejaría al profesor
+   buscando una pregunta que sabe que está en el banco. */
+.opcionApagada {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.opcionApagada:hover { background: transparent; border-color: transparent; }
+
+.subtituloTope {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--estado-aviso-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+}

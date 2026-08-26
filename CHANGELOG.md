@@ -112,7 +112,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     de un solo uso. Cada alumno lleva hasta dos preguntas por competencia, así
     que cerrarlo en cuanto se pulsa una obligaba a reabrirlo para la segunda y no
     dejaba ver si lo pulsado había entrado. Lo asignado se marca en verde y
-    volver a pulsarlo se lo quita.
+    volver a pulsarlo se lo quita. Al llegar al tope de intentos, las demás se
+    **apagan** en vez de sustituir a una en silencio: pulsar y que cambie otra
+    cosa sin avisar es peor que no poder pulsar. Lo mismo al revés —desde una
+    pregunta, el alumno sin intentos libres sale apagado—.
   - El banco de la materia se **filtra por competencia** (con 145 preguntas la
     tabla sin filtrar no se lee) y marca cuáles llevan sin estrenarse.
   - Asignar y quitar cambian la fila **en el acto** y el servidor solo confirma o

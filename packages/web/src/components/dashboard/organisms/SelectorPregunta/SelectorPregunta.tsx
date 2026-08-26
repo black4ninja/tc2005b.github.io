@@ -16,6 +16,11 @@ interface SelectorPreguntaProps {
   /** Las que este alumno YA tiene en esta competencia. Se marcan y se pueden quitar. */
   seleccionadas?: Set<string>;
   /**
+   * false = el alumno llegó al tope de intentos. Las ya asignadas se siguen
+   * pudiendo quitar; las demás quedan apagadas.
+   */
+  permiteAgregar?: boolean;
+  /**
    * Elegir una NO seleccionada la asigna; elegir una ya seleccionada la quita.
    * El modal NO se cierra: se ve el cambio en la propia lista y se sigue.
    */
@@ -34,10 +39,14 @@ interface SelectorPreguntaProps {
  *
  * La lista muestra el enunciado ENTERO y no un recorte: para decidir si una
  * pregunta le va a un alumno hay que leerla.
+ *
+ * Al llegar al tope de intentos las no elegidas se APAGAN en vez de sustituir a
+ * una en silencio: pulsar y que cambie otra cosa sin avisar es peor que no poder
+ * pulsar. Quitar una sigue disponible, que es el camino para cambiarla.
  */
 export default function SelectorPregunta({
   preguntas, titulo, subtitulo, competencias = [], competenciaInicial = null,
-  seleccionadas = new Set(), onAlternar, onCerrar,
+  seleccionadas = new Set(), permiteAgregar = true, onAlternar, onCerrar,
 }: SelectorPreguntaProps) {
   const [texto, setTexto] = useState('');
   const [competencia, setCompetencia] = useState<string | null>(competenciaInicial);
@@ -77,7 +86,7 @@ export default function SelectorPregunta({
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const elegida = filtradas[indice];
-      if (elegida) onAlternar(elegida);
+      if (elegida && (seleccionadas.has(elegida.id) || permiteAgregar)) onAlternar(elegida);
     }
   }
 
@@ -86,7 +95,12 @@ export default function SelectorPregunta({
   return (
     <Modal isOpen onClose={onCerrar} title={titulo} wide>
       <div className={styles.caja} onKeyDown={onKeyDown}>
-        {subtitulo && <p className={styles.subtitulo}>{subtitulo}</p>}
+        {subtitulo && (
+          <p className={`${styles.subtitulo} ${permiteAgregar ? '' : styles.subtituloTope}`}>
+            {!permiteAgregar && <Icon name="info" size="sm" />}
+            {subtitulo}
+          </p>
+        )}
 
         <div className={styles.buscadorFila}>
           <Icon name="search" size="sm" />
@@ -128,14 +142,20 @@ export default function SelectorPregunta({
           <ul className={styles.lista} ref={listaRef}>
             {filtradas.map((p, i) => {
               const elegida = seleccionadas.has(p.id);
+              const apagada = !elegida && !permiteAgregar;
               return (
                 <li key={p.id}>
                   <button
-                    className={`${styles.opcion} ${i === indice ? styles.opcionActiva : ''} ${elegida ? styles.opcionElegida : ''}`}
+                    className={`${styles.opcion} ${i === indice ? styles.opcionActiva : ''} ${elegida ? styles.opcionElegida : ''} ${apagada ? styles.opcionApagada : ''}`}
                     data-activo={i === indice}
+                    disabled={apagada}
                     onMouseEnter={() => setIndice(i)}
                     onClick={() => onAlternar(p)}
-                    title={elegida ? 'Pulsa para quitársela' : 'Pulsa para asignársela'}
+                    title={elegida
+                      ? 'Pulsa para quitársela'
+                      : apagada
+                        ? 'Ya tiene todos sus intentos: quita una para poner esta'
+                        : 'Pulsa para asignársela'}
                   >
                     <span className={styles.opcionMeta}>
                       {/* La marca de elegida va primero: es lo que contesta a

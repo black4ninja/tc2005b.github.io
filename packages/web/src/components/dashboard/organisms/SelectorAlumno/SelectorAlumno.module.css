@@ -61,9 +61,16 @@
   color: var(--text-muted);
 }
 
-/* Aviso, no bloqueo: cambiarle la pregunta a alguien es legítimo, pero tiene que
-   verse antes de pulsar. */
-.sustituye {
+/* Apagado, no escondido: hay que ver al alumno para entender por qué no se le
+   puede asignar. Se le cambia quitándole una desde su fila. */
+.opcionApagada {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.opcionApagada:hover { background: transparent; border-color: transparent; }
+
+.sinHueco {
   margin-left: auto;
   padding: 1px 8px;
   border-radius: 999px;

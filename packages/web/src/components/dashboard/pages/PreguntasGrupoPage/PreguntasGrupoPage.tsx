@@ -830,8 +830,11 @@ export default function PreguntasGrupoPage() {
             competencias={competencias}
             competenciaInicial={competenciaId}
             titulo={`Preguntas de ${alumno.name}`}
-            subtitulo={`${nombreCompetencia} · lleva ${suyas.length} de ${MAX_INTENTOS}. Lo que elijas entra en el ${destino}.º intento.`}
+            subtitulo={suyas.length >= MAX_INTENTOS
+              ? `${nombreCompetencia} · ya tiene sus ${MAX_INTENTOS} intentos. Quita una para poner otra.`
+              : `${nombreCompetencia} · lleva ${suyas.length} de ${MAX_INTENTOS}. Lo que elijas entra en el ${destino}.º intento.`}
             seleccionadas={new Set(suyas.map((a) => a.pregunta?.id).filter((id): id is string => !!id))}
+            permiteAgregar={suyas.length < MAX_INTENTOS}
             onAlternar={(p) => {
               // Pulsar una que ya tiene la QUITA; pulsar otra la mete en el
               // hueco de destino, sustituyendo lo que hubiera ahí.
@@ -852,9 +855,9 @@ export default function PreguntasGrupoPage() {
         <SelectorAlumno
           alumnos={alumnos}
           titulo="¿A quién se la asignas?"
-          // A quien ya tenga una de esta competencia se le sustituye: se avisa en
-          // la fila en vez de esconderlo, porque a veces es justo lo que se busca.
-          yaTienen={new Set(
+          // A quien ya agotó sus intentos no se le puede añadir otra: se apaga
+          // en vez de sustituirle una en silencio.
+          sinHuecos={new Set(
             alumnos
               .filter((a) => llenosEn(a, eligiendoAlumno.competenciaId ?? SIN_COMPETENCIA) >= MAX_INTENTOS)
               .map((a) => a.id),

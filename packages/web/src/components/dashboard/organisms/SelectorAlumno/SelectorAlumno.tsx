@@ -7,8 +7,8 @@ import styles from './SelectorAlumno.module.css';
 interface SelectorAlumnoProps {
   alumnos: AlumnoConPregunta[];
   titulo: string;
-  /** Quiénes ya tienen una pregunta de esa competencia: se les sustituiría. */
-  yaTienen?: Set<string>;
+  /** Quiénes ya agotaron sus intentos en esa competencia: no se les puede añadir. */
+  sinHuecos?: Set<string>;
   onElegir: (alumno: AlumnoConPregunta) => void;
   onCerrar: () => void;
 }
@@ -17,12 +17,12 @@ interface SelectorAlumnoProps {
  * Elegir alumno con el teclado, el reflejo del selector de preguntas.
  *
  * Existe para el camino inverso: el profesor lee una pregunta entera y decide a
- * quién le va. A quien ya tenga una de esa competencia no se le esconde —a veces
- * cambiársela es justo lo que se busca—, se le marca para que la sustitución no
- * ocurra a ciegas.
+ * quién le va. A quien ya agotó sus intentos en esa competencia se le apaga en
+ * vez de esconderlo: hay que verlo para entender por qué no está disponible, y
+ * el camino para cambiárselo es quitarle una desde su fila.
  */
 export default function SelectorAlumno({
-  alumnos, titulo, yaTienen = new Set(), onElegir, onCerrar,
+  alumnos, titulo, sinHuecos = new Set(), onElegir, onCerrar,
 }: SelectorAlumnoProps) {
   const [texto, setTexto] = useState('');
   const [indice, setIndice] = useState(0);
@@ -56,7 +56,7 @@ export default function SelectorAlumno({
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const elegido = filtrados[indice];
-      if (elegido) onElegir(elegido);
+      if (elegido && !sinHuecos.has(elegido.id)) onElegir(elegido);
     }
   }
 
@@ -79,24 +79,25 @@ export default function SelectorAlumno({
           <p className={styles.vacio}>Ningún alumno coincide.</p>
         ) : (
           <ul className={styles.lista} ref={listaRef}>
-            {filtrados.map((a, i) => (
-              <li key={a.id}>
-                <button
-                  className={`${styles.opcion} ${i === indice ? styles.opcionActiva : ''}`}
-                  data-activo={i === indice}
-                  onMouseEnter={() => setIndice(i)}
-                  onClick={() => onElegir(a)}
-                >
-                  <span className={styles.nombre}>{a.name}</span>
-                  <span className={styles.matricula}>{a.matricula}</span>
-                  {yaTienen.has(a.id) && (
-                    <span className={styles.sustituye} title="Se le cambia la que ya tenía de esta competencia">
-                      sustituye
-                    </span>
-                  )}
-                </button>
-              </li>
-            ))}
+            {filtrados.map((a, i) => {
+              const lleno = sinHuecos.has(a.id);
+              return (
+                <li key={a.id}>
+                  <button
+                    className={`${styles.opcion} ${i === indice ? styles.opcionActiva : ''} ${lleno ? styles.opcionApagada : ''}`}
+                    data-activo={i === indice}
+                    disabled={lleno}
+                    onMouseEnter={() => setIndice(i)}
+                    onClick={() => onElegir(a)}
+                    title={lleno ? 'Ya tiene todos sus intentos en esta competencia' : undefined}
+                  >
+                    <span className={styles.nombre}>{a.name}</span>
+                    <span className={styles.matricula}>{a.matricula}</span>
+                    {lleno && <span className={styles.sinHueco}>sin intentos libres</span>}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
         <p className={styles.atajos}>↑ ↓ para moverte · Enter para elegir · Esc para cerrar</p>
