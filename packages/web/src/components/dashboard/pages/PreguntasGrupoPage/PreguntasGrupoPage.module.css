@@ -700,10 +700,12 @@
 
 /* La nota del intento que está en pantalla: fila propia dentro del mando, que es
    un campo y no un botón más. */
+/* La nota, con su fila y su caja. Antes era una línea sin borde sobre el fondo
+   del mando y se leía como un texto de ayuda, no como algo donde escribir. */
 .mandoNota {
   flex: 1 1 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   padding-top: var(--space-sm);
   border-top: 1px solid var(--border-color);
@@ -714,6 +716,19 @@
   min-width: 0;
   flex: 1;
 }
+
+/* Se ve que es un campo ANTES de pulsarlo: borde y fondo propios, y alto de
+   varias líneas, que es como se toma una nota durante una entrevista —a
+   trozos—. */
+.notaCaja {
+  border-color: var(--border-color);
+  background: var(--bg-page);
+  line-height: 1.45;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.notaCaja::placeholder { color: var(--text-muted); }
 
 /* ── Notas de un alumno ────────────────────────────────────────────────────
    Todos sus intentos juntos: es lo que se relee antes de la segunda
@@ -750,10 +765,7 @@
   line-height: 1.4;
 }
 
-.notaBloque .nota {
-  border-color: var(--border-color);
-  background: var(--bg-page);
-}
+.notaBloque .nota { border-color: var(--border-color); }
 
 /* ── Agenda de entrevistas ─────────────────────────────────────────────── */
 .dias {

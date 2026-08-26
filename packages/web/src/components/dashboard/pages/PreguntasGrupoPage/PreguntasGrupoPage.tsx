@@ -791,6 +791,137 @@ export default function PreguntasGrupoPage() {
         || (p.competencia?.competencia ?? '').toLowerCase().includes(q));
   }, [preguntas, competenciaActiva, busquedaPregunta]);
 
+  /**
+   * El MANDO de la proyección, en una variable porque su SITIO cambia.
+   *
+   * En «Por alumno» y «Por pregunta» encabeza la pantalla. En la agenda va
+   * DEBAJO del selector de día: ahí lo que manda es el día, y el control es el
+   * control DE ese día —ponerlo encima hacía leer que el día dependía de él—.
+   */
+  const mando = proyeccion?.asignacionId && enPantalla ? (
+
+          <div className={styles.mando}>
+            <div className={styles.mandoQuien}>
+              <span className={styles.mandoNombre}>{proyeccion.alumno?.name}</span>
+              <span className={styles.mandoCompetencia}>
+                {proyeccion.competencia ?? 'Sin competencia'}
+                {proyeccion.intento ? ` · ${proyeccion.intento}.º intento` : ''}
+                {indiceProyectado >= 0
+                ? ` · ${indiceProyectado + 1} de ${paraProyectar.length}`
+                // Sin sitio en la lista de delante: pasa al cambiar de día con
+                // algo puesto de otro. Decirlo evita leer el mando como si fuera
+                // de este día.
+                : ' · no es de esta lista'}
+              </span>
+            </div>
+
+            <div className={`${styles.mandoEstado} ${styles[`fase_${enPantalla.fase}`] ?? ''}`}>
+              <span className={styles.mandoReloj}>{formatearDuracion(
+                enPantalla.fase === 'espera' || enPantalla.fase === 'detenida'
+                  ? proyeccion.duracionSegundos
+                  : enPantalla.restante,
+              )}</span>
+              <span className={styles.mandoFase}>
+                {mandando !== null ? (
+                  <span className={styles.mandoEnviando}><Icon name="sync" size="sm" /> Enviando…</span>
+                ) : ETIQUETA_FASE[enPantalla.fase]}
+              </span>
+            </div>
+
+            <div className={styles.mandoBotones}>
+              <button
+                className={styles.iconBtn}
+                onClick={() => moverProyeccion(-1)}
+                disabled={indiceProyectado <= 0 || mandando !== null}
+                title="Anterior de la lista"
+              >
+                <Icon name="chevron_left" size="sm" />
+              </button>
+              <button
+                className={styles.iconBtn}
+                onClick={() => moverProyeccion(1)}
+                disabled={indiceProyectado >= paraProyectar.length - 1 || mandando !== null}
+                title="Siguiente de la lista"
+              >
+                <Icon name="chevron_right" size="sm" />
+              </button>
+
+              {/* El botón dice lo que está pasando mientras pasa: la pantalla que
+                  cambia está en otro aparato y el profesor no la tiene delante. */}
+              {enPantalla.visible ? (
+                <DashButton
+                  variant="outline"
+                  onClick={() => mandarEstado('detenido')}
+                  disabled={mandando !== null}
+                  title="Retira la pregunta de la pantalla"
+                >
+                  <Icon name={mandando === 'detenido' ? 'sync' : 'stop'} size="sm" />
+                  {mandando === 'detenido' ? 'Deteniendo…' : 'Detener'}
+                </DashButton>
+              ) : (
+                <DashButton
+                  onClick={() => mandarEstado('corriendo')}
+                  disabled={mandando !== null}
+                  title="Enseña la pregunta y arranca el reloj"
+                >
+                  <Icon name={mandando === 'corriendo' ? 'sync' : 'play_arrow'} size="sm" />
+                  {mandando === 'corriendo'
+                    ? 'Iniciando…'
+                    : enPantalla.fase === 'espera' ? 'Iniciar' : 'Otra vez'}
+                </DashButton>
+              )}
+              <button
+                className={styles.iconBtn}
+                onClick={() => mandarEstado('espera')}
+                disabled={enPantalla.fase === 'espera' || mandando !== null}
+                title="Deja el reloj a cero, sin enseñar la pregunta"
+              >
+                <Icon name="restart_alt" size="sm" />
+              </button>
+
+              <button className={styles.iconBtn} onClick={abrirPantalla} title="Abrir o traer al frente la pantalla proyectada">
+                <Icon name="open_in_new" size="sm" />
+              </button>
+              <button
+                className={styles.iconBtn}
+                onClick={() => {
+                  navigator.clipboard?.writeText(urlProyeccion);
+                  setAviso(`Enlace copiado: ${urlProyeccion} — ábrelo en el iPad con tu sesión iniciada.`);
+                }}
+                title="Copiar el enlace para abrirlo en otro aparato"
+              >
+                <Icon name="link" size="sm" />
+              </button>
+              <button
+                className={styles.iconBtn}
+                onClick={() => proyectar({ asignacionId: null }, 'mover')}
+                disabled={mandando !== null}
+                title="Dejar la pantalla en blanco"
+              >
+                <Icon name="close" size="sm" />
+              </button>
+            </div>
+
+            {/* La nota se escribe MIENTRAS se pregunta, no después: es el momento
+                en que uno se acuerda de lo que quería anotar. Va en su propia
+                línea porque es un campo, no un botón más de la fila. */}
+            {asignacionProyectada && (
+              <label className={styles.mandoNota}>
+                <Icon name="edit_note" size="sm" />
+                <NotaInline
+                  key={asignacionProyectada.id}
+                  valor={asignacionProyectada.nota}
+                  deshabilitado={false}
+                  className={styles.notaAncha}
+                  lineas={3}
+                  placeholder="Nota de este intento: qué respondió, en qué insistir…"
+                  onGuardar={(nota) => actualizar(asignacionProyectada.id, { nota })}
+                />
+              </label>
+            )}
+          </div>
+  ) : null;
+
   if (loading) return <div className={styles.page}><p>Cargando...</p></div>;
 
   if (!habilitado) {
@@ -938,125 +1069,7 @@ export default function PreguntasGrupoPage() {
       </div>
       )}
 
-      {/* El MANDO. La proyección ya no es un overlay de esta pestaña: vive en
-          otra —el iPad, el cañón— y desde aquí se dirige. Por eso esta barra
-          está en las dos vistas: es el estado de la sesión, no de una lista. */}
-      {proyeccion?.asignacionId && enPantalla && (
-        <div className={styles.mando}>
-          <div className={styles.mandoQuien}>
-            <span className={styles.mandoNombre}>{proyeccion.alumno?.name}</span>
-            <span className={styles.mandoCompetencia}>
-              {proyeccion.competencia ?? 'Sin competencia'}
-              {proyeccion.intento ? ` · ${proyeccion.intento}.º intento` : ''}
-              {indiceProyectado >= 0 && ` · ${indiceProyectado + 1} de ${paraProyectar.length}`}
-            </span>
-          </div>
-
-          <div className={`${styles.mandoEstado} ${styles[`fase_${enPantalla.fase}`] ?? ''}`}>
-            <span className={styles.mandoReloj}>{formatearDuracion(
-              enPantalla.fase === 'espera' || enPantalla.fase === 'detenida'
-                ? proyeccion.duracionSegundos
-                : enPantalla.restante,
-            )}</span>
-            <span className={styles.mandoFase}>
-              {mandando !== null ? (
-                <span className={styles.mandoEnviando}><Icon name="sync" size="sm" /> Enviando…</span>
-              ) : ETIQUETA_FASE[enPantalla.fase]}
-            </span>
-          </div>
-
-          <div className={styles.mandoBotones}>
-            <button
-              className={styles.iconBtn}
-              onClick={() => moverProyeccion(-1)}
-              disabled={indiceProyectado <= 0 || mandando !== null}
-              title="Anterior de la lista"
-            >
-              <Icon name="chevron_left" size="sm" />
-            </button>
-            <button
-              className={styles.iconBtn}
-              onClick={() => moverProyeccion(1)}
-              disabled={indiceProyectado >= paraProyectar.length - 1 || mandando !== null}
-              title="Siguiente de la lista"
-            >
-              <Icon name="chevron_right" size="sm" />
-            </button>
-
-            {/* El botón dice lo que está pasando mientras pasa: la pantalla que
-                cambia está en otro aparato y el profesor no la tiene delante. */}
-            {enPantalla.visible ? (
-              <DashButton
-                variant="outline"
-                onClick={() => mandarEstado('detenido')}
-                disabled={mandando !== null}
-                title="Retira la pregunta de la pantalla"
-              >
-                <Icon name={mandando === 'detenido' ? 'sync' : 'stop'} size="sm" />
-                {mandando === 'detenido' ? 'Deteniendo…' : 'Detener'}
-              </DashButton>
-            ) : (
-              <DashButton
-                onClick={() => mandarEstado('corriendo')}
-                disabled={mandando !== null}
-                title="Enseña la pregunta y arranca el reloj"
-              >
-                <Icon name={mandando === 'corriendo' ? 'sync' : 'play_arrow'} size="sm" />
-                {mandando === 'corriendo'
-                  ? 'Iniciando…'
-                  : enPantalla.fase === 'espera' ? 'Iniciar' : 'Otra vez'}
-              </DashButton>
-            )}
-            <button
-              className={styles.iconBtn}
-              onClick={() => mandarEstado('espera')}
-              disabled={enPantalla.fase === 'espera' || mandando !== null}
-              title="Deja el reloj a cero, sin enseñar la pregunta"
-            >
-              <Icon name="restart_alt" size="sm" />
-            </button>
-
-            <button className={styles.iconBtn} onClick={abrirPantalla} title="Abrir o traer al frente la pantalla proyectada">
-              <Icon name="open_in_new" size="sm" />
-            </button>
-            <button
-              className={styles.iconBtn}
-              onClick={() => {
-                navigator.clipboard?.writeText(urlProyeccion);
-                setAviso(`Enlace copiado: ${urlProyeccion} — ábrelo en el iPad con tu sesión iniciada.`);
-              }}
-              title="Copiar el enlace para abrirlo en otro aparato"
-            >
-              <Icon name="link" size="sm" />
-            </button>
-            <button
-              className={styles.iconBtn}
-              onClick={() => proyectar({ asignacionId: null }, 'mover')}
-              disabled={mandando !== null}
-              title="Dejar la pantalla en blanco"
-            >
-              <Icon name="close" size="sm" />
-            </button>
-          </div>
-
-          {/* La nota se escribe MIENTRAS se pregunta, no después: es el momento
-              en que uno se acuerda de lo que quería anotar. Va en su propia
-              línea porque es un campo, no un botón más de la fila. */}
-          {asignacionProyectada && (
-            <label className={styles.mandoNota}>
-              <Icon name="edit_note" size="sm" />
-              <NotaInline
-                key={asignacionProyectada.id}
-                valor={asignacionProyectada.nota}
-                deshabilitado={false}
-                className={styles.notaAncha}
-                placeholder="Nota de este intento: qué respondió, en qué insistir…"
-                onGuardar={(nota) => actualizar(asignacionProyectada.id, { nota })}
-              />
-            </label>
-          )}
-        </div>
-      )}
+      {vista !== 'agenda' && mando}
 
       {vista === 'agenda' ? (
         <>
@@ -1086,17 +1099,24 @@ export default function PreguntasGrupoPage() {
               <DashButton
                 onClick={() => {
                   abrirPantalla();
-                  if (!proyeccion?.asignacionId && paraProyectar[0]) {
-                    proyectar({ asignacionId: paraProyectar[0].asignacion.id });
+                  // SIEMPRE por el primero de este día, aunque hubiera algo
+                  // puesto de otro: es lo que se pide al pulsar «Proyectar el
+                  // día», y si no, cambiar de día dejaba el mando en un alumno
+                  // que no estaba en la fila que se mira.
+                  const primera = paraProyectar[0];
+                  if (primera && primera.asignacion.id !== proyeccion?.asignacionId) {
+                    proyectar({ asignacionId: primera.asignacion.id });
                   }
                 }}
-                disabled={paraProyectar.length === 0 && !proyeccion?.asignacionId}
-                title="Abre la pantalla de proyección con la fila de este día"
+                disabled={paraProyectar.length === 0}
+                title="Abre la pantalla de proyección empezando por la primera cita de este día"
               >
                 <Icon name="cast" size="sm" /> Proyectar el día
               </DashButton>
             </div>
           </div>
+
+          {mando}
 
           {dia && (
             <>
@@ -1676,6 +1696,7 @@ export default function PreguntasGrupoPage() {
                       valor={asignacion!.nota}
                       deshabilitado={!!asignacion!.pendiente}
                       className={styles.notaAncha}
+                      lineas={3}
                       placeholder="Qué respondió, en qué insistir…"
                       onGuardar={(nota) => actualizar(asignacion!.id, { nota })}
                     />
@@ -1727,27 +1748,45 @@ export default function PreguntasGrupoPage() {
  * corto que se escribe de una sentada, y una petición por pulsación llenaría la
  * red de escrituras a medio escribir.
  */
-function NotaInline({ valor, deshabilitado, onGuardar, className, placeholder }: {
+function NotaInline({ valor, deshabilitado, onGuardar, className, placeholder, lineas }: {
   valor: string;
   deshabilitado: boolean;
   onGuardar: (nota: string) => void;
   className?: string;
   placeholder?: string;
+  /** Alto en líneas. Con esto es un `textarea`: Enter escribe, no guarda. */
+  lineas?: number;
 }) {
   const [texto, setTexto] = useState(valor);
   const inicial = useRef(valor);
 
   useEffect(() => { setTexto(valor); inicial.current = valor; }, [valor]);
 
+  const comunes = {
+    value: texto,
+    disabled: deshabilitado,
+    placeholder: deshabilitado ? '' : (placeholder ?? 'p. ej. insistir en el conflicto…'),
+    onChange: (e: { target: { value: string } }) => setTexto(e.target.value),
+    onBlur: () => { if (texto !== inicial.current) { inicial.current = texto; onGuardar(texto); } },
+  };
+
+  // Con varias líneas es un `textarea` y Enter escribe en vez de guardar: una
+  // nota de entrevista se toma en trozos, no en una frase seguida.
+  if (lineas) {
+    return (
+      <textarea
+        className={`${styles.nota} ${styles.notaCaja} ${className ?? ''}`}
+        rows={lineas}
+        {...comunes}
+      />
+    );
+  }
+
   return (
     <input
       className={`${styles.nota} ${className ?? ''}`}
       type="text"
-      value={texto}
-      disabled={deshabilitado}
-      placeholder={deshabilitado ? '' : (placeholder ?? 'p. ej. insistir en el conflicto…')}
-      onChange={(e) => setTexto(e.target.value)}
-      onBlur={() => { if (texto !== inicial.current) { inicial.current = texto; onGuardar(texto); } }}
+      {...comunes}
       onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
     />
   );
