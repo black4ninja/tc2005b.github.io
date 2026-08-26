@@ -5,6 +5,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import Icon from '../../atoms/Icon/Icon';
 import Modal from '../../atoms/Modal/Modal';
 import ColeccionForm from '../../organisms/ColeccionForm/ColeccionForm';
+import CategoriasGrupoModal from '../../organisms/CategoriasGrupoModal/CategoriasGrupoModal';
 import { buscarColecciones } from '../../../../utils/buscarColecciones';
 import type { ColeccionData } from '../../../../types/contenidos';
 import type { CategoriaRef } from '../../organisms/ColeccionForm/ColeccionForm';
@@ -45,6 +46,7 @@ export default function ContenidosPage() {
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editColeccion, setEditColeccion] = useState<ColeccionData | undefined>();
+  const [categoriasModalOpen, setCategoriasModalOpen] = useState(false);
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -187,6 +189,12 @@ export default function ContenidosPage() {
             ? `${visibles.length} de ${colecciones.length} materias`
             : `${colecciones.length} materia${colecciones.length === 1 ? '' : 's'}`}
         </span>
+        {/* El MISMO catálogo que los grupos, y la misma ventana: agregar aquí
+            una categoría la deja disponible allí, y al revés. */}
+        <button className={`${styles.categoriasBtn} ${styles.alaDerecha}`} onClick={() => setCategoriasModalOpen(true)}>
+          <Icon name="sell" size="sm" />
+          <span>Categorías</span>
+        </button>
         <button className={styles.nueva} onClick={openCreate}>
           <Icon name="add" size="sm" />
           <span>Nueva Colección</span>
@@ -224,6 +232,16 @@ export default function ContenidosPage() {
                 <span className={`${styles.badge} ${coleccion.publicada ? styles.badgeActive : styles.badgeDraft}`}>
                   {coleccion.publicada ? 'Publicada' : 'Borrador'}
                 </span>
+                {coleccion.categoria && (
+                  // Relleno y blanco, exactamente como el chip de la lista de
+                  // grupos: es el mismo dato y debe leerse igual en los dos sitios.
+                  <span
+                    className={styles.chipCategoria}
+                    style={{ background: coleccion.categoria.color }}
+                  >
+                    {coleccion.categoria.nombre}
+                  </span>
+                )}
                 {/* Editar y eliminar NO son módulos: no se entra a ellos, se le
                     hacen a la colección. De ahí que vayan aparte y apagados. */}
                 <span className={styles.tarjetaAcciones}>
@@ -247,17 +265,11 @@ export default function ContenidosPage() {
               </div>
 
               <p className={styles.nombre}>{coleccion.nombre}</p>
-              <div className={styles.pie}>
+              {/* El slug solo si aporta: en «TC2007B» / «tc2007b» es la misma
+                  palabra dos veces y solo ensucia la tarjeta. */}
+              {coleccion.slug !== (coleccion.clave ?? '').toLowerCase() && (
                 <code className={styles.slug}>{coleccion.slug}</code>
-                {coleccion.categoria && (
-                  <span
-                    className={styles.categoria}
-                    style={{ color: coleccion.categoria.color, borderColor: coleccion.categoria.color }}
-                  >
-                    {coleccion.categoria.nombre}
-                  </span>
-                )}
-              </div>
+              )}
 
               <div className={styles.modulos}>
                 {MODULOS.map((m) => (
@@ -287,6 +299,19 @@ export default function ContenidosPage() {
           loading={saving}
         />
       </Modal>
+
+      <CategoriasGrupoModal
+        isOpen={categoriasModalOpen}
+        onClose={() => setCategoriasModalOpen(false)}
+        sessionToken={sessionToken ?? ''}
+        categorias={categorias}
+        onCambio={async () => {
+          // Renombrar o recolorear cambia cómo se pintan las tarjetas, así que
+          // hay que recargar las dos cosas y no solo el catálogo.
+          await fetchCategorias();
+          await fetchColecciones();
+        }}
+      />
     </div>
   );
 }

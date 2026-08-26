@@ -212,11 +212,17 @@ export default function CategoriasGrupoModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Categorías de grupo">
+    <Modal isOpen={isOpen} onClose={onClose} title="Categorías">
       <div className={styles.contenido}>
         <p className={styles.ayuda}>
           La categoría es la materia o el nivel ("Móviles", "Gráficas", "IA", "6to"). Su color es el
-          que llevan sus grupos en las listas y en el selector.
+          que llevan sus grupos y sus materias en las listas y en los selectores.
+        </p>
+        {/* Se dice aquí porque desde esta ventana se puede borrar o recolorear
+            algo que está en uso al otro lado, y desde aquí no se ve. */}
+        <p className={styles.ayuda}>
+          Es un <strong>catálogo único</strong>: lo que agregues aparece tanto en Grupos como en
+          Contenidos, y a la inversa.
         </p>
 
         {error && <div className={styles.error}>{error}</div>}
