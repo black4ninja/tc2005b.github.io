@@ -8,6 +8,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **El banco de preguntas se queda con lo que se usa para elegir.** Se van las
+  columnas **Etiquetas** y **Uso**: la primera estaba vacía en casi todas las
+  preguntas y la segunda contestaba a algo que ya no se pregunta desde ahí —a
+  cuántos alumnos se les puso— y que sigue viéndose donde importa, al asignar.
+  - Con la columna se va también su consulta: el listado del banco dejaba de
+    ser una lectura simple para recorrer TODAS las asignaciones en cada carga.
 - **Contenidos deja la tabla y pasa a tarjetas por materia.** Cada colección
   traía **nueve** botones de acción en una fila, todos iconos sin rótulo y con el
   mismo peso: había que pasar el ratón uno por uno para saber cuál era cuál, y
@@ -29,8 +35,8 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     grupos** («Móviles», «Gráficas», «IA»). Compartirlo es el punto: la materia
     y sus grupos se reconocen por el mismo color, y cambiarle el color a «IA» los
     repinta todos a la vez. En la tarjeta sale como banda junto a la clave y como
-    rótulo al pie, y el buscador la encuentra —«moviles» trae las materias de
-    móviles—.
+    chip relleno junto al estado —los mismos valores que en la lista de grupos—,
+    y el buscador la encuentra: «moviles» trae las materias de móviles.
   - Las categorías se administran desde Contenidos con la **misma ventana** que
     ya usaban los grupos, así que agregar una aquí la deja disponible allí y al
     revés. Su texto lo dice, porque desde cualquiera de las dos se puede
