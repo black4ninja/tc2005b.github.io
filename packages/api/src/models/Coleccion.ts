@@ -1,5 +1,6 @@
 import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
+import { categoriaSafeJSON } from '../services/categoria-grupo.service.js';
 
 /**
  * Colección del CMS "Contenidos" — equivale a una instancia Docusaurus.
@@ -46,6 +47,20 @@ export class Coleccion extends BaseModel {
   }
   setIcono(icono: string): void {
     this.set('icono', icono);
+  }
+
+  /**
+   * Categoría del MISMO catálogo que usan los grupos (`CategoriaGrupo`):
+   * «Móviles», «Gráficas», «IA». Compartirlo es el punto — una materia y sus
+   * grupos se reconocen por el mismo color, y cambiar el color de «IA» los
+   * repinta todos a la vez.
+   */
+  getCategoria(): Parse.Object | undefined {
+    return this.get('categoria');
+  }
+  setCategoria(categoria: Parse.Object | null): void {
+    if (categoria) this.set('categoria', categoria);
+    else this.unset('categoria');
   }
 
   /** Borrador (false) vs visible para alumnos con acceso (true). */
@@ -95,6 +110,8 @@ export class Coleccion extends BaseModel {
     return {
       id: this.id,
       permitePenalizacion: this.getPermitePenalizacion(),
+      // Requiere query.include('categoria') para traer nombre y color.
+      categoria: categoriaSafeJSON(this.getCategoria()),
       preguntasDuracionSegundos: this.getPreguntasDuracionSegundos() ?? null,
       nombre: this.getNombre(),
       slug: this.getSlug(),

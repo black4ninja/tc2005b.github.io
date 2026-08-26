@@ -205,6 +205,13 @@ export default function CategoriasGrupoModal({
     }
   }
 
+  /**
+   * ¿El color elegido está fuera de la paleta? Entonces la muestra libre lo
+   * enseña, y así al editar una categoría con color propio se ve cuál es en vez
+   * de aparecer como si no hubiera nada elegido.
+   */
+  const personalizado = !!color && !(paleta as readonly string[]).includes(color);
+
   /** Primer color de la paleta que no esté ya en uso; si todos lo están, el primero. */
   function sugerirColor(): string {
     const usados = new Set(orden.map((c) => c.color));
@@ -212,11 +219,17 @@ export default function CategoriasGrupoModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Categorías de grupo">
+    <Modal isOpen={isOpen} onClose={onClose} title="Categorías">
       <div className={styles.contenido}>
         <p className={styles.ayuda}>
           La categoría es la materia o el nivel ("Móviles", "Gráficas", "IA", "6to"). Su color es el
-          que llevan sus grupos en las listas y en el selector.
+          que llevan sus grupos y sus materias en las listas y en los selectores.
+        </p>
+        {/* Se dice aquí porque desde esta ventana se puede borrar o recolorear
+            algo que está en uso al otro lado, y desde aquí no se ve. */}
+        <p className={styles.ayuda}>
+          Es un <strong>catálogo único</strong>: lo que agregues aparece tanto en Grupos como en
+          Contenidos, y a la inversa.
         </p>
 
         {error && <div className={styles.error}>{error}</div>}
@@ -297,6 +310,25 @@ export default function CategoriasGrupoModal({
                 aria-pressed={color === c}
               />
             ))}
+
+            {/* Cualquier otro tono. Es el selector NATIVO del sistema: sale con
+                un clic, lo maneja cualquiera y no añade una dependencia para
+                algo que el navegador ya trae. El servidor nunca estuvo limitado
+                a la paleta —`normalizarColor` valida la forma, no la lista—,
+                así que esto solo abre lo que ya se podía guardar. */}
+            <label
+              className={`${styles.muestra} ${styles.muestraLibre} ${personalizado ? styles.muestraActiva : ''}`}
+              style={personalizado ? { background: color } : undefined}
+              title={personalizado ? `Color propio ${color}` : 'Otro color…'}
+            >
+              <input
+                type="color"
+                className={styles.inputColor}
+                value={color || paleta[0]}
+                onChange={(e) => setColor(e.target.value.toLowerCase())}
+                aria-label="Elegir otro color"
+              />
+            </label>
           </div>
 
           <div className={styles.acciones}>

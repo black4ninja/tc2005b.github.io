@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { Coleccion } from '../models/Coleccion.js';
+import { resolverCategoriaGrupo } from '../services/categoria-grupo.service.js';
 import {
   invalidateColeccionSlugsCache,
   invalidateColeccionesPermitidas,
@@ -37,6 +38,9 @@ export async function listColecciones(_req: Request, res: Response): Promise<voi
   try {
     const query = new Parse.Query<Coleccion>('Coleccion');
     query.equalTo('exists' as any, true as any);
+    // Sin esto la categoría llega como pointer sin datos y se serializa a null:
+    // la tarjeta se quedaría sin su color sin que nadie sepa por qué.
+    query.include('categoria' as any);
     query.ascending('nombre');
     query.limit(1000);
     const colecciones = await query.find({ useMasterKey: true });
@@ -72,7 +76,14 @@ export async function createColeccion(req: Request, res: Response): Promise<void
       return;
     }
 
+    const categoria = await resolverCategoriaGrupo(req.body.categoriaId);
+    if (categoria === 'invalido') {
+      res.status(400).json({ status: 'error', message: 'La categoría indicada no existe' });
+      return;
+    }
+
     const coleccion = new Coleccion().initDefaults();
+    if (categoria !== undefined) coleccion.setCategoria(categoria);
     coleccion.setNombre(nombre.trim());
     coleccion.setSlug(slugValido);
     if (claveCanonica) coleccion.setClave(claveCanonica);
@@ -98,6 +109,7 @@ export async function updateColeccion(req: Request, res: Response): Promise<void
     // (mismo criterio que list/delete y que los documentos).
     const query = new Parse.Query<Coleccion>('Coleccion');
     query.equalTo('exists' as any, true as any);
+    query.include('categoria' as any);
     const coleccion = await query.get(id, { useMasterKey: true });
 
     if (nombre !== undefined) {
@@ -142,6 +154,13 @@ export async function updateColeccion(req: Request, res: Response): Promise<void
     // El nivel «Incipiente B −30 pts» se enciende por MATERIA. Solo se toca al
     // editar: una colección nueva nace sin él.
     let penalizacionRetirada = 0;
+    const categoria = await resolverCategoriaGrupo(req.body.categoriaId);
+    if (categoria === 'invalido') {
+      res.status(400).json({ status: 'error', message: 'La categoría indicada no existe' });
+      return;
+    }
+    if (categoria !== undefined) coleccion.setCategoria(categoria);
+
     if (preguntasDuracionSegundos !== undefined) {
       // null explícito = volver al valor por defecto del módulo.
       if (preguntasDuracionSegundos === null || preguntasDuracionSegundos === '') {
@@ -198,6 +217,7 @@ export async function deleteColeccion(req: Request, res: Response): Promise<void
   try {
     const query = new Parse.Query<Coleccion>('Coleccion');
     query.equalTo('exists' as any, true as any);
+    query.include('categoria' as any);
     const coleccion = await query.get(id, { useMasterKey: true });
 
     // Soft-delete de la colección: sus documentos quedan intactos (y ocultos,
