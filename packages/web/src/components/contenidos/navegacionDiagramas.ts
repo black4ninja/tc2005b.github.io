@@ -93,26 +93,21 @@ export function progresoDeBloque(
 }
 
 /**
- * Bloques que se le enseñan a quien está mirando.
+ * Bloques que se pintan en el árbol: los que ahora mismo tienen algo dentro.
  *
- * El servidor manda TODOS los bloques de la colección, tengan ejercicios
- * publicados o no, y el panel central ya descarta los vacíos
- * (`agruparEnBloques`). El árbol del sidebar no lo hacía: un bloque en
- * preparación —«Arquitectura MVVM», «Introducción al lenguaje»— salía como
- * «0/0» y, al pulsarlo, llevaba a una pantalla sin nada.
- *
- * Al ADMIN y al PROFESOR sí se les muestran: son justo quienes necesitan ver
- * que el bloque existe para poder llenarlo. Por eso la regla recibe `esAlumno`
- * en lugar de filtrar siempre.
+ * La pertenencia al módulo ya la resuelve el API (`agrupacion-modulo`), que solo
+ * devuelve los bloques con ejercicios DE ESTE módulo —las dos tablas las
+ * comparten Diagramas y programación y ninguna guarda a cuál pertenece—. Aquí
+ * queda el caso que el servidor no puede saber: el filtro de lenguaje del juez
+ * de programación, que puede dejar un bloque entero a cero. Un «0/0» en el árbol
+ * promete una sección que al abrirla está vacía.
  *
  * `total` se recibe como función porque cada módulo cuenta lo suyo: Diagramas
- * sobre todos sus ejercicios y Ejercicios sobre los del lenguaje filtrado.
+ * sobre todos sus ejercicios y Ejercicios sobre los del lenguaje elegido.
  */
 export function bloquesVisibles(
   bloques: BloqueRef[],
   total: (bloqueId: string) => number,
-  esAlumno: boolean,
 ): BloqueRef[] {
-  if (!esAlumno) return bloques;
   return bloques.filter((b) => total(b.id) > 0);
 }

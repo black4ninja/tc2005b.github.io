@@ -110,26 +110,25 @@ describe('bloquesVisibles', () => {
   const todos = [conEjercicios, vacio];
   const total = (id: string) => (id === 'b1' ? 9 : 0);
 
-  it('al alumno le esconde los bloques sin ejercicios publicados', () => {
-    expect(bloquesVisibles(todos, total, true)).toEqual([conEjercicios]);
+  it('quita los bloques que ahora mismo no tienen nada dentro', () => {
+    expect(bloquesVisibles(todos, total)).toEqual([conEjercicios]);
   });
 
-  it('al admin y al profesor se los deja ver, que son quienes los llenan', () => {
-    expect(bloquesVisibles(todos, total, false)).toEqual(todos);
+  it('no depende del rol: un «0/0» engaña igual al admin que al alumno', () => {
+    expect(bloquesVisibles(todos, () => 0)).toEqual([]);
   });
 
   it('conserva el orden de los que sobreviven', () => {
     const otro: BloqueRef = { id: 'b3', nombre: 'Interacción', orden: 3 };
     const lista = [conEjercicios, vacio, otro];
     const conDos = (id: string) => (id === 'b2' ? 0 : 6);
-    expect(bloquesVisibles(lista, conDos, true).map((b) => b.nombre)).toEqual([
+    expect(bloquesVisibles(lista, conDos).map((b) => b.nombre)).toEqual([
       'Comportamiento',
       'Interacción',
     ]);
   });
 
   it('sin bloques devuelve una lista vacía, no revienta', () => {
-    expect(bloquesVisibles([], total, true)).toEqual([]);
-    expect(bloquesVisibles([], total, false)).toEqual([]);
+    expect(bloquesVisibles([], total)).toEqual([]);
   });
 });

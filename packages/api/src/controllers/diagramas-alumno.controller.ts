@@ -4,6 +4,7 @@ import { AppUser } from '../models/AppUser.js';
 import { Coleccion } from '../models/Coleccion.js';
 import { Grupo } from '../models/Grupo.js';
 import { EjercicioDiagrama } from '../models/EjercicioDiagrama.js';
+import { recortarAlModulo } from '../services/agrupacion-modulo.js';
 import { EnvioDiagrama } from '../models/EnvioDiagrama.js';
 import { CategoriaEjercicio } from '../models/CategoriaEjercicio.js';
 import { BloqueEjercicios } from '../models/BloqueEjercicios.js';
@@ -162,10 +163,15 @@ export async function listDiagramasAlumno(req: Request, res: Response): Promise<
     // porque mostrar "0 resueltos" haría creer al alumno que perdió su progreso.
     // Las categorías y bloques sí se degradan: solo afectan al agrupado.
     const resueltos = await diagramasResueltos(user.id, ejercicios.map((e) => e.id!));
-    const [categorias, bloques] = await Promise.all([
+    const [todasCategorias, todosBloques] = await Promise.all([
       qc.find({ useMasterKey: true }).catch(() => []),
       qb.find({ useMasterKey: true }).catch(() => []),
     ]);
+
+    // Las dos tablas las COMPARTE el módulo de programación; sin recortar, aquí
+    // salían sus bloques («Arquitectura MVVM», «Introducción al lenguaje») en
+    // «0/0». Ver `agrupacion-modulo`.
+    const { categorias, bloques } = recortarAlModulo(ejercicios, todasCategorias, todosBloques);
 
     res.json({
       status: 'ok',

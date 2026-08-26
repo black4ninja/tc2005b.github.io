@@ -127,12 +127,21 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   al pasar el ratón se volvían azules y subrayadas enteras —descripción
   incluida—: las filas y tarjetas que son superficies, no enlaces de texto,
   reafirman ahora su color y su ausencia de subrayado.
-- **El alumno veía secciones vacías en el árbol.** El servidor manda todos los
-  bloques de la colección, tengan ejercicios publicados o no. El panel central
-  ya descartaba los vacíos, pero el sidebar no: un bloque en preparación
-  —«Arquitectura MVVM», «Introducción al lenguaje»— salía como «0/0» y al
-  pulsarlo llevaba a una pantalla sin nada. Al admin y al profesor se les siguen
-  mostrando, que son quienes tienen que verlos para llenarlos.
+- **Los dos módulos se enseñaban las secciones del otro.** `BloqueEjercicios` y
+  `CategoriaEjercicio` son tablas únicas por colección y las comparten Diagramas
+  y el juez de programación, sin ningún campo que diga a cuál pertenecen: cada
+  módulo devolvía TODOS los bloques. El árbol del juez listaba
+  «Comportamiento», «Estructura», «Arquitectura» e «Interacción» en «0/0», y el
+  de Diagramas listaba «Arquitectura MVVM» e «Introducción al lenguaje». Dos
+  módulos independientes leyéndose como uno, con secciones que prometían
+  ejercicios inexistentes.
+  - A falta de ese campo, la pertenencia se deduce de los ejercicios que ya se
+    van a devolver: una categoría es del módulo si alguno de sus ejercicios lo
+    es, y un bloque si alguna de sus categorías lo es. Sin consultas extra.
+  - Un bloque recién creado, aún sin ejercicios publicados, deja de salir en el
+    árbol —también para el admin—. Se administran en Contenidos, y el árbol del
+    módulo es una vista de consumo; antes ese bloque salía en LOS DOS árboles,
+    nunca en el suyo.
 
 - **Ejercicios y Diagramas se leían a medias en tema oscuro.** Los dos módulos
   se escribieron con la paleta clara de GitHub a mano —`#1f2328` de texto,

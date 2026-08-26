@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import Icon from '../../atoms/Icon/Icon';
-import { useAuth } from '../../../../context/AuthContext';
 import { useDiagramasNav } from '../../../../context/DiagramasNavContext';
 import { BLOQUES_CURSO, TIPOS_CATALOGO, agrupadoDiagramas } from '../../../../lib/diagramas/etiquetas';
 import { bloquesVisibles } from '../../../contenidos/navegacionDiagramas';
@@ -26,15 +25,13 @@ import styles from './ArbolDiagramas.module.css';
 export default function ArbolDiagramas() {
   const { base, coleccion, bloques, seccion, irA, progresoDeBloque, ejercicios, cargando, error, reintentar } =
     useDiagramasNav();
-  const { user } = useAuth();
-  const esAlumno = user?.userType === 'alumno';
   const [busqueda, setBusqueda] = useState('');
 
-  // Al alumno no se le enseñan los bloques sin nada publicado; al admin y al
-  // profesor sí. El porqué, en `bloquesVisibles`.
+  // El API ya recorta los bloques a los de ESTE módulo; esto quita los que
+  // quedan a cero. El porqué, en `bloquesVisibles`.
   const visibles = useMemo(
-    () => bloquesVisibles(bloques, (id) => progresoDeBloque(id).total, esAlumno),
-    [bloques, esAlumno, progresoDeBloque],
+    () => bloquesVisibles(bloques, (id) => progresoDeBloque(id).total),
+    [bloques, progresoDeBloque],
   );
 
   /**

@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import Icon from '../../atoms/Icon/Icon';
-import { useAuth } from '../../../../context/AuthContext';
 import { useEjerciciosNav } from '../../../../context/EjerciciosNavContext';
 import { NOMBRE_LENGUAJE } from '../../../../config/codemirrorLenguaje';
 import { bloquesVisibles } from '../../../contenidos/navegacionDiagramas';
@@ -39,18 +38,14 @@ export default function ArbolEjercicios() {
     error,
     reintentar,
   } = useEjerciciosNav();
-  const { user } = useAuth();
-  const esAlumno = user?.userType === 'alumno';
   const [busqueda, setBusqueda] = useState('');
 
-  // Misma regla que en `ArbolDiagramas`: al alumno no se le enseñan los bloques
-  // sin nada publicado; al admin y al profesor sí. El porqué, en
-  // `bloquesVisibles`. Aquí el total va sobre lo FILTRADO por lenguaje, así que
-  // un bloque entero de Swift desaparece del árbol al filtrar por Kotlin en vez
-  // de quedarse en «0/0».
+  // Misma regla que en `ArbolDiagramas`. Aquí el total va sobre lo FILTRADO por
+  // lenguaje, así que un bloque entero de Swift desaparece del árbol al filtrar
+  // por Kotlin en vez de quedarse en «0/0».
   const visibles = useMemo(
-    () => bloquesVisibles(bloques, (id) => progresoDeBloque(id).total, esAlumno),
-    [bloques, esAlumno, progresoDeBloque],
+    () => bloquesVisibles(bloques, (id) => progresoDeBloque(id).total),
+    [bloques, progresoDeBloque],
   );
 
   /** La búsqueda mira los ejercicios por título, que es como los pide el alumno. */
