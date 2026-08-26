@@ -112,9 +112,14 @@
 }
 
 /* El anillo, y no un cambio de tono, marca el elegido: alterar el color de la
-   muestra mentiría sobre el color que se va a guardar. */
+   muestra mentiría sobre el color que se va a guardar.
+
+   `--text-primary` y no `--text-color`: ese segundo token no existe en
+   `variables.css` ni se usa en ningún otro sitio, así que el anillo se pintaba
+   por accidente —una `var()` que no resuelve deja la propiedad en su valor
+   inicial, que en `border-color` es `currentColor`—. Funcionaba de casualidad. */
 .muestraActiva {
-  border-color: var(--text-color);
+  border-color: var(--text-primary);
   box-shadow: 0 0 0 2px var(--dash-surface, #fff) inset;
 }
 
@@ -158,4 +163,39 @@
 
 .asa .material-icons {
   font-size: 18px;
+}
+
+/* La novena muestra abre el selector del sistema. Sin color propio elegido
+   enseña la rueda de tonos, que es lo que dice de un vistazo para qué sirve;
+   con uno elegido enseña ese color, como las otras ocho. */
+.muestraLibre {
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+  background:
+    conic-gradient(
+      #dc2626, #ea580c, #ca8a04, #16a34a,
+      #0891b2, #2563eb, #9333ea, #db2777, #dc2626
+    );
+}
+
+/* El input nativo se estira por toda la muestra y se esconde: el clic cae en
+   él —así abre el selector del sistema— pero lo que se ve es el círculo. */
+.inputColor {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* El foco se dibuja en el CÍRCULO, no en el input: al esconderlo se pierde el
+   recuadro del navegador y sin esto la muestra no se puede usar con el teclado
+   a ciegas. Revelar el input en su lugar enseñaría un control a medio pintar. */
+.muestraLibre:focus-within {
+  outline: 2px solid var(--dash-primary);
+  outline-offset: 2px;
 }

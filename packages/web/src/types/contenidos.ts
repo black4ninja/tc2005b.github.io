@@ -22,6 +22,8 @@ export interface ColeccionData {
   publicada: boolean;
   /** ¿La materia usa el nivel «Incipiente B −30 pts»? */
   permitePenalizacion?: boolean;
+  /** Categoría del MISMO catálogo que los grupos; null = sin categoría. */
+  categoria?: { id: string; nombre: string; color: string } | null;
   active: boolean;
 }
 

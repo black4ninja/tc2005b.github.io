@@ -1,6 +1,7 @@
 import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
 import { COLOR_POR_DEFECTO } from './CategoriaGrupo.js';
+import { categoriaSafeJSON } from '../services/categoria-grupo.service.js';
 
 export class Grupo extends BaseModel {
   constructor(attributes?: Parse.Attributes) {
@@ -195,24 +196,5 @@ export class Grupo extends BaseModel {
   }
 }
 
-/**
- * La categoría tal y como la consume la interfaz, o `null`.
- *
- * Devuelve `null` también cuando la categoría fue borrada (`exists: false`):
- * el pointer sobrevive al borrado lógico y sin este filtro un grupo seguiría
- * pintándose con el color de una categoría que ya no está en el catálogo.
- */
-function categoriaSafeJSON(
-  categoria: Parse.Object | undefined,
-): { id: string; nombre: string; color: string } | null {
-  if (!categoria || categoria.get('exists') === false) return null;
-  // Sin `include` llega el pointer sin datos: mejor null que una fila en blanco.
-  if (!categoria.get('nombre')) return null;
-  return {
-    id: categoria.id!,
-    nombre: categoria.get('nombre'),
-    color: categoria.get('color') ?? COLOR_POR_DEFECTO,
-  };
-}
 
 Parse.Object.registerSubclass('Grupo', Grupo);
