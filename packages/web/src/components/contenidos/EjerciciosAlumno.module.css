@@ -13,13 +13,13 @@
 .subtitulo {
   margin: 4px 0 0;
   font-size: 14px;
-  color: #57606a;
+  color: var(--text-secondary);
 }
 
 .volver {
   display: inline-block;
   font-size: 14px;
-  color: #4f46e5;
+  color: var(--dash-primary);
   text-decoration: none;
   margin-bottom: 8px;
 }
@@ -33,7 +33,7 @@
 }
 
 .info {
-  color: #57606a;
+  color: var(--text-secondary);
   font-size: 15px;
 }
 
@@ -55,7 +55,7 @@
   border: 1px solid var(--border-color);
   border-radius: 10px;
   text-decoration: none;
-  color: #1f2328;
+  color: var(--text-primary);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .item:hover {
@@ -64,12 +64,12 @@
 }
 
 .itemTitulo { font-size: 16px; font-weight: 600; }
-.itemLeng { font-size: 13px; color: #57606a; }
+.itemLeng { font-size: 13px; color: var(--text-secondary); }
 
 .itemIzq { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.check { font-size: 15px; color: #d0d7de; width: 18px; text-align: center; }
-.itemResuelto { border-color: #a7d8b4; background: #f4fbf6; }
-.itemResuelto .check { color: #1e7e34; }
+.check { font-size: 15px; color: var(--text-muted); width: 18px; text-align: center; }
+.itemResuelto { border-color: var(--estado-exito-border); background: var(--estado-exito-bg); }
+.itemResuelto .check { color: var(--estado-exito-color); }
 
 .progreso { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
 .barra {
@@ -80,8 +80,8 @@
   overflow: hidden;
   max-width: 360px;
 }
-.barraLlena { height: 100%; background: #4f46e5; transition: width 0.3s; }
-.progresoTexto { font-size: 13px; color: #57606a; white-space: nowrap; }
+.barraLlena { height: 100%; background: var(--dash-primary); transition: width 0.3s; }
+.progresoTexto { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
 
 .filtros {
   display: flex;
@@ -90,23 +90,23 @@
   flex-wrap: wrap;
   margin: 20px 0 4px;
 }
-.filtroLabel { font-size: 13px; color: #57606a; }
+.filtroLabel { font-size: 13px; color: var(--text-secondary); }
 .chip {
   font-size: 13px;
   padding: 5px 14px;
   border-radius: 999px;
   border: 1px solid var(--border-color);
   background: var(--bg-card);
-  color: #1f2328;
+  color: var(--text-primary);
   cursor: pointer;
 }
-.chip:hover { background: #f6f8fa; }
-.chipActivo { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+.chip:hover { background: var(--dash-bg-subtle); }
+.chipActivo { background: var(--dash-primary); border-color: var(--dash-primary); color: #fff; }
 /* `.chip:hover` tiene MÁS especificidad que `.chipActivo` (clase + pseudoclase
    frente a clase), así que sin esta regla el chip seleccionado se quedaba con
    el fondo casi blanco del hover y el texto blanco encima: ilegible justo
    cuando el puntero está sobre él. */
-.chipActivo:hover { background: #4338ca; border-color: #4338ca; color: #fff; }
+.chipActivo:hover { filter: brightness(0.92); }
 
 /* --- Bloque: el nivel por encima de la categoría ---
    Deliberadamente distinto del header de categoría —más grande y SIN uppercase—
@@ -137,7 +137,7 @@
   margin: 8px 0 0;
   padding-left: 24px;
   font-size: 14px;
-  color: #57606a;
+  color: var(--text-secondary);
 }
 
 /* Sangría que hace visible la jerarquía sin tocar nada del nivel inferior. */
@@ -156,18 +156,18 @@
   cursor: pointer;
   text-align: left;
 }
-.chevron { color: #57606a; font-size: 12px; width: 14px; }
+.chevron { color: var(--text-secondary); font-size: 12px; width: 14px; }
 .grupoTitulo {
   font-size: 15px;
   font-weight: 700;
-  color: #1f2328;
+  color: var(--text-primary);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   flex: 1;
 }
 .grupoConteo {
   font-size: 13px;
-  color: #57606a;
+  color: var(--text-secondary);
   background: var(--dash-bg-subtle);
   padding: 2px 10px;
   border-radius: 999px;

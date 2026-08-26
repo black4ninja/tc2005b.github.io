@@ -18,13 +18,13 @@
 .subtitulo {
   margin: 4px 0 0;
   font-size: 14px;
-  color: #57606a;
+  color: var(--text-secondary);
 }
 
 .volver {
   display: inline-block;
   font-size: 14px;
-  color: #4f46e5;
+  color: var(--dash-primary);
   text-decoration: none;
   margin-bottom: 8px;
 }
@@ -38,7 +38,7 @@
 }
 
 .info {
-  color: #57606a;
+  color: var(--text-secondary);
   font-size: 15px;
 }
 
@@ -60,7 +60,7 @@
   border: 1px solid var(--border-color);
   border-radius: 10px;
   text-decoration: none;
-  color: #1f2328;
+  color: var(--text-primary);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .item:hover {
@@ -71,9 +71,9 @@
 .itemTitulo { font-size: 16px; font-weight: 600; }
 
 .itemIzq { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.check { font-size: 15px; color: #d0d7de; width: 18px; text-align: center; }
-.itemResuelto { border-color: #a7d8b4; background: #f4fbf6; }
-.itemResuelto .check { color: #1e7e34; }
+.check { font-size: 15px; color: var(--text-muted); width: 18px; text-align: center; }
+.itemResuelto { border-color: var(--estado-exito-border); background: var(--estado-exito-bg); }
+.itemResuelto .check { color: var(--estado-exito-color); }
 
 
 /* `.chip:hover` tiene MÁS especificidad que `.chipActivo` (clase + pseudoclase
@@ -103,18 +103,18 @@
   cursor: pointer;
   text-align: left;
 }
-.chevron { color: #57606a; font-size: 12px; width: 14px; }
+.chevron { color: var(--text-secondary); font-size: 12px; width: 14px; }
 .grupoTitulo {
   font-size: 15px;
   font-weight: 700;
-  color: #1f2328;
+  color: var(--text-primary);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   flex: 1;
 }
 .grupoConteo {
   font-size: 13px;
-  color: #57606a;
+  color: var(--text-secondary);
   background: var(--dash-bg-subtle);
   padding: 2px 10px;
   border-radius: 999px;
@@ -139,7 +139,7 @@
   border-color: var(--estado-info-border);
   background: var(--bg-pre-session);
 }
-.itemEjemplo:hover { background: #f3eeff; }
+.itemEjemplo:hover { background: var(--estado-info-bg); }
 
 .etiquetaEjemplo {
   margin-left: 10px;
@@ -149,7 +149,7 @@
   padding: 2px 8px;
   border-radius: 999px;
   background: var(--estado-info-bg);
-  color: #5b21b6;
+  color: var(--estado-info-color);
   white-space: nowrap;
 }
 
@@ -159,7 +159,7 @@
   flex: 1;
   min-width: 0;
   font-size: 13px;
-  color: #57606a;
+  color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -175,7 +175,7 @@
   padding: 3px 8px;
   border-radius: 5px;
   background: var(--estado-info-bg);
-  color: #4338ca;
+  color: var(--dash-primary);
 }
 
 /* --- Catálogo de tipos sin ejercicios ------------------------------------ */
@@ -183,7 +183,7 @@
 .catalogoIntro {
   margin: 0 0 12px;
   font-size: 14px;
-  color: #57606a;
+  color: var(--text-secondary);
 }
 
 .tipoLibre,
@@ -228,7 +228,7 @@
 
 .tipoDesc {
   font-size: 13px;
-  color: #57606a;
+  color: var(--text-secondary);
 }
 
 .abrirLibre {
@@ -236,10 +236,10 @@
   margin-left: auto;
   font-size: 13px;
   font-weight: 600;
-  color: #4f46e5;
+  color: var(--dash-primary);
   white-space: nowrap;
 }
 
 .enlace {
-  color: #4f46e5;
+  color: var(--dash-primary);
 }

@@ -15,7 +15,7 @@
 .volver {
   display: inline-block;
   font-size: 14px;
-  color: #4f46e5;
+  color: var(--dash-primary);
   text-decoration: none;
   margin-bottom: 8px;
 }
@@ -32,13 +32,13 @@
 .metaFila { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .meta {
   font-size: 12px;
-  color: #57606a;
+  color: var(--text-secondary);
   background: var(--dash-bg-subtle);
   padding: 2px 10px;
   border-radius: 999px;
 }
 
-.info { color: #57606a; font-size: 15px; }
+.info { color: var(--text-secondary); font-size: 15px; }
 
 /* El enunciado se acota: es prosa y a 700 px se lee peor que a 420. El resto
    del ancho va a la columna de trabajo, que lo aprovecha con dos paneles. */
@@ -54,7 +54,7 @@
 .enunciado {
   font-size: 15px;
   line-height: 1.6;
-  color: #24292f;
+  color: var(--text-primary);
   word-wrap: break-word;
 }
 .enunciado :global(pre) {
@@ -68,7 +68,7 @@
 .enunciado :global(.contenido-diagrama) { margin: 12px 0; overflow-x: auto; }
 .enunciado :global(.contenido-diagrama svg) { max-width: 100%; height: auto; }
 
-.subtitulo { font-size: 16px; margin: 20px 0 10px; color: #1f2328; }
+.subtitulo { font-size: 16px; margin: 20px 0 10px; color: var(--text-primary); }
 
 /* --- Diagramas de contexto --- */
 .contextos { display: flex; flex-direction: column; gap: 14px; }
@@ -80,8 +80,8 @@
   gap: 10px;
   margin-bottom: 6px;
 }
-.contextoTitulo { font-size: 14px; font-weight: 600; color: #1f2328; }
-.contextoTipo { font-size: 12px; color: #57606a; white-space: nowrap; }
+.contextoTitulo { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.contextoTipo { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
 
 /* --- Comprobaciones anunciadas --- */
 .comprobaciones {
@@ -94,7 +94,7 @@
 }
 .comprobacion {
   font-size: 14px;
-  color: #1f2328;
+  color: var(--text-primary);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 8px 12px;
@@ -142,7 +142,7 @@
 .panelLabel {
   display: block;
   font-size: 12px;
-  color: #57606a;
+  color: var(--text-secondary);
   margin-bottom: 4px;
 }
 
@@ -155,18 +155,18 @@
   cursor: pointer;
   border: 1px solid var(--border-color);
   background: var(--bg-card);
-  color: #1f2328;
+  color: var(--text-primary);
 }
-.btnPri { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+.btnPri { background: var(--dash-primary); border-color: var(--dash-primary); color: #fff; }
 .btnSec:disabled, .btnPri:disabled { opacity: 0.55; cursor: default; }
 
-.nota { margin: 8px 0 0; font-size: 13px; color: #57606a; }
+.nota { margin: 8px 0 0; font-size: 13px; color: var(--text-secondary); }
 
 .errorBox {
   margin-top: 14px;
   padding: 10px 12px;
   background: var(--estado-error-bg);
-  color: #b42318;
+  color: var(--estado-error-color);
   border-radius: 8px;
   font-size: 14px;
 }
@@ -174,7 +174,7 @@
 /* --- Resultado --- */
 .resultado { margin-top: 16px; }
 .veredictoRow { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-.conteo { font-size: 14px; color: #57606a; }
+.conteo { font-size: 14px; color: var(--text-secondary); }
 
 .badge {
   display: inline-block;
@@ -183,8 +183,8 @@
   font-size: 13px;
   font-weight: 700;
 }
-.badgeOk { background: #e6f4ea; color: #1e7e34; }
-.badgeMal { background: #fdecea; color: #b42318; }
+.badgeOk { background: var(--estado-exito-bg); color: var(--estado-exito-color); }
+.badgeMal { background: var(--estado-error-bg); color: var(--estado-error-color); }
 
 .salidaPre {
   margin: 0;
@@ -205,22 +205,22 @@
   padding: 8px 12px;
   margin-bottom: 8px;
 }
-.casoOk { border-left: 3px solid #1e7e34; }
-.casoMal { border-left: 3px solid #b42318; }
+.casoOk { border-left: 3px solid var(--estado-exito-color); }
+.casoMal { border-left: 3px solid var(--estado-error-color); }
 .casoHead {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   font-size: 13px;
   font-weight: 600;
-  color: #1f2328;
+  color: var(--text-primary);
 }
 .casoNombre { min-width: 0; }
 .casoEstado { white-space: nowrap; }
 .etiquetaOculta {
   font-size: 11px;
   font-weight: 600;
-  color: #57606a;
+  color: var(--text-secondary);
   background: var(--dash-bg-subtle);
   padding: 1px 8px;
   border-radius: 999px;
@@ -230,7 +230,7 @@
 .casoDetalle {
   margin: 8px 0 0;
   font-size: 13px;
-  color: #57606a;
+  color: var(--text-secondary);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -254,7 +254,7 @@
   border-radius: 8px;
   padding: 8px 12px;
 }
-.envioFecha { color: #57606a; white-space: nowrap; }
+.envioFecha { color: var(--text-secondary); white-space: nowrap; }
 
 @media (max-width: 1024px) {
   .cols { grid-template-columns: 1fr; }
@@ -275,7 +275,7 @@
   border-left-width: 4px;
   border-radius: 6px;
   background: var(--bg-pre-session);
-  color: #3c3255;
+  color: var(--text-primary);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -290,7 +290,7 @@
   padding: 3px 10px;
   border-radius: 999px;
   background: var(--estado-info-bg);
-  color: #5b21b6;
+  color: var(--estado-info-color);
   white-space: nowrap;
 }
 
@@ -312,13 +312,13 @@
   gap: 6px;
   padding: 5px 10px;
   font-size: 13px;
-  color: #57606a;
+  color: var(--text-secondary);
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
 }
-.btnEnunciado:hover { background: #f6f8fa; color: #1f2328; }
+.btnEnunciado:hover { background: var(--dash-bg-subtle); color: var(--text-primary); }
 
 .vistaGrupo {
   display: flex;
@@ -335,15 +335,15 @@
   padding: 4px 10px;
   border: 0;
   background: transparent;
-  color: #57606a;
+  color: var(--text-secondary);
   border-radius: 6px;
   cursor: pointer;
 }
-.vistaGrupo button:hover { color: #1f2328; }
+.vistaGrupo button:hover { color: var(--text-primary); }
 .vistaActiva,
 .vistaGrupo button.vistaActiva:hover {
   background: var(--bg-card);
-  color: #4f46e5;
+  color: var(--dash-primary);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
