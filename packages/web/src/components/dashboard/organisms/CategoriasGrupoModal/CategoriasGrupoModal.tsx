@@ -205,6 +205,13 @@ export default function CategoriasGrupoModal({
     }
   }
 
+  /**
+   * ¿El color elegido está fuera de la paleta? Entonces la muestra libre lo
+   * enseña, y así al editar una categoría con color propio se ve cuál es en vez
+   * de aparecer como si no hubiera nada elegido.
+   */
+  const personalizado = !!color && !(paleta as readonly string[]).includes(color);
+
   /** Primer color de la paleta que no esté ya en uso; si todos lo están, el primero. */
   function sugerirColor(): string {
     const usados = new Set(orden.map((c) => c.color));
@@ -303,6 +310,25 @@ export default function CategoriasGrupoModal({
                 aria-pressed={color === c}
               />
             ))}
+
+            {/* Cualquier otro tono. Es el selector NATIVO del sistema: sale con
+                un clic, lo maneja cualquiera y no añade una dependencia para
+                algo que el navegador ya trae. El servidor nunca estuvo limitado
+                a la paleta —`normalizarColor` valida la forma, no la lista—,
+                así que esto solo abre lo que ya se podía guardar. */}
+            <label
+              className={`${styles.muestra} ${styles.muestraLibre} ${personalizado ? styles.muestraActiva : ''}`}
+              style={personalizado ? { background: color } : undefined}
+              title={personalizado ? `Color propio ${color}` : 'Otro color…'}
+            >
+              <input
+                type="color"
+                className={styles.inputColor}
+                value={color || paleta[0]}
+                onChange={(e) => setColor(e.target.value.toLowerCase())}
+                aria-label="Elegir otro color"
+              />
+            </label>
           </div>
 
           <div className={styles.acciones}>

@@ -31,6 +31,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     repinta todos a la vez. En la tarjeta sale como banda junto a la clave y como
     rótulo al pie, y el buscador la encuentra —«moviles» trae las materias de
     móviles—.
+  - Las categorías se administran desde Contenidos con la **misma ventana** que
+    ya usaban los grupos, así que agregar una aquí la deja disponible allí y al
+    revés. Su texto lo dice, porque desde cualquiera de las dos se puede
+    recolorear o borrar algo que está en uso en la otra sin verlo.
+  - Al elegir el color, junto a las ocho muestras hay ahora una novena que abre
+    el **selector del sistema** y admite cualquier tono. El servidor nunca
+    estuvo limitado a la paleta —valida la forma del hexadecimal, no la lista—,
+    así que esto solo abre lo que ya se podía guardar.
 
 - **Un solo catálogo de tipos de actividad.** Había siete tablas paralelas
   —rótulos en el Hub, en la barra de filtros, en el resumen de la semana, en el
