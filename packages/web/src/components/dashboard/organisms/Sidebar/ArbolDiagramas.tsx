@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import Icon from '../../atoms/Icon/Icon';
+import { useAuth } from '../../../../context/AuthContext';
 import { useDiagramasNav } from '../../../../context/DiagramasNavContext';
 import { BLOQUES_CURSO, TIPOS_CATALOGO, agrupadoDiagramas } from '../../../../lib/diagramas/etiquetas';
+import { bloquesVisibles } from '../../../contenidos/navegacionDiagramas';
 import styles from './ArbolDiagramas.module.css';
 
 /**
@@ -24,7 +26,16 @@ import styles from './ArbolDiagramas.module.css';
 export default function ArbolDiagramas() {
   const { base, coleccion, bloques, seccion, irA, progresoDeBloque, ejercicios, cargando, error, reintentar } =
     useDiagramasNav();
+  const { user } = useAuth();
+  const esAlumno = user?.userType === 'alumno';
   const [busqueda, setBusqueda] = useState('');
+
+  // Al alumno no se le enseñan los bloques sin nada publicado; al admin y al
+  // profesor sí. El porqué, en `bloquesVisibles`.
+  const visibles = useMemo(
+    () => bloquesVisibles(bloques, (id) => progresoDeBloque(id).total, esAlumno),
+    [bloques, esAlumno, progresoDeBloque],
+  );
 
   /**
    * Los bloques de la colección se reparten entre las dos secciones por NOMBRE.
@@ -36,10 +47,10 @@ export default function ArbolDiagramas() {
   const { deCurso, deCatalogo } = useMemo(() => {
     const esDelCurso = new Set(BLOQUES_CURSO);
     return {
-      deCurso: bloques.filter((b) => esDelCurso.has(b.nombre)),
-      deCatalogo: bloques.filter((b) => !esDelCurso.has(b.nombre)),
+      deCurso: visibles.filter((b) => esDelCurso.has(b.nombre)),
+      deCatalogo: visibles.filter((b) => !esDelCurso.has(b.nombre)),
     };
-  }, [bloques]);
+  }, [visibles]);
 
   /** Tipos que YA tienen ejercicios: no se ofrecen otra vez en el catálogo. */
   const tiposConEjercicios = useMemo(

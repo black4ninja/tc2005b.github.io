@@ -6,6 +6,12 @@ import type { BloqueRef, CategoriaRef, EjercicioLista } from './agruparEjercicio
  * Vive aparte del contexto por el mismo motivo que `agruparEjercicios.ts`: son
  * las reglas que deciden qué ve el alumno —qué cuenta para el progreso, a qué
  * bloque pertenece un ejercicio— y a ojo no se comprueban en cada cambio.
+ *
+ * `contables`, `progresoDe` y `progresoDeBloque` los COMPARTE el módulo de
+ * Ejercicios (`EjerciciosNavContext`): operan sobre `EjercicioLista`, que ya es
+ * la forma común a los dos módulos, y duplicarlas habría dejado dos definiciones
+ * de «avance» que se separan con el tiempo. Lo específico de Diagramas es solo
+ * el tipo `Seccion`, con su clase `cat` para el catálogo.
  */
 
 /**
@@ -84,4 +90,29 @@ export function progresoDeBloque(
   return progresoDe(
     ejercicios.filter((e) => e.categoriaId !== null && suyas.has(e.categoriaId)),
   );
+}
+
+/**
+ * Bloques que se le enseñan a quien está mirando.
+ *
+ * El servidor manda TODOS los bloques de la colección, tengan ejercicios
+ * publicados o no, y el panel central ya descarta los vacíos
+ * (`agruparEnBloques`). El árbol del sidebar no lo hacía: un bloque en
+ * preparación —«Arquitectura MVVM», «Introducción al lenguaje»— salía como
+ * «0/0» y, al pulsarlo, llevaba a una pantalla sin nada.
+ *
+ * Al ADMIN y al PROFESOR sí se les muestran: son justo quienes necesitan ver
+ * que el bloque existe para poder llenarlo. Por eso la regla recibe `esAlumno`
+ * en lugar de filtrar siempre.
+ *
+ * `total` se recibe como función porque cada módulo cuenta lo suyo: Diagramas
+ * sobre todos sus ejercicios y Ejercicios sobre los del lenguaje filtrado.
+ */
+export function bloquesVisibles(
+  bloques: BloqueRef[],
+  total: (bloqueId: string) => number,
+  esAlumno: boolean,
+): BloqueRef[] {
+  if (!esAlumno) return bloques;
+  return bloques.filter((b) => total(b.id) > 0);
 }

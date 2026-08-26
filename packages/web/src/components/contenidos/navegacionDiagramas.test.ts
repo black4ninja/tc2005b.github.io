@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  bloquesVisibles,
   escribirSeccion,
   indiceDeBloques,
   leerSeccion,
@@ -100,5 +101,35 @@ describe('indiceDeBloques', () => {
     expect(bloqueDe(ej('sin categoría', null)), 'sin categoría').toBeNull();
     expect(bloqueDe(ej('categoría borrada', 'fantasma')), 'categoría inexistente').toBeNull();
     expect(bloqueDe(ej('categoría sin bloque', 'c4')), 'categoría sin bloque').toBeNull();
+  });
+});
+
+describe('bloquesVisibles', () => {
+  const conEjercicios: BloqueRef = { id: 'b1', nombre: 'Comportamiento', orden: 1 };
+  const vacio: BloqueRef = { id: 'b2', nombre: 'Arquitectura MVVM', orden: 2 };
+  const todos = [conEjercicios, vacio];
+  const total = (id: string) => (id === 'b1' ? 9 : 0);
+
+  it('al alumno le esconde los bloques sin ejercicios publicados', () => {
+    expect(bloquesVisibles(todos, total, true)).toEqual([conEjercicios]);
+  });
+
+  it('al admin y al profesor se los deja ver, que son quienes los llenan', () => {
+    expect(bloquesVisibles(todos, total, false)).toEqual(todos);
+  });
+
+  it('conserva el orden de los que sobreviven', () => {
+    const otro: BloqueRef = { id: 'b3', nombre: 'Interacción', orden: 3 };
+    const lista = [conEjercicios, vacio, otro];
+    const conDos = (id: string) => (id === 'b2' ? 0 : 6);
+    expect(bloquesVisibles(lista, conDos, true).map((b) => b.nombre)).toEqual([
+      'Comportamiento',
+      'Interacción',
+    ]);
+  });
+
+  it('sin bloques devuelve una lista vacía, no revienta', () => {
+    expect(bloquesVisibles([], total, true)).toEqual([]);
+    expect(bloquesVisibles([], total, false)).toEqual([]);
   });
 });
