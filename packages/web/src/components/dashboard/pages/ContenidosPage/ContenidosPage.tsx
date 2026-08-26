@@ -1,23 +1,43 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { confirmar } from '../../../../utils/dialogos';
 import { useNavigate, Link } from 'react-router';
-import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
-import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Icon from '../../atoms/Icon/Icon';
 import Modal from '../../atoms/Modal/Modal';
 import ColeccionForm from '../../organisms/ColeccionForm/ColeccionForm';
-import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
+import { buscarColecciones } from '../../../../utils/buscarColecciones';
 import type { ColeccionData } from '../../../../types/contenidos';
 import styles from './ContenidosPage.module.css';
 
 const API_BASE = '/api';
 
-/** Admin del CMS "Contenidos": lista de colecciones (design §5.1). */
+/**
+ * Los MÓDULOS de una colección: sitios a los que se entra dentro de la materia.
+ *
+ * Van aparte de editar y borrar a propósito. Antes las nueve acciones eran una
+ * fila de iconos mudos y con el mismo peso, así que «eliminar» se veía igual que
+ * «entrar a Preguntas» y no había forma de saber cuál era cuál sin pasar el
+ * ratón por encima uno a uno.
+ *
+ * El color agrupa por familia —contenido, evaluación, práctica— para orientar
+ * antes de leer.
+ */
+const MODULOS: { key: string; label: string; icon: string; familia: string; ruta: (id: string) => string }[] = [
+  { key: 'wiki', label: 'Wiki', icon: 'account_tree', familia: 'contenido', ruta: (id) => `/admin/contenidos/${id}` },
+  { key: 'paginas', label: 'Páginas', icon: 'article', familia: 'contenido', ruta: (id) => `/admin/paginas?coleccion=${id}` },
+  { key: 'competencias', label: 'Competencias', icon: 'emoji_events', familia: 'evaluacion', ruta: (id) => `/admin/competencias?coleccion=${id}` },
+  { key: 'actividades', label: 'Actividades', icon: 'assignment', familia: 'evaluacion', ruta: (id) => `/admin/actividades?coleccion=${id}` },
+  { key: 'ejercicios', label: 'Ejercicios', icon: 'terminal', familia: 'practica', ruta: (id) => `/admin/contenidos/${id}/ejercicios` },
+  { key: 'diagramas', label: 'Diagramas', icon: 'schema', familia: 'practica', ruta: (id) => `/admin/contenidos/${id}/diagramas` },
+  { key: 'preguntas', label: 'Preguntas', icon: 'quiz', familia: 'practica', ruta: (id) => `/admin/contenidos/${id}/preguntas` },
+];
+
+/** Admin del CMS "Contenidos": las colecciones y sus módulos (design §5.1). */
 export default function ContenidosPage() {
   const { sessionToken } = useAuth();
   const navigate = useNavigate();
   const [colecciones, setColecciones] = useState<ColeccionData[]>([]);
+  const [consulta, setConsulta] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -46,6 +66,11 @@ export default function ContenidosPage() {
   useEffect(() => {
     fetchColecciones();
   }, [fetchColecciones]);
+
+  const visibles = useMemo(
+    () => buscarColecciones(colecciones, consulta),
+    [colecciones, consulta],
+  );
 
   function openCreate() {
     setEditColeccion(undefined);
@@ -99,43 +124,6 @@ export default function ContenidosPage() {
     }
   }
 
-  const columnHelper = createColumnHelper<ColeccionData>();
-
-  const columns = [
-    columnHelper.accessor('clave', {
-      header: 'Clave',
-      cell: (info) => info.getValue() || '—',
-    }),
-    columnHelper.accessor('nombre', { header: 'Nombre' }),
-    columnHelper.accessor('slug', {
-      header: 'Slug',
-      cell: (info) => <code className={styles.slug}>{info.getValue()}</code>,
-    }),
-    columnHelper.accessor('publicada', {
-      header: 'Estado',
-      cell: (info) => (
-        <span className={`${styles.badge} ${info.getValue() ? styles.badgeActive : styles.badgeDraft}`}>
-          {info.getValue() ? 'Publicada' : 'Borrador'}
-        </span>
-      ),
-    }),
-  ];
-
-  const getActions = (coleccion: ColeccionData): ActionItem[] => [
-    // "Abrir" = el árbol de la wiki (Documento). "Páginas" = las páginas de
-    // bloques (Pagina) que se sirven en /paginas/:slug. Son dos contenidos
-    // distintos de la misma colección; de ahí las dos acciones.
-    { label: 'Abrir wiki', icon: 'account_tree', onClick: () => navigate(`/admin/contenidos/${coleccion.id}`) },
-    { label: 'Páginas', icon: 'article', onClick: () => navigate(`/admin/paginas?coleccion=${coleccion.id}`) },
-    { label: 'Competencias', icon: 'emoji_events', onClick: () => navigate(`/admin/competencias?coleccion=${coleccion.id}`) },
-    { label: 'Actividades', icon: 'assignment', onClick: () => navigate(`/admin/actividades?coleccion=${coleccion.id}`) },
-    { label: 'Ejercicios', icon: 'terminal', onClick: () => navigate(`/admin/contenidos/${coleccion.id}/ejercicios`) },
-    { label: 'Diagramas', icon: 'schema', onClick: () => navigate(`/admin/contenidos/${coleccion.id}/diagramas`) },
-    { label: 'Preguntas', icon: 'quiz', onClick: () => navigate(`/admin/contenidos/${coleccion.id}/preguntas`) },
-    { label: 'Editar', icon: 'edit', onClick: () => openEdit(coleccion) },
-    { label: 'Eliminar', icon: 'delete', onClick: () => handleDelete(coleccion), variant: 'danger' },
-  ];
-
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -163,21 +151,92 @@ export default function ContenidosPage() {
         </div>
       </div>
 
-      {error && <div className={styles.error}>{error}</div>}
+      <div className={styles.barra}>
+        <div className={styles.buscadorWrap}>
+          <Icon name="search" size="sm" className={styles.buscadorIcono} />
+          <input
+            className={styles.buscador}
+            type="search"
+            value={consulta}
+            onChange={(e) => setConsulta(e.target.value)}
+            placeholder="Buscar por clave, nombre o slug..."
+            aria-label="Buscar colección"
+          />
+        </div>
+        <span className={styles.recuento}>
+          {consulta.trim()
+            ? `${visibles.length} de ${colecciones.length} materias`
+            : `${colecciones.length} materia${colecciones.length === 1 ? '' : 's'}`}
+        </span>
+        <button className={styles.nueva} onClick={openCreate}>
+          <Icon name="add" size="sm" />
+          <span>Nueva Colección</span>
+        </button>
+      </div>
+
+      {error && !modalOpen && <div className={styles.error} onClick={() => setError('')}>{error}</div>}
 
       {loading ? (
-        <p>Cargando...</p>
+        <p className={styles.info}>Cargando...</p>
+      ) : visibles.length === 0 ? (
+        <div className={styles.vacio}>
+          <Icon name={consulta.trim() ? 'search_off' : 'library_books'} size="lg" />
+          <p>
+            {consulta.trim()
+              ? `Ninguna materia coincide con «${consulta.trim()}».`
+              : 'No hay colecciones registradas.'}
+          </p>
+        </div>
       ) : (
-        <AdminTable
-          title="Colecciones"
-          columns={columns}
-          data={colecciones}
-          actions={getActions}
-          onAdd={openCreate}
-          addLabel="Nueva Colección"
-          emptyMessage="No hay colecciones registradas"
-          searchPlaceholder="Buscar colección..."
-        />
+        <div className={styles.rejilla}>
+          {visibles.map((coleccion) => (
+            <article key={coleccion.id} className={styles.tarjeta}>
+              <div className={styles.tarjetaCabecera}>
+                <span className={styles.clave}>{coleccion.clave || '—'}</span>
+                <span className={`${styles.badge} ${coleccion.publicada ? styles.badgeActive : styles.badgeDraft}`}>
+                  {coleccion.publicada ? 'Publicada' : 'Borrador'}
+                </span>
+                {/* Editar y eliminar NO son módulos: no se entra a ellos, se le
+                    hacen a la colección. De ahí que vayan aparte y apagados. */}
+                <span className={styles.tarjetaAcciones}>
+                  <button
+                    className={styles.iconBtn}
+                    onClick={() => openEdit(coleccion)}
+                    title="Editar la colección"
+                    aria-label={`Editar ${coleccion.nombre}`}
+                  >
+                    <Icon name="edit" size="sm" />
+                  </button>
+                  <button
+                    className={`${styles.iconBtn} ${styles.iconBtnPeligro}`}
+                    onClick={() => handleDelete(coleccion)}
+                    title="Eliminar la colección"
+                    aria-label={`Eliminar ${coleccion.nombre}`}
+                  >
+                    <Icon name="delete" size="sm" />
+                  </button>
+                </span>
+              </div>
+
+              <p className={styles.nombre}>{coleccion.nombre}</p>
+              <code className={styles.slug}>{coleccion.slug}</code>
+
+              <div className={styles.modulos}>
+                {MODULOS.map((m) => (
+                  <button
+                    key={m.key}
+                    className={`${styles.modulo} ${styles[m.familia]}`}
+                    onClick={() => navigate(m.ruta(coleccion.id))}
+                    aria-label={`${m.label} de ${coleccion.nombre}`}
+                  >
+                    <Icon name={m.icon} size="sm" className={styles.moduloIcono} />
+                    <span className={styles.moduloLabel}>{m.label}</span>
+                  </button>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
       )}
 
       <Modal isOpen={modalOpen} onClose={closeModal} title={editColeccion ? 'Editar Colección' : 'Nueva Colección'}>

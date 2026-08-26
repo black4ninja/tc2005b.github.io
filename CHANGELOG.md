@@ -8,6 +8,24 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **Contenidos deja la tabla y pasa a tarjetas por materia.** Cada colección
+  traía **nueve** botones de acción en una fila, todos iconos sin rótulo y con el
+  mismo peso: había que pasar el ratón uno por uno para saber cuál era cuál, y
+  «eliminar» se veía igual que «entrar a Preguntas».
+  - Las nueve no eran una sola cosa: **siete son destinos** dentro de la materia
+    (wiki, páginas, competencias, actividades, ejercicios, diagramas, preguntas)
+    y **dos son operaciones** sobre la colección (editar, eliminar). Ahora los
+    destinos son botones rotulados en una rejilla de dos columnas dentro de la
+    tarjeta, y las operaciones quedan arriba, apagadas y aparte.
+  - El icono de cada módulo lleva el color de su familia —contenido, evaluación,
+    práctica—, que orienta antes de leer el rótulo.
+  - **Buscador** por clave, nombre y slug, que ignora acentos y cruza palabras
+    sueltas: «informatica» encuentra TC2007B y «datos artificial» encuentra
+    TC3009C. Lo traía la tabla y se habría perdido con ella; con la rejilla
+    creciendo hacia abajo hace más falta que antes.
+  - Tres tarjetas por fila en el panel, dos por debajo de 1100 px y una en
+    móvil.
+
 - **Un solo catálogo de tipos de actividad.** Había siete tablas paralelas
   —rótulos en el Hub, en la barra de filtros, en el resumen de la semana, en el
   formulario, en la exportación a Excel y en tres pantallas del panel— y se

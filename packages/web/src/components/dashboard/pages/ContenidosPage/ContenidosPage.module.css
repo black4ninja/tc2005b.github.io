@@ -12,11 +12,13 @@
 }
 
 .slug {
-  font-size: 12.5px;
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
   background: var(--bg-page);
   padding: 2px 7px;
   border-radius: 6px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .badge {
@@ -78,3 +80,216 @@
   background: var(--bg-page);
   color: var(--text-primary);
 }
+
+
+/* ── Barra: buscar, recuento y crear ──────────────────────────────────────
+   El buscador sube a la barra porque la tabla se fue: era ella quien lo
+   llevaba. Con cuatro materias sobra, pero la rejilla crece hacia abajo y sin
+   él encontrar una a mitad de curso sería desplazar a ojo. */
+.barra {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin: var(--space-lg) 0;
+  flex-wrap: wrap;
+}
+
+.buscadorWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  max-width: 420px;
+}
+
+.buscadorIcono {
+  position: absolute;
+  left: 12px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.buscador {
+  width: 100%;
+  padding: 9px 12px 9px 40px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.buscador:focus {
+  outline: none;
+  border-color: var(--dash-primary);
+}
+
+.buscador::placeholder { color: var(--text-muted); }
+
+.recuento {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.nueva {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 9px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--dash-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.nueva:hover { filter: brightness(0.94); }
+
+.info { color: var(--text-secondary); }
+
+/* ── Rejilla de materias ──────────────────────────────────────────────────
+   Tres por fila: con el ancho del panel cada tarjeta ronda los 386 px, que es
+   lo que necesitan los dos módulos por fila con sus rótulos completos
+   («Competencias» es el más largo). Por debajo de 1100 px caben dos, y en
+   móvil una. */
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .rejilla { grid-template-columns: minmax(0, 1fr); }
+}
+
+.tarjeta {
+  padding: 16px 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-card);
+}
+
+.tarjetaCabecera {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.clave {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tarjetaAcciones {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+/* Apagados: son operaciones sobre la colección, no destinos. Que pesen menos
+   que los módulos es deliberado. */
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.iconBtn:hover {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+.iconBtnPeligro:hover {
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+}
+
+/* Tres líneas reservadas: sin esto, las tarjetas de una misma fila bailan
+   según lo largo que sea el nombre de cada materia. */
+.nombre {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  text-wrap: pretty;
+  min-height: 56px;
+}
+
+.modulos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.modulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.modulo:hover {
+  background: var(--dash-bg-subtle);
+  border-color: var(--dash-primary);
+}
+
+.moduloLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.moduloIcono { flex-shrink: 0; }
+
+/* El color agrupa por familia y orienta antes de leer el rótulo. Sale de los
+   tokens de estado, que ya flipan con el tema. */
+.contenido .moduloIcono { color: var(--estado-info-color); }
+.evaluacion .moduloIcono { color: var(--estado-aviso-color); }
+.practica .moduloIcono { color: var(--estado-exito-color); }
+
+.vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-2xl);
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.vacio p { margin: 0; font-size: 14px; color: var(--text-secondary); }
