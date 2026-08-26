@@ -293,44 +293,13 @@ export default function PreguntasBancoPage() {
       header: 'Competencia',
       cell: (info) => {
         const comp = info.row.original.competencia;
-        if (!comp) return <span className={styles.sinEtiquetas}>—</span>;
+        if (!comp) return <span className={styles.sinDato}>—</span>;
         const deOtra = comp.coleccionId !== coleccionId;
         return (
           <span className={`${styles.competencia} ${deOtra ? styles.competenciaAjena : ''}`}
             title={deOtra ? 'Competencia de otra materia' : undefined}>
             {deOtra && <Icon name="swap_horiz" size="sm" />}
             {comp.competencia}
-          </span>
-        );
-      },
-    }),
-    columnHelper.accessor((row) => row.etiquetas.join(' '), {
-      id: 'etiquetas',
-      header: 'Etiquetas',
-      cell: (info) => {
-        const etiquetas = info.row.original.etiquetas;
-        if (etiquetas.length === 0) return <span className={styles.sinEtiquetas}>—</span>;
-        return (
-          <span className={styles.chips}>
-            {etiquetas.map((e) => <span key={e} className={styles.chip}>{e}</span>)}
-          </span>
-        );
-      },
-    }),
-    // A cuántos alumnos se les ha puesto ya. Repetir está permitido, así que
-    // esto no bloquea nada: es lo que permite variar a propósito en vez de por
-    // accidente, y ver qué parte del banco lleva sin estrenarse.
-    columnHelper.accessor((row) => (row.uso ? 'usada' : 'sin usar'), {
-      id: 'uso',
-      header: 'Uso',
-      cell: (info) => {
-        const uso = info.row.original.uso;
-        if (!uso) return <span className={styles.libreTag}>Sin usar</span>;
-        return (
-          <span className={styles.tomadaTag} title={uso.quienes.join('\n')}>
-            <Icon name="person" size="sm" />
-            {uso.veces} alumno{uso.veces === 1 ? '' : 's'}
-            {uso.algunaUsada && ' · preguntada'}
           </span>
         );
       },
@@ -459,7 +428,7 @@ export default function PreguntasBancoPage() {
           emptyMessage={competenciaFiltro
             ? 'No hay preguntas de esta competencia.'
             : 'Esta materia todavía no tiene preguntas.'}
-          searchPlaceholder="Buscar en la pregunta, competencia o etiqueta..."
+          searchPlaceholder="Buscar en la pregunta o la competencia..."
         />
       )}
 

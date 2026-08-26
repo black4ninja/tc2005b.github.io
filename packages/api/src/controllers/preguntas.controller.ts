@@ -8,7 +8,6 @@ import { PreguntaAsignacion } from '../models/PreguntaAsignacion.js';
 import type { AppUser } from '../models/AppUser.js';
 import { getColeccionActiva } from './cms-documentos.controller.js';
 import { normalizarEtiquetas } from '../services/preguntas.service.js';
-import { usoDePreguntas } from '../services/preguntas-uso.service.js';
 
 /**
  * CRUD del banco del módulo "Preguntas" (entrevistas personales).
@@ -78,14 +77,10 @@ export async function listPreguntas(req: Request, res: Response): Promise<void> 
     q.ascending('createdAt');
     q.limit(1000);
     const preguntas = await q.find({ useMasterKey: true });
-    // Quién tiene tomada cada una. El banco lo muestra porque una pregunta
-    // asignada no se puede volver a repartir, y sin decirlo aquí el autor no
-    // tiene forma de saber cuánto banco libre le queda.
-    const uso = await usoDePreguntas(preguntas.map((p) => p.id!));
-    res.json({
-      status: 'ok',
-      preguntas: preguntas.map((p) => ({ ...p.toSafeJSON(), uso: uso.get(p.id!) ?? null })),
-    });
+    // Sin `uso`: el banco ya no lo pinta, y calcularlo costaba una consulta
+    // sobre TODAS las asignaciones en cada carga. El roster del grupo, que sí
+    // lo enseña, lo sigue calculando por su cuenta.
+    res.json({ status: 'ok', preguntas: preguntas.map((p) => p.toSafeJSON()) });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al obtener el banco de preguntas' });
   }

@@ -8,6 +8,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **El banco de preguntas se queda con lo que se usa para elegir.** Se van las
+  columnas **Etiquetas** y **Uso**: la primera estaba vacía en casi todas las
+  preguntas y la segunda contestaba a algo que ya no se pregunta desde ahí —a
+  cuántos alumnos se les puso— y que sigue viéndose donde importa, al asignar.
+  - Con la columna se va también su consulta: el listado del banco dejaba de
+    ser una lectura simple para recorrer TODAS las asignaciones en cada carga.
+
 - **Un solo catálogo de tipos de actividad.** Había siete tablas paralelas
   —rótulos en el Hub, en la barra de filtros, en el resumen de la semana, en el
   formulario, en la exportación a Excel y en tres pantallas del panel— y se
