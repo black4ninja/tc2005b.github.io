@@ -22,6 +22,14 @@ function normalizeEmail(input: string): string {
   return email;
 }
 
+
+/**
+ * Cada cuánto se vuelve a sellar la actividad de una sesión. Es el grano de la
+ * ventana deslizante de caducidad, que se mide en días: cinco minutos no la
+ * cambian en nada y ahorran una escritura por petición.
+ */
+const REFRESCO_SESION_MS = 5 * 60 * 1000;
+
 class AuthService {
   async requestMagicLink(email: string): Promise<{ success: boolean; message: string }> {
     const genericResponse = {
@@ -137,8 +145,16 @@ class AuthService {
       return null;
     }
 
-    session.refreshActivity(config.auth.sessionExpiryDays);
-    await session.save(null, { useMasterKey: true });
+    // La sesión se refrescaba en CADA petición, así que toda llamada al API
+    // llevaba dentro una escritura a la base —unos 80 ms contra Atlas—, y una
+    // pantalla que sondea la pagaba una vez por segundo. Con la caducidad medida
+    // en días, refrescar como mucho cada `REFRESCO_SESION_MS` mantiene la ventana
+    // deslizante igual de viva y quita la escritura de casi todas.
+    const ultima = session.getLastActivity()?.getTime() ?? 0;
+    if (Date.now() - ultima >= REFRESCO_SESION_MS) {
+      session.refreshActivity(config.auth.sessionExpiryDays);
+      await session.save(null, { useMasterKey: true });
+    }
 
     return { session, user };
   }

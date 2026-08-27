@@ -38,6 +38,7 @@ import lecturasRoutes from './routes/lecturas.routes.js';
 import ejerciciosRoutes from './routes/ejercicios.routes.js';
 import auditLogRoutes from './routes/audit-log.routes.js';
 import preguntasRoutes from './routes/preguntas.routes.js';
+import agendaEntrevistasRoutes from './routes/agenda-entrevistas.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 
 const app = express();
@@ -87,6 +88,7 @@ app.use('/api', lecturasRoutes);
 app.use('/api', ejerciciosRoutes);
 app.use('/api', auditLogRoutes);
 app.use('/api', preguntasRoutes);
+app.use('/api', agendaEntrevistasRoutes);
 
 export function finalize() {
   app.use(errorHandler);

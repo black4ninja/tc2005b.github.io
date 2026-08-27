@@ -4,27 +4,52 @@ import { useAuth } from '../../../../context/AuthContext';
 import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Modal from '../../atoms/Modal/Modal';
-import PreguntaProyector from '../../organisms/PreguntaProyector/PreguntaProyector';
 import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta';
 import SelectorAlumno from '../../organisms/SelectorAlumno/SelectorAlumno';
 import {
-  aplicarAsignaciones, ajustarUso, formatearDuracion, quitarAsignaciones, repartirPreguntas, resumenPregunta,
+  aplicarAsignaciones, ajustarUso, faseProyeccion, formatearDuracion, quitarAsignaciones,
+  repartirPreguntas, resumenPregunta,
 } from '../../../../utils/preguntas';
 import type {
-  AlumnoConPregunta, CompetenciaEnBanco, DuracionConfig, Pregunta, PreguntaAsignacion,
+  AlumnoConPregunta, CompetenciaEnBanco, DuracionConfig, EstadoProyeccion, FaseProyeccion,
+  Pregunta, PreguntaAsignacion, Proyeccion,
 } from '../../../../types/preguntas';
+import { confirmar } from '../../../../utils/dialogos';
+import { agruparVacios, fechaLarga, hora, rangoHoras } from '../../../../utils/agenda';
+import type { Agenda, DiaProfesor } from '../../../../types/agenda';
 import styles from './PreguntasGrupoPage.module.css';
 
 const API_BASE = '/api';
 const SIN_COMPETENCIA = 'sin-competencia';
 /** Espejo de `MAX_INTENTOS` del API: hasta dos entrevistas por competencia. */
 const MAX_INTENTOS = 2;
+/**
+ * Cada cuánto se relee lo que hay proyectado. Mucho más espaciado que en la
+ * pantalla proyectada porque aquí el panel es quien MANDA: lo suyo lo pinta al
+ * pulsar y lo confirma la respuesta del PUT, así que esto solo cubre el caso de
+ * tener el panel abierto en dos sitios. Y las dos pantallas comparten servidor:
+ * sondear de más aquí le quita sitio a la que sí lo necesita.
+ */
+const PERIODO_SONDEO = 5000;
+/** Cada cuánto se repinta el reloj del mando. */
+const PERIODO_RELOJ = 250;
 
 function mensajeDeError(e: unknown, porDefecto: string): string {
   return e instanceof Error && e.message ? e.message : porDefecto;
 }
 
-type Vista = 'alumnos' | 'preguntas';
+type Vista = 'alumnos' | 'preguntas' | 'agenda';
+
+/** Cómo se llama cada fase en el mando. En la pantalla proyectada no se escribe. */
+const ETIQUETA_FASE: Record<FaseProyeccion, string> = {
+  'sin-pregunta': 'Sin pregunta',
+  espera: 'Por iniciar',
+  corriendo: 'En curso',
+  // El reloj ya está a cero pero la pregunta sigue puesta unos segundos.
+  gracia: 'Se acabó el tiempo',
+  finalizada: 'Finalizada',
+  detenida: 'Detenida',
+};
 
 /**
  * Roster de PREGUNTAS de un grupo: a quién le toca qué.
@@ -89,9 +114,38 @@ export default function PreguntasGrupoPage() {
   >(null);
   // Camino inverso: pregunta elegida, falta el alumno.
   const [eligiendoAlumno, setEligiendoAlumno] = useState<Pregunta | null>(null);
+  // Notas de TODOS los intentos de un alumno. Con «todas» las competencias no
+  // hay columna de nota donde escribirlas —serían cuatro por fila—, y son justo
+  // lo que se relee antes de la segunda entrevista.
+  const [notasDe, setNotasDe] = useState<string | null>(null);
   const [historialDe, setHistorialDe] = useState<AlumnoConPregunta | null>(null);
   const [historial, setHistorial] = useState<PreguntaAsignacion[]>([]);
-  const [proyectando, setProyectando] = useState<number | null>(null);
+  /**
+   * Lo que hay en la pantalla proyectada. El panel es el MANDO: escribe aquí y
+   * la otra pantalla —que suele estar en otro aparato— lo lee del servidor.
+   */
+  const [proyeccion, setProyeccion] = useState<Proyeccion | null>(null);
+  const [ahora, setAhora] = useState(() => Date.now());
+  /** `serverNow - Date.now()`: el reloj del mando no es el del servidor. */
+  const desfaseRef = useRef(0);
+  /**
+   * La agenda: los días que el profesor abre y las citas que los alumnos
+   * reservan. El reparto de preguntas puede hacerse semanas antes, pero el ORDEN
+   * de la proyección lo deciden los alumnos al apuntarse.
+   */
+  const [agenda, setAgenda] = useState<Agenda | null>(null);
+  const [diaActivo, setDiaActivo] = useState<string | null>(null);
+  const [creandoDia, setCreandoDia] = useState(false);
+  const [borradorDia, setBorradorDia] = useState({ fecha: '', desde: '09:00', hasta: '13:00', nota: '' });
+
+  /** La pestaña proyectada, para volver a ella en vez de abrir otra. */
+  const ventanaRef = useRef<Window | null>(null);
+  /**
+   * Qué orden está en vuelo. El mando escribe en el servidor y la pantalla que
+   * cambia está en otro aparato, así que sin esto pulsar «Iniciar» parece no
+   * hacer nada durante la ida y la vuelta —y el profesor vuelve a pulsar—.
+   */
+  const [mandando, setMandando] = useState<EstadoProyeccion | 'mover' | null>(null);
 
   const headers = useMemo<Record<string, string>>(() => ({
     'Content-Type': 'application/json',
@@ -126,6 +180,215 @@ export default function PreguntasGrupoPage() {
   }, [grupoId, sessionToken]);
 
   useEffect(() => { fetchTodo(); }, [fetchTodo]);
+
+  const cargarAgenda = useCallback(async () => {
+    if (!grupoId) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) return;
+      const data = await res.json() as Agenda;
+      setAgenda(data);
+      // Al entrar, el día que toca: el primero que no haya terminado. Es el que
+      // se quiere ver el día de las entrevistas, sin buscarlo.
+      setDiaActivo((actual) => actual
+        ?? data.dias.find((d) => new Date(d.fin) >= new Date())?.id
+        ?? data.dias[data.dias.length - 1]?.id
+        ?? null);
+    } catch {
+      setError('No se pudo cargar la agenda de entrevistas');
+    }
+  }, [grupoId, sessionToken]);
+
+  useEffect(() => { cargarAgenda(); }, [cargarAgenda]);
+
+  /** Une la fecha y la hora del formulario en un instante, en la zona del profesor. */
+  function instante(fecha: string, hhmm: string): string {
+    return new Date(`${fecha}T${hhmm}`).toISOString();
+  }
+
+  async function crearDia() {
+    const { fecha, desde, hasta, nota } = borradorDia;
+    if (!fecha) { setError('Elige la fecha del día de entrevistas'); return; }
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/dias`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ inicio: instante(fecha, desde), fin: instante(fecha, hasta), nota }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message || 'No se pudo crear el día');
+      }
+      setCreandoDia(false);
+      setBorradorDia({ fecha: '', desde: '09:00', hasta: '13:00', nota: '' });
+      await cargarAgenda();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'No se pudo crear el día'));
+    }
+  }
+
+  /**
+   * Cerrar reservas no borra nada, pero es visible para los alumnos: el día deja
+   * de admitirlos de golpe. Se pregunta por eso, no por peligro.
+   */
+  async function cerrarOReabrir(dia: DiaProfesor) {
+    const cerrando = !dia.cerrado;
+    if (!(await confirmar({
+      titulo: cerrando ? '¿Cerrar las reservas de este día?' : '¿Reabrir las reservas?',
+      texto: cerrando
+        ? `${fechaLarga(dia.inicio)}: las citas ya apuntadas se quedan, pero nadie más podrá apuntarse.`
+        : `${fechaLarga(dia.inicio)} volverá a admitir reservas en sus huecos libres.`,
+      confirmar: cerrando ? 'Cerrar reservas' : 'Reabrir',
+    }))) return;
+    await cambiarDia(dia, { cerrado: cerrando });
+  }
+
+  async function cambiarDia(dia: DiaProfesor, cambios: { cerrado?: boolean }) {
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/dias/${dia.id}`, {
+        method: 'PUT', headers, body: JSON.stringify(cambios),
+      });
+      if (!res.ok) throw new Error('No se pudo guardar el día');
+      await cargarAgenda();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'No se pudo guardar el día'));
+    }
+  }
+
+  async function borrarDia(dia: DiaProfesor) {
+    const citas = dia.huecos.filter((h) => h.cita).length;
+    if (!(await confirmar({
+      titulo: '¿Borrar este día?',
+      texto: citas > 0
+        // El servidor lo va a rechazar; decirlo aquí ahorra el rechazo.
+        ? `${fechaLarga(dia.inicio)} tiene ${citas} cita${citas === 1 ? '' : 's'} apuntada${citas === 1 ? '' : 's'}. Hay que cancelarlas antes.`
+        : `${fechaLarga(dia.inicio)} desaparecerá de la agenda del grupo.`,
+      confirmar: 'Borrar el día',
+      peligro: true,
+    }))) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/dias/${dia.id}`, {
+        method: 'DELETE', headers,
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message || 'No se pudo borrar el día');
+      }
+      if (diaActivo === dia.id) setDiaActivo(null);
+      await cargarAgenda();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'No se pudo borrar el día'));
+    }
+  }
+
+  async function cancelarCita(citaId: string) {
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/citas/${citaId}`, {
+        method: 'DELETE', headers,
+      });
+      if (!res.ok) throw new Error('No se pudo cancelar la cita');
+      await cargarAgenda();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'No se pudo cancelar la cita'));
+    }
+  }
+
+  /** La URL de la pantalla proyectada. Se abre aquí o se manda al iPad. */
+  const urlProyeccion = `${window.location.origin}/admin/grupos/${grupoId}/proyeccion`;
+
+  const leerProyeccion = useCallback(async () => {
+    if (!grupoId) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/preguntas/proyeccion`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) return;
+      const data = await res.json() as { proyeccion?: Proyeccion; serverNow?: string };
+      if (data.serverNow) desfaseRef.current = new Date(data.serverNow).getTime() - Date.now();
+      setProyeccion(data.proyeccion ?? null);
+    } catch {
+      // El mando sigue funcionando sin esto: lo que manda se guarda igual y la
+      // respuesta del PUT trae el estado. Sondear es solo para no mentir.
+    }
+  }, [grupoId, sessionToken]);
+
+  useEffect(() => {
+    leerProyeccion();
+    const id = window.setInterval(leerProyeccion, PERIODO_SONDEO);
+    return () => window.clearInterval(id);
+  }, [leerProyeccion]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setAhora(Date.now()), PERIODO_RELOJ);
+    return () => window.clearInterval(id);
+  }, []);
+
+  /**
+   * Manda un cambio a la pantalla proyectada.
+   *
+   * La respuesta trae el estado ya resuelto, así que el mando se pinta con lo
+   * que el servidor guardó y no con lo que creía haber mandado: si dos panelistas
+   * pulsan a la vez, gana el servidor y los dos ven lo mismo.
+   */
+  async function proyectar(
+    cambio: { asignacionId?: string | null; estado?: EstadoProyeccion },
+    orden: EstadoProyeccion | 'mover' = cambio.estado ?? 'mover',
+  ) {
+    if (!grupoId) return;
+    setMandando(orden);
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/preguntas/proyeccion`, {
+        method: 'PUT', headers, body: JSON.stringify(cambio),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message || 'Error al cambiar la proyección');
+      }
+      const data = await res.json() as { proyeccion?: Proyeccion; serverNow?: string };
+      if (data.serverNow) desfaseRef.current = new Date(data.serverNow).getTime() - Date.now();
+      setProyeccion(data.proyeccion ?? null);
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'Error al cambiar la proyección'));
+      // Lo que se pintó por adelantado ya no vale: manda lo que hay guardado.
+      await leerProyeccion();
+    } finally {
+      setMandando(null);
+    }
+  }
+
+  /**
+   * Cambia el estado pintándolo YA y confirmando después.
+   *
+   * El reloj del panel arranca con el clic y no con la respuesta: la orden es de
+   * las que no fallan casi nunca, y esperar a la ida y vuelta para mover el
+   * número es justo lo que hace pensar que el botón no funciona. Si algo sale
+   * mal, `proyectar` relee y deshace.
+   */
+  function mandarEstado(estado: EstadoProyeccion) {
+    setProyeccion((p) => (p ? {
+      ...p,
+      estado,
+      // En la hora del SERVIDOR, que es la que interpretan las dos pantallas.
+      iniciadoEn: estado === 'corriendo'
+        ? new Date(Date.now() + desfaseRef.current).toISOString()
+        : estado === 'espera' ? null : p.iniciadoEn,
+    } : p));
+    proyectar({ estado }, estado);
+  }
+
+  /**
+   * Abre —o trae al frente— la pestaña proyectada.
+   *
+   * Con nombre de ventana a propósito: pulsar «Proyectar» dos veces tiene que
+   * llevar a la misma pantalla, no dejar dos abiertas peleándose por el cañón.
+   */
+  function abrirPantalla() {
+    const abierta = ventanaRef.current;
+    if (abierta && !abierta.closed) { abierta.focus(); return; }
+    ventanaRef.current = window.open(urlProyeccion, `proyeccion-${grupoId}`);
+  }
 
   const porId = useMemo(() => new Map(preguntas.map((p) => [p.id, p])), [preguntas]);
 
@@ -213,8 +476,31 @@ export default function PreguntasGrupoPage() {
     [alumnos, huecosVisibles, competenciaActiva, intentoActivo],
   );
 
+  /** El día abierto en la pestaña de agenda, con sus huecos. */
+  const dia = useMemo(
+    () => agenda?.dias.find((d) => d.id === diaActivo) ?? null,
+    [agenda, diaActivo],
+  );
+
+  /**
+   * La fila del día: cada hueco con su cita resuelta contra el roster.
+   *
+   * La agenda dice QUIÉN viene y de qué competencia; el roster, con qué
+   * pregunta. Se cruzan aquí, en el cliente, porque los dos datos ya están
+   * cargados y así la fila se mueve sola al reasignarle una pregunta a alguien
+   * sin tener que recargar la agenda.
+   */
+  const filaDelDia = useMemo(() => (dia?.huecos ?? []).map((h) => {
+    const cita = h.cita;
+    const alumno = cita ? alumnos.find((a) => a.id === cita.alumno?.id) ?? null : null;
+    const asignacion = cita?.asignacionId
+      ? alumno?.asignaciones.find((x) => x.id === cita.asignacionId) ?? null
+      : null;
+    return { inicio: h.inicio, cita, alumno, asignacion };
+  }), [dia, alumnos]);
+
   /** Pares (alumno, asignación) proyectables, en el orden en que se ven. */
-  const paraProyectar = useMemo(
+  const paraProyectarRoster = useMemo(
     () => visibles.flatMap((alumno) => huecosVisibles
       .flatMap((c) => (competenciaActiva
         ? [asignacionDe(alumno, c.id, intentoActivo)]
@@ -224,6 +510,63 @@ export default function PreguntasGrupoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [visibles, huecosVisibles, competenciaActiva, intentoActivo],
   );
+
+  /**
+   * En la agenda manda la HORA, no la lista de alumnos: el profesor reparte las
+   * preguntas cuando quiere, pero el orden del día lo escribieron los alumnos al
+   * apuntarse. Las citas sin pregunta asignada no entran en la fila proyectable
+   * —no hay nada que enseñar—, y la tabla las señala aparte.
+   */
+  const paraProyectar = useMemo(
+    () => (vista === 'agenda'
+      ? filaDelDia
+        .filter((f) => f.alumno && f.asignacion)
+        .map((f) => ({ alumno: f.alumno!, asignacion: f.asignacion! }))
+      : paraProyectarRoster),
+    [vista, filaDelDia, paraProyectarRoster],
+  );
+
+  /** Dónde cae lo proyectado dentro de la lista que el profesor está viendo. */
+  const indiceProyectado = useMemo(
+    () => paraProyectar.findIndex((x) => x.asignacion.id === proyeccion?.asignacionId),
+    [paraProyectar, proyeccion],
+  );
+
+  /**
+   * En qué punto está la pantalla proyectada. Sale de la MISMA función pura que
+   * usa el proyector, con el reloj corregido: el mando enseña el número que se
+   * está viendo en la otra pantalla, no una aproximación suya.
+   */
+  const enPantalla = proyeccion ? faseProyeccion(proyeccion, ahora + desfaseRef.current) : null;
+
+  /** La asignación que está proyectándose, para escribirle la nota sin buscarla. */
+  const asignacionProyectada = useMemo(
+    () => alumnos.flatMap((a) => a.asignaciones)
+      .find((a) => a.id === proyeccion?.asignacionId) ?? null,
+    [alumnos, proyeccion],
+  );
+
+  /** Salta a la pregunta de al lado en el orden en que se ve la tabla. */
+  function moverProyeccion(paso: number) {
+    if (paraProyectar.length === 0) return;
+    const desde = indiceProyectado < 0 ? (paso > 0 ? -1 : 0) : indiceProyectado;
+    const destino = Math.min(paraProyectar.length - 1, Math.max(0, desde + paso));
+    const siguiente = paraProyectar[destino];
+    if (!siguiente || siguiente.asignacion.id === proyeccion?.asignacionId) return;
+    // Lo que el mando enseña se sabe ya de la tabla; el texto de la pregunta no
+    // se pinta aquí, así que no hay que esperarlo para cambiar de nombre.
+    setProyeccion((p) => (p ? {
+      ...p,
+      asignacionId: siguiente.asignacion.id,
+      alumno: { name: siguiente.alumno.name },
+      competencia: siguiente.asignacion.pregunta?.competencia ?? null,
+      intento: siguiente.asignacion.intento,
+      estado: 'espera',
+      iniciadoEn: null,
+    } : p));
+    // Sin `estado`: cambiar de alumno reinicia el reloj en el servidor.
+    proyectar({ asignacionId: siguiente.asignacion.id }, 'mover');
+  }
 
   /**
    * Asigna y pinta EN EL ACTO, confirmando cuando el servidor responde.
@@ -441,6 +784,30 @@ export default function PreguntasGrupoPage() {
     asignar(pares);
   }
 
+  /**
+   * A quién le ha tocado ya cada pregunta EN ESTE GRUPO.
+   *
+   * El `uso` que trae el banco cuenta todos los grupos en curso; al repartir lo
+   * que hace falta es lo de casa. Además sale del mismo estado que la tabla, así
+   * que la cuenta se mueve con el clic y no cuando conteste el servidor.
+   */
+  const asignadosPorPregunta = useMemo(() => {
+    const mapa = new Map<string, AlumnoConPregunta[]>();
+    for (const alumno of alumnos) {
+      // Un alumno puede llevar la misma pregunta en sus dos intentos: cuenta una
+      // vez, que lo que se enseña son ALUMNOS, no asignaciones.
+      const suyas = new Set(
+        alumno.asignaciones.map((a) => a.pregunta?.id).filter((id): id is string => !!id),
+      );
+      for (const id of suyas) {
+        const lista = mapa.get(id) ?? [];
+        lista.push(alumno);
+        mapa.set(id, lista);
+      }
+    }
+    return mapa;
+  }, [alumnos]);
+
   const preguntasDeVista = useMemo(() => {
     const q = busquedaPregunta.trim().toLowerCase();
     return preguntas
@@ -450,6 +817,137 @@ export default function PreguntasGrupoPage() {
         || p.texto.toLowerCase().includes(q)
         || (p.competencia?.competencia ?? '').toLowerCase().includes(q));
   }, [preguntas, competenciaActiva, busquedaPregunta]);
+
+  /**
+   * El MANDO de la proyección, en una variable porque su SITIO cambia.
+   *
+   * En «Por alumno» y «Por pregunta» encabeza la pantalla. En la agenda va
+   * DEBAJO del selector de día: ahí lo que manda es el día, y el control es el
+   * control DE ese día —ponerlo encima hacía leer que el día dependía de él—.
+   */
+  const mando = proyeccion?.asignacionId && enPantalla ? (
+
+          <div className={styles.mando}>
+            <div className={styles.mandoQuien}>
+              <span className={styles.mandoNombre}>{proyeccion.alumno?.name}</span>
+              <span className={styles.mandoCompetencia}>
+                {proyeccion.competencia ?? 'Sin competencia'}
+                {proyeccion.intento ? ` · ${proyeccion.intento}.º intento` : ''}
+                {indiceProyectado >= 0
+                ? ` · ${indiceProyectado + 1} de ${paraProyectar.length}`
+                // Sin sitio en la lista de delante: pasa al cambiar de día con
+                // algo puesto de otro. Decirlo evita leer el mando como si fuera
+                // de este día.
+                : ' · no es de esta lista'}
+              </span>
+            </div>
+
+            <div className={`${styles.mandoEstado} ${styles[`fase_${enPantalla.fase}`] ?? ''}`}>
+              <span className={styles.mandoReloj}>{formatearDuracion(
+                enPantalla.fase === 'espera' || enPantalla.fase === 'detenida'
+                  ? proyeccion.duracionSegundos
+                  : enPantalla.restante,
+              )}</span>
+              <span className={styles.mandoFase}>
+                {mandando !== null ? (
+                  <span className={styles.mandoEnviando}><Icon name="sync" size="sm" /> Enviando…</span>
+                ) : ETIQUETA_FASE[enPantalla.fase]}
+              </span>
+            </div>
+
+            <div className={styles.mandoBotones}>
+              <button
+                className={styles.iconBtn}
+                onClick={() => moverProyeccion(-1)}
+                disabled={indiceProyectado <= 0 || mandando !== null}
+                title="Anterior de la lista"
+              >
+                <Icon name="chevron_left" size="sm" />
+              </button>
+              <button
+                className={styles.iconBtn}
+                onClick={() => moverProyeccion(1)}
+                disabled={indiceProyectado >= paraProyectar.length - 1 || mandando !== null}
+                title="Siguiente de la lista"
+              >
+                <Icon name="chevron_right" size="sm" />
+              </button>
+
+              {/* El botón dice lo que está pasando mientras pasa: la pantalla que
+                  cambia está en otro aparato y el profesor no la tiene delante. */}
+              {enPantalla.visible ? (
+                <DashButton
+                  variant="outline"
+                  onClick={() => mandarEstado('detenido')}
+                  disabled={mandando !== null}
+                  title="Retira la pregunta de la pantalla"
+                >
+                  <Icon name={mandando === 'detenido' ? 'sync' : 'stop'} size="sm" />
+                  {mandando === 'detenido' ? 'Deteniendo…' : 'Detener'}
+                </DashButton>
+              ) : (
+                <DashButton
+                  onClick={() => mandarEstado('corriendo')}
+                  disabled={mandando !== null}
+                  title="Enseña la pregunta y arranca el reloj"
+                >
+                  <Icon name={mandando === 'corriendo' ? 'sync' : 'play_arrow'} size="sm" />
+                  {mandando === 'corriendo'
+                    ? 'Iniciando…'
+                    : enPantalla.fase === 'espera' ? 'Iniciar' : 'Otra vez'}
+                </DashButton>
+              )}
+              <button
+                className={styles.iconBtn}
+                onClick={() => mandarEstado('espera')}
+                disabled={enPantalla.fase === 'espera' || mandando !== null}
+                title="Deja el reloj a cero, sin enseñar la pregunta"
+              >
+                <Icon name="restart_alt" size="sm" />
+              </button>
+
+              <button className={styles.iconBtn} onClick={abrirPantalla} title="Abrir o traer al frente la pantalla proyectada">
+                <Icon name="open_in_new" size="sm" />
+              </button>
+              <button
+                className={styles.iconBtn}
+                onClick={() => {
+                  navigator.clipboard?.writeText(urlProyeccion);
+                  setAviso(`Enlace copiado: ${urlProyeccion} — ábrelo en el iPad con tu sesión iniciada.`);
+                }}
+                title="Copiar el enlace para abrirlo en otro aparato"
+              >
+                <Icon name="link" size="sm" />
+              </button>
+              <button
+                className={styles.iconBtn}
+                onClick={() => proyectar({ asignacionId: null }, 'mover')}
+                disabled={mandando !== null}
+                title="Dejar la pantalla en blanco"
+              >
+                <Icon name="close" size="sm" />
+              </button>
+            </div>
+
+            {/* La nota se escribe MIENTRAS se pregunta, no después: es el momento
+                en que uno se acuerda de lo que quería anotar. Va en su propia
+                línea porque es un campo, no un botón más de la fila. */}
+            {asignacionProyectada && (
+              <label className={styles.mandoNota}>
+                <Icon name="edit_note" size="sm" />
+                <NotaInline
+                  key={asignacionProyectada.id}
+                  valor={asignacionProyectada.nota}
+                  deshabilitado={false}
+                  className={styles.notaAncha}
+                  lineas={3}
+                  placeholder="Nota de este intento: qué respondió, en qué insistir…"
+                  onGuardar={(nota) => actualizar(asignacionProyectada.id, { nota })}
+                />
+              </label>
+            )}
+          </div>
+  ) : null;
 
   if (loading) return <div className={styles.page}><p>Cargando...</p></div>;
 
@@ -544,10 +1042,21 @@ export default function PreguntasGrupoPage() {
         >
           <Icon name="quiz" size="sm" /> Por pregunta
         </button>
+        {/* El día de las entrevistas manda sobre las otras dos: el orden no lo
+            decide el profesor al repartir, lo escriben los alumnos al apuntarse. */}
+        <button
+          className={`${styles.tab} ${vista === 'agenda' ? styles.tabActiva : ''}`}
+          onClick={() => setVista('agenda')}
+        >
+          <Icon name="event_available" size="sm" /> Agenda
+        </button>
       </div>
 
       {/* El filtro de competencia no es un filtro: es el MODO de trabajo, y por
-          eso manda sobre las dos vistas y sobre lo que reparte el botón. */}
+          eso manda sobre las dos vistas y sobre lo que reparte el botón. En la
+          agenda no pinta nada: ahí el orden y la competencia los trae la cita. */}
+      {/* `hidden` no bastaba: el `display: flex` de la clase lo pisa. */}
+      {vista !== 'agenda' && (
       <div className={styles.filtros}>
         <span className={styles.chipsTitulo}>Competencia:</span>
         <button
@@ -585,8 +1094,187 @@ export default function PreguntasGrupoPage() {
           </span>
         )}
       </div>
+      )}
 
-      {vista === 'alumnos' ? (
+      {vista !== 'agenda' && mando}
+
+      {vista === 'agenda' ? (
+        <>
+          <div className={styles.barra}>
+            <div className={styles.dias}>
+              {(agenda?.dias ?? []).length === 0 && (
+                <span className={styles.hint}>Todavía no has abierto ningún día.</span>
+              )}
+              {(agenda?.dias ?? []).map((d) => (
+                <button
+                  key={d.id}
+                  className={`${styles.chip} ${diaActivo === d.id ? styles.chipActivo : ''}`}
+                  onClick={() => setDiaActivo(d.id)}
+                  title={rangoHoras(d.inicio, d.fin)}
+                >
+                  {fechaLarga(d.inicio)}
+                  <span className={styles.chipContador}>
+                    {d.huecos.filter((h) => h.cita).length}/{d.huecos.length}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className={styles.acciones}>
+              <DashButton variant="outline" onClick={() => setCreandoDia(true)}>
+                <Icon name="add" size="sm" /> Abrir un día
+              </DashButton>
+              <DashButton
+                onClick={() => {
+                  abrirPantalla();
+                  // SIEMPRE por el primero de este día, aunque hubiera algo
+                  // puesto de otro: es lo que se pide al pulsar «Proyectar el
+                  // día», y si no, cambiar de día dejaba el mando en un alumno
+                  // que no estaba en la fila que se mira.
+                  const primera = paraProyectar[0];
+                  if (primera && primera.asignacion.id !== proyeccion?.asignacionId) {
+                    proyectar({ asignacionId: primera.asignacion.id });
+                  }
+                }}
+                disabled={paraProyectar.length === 0}
+                title="Abre la pantalla de proyección empezando por la primera cita de este día"
+              >
+                <Icon name="cast" size="sm" /> Proyectar el día
+              </DashButton>
+            </div>
+          </div>
+
+          {mando}
+
+          {dia && (
+            <>
+              <div className={styles.diaCabecera}>
+                <span className={styles.diaRango}>
+                  <Icon name="schedule" size="sm" /> {rangoHoras(dia.inicio, dia.fin)}
+                  {' · '}bloques de {formatearDuracion(dia.duracionSegundos)}
+                </span>
+                {dia.nota && <span className={styles.diaNota}>{dia.nota}</span>}
+                {/* Botones y no enlaces: son acciones sobre el día, y como
+                    enlaces subrayados se leían como navegación —y «Borrar el
+                    día» pesa lo mismo que «Cerrar reservas», que no es el caso—. */}
+                <span className={styles.diaAcciones}>
+                  <button
+                    className={styles.botonDia}
+                    onClick={() => cerrarOReabrir(dia)}
+                    title={dia.cerrado
+                      ? 'Volver a admitir reservas'
+                      : 'Dejar de admitir reservas sin borrar lo agendado'}
+                  >
+                    <Icon name={dia.cerrado ? 'lock_open' : 'lock'} size="sm" />
+                    {dia.cerrado ? 'Reabrir' : 'Cerrar reservas'}
+                  </button>
+                  <button
+                    className={`${styles.botonDia} ${styles.botonDiaPeligro}`}
+                    onClick={() => borrarDia(dia)}
+                    title="Borrar el día de la agenda"
+                  >
+                    <Icon name="delete" size="sm" /> Borrar el día
+                  </button>
+                </span>
+              </div>
+
+              <table className={styles.tabla}>
+                <thead>
+                  {/* Anchos fijos: con un día lleno, dejar que la tabla
+                      reparta sola parte los nombres en cuatro líneas para
+                      hacerle sitio al chip de competencia, que es lo que menos
+                      falta hace leer entero. */}
+                  <tr>
+                    <th className={styles.colCorta}>Hora</th>
+                    <th className={styles.colAlumno}>Alumno</th>
+                    <th className={styles.colCompetencia}>Competencia</th>
+                    <th>Pregunta que le toca</th>
+                    <th className={styles.colAcciones} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Los huecos vacíos seguidos se resumen en una fila: un día de
+                      cuatro horas son 48 bloques, y lo que hace falta saber es
+                      dónde hay un respiro y a qué hora se vuelve a empezar. */}
+                  {agruparVacios(filaDelDia, dia.duracionSegundos).map((f) => {
+                    if (f.tipo === 'vacio') {
+                      return (
+                        <tr key={`vacio-${f.desde}`} className={styles.filaVacia}>
+                          <td className={styles.colCorta}>{hora(f.desde)}</td>
+                          <td colSpan={4}>
+                            Sin entrevistas hasta las {hora(f.hasta)}
+                            <span className={styles.huecoCuenta}> · {f.cuantos} libre{f.cuantos === 1 ? '' : 's'}</span>
+                          </td>
+                        </tr>
+                      );
+                    }
+                    const { inicio, cita, alumno, asignacion } = f.hueco;
+                    const enPantalla = !!asignacion && asignacion.id === proyeccion?.asignacionId;
+                    return (
+                      <tr key={inicio} className={enPantalla ? styles.filaProyectada : ''}>
+                        <td className={styles.colCorta}>
+                          <strong>{hora(inicio)}</strong>
+                        </td>
+                        <td className={styles.colAlumno}>
+                          <span className={styles.alumnoNombre}>{cita!.alumno?.name}</span>
+                          <span className={styles.alumnoMatricula}>{cita!.alumno?.matricula}</span>
+                        </td>
+                        <td className={styles.colCompetencia}>
+                          <span className={styles.competenciaTag}>
+                            {cita!.competencia?.nombre ?? 'Sin competencia'}
+                          </span>
+                          <span className={styles.historialIntento}> {cita!.intento}.º intento</span>
+                        </td>
+                        <td>
+                          {cita!.pregunta ? (
+                            resumenPregunta(cita!.pregunta.texto, 80)
+                          ) : (
+                            <span className={styles.sinPreguntaAviso}>
+                              <Icon name="warning" size="sm" />
+                              Sin pregunta para su {cita!.intento}.º intento
+                            </span>
+                          )}
+                        </td>
+                        <td className={styles.colAcciones}>
+                          <button
+                            className={`${styles.iconBtn} ${enPantalla ? styles.iconBtnOn : ''}`}
+                            disabled={!asignacion}
+                            onClick={() => {
+                              if (!asignacion) return;
+                              proyectar({ asignacionId: asignacion.id });
+                              abrirPantalla();
+                            }}
+                            title="Poner esta pregunta en la pantalla proyectada"
+                          >
+                            <Icon name="cast" size="sm" />
+                          </button>
+                          <button
+                            className={`${styles.iconBtn} ${alumno?.asignaciones.some((a) => a.nota) ? styles.iconBtnOn : ''}`}
+                            disabled={!alumno}
+                            onClick={() => alumno && setNotasDe(alumno.id)}
+                            title="Notas de todos sus intentos"
+                          >
+                            <Icon name="edit_note" size="sm" />
+                          </button>
+                          <button
+                            className={styles.iconBtn}
+                            onClick={() => cancelarCita(cita!.id)}
+                            title="Cancelar esta cita (no llegó, se cambió de día…)"
+                          >
+                            <Icon name="close" size="sm" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filaDelDia.length === 0 && (
+                    <tr><td colSpan={5} className={styles.vacio}>Ese día no tiene huecos.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </>
+          )}
+        </>
+      ) : vista === 'alumnos' ? (
         <>
           <div className={styles.barra}>
             <div className={styles.filtrosIzq}>
@@ -614,11 +1302,18 @@ export default function PreguntasGrupoPage() {
                 Repartir al grupo ({sinLlenar})
               </DashButton>
               <DashButton
-                onClick={() => setProyectando(0)}
-                disabled={paraProyectar.length === 0}
-                title="Abre la primera pregunta a pantalla completa; se avanza con ← →"
+                onClick={() => {
+                  abrirPantalla();
+                  // Si no hay nada puesto, empieza por el primero de la lista tal
+                  // como se está viendo; si ya lo hay, solo trae la pestaña.
+                  if (!proyeccion?.asignacionId && paraProyectar[0]) {
+                    proyectar({ asignacionId: paraProyectar[0].asignacion.id });
+                  }
+                }}
+                disabled={paraProyectar.length === 0 && !proyeccion?.asignacionId}
+                title="Abre la pantalla de proyección en otra pestaña; se maneja desde aquí"
               >
-                <Icon name="slideshow" size="sm" /> Proyectar
+                <Icon name="cast" size="sm" /> Proyectar
               </DashButton>
             </div>
           </div>
@@ -641,7 +1336,12 @@ export default function PreguntasGrupoPage() {
                   ? asignacionDe(alumno, competenciaActiva, intentoActivo)
                   : null;
                 return (
-                  <tr key={alumno.id} className={unica?.usada ? styles.filaUsada : ''}>
+                  <tr
+                    key={alumno.id}
+                    className={`${unica?.usada ? styles.filaUsada : ''} ${
+                      alumno.asignaciones.some((a) => a.id === proyeccion?.asignacionId)
+                        ? styles.filaProyectada : ''}`}
+                  >
                     <td>
                       <span className={styles.alumnoNombre}>{alumno.name}</span>
                       <span className={styles.alumnoMatricula}>{alumno.matricula}</span>
@@ -732,15 +1432,18 @@ export default function PreguntasGrupoPage() {
                       {competenciaActiva ? (
                         <>
                           <button
-                            className={styles.iconBtn}
+                            className={`${styles.iconBtn} ${unica && unica.id === proyeccion?.asignacionId ? styles.iconBtnOn : ''}`}
                             disabled={!unica?.pregunta}
                             onClick={() => {
-                              const i = paraProyectar.findIndex((x) => x.asignacion.id === unica?.id);
-                              if (i >= 0) setProyectando(i);
+                              if (!unica) return;
+                              // Poner en pantalla es una cosa y arrancar el reloj
+                              // es otra: esto solo la pone, en «por iniciar».
+                              proyectar({ asignacionId: unica.id });
+                              abrirPantalla();
                             }}
-                            title="Proyectar esta pregunta"
+                            title="Poner esta pregunta en la pantalla proyectada"
                           >
-                            <Icon name="slideshow" size="sm" />
+                            <Icon name="cast" size="sm" />
                           </button>
                           <button
                             className={`${styles.iconBtn} ${unica?.usada ? styles.iconBtnOn : ''}`}
@@ -749,6 +1452,13 @@ export default function PreguntasGrupoPage() {
                             title={unica?.usada ? 'Marcar como pendiente' : 'Marcar como ya preguntada'}
                           >
                             <Icon name="check_circle" size="sm" />
+                          </button>
+                          <button
+                            className={`${styles.iconBtn} ${alumno.asignaciones.some((a) => a.nota) ? styles.iconBtnOn : ''}`}
+                            onClick={() => setNotasDe(alumno.id)}
+                            title="Notas de todos sus intentos"
+                          >
+                            <Icon name="edit_note" size="sm" />
                           </button>
                           <button
                             className={styles.iconBtn}
@@ -767,13 +1477,24 @@ export default function PreguntasGrupoPage() {
                           </button>
                         </>
                       ) : (
-                        <button
-                          className={styles.iconBtn}
-                          onClick={() => abrirHistorial(alumno)}
-                          title={`Historial (${alumno.totalAsignaciones})`}
-                        >
-                          <Icon name="history" size="sm" />
-                        </button>
+                        <>
+                          {/* Sin competencia elegida no hay columna de nota: son
+                              cuatro huecos por fila. Se entra por aquí. */}
+                          <button
+                            className={`${styles.iconBtn} ${alumno.asignaciones.some((a) => a.nota) ? styles.iconBtnOn : ''}`}
+                            onClick={() => setNotasDe(alumno.id)}
+                            title="Notas de todos sus intentos"
+                          >
+                            <Icon name="edit_note" size="sm" />
+                          </button>
+                          <button
+                            className={styles.iconBtn}
+                            onClick={() => abrirHistorial(alumno)}
+                            title={`Historial (${alumno.totalAsignaciones})`}
+                          >
+                            <Icon name="history" size="sm" />
+                          </button>
+                        </>
                       )}
                     </td>
                   </tr>
@@ -793,7 +1514,8 @@ export default function PreguntasGrupoPage() {
               placeholder="Buscar en las preguntas..."
             />
             <span className={styles.contador}>
-              {preguntasDeVista.filter((p) => !p.uso).length} sin usar de {preguntasDeVista.length}
+              {preguntasDeVista.filter((p) => !asignadosPorPregunta.has(p.id)).length} sin
+              {' '}repartir de {preguntasDeVista.length}
             </span>
           </div>
 
@@ -801,29 +1523,53 @@ export default function PreguntasGrupoPage() {
             {preguntasDeVista.length === 0 && (
               <p className={styles.vacio}>No hay preguntas que mostrar.</p>
             )}
-            {preguntasDeVista.map((p) => (
-              <article key={p.id} className={styles.tarjeta}>
-                <div className={styles.tarjetaMeta}>
-                  {p.competencia && <span className={styles.competenciaTag}>{p.competencia.competencia}</span>}
-                  {p.uso ? (
-                    <span className={styles.tomadaTag} title={p.uso.quienes.join('\n')}>
-                      <Icon name="person" size="sm" />
-                      ya en {p.uso.veces} alumno{p.uso.veces === 1 ? '' : 's'}
-                      {p.uso.algunaUsada && ' · preguntada'}
-                    </span>
-                  ) : (
-                    <span className={styles.libreTag}>sin usar</span>
-                  )}
-                </div>
-                {/* El enunciado entero: es el motivo de esta vista. */}
-                <p className={styles.tarjetaTexto}>{p.texto}</p>
-                <div className={styles.tarjetaAcciones}>
-                  <button className={styles.enlaceBtn} onClick={() => setEligiendoAlumno(p)}>
-                    Asignar a un alumno…
-                  </button>
-                </div>
-              </article>
-            ))}
+            {preguntasDeVista.map((p) => {
+              const suyos = asignadosPorPregunta.get(p.id) ?? [];
+              // Lo que trae `uso` menos lo de casa: los otros grupos en curso.
+              const enOtros = Math.max(0, (p.uso?.veces ?? 0) - suyos.length);
+              const enVuelo = suyos.some((a) => a.asignaciones.some(
+                (x) => x.pregunta?.id === p.id && x.pendiente,
+              ));
+              return (
+                <article key={p.id} className={styles.tarjeta}>
+                  <div className={styles.tarjetaMeta}>
+                    {p.competencia && <span className={styles.competenciaTag}>{p.competencia.competencia}</span>}
+                    {enOtros > 0 && (
+                      <span className={styles.tomadaTag} title={p.uso?.quienes.join('\n')}>
+                        <Icon name="history" size="sm" />
+                        también en {enOtros} de otros grupos
+                      </span>
+                    )}
+                    {p.uso?.algunaUsada && <span className={styles.libreTag}>ya preguntada</span>}
+                  </div>
+                  {/* El enunciado entero: es el motivo de esta vista. */}
+                  <p className={styles.tarjetaTexto}>{p.texto}</p>
+                  <div className={styles.tarjetaAcciones}>
+                    {/* El MISMO chip que en la vista por alumno, aquí del lado de
+                        la pregunta: dice a cuántos les ha tocado y se pulsa para
+                        repartirla. No hay tope —una pregunta se repite cuantas
+                        veces haga falta—, así que la cuenta es informativa. */}
+                    <button
+                      className={`${styles.hueco} ${styles.huecoAccion} ${suyos.length > 0 ? styles.huecoLleno : ''} ${enVuelo ? styles.pendiente : ''}`}
+                      onClick={() => setEligiendoAlumno(p)}
+                      title={suyos.length === 0
+                        ? 'Elegir a quién se la asignas'
+                        : `Ya es de:\n${suyos.map((a) => a.name).join('\n')}`}
+                    >
+                      <Icon name={suyos.length > 0 ? 'group' : 'person_add'} size="sm" />
+                      <span className={styles.huecoNombre}>
+                        {suyos.length === 0 ? 'Asignar a un alumno' : 'Asignada a'}
+                      </span>
+                      {suyos.length > 0 && (
+                        <span className={styles.huecoCuenta}>
+                          {suyos.length} de {alumnos.length}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </>
       )}
@@ -865,30 +1611,145 @@ export default function PreguntasGrupoPage() {
       })()}
 
       {/* Pregunta → alumno */}
-      {eligiendoAlumno && (
-        <SelectorAlumno
-          alumnos={alumnos}
-          titulo="¿A quién se la asignas?"
-          // A quien ya agotó sus intentos no se le puede añadir otra: se apaga
-          // en vez de sustituirle una en silencio.
-          sinHuecos={new Set(
-            alumnos
-              .filter((a) => llenosEn(a, eligiendoAlumno.competenciaId ?? SIN_COMPETENCIA) >= MAX_INTENTOS)
-              .map((a) => a.id),
-          )}
-          onElegir={(alumno) => {
-            // Cae en el primer intento libre de esa competencia; si los dos están
-            // ocupados, sustituye el último.
-            asignar([{
-              alumnoId: alumno.id,
-              preguntaId: eligiendoAlumno.id,
-              intento: primerHuecoLibre(alumno, eligiendoAlumno.competenciaId ?? SIN_COMPETENCIA),
-            }]);
-            setEligiendoAlumno(null);
-          }}
-          onCerrar={() => setEligiendoAlumno(null)}
-        />
-      )}
+      {eligiendoAlumno && (() => {
+        const competenciaId = eligiendoAlumno.competenciaId ?? SIN_COMPETENCIA;
+        const suyos = asignadosPorPregunta.get(eligiendoAlumno.id) ?? [];
+        return (
+          <SelectorAlumno
+            alumnos={alumnos}
+            titulo="¿A quién se la asignas?"
+            subtitulo={`${resumenPregunta(eligiendoAlumno.texto, 120)} — ${suyos.length === 0
+              ? 'todavía no es de nadie'
+              : `ya es de ${suyos.length} alumno${suyos.length === 1 ? '' : 's'}`}`}
+            seleccionados={new Set(suyos.map((a) => a.id))}
+            // A quien ya agotó sus intentos no se le puede añadir otra: se apaga
+            // en vez de sustituirle una en silencio.
+            sinHuecos={new Set(
+              alumnos
+                .filter((a) => llenosEn(a, competenciaId) >= MAX_INTENTOS)
+                .map((a) => a.id),
+            )}
+            llenosPorAlumno={new Map(alumnos.map((a) => [a.id, llenosEn(a, competenciaId)]))}
+            maxIntentos={MAX_INTENTOS}
+            guardando={guardando > 0}
+            onAlternar={(alumno) => {
+              // Pulsar a quien ya la tiene se la QUITA; a quien no, se la pone en
+              // su primer intento libre de esa competencia.
+              const ya = alumno.asignaciones.find((x) => x.pregunta?.id === eligiendoAlumno.id);
+              if (ya?.pendiente) return;
+              if (ya) quitar(ya);
+              else {
+                asignar([{
+                  alumnoId: alumno.id,
+                  preguntaId: eligiendoAlumno.id,
+                  intento: primerHuecoLibre(alumno, competenciaId),
+                }]);
+              }
+            }}
+            onCerrar={() => setEligiendoAlumno(null)}
+          />
+        );
+      })()}
+
+      {/* Abrir un día: fecha y franja. Los huecos salen solos, del tiempo que
+          rige en el grupo, y quedan congelados en el día para que cambiarlo
+          después no mueva las citas que los alumnos ya tienen apuntadas. */}
+      <Modal isOpen={creandoDia} onClose={() => setCreandoDia(false)} title="Abrir un día de entrevistas">
+        <div className={styles.formDia}>
+          <label>
+            <span>Fecha</span>
+            <input
+              type="date"
+              value={borradorDia.fecha}
+              onChange={(e) => setBorradorDia({ ...borradorDia, fecha: e.target.value })}
+            />
+          </label>
+          <label>
+            <span>Desde</span>
+            <input
+              type="time"
+              value={borradorDia.desde}
+              onChange={(e) => setBorradorDia({ ...borradorDia, desde: e.target.value })}
+            />
+          </label>
+          <label>
+            <span>Hasta</span>
+            <input
+              type="time"
+              value={borradorDia.hasta}
+              onChange={(e) => setBorradorDia({ ...borradorDia, hasta: e.target.value })}
+            />
+          </label>
+          <label className={styles.formAncho}>
+            <span>Nota para el alumno (opcional)</span>
+            <input
+              type="text"
+              placeholder="p. ej. Sala 3, o el enlace de la videollamada"
+              value={borradorDia.nota}
+              onChange={(e) => setBorradorDia({ ...borradorDia, nota: e.target.value })}
+            />
+          </label>
+        </div>
+        <p className={styles.hint}>
+          Se parte en bloques de {formatearDuracion(duracionVigente)}, el tiempo que rige ahora en
+          este grupo. Los alumnos verán los huecos libres y elegirán el suyo.
+        </p>
+        <div className={styles.formAcciones}>
+          <DashButton variant="outline" onClick={() => setCreandoDia(false)}>Cancelar</DashButton>
+          <DashButton onClick={crearDia}>Abrir el día</DashButton>
+        </div>
+      </Modal>
+
+      {/* Notas de un alumno, todas juntas. Es la vista que se abre antes de la
+          segunda entrevista: qué se le preguntó ya y qué se apuntó entonces. */}
+      {notasDe && (() => {
+        const alumno = alumnos.find((a) => a.id === notasDe);
+        if (!alumno) return null;
+        const huecos = competencias.flatMap((c) => Array
+          .from({ length: MAX_INTENTOS }, (_, i) => i + 1)
+          .map((intento) => ({ competencia: c, intento, asignacion: asignacionDe(alumno, c.id, intento) }))
+          .filter((h) => h.asignacion));
+        return (
+          <Modal isOpen onClose={() => setNotasDe(null)} title={`Notas — ${alumno.name}`} wide>
+            {huecos.length === 0 ? (
+              <p className={styles.hint}>Todavía no tiene ninguna pregunta asignada.</p>
+            ) : (
+              <div className={styles.notasLista}>
+                {huecos.map(({ competencia, intento, asignacion }) => (
+                  <div key={asignacion!.id} className={styles.notaBloque}>
+                    <div className={styles.notaCabecera}>
+                      <span className={styles.competenciaTag}>{competencia.nombre}</span>
+                      <span className={styles.historialIntento}>{intento}.º intento</span>
+                      {asignacion!.usada && <span className={styles.libreTag}>ya preguntada</span>}
+                      {asignacion!.id === proyeccion?.asignacionId && (
+                        <span className={styles.tomadaTag}>
+                          <Icon name="cast" size="sm" /> en pantalla
+                        </span>
+                      )}
+                    </div>
+                    <p className={styles.notaEnunciado}>
+                      {asignacion!.pregunta ? resumenPregunta(asignacion!.pregunta.texto, 160) : '—'}
+                    </p>
+                    <NotaInline
+                      key={asignacion!.id}
+                      valor={asignacion!.nota}
+                      deshabilitado={!!asignacion!.pendiente}
+                      className={styles.notaAncha}
+                      lineas={3}
+                      placeholder="Qué respondió, en qué insistir…"
+                      onGuardar={(nota) => actualizar(asignacion!.id, { nota })}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className={styles.hint}>
+              Se guardan al salir del campo. Solo las ves tú: no se proyectan ni afectan a la
+              calificación.
+            </p>
+          </Modal>
+        );
+      })()}
 
       <Modal
         isOpen={historialDe !== null}
@@ -917,22 +1778,6 @@ export default function PreguntasGrupoPage() {
         )}
       </Modal>
 
-      {proyectando !== null && paraProyectar[proyectando] && (() => {
-        const { alumno, asignacion } = paraProyectar[proyectando];
-        const pregunta = asignacion.pregunta ? porId.get(asignacion.pregunta.id) : null;
-        if (!pregunta) return null;
-        return (
-          <PreguntaProyector
-            pregunta={pregunta}
-            duracionSegundos={pregunta.duracionSegundos ?? duracionVigente}
-            alumno={{ name: alumno.name, matricula: alumno.matricula }}
-            posicion={{ indice: proyectando + 1, total: paraProyectar.length }}
-            onAnterior={proyectando > 0 ? () => setProyectando(proyectando - 1) : null}
-            onSiguiente={proyectando < paraProyectar.length - 1 ? () => setProyectando(proyectando + 1) : null}
-            onSalir={() => setProyectando(null)}
-          />
-        );
-      })()}
     </div>
   );
 }
@@ -942,25 +1787,45 @@ export default function PreguntasGrupoPage() {
  * corto que se escribe de una sentada, y una petición por pulsación llenaría la
  * red de escrituras a medio escribir.
  */
-function NotaInline({ valor, deshabilitado, onGuardar }: {
+function NotaInline({ valor, deshabilitado, onGuardar, className, placeholder, lineas }: {
   valor: string;
   deshabilitado: boolean;
   onGuardar: (nota: string) => void;
+  className?: string;
+  placeholder?: string;
+  /** Alto en líneas. Con esto es un `textarea`: Enter escribe, no guarda. */
+  lineas?: number;
 }) {
   const [texto, setTexto] = useState(valor);
   const inicial = useRef(valor);
 
   useEffect(() => { setTexto(valor); inicial.current = valor; }, [valor]);
 
+  const comunes = {
+    value: texto,
+    disabled: deshabilitado,
+    placeholder: deshabilitado ? '' : (placeholder ?? 'p. ej. insistir en el conflicto…'),
+    onChange: (e: { target: { value: string } }) => setTexto(e.target.value),
+    onBlur: () => { if (texto !== inicial.current) { inicial.current = texto; onGuardar(texto); } },
+  };
+
+  // Con varias líneas es un `textarea` y Enter escribe en vez de guardar: una
+  // nota de entrevista se toma en trozos, no en una frase seguida.
+  if (lineas) {
+    return (
+      <textarea
+        className={`${styles.nota} ${styles.notaCaja} ${className ?? ''}`}
+        rows={lineas}
+        {...comunes}
+      />
+    );
+  }
+
   return (
     <input
-      className={styles.nota}
+      className={`${styles.nota} ${className ?? ''}`}
       type="text"
-      value={texto}
-      disabled={deshabilitado}
-      placeholder={deshabilitado ? '' : 'p. ej. insistir en el conflicto…'}
-      onChange={(e) => setTexto(e.target.value)}
-      onBlur={() => { if (texto !== inicial.current) { inicial.current = texto; onGuardar(texto); } }}
+      {...comunes}
       onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
     />
   );

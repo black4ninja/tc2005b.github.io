@@ -7,7 +7,101 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Agenda de entrevistas: el alumno elige su hora y de ahí sale el orden de la
+  proyección.** El profesor puede repartir las preguntas semanas antes, pero
+  quién pasa primero no lo decide él: lo escriben los alumnos al apuntarse, y
+  eso solo se sabe el día de la entrevista.
+  - **El profesor** abre días (fecha y franja) desde la pestaña **Agenda** de
+    Preguntas. El día se parte solo en bloques del tiempo que rige en el grupo, y
+    ese tamaño queda **congelado en el día**: cambiar el tiempo del módulo
+    después movería las citas que los alumnos ya tienen apuntadas.
+  - El día se lee como una fila: **hora, alumno, competencia, en qué intento va y
+    qué pregunta le toca**. Los huecos vacíos seguidos se resumen en una línea
+    —«Sin entrevistas hasta las 10:00 · 8 libres»—, porque cuatro horas son 48
+    bloques y lo que hace falta saber es dónde hay un respiro. **Proyectar el
+    día** usa ese orden.
+  - Una cita **sin pregunta para su intento** sale avisada en la fila, no al
+    pulsar «Proyectar» con el alumno delante.
+  - **El alumno** ve sus huecos libres, elige competencia y reserva o cancela. Es
+    lo único del módulo que ve: ni el banco, ni qué pregunta le tocará, ni la de
+    nadie más —los huecos ajenos salen como «ocupado», sin nombre—.
+  - Las reglas de la hoja de cálculo dejan de ser un texto en la cabecera y las
+    aplica el servidor: **24 horas hábiles de antelación** (el fin de semana no
+    corre), **cancelar hasta 5 minutos antes** y **2 oportunidades por
+    competencia**. Los huecos que aún no cumplen la antelación se ven apagados y
+    con su motivo, en vez de desaparecer: así el rechazo no llega con el clic ya
+    dado.
+  - El profesor puede agendar por un alumno y cancelar sin margen —para el que no
+    se presentó—; el tope de intentos rige para los dos.
+
+- **La proyección se abre en su propia pestaña y se maneja a distancia.** Antes
+  era una capa sobre el panel: proyectar significaba tapar la pantalla desde la
+  que se trabaja, y con un solo aparato no había forma de enseñarle la pregunta
+  al alumno sin enseñarle también el roster.
+  - Ahora **Proyectar** abre `/admin/grupos/:id/proyeccion` en otra pestaña, que
+    puede vivir en otro aparato —el iPad, el cañón del aula—, y el panel se
+    convierte en el **mando**: dice qué hay en pantalla, con su reloj, y lleva
+    anterior/siguiente, iniciar, detener y reiniciar. La fila que se está
+    proyectando queda marcada en la tabla.
+  - Se sincronizan por el servidor y no por el navegador: un `BroadcastChannel`
+    habría bastado entre pestañas del mismo Chrome, pero no cruza dispositivos.
+  - **Tres estados.** *Por iniciar* y *detenida/finalizada* no enseñan la
+    pregunta —solo el nombre, la competencia y cuánto tiempo habrá—; *en curso*
+    la enseña con el reloj corriendo. Al llegar a cero la pregunta **se queda
+    cinco segundos más** antes de retirarse: que la pantalla cambie de golpe
+    mientras el alumno está cerrando la frase se vive como un portazo. Entra y
+    sale con un fundido.
+  - El reloj **no viaja**: el servidor guarda cuándo se pulsó iniciar y cada
+    pantalla calcula lo que queda corrigiendo el desfase de su propio reloj. Así
+    entrar a mitad enseña el número correcto y las dos pantallas coinciden.
+  - En la pantalla proyectada **no hay controles**, y bajo el nombre va la
+    **competencia** que se evalúa —fuera la matrícula y el «3 de 28», que eran
+    del profesor y no del alumno—.
+  - **La pantalla proyectada escucha en vez de preguntar.** Sondear una vez por
+    segundo costaba, en cada vuelta, validar la sesión —con su escritura—,
+    comprobar el acceso al grupo y leer la fila, para contestar «no ha cambiado»
+    el 99 % de las veces; y al pulsar «Iniciar» el alumno lo veía **hasta 2,6 s
+    después**. Ahora abre una conexión (SSE) y el servidor le empuja los
+    cambios: se ven **a los 0,6 s del clic**, que es lo que tarda el guardado, y
+    el aviso no añade nada. Debajo queda un sondeo cada 20 s como red de
+    seguridad.
+  - Dos cambios más de los que se benefician también el resto de pantallas: la
+    fila de proyección guarda una **foto** de lo que hay en pantalla —resolver
+    los punteros hasta la competencia y la colección eran cinco idas y vueltas a
+    la base, 310 ms—, y la sesión deja de **reescribirse en cada petición**
+    (ahora como mucho cada cinco minutos), lo que quita unos 80 ms a *toda*
+    llamada al API.
+  - **Las notas se escriben donde se toman.** La nota del intento estaba en una
+    columna que solo existía con una competencia elegida: con «todas» no había
+    dónde escribirla, y durante la entrevista había que salir a buscarla. Ahora
+    el mando lleva su campo —la nota del intento que está en pantalla— y cada
+    fila abre las de **todos** los intentos del alumno, con su competencia, su
+    número y el enunciado, que es lo que se relee antes de la segunda entrevista.
+    El icono de la fila queda marcado cuando hay algo escrito.
+  - **El mando contesta al instante.** Cada orden viaja al servidor y de ahí a
+    la otra pantalla, y ese viaje se nota: pulsar «Iniciar» y no ver nada
+    durante un segundo se lee como que el botón no funciona. Ahora el reloj
+    arranca con el clic, el botón dice *Iniciando…* / *Deteniendo…* y la barra
+    marca **Enviando…** hasta que el servidor confirma; mientras tanto no admite
+    otra orden. Si falla, vuelve a lo que hay guardado.
+
 ### Changed
+- **Repartir una pregunta se hace desde la propia pregunta, y de una sentada.**
+  La vista «Por pregunta» tenía un enlace *Asignar a un alumno…* que abría una
+  lista, se cerraba al primer clic y no decía nada más. Ahora cada tarjeta lleva
+  **el mismo chip que la vista por alumno**, con la cuenta de a cuántos les ha
+  tocado ya —`Asignada a 3 de 26`—, y al pulsarlo la lista se queda abierta:
+  cada alumno es un interruptor que se marca al asignársela y la quita si se
+  vuelve a pulsar.
+  - La cuenta es de **este grupo** y sale del mismo estado que la tabla, así que
+    se mueve con el clic y no cuando conteste el servidor. Lo de otros grupos
+    en curso pasa a un aviso aparte, que es lo que de verdad avisa de una
+    repetición que no se ve desde aquí.
+  - No hay tope: una pregunta se repite cuantas veces haga falta. Lo que sí
+    limita es el alumno —dos intentos por competencia—, y por eso cada fila
+    enseña su `1/2` y quien los agotó queda apagado en vez de escondido.
+
 - **El sidebar del módulo Ejercicios se vuelve el índice de la colección.** Al
   entrar al juez de programación la columna izquierda seguía siendo el menú
   global entero —Calendario, Hub, Alumnos, Equipos, Entrevistas…— mientras el

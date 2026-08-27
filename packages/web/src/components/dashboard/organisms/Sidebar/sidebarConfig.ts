@@ -20,7 +20,7 @@ export function getSidebarItems(
    * módulo apagado, y el enlace llevaba a una pantalla vacía.
    * Por defecto en true: quien no pase el dato (el admin) no pierde ítems.
    */
-  modulosGrupo: { malla?: boolean; competencias?: boolean } = {},
+  modulosGrupo: { malla?: boolean; competencias?: boolean; preguntas?: boolean } = {},
 ): SidebarItem[] {
   if (role === 'admin') {
     return [
@@ -84,8 +84,19 @@ export function getSidebarItems(
   }
   // Ídem para Diagramas, que se enciende por separado: un grupo puede tener uno
   // de los dos módulos y no el otro.
-  // Sin URL en su grupo, no hay agenda que enlazar (igual que "Wiki").
-  if (agendaHref) {
+  // La agenda propia del módulo "Preguntas" GANA a la URL externa del grupo:
+  // aplica de verdad las reglas que la hoja de cálculo solo podía escribir en su
+  // cabecera —24 horas hábiles, cancelar hasta 5 minutos antes, dos
+  // oportunidades por competencia—. La externa sigue para los grupos que no
+  // tienen el módulo encendido.
+  if (modulosGrupo.preguntas && selectedGrupoId) {
+    items.push({
+      label: 'Agendar Entrevistas',
+      icon: 'event_available',
+      path: `/alumno/grupos/${selectedGrupoId}/entrevistas`,
+      disabled: !perfilCompleto,
+    });
+  } else if (agendaHref) {
     items.push({
       label: 'Agendar Entrevistas',
       icon: 'event_available',

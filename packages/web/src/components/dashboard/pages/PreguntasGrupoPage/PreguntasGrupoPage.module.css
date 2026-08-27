@@ -280,6 +280,11 @@
 }
 
 .colCorta { width: 90px; white-space: nowrap; }
+/* Reparto de la tabla de la agenda con un día lleno. El nombre pide sitio
+   —«María Fernanda Nolasco Treviño» son cuatro palabras— y el enunciado se lee
+   mejor en dos líneas anchas que en cinco estrechas. */
+.colAlumno { width: 19%; }
+.colCompetencia { width: 23%; }
 .colAcciones { width: 160px; white-space: nowrap; }
 
 .vacio {
@@ -477,6 +482,13 @@
   color: var(--estado-exito-color);
 }
 
+/* El mismo chip, del lado de la pregunta: ahí es la acción principal de la
+   tarjeta y no una casilla más de una fila, así que respira un poco más. */
+.huecoAccion {
+  padding: 6px 12px;
+  font-size: 0.82rem;
+}
+
 .huecoNombre {
   max-width: 22ch;
   overflow: hidden;
@@ -597,4 +609,294 @@
    mismo. */
 @media (prefers-reduced-motion: reduce) {
   .guardando { animation: none; }
+}
+
+/* ── Mando de la proyección ────────────────────────────────────────────────
+   La pantalla proyectada vive en otra pestaña y casi siempre en otro aparato;
+   esto es el mando. Va por encima de las dos vistas porque describe la SESIÓN,
+   no la lista que se esté mirando. */
+.mando {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--dash-primary);
+  border-radius: var(--border-radius);
+  background: var(--dash-bg-subtle);
+}
+
+/* Con el panel estrecho —media pantalla, con la proyección al lado— el nombre
+   se partía en tres líneas para dejarle sitio a los botones. Con una base
+   mínima, la barra se parte en dos filas antes que estrujar el nombre. */
+.mandoQuien {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 14rem;
+}
+
+.mandoNombre {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mandoCompetencia {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.mandoEstado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+/* Cifras tabulares: si no, el número baila al pasar de 1:00 a 0:59 y el ojo lo
+   sigue en vez de mirar al alumno. */
+.mandoReloj {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+/* Solo gira el icono: si la animación va en el contenedor, el texto gira con
+   él. */
+.mandoEnviando {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--dash-primary);
+}
+
+.mandoEnviando :global(.material-icons) {
+  animation: girando 1.1s linear infinite;
+}
+
+.mandoFase {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.fase_corriendo .mandoReloj { color: var(--estado-exito-color); }
+.fase_gracia .mandoReloj,
+.fase_finalizada .mandoReloj { color: var(--dash-danger); }
+
+.mandoBotones {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* La fila que está en pantalla ahora mismo: el profesor mira la tabla, no el
+   mando, y tiene que poder situarse sin leer el nombre. */
+/* La fila que está en pantalla ahora mismo.
+ *
+ * El fondo va en TODAS las celdas y la marca SOLO en la primera. Estaba en cada
+ * celda, y con `border-collapse` la sombra interior se pintaba en el borde
+ * izquierdo de cada una: en vez de una fila señalada se veían cuatro columnas
+ * subrayadas, como si cada dato estuviera seleccionado por su cuenta. */
+.filaProyectada td { background: var(--dash-bg-subtle); }
+
+.filaProyectada td:first-child {
+  box-shadow: inset 3px 0 0 var(--dash-primary);
+}
+
+
+/* La nota del intento que está en pantalla: fila propia dentro del mando, que es
+   un campo y no un botón más. */
+/* La nota, con su fila y su caja. Antes era una línea sin borde sobre el fondo
+   del mando y se leía como un texto de ayuda, no como algo donde escribir. */
+.mandoNota {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
+
+.notaAncha {
+  min-width: 0;
+  flex: 1;
+}
+
+/* Se ve que es un campo ANTES de pulsarlo: borde y fondo propios, y alto de
+   varias líneas, que es como se toma una nota durante una entrevista —a
+   trozos—. */
+.notaCaja {
+  border-color: var(--border-color);
+  background: var(--bg-page);
+  line-height: 1.45;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.notaCaja::placeholder { color: var(--text-muted); }
+
+/* ── Notas de un alumno ────────────────────────────────────────────────────
+   Todos sus intentos juntos: es lo que se relee antes de la segunda
+   entrevista. */
+.notasLista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.notaBloque {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+.notaCabecera {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* El enunciado recortado sitúa la nota; el entero está en la vista por pregunta
+   y aquí solo estorbaría. */
+.notaEnunciado {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.notaBloque .nota { border-color: var(--border-color); }
+
+/* ── Agenda de entrevistas ─────────────────────────────────────────────── */
+.dias {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
+}
+
+.diaCabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-sm);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.diaRango {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.diaNota { color: var(--text-muted); }
+
+.diaAcciones {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* Con forma de botón: como enlaces subrayados se leían como navegación, y una
+   de las dos borra el día. */
+.botonDia {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.botonDia:hover {
+  background: var(--dash-bg-subtle);
+  border-color: var(--sidebar-active-color);
+  color: var(--text-primary);
+}
+
+/* El destructivo solo se tiñe al pasar por encima: en reposo compite con el
+   otro, y en una fila de dos el que borra no es el que más llama. */
+.botonDiaPeligro:hover {
+  border-color: var(--estado-error-color);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+}
+
+/* Los huecos sin cita se resumen en una fila y se apagan: están para que el
+   profesor sepa dónde tiene un respiro, no para leerlos uno a uno. */
+.filaVacia td {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  background: var(--bg-page);
+}
+
+/* Una cita sin pregunta para su intento se ve ANTES del día, no al pulsar
+   «Proyectar» con el alumno delante. */
+.sinPreguntaAviso {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  font-size: 0.78rem;
+}
+
+.formDia {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-sm);
+}
+
+.formDia label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.formDia input {
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.formAncho { flex: 1 1 100%; }
+
+.formAcciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
 }

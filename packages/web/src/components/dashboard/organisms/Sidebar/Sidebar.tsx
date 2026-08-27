@@ -94,7 +94,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const [agendaGrupoHref, setAgendaGrupoHref] = useState<string | null>(null);
   // Secciones que el grupo del alumno comparte. `undefined` hasta que responde
   // el servidor: se asume que sí, para no parpadear quitando ítems.
-  const [modulosGrupo, setModulosGrupo] = useState<{ malla?: boolean; competencias?: boolean }>({});
+  const [modulosGrupo, setModulosGrupo] = useState<{ malla?: boolean; competencias?: boolean; preguntas?: boolean }>({});
   // Hasta que el menú del alumno esté resuelto se pinta un esqueleto: es
   // preferible a enseñar ítems que van a cambiar en cuanto llegue la respuesta.
   const [menuCargado, setMenuCargado] = useState(false);

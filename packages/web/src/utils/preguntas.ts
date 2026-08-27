@@ -1,5 +1,7 @@
 /** Utilidades puras del módulo "Preguntas". */
-import type { AlumnoConPregunta, Pregunta, PreguntaAsignacion } from '../types/preguntas';
+import type {
+  AlumnoConPregunta, FaseProyeccion, Pregunta, PreguntaAsignacion, Proyeccion,
+} from '../types/preguntas';
 
 /** `95` → `1:35`. El temporizador se lee en minutos, no en segundos sueltos. */
 export function formatearDuracion(segundos: number): string {
@@ -130,4 +132,35 @@ export function ajustarUso(preguntas: Pregunta[], suman: string[], restan: strin
       },
     };
   });
+}
+
+/**
+ * En qué punto está la proyección y cuánto queda, según el reloj.
+ *
+ * El servidor guarda CUÁNDO se pulsó iniciar y nada más: aquí se deduce el
+ * resto. Que sea una función pura es lo que permite que el panel y la pantalla
+ * proyectada enseñen lo mismo sin hablarse, y que entrar a mitad no descuadre
+ * nada.
+ *
+ * `ahora` se pasa desde fuera —y corregido con el desfase del servidor— porque
+ * las dos pantallas son aparatos distintos y sus relojes no coinciden.
+ */
+export function faseProyeccion(
+  p: Pick<Proyeccion, 'estado' | 'iniciadoEn' | 'asignacionId' | 'duracionSegundos' | 'graciaSegundos'>,
+  ahora: number,
+): { fase: FaseProyeccion; restante: number; visible: boolean } {
+  const total = p.duracionSegundos;
+  if (!p.asignacionId) return { fase: 'sin-pregunta', restante: total, visible: false };
+  if (p.estado === 'detenido') return { fase: 'detenida', restante: 0, visible: false };
+  if (p.estado !== 'corriendo' || !p.iniciadoEn) {
+    return { fase: 'espera', restante: total, visible: false };
+  }
+
+  const transcurrido = (ahora - new Date(p.iniciadoEn).getTime()) / 1000;
+  const restante = Math.max(0, Math.ceil(total - transcurrido));
+  // La gracia: el reloj ya está a cero pero la pregunta sigue puesta, para que
+  // la pantalla no cambie justo mientras el alumno está cerrando la frase.
+  if (transcurrido < total) return { fase: 'corriendo', restante, visible: true };
+  if (transcurrido < total + p.graciaSegundos) return { fase: 'gracia', restante: 0, visible: true };
+  return { fase: 'finalizada', restante: 0, visible: false };
 }
