@@ -1,0 +1,270 @@
+.page {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.cargando { padding: 24px; color: var(--text-secondary); }
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.subtitulo {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  max-width: 80ch;
+}
+
+.error {
+  padding: 10px 14px;
+  border: 1px solid var(--estado-error-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+  cursor: pointer;
+}
+
+.primario {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--dash-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.primario:hover { opacity: 0.9; }
+.primario .material-icons { font-size: 18px; }
+
+/* La barra de la etapa: arriba y ancha porque es lo único que se toca durante
+   la clase. */
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  padding: var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+.barraIzquierda {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.barraDerecha {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.barraTitulo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.etapas {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.etapa {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.etapa:hover:not(:disabled) { border-color: var(--text-muted); }
+.etapa:disabled { opacity: 0.5; cursor: default; }
+
+/* La activa se pinta con SU color de fondo, no con el azul del panel: es el
+   mismo color que el alumno tiene en la banda de su tablero. */
+.etapaActiva {
+  color: #fff;
+  font-weight: 600;
+}
+
+.punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.aplicaA { font-size: 0.82rem; color: var(--text-muted); }
+
+.enlaceBtn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--sidebar-active-color);
+  font-family: inherit;
+  font-size: 0.82rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.tabla th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tabla td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.tabla tr:last-child td { border-bottom: none; }
+
+.colCorta { width: 90px; }
+.colEtapa { width: 150px; }
+.colAcciones { width: 130px; }
+
+.nombreBtn {
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nombreBtn:hover { color: var(--sidebar-active-color); }
+
+.rango {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.etapaTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.vacioCelda { color: var(--text-muted); }
+
+.tagAbierta,
+.tagCerrada {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tagAbierta {
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+  border: 1px solid var(--estado-exito-border);
+}
+
+.tagCerrada {
+  background: var(--dash-bg-subtle);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.acciones { white-space: nowrap; text-align: right; }
+
+.iconBtn {
+  display: inline-flex;
+  padding: 5px;
+  margin-left: 2px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.iconBtn:hover { background: var(--dash-bg-subtle); color: var(--text-primary); }
+.iconBtn .material-icons { font-size: 18px; }
+
+.apagado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-2xl);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.apagado .material-icons { font-size: 40px; color: var(--text-muted); }
+.apagado p { margin: 0; }
+.hint { font-size: 0.85rem; color: var(--text-muted); }

@@ -1,0 +1,210 @@
+.tablero {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.columna {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--dash-bg-subtle);
+  overflow-y: auto;
+  /* Sin esto una palabra larga sacaba una barra de desplazamiento horizontal
+     dentro de la columna, que proyectada se lee como un defecto. */
+  overflow-x: hidden;
+}
+
+/* Mientras se arrastra encima: el destino se señala en el propio hueco, no con
+   un cursor, que en una rejilla de cinco columnas no dice a cuál va a caer. */
+.columnaDestino {
+  outline: 2px dashed var(--sidebar-active-color);
+  outline-offset: -2px;
+}
+
+.columnaCabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.columnaTitulo {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* `gap` y no un espacio en el texto: dentro de un contenedor flex el espacio
+   inicial de un hijo se pierde, y el contador salía como «3· 11 pts». */
+.contador {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--border-color);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex: none;
+}
+
+.puntosCol { font-weight: 500; }
+
+.alta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border: 1px dashed var(--scrum-postit-linea);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.alta:hover {
+  background: var(--scrum-postit-bg);
+  color: var(--text-primary);
+}
+
+.alta .material-icons { font-size: 16px; }
+
+/* ── El recuadro del sprint backlog ────────────────────────────────────
+   Punteado y con la leyenda montada sobre el borde, como el `legend` de un
+   fieldset: es lo que hace que se lea como UN grupo y no como cuatro columnas
+   sueltas al lado del backlog. */
+.sprint {
+  position: relative;
+  flex: 4 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 2px dashed var(--scrum-sprint-borde);
+  border-radius: 12px;
+  background: var(--bg-card);
+}
+
+.leyenda {
+  position: absolute;
+  top: -9px;
+  left: 16px;
+  padding: 0 8px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  white-space: nowrap;
+}
+
+.objetivo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-page);
+}
+
+.objetivoEtiqueta {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.objetivoTexto,
+.objetivoVacio {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.objetivoTexto { color: var(--text-primary); }
+.objetivoVacio { color: var(--text-muted); font-style: italic; }
+
+.objetivoBtn {
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.objetivoBtn:hover { background: var(--dash-bg-subtle); color: var(--text-primary); }
+.objetivoBtn .material-icons { font-size: 16px; }
+
+.columnas {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* ── Escalas de la proyección ───────────────────────────────────────── */
+.md { gap: 11px; }
+.md .columna { gap: 5px; padding: 8px; border-radius: 8px; }
+/* Con cuatro columnas dentro de un panel de la rejilla el rótulo va justo:
+   sin bajar el interletraje, «PLANNED» sale cortado con puntos suspensivos. */
+.md .columnaTitulo { font-size: 8.5px; letter-spacing: 0.02em; }
+.md .contador { min-height: 15px; padding: 0 5px; font-size: 8px; }
+.md .sprint { gap: 7px; padding: 10px; border-radius: 10px; }
+.md .leyenda { top: -7px; font-size: 8px; }
+.md .objetivo { gap: 7px; padding: 5px 8px; border-radius: 6px; }
+.md .objetivoEtiqueta { font-size: 8px; }
+.md .objetivoTexto, .md .objetivoVacio { font-size: 10px; }
+.md .columnas { gap: 7px; }
+
+.sm { gap: 9px; }
+.sm .columna { gap: 4px; padding: 6px; border-radius: 6px; }
+.sm .columnaTitulo { font-size: 7px; letter-spacing: 0; }
+.sm .contador { min-height: 13px; padding: 0 5px; font-size: 7px; }
+.sm .sprint { gap: 5px; padding: 8px; border-radius: 8px; }
+.sm .leyenda { top: -6px; font-size: 6.5px; }
+.sm .objetivo { gap: 5px; padding: 4px 7px; border-radius: 5px; }
+.sm .objetivoEtiqueta { font-size: 7px; }
+.sm .objetivoTexto, .sm .objetivoVacio { font-size: 8.5px; }
+.sm .columnas { gap: 5px; }
+
+/* En pantallas estrechas el tablero se desplaza en horizontal en vez de
+   apretar cinco columnas hasta que no cabe una tarjeta. */
+@media (max-width: 1100px) {
+  .tablero {
+    overflow-x: auto;
+    padding-bottom: var(--space-sm);
+  }
+  .columna { min-width: 210px; }
+  .sprint { min-width: 720px; }
+}

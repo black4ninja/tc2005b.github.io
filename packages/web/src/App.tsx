@@ -27,6 +27,10 @@ import PreguntasBancoPage from './components/dashboard/pages/PreguntasBancoPage/
 import PreguntasGrupoPage from './components/dashboard/pages/PreguntasGrupoPage/PreguntasGrupoPage';
 import ProyeccionPage from './components/dashboard/pages/ProyeccionPage/ProyeccionPage';
 import AgendaEntrevistasAlumnoPage from './components/dashboard/pages/AgendaEntrevistasAlumnoPage/AgendaEntrevistasAlumnoPage';
+import ScrumGrupoPage from './components/dashboard/pages/ScrumGrupoPage/ScrumGrupoPage';
+import DinamicaScrumPage from './components/dashboard/pages/DinamicaScrumPage/DinamicaScrumPage';
+import ScrumTableroPage from './components/dashboard/pages/ScrumTableroPage/ScrumTableroPage';
+import ProyeccionScrumPage from './components/dashboard/pages/ProyeccionScrumPage/ProyeccionScrumPage';
 import EvaluacionEntrevistaPage from './components/dashboard/pages/EvaluacionEntrevistaPage/EvaluacionEntrevistaPage';
 import AlumnoCalendarioPage from './components/dashboard/pages/AlumnoCalendarioPage/AlumnoCalendarioPage';
 import HubPage from './components/dashboard/pages/HubPage/HubPage';
@@ -119,6 +123,12 @@ export default function App() {
           propósito. Se abre en otra pestaña —el iPad del alumno, el cañón del
           aula— y ahí sobran el menú y la cabecera; se guarda sola. */}
       <Route path="admin/grupos/:id/proyeccion" element={<ProyeccionPage />} />
+      {/* La misma idea para Scrum: los tableros de varios equipos a la vez. Qué
+          equipos se ven va en la query, así caben dos proyecciones distintas. */}
+      <Route
+        path="admin/grupos/:id/scrum/:dinamicaId/proyeccion"
+        element={<ProyeccionScrumPage />}
+      />
 
       {/* Auth */}
       <Route path="login" element={<LoginPage />} />
@@ -219,6 +229,10 @@ export default function App() {
             asignación, del grupo (profesor de ese grupo). */}
         <Route path="admin/contenidos/:id/preguntas" element={<PreguntasBancoPage />} />
         <Route path="admin/grupos/:id/preguntas" element={<PreguntasGrupoPage />} />
+        {/* Módulo "Actividad de Scrum": el listado de dinámicas y el detalle de
+            una, con sus equipos y sus tableros. */}
+        <Route path="admin/grupos/:id/scrum" element={<ScrumGrupoPage />} />
+        <Route path="admin/grupos/:id/scrum/:dinamicaId" element={<DinamicaScrumPage />} />
         <Route path="admin/competencias" element={<CompetenciasPage />} />
         <Route path="admin/actividades" element={<ActividadesPage />} />
         <Route path="admin/paginas" element={<PaginasPage />} />
@@ -305,6 +319,9 @@ export default function App() {
         {/* Lo ÚNICO del módulo "Preguntas" que el alumno ve: su agenda. Ni el
             banco, ni qué pregunta le tocará, ni la de nadie más. */}
         <Route path="alumno/grupos/:grupoId/entrevistas" element={<AgendaEntrevistasAlumnoPage />} />
+        {/* El tablero del equipo del alumno. Al revés que "Preguntas", este
+            módulo SÍ le añade una pantalla propia. */}
+        <Route path="alumno/grupos/:grupoId/scrum" element={<ScrumTableroPage />} />
         {/* Taller libre: fuera del árbol de :slug porque no pertenece a ninguna
             colección. Colgarlo de una haría creer que lo guardado es del curso. */}
         <Route

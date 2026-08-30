@@ -8,6 +8,53 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Módulo «Actividad de Scrum»: el profesor arma equipos y cada equipo lleva su
+  tablero kanban con historias de usuario.** Es un módulo de APRENDIZAJE, no un
+  gestor de proyectos: todo está recortado a propósito para que lo que se
+  practique sea el ciclo, no la herramienta. Se enciende por colección, como
+  Ejercicios y Diagramas.
+  - **El profesor** crea *dinámicas* (un sprint, un taller) y dentro de cada una
+    los equipos. El reparto está pensado para el clic repetido de los primeros
+    diez minutos de clase: los alumnos sin equipo a la izquierda, se marcan
+    varios y se mandan de golpe, se arrastra uno a su tarjeta, o se reparte todo
+    con **Repartir automáticamente** —en rueda, para que 13 personas en equipos
+    de 5 salgan 5-4-4 y no 5-5-3—.
+  - Los equipos son de la DINÁMICA y no del grupo: se rehacen en cada sprint,
+    que es parte del ejercicio, y no tocan los equipos del proyecto semestral.
+    Un alumno pertenece a un solo equipo por dinámica; asignarlo lo saca del
+    anterior en vez de fallar.
+  - **La etapa del Scrum** (planning, grooming, daily, review, retrospectiva) es
+    un catálogo POR GRUPO con color propio, editable: cada materia corre su
+    versión del ciclo. El profesor la cambia desde su panel y a todos los
+    tableros abiertos les cambia la banda de color al instante.
+  - **El alumno** ve el tablero de su equipo con cinco columnas. Las cuatro del
+    sprint —planned, doing, review, done— van dentro de un recuadro punteado
+    rotulado **sprint backlog**, con el **objetivo del sprint** dentro; el
+    backlog del producto queda fuera. La forma es la enseñanza: lo que el equipo
+    se comprometió a hacer se ve separado de lo que solo está anotado.
+  - **Las historias son post-its** con tres campos separados —¿por qué?, ¿qué?,
+    ¿cómo?—, estimación en puntos (Fibonacci recortado, con «sin estimar») y
+    prioridad **MoSCoW**. Separar los campos es lo que impide omitir el porqué,
+    que es la parte que se cae cuando el formato es texto libre.
+  - **Una sola persona responsable por historia**, o ninguna. No es una
+    advertencia: el selector es excluyente y el servidor exige que sea alguien
+    del equipo. Dejar marcar a varios es la manera silenciosa de que al final no
+    la lleve nadie. «Sin asignar» se ve, no se esconde: es la señal de que falta
+    repartir.
+  - **Las historias nacen en el backlog** y solo ahí. Meter trabajo directamente
+    en «doing» es justo el hábito contra el que existe el sprint backlog.
+  - **Proyección**: `Proyectar` abre en otra pestaña los tableros de los equipos
+    elegidos. A partir de cuatro deja de repartirse en columnas —seguir
+    estirando la fila deja tarjetas que no se leen desde el fondo del aula— y
+    pasa a rejilla: 4 en 2 × 2, 5 y 6 en 3 × 2, de 7 a 9 en 3 × 3, bajando
+    también el detalle de cada post-it. Nueve equipos es el tope por esa razón,
+    no por una limitación técnica.
+  - Las pantallas **escuchan en vez de preguntar** (SSE): quien arrastra una
+    tarjeta la mueve también en la de sus compañeros y en el proyector. El
+    estado se construye una sola vez por cambio y se reparte a todos los que
+    escuchan, con un refresco lento de red de seguridad por si el wifi del aula
+    corta la conexión sin avisar.
+
 - **Agenda de entrevistas: el alumno elige su hora y de ahí sale el orden de la
   proyección.** El profesor puede repartir las preguntas semanas antes, pero
   quién pasa primero no lo decide él: lo escriben los alumnos al apuntarse, y

@@ -56,3 +56,9 @@ export type { EstadoProyeccion } from './ProyeccionPregunta.js';
 // alumnos reservan. De ahí sale el ORDEN en que se proyecta.
 export { DiaEntrevistas } from './DiaEntrevistas.js';
 export { CitaEntrevista } from './CitaEntrevista.js';
+// Módulo "Actividad de Scrum": el profesor arma dinámicas con equipos y el
+// alumno lleva el tablero kanban de su equipo con historias de usuario.
+export { EtapaScrum } from './EtapaScrum.js';
+export { DinamicaScrum } from './DinamicaScrum.js';
+export { EquipoScrum } from './EquipoScrum.js';
+export { HistoriaUsuario } from './HistoriaUsuario.js';

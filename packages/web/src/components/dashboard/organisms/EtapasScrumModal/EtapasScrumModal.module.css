@@ -1,0 +1,181 @@
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+}
+
+.intro {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 62ch;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.fila:last-child { border-bottom: none; }
+
+.textos {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nombre,
+.pista,
+.entrada {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.nombre { font-size: 0.9rem; font-weight: 500; }
+.pista { font-size: 0.78rem; color: var(--text-secondary); }
+
+.nombre:hover, .pista:hover,
+.nombre:focus, .pista:focus {
+  border-color: var(--border-color);
+  background: var(--bg-page);
+  outline: none;
+}
+
+/* La muestra de color ES el selector: un `input type=color` invisible encima
+   del cuadrado. Así el cuadrado se ve del color que representa y no hay que
+   explicar dónde se cambia. */
+.muestra {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 8px;
+  flex: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.muestraActiva {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+.muestraPropia {
+  composes: muestra;
+  border: 1px dashed var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-muted);
+}
+
+.muestraPropia .material-icons { font-size: 14px; }
+
+.colorOculto {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+
+.iconBtn {
+  display: inline-flex;
+  padding: 5px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.iconBtn:hover { background: var(--dash-bg-subtle); color: var(--estado-error-color); }
+.iconBtn .material-icons { font-size: 18px; }
+
+.vacio {
+  padding: var(--space-md) 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.alta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--border-radius);
+  background: var(--bg-page);
+}
+
+.etiqueta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.altaFila {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.altaFila .entrada {
+  flex: 1;
+  min-width: 160px;
+  border-color: var(--border-color);
+  background: var(--bg-card);
+  font-size: 0.87rem;
+  padding: 8px 12px;
+  border-radius: var(--border-radius);
+}
+
+.agregar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--dash-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.87rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.agregar:disabled { opacity: 0.5; cursor: default; }
+.agregar .material-icons { font-size: 18px; }
+
+.paleta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}

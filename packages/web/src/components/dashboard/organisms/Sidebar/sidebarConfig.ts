@@ -20,7 +20,7 @@ export function getSidebarItems(
    * módulo apagado, y el enlace llevaba a una pantalla vacía.
    * Por defecto en true: quien no pase el dato (el admin) no pierde ítems.
    */
-  modulosGrupo: { malla?: boolean; competencias?: boolean; preguntas?: boolean } = {},
+  modulosGrupo: { malla?: boolean; competencias?: boolean; preguntas?: boolean; scrum?: boolean } = {},
 ): SidebarItem[] {
   if (role === 'admin') {
     return [
@@ -105,6 +105,17 @@ export function getSidebarItems(
       disabled: !perfilCompleto,
     });
   }
+  // El tablero del equipo. A diferencia de "Preguntas", este módulo sí le da al
+  // alumno una pantalla propia: sin equipo asignado la pantalla lo explica, así
+  // que el ítem aparece en cuanto el módulo está encendido.
+  if (modulosGrupo.scrum && selectedGrupoId) {
+    items.push({
+      label: 'Actividad de Scrum',
+      icon: 'view_kanban',
+      path: `/alumno/grupos/${selectedGrupoId}/scrum`,
+      disabled: !perfilCompleto,
+    });
+  }
   return items;
 }
 
@@ -122,6 +133,8 @@ export function getGrupoDetailItems(
   ejerciciosHref: string | null = null,
   /** Ruta del roster de Preguntas; null si ninguna materia lo tiene encendido. */
   preguntasHref: string | null = null,
+  /** Ruta de Actividad de Scrum; null si ninguna materia lo tiene encendido. */
+  scrumHref: string | null = null,
 ): SidebarItem[] {
   const items: SidebarItem[] = [
     { label: 'Calendario', icon: 'calendar_month', path: `/admin/grupos/${grupoId}/calendario` },
@@ -139,6 +152,12 @@ export function getGrupoDetailItems(
   // se plantean en ellas. Solo si alguna materia del grupo lo tiene encendido.
   if (preguntasHref) {
     items.push({ label: 'Preguntas', icon: 'quiz', path: preguntasHref });
+  }
+  // Junto a Equipos sería lo natural, pero va aquí: los equipos de Scrum se
+  // rehacen en cada dinámica y no son los del proyecto semestral. Ponerlos
+  // seguidos invitaba a confundirlos.
+  if (scrumHref) {
+    items.push({ label: 'Actividad de Scrum', icon: 'view_kanban', path: scrumHref });
   }
   // Probar los ejercicios del grupo como los ve el alumno. Aparece cuando el
   // grupo tiene el módulo 'ejercicios' encendido en alguna colección — tanto

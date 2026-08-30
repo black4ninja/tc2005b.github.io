@@ -371,7 +371,7 @@ export async function getMyMenu(req: Request, res: Response): Promise<void> {
     // Los dos módulos salen de UNA lectura del grupo: preguntarlos por separado
     // traía el mismo grupo con sus colecciones dos veces.
     const [modulos, colecciones, ejercicios, diagramas] = await Promise.all([
-      modulosActivosEnGrupo(grupoPointer.id, ['competencias', 'actividades', 'preguntas']),
+      modulosActivosEnGrupo(grupoPointer.id, ['competencias', 'actividades', 'preguntas', 'scrum']),
       getColeccionesPermitidas(user),
       coleccionesConEjerciciosPublicados(user),
       coleccionesConDiagramasPublicados(user),
@@ -381,13 +381,15 @@ export async function getMyMenu(req: Request, res: Response): Promise<void> {
     // El alumno no ve nada del módulo "Preguntas" salvo UNA cosa: la agenda,
     // donde elige su hora. De ahí sale el orden de las entrevistas.
     const preguntas = modulos.preguntas === true;
+    // Este SÍ le añade una pantalla al alumno: el tablero kanban de su equipo.
+    const scrum = modulos.scrum === true;
 
     res.json({
       status: 'ok',
       menu: {
         // `malla` sale del mismo interruptor que las actividades: es de donde se
         // estampa. Se nombra aparte para que el consumidor no tenga que saberlo.
-        modulos: { competencias, actividades, malla: actividades, preguntas },
+        modulos: { competencias, actividades, malla: actividades, preguntas, scrum },
         perfilCompleto: link.getPerfilCompleto(),
         // Solo el slug de la primera: es lo único que el menú usa para enlazar.
         coleccionSlug: colecciones[0]?.slug ?? null,

@@ -1,0 +1,124 @@
+.page {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-height: calc(100vh - var(--dashboard-header-height));
+}
+
+.cargando { padding: 24px; color: var(--text-secondary); }
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.subtitulo {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.miembros {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--dash-bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  flex: none;
+}
+
+/* El color lo elige el profesor en el catálogo de etapas, así que viene por
+   `style`. El texto va en blanco: la paleta que se ofrece son todos tonos
+   oscuros y es lo que mantiene el contraste. */
+.banda {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding: 14px 20px;
+  border-radius: var(--border-radius);
+  color: #fff;
+}
+
+.bandaTextos {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.bandaEtiqueta {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.85;
+}
+
+.bandaNombre { font-size: 1.35rem; font-weight: 700; }
+.bandaPista { font-size: 0.82rem; opacity: 0.9; }
+.bandaNota { font-size: 0.75rem; opacity: 0.85; white-space: nowrap; }
+
+.bandaVacia {
+  padding: 12px 20px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.cerrada {
+  padding: 10px 14px;
+  border: 1px solid var(--estado-aviso-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  font-size: 0.85rem;
+}
+
+.error {
+  padding: 10px 14px;
+  border: 1px solid var(--estado-error-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+}
+
+.apagado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-2xl);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.apagado .material-icons { font-size: 44px; color: var(--text-muted); }
+.apagadoTitulo { margin: 0; font-size: 1rem; font-weight: 500; }
+.hint { font-size: 0.85rem; color: var(--text-muted); max-width: 48ch; }

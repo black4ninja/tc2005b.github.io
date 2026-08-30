@@ -33,6 +33,9 @@ export const MODULOS_CONTENIDO: ModuloContenido[] = [
   // Preguntas de entrevista. Solo la ve el profesor: encenderla NO le añade
   // nada al alumno, al revés que el resto de módulos de esta lista.
   { key: 'preguntas', label: 'Preguntas', icon: 'quiz', optIn: true },
+  // Actividad de Scrum. Al revés que Preguntas, encenderlo SÍ le añade una
+  // pantalla al alumno: el tablero de su equipo.
+  { key: 'scrum', label: 'Actividad de Scrum', icon: 'view_kanban', optIn: true },
 ];
 
 const OPT_IN = new Set(MODULOS_CONTENIDO.filter((m) => m.optIn).map((m) => m.key));
