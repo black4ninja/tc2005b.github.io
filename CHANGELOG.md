@@ -49,6 +49,15 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     pasa a rejilla: 4 en 2 × 2, 5 y 6 en 3 × 2, de 7 a 9 en 3 × 3, bajando
     también el detalle de cada post-it. Nueve equipos es el tope por esa razón,
     no por una limitación técnica.
+  - **Las tarjetas se arrastran con el dedo, con el ratón y con el lápiz**, por
+    el mismo camino de código (eventos de puntero). El arrastre nativo de HTML5
+    no existe en táctil: en una tableta el tablero no se podía mover. Con el
+    dedo hay que **mantener pulsado** antes de arrastrar, que es lo que deja
+    convivir el arrastre con tocar la tarjeta para abrirla y con deslizar para
+    desplazar la columna; con ratón arranca al mover. El contenedor se desplaza
+    solo al acercarse a un borde, porque mientras se arrastra el
+    desplazamiento con el dedo está bloqueado. Quien no quiera arrastrar sigue
+    teniendo el desplegable de columna dentro de la historia.
   - Las pantallas **escuchan en vez de preguntar** (SSE): quien arrastra una
     tarjeta la mueve también en la de sus compañeros y en el proyector. El
     estado se construye una sola vez por cambio y se reparte a todos los que

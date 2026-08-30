@@ -22,10 +22,26 @@
 }
 
 /* Mientras se arrastra encima: el destino se señala en el propio hueco, no con
-   un cursor, que en una rejilla de cinco columnas no dice a cuál va a caer. */
+   un cursor, que en una rejilla de cinco columnas no dice a cuál va a caer.
+   Con el dedo esto es lo ÚNICO que lo dice: no hay puntero que mirar. */
 .columnaDestino {
   outline: 2px dashed var(--sidebar-active-color);
   outline-offset: -2px;
+  background: var(--sidebar-active-bg);
+}
+
+/* Mientras hay un arrastre vivo nada más responde al puntero: sin esto, pasar
+   por encima de otra tarjeta la resaltaba como si fuera pulsable. */
+.enArrastre .columna * {
+  pointer-events: none;
+}
+
+.capaFantasma {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 4000;
+  pointer-events: none;
 }
 
 .columnaCabecera {

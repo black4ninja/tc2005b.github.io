@@ -17,6 +17,36 @@
   text-align: left;
 }
 
+/* `touch-action: manipulation` quita el retardo del doble toque sin renunciar
+   al desplazamiento con el dedo: quién se queda con el gesto lo decide
+   `useArrastre` según cuánto se mantenga pulsado, no el navegador.
+   `user-select` evita que mantener pulsado seleccione el texto de la tarjeta. */
+.arrastrable {
+  cursor: grab;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* El original se queda en su sitio, apagado: sin él la columna se recompone al
+   levantar la tarjeta y las de abajo dan un salto. */
+.atenuada {
+  opacity: 0.35;
+}
+
+/* La copia que sigue al dedo. Va en `position: fixed` para escaparse del
+   recorte de la columna, y sin eventos para que `elementFromPoint` vea la
+   columna que hay debajo y no a sí misma. */
+.fantasma {
+  pointer-events: none;
+  width: 232px;
+  cursor: grabbing;
+  box-shadow: var(--shadow-lg);
+  transform: rotate(-2deg);
+  opacity: 0.95;
+}
+
 .pulsable:hover {
   border-color: var(--scrum-postit-linea);
 }

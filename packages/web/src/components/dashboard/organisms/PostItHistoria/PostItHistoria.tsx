@@ -1,4 +1,4 @@
-import type { DragEvent } from 'react';
+import type { PointerEvent } from 'react';
 import { iniciales, type Escala, type Historia } from '../../../../utils/scrum';
 import styles from './PostItHistoria.module.css';
 
@@ -8,7 +8,12 @@ interface Props {
   escala?: Escala;
   /** Sin esto la tarjeta es solo lectura: es lo que ve la proyección. */
   onAbrir?: (historia: Historia) => void;
-  onDragStart?: (e: DragEvent<HTMLElement>, historia: Historia) => void;
+  /** Arranca el arrastre (dedo, ratón o lápiz). Ver `useArrastre`. */
+  onPointerDown?: (e: PointerEvent<HTMLElement>) => void;
+  /** La está arrastrando: se apaga y el fantasma es el que sigue al dedo. */
+  atenuada?: boolean;
+  /** Copia que va pegada al puntero mientras se arrastra. */
+  fantasma?: boolean;
 }
 
 /**
@@ -23,7 +28,9 @@ interface Props {
  * tableros. El color de la prioridad hace entonces el trabajo que el texto ya no
  * puede hacer.
  */
-export default function PostItHistoria({ historia, escala = 'full', onAbrir, onDragStart }: Props) {
+export default function PostItHistoria({
+  historia, escala = 'full', onAbrir, onPointerDown, atenuada, fantasma,
+}: Props) {
   const completo = escala === 'full';
   const quien = historia.responsable;
 
@@ -39,9 +46,15 @@ export default function PostItHistoria({ historia, escala = 'full', onAbrir, onD
 
   return (
     <article
-      className={`${styles.postit} ${styles[escala]} ${onAbrir ? styles.pulsable : ''}`}
-      draggable={!!onDragStart}
-      onDragStart={onDragStart ? (e) => onDragStart(e, historia) : undefined}
+      className={[
+        styles.postit,
+        styles[escala],
+        onAbrir ? styles.pulsable : '',
+        onPointerDown ? styles.arrastrable : '',
+        atenuada ? styles.atenuada : '',
+        fantasma ? styles.fantasma : '',
+      ].filter(Boolean).join(' ')}
+      onPointerDown={onPointerDown}
       onClick={onAbrir ? () => onAbrir(historia) : undefined}
       role={onAbrir ? 'button' : undefined}
       tabIndex={onAbrir ? 0 : undefined}

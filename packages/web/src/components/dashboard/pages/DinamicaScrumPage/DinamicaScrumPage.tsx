@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState, type DragEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import TableroScrum from '../../organisms/TableroScrum/TableroScrum';
+import { useArrastre } from '../../../../hooks/useArrastre';
 import { avisar, confirmar, pedirTexto } from '../../../../utils/dialogos';
 import {
   iniciales, rangoFechas, rejillaProyeccion,
@@ -115,11 +116,31 @@ export default function DinamicaScrumPage() {
     });
   }
 
-  async function asignar(equipoId: string, alumnoIds: string[]) {
-    if (alumnoIds.length === 0) return;
-    const ok = await mandar(`${base}/equipos/${equipoId}/miembros`, 'POST', { alumnoIds });
-    if (ok) setMarcados(new Set());
-  }
+  const asignar = useCallback(
+    async (equipoId: string, alumnoIds: string[]) => {
+      if (alumnoIds.length === 0) return;
+      const ok = await mandar(`${base}/equipos/${equipoId}/miembros`, 'POST', { alumnoIds });
+      if (ok) setMarcados(new Set());
+    },
+    [base, mandar],
+  );
+
+  /**
+   * Arrastrar un alumno a su equipo. Con el dedo hay que mantener pulsado, que
+   * es lo que deja convivir el arrastre con marcar la casilla y con desplazar
+   * la lista. Quien no quiera arrastrar tiene el mismo camino de siempre:
+   * marcar varios y usar «Asignar a…».
+   */
+  const soltarAlumno = useCallback(
+    (alumno: Persona, equipoId: string) => {
+      void asignar(equipoId, [alumno.id]);
+    },
+    [asignar],
+  );
+
+  const { iniciar: arrastrarAlumno, arrastrando, posicion, zona } = useArrastre<Persona>({
+    alSoltar: soltarAlumno,
+  });
 
   async function nuevoEquipo() {
     if (equipos.length >= maxEquipos) {
@@ -174,12 +195,6 @@ export default function DinamicaScrumPage() {
       'noopener',
     );
     setMandoAbierto(false);
-  }
-
-  function soltarEnEquipo(e: DragEvent<HTMLElement>, equipoId: string) {
-    e.preventDefault();
-    const id = e.dataTransfer.getData('text/alumno');
-    if (id) void asignar(equipoId, [id]);
   }
 
   if (cargando) return <p className={styles.cargando}>Cargando…</p>;
@@ -269,9 +284,12 @@ export default function DinamicaScrumPage() {
               {filtrados.map((a) => (
                 <li key={a.id}>
                   <label
-                    className={`${styles.alumno} ${marcados.has(a.id) ? styles.alumnoMarcado : ''}`}
-                    draggable
-                    onDragStart={(e) => e.dataTransfer.setData('text/alumno', a.id)}
+                    className={[
+                      styles.alumno,
+                      marcados.has(a.id) ? styles.alumnoMarcado : '',
+                      arrastrando?.id === a.id ? styles.alumnoAtenuado : '',
+                    ].filter(Boolean).join(' ')}
+                    onPointerDown={arrastrarAlumno(a)}
                   >
                     <input
                       type="checkbox"
@@ -327,9 +345,10 @@ export default function DinamicaScrumPage() {
             {equipos.map((equipo) => (
               <article
                 key={equipo.id}
-                className={styles.equipo}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => soltarEnEquipo(e, equipo.id)}
+                data-zona={equipo.id}
+                className={`${styles.equipo} ${
+                  arrastrando && zona === equipo.id ? styles.equipoDestino : ''
+                }`}
               >
                 <header className={styles.equipoCabecera}>
                   <label className={styles.color} style={{ background: equipo.color }}>
@@ -417,6 +436,16 @@ export default function DinamicaScrumPage() {
             </section>
           ))}
           {equipos.length === 0 && <p className={styles.hint}>Todavía no hay equipos que enseñar.</p>}
+        </div>
+      )}
+
+      {arrastrando && posicion && (
+        <div
+          className={styles.fantasmaAlumno}
+          style={{ transform: `translate(${posicion.x - 90}px, ${posicion.y - 20}px)` }}
+        >
+          <span className={styles.avatar}>{iniciales(arrastrando.name)}</span>
+          <span className={styles.alumnoNombre}>{arrastrando.name}</span>
         </div>
       )}
 

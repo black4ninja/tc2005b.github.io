@@ -1,7 +1,8 @@
-import { useState, type DragEvent } from 'react';
+import { useCallback, useRef } from 'react';
 import PostItHistoria from '../PostItHistoria/PostItHistoria';
+import { useArrastre } from '../../../../hooks/useArrastre';
 import {
-  COLUMNAS_SPRINT, agruparPorColumna, sumaPuntos,
+  COLUMNAS, COLUMNAS_SPRINT, agruparPorColumna, sumaPuntos,
   type Columna, type Escala, type EquipoTablero, type Historia,
 } from '../../../../utils/scrum';
 import styles from './TableroScrum.module.css';
@@ -16,6 +17,8 @@ interface Props {
   onMover?: (historiaId: string, columna: Columna) => void;
   onEditarObjetivo?: () => void;
 }
+
+const CLAVES = new Set<string>(COLUMNAS.map((c) => c.key));
 
 /**
  * El tablero de un equipo.
@@ -38,25 +41,32 @@ export default function TableroScrum({
   onEditarObjetivo,
 }: Props) {
   const porColumna = agruparPorColumna(equipo.historias);
-  const [encima, setEncima] = useState<Columna | null>(null);
+  const tablero = useRef<HTMLDivElement>(null);
 
-  function alSoltar(e: DragEvent<HTMLElement>, columna: Columna) {
-    e.preventDefault();
-    setEncima(null);
-    const id = e.dataTransfer.getData('text/historia');
-    if (id && onMover) onMover(id, columna);
-  }
+  const soltar = useCallback(
+    (historia: Historia, zona: string) => {
+      // La zona viene de un `data-zona` del DOM, así que se comprueba: entre
+      // las columnas hay otros elementos con atributos y no todos son destinos.
+      if (CLAVES.has(zona) && zona !== historia.columna) onMover?.(historia.id, zona as Columna);
+    },
+    [onMover],
+  );
+
+  const seMueve = editable && !!onMover;
+  const { iniciar, arrastrando, posicion, zona } = useArrastre<Historia>({
+    alSoltar: soltar,
+    contenedor: tablero,
+  });
 
   function columna(key: Columna, label: string, conAlta: boolean) {
     const historias = porColumna[key];
     const puntos = sumaPuntos(historias);
+    const destino = !!arrastrando && zona === key && key !== arrastrando.columna;
     return (
       <section
         key={key}
-        className={`${styles.columna} ${encima === key ? styles.columnaDestino : ''}`}
-        onDragOver={editable && onMover ? (e) => { e.preventDefault(); setEncima(key); } : undefined}
-        onDragLeave={editable && onMover ? () => setEncima(null) : undefined}
-        onDrop={editable && onMover ? (e) => alSoltar(e, key) : undefined}
+        data-zona={key}
+        className={`${styles.columna} ${destino ? styles.columnaDestino : ''}`}
       >
         <header className={styles.columnaCabecera}>
           <span className={styles.columnaTitulo}>{label}</span>
@@ -74,11 +84,8 @@ export default function TableroScrum({
             historia={h}
             escala={escala}
             onAbrir={editable && onAbrirHistoria ? onAbrirHistoria : undefined}
-            onDragStart={
-              editable && onMover
-                ? (e, historia) => e.dataTransfer.setData('text/historia', historia.id)
-                : undefined
-            }
+            onPointerDown={seMueve ? iniciar(h) : undefined}
+            atenuada={arrastrando?.id === h.id}
           />
         ))}
 
@@ -96,7 +103,10 @@ export default function TableroScrum({
   }
 
   return (
-    <div className={`${styles.tablero} ${styles[escala]}`}>
+    <div
+      ref={tablero}
+      className={`${styles.tablero} ${styles[escala]} ${arrastrando ? styles.enArrastre : ''}`}
+    >
       {columna('backlog', 'Backlog', true)}
 
       <div className={styles.sprint}>
@@ -123,6 +133,17 @@ export default function TableroScrum({
           {COLUMNAS_SPRINT.map((c) => columna(c.key, c.label, false))}
         </div>
       </div>
+
+      {/* La copia que sigue al dedo. Va fuera de la columna —y en `fixed`— para
+          que no la recorte, y sin eventos para que se vea qué hay debajo. */}
+      {arrastrando && posicion && (
+        <div
+          className={styles.capaFantasma}
+          style={{ transform: `translate(${posicion.x - 116}px, ${posicion.y - 40}px)` }}
+        >
+          <PostItHistoria historia={arrastrando} escala="full" fantasma />
+        </div>
+      )}
     </div>
   );
 }

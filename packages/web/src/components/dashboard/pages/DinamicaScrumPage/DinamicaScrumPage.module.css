@@ -213,6 +213,39 @@
   border-radius: 8px;
   background: var(--bg-card);
   cursor: grab;
+  /* Ver `useArrastre`: quién se queda con el gesto lo decide cuánto se
+     mantenga pulsado, no el navegador. */
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.alumnoAtenuado { opacity: 0.35; }
+
+/* El equipo bajo el dedo. Con el dedo esto es lo único que dice dónde va a
+   caer: no hay puntero que mirar. */
+.equipoDestino {
+  border-color: var(--sidebar-active-color);
+  background: var(--sidebar-active-bg);
+}
+
+.fantasmaAlumno {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 4000;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid var(--sidebar-active-color);
+  border-radius: 8px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+  transform-origin: top left;
+  max-width: 220px;
 }
 
 .alumnoMarcado {
