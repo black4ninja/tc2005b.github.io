@@ -38,6 +38,13 @@ export const PUNTOS_VALIDOS = [0, 1, 2, 3, 5, 8, 13, 21] as const;
 export const LARGO_CAMPO = 200;
 
 /**
+ * Tope de la descripción de una etapa. Da para tres o cuatro frases: lo que hay
+ * que hacer en ese momento, que es lo que el alumno lee cuando levanta la vista
+ * a mitad de la sesión y no se acuerda de qué toca.
+ */
+export const LARGO_DESCRIPCION_ETAPA = 400;
+
+/**
  * Nueve equipos por dinámica. No es una limitación técnica: es lo que cabe en la
  * proyección en una rejilla de 3 × 3 sin que las tarjetas dejen de leerse desde
  * el fondo del aula.
@@ -57,11 +64,41 @@ export const LARGO_OBJETIVO = 160;
  * pintan las categorías de grupo.
  */
 export const ETAPAS_SEMILLA = [
-  { nombre: 'Planning', color: '#2563eb', pista: 'Se elige el objetivo y se llena el sprint backlog' },
-  { nombre: 'Grooming', color: '#9333ea', pista: 'Se depura y estima el product backlog' },
-  { nombre: 'Daily', color: '#16a34a', pista: '15 min: qué hice, qué haré, qué me bloquea' },
-  { nombre: 'Review', color: '#ea580c', pista: 'Se demuestra el incremento terminado' },
-  { nombre: 'Retrospectiva', color: '#0891b2', pista: 'Qué mantener y qué cambiar para el siguiente sprint' },
+  {
+    nombre: 'Planning',
+    color: '#2563eb',
+    pista:
+      'El Product Owner prioriza el backlog. El equipo elige qué historias entran al sprint '
+      + 'y las estima entre todos. Solo se puede trabajar lo que esté estimado.',
+  },
+  {
+    nombre: 'Grooming',
+    color: '#9333ea',
+    pista:
+      'Se depuran las historias que todavía no entran al sprint: se aclaran, se parten las '
+      + 'demasiado grandes y se estiman. No se toca lo que ya está en curso.',
+  },
+  {
+    nombre: 'Daily',
+    color: '#16a34a',
+    pista:
+      'Cada quien dice en qué va, qué sigue y qué lo bloquea. Se mira el sprint backlog para '
+      + 'decidir qué hay que priorizar para terminarlo.',
+  },
+  {
+    nombre: 'Review',
+    color: '#ea580c',
+    pista:
+      'Se enseña lo terminado y se valida contra la definición de terminado. Se cuenta qué '
+      + 'historias no se cerraron y qué restricciones no se cumplieron.',
+  },
+  {
+    nombre: 'Retrospectiva',
+    color: '#0891b2',
+    pista:
+      'Se habla de cómo trabajó el equipo, no de lo que construyó: qué mantener y qué cambiar '
+      + 'en la siguiente iteración.',
+  },
 ] as const;
 
 /**

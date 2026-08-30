@@ -24,18 +24,26 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     Un alumno pertenece a un solo equipo por dinámica; asignarlo lo saca del
     anterior en vez de fallar.
   - **La etapa del Scrum** (planning, grooming, daily, review, retrospectiva) es
-    un catálogo POR GRUPO con color propio, editable: cada materia corre su
-    versión del ciclo. El profesor la cambia desde su panel y a todos los
-    tableros abiertos les cambia la banda de color al instante.
+    un catálogo POR GRUPO con color propio y **descripción**, editable: cada
+    materia corre su versión del ciclo. El profesor la cambia desde su panel y a
+    todos los tableros abiertos les cambia la banda al instante. La descripción
+    dice **qué hay que hacer en ese momento** y se lee en la propia banda: es lo
+    que necesita quien levanta la vista a mitad de la sesión y no se acuerda de
+    en qué punto del ciclo va la clase.
   - **El alumno** ve el tablero de su equipo con cinco columnas. Las cuatro del
     sprint —planned, doing, review, done— van dentro de un recuadro punteado
     rotulado **sprint backlog**, con el **objetivo del sprint** dentro; el
     backlog del producto queda fuera. La forma es la enseñanza: lo que el equipo
     se comprometió a hacer se ve separado de lo que solo está anotado.
-  - **Las historias son post-its** con tres campos separados —¿por qué?, ¿qué?,
-    ¿cómo?—, estimación en puntos (Fibonacci recortado, con «sin estimar») y
-    prioridad **MoSCoW**. Separar los campos es lo que impide omitir el porqué,
+  - **Las historias son post-its** con tres campos separados —¿por qué? (qué
+    valor aporta), ¿qué? y ¿cómo?—, estimación en puntos (Fibonacci recortado,
+    con «sin estimar» y con el significado de cada cifra en la propia opción) y
+    prioridad **MoSCoW**. Separar los campos es lo que impide omitir el valor,
     que es la parte que se cae cuando el formato es texto libre.
+  - En el TABLERO la tarjeta enseña solo el «qué»; el porqué y el cómo se leen
+    al abrirla. Con los tres campos la tarjeta crecía tanto que en una columna
+    cabían dos y el tablero dejaba de leerse de un vistazo, que es justo para lo
+    que sirve un tablero.
   - **Una sola persona responsable por historia**, o ninguna. No es una
     advertencia: el selector es excluyente y el servidor exige que sea alguien
     del equipo. Dejar marcar a varios es la manera silenciosa de que al final no

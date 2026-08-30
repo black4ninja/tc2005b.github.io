@@ -62,12 +62,11 @@
   color: #fff;
 }
 
-.bandaTextos {
+.bandaTitulo {
   display: flex;
-  align-items: baseline;
-  gap: 14px;
-  flex-wrap: wrap;
-  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  flex: none;
 }
 
 .bandaEtiqueta {
@@ -78,9 +77,31 @@
   opacity: 0.85;
 }
 
-.bandaNombre { font-size: 1.35rem; font-weight: 700; }
-.bandaPista { font-size: 0.82rem; opacity: 0.9; }
-.bandaNota { font-size: 0.75rem; opacity: 0.85; white-space: nowrap; }
+.bandaNombre { font-size: 1.45rem; font-weight: 700; line-height: 1.1; }
+
+/* La descripción de la etapa, separada del nombre por una línea: es un texto de
+   dos o tres frases y pegado al nombre se leía como parte de él. */
+.bandaPista {
+  flex: 1;
+  min-width: 220px;
+  margin: 0;
+  padding-left: 20px;
+  border-left: 1px solid rgba(255, 255, 255, 0.35);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  opacity: 0.95;
+}
+
+.bandaNota { font-size: 0.75rem; opacity: 0.8; white-space: nowrap; align-self: flex-start; }
+
+@media (max-width: 900px) {
+  .bandaPista {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+    padding-top: 10px;
+  }
+}
 
 .bandaVacia {
   padding: 12px 20px;

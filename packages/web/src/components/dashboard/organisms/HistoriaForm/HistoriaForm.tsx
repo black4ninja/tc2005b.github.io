@@ -3,7 +3,7 @@ import Modal from '../../atoms/Modal/Modal';
 import PostItHistoria from '../PostItHistoria/PostItHistoria';
 import { confirmar } from '../../../../utils/dialogos';
 import {
-  COLUMNAS, PRIORIDADES, PUNTOS, iniciales,
+  COLUMNAS, PRIORIDADES, PUNTOS, PUNTOS_ETIQUETA,
   type Columna, type Historia, type Persona, type Prioridad,
 } from '../../../../utils/scrum';
 import styles from './HistoriaForm.module.css';
@@ -42,11 +42,15 @@ const VACIA: DatosHistoria = {
  * Alta y edición de una historia de usuario.
  *
  * Dos cosas que la forma del formulario impone y que el texto libre no impondría:
- *  - los tres campos van SEPARADOS, así que el «por qué» no se puede omitir sin
- *    que se note;
- *  - el responsable es una fila de opciones EXCLUYENTES con «Sin asignar» de
- *    primera. En Scrum una historia la lleva una persona, y dejar marcar a
- *    varias es la manera silenciosa de que no la lleve nadie.
+ *  - los tres campos van SEPARADOS, así que el «por qué» —el valor que aporta—
+ *    no se puede omitir sin que se note;
+ *  - el responsable es una lista de UNA sola opción. En Scrum una historia la
+ *    lleva una persona, y dejar marcar a varias es la manera silenciosa de que
+ *    al final no la lleve nadie.
+ *
+ * Responsable y estimación son desplegables y no filas de fichas: con cinco
+ * compañeros y ocho cifras, las fichas ocupaban media pantalla y empujaban los
+ * campos de texto —lo importante— fuera de la vista.
  *
  * La vista previa al lado no es adorno: lo que se escribe acaba en un post-it de
  * cuatro centímetros, y verlo mientras se escribe es lo que hace que la gente
@@ -120,7 +124,7 @@ export default function HistoriaForm({
 
           <Campo
             etiqueta="¿Por qué?"
-            pista="Qué gana quien la use"
+            pista="Qué valor aporta"
             valor={datos.porQue}
             onChange={(porQue) => setDatos((d) => ({ ...d, porQue }))}
           />
@@ -137,72 +141,55 @@ export default function HistoriaForm({
             onChange={(como) => setDatos((d) => ({ ...d, como }))}
           />
 
-          <div className={styles.bloque}>
-            <div className={styles.bloqueTitulo}>
-              <span className={styles.etiqueta}>Responsable</span>
-              <span className={styles.aclaracion}>una sola persona por historia</span>
-            </div>
-            <div className={styles.fichas}>
-              <button
-                type="button"
-                className={`${styles.ficha} ${datos.responsableId === null ? styles.fichaActiva : ''}`}
-                onClick={() => setDatos((d) => ({ ...d, responsableId: null }))}
-                aria-pressed={datos.responsableId === null}
+          <div className={styles.tresBloques}>
+            <div className={styles.bloque}>
+              <div className={styles.bloqueTitulo}>
+                <span className={styles.etiqueta}>Responsable</span>
+                <span className={styles.aclaracion}>una sola persona</span>
+              </div>
+              <select
+                className={styles.select}
+                value={datos.responsableId ?? ''}
+                onChange={(e) =>
+                  setDatos((d) => ({ ...d, responsableId: e.target.value || null }))}
               >
-                <span className={styles.avatarVacio} />
-                Sin asignar
-              </button>
-              {miembros.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  className={`${styles.ficha} ${datos.responsableId === m.id ? styles.fichaActiva : ''}`}
-                  onClick={() => setDatos((d) => ({ ...d, responsableId: m.id }))}
-                  aria-pressed={datos.responsableId === m.id}
-                >
-                  <span className={styles.avatar}>{iniciales(m.name)}</span>
-                  {m.name}
-                </button>
-              ))}
+                <option value="">Sin asignar</option>
+                {miembros.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className={styles.bloque}>
+              <span className={styles.etiqueta}>Estimación</span>
+              <select
+                className={styles.select}
+                value={datos.puntos}
+                onChange={(e) => setDatos((d) => ({ ...d, puntos: Number(e.target.value) }))}
+              >
+                {PUNTOS.map((p) => (
+                  <option key={p} value={p}>{PUNTOS_ETIQUETA[p] ?? String(p)}</option>
+                ))}
+              </select>
             </div>
           </div>
 
-          <div className={styles.dosBloques}>
-            <div className={styles.bloque}>
-              <span className={styles.etiqueta}>Estimación</span>
-              <div className={styles.fichas}>
-                {PUNTOS.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    className={`${styles.punto} ${datos.puntos === p ? styles.puntoActivo : ''}`}
-                    onClick={() => setDatos((d) => ({ ...d, puntos: p }))}
-                    aria-pressed={datos.puntos === p}
-                    title={p === 0 ? 'Sin estimar' : `${p} puntos`}
-                  >
-                    {p === 0 ? '–' : p}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className={styles.bloque}>
-              <span className={styles.etiqueta}>Prioridad MoSCoW</span>
-              <div className={styles.fichas}>
-                {PRIORIDADES.map((p) => (
-                  <button
-                    key={p.key}
-                    type="button"
-                    className={`${styles.ficha} ${styles[p.key]} ${
-                      datos.prioridad === p.key ? styles.fichaPrioridadActiva : ''
-                    }`}
-                    onClick={() => setDatos((d) => ({ ...d, prioridad: p.key }))}
-                    aria-pressed={datos.prioridad === p.key}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
+          <div className={styles.bloque}>
+            <span className={styles.etiqueta}>Prioridad MoSCoW</span>
+            <div className={styles.fichas}>
+              {PRIORIDADES.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  className={`${styles.ficha} ${styles[p.key]} ${
+                    datos.prioridad === p.key ? styles.fichaPrioridadActiva : ''
+                  }`}
+                  onClick={() => setDatos((d) => ({ ...d, prioridad: p.key }))}
+                  aria-pressed={datos.prioridad === p.key}
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
           </div>
 

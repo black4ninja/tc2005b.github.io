@@ -114,12 +114,6 @@
   overflow-wrap: anywhere;
 }
 
-.linea {
-  font-size: 11px;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-
 .pie {
   display: flex;
   align-items: center;
@@ -185,6 +179,7 @@
 .md .pie { padding-top: 3px; gap: 4px; }
 .md .avatar, .md .avatarVacio { width: 15px; height: 15px; font-size: 6.5px; }
 .md .quien, .md .sinAsignar { font-size: 8px; }
+.md .etiqueta { display: none; }
 
 .sm {
   gap: 2px;

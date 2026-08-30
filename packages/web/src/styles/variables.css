@@ -219,11 +219,15 @@
   --destacado-halo: #fbbf2466;
   --destacado-fondo: #78350f73;
 
-  /* Scrum: el amarillo pasa a ámbar translúcido sobre el fondo, igual que el
-     resto de insignias, y las prioridades siguen la misma regla. */
-  --scrum-postit-bg: #78350f4d;
-  --scrum-postit-borde: #78350f;
-  --scrum-postit-linea: #fbbf24;
+  /* Scrum: el post-it en oscuro.
+     El ámbar translúcido que había (#78350f4d) se mezclaba con el azul del
+     fondo y salía MARRÓN ROJIZO: una tarjeta que parece en rojo se lee como
+     una tarjeta con un problema, y aquí el rojo ya significa otra cosa (la
+     prioridad «must»). Se cambia por un oliva cálido opaco, que sigue leyéndose
+     como papel amarillo pero no se confunde con una alarma. */
+  --scrum-postit-bg: #3a3620;
+  --scrum-postit-borde: #6b6130;
+  --scrum-postit-linea: #e0bb45;
   --scrum-sprint-borde: #475569;
   --scrum-must-bg: #7f1d1d4d;
   --scrum-must-color: #fca5a5;

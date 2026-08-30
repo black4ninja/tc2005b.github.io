@@ -19,14 +19,15 @@ interface Props {
 /**
  * Una historia de usuario como post-it.
  *
- * Los tres campos van etiquetados y separados —«¿por qué?», «¿qué?», «¿cómo?»—
- * en vez de en una frase con plantilla. Es lo que obliga a escribir el porqué,
- * que es la parte que se cae cuando el formato es texto libre.
+ * En el tablero se ve SOLO el «qué», con su rótulo. El «por qué» y el «cómo» se
+ * escriben y se leen al abrir la historia: con los tres campos, la tarjeta
+ * crecía tanto que en una columna cabían dos y el tablero dejaba de leerse de
+ * un vistazo, que es justo para lo que sirve un tablero.
  *
- * Al reducir la escala se quedan la prioridad, los puntos y el «qué»: es lo que
- * sigue siendo legible desde el fondo del aula cuando se proyectan nueve
- * tableros. El color de la prioridad hace entonces el trabajo que el texto ya no
- * puede hacer.
+ * Al reducir la escala se caen el rótulo y el responsable. Lo último que
+ * sobrevive son la prioridad y los puntos, que son color y una cifra: es lo que
+ * sigue diciendo algo desde el fondo del aula cuando se proyectan nueve
+ * tableros y el texto ya no se lee.
  */
 export default function PostItHistoria({
   historia, escala = 'full', onAbrir, onPointerDown, atenuada, fantasma,
@@ -35,11 +36,10 @@ export default function PostItHistoria({
   const quien = historia.responsable;
 
   const contenido = completo ? (
-    <>
-      <Campo etiqueta="¿Por qué?" texto={historia.porQue} clase={styles.linea} />
-      <Campo etiqueta="¿Qué?" texto={historia.que} clase={styles.que} />
-      <Campo etiqueta="¿Cómo?" texto={historia.como} clase={styles.linea} />
-    </>
+    <div>
+      <div className={styles.etiqueta}>¿Qué?</div>
+      <div className={styles.que}>{historia.que}</div>
+    </div>
   ) : (
     <div className={styles.que}>{historia.que}</div>
   );
@@ -100,15 +100,5 @@ export default function PostItHistoria({
         </footer>
       )}
     </article>
-  );
-}
-
-function Campo({ etiqueta, texto, clase }: { etiqueta: string; texto: string; clase: string }) {
-  if (!texto) return null;
-  return (
-    <div>
-      <div className={styles.etiqueta}>{etiqueta}</div>
-      <div className={clase}>{texto}</div>
-    </div>
   );
 }

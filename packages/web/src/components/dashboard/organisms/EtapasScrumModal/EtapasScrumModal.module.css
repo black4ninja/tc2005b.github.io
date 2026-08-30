@@ -23,7 +23,7 @@
 
 .fila {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-sm);
   padding: 8px 0;
   border-bottom: 1px solid var(--border-color);
@@ -52,7 +52,14 @@
 }
 
 .nombre { font-size: 0.9rem; font-weight: 500; }
-.pista { font-size: 0.78rem; color: var(--text-secondary); }
+
+.pista {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  resize: vertical;
+  font-family: inherit;
+}
 
 .nombre:hover, .pista:hover,
 .nombre:focus, .pista:focus {

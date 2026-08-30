@@ -213,11 +213,14 @@ export default function ScrumTableroPage() {
           se lee de un vistazo desde el otro lado del salón. */}
       {etapa ? (
         <div className={styles.banda} style={{ background: etapa.color }}>
-          <div className={styles.bandaTextos}>
+          <div className={styles.bandaTitulo}>
             <span className={styles.bandaEtiqueta}>Etapa en curso</span>
             <span className={styles.bandaNombre}>{etapa.nombre}</span>
-            {etapa.pista && <span className={styles.bandaPista}>{etapa.pista}</span>}
           </div>
+          {/* Qué hay que hacer AHORA. Va aquí y no en un manual aparte: es lo
+              que se lee cuando alguien levanta la vista a mitad de la sesión y
+              no se acuerda de en qué momento del ciclo va la clase. */}
+          {etapa.pista && <p className={styles.bandaPista}>{etapa.pista}</p>}
           <span className={styles.bandaNota}>La cambia el profesor</span>
         </div>
       ) : (

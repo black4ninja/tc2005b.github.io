@@ -58,7 +58,8 @@ export default function EtapasScrumModal({
       <div className={styles.cuerpo}>
         <p className={styles.intro}>
           La etapa es el momento del Scrum que la clase está trabajando. Su color es lo que el
-          alumno ve de fondo en su tablero, así que conviene que se distingan entre sí de lejos.
+          alumno ve de fondo en su tablero —conviene que se distingan entre sí de lejos— y la
+          descripción es lo que le dice qué tiene que hacer en ese momento.
         </p>
 
         <ul className={styles.lista}>
@@ -84,11 +85,12 @@ export default function EtapasScrumModal({
                     else e.target.value = etapa.nombre;
                   }}
                 />
-                <input
+                <textarea
                   className={styles.pista}
                   defaultValue={etapa.pista}
-                  maxLength={120}
-                  placeholder="Qué se hace en esta etapa"
+                  maxLength={400}
+                  rows={2}
+                  placeholder="Qué hay que hacer en esta etapa"
                   onBlur={(e) => {
                     const v = e.target.value.trim();
                     if (v !== etapa.pista) onActualizar(etapa.id, { pista: v });
@@ -121,9 +123,9 @@ export default function EtapasScrumModal({
             />
             <input
               className={styles.entrada}
-              placeholder="Qué se hace en ella (opcional)"
+              placeholder="Qué hay que hacer en ella (opcional)"
               value={pista}
-              maxLength={120}
+              maxLength={400}
               onChange={(e) => setPista(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && crear()}
             />

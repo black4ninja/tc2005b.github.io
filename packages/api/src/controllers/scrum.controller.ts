@@ -21,7 +21,7 @@ import {
 } from '../services/scrum.service.js';
 
 import {
-  LARGO_NOMBRE, LARGO_OBJETIVO, MAX_EQUIPOS, PALETA_ETAPAS,
+  LARGO_DESCRIPCION_ETAPA, LARGO_NOMBRE, LARGO_OBJETIVO, MAX_EQUIPOS, PALETA_ETAPAS,
 } from '../constants/scrum.js';
 
 /**
@@ -600,7 +600,7 @@ export async function crearEtapa(req: Request, res: Response): Promise<void> {
     etapa.setGrupo(Grupo.createWithoutData(grupoId) as Grupo);
     etapa.setNombre(nombre);
     etapa.setColor(normalizarColor(req.body?.color) ?? PALETA_ETAPAS[etapas.length % PALETA_ETAPAS.length]);
-    etapa.setPista(String(req.body?.pista ?? '').trim().slice(0, 120));
+    etapa.setPista(String(req.body?.pista ?? '').trim().slice(0, LARGO_DESCRIPCION_ETAPA));
     etapa.setOrden(etapas.length);
     await etapa.save(null, { useMasterKey: true });
     res.status(201).json({ status: 'ok', etapa: etapa.toSafeJSON() });
@@ -636,7 +636,7 @@ export async function actualizarEtapa(req: Request, res: Response): Promise<void
       etapa.setColor(color);
     }
     if (req.body?.pista !== undefined) {
-      etapa.setPista(String(req.body.pista ?? '').trim().slice(0, 120));
+      etapa.setPista(String(req.body.pista ?? '').trim().slice(0, LARGO_DESCRIPCION_ETAPA));
     }
     await etapa.save(null, { useMasterKey: true });
     res.json({ status: 'ok', etapa: etapa.toSafeJSON() });

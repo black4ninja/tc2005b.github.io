@@ -72,10 +72,17 @@
   flex-wrap: wrap;
 }
 
-.dosBloques {
+/* Responsable y estimación en una fila: son dos desplegables cortos y juntos
+   ocupan lo que antes ocupaba una sola fila de fichas. */
+.tresBloques {
   display: flex;
-  gap: var(--space-lg);
+  gap: var(--space-md);
   flex-wrap: wrap;
+}
+
+.tresBloques .bloque {
+  flex: 1;
+  min-width: 200px;
 }
 
 .fichas {
@@ -117,46 +124,6 @@
 .fichaPrioridadActiva.could { background: var(--scrum-could-bg); color: var(--scrum-could-color); border-color: var(--scrum-could-color); }
 .fichaPrioridadActiva.wont { background: var(--scrum-wont-bg); color: var(--scrum-wont-color); border-color: var(--scrum-wont-color); }
 
-.punto {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 40px;
-  height: 40px;
-  padding: 0 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  background: var(--bg-card);
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: 0.95rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-}
-
-.puntoActivo {
-  border-color: var(--sidebar-active-color);
-  background: var(--sidebar-active-bg);
-  color: var(--sidebar-active-color);
-}
-
-.avatar,
-.avatarVacio {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  flex: none;
-  font-size: 0.62rem;
-  font-weight: 600;
-}
-
-.avatar { background: var(--dash-bg-subtle); color: var(--text-secondary); }
-.avatarVacio { border: 1px dashed var(--border-color); }
-
 .select {
   padding: 8px 12px;
   border: 1px solid var(--border-color);
@@ -166,8 +133,7 @@
   font-family: inherit;
   font-size: 0.9rem;
   cursor: pointer;
-  align-self: flex-start;
-  min-width: 180px;
+  width: 100%;
 }
 
 .previa {

@@ -36,6 +36,24 @@ export const PRIORIDADES: { key: Prioridad; label: string }[] = [
 /** Fibonacci recortado, como en planning poker. 0 = sin estimar. */
 export const PUNTOS = [0, 1, 2, 3, 5, 8, 13, 21];
 
+/**
+ * Qué significa cada cifra, para que estimar no sea elegir un número al azar.
+ *
+ * La serie crece a propósito: a partir de 13 la estimación deja de ser útil y
+ * lo que hay que hacer es partir la historia. Decirlo en la propia opción es
+ * más eficaz que explicarlo una vez al principio de la sesión.
+ */
+export const PUNTOS_ETIQUETA: Record<number, string> = {
+  0: 'Sin estimar',
+  1: '1 · muy simple',
+  2: '2 · simple',
+  3: '3 · con varias partes',
+  5: '5 · compleja',
+  8: '8 · muy compleja',
+  13: '13 · demasiado grande, conviene partirla',
+  21: '21 · demasiado grande, conviene partirla',
+};
+
 export interface Persona {
   id: string;
   name: string;
