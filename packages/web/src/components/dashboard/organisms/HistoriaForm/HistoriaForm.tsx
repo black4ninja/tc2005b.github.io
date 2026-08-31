@@ -63,6 +63,21 @@ export default function HistoriaForm({
 }: Props) {
   const [datos, setDatos] = useState<DatosHistoria>(VACIA);
 
+  /**
+   * El formulario se rellena UNA VEZ por apertura, no cada vez que cambian las
+   * props.
+   *
+   * Las dependencias son el «abierto» y el ID de la historia, a propósito:
+   * `historia` y `epicas` son objetos nuevos en cada refresco del tablero —el
+   * stream trae uno cada vez que alguien del equipo toca algo, y además hay un
+   * sondeo—, y con ellos en la lista el efecto volvía a correr mientras se
+   * escribía y devolvía los campos a lo que había guardado. Escribir tres
+   * frases seguidas sin que llegara ningún refresco era cuestión de suerte.
+   *
+   * `epicas` se lee dentro y no está en la lista: no hace falta que vuelva a
+   * correr cuando cambie, solo interesa la que hay al abrir.
+   */
+  const historiaId = historia?.id ?? null;
   useEffect(() => {
     if (!abierto) return;
     setDatos(
@@ -80,7 +95,8 @@ export default function HistoriaForm({
         // lo que quiere el 90 % de las veces y evita el error más común.
         : { ...VACIA, epicaId: epicas[0]?.id ?? null },
     );
-  }, [abierto, historia, epicas]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abierto, historiaId]);
 
   const editando = !!historia;
   const puedeGuardar = datos.porQue.trim() !== '' && !guardando;
@@ -140,6 +156,7 @@ export default function HistoriaForm({
             pista="Qué valor aporta"
             valor={datos.porQue}
             onChange={(porQue) => setDatos((d) => ({ ...d, porQue }))}
+            bloqueado={guardando}
             obligatorio
           />
           <Campo
@@ -147,12 +164,14 @@ export default function HistoriaForm({
             pista="Qué tiene que poder hacer"
             valor={datos.que}
             onChange={(que) => setDatos((d) => ({ ...d, que }))}
+            bloqueado={guardando}
           />
           <Campo
             etiqueta="¿Cómo?"
             pista="Con qué se piensa resolver"
             valor={datos.como}
             onChange={(como) => setDatos((d) => ({ ...d, como }))}
+            bloqueado={guardando}
           />
 
           <div className={styles.tresBloques}>
@@ -164,6 +183,7 @@ export default function HistoriaForm({
                 </div>
                 <select
                   className={styles.select}
+                  disabled={guardando}
                   value={datos.epicaId ?? ''}
                   onChange={(e) => setDatos((d) => ({ ...d, epicaId: e.target.value || null }))}
                 >
@@ -193,6 +213,7 @@ export default function HistoriaForm({
               ) : (
                 <select
                   className={styles.select}
+                  disabled={guardando}
                   value={datos.responsableId ?? ''}
                   onChange={(e) =>
                     setDatos((d) => ({ ...d, responsableId: e.target.value || null }))}
@@ -209,6 +230,7 @@ export default function HistoriaForm({
               <span className={styles.etiqueta}>Estimación</span>
               <select
                 className={styles.select}
+                disabled={guardando}
                 value={datos.puntos}
                 onChange={(e) => setDatos((d) => ({ ...d, puntos: Number(e.target.value) }))}
               >
@@ -231,6 +253,7 @@ export default function HistoriaForm({
                   className={`${styles.ficha} ${styles[p.key]} ${
                     datos.prioridad === p.key ? styles.fichaPrioridadActiva : ''
                   }`}
+                  disabled={guardando}
                   onClick={() => setDatos((d) => ({ ...d, prioridad: p.key }))}
                   aria-pressed={datos.prioridad === p.key}
                 >
@@ -254,21 +277,25 @@ export default function HistoriaForm({
 
       <div className={styles.acciones}>
         {editando && onBorrar && (
-          <button type="button" className={styles.borrar} onClick={borrar}>
+          <button type="button" className={styles.borrar} onClick={borrar} disabled={guardando}>
             <span className="material-icons">delete</span>
             Borrar
           </button>
         )}
         <div className={styles.accionesDerecha}>
-          <button type="button" className={styles.cancelar} onClick={onCerrar}>
+          <button type="button" className={styles.cancelar} onClick={onCerrar} disabled={guardando}>
             Cancelar
           </button>
+          {/* Mientras el guardado viaja, el formulario entero se queda quieto:
+              lo que se escribiera a partir de aquí no iría dentro. */}
           <button
             type="button"
             className={styles.guardar}
             disabled={!puedeGuardar}
+            aria-busy={guardando}
             onClick={() => onGuardar({ ...datos, porQue: datos.porQue.trim() })}
           >
+            {guardando && <span className={styles.girando} aria-hidden />}
             {guardando ? 'Guardando…' : editando ? 'Guardar' : 'Guardar historia'}
           </button>
         </div>
@@ -278,13 +305,15 @@ export default function HistoriaForm({
 }
 
 function Campo({
-  etiqueta, pista, valor, onChange, obligatorio = false,
+  etiqueta, pista, valor, onChange, obligatorio = false, bloqueado = false,
 }: {
   etiqueta: string;
   pista: string;
   valor: string;
   onChange: (v: string) => void;
   obligatorio?: boolean;
+  /** Mientras el guardado viaja: lo que se escriba ahí ya no iría en él. */
+  bloqueado?: boolean;
 }) {
   return (
     <label className={styles.campo}>
@@ -298,6 +327,7 @@ function Campo({
         maxLength={200}
         placeholder={pista}
         value={valor}
+        disabled={bloqueado}
         onChange={(e) => onChange(e.target.value)}
       />
     </label>
