@@ -4,6 +4,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import EtapasScrumModal from '../../organisms/EtapasScrumModal/EtapasScrumModal';
 import { avisar, confirmar, pedirTexto } from '../../../../utils/dialogos';
 import { rangoFechas, type Dinamica, type Etapa } from '../../../../utils/scrum';
+import BarraEtapasScrum from '../../organisms/BarraEtapasScrum/BarraEtapasScrum';
 import styles from './ScrumGrupoPage.module.css';
 
 const API = '/api';
@@ -225,47 +226,15 @@ export default function ScrumGrupoPage() {
         </div>
       )}
 
-      <section className={styles.barra}>
-        <div className={styles.barraIzquierda}>
-          <span className={styles.barraTitulo}>Etapa en curso</span>
-          <div className={styles.etapas}>
-            {etapas.map((e) => {
-              const activa = vigente?.etapaActual?.id === e.id;
-              const enMarcha = aplicando === e.id;
-              return (
-                <button
-                  key={e.id}
-                  type="button"
-                  className={`${styles.etapa} ${activa ? styles.etapaActiva : ''}`}
-                  style={activa ? { background: e.color, borderColor: e.color } : undefined}
-                  onClick={() => cambiarEtapa(activa ? null : e.id)}
-                  disabled={!vigente || !!aplicando}
-                  title={e.pista || e.nombre}
-                  aria-pressed={activa}
-                  aria-busy={enMarcha}
-                >
-                  {enMarcha
-                    ? <span className={styles.girando} aria-hidden />
-                    : !activa && <span className={styles.punto} style={{ background: e.color }} />}
-                  {e.nombre}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div className={styles.barraDerecha}>
-          {vigente ? (
-            <span className={styles.aplicaA}>
-              Se aplica a <strong>{vigente.nombre}</strong>
-            </span>
-          ) : (
-            <span className={styles.aplicaA}>Sin dinámica abierta</span>
-          )}
-          <button type="button" className={styles.enlaceBtn} onClick={() => setEtapasAbierto(true)}>
-            Configurar etapas
-          </button>
-        </div>
-      </section>
+      <BarraEtapasScrum
+        etapas={etapas}
+        etapaActualId={vigente?.etapaActual?.id ?? null}
+        aplicando={aplicando}
+        deshabilitada={!vigente}
+        nota={vigente ? `Se aplica a ${vigente.nombre}` : 'Sin dinámica abierta'}
+        onCambiar={(id) => void cambiarEtapa(id)}
+        onConfigurar={() => setEtapasAbierto(true)}
+      />
 
       {dinamicas.length === 0 ? (
         <div className={styles.apagado}>

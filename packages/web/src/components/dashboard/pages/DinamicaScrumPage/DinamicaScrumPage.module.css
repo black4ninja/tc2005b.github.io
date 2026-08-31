@@ -53,17 +53,6 @@
   flex-wrap: wrap;
 }
 
-.etapaTag {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 12px;
-  border-radius: 999px;
-  color: #fff;
-  font-size: 0.82rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
 .primario,
 .outline {
   display: inline-flex;

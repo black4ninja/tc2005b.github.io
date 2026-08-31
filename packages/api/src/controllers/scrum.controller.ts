@@ -391,11 +391,14 @@ export async function getDinamica(req: Request, res: Response): Promise<void> {
   try {
     // Tres rondas en vez de cinco: todo lo que solo necesita los ids va junto,
     // y lo que depende de los equipos o del sprint va después.
-    const [dinamica, equipos, alumnos, sprints] = await Promise.all([
+    const [dinamica, equipos, alumnos, sprints, etapas] = await Promise.all([
       cargarDinamica(dinamicaId, grupoId),
       equiposDeDinamica(dinamicaId),
       getAlumnosDeGrupo(grupoId),
       sprintsDeDinamica(dinamicaId),
+      // El catálogo de etapas viaja con el detalle porque la barra para
+      // cambiarlas vive también aquí dentro, junto a los demás mandos.
+      etapasDeGrupo(grupoId),
     ]);
     if (!dinamica) {
       error(res, 404, 'La dinámica no existe en este grupo');
@@ -414,6 +417,7 @@ export async function getDinamica(req: Request, res: Response): Promise<void> {
     res.json({
       status: 'ok',
       dinamica: dinamica.toSafeJSON(),
+      etapas: etapas.map((e) => e.toSafeJSON()),
       equipos: armarTableros(equipos, historias),
       sinEquipo: fotoDeEquipos(equipos, alumnos).sinEquipo,
       maxEquipos: MAX_EQUIPOS,

@@ -7,8 +7,9 @@ import { useArrastre } from '../../../../hooks/useArrastre';
 import { avisar, confirmar, pedirTexto } from '../../../../utils/dialogos';
 import {
   iniciales, rangoFechas, rejillaProyeccion,
-  type Dinamica, type EquipoTablero, type Marcador, type Persona, type Sprint,
+  type Dinamica, type EquipoTablero, type Etapa, type Marcador, type Persona, type Sprint,
 } from '../../../../utils/scrum';
+import BarraEtapasScrum from '../../organisms/BarraEtapasScrum/BarraEtapasScrum';
 import styles from './DinamicaScrumPage.module.css';
 
 const API = '/api';
@@ -58,6 +59,10 @@ export default function DinamicaScrumPage() {
   const [marcados, setMarcados] = useState<Set<string>>(new Set());
   const [mandoAbierto, setMandoAbierto] = useState(false);
   const [proyectados, setProyectados] = useState<Set<string>>(new Set());
+  const [etapas, setEtapas] = useState<Etapa[]>([]);
+  // La etapa que se está aplicando. El cambio se pinta optimista y el botón
+  // dice que viaja: es lo que más se pulsa durante la clase.
+  const [aplicandoEtapa, setAplicandoEtapa] = useState<string | null>(null);
 
   const cabeceras = useCallback(
     (): HeadersInit => ({
@@ -76,6 +81,7 @@ export default function DinamicaScrumPage() {
       const json = await r.json();
       if (!r.ok) throw new Error(json?.message ?? 'No se pudo cargar');
       setDinamica(json.dinamica ?? null);
+      setEtapas(json.etapas ?? []);
       setEquipos(json.equipos ?? []);
       setSinEquipo(json.sinEquipo ?? []);
       setMaxEquipos(json.maxEquipos ?? 9);
@@ -311,6 +317,40 @@ export default function DinamicaScrumPage() {
     setMandoAbierto(false);
   }
 
+  /**
+   * Cambia la etapa de ESTA dinámica.
+   *
+   * No pasa por `mandar`: no toca el reparto, se pinta optimista y no tiene por
+   * qué congelar la pantalla —el profesor puede querer corregirse y pulsar otra
+   * enseguida—. El servidor no devuelve nada más que confirmarla, así que
+   * tampoco se recarga el detalle.
+   */
+  async function cambiarEtapa(etapaId: string | null) {
+    if (!dinamica || aplicandoEtapa) return;
+    setAplicandoEtapa(etapaId ?? 'ninguna');
+    const previa = dinamica.etapaActual ?? null;
+    setDinamica((d) => (d
+      ? { ...d, etapaActual: etapaId ? etapas.find((e) => e.id === etapaId) ?? null : null }
+      : d));
+    try {
+      const r = await fetch(`${base}/etapa`, {
+        method: 'PUT',
+        headers: cabeceras(),
+        body: JSON.stringify({ etapaId }),
+      });
+      if (!r.ok) {
+        const json = await r.json().catch(() => ({}));
+        setDinamica((d) => (d ? { ...d, etapaActual: previa } : d));
+        await avisar({ titulo: 'No se pudo', texto: json?.message ?? 'Inténtalo de nuevo', icono: 'error' });
+      }
+    } catch {
+      setDinamica((d) => (d ? { ...d, etapaActual: previa } : d));
+      await avisar({ titulo: 'Sin conexión', texto: 'No se pudo contactar al servidor', icono: 'error' });
+    } finally {
+      setAplicandoEtapa(null);
+    }
+  }
+
   if (cargando) return <p className={styles.cargando}>Cargando…</p>;
 
   const rejilla = rejillaProyeccion(proyectados.size);
@@ -345,11 +385,6 @@ export default function DinamicaScrumPage() {
           </p>
         </div>
         <div className={styles.headerAcciones}>
-          {dinamica?.etapaActual && (
-            <span className={styles.etapaTag} style={{ background: dinamica.etapaActual.color }}>
-              {dinamica.etapaActual.nombre}
-            </span>
-          )}
           {/* Dos botones y no uno: las restricciones se consultan tanto como la
               definición de terminado, y escondidas tras un cambiador no las
               encontraba nadie. */}
@@ -381,6 +416,19 @@ export default function DinamicaScrumPage() {
         <div className={styles.error} onClick={() => setError(null)} role="alert">
           {error}
         </div>
+      )}
+
+      {etapas.length > 0 && (
+        <BarraEtapasScrum
+          etapas={etapas}
+          etapaActualId={dinamica?.etapaActual?.id ?? null}
+          aplicando={aplicandoEtapa}
+          deshabilitada={!dinamica || dinamica.cerrada}
+          nota={dinamica?.cerrada
+            ? 'La dinámica está cerrada'
+            : 'La ven todos los equipos de esta dinámica'}
+          onCambiar={(id) => void cambiarEtapa(id)}
+        />
       )}
 
       <div className={styles.tabs}>

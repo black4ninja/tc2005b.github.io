@@ -57,83 +57,6 @@
 .primario:hover { opacity: 0.9; }
 .primario .material-icons { font-size: 18px; }
 
-/* La barra de la etapa: arriba y ancha porque es lo único que se toca durante
-   la clase. */
-.barra {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
-  flex-wrap: wrap;
-  padding: var(--space-md);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  background: var(--bg-card);
-}
-
-.barraIzquierda {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  flex-wrap: wrap;
-  min-width: 0;
-}
-
-.barraDerecha {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  flex-wrap: wrap;
-}
-
-.barraTitulo {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-.etapas {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.etapa {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: 0.82rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.etapa:hover:not(:disabled) { border-color: var(--text-muted); }
-.etapa:disabled { opacity: 0.5; cursor: default; }
-
-/* La activa se pinta con SU color de fondo, no con el azul del panel: es el
-   mismo color que el alumno tiene en la banda de su tablero. */
-.etapaActiva {
-  color: #fff;
-  font-weight: 600;
-}
-
-.punto {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex: none;
-}
-
 /* La etapa que se está aplicando. Cambiarla toca treinta pantallas y el viaje
    no es instantáneo: sin esta señal el profesor cree que no pulsó y repite. */
 .girando {
@@ -150,19 +73,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .girando { animation-duration: 2s; }
-}
-
-.aplicaA { font-size: 0.82rem; color: var(--text-muted); }
-
-.enlaceBtn {
-  border: none;
-  background: none;
-  padding: 0;
-  color: var(--sidebar-active-color);
-  font-family: inherit;
-  font-size: 0.82rem;
-  text-decoration: underline;
-  cursor: pointer;
 }
 
 .tabla {
