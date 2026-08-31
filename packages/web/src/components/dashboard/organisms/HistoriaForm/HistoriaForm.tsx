@@ -86,6 +86,9 @@ export default function HistoriaForm({
   const puedeGuardar = datos.porQue.trim() !== '' && !guardando;
 
   const epicaPrevia = epicas.find((e) => e.id === datos.epicaId) ?? null;
+  // Una historia nueva nace en el backlog, así que el caso «sin historia» cuenta
+  // igual: en ninguno de los dos hay a quién asignársela todavía.
+  const enBacklog = (historia?.columna ?? 'backlog') === 'backlog';
 
   const previa: Historia = {
     id: historia?.id ?? 'previa',
@@ -172,22 +175,34 @@ export default function HistoriaForm({
               </div>
             )}
 
+            {/* En el backlog no se reparte: la historia todavía no es de nadie
+                porque el equipo no se ha comprometido a hacerla. En vez de un
+                desplegable muerto se dice cuándo toca. */}
             <div className={styles.bloque}>
               <div className={styles.bloqueTitulo}>
                 <span className={styles.etiqueta}>Responsable</span>
-                <span className={styles.aclaracion}>una sola persona</span>
+                <span className={styles.aclaracion}>
+                  {enBacklog ? 'se asigna en el sprint' : 'una sola persona'}
+                </span>
               </div>
-              <select
-                className={styles.select}
-                value={datos.responsableId ?? ''}
-                onChange={(e) =>
-                  setDatos((d) => ({ ...d, responsableId: e.target.value || null }))}
-              >
-                <option value="">Sin asignar</option>
-                {miembros.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
+              {enBacklog ? (
+                <p className={styles.aviso}>
+                  En el backlog las historias no llevan responsable. Métela al sprint y ahí se
+                  reparte.
+                </p>
+              ) : (
+                <select
+                  className={styles.select}
+                  value={datos.responsableId ?? ''}
+                  onChange={(e) =>
+                    setDatos((d) => ({ ...d, responsableId: e.target.value || null }))}
+                >
+                  <option value="">Sin asignar</option>
+                  {miembros.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className={styles.bloque}>

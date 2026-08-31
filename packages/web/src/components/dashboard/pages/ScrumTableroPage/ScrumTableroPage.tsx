@@ -293,11 +293,34 @@ export default function ScrumTableroPage() {
     setEnEdicion(null);
   }
 
+  /**
+   * Deja la historia que devuelve el servidor en su sitio del tablero.
+   *
+   * El servidor ya manda la historia guardada en la respuesta, pero la pantalla
+   * esperaba a que el tablero entero bajara por el stream: entre el «Guardando…»
+   * y ver el cambio se iban un par de segundos con el modal ya cerrado. Aquí se
+   * fusiona y el resto del tablero se queda como está.
+   */
+  const fusionarHistoria = useCallback((json: any) => {
+    const h = json?.historia as Historia | undefined;
+    if (!h?.id) return;
+    setEquipo((previo) => {
+      if (!previo) return previo;
+      const estaba = previo.historias.some((x) => x.id === h.id);
+      return {
+        ...previo,
+        historias: estaba
+          ? previo.historias.map((x) => (x.id === h.id ? h : x))
+          : [...previo.historias, h],
+      };
+    });
+  }, []);
+
   async function guardarHistoria(datos: DatosHistoria) {
     setGuardando(true);
     const ok = enEdicion
-      ? await mandar(`${base}/historias/${enEdicion.id}`, 'PUT', datos)
-      : await mandar(`${base}/historias`, 'POST', datos);
+      ? await mandar(`${base}/historias/${enEdicion.id}`, 'PUT', datos, fusionarHistoria)
+      : await mandar(`${base}/historias`, 'POST', datos, fusionarHistoria);
     setGuardando(false);
     if (ok) cerrarHistoria();
   }
@@ -312,11 +335,13 @@ export default function ScrumTableroPage() {
           }
         : previo,
     );
-    await mandar(`${base}/historias/${historiaId}`, 'PUT', { columna });
+    // La respuesta trae además el orden que le tocó y, si volvió al backlog, sin
+    // responsable: se fusiona porque es más fiel que lo que se pintó al soltar.
+    await mandar(`${base}/historias/${historiaId}`, 'PUT', { columna }, fusionarHistoria);
   }
 
   async function asignar(historiaId: string, alumnoId: string | null) {
-    await mandar(`${base}/historias/${historiaId}`, 'PUT', { responsableId: alumnoId });
+    await mandar(`${base}/historias/${historiaId}`, 'PUT', { responsableId: alumnoId }, fusionarHistoria);
   }
 
   async function editarObjetivo() {

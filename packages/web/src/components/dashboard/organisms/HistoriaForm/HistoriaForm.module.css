@@ -219,3 +219,12 @@
   letter-spacing: 0;
   color: var(--text-muted);
 }
+
+/* Donde iría el desplegable de responsable cuando la historia está en el
+   backlog: se dice la regla en lugar de dejar un control apagado. */
+.aviso {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}

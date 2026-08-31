@@ -67,7 +67,11 @@ export default function PostItHistoria({
     onAsignar?.(historia.id, alumnoId);
   }
 
-  const puedeAsignar = !!onAsignar && !!miembros?.length && completo && !bloqueadaPor;
+  // En el backlog nadie es responsable de nada: el reparto pertenece al sprint,
+  // así que ahí no hay ni pie ni menú. Si una historia vieja arrastra un dueño,
+  // se enseña —pero apagado— en vez de esconderlo sin más.
+  const enBacklog = historia.columna === 'backlog';
+  const puedeAsignar = !!onAsignar && !!miembros?.length && completo && !bloqueadaPor && !enBacklog;
 
   return (
     <article
@@ -129,7 +133,7 @@ export default function PostItHistoria({
       {/* Una persona o ninguna, nunca varias: en Scrum la historia tiene un
           dueño. El hueco se ve a propósito — es la señal de que falta repartir —
           y el pie entero es el botón de asignar, sin abrir el detalle. */}
-      {escala !== 'sm' && (
+      {escala !== 'sm' && (!enBacklog || !!quien) && (
         <div className={styles.pieCaja}>
           <button
             type="button"

@@ -295,8 +295,12 @@ function leerCampos(body: any): { porQue: string; que: string; como: string } | 
 function resolverResponsable(valor: unknown, equipo: EquipoScrum): AppUser | null | false {
   if (valor === undefined || valor === null || valor === '') return null;
   const id = String(valor);
-  if (!equipo.getMiembroIds().includes(id)) return false;
-  return AppUser.createWithoutData(id) as AppUser;
+  // El miembro TAL COMO viene en el equipo, con su nombre dentro, no un puntero
+  // pelado: la historia guardada se devuelve en la respuesta y la pantalla la
+  // pinta directamente, así que un puntero sin datos dejaba la tarjeta asignada
+  // a nadie hasta el siguiente refresco.
+  const miembro = equipo.getMiembros().find((m) => m.id === id);
+  return miembro ?? false;
 }
 
 /**
@@ -386,11 +390,13 @@ export async function crearHistoria(req: Request, res: Response): Promise<void> 
       error(res, 400, 'La prioridad debe ser must, should, could o wont');
       return;
     }
-    const responsable = resolverResponsable(req.body?.responsableId, equipo);
-    if (responsable === false) {
-      error(res, 400, 'El responsable tiene que ser alguien del equipo');
+    // Nace en el backlog, y en el backlog no hay responsables: el reparto se
+    // hace al meterla al sprint.
+    if (req.body?.responsableId) {
+      error(res, 409, 'En el backlog las historias no llevan responsable: se asigna al entrar al sprint');
       return;
     }
+    const responsable = null;
     const epica = await resolverEpica(req.body?.epicaId, equipo.id!);
     if (epica === false) {
       error(res, 400, 'Esa épica no es de tu equipo');
@@ -411,10 +417,28 @@ export async function crearHistoria(req: Request, res: Response): Promise<void> 
     historia.setOrden(siguienteOrdenEnColumna(existentes, 'backlog'));
     await historia.save(null, { useMasterKey: true });
 
-    void difundirTablero(ctx.dinamicaId!);
     res.status(201).json({ status: 'ok', historia: historia.toSafeJSON() });
+    void difundirTablero(ctx.dinamicaId!);
   } catch {
     error(res, 500, 'Error al crear la historia');
+  }
+}
+
+/**
+ * La historia por id, sin mirar de quién es.
+ *
+ * Se separa de la comprobación para poder pedirla A LA VEZ que el contexto del
+ * alumno: son dos viajes independientes y en fila india se notaban al guardar.
+ * Quien la use tiene que comprobar el equipo con `esDelEquipo`.
+ */
+async function cargarHistoria(historiaId: string): Promise<HistoriaUsuario | null> {
+  const q = new Parse.Query<HistoriaUsuario>('HistoriaUsuario');
+  q.equalTo('exists' as any, true as any);
+  q.include('responsable' as any);
+  try {
+    return await q.get(historiaId, { useMasterKey: true });
+  } catch {
+    return null;
   }
 }
 
@@ -423,15 +447,8 @@ async function cargarHistoriaDelEquipo(
   historiaId: string,
   equipoId: string,
 ): Promise<HistoriaUsuario | null> {
-  const q = new Parse.Query<HistoriaUsuario>('HistoriaUsuario');
-  q.equalTo('exists' as any, true as any);
-  q.include('responsable' as any);
-  try {
-    const historia = await q.get(historiaId, { useMasterKey: true });
-    return historia.getEquipoId() === equipoId ? historia : null;
-  } catch {
-    return null;
-  }
+  const historia = await cargarHistoria(historiaId);
+  return historia && historia.getEquipoId() === equipoId ? historia : null;
 }
 
 /**
@@ -444,14 +461,18 @@ async function cargarHistoriaDelEquipo(
 export async function actualizarHistoria(req: Request, res: Response): Promise<void> {
   const { historiaId } = req.params;
   try {
-    const ctx = await equipoEditable(req, res);
+    // Las dos lecturas van juntas: la historia no depende del contexto y
+    // pedirlas en fila india era un viaje de más en el gesto que más se repite.
+    const [ctx, historia] = await Promise.all([
+      equipoEditable(req, res),
+      cargarHistoria(historiaId),
+    ]);
     if (!ctx) return;
     const equipo = ctx.equipo!;
 
     if (ocupado(res, ctx, `historia:${historiaId}`)) return;
 
-    const historia = await cargarHistoriaDelEquipo(historiaId, equipo.id!);
-    if (!historia) {
+    if (!historia || historia.getEquipoId() !== equipo.id!) {
       error(res, 404, 'Esa historia no es de tu equipo');
       return;
     }
@@ -541,9 +562,26 @@ export async function actualizarHistoria(req: Request, res: Response): Promise<v
       historia.setOrden(req.body.orden);
     }
 
+    // En el backlog nadie es responsable de nada.
+    //
+    // El backlog es la lista de lo que ESTÁ POR HACER, y repartírselo ahí es
+    // decidir quién hace qué antes de que el equipo se haya comprometido a
+    // hacerlo: el reparto pertenece al sprint. Se comprueba sobre la columna
+    // FINAL, después de haber aplicado el movimiento, porque en la misma
+    // petición se puede mover y asignar.
+    if (historia.getColumna() === 'backlog' && historia.getResponsable()) {
+      if (req.body?.responsableId) {
+        error(res, 409, 'En el backlog las historias no llevan responsable: métela al sprint primero');
+        return;
+      }
+      // No lo pedían: la historia VUELVE al backlog y deja de ser de nadie. Sin
+      // esto se quedaría con un dueño que ya no se puede quitar desde ahí.
+      historia.setResponsable(null);
+    }
+
     await historia.save(null, { useMasterKey: true });
-    void difundirTablero(ctx.dinamicaId!);
     res.json({ status: 'ok', historia: historia.toSafeJSON() });
+    void difundirTablero(ctx.dinamicaId!);
   } catch {
     error(res, 500, 'Error al actualizar la historia');
   }

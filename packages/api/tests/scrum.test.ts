@@ -99,6 +99,15 @@ describe('sin etapa abierta', () => {
   });
 });
 
+describe('responsable y backlog', () => {
+  it('el backlog no es una columna del sprint', () => {
+    // De aquí sale la regla: repartirse el trabajo pertenece al sprint, y lo
+    // que está en el backlog todavía no lo ha comprometido nadie.
+    expect(COLUMNAS_DEL_SPRINT).not.toContain('backlog');
+    expect(COLUMNAS).toContain('backlog');
+  });
+});
+
 describe('estimación', () => {
   it('«?» y «∞» no son estimaciones y no dejan entrar al sprint', () => {
     expect(estaEstimada(PUNTOS_DESCONOCIDO)).toBe(false);
