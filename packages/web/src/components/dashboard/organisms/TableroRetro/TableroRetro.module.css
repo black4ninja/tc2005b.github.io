@@ -163,6 +163,11 @@
 }
 
 .si:disabled, .no:disabled { opacity: 0.45; cursor: default; }
+
+/* Menos el que está girando: es justo el que hay que ver. Mientras uno viaja se
+   apagan los dos —para que nadie pulse el otro—, y con eso el que gira se iba
+   al 45 % y no se distinguía: parecía que el botón no había hecho nada. */
+.si[aria-busy='true'], .no[aria-busy='true'] { opacity: 1; }
 .si .material-icons, .no .material-icons { font-size: 14px; }
 
 .ajeno {
@@ -237,10 +242,12 @@
 }
 
 .girando {
-  width: 11px;
-  height: 11px;
+  width: 12px;
+  height: 12px;
   border: 2px solid var(--border-color);
-  border-top-color: var(--sidebar-active-color);
+  /* Del color del texto que tenga al lado: dentro de un botón pequeño, un aro
+     de color fijo se pierde contra el fondo. */
+  border-top-color: currentColor;
   border-radius: 50%;
   flex: none;
   animation: girarRetro 700ms linear infinite;
