@@ -55,8 +55,11 @@ export default function ProyeccionScrumPage() {
   const aplicar = useCallback((json: any) => {
     setDinamica(json?.dinamica ?? null);
     setEtapa(json?.etapa ?? null);
-    setSprint(json?.sprint ?? null);
+    // El parche de etapa no trae el sprint —no lo toca—: se conserva el que ya
+    // hay. Antes venía a medias y el número y el objetivo se borraban durante
+    // los dos segundos que tardaba en llegar el estado completo.
     if (json?.tipo === 'etapa') return;
+    setSprint(json?.sprint ?? null);
     setEquipos(json?.equipos ?? []);
   }, []);
 

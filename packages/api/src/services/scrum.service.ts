@@ -147,6 +147,28 @@ export async function dinamicasDeGrupo(grupoId: string): Promise<DinamicaScrum[]
  * grupo, no que el recurso pedido le pertenezca. Sin esto, un profesor con un
  * grupo podría leer y escribir la dinámica de otro cambiando el id de la URL.
  */
+/**
+ * La dinámica PELADA: sin desplegar la etapa ni el sprint.
+ *
+ * Cada `include` es un viaje más contra una base remota, y para cambiar de
+ * etapa no hacen falta: el catálogo de etapas se lee igualmente al lado —de ahí
+ * sale la anterior— y del sprint solo se necesita el id, que el puntero ya
+ * trae. Es la mitad de lo que costaba el gesto que más se pulsa en clase.
+ */
+export async function cargarDinamicaLigera(
+  dinamicaId: string,
+  grupoId: string,
+): Promise<DinamicaScrum | null> {
+  const q = new Parse.Query<DinamicaScrum>('DinamicaScrum');
+  q.equalTo('exists' as any, true as any);
+  try {
+    const dinamica = await q.get(dinamicaId, { useMasterKey: true });
+    return dinamica.getGrupoId() === grupoId ? dinamica : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function cargarDinamica(
   dinamicaId: string,
   grupoId: string,
@@ -499,7 +521,10 @@ async function compromisosDeEquipos(
 export function difundirEtapa(dinamica: DinamicaScrum, etapa: EtapaScrum | null): void {
   const dinamicaId = dinamica.id!;
   if (cuantosEscuchanTablero(dinamicaId) === 0) return;
-  const sprint = dinamica.getSprintActual();
+  // El parche NO lleva el sprint: cambiar de etapa no lo toca, y mandarlo
+  // obligaba a desplegarlo —un viaje más— o a mandarlo a medias, que es lo que
+  // pasaba: el alumno veía «Sprint 1» sin objetivo durante los dos segundos que
+  // tardaba en llegar el estado completo. Quien recibe conserva el suyo.
   publicarTablero(dinamicaId, {
     tipo: 'etapa',
     dinamica: dinamica.toSafeJSON(),
@@ -510,14 +535,6 @@ export function difundirEtapa(dinamica: DinamicaScrum, etapa: EtapaScrum | null)
         color: etapa.getColor(),
         pista: etapa.getPista(),
         politica: etapa.getPolitica(),
-      }
-      : null,
-    sprint: sprint
-      ? {
-        id: sprint.id,
-        numero: sprint.get('numero') ?? 1,
-        objetivo: sprint.get('objetivo') ?? '',
-        cerrado: sprint.get('cerrado') === true,
       }
       : null,
     serverNow: new Date().toISOString(),

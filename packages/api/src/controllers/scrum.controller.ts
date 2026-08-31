@@ -11,6 +11,7 @@ import { getAlumnosDeGrupo, type AlumnoConPerfil } from '../services/grupo-alumn
 import {
   construirEstadoDinamica,
   cargarDinamica,
+  cargarDinamicaLigera,
   cargarEquipo,
   colorParaEquipo,
   asegurarSprint,
@@ -231,7 +232,9 @@ export async function setEtapaActual(req: Request, res: Response): Promise<void>
     // Las dos lecturas en paralelo: en fila india eran dos viajes a una base
     // remota antes de siquiera empezar.
     const [dinamica, etapas] = await Promise.all([
-      cargarDinamica(dinamicaId, grupoId),
+      // Pelada a propósito: la etapa anterior sale del catálogo que se lee aquí
+      // al lado y del sprint solo hace falta el id. Ver `cargarDinamicaLigera`.
+      cargarDinamicaLigera(dinamicaId, grupoId),
       etapasDeGrupo(grupoId),
     ]);
     if (!dinamica) {
