@@ -12,6 +12,8 @@ import {
   construirEstadoDinamica,
   cargarDinamica,
   cargarDinamicaLigera,
+  colgadoDeEquipos,
+  sprintsColgados,
   cargarEquipo,
   colorParaEquipo,
   asegurarSprint,
@@ -203,11 +205,18 @@ export async function borrarDinamica(req: Request, res: Response): Promise<void>
       return;
     }
     const equipos = await equiposDeDinamica(dinamicaId);
-    const historias = await historiasDeEquipos(equipos.map((e) => e.id!));
-    for (const h of historias) h.softDelete();
-    for (const e of equipos) e.softDelete();
-    dinamica.softDelete();
-    await Parse.Object.saveAll([...historias, ...equipos, dinamica], { useMasterKey: true });
+    const ids = equipos.map((e) => e.id!);
+    // Se va TODO lo que cuelga, no solo las historias: épicas, tarjetas de
+    // retro, marcadores y sprints. Lo que se quedara vivo no lo leería ya
+    // nadie, pero la base es la de producción y se comparte.
+    const [historias, colgado, sprints] = await Promise.all([
+      historiasDeEquipos(ids, { incluirArchivadas: true }),
+      colgadoDeEquipos(ids),
+      sprintsColgados(dinamicaId),
+    ]);
+    const todo = [...historias, ...colgado, ...sprints, ...equipos, dinamica];
+    for (const x of todo) (x as unknown as { softDelete(): void }).softDelete();
+    await Parse.Object.saveAll(todo, { useMasterKey: true });
     res.json({ status: 'ok' });
   } catch {
     error(res, 500, 'Error al borrar la dinámica');
@@ -560,9 +569,11 @@ export async function borrarEquipo(req: Request, res: Response): Promise<void> {
       error(res, 404, 'El equipo no existe en esta dinámica');
       return;
     }
-    for (const h of historias) h.softDelete();
-    equipo.softDelete();
-    await Parse.Object.saveAll([...historias, equipo], { useMasterKey: true });
+    // Igual que al borrar la dinámica: con el equipo se va lo suyo entero.
+    const colgado = await colgadoDeEquipos([equipoId]);
+    const todo = [...historias, ...colgado, equipo];
+    for (const x of todo) (x as unknown as { softDelete(): void }).softDelete();
+    await Parse.Object.saveAll(todo, { useMasterKey: true });
 
     res.json({
       status: 'ok',

@@ -661,6 +661,39 @@ export async function historicoDeEquipo(equipoId: string): Promise<SprintEquipo[
   return filas.sort((a, b) => (a.getSprint()?.get('numero') ?? 0) - (b.getSprint()?.get('numero') ?? 0));
 }
 
+
+/**
+ * Todo lo que cuelga de unos equipos: épicas, tarjetas de retro y marcadores.
+ *
+ * Se usa al borrar. Nadie volvería a leerlos —se consultan por el equipo, que
+ * ya no existe—, pero la base es la de producción y se comparte: dejarlos ahí
+ * es basura que solo crece.
+ */
+export async function colgadoDeEquipos(equipoIds: string[]): Promise<Parse.Object[]> {
+  if (equipoIds.length === 0) return [];
+  const punteros = equipoIds.map((id) => EquipoScrum.createWithoutData(id));
+  const de = async (clase: string) => {
+    const q = new Parse.Query(clase);
+    q.containedIn('equipo' as any, punteros as any);
+    q.equalTo('exists' as any, true as any);
+    q.limit(1000);
+    return q.find({ useMasterKey: true });
+  };
+  const [epicas, retro, marcadores] = await Promise.all([
+    de('EpicaScrum'), de('TarjetaRetro'), de('SprintEquipo'),
+  ]);
+  return [...epicas, ...retro, ...marcadores];
+}
+
+/** Los sprints de una dinámica. Se usa al borrarla. */
+export async function sprintsColgados(dinamicaId: string): Promise<Parse.Object[]> {
+  const q = new Parse.Query('SprintScrum');
+  q.equalTo('dinamica' as any, DinamicaScrum.createWithoutData(dinamicaId) as any);
+  q.equalTo('exists' as any, true as any);
+  q.limit(500);
+  return q.find({ useMasterKey: true });
+}
+
 /** El marcador vivo de un equipo en el sprint en curso, creándolo si falta. */
 export async function marcadorVivo(
   sprintId: string,

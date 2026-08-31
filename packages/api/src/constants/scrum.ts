@@ -254,6 +254,16 @@ export const RESTRICCIONES_SEMILLA = [
  * que hace comparable «no terminamos una historia» con «nos saltamos una
  * restricción», que es justo la comparación que la actividad quiere provocar.
  */
+/**
+ * Tope de penalizaciones que se le pueden cargar a un equipo en un sprint.
+ *
+ * Las cuenta el profesor a mano —las reporta el PO— y no hay ninguna clase en
+ * la que pasen de unas pocas. El tope está para que un dedo torpe en el cuadro
+ * no deje al equipo con un bloqueo del que ya no sale: la deuda del sprint
+ * siguiente se calcula sobre él.
+ */
+export const MAX_PENALIZACIONES = 99;
+
 export const PUNTOS_POR_PENALIZACION = 1;
 
 /* ------------------------------------------------------------------ */

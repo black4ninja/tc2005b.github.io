@@ -4,7 +4,7 @@ import { HistoriaUsuario } from '../models/HistoriaUsuario.js';
 import { SprintScrum } from '../models/SprintScrum.js';
 import type { SprintEquipo, CorteBurndown } from '../models/SprintEquipo.js';
 import {
-  COLUMNAS_DEL_SPRINT, PUNTOS_POR_PENALIZACION,
+  COLUMNAS_DEL_SPRINT, MAX_PENALIZACIONES, PUNTOS_POR_PENALIZACION,
 } from '../constants/scrum.js';
 import {
   equiposDeDinamica, historiasDeEquipos, marcadorVivo, puntosComprometidos, puntosRestantes,
@@ -25,6 +25,12 @@ import {
 
 /** El hito con el que arranca todo burndown: lo que el equipo se comprometió. */
 export const ETIQUETA_COMPROMISO = 'Compromiso';
+
+/**
+ * Cuántos cortes se guardan de un sprint. Un profesor que pasea por las etapas
+ * mete uno por cada paseo y la gráfica no gana nada con los de más.
+ */
+const MAX_CORTES = 40;
 
 /**
  * Guarda cuántos puntos quedaban en este instante.
@@ -58,7 +64,7 @@ export async function tomarCorte(
   } else {
     cortes.push(corte);
   }
-  marcador.setCortes(cortes.slice(-40));
+  marcador.setCortes(cortes.slice(-MAX_CORTES));
   await marcador.save(null, { useMasterKey: true });
 }
 
@@ -227,10 +233,24 @@ export async function cerrarSprint(
   const equipos = await equiposDeDinamica(dinamicaId);
   const resultado: CierreEquipo[] = [];
   const aGuardar: Parse.Object[] = [];
-  const marcadores: SprintEquipo[] = [];
 
-  for (const equipo of equipos) {
-    const historias = await historiasDeEquipos([equipo.id!]);
+  // Las historias de TODOS los equipos de una, y los marcadores en paralelo.
+  // Cerrar el sprint se pulsa con la clase esperando el marcador, y pedirlas
+  // equipo por equipo eran dos viajes encadenados por equipo: con nueve, casi
+  // veinte contra una base remota.
+  const [todas, marcadores] = await Promise.all([
+    historiasDeEquipos(equipos.map((e) => e.id!)),
+    Promise.all(equipos.map((e) => marcadorVivo(sprintId, e.id!))),
+  ]);
+  const porEquipo = new Map<string, HistoriaUsuario[]>();
+  for (const h of todas) {
+    const suyas = porEquipo.get(h.getEquipoId()) ?? [];
+    suyas.push(h);
+    porEquipo.set(h.getEquipoId(), suyas);
+  }
+
+  for (const [i, equipo] of equipos.entries()) {
+    const historias = porEquipo.get(equipo.id!) ?? [];
     const terminadas = historias.filter((h) => h.getColumna() === 'done');
     const abiertas = historias.filter(
       (h) => COLUMNAS_DEL_SPRINT.includes(h.getColumna()) && h.getColumna() !== 'done',
@@ -238,7 +258,10 @@ export async function cerrarSprint(
 
     const cerrados = terminadas.reduce((t, h) => t + Math.max(0, h.getPuntos()), 0);
     const abiertosPts = abiertas.reduce((t, h) => t + Math.max(0, h.getPuntos()), 0);
-    const pen = Math.max(0, Math.trunc(penalizaciones[equipo.id!] ?? 0));
+    const pen = Math.min(
+      MAX_PENALIZACIONES,
+      Math.max(0, Math.trunc(penalizaciones[equipo.id!] ?? 0)),
+    );
     const bloqueo = abiertosPts + pen * PUNTOS_POR_PENALIZACION;
 
     for (const h of terminadas) {
@@ -247,18 +270,19 @@ export async function cerrarSprint(
       aGuardar.push(h);
     }
 
-    const marcador = await marcadorVivo(sprintId, equipo.id!);
+    const marcador = marcadores[i];
     marcador.setCerrados(cerrados);
     marcador.setAbiertas(abiertas.length);
     marcador.setAbiertosPts(abiertosPts);
     marcador.setPenalizaciones(pen);
     marcador.setBloqueo(bloqueo);
     // Último corte del burndown: dónde se quedó la línea al cerrar.
+    // Con el mismo tope que `tomarCorte`: quien pasea por las etapas no engorda
+    // la fila sin límite, y el corte del cierre no tiene por qué escaparse.
     marcador.setCortes([
       ...marcador.getCortes(),
       { en: new Date().toISOString(), etiqueta: 'Cierre', restantes: abiertosPts },
-    ]);
-    marcadores.push(marcador);
+    ].slice(-MAX_CORTES));
 
     equipo.setBloqueoPendiente(bloqueo);
     aGuardar.push(equipo);
