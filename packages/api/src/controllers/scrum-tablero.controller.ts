@@ -14,6 +14,7 @@ import {
   equipoDelAlumno,
   equiposDeDinamica,
   historiasDeEquipos,
+  historicoDeEquipos,
   otraHistoriaViva,
   siguienteOrdenEnColumna,
   type EstadoDinamica,
@@ -758,7 +759,19 @@ export async function getProyeccionScrum(req: Request, res: Response): Promise<v
       return;
     }
     const estado = await construirEstadoDinamica(dinamicaId);
-    res.json({ status: 'ok', ...estado });
+    // El histórico va aparte del estado del tablero: solo cambia al cerrar un
+    // sprint, así que no tiene por qué viajar en cada empujón del stream —que
+    // es lo que ve el alumno cada vez que alguien mueve una tarjeta—.
+    const historico = await historicoDeEquipos((estado?.equipos ?? []).map((e) => e.id as string));
+    res.json({
+      status: 'ok',
+      ...estado,
+      historico: historico.map((m) => ({
+        ...m.toSafeJSON(),
+        numero: m.getSprint()?.get('numero') ?? 0,
+        objetivo: m.getSprint()?.get('objetivo') ?? '',
+      })),
+    });
   } catch {
     error(res, 500, 'Error al leer la proyección');
   }

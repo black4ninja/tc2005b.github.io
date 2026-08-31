@@ -623,6 +623,17 @@ export async function marcadoresDeSprint(sprintId: string): Promise<SprintEquipo
 }
 
 /** Todo el histórico de un equipo, sprint a sprint. */
+export async function historicoDeEquipos(equipoIds: string[]): Promise<SprintEquipo[]> {
+  if (equipoIds.length === 0) return [];
+  const q = new Parse.Query<SprintEquipo>('SprintEquipo');
+  q.containedIn('equipo' as any, equipoIds.map((id) => EquipoScrum.createWithoutData(id)) as any);
+  q.equalTo('exists' as any, true as any);
+  q.include('sprint' as any);
+  q.limit(500);
+  const filas = await q.find({ useMasterKey: true });
+  return filas.sort((a, b) => (a.getSprint()?.get('numero') ?? 0) - (b.getSprint()?.get('numero') ?? 0));
+}
+
 export async function historicoDeEquipo(equipoId: string): Promise<SprintEquipo[]> {
   const q = new Parse.Query<SprintEquipo>('SprintEquipo');
   q.equalTo('equipo' as any, EquipoScrum.createWithoutData(equipoId) as any);

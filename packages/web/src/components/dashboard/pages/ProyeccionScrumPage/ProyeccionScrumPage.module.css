@@ -188,3 +188,31 @@
   font-size: 1.1rem;
   color: var(--text-muted);
 }
+
+/* Las gráficas en fila, arrastrando de lado. Proyectando con seis equipos a la
+   vez el alto es lo que falta y el ancho sobra; apilarlas dejaría fuera de
+   pantalla todo menos la primera. Mismo gesto que las columnas del kanban. */
+.tiraGraficas {
+  display: flex;
+  gap: var(--space-sm);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  scroll-snap-type: x proximity;
+  /* Sin esto, un hijo flexible se niega a encoger y la fila desborda el panel
+     en vez de hacer scroll dentro. */
+  min-width: 0;
+}
+
+.grafica {
+  flex: 0 0 auto;
+  width: 240px;
+  scroll-snap-align: start;
+}
+
+/* La barra, fina y discreta: esto se proyecta. */
+.tiraGraficas::-webkit-scrollbar { height: 6px; }
+.tiraGraficas::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 999px;
+}

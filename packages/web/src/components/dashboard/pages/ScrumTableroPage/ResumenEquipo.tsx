@@ -1,5 +1,7 @@
 import Burndown from '../../organisms/Burndown/Burndown';
-import { iniciales, type Marcador, type Persona, type TarjetaRetro } from '../../../../utils/scrum';
+import {
+  iniciales, serieProyecto, type Marcador, type Persona, type TarjetaRetro,
+} from '../../../../utils/scrum';
 import styles from './ResumenEquipo.module.css';
 
 export interface DatosResumen {
@@ -46,29 +48,8 @@ export default function ResumenEquipo({ datos }: { datos: DatosResumen }) {
 
   const maxIntegrante = Math.max(1, ...porIntegrante.map((p) => p.puntos));
 
-  /**
-   * El burndown del PROYECTO no se puede apoyar en lo planeado sprint a sprint:
-   * lo que la deuda devuelve al backlog se vuelve a comprometer, así que el
-   * mismo trabajo contaría dos o tres veces y la gráfica arrancaría de un total
-   * que nunca existió. La base es el trabajo conocido de verdad: lo cerrado,
-   * más lo que quedó abierto al final, más lo que nunca salió del backlog.
-   */
-  const abiertoAlFinal = historico[historico.length - 1]?.abiertosPts ?? 0;
   const pendienteBacklog = sinEmpezar.reduce((t, h) => t + Math.max(0, h.puntos), 0);
-  const totalProyecto = cerrados + abiertoAlFinal + pendienteBacklog;
-
-  // Empieza en el total, igual que el del sprint empieza en el compromiso: sin
-  // ese punto la gráfica arranca donde ya habían avanzado.
-  const cortesProyecto = [
-    { en: '', etiqueta: 'Inicio', restantes: totalProyecto },
-    ...historico.map((m) => ({
-      en: '',
-      etiqueta: `Sprint ${m.numero ?? ''}`,
-      restantes: Math.max(0, totalProyecto - historico
-        .filter((x) => (x.numero ?? 0) <= (m.numero ?? 0))
-        .reduce((t, x) => t + x.cerrados, 0)),
-    })),
-  ];
+  const { cortes: cortesProyecto, total: totalProyecto } = serieProyecto(historico, pendienteBacklog);
 
   return (
     <div className={styles.resumen}>

@@ -249,6 +249,39 @@ export interface Dinamica {
 }
 
 /**
+ * La serie del burndown del PROYECTO: lo que queda por cerrar sprint a sprint.
+ *
+ * No se puede apoyar en lo planeado de cada sprint: lo que la deuda devuelve al
+ * backlog se vuelve a comprometer, así que el mismo trabajo contaría dos o tres
+ * veces y la gráfica arrancaría de un total que nunca existió. La base es el
+ * trabajo conocido de verdad: lo cerrado, más lo que quedó abierto al final,
+ * más lo que nunca salió del backlog.
+ */
+export function serieProyecto(
+  historico: Marcador[],
+  pendienteBacklog: number,
+): { cortes: CorteBurndown[]; total: number } {
+  const cerrados = historico.reduce((t, m) => t + m.cerrados, 0);
+  const abiertoAlFinal = historico[historico.length - 1]?.abiertosPts ?? 0;
+  const total = cerrados + abiertoAlFinal + pendienteBacklog;
+  return {
+    total,
+    // Empieza en el total, igual que el del sprint empieza en el compromiso:
+    // sin ese punto la gráfica arranca donde ya habían avanzado.
+    cortes: [
+      { en: '', etiqueta: 'Inicio', restantes: total },
+      ...historico.map((m) => ({
+        en: '',
+        etiqueta: `Sprint ${m.numero ?? ''}`,
+        restantes: Math.max(0, total - historico
+          .filter((x) => (x.numero ?? 0) <= (m.numero ?? 0))
+          .reduce((t, x) => t + x.cerrados, 0)),
+      })),
+    ],
+  };
+}
+
+/**
  * Quién tiene trabajo vivo y cuál es.
  *
  * «Vivo» es todo lo que no está en `done`. Sirve para no ofrecer a alguien que

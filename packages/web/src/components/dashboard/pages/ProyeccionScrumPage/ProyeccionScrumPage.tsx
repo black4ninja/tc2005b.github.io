@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import TableroScrum from '../../organisms/TableroScrum/TableroScrum';
 import Burndown from '../../organisms/Burndown/Burndown';
 import {
-  POLITICA_SIN_ETAPA, rejillaProyeccion, sumaPuntos,
-  type Dinamica, type EquipoTablero, type Etapa, type Sprint,
+  POLITICA_SIN_ETAPA, rejillaProyeccion, serieProyecto, sumaPuntos,
+  type Dinamica, type EquipoTablero, type Etapa, type Marcador, type Sprint,
 } from '../../../../utils/scrum';
 import styles from './ProyeccionScrumPage.module.css';
 
@@ -38,6 +38,11 @@ export default function ProyeccionScrumPage() {
   const [equipos, setEquipos] = useState<EquipoTablero[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [vista, setVista] = useState<Vista>('tableros');
+  // El histórico de todos los equipos. No viaja en el stream —solo cambia al
+  // cerrar un sprint—, así que se guarda aparte y se vuelve a pedir cuando el
+  // sprint cambia de número.
+  const [historico, setHistorico] = useState<Marcador[]>([]);
+  const sprintDelHistorico = useRef<string | null>(null);
 
   const elegidos = useMemo(() => {
     const crudo = params.get('equipos');
@@ -64,6 +69,8 @@ export default function ProyeccionScrumPage() {
       const json = await r.json();
       if (!r.ok) throw new Error(json?.message ?? 'No se pudo cargar la proyección');
       aplicar(json);
+      setHistorico(json?.historico ?? []);
+      sprintDelHistorico.current = json?.sprint?.id ?? null;
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cargar');
@@ -76,7 +83,14 @@ export default function ProyeccionScrumPage() {
     if (!grupoId || !dinamicaId) return;
     const fuente = new EventSource(`${base}/stream`, { withCredentials: true });
     fuente.onmessage = (ev) => {
-      try { aplicar(JSON.parse(ev.data)); } catch { /* trama a medias: llega otra */ }
+      try {
+        const json = JSON.parse(ev.data);
+        aplicar(json);
+        // Se cerró un sprint: el histórico tiene una fila más y hay que pedirlo.
+        if (json?.tipo !== 'etapa' && (json?.sprint?.id ?? null) !== sprintDelHistorico.current) {
+          void cargar();
+        }
+      } catch { /* trama a medias: llega otra */ }
     };
     return () => fuente.close();
   }, [base, grupoId, dinamicaId, aplicar]);
@@ -169,7 +183,11 @@ export default function ProyeccionScrumPage() {
                   objetivo={sprint?.objetivo ?? ''}
                 />
               ) : (
-                <ResumenPanel equipo={equipo} />
+                <ResumenPanel
+                  equipo={equipo}
+                  historico={historico.filter((m) => m.equipo === equipo.id)}
+                  sprint={sprint}
+                />
               )}
             </section>
           ))}
@@ -179,14 +197,32 @@ export default function ProyeccionScrumPage() {
   );
 }
 
-/** El otro lado del interruptor: cómo va el equipo, sin leer las tarjetas. */
-function ResumenPanel({ equipo }: { equipo: EquipoTablero }) {
+/**
+ * El otro lado del interruptor: cómo va el equipo, sin leer las tarjetas.
+ *
+ * Las gráficas van en una fila que se arrastra, no apiladas: proyectando con
+ * seis equipos a la vez el alto es lo que falta, y el ancho sobra. Es el mismo
+ * gesto que las columnas del kanban.
+ */
+function ResumenPanel({ equipo, historico, sprint }: {
+  equipo: EquipoTablero;
+  historico: Marcador[];
+  sprint: Sprint | null;
+}) {
   const enSprint = equipo.historias.filter((h) => h.columna !== 'backlog');
   const cerrados = sumaPuntos(equipo.historias.filter((h) => h.columna === 'done'));
   const planeados = equipo.marcador?.planeados || sumaPuntos(enSprint);
   // Lo que queda se cuenta del tablero, no restando: después de que la deuda
   // devuelve historias al backlog, lo planeado y lo que hay dejan de cuadrar.
   const sinCerrar = sumaPuntos(enSprint.filter((h) => h.columna !== 'done'));
+
+  // El sprint en curso todavía no está en el histórico, así que se enseña
+  // aparte y al final: la fila se lee de izquierda a derecha, del proyecto
+  // entero al sprint de ahora.
+  const enCurso = equipo.marcador;
+  const cerrados_ = historico.filter((m) => m.id !== enCurso?.id);
+  const pendienteBacklog = sumaPuntos(equipo.historias.filter((h) => h.columna === 'backlog'));
+  const proyecto = serieProyecto(historico, pendienteBacklog);
 
   return (
     <div className={styles.resumen}>
@@ -195,11 +231,38 @@ function ResumenPanel({ equipo }: { equipo: EquipoTablero }) {
         <Dato valor={cerrados} etiqueta="cerrado" tono="ok" />
         <Dato valor={Math.max(0, sinCerrar)} etiqueta="sin cerrar" tono={sinCerrar > 0 ? 'aviso' : undefined} />
       </div>
-      <Burndown
-        titulo="Sprint"
-        cortes={equipo.marcador?.cortes ?? []}
-        planeados={planeados}
-      />
+
+      <div className={styles.tiraGraficas}>
+        {historico.length > 0 && (
+          <div className={styles.grafica}>
+            <Burndown
+              titulo="Todo el proyecto"
+              cortes={proyecto.cortes}
+              planeados={proyecto.total}
+              pasos={proyecto.cortes.length}
+              secundario
+            />
+          </div>
+        )}
+        {cerrados_.map((m) => (
+          <div className={styles.grafica} key={m.id}>
+            <Burndown
+              titulo={`Sprint ${m.numero ?? ''}`}
+              cortes={m.cortes}
+              planeados={m.planeados}
+              pasos={m.pasos}
+            />
+          </div>
+        ))}
+        <div className={styles.grafica}>
+          <Burndown
+            titulo={sprint ? `Sprint ${sprint.numero}` : 'Sprint en curso'}
+            cortes={enCurso?.cortes ?? []}
+            planeados={planeados}
+            pasos={enCurso?.pasos}
+          />
+        </div>
+      </div>
     </div>
   );
 }
