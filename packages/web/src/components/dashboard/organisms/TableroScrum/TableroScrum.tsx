@@ -56,10 +56,13 @@ export default function TableroScrum({
   onAsignar,
   onEditarObjetivo,
 }: Props) {
-  const porColumna = agruparPorColumna(equipo.historias);
+  const porColumna = agruparPorColumna(equipo.historias ?? []);
   const tablero = useRef<HTMLDivElement>(null);
+  // Con `?? []` a propósito: un equipo sin épicas es un caso normal, y que a
+  // esta lista le faltara el campo tumbaba la pestaña entera en vez de pintar
+  // un tablero sin colores de épica.
   const epicas = useMemo(
-    () => new Map(equipo.epicas.map((e) => [e.id, e])),
+    () => new Map((equipo.epicas ?? []).map((e) => [e.id, e])),
     [equipo.epicas],
   );
 

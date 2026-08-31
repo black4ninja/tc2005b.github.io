@@ -221,25 +221,6 @@ export interface EquipoConTablero extends Record<string, unknown> {
   historias: Record<string, unknown>[];
 }
 
-/** Los equipos con sus historias colgando, que es como se pinta el tablero. */
-export function armarTableros(
-  equipos: EquipoScrum[],
-  historias: HistoriaUsuario[],
-): EquipoConTablero[] {
-  const porEquipo = new Map<string, HistoriaUsuario[]>();
-  for (const h of historias) {
-    const id = h.getEquipoId();
-    if (!id) continue;
-    const lista = porEquipo.get(id) ?? [];
-    lista.push(h);
-    porEquipo.set(id, lista);
-  }
-  return equipos.map((e) => ({
-    ...(e.toSafeJSON() as Record<string, unknown>),
-    id: e.id!,
-    historias: (porEquipo.get(e.id!) ?? []).map((h) => h.toSafeJSON()),
-  }));
-}
 
 /** El equipo del alumno dentro de una dinámica, o null si no le tocó ninguno. */
 export async function equipoDelAlumno(

@@ -9,7 +9,7 @@ import { HistoriaUsuario } from '../models/HistoriaUsuario.js';
 import { normalizarColor, PALETA_CATEGORIAS } from '../models/CategoriaGrupo.js';
 import { getAlumnosDeGrupo, type AlumnoConPerfil } from '../services/grupo-alumno.service.js';
 import {
-  armarTableros,
+  construirEstadoDinamica,
   cargarDinamica,
   cargarEquipo,
   colorParaEquipo,
@@ -409,8 +409,12 @@ export async function getDinamica(req: Request, res: Response): Promise<void> {
     const actual = await asegurarSprint(dinamica);
     if (actual && !sprints.some((sp) => sp.id === actual.id)) sprints.push(actual);
 
-    const [historias, marcadores] = await Promise.all([
-      historiasDeEquipos(equipos.map((e) => e.id!)),
+    // Los tableros se arman con el MISMO constructor que ve el alumno y la
+    // proyección. Antes aquí se pegaban solo las historias, así que a los
+    // equipos les faltaban las épicas y la pestaña «Tableros» reventaba entera
+    // al intentar recorrerlas.
+    const [estado, marcadores] = await Promise.all([
+      construirEstadoDinamica(dinamicaId, { dinamica, equipos }),
       actual ? marcadoresDeSprint(actual.id!) : Promise.resolve([]),
     ]);
 
@@ -418,7 +422,7 @@ export async function getDinamica(req: Request, res: Response): Promise<void> {
       status: 'ok',
       dinamica: dinamica.toSafeJSON(),
       etapas: etapas.map((e) => e.toSafeJSON()),
-      equipos: armarTableros(equipos, historias),
+      equipos: estado?.equipos ?? [],
       sinEquipo: fotoDeEquipos(equipos, alumnos).sinEquipo,
       maxEquipos: MAX_EQUIPOS,
       sprints: sprints.map((sp) => sp.toSafeJSON()),
