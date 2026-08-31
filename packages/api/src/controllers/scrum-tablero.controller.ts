@@ -655,11 +655,13 @@ export async function borrarHistoria(req: Request, res: Response): Promise<void>
 /**
  * PUT /alumno/grupos/:grupoId/scrum/objetivo — `{ objetivo }`.
  *
- * El objetivo del sprint es del EQUIPO y lo escribe el equipo: es a lo que se
- * compromete, no lo que le mandan. Por eso está en el camino del alumno y no en
- * el del profesor.
+ * El objetivo es del SPRINT y es el mismo para toda la clase: lo pone el
+ * profesor —viene sembrado con los de la presentación— y todos los equipos
+ * trabajan contra él. Los alumnos pueden reescribirlo en el planning, para los
+ * sprints que se salgan de lo previsto; como es uno solo, quien lo cambia lo
+ * cambia para todos, y de que no se pisen se encarga el semáforo.
  */
-export async function setObjetivoEquipo(req: Request, res: Response): Promise<void> {
+export async function setObjetivoSprint(req: Request, res: Response): Promise<void> {
   try {
     const ctx = await equipoEditable(req, res);
     if (!ctx) return;
@@ -667,16 +669,21 @@ export async function setObjetivoEquipo(req: Request, res: Response): Promise<vo
       error(res, 409, 'El objetivo del sprint se escribe en el planning');
       return;
     }
-    if (ocupado(res, ctx, `objetivo:${ctx.equipo!.id}`)) return;
+    if (!ctx.sprintId) {
+      error(res, 409, 'Todavía no hay un sprint abierto');
+      return;
+    }
+    if (ocupado(res, ctx, `objetivo:${ctx.sprintId}`)) return;
     const objetivo = String(req.body?.objetivo ?? '').trim().replace(/\s+/g, ' ');
     if (objetivo.length > LARGO_OBJETIVO) {
       error(res, 400, `El objetivo no puede pasar de ${LARGO_OBJETIVO} caracteres`);
       return;
     }
-    ctx.equipo!.setObjetivo(objetivo);
-    await ctx.equipo!.save(null, { useMasterKey: true });
-    void difundirTablero(ctx.dinamicaId!);
+    const sprint = SprintScrum.createWithoutData(ctx.sprintId) as SprintScrum;
+    sprint.setObjetivo(objetivo);
+    await sprint.save(null, { useMasterKey: true });
     res.json({ status: 'ok', objetivo });
+    void difundirTablero(ctx.dinamicaId!);
   } catch {
     error(res, 500, 'Error al guardar el objetivo del sprint');
   }

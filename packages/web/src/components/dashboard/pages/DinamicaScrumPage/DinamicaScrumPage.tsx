@@ -628,7 +628,7 @@ export default function DinamicaScrumPage() {
               </header>
               {/* Solo lectura: el tablero es del equipo. El profesor mira, no
                   mueve las tarjetas de nadie. */}
-              <TableroScrum equipo={equipo} escala="full" />
+              <TableroScrum equipo={equipo} escala="full" objetivo={enCurso?.objetivo ?? ''} />
             </section>
           ))}
           {equipos.length === 0 && <p className={styles.hint}>Todavía no hay equipos que enseñar.</p>}

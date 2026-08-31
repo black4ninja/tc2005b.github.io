@@ -31,7 +31,7 @@ import {
   crearHistoria,
   actualizarHistoria,
   borrarHistoria,
-  setObjetivoEquipo,
+  setObjetivoSprint,
   getProyeccionScrum,
   streamProyeccionScrum,
   setProductOwner,
@@ -115,7 +115,7 @@ router.get('/alumno/grupos/:grupoId/scrum/stream', streamMiTablero);
 router.post('/alumno/grupos/:grupoId/scrum/historias', crearHistoria);
 router.put('/alumno/grupos/:grupoId/scrum/historias/:historiaId', actualizarHistoria);
 router.delete('/alumno/grupos/:grupoId/scrum/historias/:historiaId', borrarHistoria);
-router.put('/alumno/grupos/:grupoId/scrum/objetivo', setObjetivoEquipo);
+router.put('/alumno/grupos/:grupoId/scrum/objetivo', setObjetivoSprint);
 router.get('/alumno/grupos/:grupoId/scrum/resumen', getResumenEquipo);
 
 // El equipo se organiza solo: su PO y su épica en curso.

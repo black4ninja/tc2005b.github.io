@@ -127,7 +127,6 @@ export interface EquipoTablero {
   id: string;
   nombre: string;
   color: string;
-  objetivo: string;
   orden: number;
   po: string | null;
   epicaActual: string | null;

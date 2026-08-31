@@ -458,7 +458,6 @@ export async function crearEquipo(req: Request, res: Response): Promise<void> {
     equipo.setDinamica(DinamicaScrum.createWithoutData(dinamicaId) as DinamicaScrum);
     equipo.setNombre(nombre);
     equipo.setColor(normalizarColor(req.body?.color) ?? colorParaEquipo(equipos.length));
-    equipo.setObjetivo('');
     equipo.setMiembros([]);
     equipo.setOrden(equipos.length);
     await equipo.save(null, { useMasterKey: true });
@@ -474,7 +473,7 @@ export async function crearEquipo(req: Request, res: Response): Promise<void> {
   }
 }
 
-/** PUT …/equipos/:equipoId — `{ nombre?, color?, objetivo? }`. */
+/** PUT …/equipos/:equipoId — `{ nombre?, color? }`. */
 export async function actualizarEquipo(req: Request, res: Response): Promise<void> {
   const { grupoId, dinamicaId, equipoId } = req.params;
   try {
@@ -507,15 +506,6 @@ export async function actualizarEquipo(req: Request, res: Response): Promise<voi
       }
       equipo.setColor(color);
     }
-    if (req.body?.objetivo !== undefined) {
-      const objetivo = String(req.body.objetivo ?? '').trim();
-      if (objetivo.length > LARGO_OBJETIVO) {
-        error(res, 400, `El objetivo no puede pasar de ${LARGO_OBJETIVO} caracteres`);
-        return;
-      }
-      equipo.setObjetivo(objetivo);
-    }
-
     await equipo.save(null, { useMasterKey: true });
     const [equipos, alumnos] = await Promise.all([
       equiposDeDinamica(dinamicaId),
@@ -774,8 +764,7 @@ export async function repartirAlumnos(req: Request, res: Response): Promise<void
       equipo.setDinamica(DinamicaScrum.createWithoutData(dinamicaId) as DinamicaScrum);
       equipo.setNombre(`Equipo ${equipos.length + i + 1}`);
       equipo.setColor(colorParaEquipo(equipos.length + i));
-      equipo.setObjetivo('');
-      equipo.setOrden(equipos.length + i);
+        equipo.setOrden(equipos.length + i);
       equipo.setMiembros(lote.map((a) => a.alumno));
       return equipo;
     });

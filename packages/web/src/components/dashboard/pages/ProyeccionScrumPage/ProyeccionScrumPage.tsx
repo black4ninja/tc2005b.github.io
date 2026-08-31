@@ -166,6 +166,7 @@ export default function ProyeccionScrumPage() {
                   escala={escala}
                   politica={politica}
                   archivadas={equipo.archivadas}
+                  objetivo={sprint?.objetivo ?? ''}
                 />
               ) : (
                 <ResumenPanel equipo={equipo} />

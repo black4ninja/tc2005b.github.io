@@ -46,14 +46,6 @@ export class EquipoScrum extends BaseModel {
     this.set('color', color);
   }
 
-  /** La frase a la que el equipo se compromete este sprint. Puede estar vacía. */
-  getObjetivo(): string {
-    return this.get('objetivo') ?? '';
-  }
-  setObjetivo(objetivo: string): void {
-    this.set('objetivo', objetivo);
-  }
-
   /**
    * El Product Owner del equipo. Lo elige el propio equipo y es UNO: escribe y
    * prioriza las historias, y reporta en el review las restricciones que no se
@@ -118,7 +110,6 @@ export class EquipoScrum extends BaseModel {
       id: this.id,
       nombre: this.getNombre(),
       color: this.getColor(),
-      objetivo: this.getObjetivo(),
       orden: this.getOrden(),
       po: this.getPoId(),
       epicaActual: this.getEpicaActual()?.id ?? null,

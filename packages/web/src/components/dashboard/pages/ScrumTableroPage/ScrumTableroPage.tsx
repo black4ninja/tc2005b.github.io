@@ -360,8 +360,9 @@ export default function ScrumTableroPage() {
   async function editarObjetivo() {
     const valor = await pedirTexto({
       titulo: 'Objetivo del sprint',
-      html: 'Una frase: a qué se compromete el equipo en este sprint.',
-      valor: equipo?.objetivo ?? '',
+      html: 'Una frase: a qué se compromete la clase en este sprint. Es el mismo para todos '
+        + 'los equipos.',
+      valor: sprint?.objetivo ?? '',
       placeholder: 'Terminar el modelo con todos sus detalles…',
       confirmar: 'Guardar',
     });
@@ -544,6 +545,7 @@ export default function ScrumTableroPage() {
                   editable={editable}
                   politica={politica}
                   archivadas={equipo.archivadas}
+                  objetivo={sprint?.objetivo ?? ''}
                   bloqueos={bloqueos}
                   yoId={yoId}
                   onNuevaHistoria={() => { setEnEdicion(null); setFormAbierto(true); }}

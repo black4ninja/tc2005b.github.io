@@ -18,6 +18,11 @@ interface Props {
   politica?: PoliticaEtapa;
   /** Cuántas historias hay archivadas de sprints anteriores. */
   archivadas?: number;
+  /**
+   * El objetivo del SPRINT, que es uno solo para toda la clase. No vive en el
+   * equipo: todos trabajan contra el mismo y por eso llega de fuera.
+   */
+  objetivo?: string;
   /** Quién está editando qué: la tarjeta ocupada no se abre ni se arrastra. */
   bloqueos?: Bloqueo[];
   yoId?: string;
@@ -48,6 +53,7 @@ export default function TableroScrum({
   editable = false,
   politica = POLITICA_POR_DEFECTO,
   archivadas = 0,
+  objetivo = '',
   bloqueos = [],
   yoId = '',
   onNuevaHistoria,
@@ -209,8 +215,8 @@ export default function TableroScrum({
 
           <div className={styles.objetivo}>
             <span className={styles.objetivoEtiqueta}>Objetivo del sprint</span>
-            <span className={equipo.objetivo ? styles.objetivoTexto : styles.objetivoVacio}>
-              {equipo.objetivo || 'Sin definir'}
+            <span className={objetivo ? styles.objetivoTexto : styles.objetivoVacio}>
+              {objetivo || 'Sin definir'}
             </span>
             {editable && onEditarObjetivo && politica.cobraDeuda ? (
               <button
