@@ -23,7 +23,8 @@ import {
 } from '../services/scrum-bloqueos.js';
 import { SprintScrum } from '../models/SprintScrum.js';
 import {
-  esColumna, esColumnaRetro, esPrioridad, esPuntos, estaEstimada, permiteMover,
+  esColumna, esColumnaRetro, esPrioridad, esPuntos, estaEstimada, necesitaResponsable,
+  permiteMover,
   COLUMNAS_DEL_SPRINT, ESTADOS_COMPROMISO, LARGO_CAMPO, LARGO_OBJETIVO,
   LARGO_TARJETA_RETRO, POLITICA_POR_DEFECTO, POLITICA_SIN_ETAPA, PRIORIDAD_POR_DEFECTO,
   PUNTOS_VALIDOS,
@@ -544,6 +545,13 @@ export async function actualizarHistoria(req: Request, res: Response): Promise<v
         error(res, 409, historia.getPuntos() < 0
           ? 'Esta historia está marcada como demasiado grande: pártela antes de meterla al sprint'
           : 'Solo entran al sprint las historias estimadas');
+        return;
+      }
+      // Nada se pone en marcha sin alguien que responda por ello. Se mira
+      // DESPUÉS de haber aplicado el `responsableId` de esta misma petición,
+      // así que asignar y avanzar en un solo gesto funciona.
+      if (necesitaResponsable(destino) && !historia.getResponsable()) {
+        error(res, 409, 'Antes de moverla, alguien tiene que hacerse responsable de esta historia');
         return;
       }
 

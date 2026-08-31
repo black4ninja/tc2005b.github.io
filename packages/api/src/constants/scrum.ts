@@ -296,6 +296,20 @@ export function esColumnaRetro(v: unknown): v is ColumnaRetro {
 }
 
 /**
+ * ¿Hay que tener un responsable para llegar a esta columna?
+ *
+ * Sí en cuanto la historia se pone en marcha: `doing`, `review` y `done`. En
+ * `planned` todavía no —entrar al sprint es del equipo entero, y repartir es lo
+ * siguiente que se hace—, y en el backlog no puede haberlo.
+ *
+ * Es la regla de «siempre hay un responsable» dicha donde se nota: el equipo
+ * descubre que la tarjeta no avanza hasta que alguien la firma.
+ */
+export function necesitaResponsable(destino: Columna): boolean {
+  return COLUMNAS_DEL_SPRINT.includes(destino) && destino !== 'planned';
+}
+
+/**
  * ¿La etapa permite ESTE movimiento? Función pura porque es la regla que más se
  * ejecuta —cada tarjeta que alguien arrastra pasa por aquí— y la que peor se
  * nota si falla: dejar mover algo en planning rompe la lección de la etapa.

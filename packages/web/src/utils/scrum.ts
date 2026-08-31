@@ -248,6 +248,20 @@ export interface Dinamica {
 }
 
 /**
+ * ¿Hay que tener un responsable para llegar a esta columna?
+ *
+ * Sí en cuanto la historia se pone en marcha: `doing`, `review` y `done`. En
+ * `planned` todavía no —entrar al sprint es del equipo entero, y repartir es lo
+ * siguiente que se hace—, y en el backlog no puede haberlo.
+ *
+ * Es la regla de «siempre hay un responsable» dicha donde se nota: el equipo
+ * descubre que la tarjeta no avanza hasta que alguien la firma.
+ */
+export function necesitaResponsable(destino: Columna): boolean {
+  return COLUMNAS_SPRINT.some((c) => c.key === destino) && destino !== 'planned';
+}
+
+/**
  * Espejo de la regla del servidor. Se repite en el cliente a propósito: la
  * pantalla tiene que poder apagar lo que no se puede arrastrar ANTES de que
  * alguien lo intente, y el servidor la vuelve a comprobar porque la lección es

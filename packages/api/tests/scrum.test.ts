@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { repartirEnEquipos } from '../src/controllers/scrum.controller.js';
 import { elegirDevueltas } from '../src/services/scrum-cierre.service.js';
 import {
-  esColumna, esPrioridad, esPuntos, estaEstimada, permiteMover,
+  esColumna, esPrioridad, esPuntos, estaEstimada, necesitaResponsable, permiteMover,
   COLUMNAS, COLUMNAS_DEL_SPRINT, MAX_EQUIPOS, POLITICA_POR_DEFECTO, POLITICA_SIN_ETAPA,
   PUNTOS_DEMASIADO, PUNTOS_DESCONOCIDO,
 } from '../src/constants/scrum.js';
@@ -100,6 +100,20 @@ describe('sin etapa abierta', () => {
 });
 
 describe('responsable y backlog', () => {
+  it('nada se pone en marcha sin alguien que responda', () => {
+    // La otra mitad de la regla: en el backlog no se puede asignar, y a partir
+    // de «doing» no se puede avanzar sin haberlo hecho. Entre las dos, repartir
+    // deja de ser opcional sin que nadie tenga que recordarlo.
+    expect(necesitaResponsable('doing')).toBe(true);
+    expect(necesitaResponsable('review')).toBe(true);
+    expect(necesitaResponsable('done')).toBe(true);
+  });
+
+  it('entrar al sprint todavía no lo pide: comprometerse es del equipo entero', () => {
+    expect(necesitaResponsable('planned')).toBe(false);
+    expect(necesitaResponsable('backlog')).toBe(false);
+  });
+
   it('el backlog no es una columna del sprint', () => {
     // De aquí sale la regla: repartirse el trabajo pertenece al sprint, y lo
     // que está en el backlog todavía no lo ha comprometido nadie.

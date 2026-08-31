@@ -12,6 +12,7 @@ import ResumenEquipo, { type DatosResumen } from './ResumenEquipo';
 import { avisar, pedirTexto } from '../../../../utils/dialogos';
 import {
   POLITICA_SIN_ETAPA, bloqueoAjeno, cuentaRegresiva, historiasDeOtraEpica, iniciales,
+  necesitaResponsable,
   sumaPuntos,
   type Bloqueo, type Columna, type ColumnaRetro, type Dinamica, type Epica, type EquipoTablero,
   type Etapa, type Historia, type Sprint,
@@ -327,6 +328,18 @@ export default function ScrumTableroPage() {
 
   /** Mover se pinta ANTES de que conteste el servidor: es un gesto de arrastrar. */
   async function mover(historiaId: string, columna: Columna) {
+    // La regla se dice aquí y también la impone el servidor. Aquí, para que se
+    // lea al soltar en vez de ver la tarjeta irse y volver un segundo después;
+    // allí, porque la lección es la regla y no el aviso.
+    const suya = equipo?.historias.find((h) => h.id === historiaId);
+    if (suya && !suya.responsable && necesitaResponsable(columna)) {
+      await avisar({
+        titulo: 'Falta el responsable',
+        texto: 'Antes de moverla, alguien del equipo tiene que hacerse responsable de esta historia.',
+        icono: 'warning',
+      });
+      return;
+    }
     setEquipo((previo) =>
       previo
         ? {
