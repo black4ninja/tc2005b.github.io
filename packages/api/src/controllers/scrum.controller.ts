@@ -272,7 +272,7 @@ export async function setEtapaActual(req: Request, res: Response): Promise<void>
       try {
         await dinamica.save(null, { useMasterKey: true });
         await ritualDeEtapa(
-          dinamicaId, sprint?.id ?? null, anteriorViva, nueva?.getNombre() ?? null,
+          grupoId, dinamicaId, sprint?.id ?? null, anteriorViva, nueva ?? null,
         );
       } catch {
         await difundirTablero(dinamicaId);
@@ -293,17 +293,30 @@ export async function setEtapaActual(req: Request, res: Response): Promise<void>
  * paralelo: antes era una consulta por equipo y por paso, en fila india.
  */
 async function ritualDeEtapa(
+  grupoId: string,
   dinamicaId: string,
   sprintId: string | null,
   anterior: EtapaScrum | null | undefined,
-  etiqueta: string | null,
+  nueva: EtapaScrum | null,
 ): Promise<void> {
   if (!sprintId) return;
   try {
-    const equipos = await equiposDeDinamica(dinamicaId);
+    const [equipos, etapas] = await Promise.all([
+      equiposDeDinamica(dinamicaId),
+      etapasDeGrupo(grupoId),
+    ]);
     if (equipos.length === 0) return;
 
+    // En el planning NO se toma corte: se está decidiendo el compromiso, y
+    // medirlo a medias es lo que dibujaba la caída al empezar. El primer punto
+    // lo pone `fijarPlaneados` al salir.
+    const etiqueta = nueva && nueva.getPolitica().cobraDeuda !== true
+      ? nueva.getNombre()
+      : null;
     const cobra = anterior?.getPolitica().cobraDeuda === true;
+    // Los hitos del ciclo: el compromiso, una etapa de trabajo por cada una que
+    // no sea el planning, y el cierre.
+    const pasos = etapas.filter((e) => e.getPolitica().cobraDeuda !== true).length + 2;
     if (cobra) {
       const historias = await historiasDeEquipos(equipos.map((e) => e.id!));
       const porEquipo = new Map<string, typeof historias>();
@@ -315,7 +328,7 @@ async function ritualDeEtapa(
       await Promise.all(equipos.map(async (equipo) => {
         const suyas = porEquipo.get(equipo.id!) ?? [];
         const cobro = await cobrarDeuda(equipo, suyas);
-        await fijarPlaneados(sprintId, equipo.id!, cobro?.puntos ?? 0, suyas);
+        await fijarPlaneados(sprintId, equipo.id!, cobro?.puntos ?? 0, suyas, pasos);
       }));
     }
 

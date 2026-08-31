@@ -118,6 +118,8 @@ export interface Marcador {
   bloqueo: number;
   devueltos: number;
   cortes: CorteBurndown[];
+  /** Sobre cuántos hitos baja la línea ideal. Se fija al comprometerse. */
+  pasos?: number;
   equipo?: string;
   numero?: number;
   objetivo?: string;

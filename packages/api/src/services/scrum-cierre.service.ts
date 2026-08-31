@@ -23,6 +23,9 @@ import {
 /*  Cortes del burndown                                                */
 /* ------------------------------------------------------------------ */
 
+/** El hito con el que arranca todo burndown: lo que el equipo se comprometió. */
+export const ETIQUETA_COMPROMISO = 'Compromiso';
+
 /**
  * Guarda cuántos puntos quedaban en este instante.
  *
@@ -68,11 +71,27 @@ export async function fijarPlaneados(
   equipoId: string,
   devueltos = 0,
   yaTraidas?: HistoriaUsuario[],
+  /** Cuántos hitos tiene el ciclo, para la línea ideal. Ver `getPasos`. */
+  pasos = 0,
 ): Promise<void> {
   const marcador = await marcadorVivo(sprintId, equipoId);
   const historias = yaTraidas ?? await historiasDeEquipos([equipoId]);
-  marcador.setPlaneados(puntosComprometidos(historias));
+  const comprometidos = puntosComprometidos(historias);
+  marcador.setPlaneados(comprometidos);
   if (devueltos > 0) marcador.setDevueltos(devueltos);
+  if (pasos > 0) marcador.setPasos(pasos);
+
+  // El primer punto de la gráfica es el COMPROMISO, y este es el momento en que
+  // existe. Antes el primer corte se tomaba al entrar en el planning, con el
+  // sprint backlog todavía vacío: la curva empezaba cayendo a cero y volvía a
+  // subir mientras planeaban, que es lo que se veía raro.
+  const cortes = marcador.getCortes();
+  if (!cortes.some((c) => c.etiqueta === ETIQUETA_COMPROMISO)) {
+    marcador.setCortes([
+      { en: new Date().toISOString(), etiqueta: ETIQUETA_COMPROMISO, restantes: comprometidos },
+      ...cortes,
+    ]);
+  }
   await marcador.save(null, { useMasterKey: true });
 }
 

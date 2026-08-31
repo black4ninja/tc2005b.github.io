@@ -72,6 +72,18 @@ export class SprintEquipo extends BaseModel {
 
   /** Puntos que la deuda del sprint ANTERIOR devolvió al backlog en este. */
   getDevueltos(): number { return this.num('devueltos'); }
+
+  /**
+   * Sobre cuántos hitos se traza la línea ideal: el compromiso más un paso por
+   * cada etapa que queda del ciclo, más el cierre.
+   *
+   * Se fija AL COMPROMETERSE y ya no cambia. Antes la ideal se reajustaba a los
+   * cortes que hubiera hasta ese momento, así que su pendiente dependía de
+   * cuántas veces cambiara de etapa el profesor y no del trabajo del equipo:
+   * a mitad de sprint exigía terminarlo todo para el siguiente cambio.
+   */
+  getPasos(): number { return this.num('pasos'); }
+  setPasos(pasos: number): void { this.set('pasos', pasos); }
   setDevueltos(v: number): void { this.set('devueltos', v); }
 
   getCortes(): CorteBurndown[] {
@@ -93,6 +105,7 @@ export class SprintEquipo extends BaseModel {
       penalizaciones: this.getPenalizaciones(),
       bloqueo: this.getBloqueo(),
       devueltos: this.getDevueltos(),
+      pasos: this.getPasos(),
       cortes: this.getCortes(),
     };
   }

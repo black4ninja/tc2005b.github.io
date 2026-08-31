@@ -11,6 +11,15 @@ export interface DatosResumen {
   compromisos: TarjetaRetro[];
 }
 
+/** Lo que hay que leer en el burndown de un sprint, dicho en una frase. */
+function notaSprint(m: Marcador): string {
+  const sinCerrar = Math.max(0, m.planeados - m.cerrados);
+  if (m.planeados === 0) return 'No llegaron a comprometer nada en este sprint.';
+  if (sinCerrar === 0) return `Cerraron los ${m.planeados} puntos que se comprometieron.`;
+  return `Se comprometieron a ${m.planeados} y cerraron ${m.cerrados}: `
+    + `${sinCerrar} ${sinCerrar === 1 ? 'punto se quedó' : 'puntos se quedaron'} sin terminar.`;
+}
+
 /**
  * Lo que el equipo se lleva al terminar la dinámica.
  *
@@ -48,13 +57,18 @@ export default function ResumenEquipo({ datos }: { datos: DatosResumen }) {
   const pendienteBacklog = sinEmpezar.reduce((t, h) => t + Math.max(0, h.puntos), 0);
   const totalProyecto = cerrados + abiertoAlFinal + pendienteBacklog;
 
-  const cortesProyecto = historico.map((m) => ({
-    en: '',
-    etiqueta: `Sprint ${m.numero ?? ''}`,
-    restantes: Math.max(0, totalProyecto - historico
-      .filter((x) => (x.numero ?? 0) <= (m.numero ?? 0))
-      .reduce((t, x) => t + x.cerrados, 0)),
-  }));
+  // Empieza en el total, igual que el del sprint empieza en el compromiso: sin
+  // ese punto la gráfica arranca donde ya habían avanzado.
+  const cortesProyecto = [
+    { en: '', etiqueta: 'Inicio', restantes: totalProyecto },
+    ...historico.map((m) => ({
+      en: '',
+      etiqueta: `Sprint ${m.numero ?? ''}`,
+      restantes: Math.max(0, totalProyecto - historico
+        .filter((x) => (x.numero ?? 0) <= (m.numero ?? 0))
+        .reduce((t, x) => t + x.cerrados, 0)),
+    })),
+  ];
 
   return (
     <div className={styles.resumen}>
@@ -153,9 +167,27 @@ export default function ResumenEquipo({ datos }: { datos: DatosResumen }) {
             titulo="Todo el proyecto"
             cortes={cortesProyecto}
             planeados={totalProyecto}
+            // Un paso por sprint: la ideal del proyecto baja parejo de sprint
+            // en sprint hasta cero en el último.
+            pasos={cortesProyecto.length}
             nota="La distancia con la línea gris es lo que costó la deuda."
             secundario
           />
+
+          {/* Y el de cada sprint por separado. El del proyecto dice si llegaron;
+              estos dicen CÓMO fue cada iteración, que es lo que se compara en la
+              retrospectiva: el que se despeñó y el que bajó parejo no se
+              distinguen en la suma. */}
+          {historico.map((m) => (
+            <Burndown
+              key={m.id}
+              titulo={`Sprint ${m.numero ?? ''}${m.objetivo ? ` · ${m.objetivo}` : ''}`}
+              cortes={m.cortes}
+              planeados={m.planeados}
+              pasos={m.pasos}
+              nota={notaSprint(m)}
+            />
+          ))}
 
           <section className={styles.caja}>
             <span className={styles.cajaTitulo}>Se quedó en el camino</span>

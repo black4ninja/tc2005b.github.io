@@ -566,7 +566,8 @@ export default function ScrumTableroPage() {
                   planeados={equipo.marcador?.planeados || sumaPuntos(
                     equipo.historias.filter((h) => h.columna !== 'backlog'),
                   )}
-                  nota="Cada punto es un cambio de etapa. Si la línea de color va por encima de la gris, van tarde."
+                  pasos={equipo.marcador?.pasos}
+                  nota="Cada punto es un hito del sprint, del compromiso al cierre. Si la línea de color va por encima de la gris, van tarde."
                 />
               </aside>
             )}
