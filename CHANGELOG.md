@@ -8,6 +8,100 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Las reglas del Scrum dejan de ser un aviso y las hace cumplir el servidor.**
+  - **Sin etapa abierta no se toca nada.** Hasta ahora, mientras el profesor no
+    señalaba una etapa regía la política de base —que lo permite todo— y un
+    equipo podía adelantarse a escribir historias y a repartírselas antes de
+    empezar. El corte va en `equipoEditable`, antes que cualquier política de
+    zona, para que no se quede fuera ningún endpoint: ni el tablero, ni las
+    épicas, ni los roles.
+  - **En el backlog las historias no llevan responsable.** El backlog es la
+    lista de lo que está por hacer, y poner nombres ahí es decidir quién hace
+    qué antes de que el equipo se haya comprometido. Una historia que vuelve al
+    backlog deja de ser de nadie.
+  - **Nada avanza en el sprint sin alguien que responda por ello**, y **una
+    persona lleva una historia a la vez**: si ya tiene una que no está en Done,
+    no se le puede dar otra —tampoco sacando la suya de Done por la puerta de
+    atrás—. Entre las dos, repartir el trabajo deja de ser opcional. Quien está
+    ocupado sale en el menú, apagado y con la historia que lleva.
+  - **En desarrollo el sprint ya está comprometido**: ni entra nada del backlog
+    —lo prometía la pista de la etapa y no lo cumplía nadie— ni sale nada hacia
+    él, porque devolver lo que no dio tiempo sería esquivar el bloqueo del
+    cierre. **La daily se mira**: treinta segundos para decir en qué va cada
+    uno, no el rato de poner el tablero al día.
+  - «Solo lectura» pasa a significarlo: cambiar una historia se comprobaba
+    contra una zona que no mira ninguna política, así que en la daily —y en la
+    review— se podía seguir reescribiéndola, reasignarla o borrarla desde el
+    detalle.
+  - La barra de etapas está también **dentro de cada dinámica**, junto a los
+    demás mandos, y actúa sobre esa dinámica.
+
+### Changed
+- **El burndown vuelve a decir lo que dice un burndown.**
+  - Empieza en el **compromiso**. El primer corte se tomaba al entrar en el
+    planning, con el sprint backlog todavía vacío, así que la curva arrancaba
+    cayendo a cero y volvía a subir mientras el equipo planeaba.
+  - La **línea ideal deja de moverse**: se recalculaba sobre los cortes que
+    hubiera hasta ese momento, de modo que su pendiente dependía de cuántas
+    veces cambiara de etapa el profesor y no del trabajo del equipo. Ahora baja
+    del compromiso a cero sobre el ciclo entero, se fija al comprometerse y se
+    queda en cero si el equipo da más vueltas de las previstas.
+  - El **reporte final** lleva el burndown de cada sprint bajo el del proyecto,
+    y la **proyección** los enseña todos por equipo en una tira que se arrastra
+    de lado, como las columnas del kanban.
+  - `packages/api/scripts/normalizar-burndown.ts` (con `--dry-run`) pone al día
+    los sprints jugados con el esquema anterior.
+- **El «por qué» es el titular de la historia y su único campo obligatorio.**
+  Estaba al revés: la tarjeta se leía por el «qué» y el «qué» era lo que no se
+  podía dejar en blanco, con lo que se podía guardar una historia que decía qué
+  construir sin decir para qué.
+
+### Fixed
+- **La pestaña «Tableros» del profesor reventaba entera** al pintar las épicas:
+  armaba los tableros por su cuenta y a los equipos les faltaban las épicas, la
+  retro, los compromisos y el marcador. Había dos formas de armar un tablero;
+  ahora hay una.
+- **El objetivo del sprint no le llegaba al alumno**, que leía «Sin definir» con
+  el del profesor puesto: se pintaba un campo por equipo que nadie escribía.
+- **Escribir una historia se borraba solo.** El formulario se rellenaba con lo
+  guardado cada vez que cambiaban sus props, y dos de ellas son objetos nuevos
+  en cada refresco del tablero: escribir una historia entera sin que cayera un
+  refresco en medio era cuestión de suerte.
+- **El parche de etapa mandaba el sprint a medias** y le borraba al alumno el
+  número y el objetivo durante los dos segundos que tardaba en llegar el estado
+  completo.
+- Tres sitios guardaban un puntero de usuario **sin datos** y devolvían el
+  nombre en blanco: los miembros de un equipo, el responsable de una historia y
+  el de un compromiso.
+- **Borrar una dinámica dejaba huérfanos** épicas, tarjetas de retro, sprints y
+  marcadores; borrar un equipo, lo suyo. La base es la de producción y se
+  comparte.
+- **Cerrar el sprint** pedía las historias y el marcador dentro del bucle de
+  equipos: con nueve, dieciocho viajes encadenados en el botón que se pulsa con
+  la clase esperando el marcador.
+
+### Performance
+- **El tablero del alumno pasa de ~3,5 s a ~1,2 s.** La mayor parte se iba antes
+  de empezar a trabajar: la lista de grupos de un alumno lleva dos niveles de
+  include y cada petición suya la pedía **dos veces** —al validar la sesión y al
+  evaluar el permiso—. Ahora se guarda tres segundos, con olvido explícito al
+  dar de alta, de baja o completar el perfil. Leer el tablero pedía además la
+  dinámica dos veces y los equipos otras dos.
+- **Armar los equipos deja de recargar el detalle entero** en cada gesto: cada
+  cambio devuelve la foto del reparto y la pantalla la fusiona. Asignar un
+  alumno pasa de ~3,5 s a ~1,5 s y crear una dinámica de ~1,6 s a 0,85 s, con
+  velo bloqueante mientras viaja.
+- **Lo que se guarda se ve al momento**, sin esperar a que el tablero entero
+  baje por el stream: al cerrarse el modal de una historia ya está puesta, la
+  épica nueva aparece al volver el POST, y la retrospectiva contesta al Enter
+  —el recuadro se queda con su texto, apagado y diciendo «Guardando…», en vez de
+  vaciarse y dejar la duda—.
+- **Cambiar de etapa** deja de desplegar lo que no usa: las dos lecturas del
+  handler pasan de 209 ms a 94 ms. Lo que queda del viaje es validar la sesión
+  contra la base, que es de la plataforma entera; **no se cachea a propósito**,
+  porque una sesión revocada seguiría valiendo unos segundos en todo el sitio.
+
+### Added
 - **El aula va deprisa: la etapa llega a todas las pantallas a la vez, y nadie
   pisa el trabajo de nadie.**
   - **Cambiar de etapa era el gesto más lento** justo siendo el que más corre:
