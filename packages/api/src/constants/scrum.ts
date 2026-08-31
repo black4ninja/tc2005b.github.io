@@ -183,8 +183,11 @@ export const ETAPAS_SEMILLA: {
     pista:
       'Cada quien dice en qué va, qué sigue y qué lo bloquea. Se mira el sprint backlog y los '
       + 'burndown para decidir qué hay que priorizar para terminarlo.',
+    // La daily se MIRA. Son treinta segundos para decir en qué va cada uno; si
+    // se pueden arrastrar tarjetas, se convierte en el rato de ponerse al día
+    // con el tablero, que es el trabajo que debería estar hecho ya.
     politica: {
-      backlog: 'plegado', sprint: 'editable', movimientos: 'dentro-sprint',
+      backlog: 'plegado', sprint: 'lectura', movimientos: 'ninguno',
       burndown: true, retro: false, cobraDeuda: false, duracionSegundos: 30,
     },
   },

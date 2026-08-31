@@ -3,7 +3,8 @@ import { repartirEnEquipos } from '../src/controllers/scrum.controller.js';
 import { elegirDevueltas } from '../src/services/scrum-cierre.service.js';
 import {
   esColumna, esPrioridad, esPuntos, estaEstimada, necesitaResponsable, permiteMover,
-  COLUMNAS, COLUMNAS_DEL_SPRINT, MAX_EQUIPOS, POLITICA_POR_DEFECTO, POLITICA_SIN_ETAPA,
+  COLUMNAS, COLUMNAS_DEL_SPRINT, ETAPAS_SEMILLA, MAX_EQUIPOS, POLITICA_POR_DEFECTO,
+  POLITICA_SIN_ETAPA,
   PUNTOS_DEMASIADO, PUNTOS_DESCONOCIDO,
 } from '../src/constants/scrum.js';
 
@@ -128,6 +129,27 @@ describe('responsable y backlog', () => {
     // que está en el backlog todavía no lo ha comprometido nadie.
     expect(COLUMNAS_DEL_SPRINT).not.toContain('backlog');
     expect(COLUMNAS).toContain('backlog');
+  });
+});
+
+describe('la daily se mira', () => {
+  const daily = ETAPAS_SEMILLA.find((e) => e.nombre === 'Daily')!;
+
+  it('no deja mover ninguna tarjeta', () => {
+    // Son treinta segundos para decir en qué va cada uno. Con las tarjetas
+    // sueltas se convierte en el rato de poner el tablero al día, que es el
+    // trabajo que ya debería estar hecho.
+    expect(daily.politica.movimientos).toBe('ninguno');
+    expect(permiteMover(daily.politica.movimientos, 'doing', 'review')).toBe(false);
+  });
+
+  it('deja el sprint backlog en lectura y el backlog plegado', () => {
+    expect(daily.politica.sprint).toBe('lectura');
+    expect(daily.politica.backlog).toBe('plegado');
+  });
+
+  it('y enseña el burndown, que es contra lo que se habla', () => {
+    expect(daily.politica.burndown).toBe(true);
   });
 });
 

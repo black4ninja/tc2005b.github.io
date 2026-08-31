@@ -176,7 +176,11 @@ export default function TableroScrum({
               miembros={equipo.miembros}
               ocupados={ocupados}
               bloqueadaPor={ajeno?.nombre}
-              onAbrir={editable && onAbrirHistoria ? onAbrirHistoria : undefined}
+              /* Se abre solo donde la etapa deja escribir. En la daily o en la
+                 review el tablero se mira: abrir el detalle para encontrarlo
+                 todo apagado —o peor, para que el servidor lo rechace al
+                 guardar— no le sirve a nadie. */
+              onAbrir={seTocan && onAbrirHistoria ? onAbrirHistoria : undefined}
               onAsignar={seTocan && !ajeno ? onAsignar : undefined}
               onPointerDown={seTocan && !ajeno ? iniciar(h) : undefined}
               atenuada={arrastrando?.id === h.id}

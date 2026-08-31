@@ -68,6 +68,23 @@ export class EtapaScrum extends BaseModel {
     this.set('politica', { ...this.getPolitica(), ...politica });
   }
 
+  /**
+   * ¿La configuró el profesor a mano?
+   *
+   * Las etapas nacen sembradas, y esa semilla se ha tenido que corregir más de
+   * una vez —una etapa que dejaba meter historias a un sprint ya empezado, una
+   * daily en la que se podían mover tarjetas—. Sin esta marca no hay forma de
+   * llevar la corrección a los grupos que ya existen sin arriesgarse a pisar lo
+   * que alguien haya configurado. Con ella, la regla es simple: lo que el
+   * profesor tocó no se toca.
+   */
+  getPoliticaTocada(): boolean {
+    return this.get('politicaTocada') === true;
+  }
+  marcarPoliticaTocada(): void {
+    this.set('politicaTocada', true);
+  }
+
   getOrden(): number {
     return this.get('orden') ?? 0;
   }

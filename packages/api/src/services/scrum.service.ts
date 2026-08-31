@@ -87,20 +87,17 @@ async function sembrarPoliticasQueFaltan(
     tocadas.push(etapa);
   }
 
-  // Y la corrección de un movimiento que se sembró mal: el desarrollo salió con
-  // «todos», que dejaba meter historias nuevas al sprint ya empezado. Solo se
-  // corrige cuando la política guardada coincide con la semilla EN TODO LO
-  // DEMÁS: si el profesor la ha tocado, lo suyo manda y esto no entra.
-  for (const etapa of etapas.filter((e) => e.get('politica'))) {
+  // Y las correcciones de la semilla, que ya han hecho falta dos veces: un
+  // desarrollo que dejaba meter historias a un sprint empezado y una daily en la
+  // que se movían tarjetas. Se aplican a las etapas que el profesor NO ha
+  // configurado; en cuanto toca una, esa deja de escucharlas para siempre.
+  for (const etapa of etapas.filter((e) => e.get('politica') && !e.getPoliticaTocada())) {
     const semilla = porNombre.get(etapa.getNombre().trim().toLowerCase());
     if (!semilla || tocadas.includes(etapa)) continue;
     const guardada = etapa.getPolitica();
-    if (guardada.movimientos === semilla.politica.movimientos) continue;
     const claves = Object.keys(semilla.politica) as (keyof PoliticaEtapa)[];
-    const igualEnLoDemas = claves
-      .every((k) => k === 'movimientos' || guardada[k] === semilla.politica[k]);
-    if (!igualEnLoDemas) continue;
-    etapa.setPolitica({ ...guardada, movimientos: semilla.politica.movimientos });
+    if (claves.every((k) => guardada[k] === semilla.politica[k])) continue;
+    etapa.setPolitica(semilla.politica);
     tocadas.push(etapa);
   }
 

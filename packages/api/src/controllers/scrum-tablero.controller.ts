@@ -354,15 +354,32 @@ async function equipoEditable(
     error(res, 409, 'La retrospectiva no está abierta ahora mismo');
     return null;
   }
+  if (zona !== 'retro' && zona !== 'equipo' && !zonaEditable(res, ctx, zona)) return null;
+  return ctx;
+}
+
+/**
+ * ¿Deja la etapa escribir en esta mitad del tablero?
+ *
+ * Se saca aparte porque la mitad que toca no siempre se sabe al empezar: para
+ * cambiar una historia depende de en qué columna esté, y eso hay que leerlo
+ * primero. Responde ya con el error, como el resto de guardas.
+ */
+function zonaEditable(res: Response, ctx: ContextoAlumno, zona: 'backlog' | 'sprint'): boolean {
   if (zona === 'backlog' && ctx.politica.backlog !== 'editable') {
     error(res, 409, 'En esta etapa el backlog no se toca');
-    return null;
+    return false;
   }
   if (zona === 'sprint' && ctx.politica.sprint !== 'editable') {
-    error(res, 409, 'En esta etapa el sprint backlog no se toca');
-    return null;
+    error(res, 409, 'En esta etapa el sprint backlog no se toca: mírenlo, que para eso está');
+    return false;
   }
-  return ctx;
+  return true;
+}
+
+/** En qué mitad del tablero vive una columna. */
+function zonaDeColumna(columna: Columna): 'backlog' | 'sprint' {
+  return columna === 'backlog' ? 'backlog' : 'sprint';
 }
 
 /**
@@ -479,6 +496,10 @@ export async function actualizarHistoria(req: Request, res: Response): Promise<v
       return;
     }
     const columnaOriginal = historia.getColumna();
+    // La etapa manda sobre la mitad donde la historia ESTÁ ahora. Sin esto,
+    // «solo lectura» solo impedía arrastrar: en la daily o en la review se podía
+    // seguir reescribiendo una historia desde el detalle.
+    if (!zonaEditable(res, ctx, zonaDeColumna(columnaOriginal))) return;
 
     const tocaTexto = ['porQue', 'que', 'como'].some((k) => req.body?.[k] !== undefined);
     if (tocaTexto) {
@@ -668,6 +689,8 @@ export async function borrarHistoria(req: Request, res: Response): Promise<void>
       error(res, 404, 'Esa historia no es de tu equipo');
       return;
     }
+    // Igual que al editarla: manda la mitad donde está.
+    if (!zonaEditable(res, ctx, zonaDeColumna(historia.getColumna()))) return;
     historia.softDelete();
     await historia.save(null, { useMasterKey: true });
     void difundirTablero(ctx.dinamicaId!);

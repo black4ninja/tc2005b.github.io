@@ -810,6 +810,9 @@ export async function crearEtapa(req: Request, res: Response): Promise<void> {
       return;
     }
     etapa.setPolitica(politicaNueva);
+    // Una etapa que crea el profesor es suya entera: ninguna corrección de la
+    // semilla tiene por qué opinar sobre ella.
+    etapa.marcarPoliticaTocada();
     etapa.setOrden(etapas.length);
     await etapa.save(null, { useMasterKey: true });
     res.status(201).json({ status: 'ok', etapa: etapa.toSafeJSON() });
@@ -854,6 +857,7 @@ export async function actualizarEtapa(req: Request, res: Response): Promise<void
         return;
       }
       etapa.setPolitica(politica);
+      etapa.marcarPoliticaTocada();
     }
     await etapa.save(null, { useMasterKey: true });
     // Cambiar lo que deja tocar la etapa EN CURSO cambia el tablero de todos.
