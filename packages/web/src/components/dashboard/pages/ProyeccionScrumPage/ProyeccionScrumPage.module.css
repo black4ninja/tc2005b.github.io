@@ -197,7 +197,7 @@
   gap: var(--space-sm);
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 4px;
+  padding-bottom: 10px;
   scroll-snap-type: x proximity;
   /* Sin esto, un hijo flexible se niega a encoger y la fila desborda el panel
      en vez de hacer scroll dentro. */
@@ -210,9 +210,27 @@
   scroll-snap-align: start;
 }
 
-/* La barra, fina y discreta: esto se proyecta. */
-.tiraGraficas::-webkit-scrollbar { height: 6px; }
-.tiraGraficas::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+/* La barra, ANCHA: esto se maneja desde el portátil mientras se proyecta, a
+   menudo con el trackpad y mirando a la pared. Una barra de seis píxeles no se
+   agarra. */
+.tiraGraficas {
+  scrollbar-width: auto;
+  scrollbar-color: var(--text-muted) transparent;
+}
+
+.tiraGraficas::-webkit-scrollbar { height: 14px; }
+
+.tiraGraficas::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
   border-radius: 999px;
 }
+
+.tiraGraficas::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 999px;
+  /* El borde del color del fondo deja el pulgar más fino que el carril sin
+     perder superficie para agarrarlo. */
+  border: 3px solid var(--bg-secondary);
+}
+
+.tiraGraficas::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
