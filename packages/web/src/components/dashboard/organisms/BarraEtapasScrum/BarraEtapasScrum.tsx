@@ -35,9 +35,6 @@ export default function BarraEtapasScrum({
   nota, onCambiar, onConfigurar,
 }: Props) {
   const actual = etapas.find((e) => e.id === etapaActualId) ?? null;
-  // Solo mientras la etapa esté viva. En una dinámica cerrada el contador
-  // seguiría corriendo sobre la última etapa que se abrió y enseñaría las horas
-  // que han pasado desde la clase, que no es un dato de nada.
   const reloj = useCuentaRegresiva(iniciadaEn, actual?.politica.duracionSegundos ?? null);
 
   return (
@@ -70,6 +67,9 @@ export default function BarraEtapasScrum({
         </div>
       </div>
       <div className={styles.derecha}>
+        {/* Solo mientras la etapa esté viva. Con la dinámica cerrada el contador
+            seguiría corriendo sobre la última que se abrió y enseñaría las horas
+            que han pasado desde la clase, que no es un dato de nada. */}
         {reloj && !deshabilitada && (
           <span className={`${styles.reloj} ${reloj.agotado ? styles.relojAgotado : ''}`}>
             <span className={styles.relojEtiqueta}>{reloj.agotado ? 'De más' : 'Queda'}</span>
