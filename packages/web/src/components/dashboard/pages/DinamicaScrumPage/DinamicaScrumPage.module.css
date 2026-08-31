@@ -1,4 +1,5 @@
 .page {
+  position: relative;
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -849,4 +850,54 @@
   gap: var(--space-sm);
   justify-content: flex-end;
   flex-wrap: wrap;
+}
+
+/* Un cambio en el reparto es una escritura contra una base remota: hasta que
+   vuelve, la pantalla no acepta el siguiente gesto. Sin esto el profesor
+   arrastra tres alumnos seguidos y las respuestas se pisan entre sí. */
+.velo {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 96px;
+  background: var(--bg-secondary);
+  opacity: 0;
+  pointer-events: all;
+  transition: opacity 140ms ease;
+}
+
+.veloVisible { opacity: 0.72; }
+
+.veloCaja {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+}
+
+.girando {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--sidebar-active-color);
+  border-radius: 50%;
+  flex: none;
+  animation: girar 700ms linear infinite;
+}
+
+@keyframes girar { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .girando { animation: none; }
+  .velo { transition: none; }
 }

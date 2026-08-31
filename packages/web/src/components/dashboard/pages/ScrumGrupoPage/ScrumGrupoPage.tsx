@@ -30,6 +30,18 @@ export default function ScrumGrupoPage() {
   // Qué etapa se está aplicando. Sin esto el profesor pulsa y no pasa nada
   // visible durante medio segundo, así que vuelve a pulsar.
   const [aplicando, setAplicando] = useState<string | null>(null);
+  // Un cambio que sí tapa la pantalla: crear o borrar una dinámica reordena la
+  // lista entera y aceptar el siguiente clic mientras viaja deja al profesor
+  // dando de alta dos veces lo mismo. El gris entra a los 180 ms para que lo
+  // que vuelve rápido no parpadee.
+  const [enVuelo, setEnVuelo] = useState(false);
+  const [velo, setVelo] = useState(false);
+
+  useEffect(() => {
+    if (!enVuelo) { setVelo(false); return; }
+    const t = window.setTimeout(() => setVelo(true), 180);
+    return () => window.clearTimeout(t);
+  }, [enVuelo]);
 
   const cabeceras = useCallback(
     (): HeadersInit => ({
@@ -58,9 +70,26 @@ export default function ScrumGrupoPage() {
 
   useEffect(() => { void cargar(); }, [cargar]);
 
-  /** Envuelve una llamada que cambia algo: recarga al terminar y avisa si falla. */
+  /**
+   * Envuelve una llamada que cambia algo.
+   *
+   * `opciones.fusionar` recibe la respuesta y devuelve `true` si ya dejó el
+   * estado como debe quedar; entonces no se recarga la lista. Recargar cuesta
+   * un viaje a una base remota y la mayoría de los cambios ya vienen resueltos
+   * en la propia respuesta. Si algo falla se recarga siempre: ahí sí conviene
+   * volver a preguntar quién tiene razón.
+   *
+   * `opciones.bloquear` levanta el velo. Se deja fuera del cambio de etapa,
+   * que ya se pinta optimista y no tiene por qué congelar la pantalla.
+   */
   const mandar = useCallback(
-    async (url: string, metodo: string, cuerpo?: unknown): Promise<boolean> => {
+    async (
+      url: string,
+      metodo: string,
+      cuerpo?: unknown,
+      opciones?: { fusionar?: (json: { dinamica?: Dinamica }) => boolean; bloquear?: boolean },
+    ): Promise<boolean> => {
+      if (opciones?.bloquear) setEnVuelo(true);
       try {
         const r = await fetch(url, {
           method: metodo,
@@ -70,13 +99,16 @@ export default function ScrumGrupoPage() {
         const json = await r.json().catch(() => ({}));
         if (!r.ok) {
           await avisar({ titulo: 'No se pudo', texto: json?.message ?? 'Inténtalo de nuevo', icono: 'error' });
+          await cargar();
           return false;
         }
-        await cargar();
+        if (!opciones?.fusionar?.(json)) await cargar();
         return true;
       } catch {
         await avisar({ titulo: 'Sin conexión', texto: 'No se pudo contactar al servidor', icono: 'error' });
         return false;
+      } finally {
+        if (opciones?.bloquear) setEnVuelo(false);
       }
     },
     [cabeceras, cargar],
@@ -95,7 +127,16 @@ export default function ScrumGrupoPage() {
       validar: (v) => (v.trim() === '' ? 'Escribe un nombre' : null),
     });
     if (!nombre) return;
-    await mandar(`${API}/admin/grupos/${grupoId}/scrum/dinamicas`, 'POST', { nombre });
+    await mandar(`${API}/admin/grupos/${grupoId}/scrum/dinamicas`, 'POST', { nombre }, {
+      bloquear: true,
+      // La dinámica recién creada ya viene entera en la respuesta y va primero:
+      // la lista está ordenada de la más reciente a la más vieja.
+      fusionar: ({ dinamica }) => {
+        if (!dinamica?.id) return false;
+        setDinamicas((ds) => [dinamica, ...ds]);
+        return true;
+      },
+    });
   }
 
   async function cambiarEtapa(etapaId: string | null) {
@@ -110,7 +151,14 @@ export default function ScrumGrupoPage() {
           : d,
       ),
     );
-    await mandar(`${API}/admin/grupos/${grupoId}/scrum/dinamicas/${vigente.id}/etapa`, 'PUT', { etapaId });
+    // Sin recarga: lo de arriba ya dejó la etapa puesta y el servidor no
+    // devuelve nada más que confirmarla.
+    await mandar(
+      `${API}/admin/grupos/${grupoId}/scrum/dinamicas/${vigente.id}/etapa`,
+      'PUT',
+      { etapaId },
+      { fusionar: () => true },
+    );
     setAplicando(null);
   }
 
@@ -123,7 +171,12 @@ export default function ScrumGrupoPage() {
       confirmar: d.cerrada ? 'Reabrir' : 'Cerrar',
     });
     if (!ok) return;
-    await mandar(`${API}/admin/grupos/${grupoId}/scrum/dinamicas/${d.id}`, 'PUT', { cerrada: !d.cerrada });
+    await mandar(
+      `${API}/admin/grupos/${grupoId}/scrum/dinamicas/${d.id}`,
+      'PUT',
+      { cerrada: !d.cerrada },
+      { bloquear: true },
+    );
   }
 
   async function borrarDinamica(d: Dinamica) {
@@ -134,13 +187,24 @@ export default function ScrumGrupoPage() {
       peligro: true,
     });
     if (!ok) return;
-    await mandar(`${API}/admin/grupos/${grupoId}/scrum/dinamicas/${d.id}`, 'DELETE');
+    await mandar(`${API}/admin/grupos/${grupoId}/scrum/dinamicas/${d.id}`, 'DELETE', undefined, {
+      bloquear: true,
+      fusionar: () => { setDinamicas((ds) => ds.filter((x) => x.id !== d.id)); return true; },
+    });
   }
 
   if (cargando) return <p className={styles.cargando}>Cargando…</p>;
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} aria-busy={enVuelo}>
+      {enVuelo && (
+        <div className={velo ? `${styles.velo} ${styles.veloVisible}` : styles.velo}>
+          <div className={styles.veloCaja}>
+            <span className={styles.girando} />
+            Guardando…
+          </div>
+        </div>
+      )}
       <header className={styles.header}>
         <div>
           <h1 className={styles.pageTitle}>Actividad de Scrum</h1>

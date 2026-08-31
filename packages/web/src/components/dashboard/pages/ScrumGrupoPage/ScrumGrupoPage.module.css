@@ -1,4 +1,5 @@
 .page {
+  position: relative;
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -286,3 +287,39 @@
 .apagado .material-icons { font-size: 40px; color: var(--text-muted); }
 .apagado p { margin: 0; }
 .hint { font-size: 0.85rem; color: var(--text-muted); }
+
+/* Crear o borrar una dinámica reordena la lista: hasta que vuelve, la pantalla
+   no acepta el siguiente clic. */
+.velo {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 96px;
+  background: var(--bg-secondary);
+  opacity: 0;
+  pointer-events: all;
+  transition: opacity 140ms ease;
+}
+
+.veloVisible { opacity: 0.72; }
+
+.veloCaja {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .velo { transition: none; }
+}

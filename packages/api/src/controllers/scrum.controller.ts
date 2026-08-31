@@ -7,7 +7,7 @@ import { DinamicaScrum } from '../models/DinamicaScrum.js';
 import { EquipoScrum } from '../models/EquipoScrum.js';
 import { HistoriaUsuario } from '../models/HistoriaUsuario.js';
 import { normalizarColor, PALETA_CATEGORIAS } from '../models/CategoriaGrupo.js';
-import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
+import { getAlumnosDeGrupo, type AlumnoConPerfil } from '../services/grupo-alumno.service.js';
 import {
   armarTableros,
   cargarDinamica,
@@ -141,10 +141,12 @@ export async function crearDinamica(req: Request, res: Response): Promise<void> 
     if (inicio !== undefined) dinamica.setInicio(inicio);
     if (fin !== undefined) dinamica.setFin(fin);
     await dinamica.save(null, { useMasterKey: true });
-    // Con su primer sprint ya abierto: una dinámica sin sprint no tiene dónde
-    // guardar el burndown ni contra qué calcular la deuda.
-    await asegurarSprint(dinamica);
     res.status(201).json({ status: 'ok', dinamica: { ...dinamica.toSafeJSON(), equipos: 0, alumnos: 0 } });
+    // Su primer sprint se abre DETRÁS de la respuesta: una dinámica sin sprint
+    // no tiene dónde guardar el burndown, pero eso no lo necesita nadie en el
+    // segundo siguiente a crearla, y son tres escrituras más contra una base
+    // remota. Si no llegara, la primera lectura del detalle lo abre igual.
+    void asegurarSprint(dinamica).catch(() => {});
   } catch {
     error(res, 500, 'Error al crear la dinámica');
   }
@@ -341,43 +343,79 @@ async function ritualDeEtapa(
 /* ------------------------------------------------------------------ */
 
 /**
- * GET …/dinamicas/:dinamicaId — el detalle: equipos con su tablero y quién se
- * ha quedado sin equipo.
+ * La foto de los equipos y de quién sigue sin equipo, construida con lo que ya
+ * está en memoria.
+ *
+ * Se devuelve en la respuesta de cada cambio para que el panel no tenga que
+ * volver a pedir el detalle entero. Armar equipos es el momento de la sesión con
+ * la clase esperando y son treinta gestos seguidos: pagar una recarga completa
+ * por cada uno era lo que lo hacía lento.
+ *
+ * NO trae historias: el reparto no las toca y el cliente conserva las que ya
+ * tenía.
+ *
+ * Los nombres de los miembros salen de la lista del grupo, no del equipo: a
+ * quien se acaba de mover se le puso como puntero sin datos y su `name` vendría
+ * vacío, borrando el nombre de la ficha en el panel.
  */
-export async function getDinamica(req: Request, res: Response): Promise<void> {
-  const { grupoId, dinamicaId } = req.params;
-  try {
-    const dinamica = await cargarDinamica(dinamicaId, grupoId);
-    if (!dinamica) {
-      error(res, 404, 'La dinámica no existe en este grupo');
-      return;
-    }
-    const [equipos, alumnos] = await Promise.all([
-      equiposDeDinamica(dinamicaId),
-      getAlumnosDeGrupo(grupoId),
-    ]);
-    const historias = await historiasDeEquipos(equipos.map((e) => e.id!));
-
-    const asignados = new Set(equipos.flatMap((e) => e.getMiembroIds()));
-    const sinEquipo = alumnos
+function fotoDeEquipos(equipos: EquipoScrum[], alumnos: AlumnoConPerfil[]) {
+  const asignados = new Set(equipos.flatMap((e) => e.getMiembroIds()));
+  const porId = new Map(alumnos.map((a) => [a.alumno.id!, a.alumno]));
+  return {
+    equipos: equipos.map((e) => ({
+      ...(e.toSafeJSON() as Record<string, unknown>),
+      id: e.id!,
+      miembros: e.getMiembroIds().map((id) => ({
+        id,
+        name: porId.get(id)?.get('name') ?? '',
+        matricula: porId.get(id)?.get('matricula') ?? '',
+      })),
+    })),
+    sinEquipo: alumnos
       .filter((a) => !asignados.has(a.alumno.id!))
       .map((a) => ({
         id: a.alumno.id,
         name: a.alumno.get('name') ?? '',
         matricula: a.alumno.get('matricula') ?? '',
       }))
-      .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+      .sort((a, b) => a.name.localeCompare(b.name, 'es')),
+  };
+}
 
-    await asegurarSprint(dinamica);
-    const sprints = await sprintsDeDinamica(dinamicaId);
-    const actual = dinamica.getSprintActual();
-    const marcadores = actual ? await marcadoresDeSprint(actual.id!) : [];
+/**
+ * GET …/dinamicas/:dinamicaId — el detalle: equipos con su tablero y quién se
+ * ha quedado sin equipo.
+ */
+export async function getDinamica(req: Request, res: Response): Promise<void> {
+  const { grupoId, dinamicaId } = req.params;
+  try {
+    // Tres rondas en vez de cinco: todo lo que solo necesita los ids va junto,
+    // y lo que depende de los equipos o del sprint va después.
+    const [dinamica, equipos, alumnos, sprints] = await Promise.all([
+      cargarDinamica(dinamicaId, grupoId),
+      equiposDeDinamica(dinamicaId),
+      getAlumnosDeGrupo(grupoId),
+      sprintsDeDinamica(dinamicaId),
+    ]);
+    if (!dinamica) {
+      error(res, 404, 'La dinámica no existe en este grupo');
+      return;
+    }
+    // Si la dinámica venía sin sprint, el que se acaba de abrir no está en la
+    // lista que se leyó arriba: se añade a mano en vez de volver a preguntar.
+    const actual = await asegurarSprint(dinamica);
+    if (actual && !sprints.some((sp) => sp.id === actual.id)) sprints.push(actual);
+
+    const [historias, marcadores] = await Promise.all([
+      historiasDeEquipos(equipos.map((e) => e.id!)),
+      actual ? marcadoresDeSprint(actual.id!) : Promise.resolve([]),
+    ]);
 
     res.json({
       status: 'ok',
       dinamica: dinamica.toSafeJSON(),
       equipos: armarTableros(equipos, historias),
-      sinEquipo,
+      sinEquipo: fotoDeEquipos(equipos, alumnos).sinEquipo,
       maxEquipos: MAX_EQUIPOS,
       sprints: sprints.map((sp) => sp.toSafeJSON()),
       sprintActual: actual?.id ?? null,
@@ -392,12 +430,15 @@ export async function getDinamica(req: Request, res: Response): Promise<void> {
 export async function crearEquipo(req: Request, res: Response): Promise<void> {
   const { grupoId, dinamicaId } = req.params;
   try {
-    const dinamica = await cargarDinamica(dinamicaId, grupoId);
+    const [dinamica, equipos, alumnos] = await Promise.all([
+      cargarDinamica(dinamicaId, grupoId),
+      equiposDeDinamica(dinamicaId),
+      getAlumnosDeGrupo(grupoId),
+    ]);
     if (!dinamica) {
       error(res, 404, 'La dinámica no existe en este grupo');
       return;
     }
-    const equipos = await equiposDeDinamica(dinamicaId);
     if (equipos.length >= MAX_EQUIPOS) {
       // El tope no es técnico: es lo que cabe legible en la proyección.
       error(res, 409, `Una dinámica no puede tener más de ${MAX_EQUIPOS} equipos`);
@@ -414,8 +455,12 @@ export async function crearEquipo(req: Request, res: Response): Promise<void> {
     equipo.setOrden(equipos.length);
     await equipo.save(null, { useMasterKey: true });
 
+    res.status(201).json({
+      status: 'ok',
+      equipo: { ...equipo.toSafeJSON(), historias: [], epicas: [], retro: [], compromisos: [], marcador: null, archivadas: 0 },
+      ...fotoDeEquipos([...equipos, equipo], alumnos),
+    });
     void difundirTablero(dinamicaId);
-    res.status(201).json({ status: 'ok', equipo: { ...equipo.toSafeJSON(), historias: [] } });
   } catch {
     error(res, 500, 'Error al crear el equipo');
   }
@@ -425,12 +470,14 @@ export async function crearEquipo(req: Request, res: Response): Promise<void> {
 export async function actualizarEquipo(req: Request, res: Response): Promise<void> {
   const { grupoId, dinamicaId, equipoId } = req.params;
   try {
-    const dinamica = await cargarDinamica(dinamicaId, grupoId);
+    const [dinamica, equipo] = await Promise.all([
+      cargarDinamica(dinamicaId, grupoId),
+      cargarEquipo(equipoId, dinamicaId),
+    ]);
     if (!dinamica) {
       error(res, 404, 'La dinámica no existe en este grupo');
       return;
     }
-    const equipo = await cargarEquipo(equipoId, dinamicaId);
     if (!equipo) {
       error(res, 404, 'El equipo no existe en esta dinámica');
       return;
@@ -462,8 +509,16 @@ export async function actualizarEquipo(req: Request, res: Response): Promise<voi
     }
 
     await equipo.save(null, { useMasterKey: true });
+    const [equipos, alumnos] = await Promise.all([
+      equiposDeDinamica(dinamicaId),
+      getAlumnosDeGrupo(grupoId),
+    ]);
+    res.json({
+      status: 'ok',
+      equipo: equipo.toSafeJSON(),
+      ...fotoDeEquipos(equipos.map((e) => (e.id === equipoId ? equipo : e)), alumnos),
+    });
     void difundirTablero(dinamicaId);
-    res.json({ status: 'ok', equipo: equipo.toSafeJSON() });
   } catch {
     error(res, 500, 'Error al actualizar el equipo');
   }
@@ -473,23 +528,33 @@ export async function actualizarEquipo(req: Request, res: Response): Promise<voi
 export async function borrarEquipo(req: Request, res: Response): Promise<void> {
   const { grupoId, dinamicaId, equipoId } = req.params;
   try {
-    const dinamica = await cargarDinamica(dinamicaId, grupoId);
+    // Todo lo que hay que mirar, de una: el equipo, sus historias, los demás
+    // equipos y la lista del grupo. En fila india eran cinco viajes a Atlas
+    // para borrar una tarjeta.
+    const [dinamica, equipo, historias, equipos, alumnos] = await Promise.all([
+      cargarDinamica(dinamicaId, grupoId),
+      cargarEquipo(equipoId, dinamicaId),
+      historiasDeEquipos([equipoId]),
+      equiposDeDinamica(dinamicaId),
+      getAlumnosDeGrupo(grupoId),
+    ]);
     if (!dinamica) {
       error(res, 404, 'La dinámica no existe en este grupo');
       return;
     }
-    const equipo = await cargarEquipo(equipoId, dinamicaId);
     if (!equipo) {
       error(res, 404, 'El equipo no existe en esta dinámica');
       return;
     }
-    const historias = await historiasDeEquipos([equipoId]);
     for (const h of historias) h.softDelete();
     equipo.softDelete();
     await Parse.Object.saveAll([...historias, equipo], { useMasterKey: true });
 
+    res.json({
+      status: 'ok',
+      ...fotoDeEquipos(equipos.filter((e) => e.id !== equipoId), alumnos),
+    });
     void difundirTablero(dinamicaId);
-    res.json({ status: 'ok' });
   } catch {
     error(res, 500, 'Error al borrar el equipo');
   }
@@ -512,12 +577,17 @@ export async function asignarMiembros(req: Request, res: Response): Promise<void
   }
 
   try {
-    const dinamica = await cargarDinamica(dinamicaId, grupoId);
+    // Las tres lecturas van juntas: en fila india eran tres viajes a una base
+    // remota por cada alumno que se arrastra a un equipo.
+    const [dinamica, equipos, alumnos] = await Promise.all([
+      cargarDinamica(dinamicaId, grupoId),
+      equiposDeDinamica(dinamicaId),
+      getAlumnosDeGrupo(grupoId),
+    ]);
     if (!dinamica) {
       error(res, 404, 'La dinámica no existe en este grupo');
       return;
     }
-    const equipos = await equiposDeDinamica(dinamicaId);
     const destino = equipos.find((e) => e.id === equipoId);
     if (!destino) {
       error(res, 404, 'El equipo no existe en esta dinámica');
@@ -526,7 +596,7 @@ export async function asignarMiembros(req: Request, res: Response): Promise<void
 
     // Que sean alumnos DE ESTE GRUPO: el id viene del cliente y sin esto se
     // podría meter en el equipo a cualquiera con una petición a mano.
-    const delGrupo = new Set((await getAlumnosDeGrupo(grupoId)).map((a) => a.alumno.id!));
+    const delGrupo = new Set(alumnos.map((a) => a.alumno.id!));
     const nuevos = (alumnoIds as string[]).filter((id) => delGrupo.has(id));
     if (nuevos.length === 0) {
       error(res, 400, 'Ninguno de esos alumnos pertenece al grupo');
@@ -535,12 +605,14 @@ export async function asignarMiembros(req: Request, res: Response): Promise<void
 
     const aGuardar: Parse.Object[] = [];
     const mudados = new Set(nuevos);
+    let veniaDeOtroEquipo = false;
 
     for (const equipo of equipos) {
       const antes = equipo.getMiembroIds();
       if (equipo.id === equipoId) continue;
       const quedan = antes.filter((id) => !mudados.has(id));
       if (quedan.length !== antes.length) {
+        veniaDeOtroEquipo = true;
         equipo.setMiembros(quedan.map((id) => AppUser.createWithoutData(id) as AppUser));
         aGuardar.push(equipo);
       }
@@ -551,12 +623,21 @@ export async function asignarMiembros(req: Request, res: Response): Promise<void
     aGuardar.push(destino);
     await Parse.Object.saveAll(aGuardar, { useMasterKey: true });
 
-    // Al salir de un equipo se dejan de ser responsable de sus historias: una
-    // historia con dueño de otro equipo es exactamente lo que no puede pasar.
-    await liberarHistoriasDeExmiembros(dinamicaId, equipos, equipoId, nuevos);
+    // La foto sale de lo que ya está en memoria: el panel no tiene que volver a
+    // pedir el detalle entero por cada alumno que se mueve.
+    res.json({ status: 'ok', ...fotoDeEquipos(equipos, alumnos) });
 
-    void difundirTablero(dinamicaId);
-    res.json({ status: 'ok' });
+    // Al salir de un equipo se deja de ser responsable de sus historias: una
+    // historia con dueño de otro equipo es exactamente lo que no puede pasar.
+    // Solo hace falta mirarlo si alguien venía de otro equipo, y va detrás de la
+    // respuesta porque el reparto no espera a eso.
+    void (async () => {
+      if (veniaDeOtroEquipo) {
+        await liberarHistoriasDeExmiembros(dinamicaId, equipos, equipoId, nuevos)
+          .catch(() => {});
+      }
+      await difundirTablero(dinamicaId);
+    })();
   } catch {
     error(res, 500, 'Error al asignar los alumnos');
   }
@@ -595,12 +676,16 @@ async function liberarHistoriasDeExmiembros(
 export async function quitarMiembro(req: Request, res: Response): Promise<void> {
   const { grupoId, dinamicaId, equipoId, alumnoId } = req.params;
   try {
-    const dinamica = await cargarDinamica(dinamicaId, grupoId);
+    const [dinamica, equipos, alumnos] = await Promise.all([
+      cargarDinamica(dinamicaId, grupoId),
+      equiposDeDinamica(dinamicaId),
+      getAlumnosDeGrupo(grupoId),
+    ]);
     if (!dinamica) {
       error(res, 404, 'La dinámica no existe en este grupo');
       return;
     }
-    const equipo = await cargarEquipo(equipoId, dinamicaId);
+    const equipo = equipos.find((e) => e.id === equipoId);
     if (!equipo) {
       error(res, 404, 'El equipo no existe en esta dinámica');
       return;
@@ -611,15 +696,19 @@ export async function quitarMiembro(req: Request, res: Response): Promise<void> 
         .map((id) => AppUser.createWithoutData(id) as AppUser),
     );
     await equipo.save(null, { useMasterKey: true });
+    res.json({ status: 'ok', ...fotoDeEquipos(equipos, alumnos) });
 
-    // Deja de ser responsable de lo que llevara en ESE equipo.
-    const suyas = (await historiasDeEquipos([equipoId]))
-      .filter((h) => h.getResponsable()?.id === alumnoId);
-    for (const h of suyas) h.setResponsable(null);
-    if (suyas.length > 0) await Parse.Object.saveAll(suyas, { useMasterKey: true });
-
-    void difundirTablero(dinamicaId);
-    res.json({ status: 'ok' });
+    // Deja de ser responsable de lo que llevara en ESE equipo. Detrás de la
+    // respuesta: quitar a alguien de un equipo no espera a eso.
+    void (async () => {
+      try {
+        const suyas = (await historiasDeEquipos([equipoId]))
+          .filter((h) => h.getResponsable()?.id === alumnoId);
+        for (const h of suyas) h.setResponsable(null);
+        if (suyas.length > 0) await Parse.Object.saveAll(suyas, { useMasterKey: true });
+      } catch { /* el tablero se pone al día en el siguiente refresco */ }
+      await difundirTablero(dinamicaId);
+    })();
   } catch {
     error(res, 500, 'Error al quitar al alumno del equipo');
   }
@@ -650,15 +739,15 @@ export async function repartirAlumnos(req: Request, res: Response): Promise<void
   }
 
   try {
-    const dinamica = await cargarDinamica(dinamicaId, grupoId);
+    const [dinamica, equipos, alumnos] = await Promise.all([
+      cargarDinamica(dinamicaId, grupoId),
+      equiposDeDinamica(dinamicaId),
+      getAlumnosDeGrupo(grupoId),
+    ]);
     if (!dinamica) {
       error(res, 404, 'La dinámica no existe en este grupo');
       return;
     }
-    const [equipos, alumnos] = await Promise.all([
-      equiposDeDinamica(dinamicaId),
-      getAlumnosDeGrupo(grupoId),
-    ]);
     const asignados = new Set(equipos.flatMap((e) => e.getMiembroIds()));
     const sueltos = alumnos.filter((a) => !asignados.has(a.alumno.id!));
     if (sueltos.length === 0) {
@@ -684,8 +773,12 @@ export async function repartirAlumnos(req: Request, res: Response): Promise<void
     });
     await Parse.Object.saveAll(nuevos, { useMasterKey: true });
 
+    res.status(201).json({
+      status: 'ok',
+      creados: nuevos.length,
+      ...fotoDeEquipos([...equipos, ...nuevos], alumnos),
+    });
     void difundirTablero(dinamicaId);
-    res.status(201).json({ status: 'ok', creados: nuevos.length });
   } catch {
     error(res, 500, 'Error al repartir los alumnos');
   }

@@ -44,6 +44,16 @@ export default function DinamicaScrumPage() {
   // Hay una petición en marcha: cerrar un sprint recorre todos los equipos y
   // tarda. Sin esta señal el profesor pulsa dos veces y cierra dos sprints.
   const [enVuelo, setEnVuelo] = useState(false);
+  // El velo se pinta un instante DESPUÉS de que empieza el trabajo. Bloquear se
+  // bloquea desde el primer momento; lo que se retrasa es el gris, para que un
+  // cambio que vuelve en 200 ms no dé un parpadeo por cada alumno del reparto.
+  const [velo, setVelo] = useState(false);
+
+  useEffect(() => {
+    if (!enVuelo) { setVelo(false); return; }
+    const t = window.setTimeout(() => setVelo(true), 180);
+    return () => window.clearTimeout(t);
+  }, [enVuelo]);
   const [busqueda, setBusqueda] = useState('');
   const [marcados, setMarcados] = useState<Set<string>>(new Set());
   const [mandoAbierto, setMandoAbierto] = useState(false);
@@ -90,6 +100,19 @@ export default function DinamicaScrumPage() {
     );
   }, [equipos]);
 
+  /**
+   * Manda un cambio y se queda con lo que el servidor devuelve.
+   *
+   * Armar los equipos son treinta gestos seguidos con la clase esperando, y
+   * hasta ahora cada uno pagaba una recarga del detalle entero —equipos,
+   * alumnos, historias, sprints y marcador— para enterarse de que un alumno
+   * cambió de columna. Ahora cada cambio devuelve la foto del reparto y aquí
+   * solo se fusiona; el detalle completo se recarga cuando el servidor no la
+   * manda.
+   *
+   * Las historias, épicas y demás NO viajan en esa foto: el reparto no las toca,
+   * así que se conservan las que ya había.
+   */
   const mandar = useCallback(
     async (url: string, metodo: string, cuerpo?: unknown): Promise<boolean> => {
       setEnVuelo(true);
@@ -102,9 +125,23 @@ export default function DinamicaScrumPage() {
         const json = await r.json().catch(() => ({}));
         if (!r.ok) {
           await avisar({ titulo: 'No se pudo', texto: json?.message ?? 'Inténtalo de nuevo', icono: 'error' });
+          await cargar();
           return false;
         }
-        await cargar();
+        if (Array.isArray(json?.equipos) && Array.isArray(json?.sinEquipo)) {
+          setEquipos((previos) => {
+            const antes = new Map(previos.map((e) => [e.id, e]));
+            return (json.equipos as Partial<EquipoTablero>[]).map((e) => ({
+              historias: [], epicas: [], retro: [], compromisos: [],
+              marcador: null, archivadas: 0,
+              ...antes.get(e.id!),
+              ...e,
+            } as EquipoTablero));
+          });
+          setSinEquipo(json.sinEquipo);
+        } else {
+          await cargar();
+        }
         return true;
       } catch {
         await avisar({ titulo: 'Sin conexión', texto: 'No se pudo contactar al servidor', icono: 'error' });
@@ -279,7 +316,15 @@ export default function DinamicaScrumPage() {
   const rejilla = rejillaProyeccion(proyectados.size);
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} aria-busy={enVuelo}>
+      {enVuelo && (
+        <div className={velo ? `${styles.velo} ${styles.veloVisible}` : styles.velo}>
+          <div className={styles.veloCaja}>
+            <span className={styles.girando} />
+            Guardando…
+          </div>
+        </div>
+      )}
       <header className={styles.header}>
         <div className={styles.tituloCaja}>
           <button
