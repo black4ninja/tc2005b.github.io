@@ -83,6 +83,13 @@ export default function ScrumTableroPage() {
       const json = await r.json();
       if (!r.ok) throw new Error(json?.message ?? 'No se pudo cargar el tablero');
       aplicar(json);
+      // El resumen se pide AQUÍ y no en un efecto aparte: así lo reintenta el
+      // refresco de siempre. En un efecto suelto, un fallo de red al montar
+      // dejaba «Preparando el resumen…» para siempre.
+      if (json?.dinamica?.finalizada) {
+        const rr = await fetch(`${base}/resumen`, { headers: cabeceras() });
+        if (rr.ok) setResumen(await rr.json());
+      }
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cargar');
@@ -141,16 +148,6 @@ export default function ScrumTableroPage() {
     },
     [cabeceras, cargar],
   );
-
-  // Al finalizar la dinámica el tablero desaparece y queda el resumen: es lo
-  // último que se ve y lo que contesta las preguntas de las conclusiones.
-  useEffect(() => {
-    if (!dinamica?.finalizada || !sessionToken) return;
-    fetch(`${base}/resumen`, { headers: cabeceras() })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => { if (json) setResumen(json); })
-      .catch(() => {});
-  }, [dinamica?.finalizada, base, cabeceras, sessionToken]);
 
   /**
    * El cobro de la deuda tiene que VERSE.
@@ -321,7 +318,9 @@ export default function ScrumTableroPage() {
               Restricciones
             </button>
 
-            {intrusas.length > 0 && (
+            {/* En la retro el tablero está oculto: avisar de una épica intrusa
+                ahí es ruido, porque no hay nada que mover. */}
+            {intrusas.length > 0 && !politica.retro && (
               <button type="button" className={styles.chipAlerta} onClick={() => setEpicasAbierto(true)}>
                 <span className="material-icons">warning</span>
                 Hay historias de otra épica en el sprint

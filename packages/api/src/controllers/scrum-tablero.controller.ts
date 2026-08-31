@@ -119,7 +119,7 @@ async function contextoAlumno(
       cerrada: false, politica: POLITICA_POR_DEFECTO, estado: null,
     };
   }
-  await asegurarSprint(dinamica);
+  if (!dinamica.getFinalizada()) await asegurarSprint(dinamica);
   const equipo = await equipoDelAlumno(dinamica.id!, alumno.id);
   const estado = conEstado ? await construirEstadoDinamica(dinamica.id!) : null;
   const etapa = dinamica.getEtapaActual();
@@ -257,6 +257,20 @@ function resolverResponsable(valor: unknown, equipo: EquipoScrum): AppUser | nul
 }
 
 /**
+ * Resuelve la épica que viene en el cuerpo: el puntero, `null` para quitarla, o
+ * `false` si no es de este equipo. Igual que con el responsable, el id llega del
+ * cliente y sin comprobarlo se podría colgar una historia de la épica de otro.
+ */
+async function resolverEpica(
+  valor: unknown,
+  equipoId: string,
+): Promise<EpicaScrum | null | false> {
+  if (valor === undefined || valor === null || valor === '') return null;
+  const epica = await cargarEpicaDelEquipo(String(valor), equipoId);
+  return epica ?? false;
+}
+
+/**
  * El equipo del alumno, listo para escribir, o null (ya contestado).
  *
  * `zona` dice sobre qué mitad del tablero se va a escribir, para que la política
@@ -327,6 +341,11 @@ export async function crearHistoria(req: Request, res: Response): Promise<void> 
       error(res, 400, 'El responsable tiene que ser alguien del equipo');
       return;
     }
+    const epica = await resolverEpica(req.body?.epicaId, equipo.id!);
+    if (epica === false) {
+      error(res, 400, 'Esa épica no es de tu equipo');
+      return;
+    }
 
     const existentes = await historiasDeEquipos([equipo.id!]);
     const historia = new HistoriaUsuario().initDefaults();
@@ -337,6 +356,7 @@ export async function crearHistoria(req: Request, res: Response): Promise<void> 
     historia.setPuntos(puntos);
     historia.setPrioridad(prioridad);
     historia.setResponsable(responsable);
+    historia.setEpica(epica);
     historia.setColumna('backlog');
     historia.setOrden(siguienteOrdenEnColumna(existentes, 'backlog'));
     await historia.save(null, { useMasterKey: true });
@@ -421,6 +441,14 @@ export async function actualizarHistoria(req: Request, res: Response): Promise<v
         return;
       }
       historia.setResponsable(responsable);
+    }
+    if (req.body?.epicaId !== undefined) {
+      const epica = await resolverEpica(req.body.epicaId, equipo.id!);
+      if (epica === false) {
+        error(res, 400, 'Esa épica no es de tu equipo');
+        return;
+      }
+      historia.setEpica(epica);
     }
     if (req.body?.columna !== undefined) {
       if (!esColumna(req.body.columna)) {

@@ -1,5 +1,9 @@
+/* `min-width: 0` es obligatorio: el tablero es hijo de un contenedor flex en
+   fila —comparte sitio con el panel del burndown— y sin esto no se encoge por
+   debajo de su contenido, así que la última columna se salía de la pantalla. */
 .tablero {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   display: flex;
   gap: 16px;
@@ -65,7 +69,7 @@
 }
 
 .plegar:hover { color: var(--text-primary); }
-.plegar .material-icons { font-size: 16px; }
+.plegar .material-icons { font-size: 14px; }
 
 /* Una columna plegada: una tira vertical. La usa la etapa (en la daily el
    backlog estorba) y también quien proyecta con muchos equipos. */
@@ -106,13 +110,15 @@
   white-space: nowrap;
 }
 
+/* 11px y poco interletraje: con el panel del burndown al lado las columnas se
+   quedan en unos 150 px y a 12px el rótulo salía cortado en «PL…». */
 .columnaTitulo {
   flex: 1;
   min-width: 0;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;

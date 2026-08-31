@@ -281,7 +281,7 @@
 }
 
 .lateral {
-  width: 320px;
+  width: 290px;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -304,8 +304,8 @@
 
 .compromisosTitulo {
   flex: none;
-  max-width: 96px;
-  font-size: 0.68rem;
+  white-space: nowrap;
+  font-size: 0.65rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;

@@ -299,9 +299,16 @@ export default function DinamicaScrumPage() {
               {dinamica.etapaActual.nombre}
             </span>
           )}
+          {/* Dos botones y no uno: las restricciones se consultan tanto como la
+              definición de terminado, y escondidas tras un cambiador no las
+              encontraba nadie. */}
           <button type="button" className={styles.outline} onClick={() => setReglas('done')}>
+            <span className="material-icons">check_circle</span>
+            Terminado
+          </button>
+          <button type="button" className={styles.outline} onClick={() => setReglas('restricciones')}>
             <span className="material-icons">rule</span>
-            Reglas
+            Restricciones
           </button>
           <button
             type="button"

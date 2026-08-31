@@ -146,15 +146,33 @@ export async function cargarDinamica(
   }
 }
 
-/** La dinámica ABIERTA más reciente del grupo: la que el alumno ve al entrar. */
+/**
+ * La dinámica que el alumno ve al entrar: la ABIERTA más reciente.
+ *
+ * Y si no hay ninguna abierta, la última FINALIZADA. Sin esto, terminar la
+ * dinámica dejaba al equipo con un «todavía no hay ninguna» justo cuando lo que
+ * tiene que ver es su resumen — que es la pantalla que contesta las preguntas
+ * del cierre de la sesión.
+ */
 export async function dinamicaVigente(grupoId: string): Promise<DinamicaScrum | null> {
-  const q = new Parse.Query<DinamicaScrum>('DinamicaScrum');
-  q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
-  q.equalTo('exists' as any, true as any);
-  q.notEqualTo('cerrada' as any, true as any);
-  q.include('etapaActual' as any);
-  q.descending('createdAt');
-  return (await q.first({ useMasterKey: true })) ?? null;
+  const abierta = new Parse.Query<DinamicaScrum>('DinamicaScrum');
+  abierta.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  abierta.equalTo('exists' as any, true as any);
+  abierta.notEqualTo('cerrada' as any, true as any);
+  abierta.include('etapaActual' as any);
+  abierta.include('sprintActual' as any);
+  abierta.descending('createdAt');
+  const viva = await abierta.first({ useMasterKey: true });
+  if (viva) return viva;
+
+  const terminada = new Parse.Query<DinamicaScrum>('DinamicaScrum');
+  terminada.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  terminada.equalTo('exists' as any, true as any);
+  terminada.equalTo('finalizada' as any, true as any);
+  terminada.include('etapaActual' as any);
+  terminada.include('sprintActual' as any);
+  terminada.descending('updatedAt');
+  return (await terminada.first({ useMasterKey: true })) ?? null;
 }
 
 export async function equiposDeDinamica(dinamicaId: string): Promise<EquipoScrum[]> {
