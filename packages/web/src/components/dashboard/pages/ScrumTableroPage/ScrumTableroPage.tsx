@@ -333,11 +333,23 @@ export default function ScrumTableroPage() {
     });
   }, []);
 
-  /** Los compromisos vienen del sprint anterior y viven en su propia lista. */
+  /**
+   * Los compromisos vienen del sprint anterior y viven en su propia lista.
+   *
+   * Marcar uno lo CIERRA —es lo que promete el propio texto de la columna: «los
+   * dos botones lo cierran, y lo que no se cierra sigue apareciendo aquí»—, así
+   * que sale de la lista. Antes solo se sustituía, y como la tarjeta se pinta
+   * igual con estado o sin él, marcarla no cambiaba nada en pantalla hasta que
+   * un par de segundos después bajaba el tablero entero y la hacía desaparecer.
+   * Ese hueco es el que parecía que el botón no hacía nada.
+   */
   const fusionarCompromiso = useCallback((t: TarjetaRetro) => {
-    setEquipo((eq) => (eq
-      ? { ...eq, compromisos: eq.compromisos.map((x) => (x.id === t.id ? t : x)) }
-      : eq));
+    setEquipo((eq) => {
+      if (!eq) return eq;
+      return t.estado
+        ? { ...eq, compromisos: eq.compromisos.filter((x) => x.id !== t.id) }
+        : { ...eq, compromisos: eq.compromisos.map((x) => (x.id === t.id ? t : x)) };
+    });
   }, []);
 
   async function guardarHistoria(datos: DatosHistoria) {
