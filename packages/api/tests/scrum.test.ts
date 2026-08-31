@@ -71,7 +71,16 @@ describe('permiteMover', () => {
     expect(permiteMover('ninguno', 'doing', 'doing')).toBe(true);
   });
 
-  it('en desarrollo se mueve todo', () => {
+  it('en desarrollo el sprint está cerrado: ni entra ni sale nada', () => {
+    // Es la regla que la propia pista del desarrollo prometía —«no se toma
+    // nada nuevo»— y que la política no cumplía. Salir tampoco: devolver al
+    // backlog lo que no dio tiempo sería esquivar el bloqueo del cierre.
+    expect(permiteMover('dentro-sprint', 'backlog', 'planned')).toBe(false);
+    expect(permiteMover('dentro-sprint', 'planned', 'backlog')).toBe(false);
+    expect(permiteMover('dentro-sprint', 'planned', 'doing')).toBe(true);
+  });
+
+  it('«todos» sigue existiendo para quien lo configure a mano', () => {
     expect(permiteMover('todos', 'backlog', 'done')).toBe(true);
   });
 });

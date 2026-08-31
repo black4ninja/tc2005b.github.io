@@ -168,8 +168,12 @@ export const ETAPAS_SEMILLA: {
     pista:
       'Se trabajan las historias del sprint backlog y se van moviendo conforme avanzan: '
       + 'diseño, desarrollo y revisión. Si terminan todo, no se toma nada nuevo.',
+    // «Dentro del sprint» y no «todos»: una vez arrancado, el sprint backlog es
+    // un compromiso cerrado. Ni entra nada del backlog —que es de lo que avisa
+    // la pista— ni sale nada hacia él, porque devolver lo que no dio tiempo
+    // sería quitarse de encima el bloqueo que toca pagar al cerrar.
     politica: {
-      backlog: 'editable', sprint: 'editable', movimientos: 'todos',
+      backlog: 'editable', sprint: 'editable', movimientos: 'dentro-sprint',
       burndown: false, retro: false, cobraDeuda: false, duracionSegundos: 180,
     },
   },

@@ -622,7 +622,10 @@ function mensajeMovimiento(movimientos: string): string {
     case 'dentro-backlog':
       return 'En el grooming solo se ordena el backlog';
     case 'dentro-sprint':
-      return 'Aquí solo se mueve lo que ya está en el sprint';
+      // Es el mensaje del desarrollo, así que dice la razón y no solo el «no»:
+      // que el sprint sea un compromiso cerrado es la mitad de la lección.
+      return 'El sprint ya está comprometido: solo se mueve lo que entró en el planning, '
+        + 'y lo que no entró espera al siguiente';
     default:
       return 'Ese movimiento no está permitido ahora';
   }

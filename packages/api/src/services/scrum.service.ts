@@ -11,7 +11,7 @@ import { SprintEquipo } from '../models/SprintEquipo.js';
 import { TarjetaRetro } from '../models/TarjetaRetro.js';
 import {
   COLUMNAS, COLUMNAS_DEL_SPRINT, COLORES_EQUIPO, ETAPAS_SEMILLA,
-  OBJETIVOS_SPRINT_SEMILLA, POLITICA_POR_DEFECTO, type Columna,
+  OBJETIVOS_SPRINT_SEMILLA, POLITICA_POR_DEFECTO, type Columna, type PoliticaEtapa,
 } from '../constants/scrum.js';
 import { cuantosEscuchanTablero, publicarTablero } from './scrum-bus.js';
 import { bloqueosVigentes } from './scrum-bloqueos.js';
@@ -86,6 +86,24 @@ async function sembrarPoliticasQueFaltan(
     if (!etapa.getPista()) etapa.setPista(semilla.pista);
     tocadas.push(etapa);
   }
+
+  // Y la corrección de un movimiento que se sembró mal: el desarrollo salió con
+  // «todos», que dejaba meter historias nuevas al sprint ya empezado. Solo se
+  // corrige cuando la política guardada coincide con la semilla EN TODO LO
+  // DEMÁS: si el profesor la ha tocado, lo suyo manda y esto no entra.
+  for (const etapa of etapas.filter((e) => e.get('politica'))) {
+    const semilla = porNombre.get(etapa.getNombre().trim().toLowerCase());
+    if (!semilla || tocadas.includes(etapa)) continue;
+    const guardada = etapa.getPolitica();
+    if (guardada.movimientos === semilla.politica.movimientos) continue;
+    const claves = Object.keys(semilla.politica) as (keyof PoliticaEtapa)[];
+    const igualEnLoDemas = claves
+      .every((k) => k === 'movimientos' || guardada[k] === semilla.politica[k]);
+    if (!igualEnLoDemas) continue;
+    etapa.setPolitica({ ...guardada, movimientos: semilla.politica.movimientos });
+    tocadas.push(etapa);
+  }
+
   if (tocadas.length > 0) await Parse.Object.saveAll(tocadas, { useMasterKey: true });
 
   // Y las etapas de la semilla que aún no existen —«Desarrollo» se añadió
