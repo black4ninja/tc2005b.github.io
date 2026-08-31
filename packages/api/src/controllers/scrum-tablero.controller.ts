@@ -3,7 +3,7 @@ import Parse from 'parse/node';
 import { AppUser } from '../models/AppUser.js';
 import { EquipoScrum } from '../models/EquipoScrum.js';
 import { HistoriaUsuario } from '../models/HistoriaUsuario.js';
-import { getVinculoConGrupoActivo } from '../services/grupo-alumno.service.js';
+import { alumnoTieneAccesoAGrupo } from '../services/grupo-alumno.service.js';
 import { moduloActivoEnGrupo } from '../services/grupo-colecciones.service.js';
 import {
   asegurarSprint,
@@ -12,6 +12,7 @@ import {
   difundirTablero,
   dinamicaVigente,
   equipoDelAlumno,
+  equiposDeDinamica,
   historiasDeEquipos,
   siguienteOrdenEnColumna,
   type EstadoDinamica,
@@ -105,17 +106,26 @@ async function contextoAlumno(
     error(res, 400, 'Datos incompletos');
     return null;
   }
-  const vinculo = await getVinculoConGrupoActivo(alumno.id, grupoId);
-  if (!vinculo) {
+  // Las tres comprobaciones de entrada solo necesitan el grupo y el alumno, así
+  // que van juntas. En fila india eran tres viajes a una base remota ANTES de
+  // empezar a hacer nada, y los paga cada gesto del alumno: cada arrastre, cada
+  // épica, cada historia. Si el acceso resulta denegado se habrá pedido la
+  // dinámica de más; es un camino de error y sale mucho más barato que el peaje
+  // en el camino bueno.
+  const [enElGrupo, moduloActivo, dinamica] = await Promise.all([
+    alumnoTieneAccesoAGrupo(alumno.id, grupoId),
+    moduloActivoEnGrupo(grupoId, 'scrum'),
+    dinamicaVigente(grupoId),
+  ]);
+  if (!enElGrupo) {
     error(res, 403, 'No perteneces a este grupo');
     return null;
   }
-  if (!(await moduloActivoEnGrupo(grupoId, 'scrum'))) {
+  if (!moduloActivo) {
     error(res, 404, 'Esta sección no está disponible en tu grupo');
     return null;
   }
 
-  const dinamica = await dinamicaVigente(grupoId);
   if (!dinamica) {
     return {
       grupoId, alumno, dinamicaId: null, sprintId: null, equipo: null,
@@ -123,8 +133,20 @@ async function contextoAlumno(
     };
   }
   if (!dinamica.getFinalizada()) await asegurarSprint(dinamica);
-  const equipo = await equipoDelAlumno(dinamica.id!, alumno.id);
-  const estado = conEstado ? await construirEstadoDinamica(dinamica.id!) : null;
+
+  // Para LEER el tablero hacen falta todos los equipos de la dinámica de todos
+  // modos: se piden una vez y de ahí sale también en cuál está quien mira, en
+  // vez de preguntarlo aparte. Para ESCRIBIR basta con su equipo, que es una
+  // consulta más barata.
+  let equipo: EquipoScrum | null;
+  let estado: EstadoDinamica | null = null;
+  if (conEstado) {
+    const equipos = await equiposDeDinamica(dinamica.id!);
+    equipo = equipos.find((e: EquipoScrum) => e.getMiembroIds().includes(alumno.id!)) ?? null;
+    estado = await construirEstadoDinamica(dinamica.id!, { dinamica, equipos });
+  } else {
+    equipo = await equipoDelAlumno(dinamica.id!, alumno.id);
+  }
   const etapa = dinamica.getEtapaActual();
   const politica: PoliticaEtapa = {
     ...POLITICA_POR_DEFECTO,
@@ -726,13 +748,21 @@ export async function crearEpica(req: Request, res: Response): Promise<void> {
 
     // La primera épica pasa a ser la del sprint: sin ninguna elegida, la regla
     // de «un modelo a la vez» no tiene contra qué comparar.
-    if (existentes.length === 0) {
+    const primera = existentes.length === 0;
+    if (primera) {
       equipo.setEpicaActual(epica);
       await equipo.save(null, { useMasterKey: true });
     }
 
+    // La épica y, si toca, la que queda como épica del sprint viajan en la
+    // respuesta: el equipo la ve aparecer en cuanto vuelve el POST, sin esperar
+    // a que el tablero se reconstruya y baje por el stream.
+    res.status(201).json({
+      status: 'ok',
+      epica: epica.toSafeJSON(),
+      epicaActual: primera ? epica.id : equipo.getEpicaActual()?.id ?? null,
+    });
     void difundirTablero(ctx.dinamicaId!);
-    res.status(201).json({ status: 'ok', epica: epica.toSafeJSON() });
   } catch {
     error(res, 500, 'Error al crear la épica');
   }

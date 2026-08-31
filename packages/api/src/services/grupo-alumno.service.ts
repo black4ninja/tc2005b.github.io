@@ -80,6 +80,20 @@ export async function hasAnyActiveGrupoForAlumno(alumnoId: string): Promise<bool
 }
 
 /**
+ * ¿Este alumno tiene acceso a ESTE grupo?
+ *
+ * Se responde con la lista de grupos que ya se acaba de leer para validar la
+ * sesión, en vez de con una consulta propia. Quien solo necesita el sí o el no
+ * —y es casi todo el mundo— se ahorra así un viaje entero.
+ */
+export async function alumnoTieneAccesoAGrupo(
+  alumnoId: string,
+  grupoId: string,
+): Promise<boolean> {
+  return (await getGruposDeAlumno(alumnoId)).some((g) => g.id === grupoId);
+}
+
+/**
  * Vínculo del alumno con un grupo que le dé acceso, o `null`. Reúne las dos
  * condiciones que antes se comprobaban por separado —vínculo activo y grupo no
  * bloqueado— para que ningún endpoint del alumno se deje una.
@@ -149,9 +163,31 @@ export async function getGruposDeAlumno(alumnoId: string): Promise<Grupo[]> {
  * que sale gratis; sin él, quien decide a dónde mandar al alumno al entrar no
  * puede saber si tiene algo que rellenar.
  */
+/**
+ * Los grupos de un alumno, recién leídos, guardados un instante.
+ *
+ * Esta consulta lleva DOS niveles de include y contra una base remota sale por
+ * medio segundo. Cada petición de un alumno la hacía dos veces —una al validar
+ * la sesión y otra al evaluar el permiso—, así que antes de empezar a trabajar
+ * ya se había ido un segundo. El grano es de segundos, no de minutos: lo justo
+ * para que las dos de la MISMA petición sean una, sin que dar de alta o de baja
+ * a alguien tarde en notarse. Y cuando la plataforma toca un vínculo, lo olvida
+ * a mano.
+ */
+const VIGENCIA_GRUPOS_MS = 3000;
+const cacheGrupos = new Map<string, { hasta: number; valor: { grupo: Grupo; perfilCompleto: boolean }[] }>();
+
+/** Olvida lo que se sepa de un alumno. Al dar de alta, de baja o tocar su perfil. */
+export function olvidarGruposDeAlumno(alumnoId: string): void {
+  cacheGrupos.delete(alumnoId);
+}
+
 export async function getGruposDeAlumnoConPerfil(
   alumnoId: string,
 ): Promise<{ grupo: Grupo; perfilCompleto: boolean }[]> {
+  const guardado = cacheGrupos.get(alumnoId);
+  if (guardado && guardado.hasta > Date.now()) return guardado.valor;
+
   const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId) as AppUser;
 
   const query = new Parse.Query<GrupoAlumno>('GrupoAlumno');
@@ -172,6 +208,7 @@ export async function getGruposDeAlumnoConPerfil(
       grupos.push({ grupo: grupo!, perfilCompleto: link.getPerfilCompleto() });
     }
   }
+  cacheGrupos.set(alumnoId, { hasta: Date.now() + VIGENCIA_GRUPOS_MS, valor: grupos });
   return grupos;
 }
 
@@ -186,6 +223,7 @@ export async function createGrupoAlumnoLink(
   link.setAlumno(alumno);
   link.setGrupo(grupoPointer);
   await link.save(null, { useMasterKey: true });
+  olvidarGruposDeAlumno(alumno.id!);
 
   return link;
 }

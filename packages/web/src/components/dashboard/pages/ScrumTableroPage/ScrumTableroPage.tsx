@@ -13,7 +13,7 @@ import { avisar, pedirTexto } from '../../../../utils/dialogos';
 import {
   POLITICA_POR_DEFECTO, bloqueoAjeno, cuentaRegresiva, historiasDeOtraEpica, iniciales,
   sumaPuntos,
-  type Bloqueo, type Columna, type ColumnaRetro, type Dinamica, type EquipoTablero,
+  type Bloqueo, type Columna, type ColumnaRetro, type Dinamica, type Epica, type EquipoTablero,
   type Etapa, type Historia, type Sprint,
 } from '../../../../utils/scrum';
 import styles from './ScrumTableroPage.module.css';
@@ -143,7 +143,17 @@ export default function ScrumTableroPage() {
   }, [etapa?.politica.duracionSegundos, dinamica?.etapaIniciadaEn]);
 
   const mandar = useCallback(
-    async (url: string, metodo: string, cuerpo?: unknown): Promise<boolean> => {
+    async (
+      url: string,
+      metodo: string,
+      cuerpo?: unknown,
+      /**
+       * Qué hacer con la respuesta. Lo que el servidor devuelve suele bastar
+       * para dejar la pantalla como debe quedar, y aplicarlo aquí se ve al
+       * instante en vez de esperar a que el tablero entero baje por el stream.
+       */
+      fusionar?: (json: any) => void,
+    ): Promise<boolean> => {
       try {
         const r = await fetch(url, {
           method: metodo,
@@ -156,6 +166,7 @@ export default function ScrumTableroPage() {
           await cargar();
           return false;
         }
+        fusionar?.(json);
         // Cuando el stream está vivo NO se recarga: el nuevo estado llega solo,
         // y pedirlo otra vez era duplicar el viaje más caro de cada gesto. Sin
         // stream —una pestaña vieja, un proxy que lo corta— sí hace falta.
@@ -561,8 +572,23 @@ export default function ScrumTableroPage() {
         epicaActual={equipo.epicaActual}
         historias={equipo.historias}
         editable={editable}
-        onCrear={(nombre) => void mandar(`${base}/epicas`, 'POST', { nombre })}
-        onElegir={(epicaId) => void mandar(`${base}/epica-actual`, 'PUT', { epicaId })}
+        // La épica nueva se pinta con lo que devuelve el POST. Esperar al
+        // stream era medio tablero reconstruido para enseñar una línea más.
+        onCrear={(nombre) => mandar(`${base}/epicas`, 'POST', { nombre }, (json) => {
+          if (!json?.epica?.id) return;
+          setEquipo((eq) => (eq
+            ? {
+              ...eq,
+              epicas: eq.epicas.some((x) => x.id === json.epica.id)
+                ? eq.epicas
+                : [...eq.epicas, json.epica as Epica],
+              epicaActual: json.epicaActual ?? eq.epicaActual,
+            }
+            : eq));
+        })}
+        onElegir={(epicaId) => mandar(`${base}/epica-actual`, 'PUT', { epicaId }, (json) => {
+          setEquipo((eq) => (eq ? { ...eq, epicaActual: json?.epicaActual ?? null } : eq));
+        })}
         onCerrar={() => setEpicasAbierto(false)}
       />
 

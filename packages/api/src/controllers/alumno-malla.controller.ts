@@ -9,7 +9,7 @@ import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { validarPerfil } from '../models/campos-perfil.js';
-import { getVinculoConGrupoActivo } from '../services/grupo-alumno.service.js';
+import { getVinculoConGrupoActivo, olvidarGruposDeAlumno } from '../services/grupo-alumno.service.js';
 import { moduloActivoEnGrupo, modulosActivosEnGrupo } from '../services/grupo-colecciones.service.js';
 import { getColeccionesPermitidas } from '../services/contenidos.service.js';
 import { coleccionesConEjerciciosPublicados } from '../services/ejercicios-alumno.service.js';
@@ -520,6 +520,8 @@ export async function updateMyPerfil(req: Request, res: Response): Promise<void>
     link.setPerfilCompleto(true);
 
     await link.save(null, { useMasterKey: true });
+    // El perfil completo viaja en la lista de grupos que se guarda un instante.
+    olvidarGruposDeAlumno(link.getAlumno()?.id ?? '');
 
     res.json({
       status: 'ok',

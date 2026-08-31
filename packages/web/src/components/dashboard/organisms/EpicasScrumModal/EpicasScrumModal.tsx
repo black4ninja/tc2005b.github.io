@@ -9,8 +9,9 @@ interface Props {
   epicaActual: string | null;
   historias: Historia[];
   editable?: boolean;
-  onCrear: (nombre: string) => void;
-  onElegir: (epicaId: string | null) => void;
+  /** Devuelven la promesa del viaje para que aquí se pueda esperar y avisar. */
+  onCrear: (nombre: string) => Promise<unknown>;
+  onElegir: (epicaId: string | null) => Promise<unknown>;
   onCerrar: () => void;
 }
 
@@ -27,12 +28,31 @@ export default function EpicasScrumModal({
   abierto, epicas, epicaActual, historias, editable = true, onCrear, onElegir, onCerrar,
 }: Props) {
   const [nombre, setNombre] = useState('');
+  // Qué se está guardando: 'alta' al crear, o el id de la épica que se elige.
+  // Crear una épica es un viaje al servidor y antes no se veía nada: el equipo
+  // volvía a pulsar y salían dos épicas iguales.
+  const [guardando, setGuardando] = useState<string | null>(null);
 
-  function crear() {
+  async function crear() {
     const limpio = nombre.trim();
-    if (!limpio) return;
-    onCrear(limpio);
-    setNombre('');
+    if (!limpio || guardando) return;
+    setGuardando('alta');
+    try {
+      await onCrear(limpio);
+      setNombre('');
+    } finally {
+      setGuardando(null);
+    }
+  }
+
+  async function elegir(epicaId: string | null, cual: string) {
+    if (guardando) return;
+    setGuardando(cual);
+    try {
+      await onElegir(epicaId);
+    } finally {
+      setGuardando(null);
+    }
   }
 
   const intrusas = epicaActual
@@ -64,9 +84,10 @@ export default function EpicasScrumModal({
                 <button
                   type="button"
                   className={`${styles.elegir} ${activa ? styles.elegida : ''}`}
-                  disabled={!editable}
-                  onClick={() => onElegir(activa ? null : e.id)}
+                  disabled={!editable || guardando !== null}
+                  onClick={() => void elegir(activa ? null : e.id, e.id)}
                 >
+                  {guardando === e.id && <span className={styles.girando} />}
                   {activa ? 'Épica del sprint' : 'Trabajar esta'}
                 </button>
               </li>
@@ -84,12 +105,20 @@ export default function EpicasScrumModal({
               placeholder="Nombre de la épica"
               value={nombre}
               maxLength={60}
+              disabled={guardando !== null}
               onChange={(e) => setNombre(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && crear()}
+              onKeyDown={(e) => e.key === 'Enter' && void crear()}
             />
-            <button type="button" className={styles.agregar} onClick={crear} disabled={!nombre.trim()}>
-              <span className="material-icons">add</span>
-              Nueva épica
+            <button
+              type="button"
+              className={styles.agregar}
+              onClick={() => void crear()}
+              disabled={!nombre.trim() || guardando !== null}
+            >
+              {guardando === 'alta'
+                ? <span className={styles.girando} />
+                : <span className="material-icons">add</span>}
+              {guardando === 'alta' ? 'Creando…' : 'Nueva épica'}
             </button>
           </div>
         )}

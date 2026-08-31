@@ -312,19 +312,30 @@ export interface EstadoDinamica {
  * reparte a todos los que escuchan; construir uno por conexión eran treinta
  * consultas cada vez que alguien arrastraba una tarjeta.
  */
-export async function construirEstadoDinamica(dinamicaId: string): Promise<EstadoDinamica | null> {
-  const q = new Parse.Query<DinamicaScrum>('DinamicaScrum');
-  q.equalTo('exists' as any, true as any);
-  q.include('etapaActual' as any);
-  q.include('sprintActual' as any);
-  let dinamica: DinamicaScrum;
-  try {
-    dinamica = await q.get(dinamicaId, { useMasterKey: true });
-  } catch {
-    return null;
+export async function construirEstadoDinamica(
+  dinamicaId: string,
+  /**
+   * Lo que quien llama ya tenga leído. El tablero del alumno acaba de cargar la
+   * dinámica y sus equipos para saber en cuál está: volver a pedirlos aquí eran
+   * dos viajes más a una base remota en la pantalla que más se abre de todo el
+   * módulo.
+   */
+  precargado?: { dinamica?: DinamicaScrum | null; equipos?: EquipoScrum[] },
+): Promise<EstadoDinamica | null> {
+  let dinamica = precargado?.dinamica ?? null;
+  if (!dinamica) {
+    const q = new Parse.Query<DinamicaScrum>('DinamicaScrum');
+    q.equalTo('exists' as any, true as any);
+    q.include('etapaActual' as any);
+    q.include('sprintActual' as any);
+    try {
+      dinamica = await q.get(dinamicaId, { useMasterKey: true });
+    } catch {
+      return null;
+    }
   }
 
-  const equipos = await equiposDeDinamica(dinamicaId);
+  const equipos = precargado?.equipos ?? (await equiposDeDinamica(dinamicaId));
   const ids = equipos.map((e) => e.id!);
   const sprint = dinamica.getSprintActual();
   const sprintId = sprint?.id ?? null;
