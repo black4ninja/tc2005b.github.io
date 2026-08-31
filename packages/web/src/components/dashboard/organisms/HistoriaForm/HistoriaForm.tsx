@@ -3,8 +3,8 @@ import Modal from '../../atoms/Modal/Modal';
 import PostItHistoria from '../PostItHistoria/PostItHistoria';
 import { confirmar } from '../../../../utils/dialogos';
 import {
-  COLUMNAS, PRIORIDADES, PUNTOS, PUNTOS_ETIQUETA,
-  type Columna, type Historia, type Persona, type Prioridad,
+  ESTIMACIONES, PRIORIDADES,
+  type Epica, type Historia, type Persona, type Prioridad,
 } from '../../../../utils/scrum';
 import styles from './HistoriaForm.module.css';
 
@@ -15,7 +15,7 @@ export interface DatosHistoria {
   puntos: number;
   prioridad: Prioridad;
   responsableId: string | null;
-  columna?: Columna;
+  epicaId: string | null;
 }
 
 interface Props {
@@ -23,6 +23,7 @@ interface Props {
   /** `null` = alta. Las altas nacen siempre en Backlog. */
   historia: Historia | null;
   miembros: Persona[];
+  epicas: Epica[];
   guardando?: boolean;
   onGuardar: (datos: DatosHistoria) => void;
   onBorrar?: (historiaId: string) => void;
@@ -36,6 +37,7 @@ const VACIA: DatosHistoria = {
   puntos: 0,
   prioridad: 'should',
   responsableId: null,
+  epicaId: null,
 };
 
 /**
@@ -57,7 +59,7 @@ const VACIA: DatosHistoria = {
  * acorte la frase antes de guardarla.
  */
 export default function HistoriaForm({
-  abierto, historia, miembros, guardando, onGuardar, onBorrar, onCerrar,
+  abierto, historia, miembros, epicas, guardando, onGuardar, onBorrar, onCerrar,
 }: Props) {
   const [datos, setDatos] = useState<DatosHistoria>(VACIA);
 
@@ -72,14 +74,18 @@ export default function HistoriaForm({
             puntos: historia.puntos,
             prioridad: historia.prioridad,
             responsableId: historia.responsable?.id ?? null,
-            columna: historia.columna,
+            epicaId: historia.epica ?? null,
           }
-        : VACIA,
+        // Una historia nueva nace en la épica que el equipo está trabajando: es
+        // lo que quiere el 90 % de las veces y evita el error más común.
+        : { ...VACIA, epicaId: epicas[0]?.id ?? null },
     );
-  }, [abierto, historia]);
+  }, [abierto, historia, epicas]);
 
   const editando = !!historia;
   const puedeGuardar = datos.que.trim() !== '' && !guardando;
+
+  const epicaPrevia = epicas.find((e) => e.id === datos.epicaId) ?? null;
 
   const previa: Historia = {
     id: historia?.id ?? 'previa',
@@ -88,8 +94,10 @@ export default function HistoriaForm({
     como: datos.como,
     puntos: datos.puntos,
     prioridad: datos.prioridad,
-    columna: datos.columna ?? 'backlog',
+    columna: historia?.columna ?? 'backlog',
     orden: 0,
+    epica: datos.epicaId,
+    archivada: false,
     responsable: datos.responsableId
       ? miembros.find((m) => m.id === datos.responsableId) ?? null
       : null,
@@ -142,6 +150,25 @@ export default function HistoriaForm({
           />
 
           <div className={styles.tresBloques}>
+            {epicas.length > 0 && (
+              <div className={styles.bloque}>
+                <div className={styles.bloqueTitulo}>
+                  <span className={styles.etiqueta}>Épica</span>
+                  <span className={styles.aclaracion}>de qué entregable es</span>
+                </div>
+                <select
+                  className={styles.select}
+                  value={datos.epicaId ?? ''}
+                  onChange={(e) => setDatos((d) => ({ ...d, epicaId: e.target.value || null }))}
+                >
+                  <option value="">Sin épica</option>
+                  {epicas.map((e) => (
+                    <option key={e.id} value={e.id}>{e.nombre}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className={styles.bloque}>
               <div className={styles.bloqueTitulo}>
                 <span className={styles.etiqueta}>Responsable</span>
@@ -167,8 +194,10 @@ export default function HistoriaForm({
                 value={datos.puntos}
                 onChange={(e) => setDatos((d) => ({ ...d, puntos: Number(e.target.value) }))}
               >
-                {PUNTOS.map((p) => (
-                  <option key={p} value={p}>{PUNTOS_ETIQUETA[p] ?? String(p)}</option>
+                {ESTIMACIONES.map((e) => (
+                  <option key={e.valor} value={e.valor}>
+                    {e.etiqueta} · {e.descripcion}
+                  </option>
                 ))}
               </select>
             </div>
@@ -193,28 +222,14 @@ export default function HistoriaForm({
             </div>
           </div>
 
-          {editando && (
-            <div className={styles.bloque}>
-              <span className={styles.etiqueta}>Columna</span>
-              <select
-                className={styles.select}
-                value={datos.columna ?? 'backlog'}
-                onChange={(e) => setDatos((d) => ({ ...d, columna: e.target.value as Columna }))}
-              >
-                {COLUMNAS.map((c) => (
-                  <option key={c.key} value={c.key}>{c.label}</option>
-                ))}
-              </select>
-            </div>
-          )}
         </div>
 
         <aside className={styles.previa}>
           <span className={styles.etiqueta}>Así queda en el tablero</span>
-          <PostItHistoria historia={previa} />
+          <PostItHistoria historia={previa} epica={epicaPrevia} />
           <p className={styles.pista}>
-            El responsable, los puntos y la prioridad se pueden cambiar después sin abrir la
-            historia.
+            El responsable se cambia desde la propia tarjeta, sin abrirla. El borde de arriba
+            es el color de su épica.
           </p>
         </aside>
       </div>

@@ -8,6 +8,58 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **La dinámica de Scrum completa: sprints, deuda técnica, retrospectiva y
+  cierre.** El módulo pasa de ser un tablero a ser la actividad entera, con las
+  reglas que la clase repetía en voz alta puestas donde se cumplen solas.
+  - **La etapa manda sobre el tablero.** Cada etapa declara qué deja ver y tocar
+    —backlog y sprint backlog por separado: editable, solo lectura, plegado u
+    oculto—, qué movimientos permite y cuánto dura. En **planning** el sprint
+    backlog se ve apagado con su candado y solo se entra de Backlog a Planned;
+    en **grooming** se pliega; en la **daily** se pliega el backlog y salen los
+    burndown; en **review** no se mueve nada; en la **retrospectiva** desaparece
+    el kanban entero. Se añade **Desarrollo**, que no es una ceremonia de Scrum
+    pero hace falta: es el momento en que se construye sin que ninguna regla
+    estorbe.
+  - **Solo entra al sprint lo estimado.** La escala pasa a `?` · 1 · 2 · 3 · 5 ·
+    `∞`, y ni «desconocido» ni «demasiado grande» dejan pasar una historia. El ∞
+    no es un castigo: es la manera de que partirla sea el único camino.
+  - **Sprints de verdad.** El profesor abre los que quiera —el objetivo de los
+    cuatro primeros sale de la presentación de la actividad— y al cerrar uno lo
+    terminado se archiva, lo abierto se queda donde está y de ahí sale el
+    **bloqueo**: puntos sin cerrar más una por cada restricción incumplida, que
+    el profesor recoge del PO en el review.
+  - **La deuda técnica se cobra sola.** Al salir del planning del siguiente
+    sprint, el sistema devuelve al backlog historias AL AZAR hasta cubrir el
+    bloqueo —pasándose de largo si hace falta— y avisa al equipo de qué acaba de
+    pasar. Si el bloqueo supera lo que planearon, solo les queda lo que dejaron
+    abierto: exactamente la regla de la dinámica.
+  - **Retrospectiva con consecuencias.** Su propio tablero de tres columnas —qué
+    hicimos bien, qué hicimos mal, qué podemos mejorar—, donde solo la última
+    lleva responsable porque solo ella genera un compromiso. Los compromisos se
+    arrastran al siguiente sprint, se ven bajo el tablero durante todo el sprint
+    y aparecen en la retro siguiente con sus botones de sí/no. **Una persona solo
+    puede llevar un compromiso abierto**: un equipo que no los cierra se queda
+    sin gente a quien asignarle los nuevos.
+  - **Burndown**: del sprint y del proyecto, con un corte en cada cambio de
+    etapa, que es el ritmo al que la actividad pide actualizarlo. Y el reparto
+    por integrante, con lo que hay que decir en voz alta: si una historia es de
+    todos a la vez, no es de nadie.
+  - **Épicas**: el entregable completo del que cuelgan las historias. El borde de
+    la tarjeta lleva su color, y meter en el sprint una historia de otra épica
+    sale señalado — «solo se puede trabajar en 1 modelo a la vez».
+  - **Roles**: el equipo elige a su Product Owner desde su propia cabecera, con
+    la descripción de qué se espera de cada rol al lado.
+  - **Definición de terminado y restricciones** a un botón del tablero, editables
+    por el profesor. Dejan de vivir en una diapositiva que nadie tiene delante.
+  - **Resumen final**: al terminar la dinámica cada equipo ve lo que logró y lo
+    que le faltó —sprint a sprint, quién cerró qué, qué nunca salió del backlog,
+    cuánto costó la deuda—, que es lo que contesta las preguntas del cierre de
+    la sesión.
+  - **En la proyección** las columnas tienen ancho fijo y cada panel se desplaza:
+    apretarlas hasta que el rótulo diga «PL…» es peor que tener que desplazar. Y
+    un interruptor cambia los tableros por un resumen por equipo, que es lo que
+    hace falta en la daily con seis o nueve.
+
 - **Módulo «Actividad de Scrum»: el profesor arma equipos y cada equipo lleva su
   tablero kanban con historias de usuario.** Es un módulo de APRENDIZAJE, no un
   gestor de proyectos: todo está recortado a propósito para que lo que se

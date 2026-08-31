@@ -6,6 +6,7 @@ import { HistoriaUsuario } from '../models/HistoriaUsuario.js';
 import { getVinculoConGrupoActivo } from '../services/grupo-alumno.service.js';
 import { moduloActivoEnGrupo } from '../services/grupo-colecciones.service.js';
 import {
+  asegurarSprint,
   cargarDinamica,
   construirEstadoDinamica,
   difundirTablero,
@@ -16,10 +17,20 @@ import {
   type EstadoDinamica,
 } from '../services/scrum.service.js';
 import { suscribirTablero } from '../services/scrum-bus.js';
+import { SprintScrum } from '../models/SprintScrum.js';
 import {
-  esColumna, esPrioridad, esPuntos, LARGO_CAMPO, LARGO_OBJETIVO,
-  PRIORIDAD_POR_DEFECTO, PUNTOS_VALIDOS, type Columna,
+  esColumna, esColumnaRetro, esPrioridad, esPuntos, estaEstimada, permiteMover,
+  COLUMNAS_DEL_SPRINT, ESTADOS_COMPROMISO, LARGO_CAMPO, LARGO_OBJETIVO,
+  LARGO_TARJETA_RETRO, POLITICA_POR_DEFECTO, PRIORIDAD_POR_DEFECTO, PUNTOS_VALIDOS,
+  COLORES_EPICA, LARGO_NOMBRE,
+  type Columna, type ColumnaRetro, type EstadoCompromiso, type PoliticaEtapa,
 } from '../constants/scrum.js';
+import { EpicaScrum } from '../models/EpicaScrum.js';
+import { TarjetaRetro } from '../models/TarjetaRetro.js';
+import { normalizarColor } from '../models/CategoriaGrupo.js';
+import {
+  compromisosAbiertos, epicasDeEquipos, historicoDeEquipo,
+} from '../services/scrum.service.js';
 
 /**
  * El tablero: lo que el alumno escribe y lo que se proyecta.
@@ -50,9 +61,21 @@ interface ContextoAlumno {
   grupoId: string;
   alumno: AppUser;
   dinamicaId: string | null;
+  sprintId: string | null;
   equipo: EquipoScrum | null;
   cerrada: boolean;
+  politica: PoliticaEtapa;
   estado: EstadoDinamica | null;
+}
+
+/**
+ * La etapa que cobra la deuda es el PLANNING: es el único momento del ciclo en
+ * el que se decide qué entra al sprint, y por eso es también el único en el que
+ * el equipo puede reescribir su objetivo. Se deduce de la política en vez de
+ * mirar el nombre de la etapa porque el nombre lo cambia el profesor.
+ */
+function esPlanning(politica: PoliticaEtapa): boolean {
+  return politica.cobraDeuda === true;
 }
 
 /**
@@ -91,16 +114,27 @@ async function contextoAlumno(
 
   const dinamica = await dinamicaVigente(grupoId);
   if (!dinamica) {
-    return { grupoId, alumno, dinamicaId: null, equipo: null, cerrada: false, estado: null };
+    return {
+      grupoId, alumno, dinamicaId: null, sprintId: null, equipo: null,
+      cerrada: false, politica: POLITICA_POR_DEFECTO, estado: null,
+    };
   }
+  await asegurarSprint(dinamica);
   const equipo = await equipoDelAlumno(dinamica.id!, alumno.id);
   const estado = conEstado ? await construirEstadoDinamica(dinamica.id!) : null;
+  const etapa = dinamica.getEtapaActual();
+  const politica: PoliticaEtapa = {
+    ...POLITICA_POR_DEFECTO,
+    ...((etapa?.get('politica') as Partial<PoliticaEtapa> | undefined) ?? {}),
+  };
   return {
     grupoId,
     alumno,
     dinamicaId: dinamica.id!,
+    sprintId: dinamica.getSprintActual()?.id ?? null,
     equipo,
     cerrada: dinamica.getCerrada(),
+    politica,
     estado,
   };
 }
@@ -116,6 +150,8 @@ function sobreAlumno(ctx: ContextoAlumno) {
     status: 'ok',
     serverNow: new Date().toISOString(),
     dinamica: ctx.estado?.dinamica ?? null,
+    etapa: ctx.estado?.etapa ?? null,
+    sprint: ctx.estado?.sprint ?? null,
     // Solo su equipo: el alumno no tiene por qué leer el tablero de los demás,
     // y la pantalla no lo pinta.
     equipo: recortarAEquipo(ctx.estado, ctx.equipo?.id ?? null),
@@ -170,6 +206,8 @@ export async function streamMiTablero(req: Request, res: Response): Promise<void
       status: 'ok',
       serverNow: completo.serverNow,
       dinamica: completo.dinamica,
+      etapa: completo.etapa,
+      sprint: completo.sprint,
       equipo: recortarAEquipo(completo, equipoId),
       editable: !!equipoId && completo.dinamica?.cerrada !== true,
       puntosValidos: PUNTOS_VALIDOS,
@@ -218,8 +256,19 @@ function resolverResponsable(valor: unknown, equipo: EquipoScrum): AppUser | nul
   return AppUser.createWithoutData(id) as AppUser;
 }
 
-/** El equipo del alumno, listo para escribir, o null (ya contestado). */
-async function equipoEditable(req: Request, res: Response): Promise<ContextoAlumno | null> {
+/**
+ * El equipo del alumno, listo para escribir, o null (ya contestado).
+ *
+ * `zona` dice sobre qué mitad del tablero se va a escribir, para que la política
+ * de la etapa pueda negarlo: en grooming el sprint backlog está plegado y en la
+ * review no se toca nada. La comprobación va en el SERVIDOR y no solo en la
+ * pantalla porque la lección es la regla, no el aviso.
+ */
+async function equipoEditable(
+  req: Request,
+  res: Response,
+  zona: 'backlog' | 'sprint' | 'retro' | 'equipo' = 'equipo',
+): Promise<ContextoAlumno | null> {
   const ctx = await contextoAlumno(req, res, false);
   if (!ctx) return null;
   if (!ctx.equipo) {
@@ -228,6 +277,19 @@ async function equipoEditable(req: Request, res: Response): Promise<ContextoAlum
   }
   if (ctx.cerrada) {
     error(res, 409, 'Esta dinámica está cerrada');
+    return null;
+  }
+
+  if (zona === 'retro' && !ctx.politica.retro) {
+    error(res, 409, 'La retrospectiva no está abierta ahora mismo');
+    return null;
+  }
+  if (zona === 'backlog' && ctx.politica.backlog !== 'editable') {
+    error(res, 409, 'En esta etapa el backlog no se toca');
+    return null;
+  }
+  if (zona === 'sprint' && ctx.politica.sprint !== 'editable') {
+    error(res, 409, 'En esta etapa el sprint backlog no se toca');
     return null;
   }
   return ctx;
@@ -241,7 +303,7 @@ async function equipoEditable(req: Request, res: Response): Promise<ContextoAlum
  */
 export async function crearHistoria(req: Request, res: Response): Promise<void> {
   try {
-    const ctx = await equipoEditable(req, res);
+    const ctx = await equipoEditable(req, res, 'backlog');
     if (!ctx) return;
     const equipo = ctx.equipo!;
 
@@ -365,7 +427,26 @@ export async function actualizarHistoria(req: Request, res: Response): Promise<v
         error(res, 400, 'Esa columna no existe en el tablero');
         return;
       }
-      historia.setColumna(req.body.columna as Columna);
+      const destino = req.body.columna as Columna;
+      const origen = historia.getColumna();
+
+      if (!permiteMover(ctx.politica.movimientos, origen, destino)) {
+        error(res, 409, mensajeMovimiento(ctx.politica.movimientos));
+        return;
+      }
+      // «Solo historias de usuario estimadas podrán trabajarse durante el
+      // sprint»: el `?` y el `∞` se quedan fuera. El ∞ además dice qué hacer —
+      // partirla— en vez de solo negar el paso.
+      const entraAlSprint = COLUMNAS_DEL_SPRINT.includes(destino)
+        && !COLUMNAS_DEL_SPRINT.includes(origen);
+      if (entraAlSprint && !estaEstimada(historia.getPuntos())) {
+        error(res, 409, historia.getPuntos() < 0
+          ? 'Esta historia está marcada como demasiado grande: pártela antes de meterla al sprint'
+          : 'Solo entran al sprint las historias estimadas');
+        return;
+      }
+
+      historia.setColumna(destino);
       // Sin posición explícita, al final de la columna de destino: es donde el
       // ojo la busca después de soltarla.
       if (req.body?.orden === undefined) {
@@ -385,6 +466,22 @@ export async function actualizarHistoria(req: Request, res: Response): Promise<v
     res.json({ status: 'ok', historia: historia.toSafeJSON() });
   } catch {
     error(res, 500, 'Error al actualizar la historia');
+  }
+}
+
+/** Por qué la etapa no deja hacer ese movimiento, en las palabras del ciclo. */
+function mensajeMovimiento(movimientos: string): string {
+  switch (movimientos) {
+    case 'ninguno':
+      return 'En esta etapa el tablero no se mueve';
+    case 'backlog-a-planned':
+      return 'En el planning solo se puede pasar del backlog a Planned';
+    case 'dentro-backlog':
+      return 'En el grooming solo se ordena el backlog';
+    case 'dentro-sprint':
+      return 'Aquí solo se mueve lo que ya está en el sprint';
+    default:
+      return 'Ese movimiento no está permitido ahora';
   }
 }
 
@@ -419,6 +516,10 @@ export async function setObjetivoEquipo(req: Request, res: Response): Promise<vo
   try {
     const ctx = await equipoEditable(req, res);
     if (!ctx) return;
+    if (!esPlanning(ctx.politica)) {
+      error(res, 409, 'El objetivo del sprint se escribe en el planning');
+      return;
+    }
     const objetivo = String(req.body?.objetivo ?? '').trim().replace(/\s+/g, ' ');
     if (objetivo.length > LARGO_OBJETIVO) {
       error(res, 400, `El objetivo no puede pasar de ${LARGO_OBJETIVO} caracteres`);
@@ -491,4 +592,439 @@ export async function streamProyeccionScrum(req: Request, res: Response): Promis
   } catch {
     res.write('event: error\ndata: {}\n\n');
   }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Rol del equipo                                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * PUT /alumno/grupos/:grupoId/scrum/po — `{ alumnoId: string | null }`.
+ *
+ * Lo elige el propio equipo, no el profesor: en la dinámica el reparto de roles
+ * es parte de lo que se practica. Es UNO, y por eso el campo es un puntero y no
+ * una lista.
+ */
+export async function setProductOwner(req: Request, res: Response): Promise<void> {
+  try {
+    const ctx = await equipoEditable(req, res);
+    if (!ctx) return;
+    const equipo = ctx.equipo!;
+    const { alumnoId } = req.body as { alumnoId?: string | null };
+
+    if (!alumnoId) {
+      equipo.setPo(null);
+    } else {
+      if (!equipo.getMiembroIds().includes(String(alumnoId))) {
+        error(res, 400, 'El Product Owner tiene que ser alguien del equipo');
+        return;
+      }
+      equipo.setPo(AppUser.createWithoutData(String(alumnoId)) as AppUser);
+    }
+    await equipo.save(null, { useMasterKey: true });
+    void difundirTablero(ctx.dinamicaId!);
+    res.json({ status: 'ok', po: equipo.getPoId() });
+  } catch {
+    error(res, 500, 'Error al cambiar el Product Owner');
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Épicas                                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * POST /alumno/grupos/:grupoId/scrum/epicas — `{ nombre, color? }`.
+ *
+ * La épica es el entregable completo. Existe para enseñar que la historia de
+ * usuario no es la unidad más grande: primero se define qué se va a construir y
+ * después se parte en historias.
+ */
+export async function crearEpica(req: Request, res: Response): Promise<void> {
+  try {
+    const ctx = await equipoEditable(req, res);
+    if (!ctx) return;
+    const equipo = ctx.equipo!;
+
+    const nombre = String(req.body?.nombre ?? '').trim().replace(/\s+/g, ' ');
+    if (nombre === '' || nombre.length > LARGO_NOMBRE) {
+      error(res, 400, `El nombre es requerido y no puede pasar de ${LARGO_NOMBRE} caracteres`);
+      return;
+    }
+
+    const existentes = await epicasDeEquipos([equipo.id!]);
+    const epica = new EpicaScrum().initDefaults();
+    epica.setEquipo(EquipoScrum.createWithoutData(equipo.id!) as EquipoScrum);
+    epica.setNombre(nombre);
+    epica.setColor(
+      normalizarColor(req.body?.color) ?? COLORES_EPICA[existentes.length % COLORES_EPICA.length],
+    );
+    epica.setOrden(existentes.length);
+    await epica.save(null, { useMasterKey: true });
+
+    // La primera épica pasa a ser la del sprint: sin ninguna elegida, la regla
+    // de «un modelo a la vez» no tiene contra qué comparar.
+    if (existentes.length === 0) {
+      equipo.setEpicaActual(epica);
+      await equipo.save(null, { useMasterKey: true });
+    }
+
+    void difundirTablero(ctx.dinamicaId!);
+    res.status(201).json({ status: 'ok', epica: epica.toSafeJSON() });
+  } catch {
+    error(res, 500, 'Error al crear la épica');
+  }
+}
+
+/** PUT …/scrum/epicas/:epicaId — `{ nombre?, color? }`. */
+export async function actualizarEpica(req: Request, res: Response): Promise<void> {
+  const { epicaId } = req.params;
+  try {
+    const ctx = await equipoEditable(req, res);
+    if (!ctx) return;
+    const epica = await cargarEpicaDelEquipo(epicaId, ctx.equipo!.id!);
+    if (!epica) {
+      error(res, 404, 'Esa épica no es de tu equipo');
+      return;
+    }
+    if (req.body?.nombre !== undefined) {
+      const nombre = String(req.body.nombre ?? '').trim().replace(/\s+/g, ' ');
+      if (nombre === '' || nombre.length > LARGO_NOMBRE) {
+        error(res, 400, 'El nombre no puede estar vacío');
+        return;
+      }
+      epica.setNombre(nombre);
+    }
+    if (req.body?.color !== undefined) {
+      const color = normalizarColor(req.body.color);
+      if (!color) {
+        error(res, 400, 'El color no es un hexadecimal válido');
+        return;
+      }
+      epica.setColor(color);
+    }
+    await epica.save(null, { useMasterKey: true });
+    void difundirTablero(ctx.dinamicaId!);
+    res.json({ status: 'ok', epica: epica.toSafeJSON() });
+  } catch {
+    error(res, 500, 'Error al actualizar la épica');
+  }
+}
+
+/** PUT …/scrum/epica-actual — `{ epicaId }`. La que el sprint está trabajando. */
+export async function setEpicaActual(req: Request, res: Response): Promise<void> {
+  try {
+    const ctx = await equipoEditable(req, res);
+    if (!ctx) return;
+    const equipo = ctx.equipo!;
+    const { epicaId } = req.body as { epicaId?: string | null };
+
+    if (!epicaId) {
+      equipo.setEpicaActual(null);
+    } else {
+      const epica = await cargarEpicaDelEquipo(String(epicaId), equipo.id!);
+      if (!epica) {
+        error(res, 404, 'Esa épica no es de tu equipo');
+        return;
+      }
+      equipo.setEpicaActual(epica);
+    }
+    await equipo.save(null, { useMasterKey: true });
+    void difundirTablero(ctx.dinamicaId!);
+    res.json({ status: 'ok', epicaActual: equipo.getEpicaActual()?.id ?? null });
+  } catch {
+    error(res, 500, 'Error al cambiar la épica del sprint');
+  }
+}
+
+async function cargarEpicaDelEquipo(epicaId: string, equipoId: string): Promise<EpicaScrum | null> {
+  const q = new Parse.Query<EpicaScrum>('EpicaScrum');
+  q.equalTo('exists' as any, true as any);
+  try {
+    const epica = await q.get(epicaId, { useMasterKey: true });
+    return epica.getEquipoId() === equipoId ? epica : null;
+  } catch {
+    return null;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Retrospectiva                                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * POST /alumno/grupos/:grupoId/scrum/retro — `{ columna, texto, responsableId? }`.
+ *
+ * Solo «mejorar» admite responsable: es la única columna que genera un
+ * compromiso. Las otras dos son observaciones y no llevan nombre a propósito —
+ * repartir culpas no es el punto de una retrospectiva—.
+ *
+ * Y una persona solo puede tener UN compromiso abierto a la vez. Es la regla
+ * que hace que la retro tenga consecuencias: un equipo que no cierra sus
+ * compromisos se queda sin gente a quien asignarle los nuevos.
+ */
+export async function crearTarjetaRetro(req: Request, res: Response): Promise<void> {
+  try {
+    const ctx = await equipoEditable(req, res, 'retro');
+    if (!ctx) return;
+    if (!ctx.sprintId) {
+      error(res, 409, 'La dinámica no tiene ningún sprint abierto');
+      return;
+    }
+    const equipo = ctx.equipo!;
+
+    const columna = req.body?.columna;
+    if (!esColumnaRetro(columna)) {
+      error(res, 400, 'La columna debe ser bien, mal o mejorar');
+      return;
+    }
+    const texto = String(req.body?.texto ?? '').trim().replace(/\s+/g, ' ');
+    if (texto === '' || texto.length > LARGO_TARJETA_RETRO) {
+      error(res, 400, `El texto es requerido y no puede pasar de ${LARGO_TARJETA_RETRO} caracteres`);
+      return;
+    }
+
+    let responsable: AppUser | null = null;
+    if (columna === 'mejorar' && req.body?.responsableId) {
+      const fallo = await validarResponsableCompromiso(String(req.body.responsableId), equipo);
+      if (fallo) {
+        error(res, 409, fallo);
+        return;
+      }
+      responsable = AppUser.createWithoutData(String(req.body.responsableId)) as AppUser;
+    }
+
+    const tarjeta = new TarjetaRetro().initDefaults();
+    tarjeta.setEquipo(EquipoScrum.createWithoutData(equipo.id!) as EquipoScrum);
+    tarjeta.setSprint(SprintScrum.createWithoutData(ctx.sprintId) as SprintScrum);
+    tarjeta.setColumna(columna as ColumnaRetro);
+    tarjeta.setTexto(texto);
+    tarjeta.setResponsable(responsable);
+    await tarjeta.save(null, { useMasterKey: true });
+
+    void difundirTablero(ctx.dinamicaId!);
+    res.status(201).json({ status: 'ok', tarjeta: tarjeta.toSafeJSON() });
+  } catch {
+    error(res, 500, 'Error al crear la tarjeta');
+  }
+}
+
+/**
+ * ¿Puede esta persona llevarse otro compromiso? Devuelve el motivo por el que
+ * no, o `null` si sí.
+ */
+async function validarResponsableCompromiso(
+  alumnoId: string,
+  equipo: EquipoScrum,
+  exceptoTarjetaId?: string,
+): Promise<string | null> {
+  if (!equipo.getMiembroIds().includes(alumnoId)) {
+    return 'El responsable tiene que ser alguien del equipo';
+  }
+  // TODOS los abiertos, incluidos los de esta misma retro: si no, se podrían
+  // cargar tres compromisos a la misma persona en la misma sesión, que es justo
+  // lo que la regla quiere impedir.
+  const abiertos = await compromisosAbiertos(equipo.id!);
+  const suyo = abiertos.find(
+    (t) => t.getResponsable()?.id === alumnoId && t.id !== exceptoTarjetaId,
+  );
+  if (suyo) {
+    return `Esa persona ya tiene un compromiso abierto: «${suyo.getTexto()}». `
+      + 'Ciérrenlo en esta retro o repartan el nuevo a alguien más.';
+  }
+  return null;
+}
+
+/** PUT …/scrum/retro/:tarjetaId — `{ texto?, responsableId? }`. */
+export async function actualizarTarjetaRetro(req: Request, res: Response): Promise<void> {
+  const { tarjetaId } = req.params;
+  try {
+    const ctx = await equipoEditable(req, res, 'retro');
+    if (!ctx) return;
+    const tarjeta = await cargarTarjetaRetro(tarjetaId, ctx.equipo!.id!);
+    if (!tarjeta) {
+      error(res, 404, 'Esa tarjeta no es de tu equipo');
+      return;
+    }
+
+    if (req.body?.texto !== undefined) {
+      const texto = String(req.body.texto ?? '').trim().replace(/\s+/g, ' ');
+      if (texto === '' || texto.length > LARGO_TARJETA_RETRO) {
+        error(res, 400, 'El texto no puede estar vacío');
+        return;
+      }
+      tarjeta.setTexto(texto);
+    }
+    if (req.body?.responsableId !== undefined) {
+      if (tarjeta.getColumna() !== 'mejorar') {
+        error(res, 400, 'Solo los compromisos llevan responsable');
+        return;
+      }
+      if (!req.body.responsableId) {
+        tarjeta.setResponsable(null);
+      } else {
+        const fallo = await validarResponsableCompromiso(
+          String(req.body.responsableId), ctx.equipo!, tarjeta.id,
+        );
+        if (fallo) {
+          error(res, 409, fallo);
+          return;
+        }
+        tarjeta.setResponsable(AppUser.createWithoutData(String(req.body.responsableId)) as AppUser);
+      }
+    }
+
+    await tarjeta.save(null, { useMasterKey: true });
+    void difundirTablero(ctx.dinamicaId!);
+    res.json({ status: 'ok', tarjeta: tarjeta.toSafeJSON() });
+  } catch {
+    error(res, 500, 'Error al actualizar la tarjeta');
+  }
+}
+
+/** DELETE …/scrum/retro/:tarjetaId */
+export async function borrarTarjetaRetro(req: Request, res: Response): Promise<void> {
+  const { tarjetaId } = req.params;
+  try {
+    const ctx = await equipoEditable(req, res, 'retro');
+    if (!ctx) return;
+    const tarjeta = await cargarTarjetaRetro(tarjetaId, ctx.equipo!.id!);
+    if (!tarjeta) {
+      error(res, 404, 'Esa tarjeta no es de tu equipo');
+      return;
+    }
+    tarjeta.softDelete();
+    await tarjeta.save(null, { useMasterKey: true });
+    void difundirTablero(ctx.dinamicaId!);
+    res.json({ status: 'ok' });
+  } catch {
+    error(res, 500, 'Error al borrar la tarjeta');
+  }
+}
+
+/**
+ * PUT …/scrum/compromisos/:tarjetaId — `{ estado: 'cumplido' | 'fallado' }`.
+ *
+ * Lo marca SU responsable y nadie más. Estar asignado a un compromiso no
+ * significa tener que hacerlo solo: significa responder de su seguimiento, y
+ * este botón es exactamente ese seguimiento.
+ */
+export async function marcarCompromiso(req: Request, res: Response): Promise<void> {
+  const { tarjetaId } = req.params;
+  try {
+    const ctx = await equipoEditable(req, res, 'retro');
+    if (!ctx) return;
+    const tarjeta = await cargarTarjetaRetro(tarjetaId, ctx.equipo!.id!);
+    if (!tarjeta || tarjeta.getColumna() !== 'mejorar') {
+      error(res, 404, 'Ese compromiso no es de tu equipo');
+      return;
+    }
+    const responsableId = tarjeta.getResponsable()?.id ?? null;
+    if (responsableId && responsableId !== ctx.alumno.id) {
+      error(res, 403, 'Este compromiso lo marca quien le da seguimiento');
+      return;
+    }
+
+    const { estado } = req.body as { estado?: string };
+    if (!(ESTADOS_COMPROMISO as readonly string[]).includes(String(estado))) {
+      error(res, 400, 'El estado debe ser cumplido o fallado');
+      return;
+    }
+    tarjeta.setEstado(estado as EstadoCompromiso);
+    await tarjeta.save(null, { useMasterKey: true });
+    void difundirTablero(ctx.dinamicaId!);
+    res.json({ status: 'ok', tarjeta: tarjeta.toSafeJSON() });
+  } catch {
+    error(res, 500, 'Error al marcar el compromiso');
+  }
+}
+
+async function cargarTarjetaRetro(
+  tarjetaId: string,
+  equipoId: string,
+): Promise<TarjetaRetro | null> {
+  const q = new Parse.Query<TarjetaRetro>('TarjetaRetro');
+  q.equalTo('exists' as any, true as any);
+  q.include('responsable' as any);
+  try {
+    const tarjeta = await q.get(tarjetaId, { useMasterKey: true });
+    return tarjeta.getEquipoId() === equipoId ? tarjeta : null;
+  } catch {
+    return null;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Resumen del equipo                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * GET /alumno/grupos/:grupoId/scrum/resumen — lo que el equipo se lleva.
+ *
+ * No es un marcador: es la respuesta a las preguntas con las que termina la
+ * sesión. Por eso viaja el histórico sprint a sprint, quién cerró qué y lo que
+ * nunca salió del backlog, y no solo un total.
+ */
+export async function getResumenEquipo(req: Request, res: Response): Promise<void> {
+  try {
+    const ctx = await contextoAlumno(req, res, false);
+    if (!ctx) return;
+    if (!ctx.equipo) {
+      res.json({ status: 'ok', equipo: null, historico: [], sinEmpezar: [], porIntegrante: [] });
+      return;
+    }
+    const equipoId = ctx.equipo.id!;
+    const [historico, todas, compromisos] = await Promise.all([
+      historicoDeEquipo(equipoId),
+      historiasDeEquipos([equipoId], { incluirArchivadas: true }),
+      compromisosDeTodos(equipoId),
+    ]);
+
+    // Quién cerró qué: solo cuenta lo que estaba asignado al archivarse. Una
+    // historia sin responsable no le suma a nadie, y eso hay que decirlo.
+    const porIntegrante = new Map<string, { name: string; puntos: number }>();
+    for (const m of ctx.equipo.getMiembros()) {
+      porIntegrante.set(m.id!, { name: m.get('name') ?? '', puntos: 0 });
+    }
+    let sinResponsable = 0;
+    for (const h of todas) {
+      if (!h.getArchivada()) continue;
+      const quien = h.getResponsable()?.id;
+      if (quien && porIntegrante.has(quien)) {
+        porIntegrante.get(quien)!.puntos += Math.max(0, h.getPuntos());
+      } else {
+        sinResponsable += 1;
+      }
+    }
+
+    res.json({
+      status: 'ok',
+      equipo: ctx.equipo.toSafeJSON(),
+      dinamica: ctx.estado?.dinamica ?? null,
+      historico: historico.map((m) => ({
+        ...m.toSafeJSON(),
+        numero: m.getSprint()?.get('numero') ?? 0,
+        objetivo: m.getSprint()?.get('objetivo') ?? '',
+      })),
+      sinEmpezar: todas
+        .filter((h) => !h.getArchivada() && h.getColumna() === 'backlog')
+        .map((h) => ({ que: h.getQue(), puntos: h.getPuntos(), prioridad: h.getPrioridad() })),
+      porIntegrante: [...porIntegrante.entries()].map(([id, v]) => ({ id, ...v })),
+      sinResponsable,
+      compromisos: compromisos.map((t) => t.toSafeJSON()),
+    });
+  } catch {
+    error(res, 500, 'Error al leer el resumen');
+  }
+}
+
+/** Todos los compromisos del equipo, marcados o no: para el resumen final. */
+async function compromisosDeTodos(equipoId: string): Promise<TarjetaRetro[]> {
+  const q = new Parse.Query<TarjetaRetro>('TarjetaRetro');
+  q.equalTo('equipo' as any, EquipoScrum.createWithoutData(equipoId) as any);
+  q.equalTo('columna' as any, 'mejorar' as any);
+  q.equalTo('exists' as any, true as any);
+  q.include('responsable' as any);
+  q.limit(200);
+  return q.find({ useMasterKey: true });
 }

@@ -1,11 +1,14 @@
 /* El post-it. Todo sale de los tokens `--scrum-*`: el amarillo pastel de claro
    deslumbra proyectado en oscuro, y ahí pasa a ámbar translúcido solo. */
+/* El borde de ARRIBA lleva el color de la épica: es lo que deja ver de un
+   vistazo si en el sprint se coló un trozo de otro modelo. */
 .postit {
   display: flex;
   flex-direction: column;
   gap: 5px;
   background: var(--scrum-postit-bg);
   border: 1px solid var(--scrum-postit-borde);
+  border-top: 3px solid var(--scrum-postit-linea);
   border-radius: 10px;
   box-shadow: var(--shadow-sm);
   padding: 10px 12px;
@@ -81,6 +84,13 @@
 
 /* Los puntos en un círculo: es un número suelto y sin el borde se leía como
    parte del texto de la tarjeta. */
+/* Sin estimar («?») o demasiado grande («∞»): se apaga, porque ninguna de las
+   dos deja entrar la historia al sprint. */
+.puntosSinEstimar {
+  color: var(--text-muted);
+  border-style: dashed;
+}
+
 .puntos {
   display: inline-flex;
   align-items: center;
@@ -97,14 +107,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.etiqueta {
-  font-size: 8.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-}
-
 .que {
   font-size: 13px;
   font-weight: 500;
@@ -114,14 +116,69 @@
   overflow-wrap: anywhere;
 }
 
+/* El pie ES el botón de asignar: el gesto que más se repite no debería costar
+   abrir el detalle de la historia. */
+.pieCaja { position: relative; }
+
 .pie {
   display: flex;
   align-items: center;
   gap: 6px;
+  width: 100%;
   margin-top: 2px;
-  padding-top: 5px;
+  padding: 5px 0 0;
+  border: none;
   border-top: 1px dashed var(--scrum-postit-borde);
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
 }
+
+.pieAsignable { cursor: pointer; }
+.pieAsignable:hover .quien, .pieAsignable:hover .sinAsignar { color: var(--text-primary); }
+.pie .material-icons { font-size: 15px; color: var(--text-muted); }
+
+.menu {
+  position: absolute;
+  top: 100%;
+  left: -4px;
+  right: -4px;
+  z-index: 20;
+  margin-top: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.menuTitulo {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menuItem:hover { background: var(--dash-bg-subtle); }
+.menuItemActivo { background: var(--sidebar-active-bg); color: var(--sidebar-active-color); }
 
 .avatar,
 .avatarVacio {
@@ -177,6 +234,7 @@
 .md .prioridad { font-size: 7.5px; padding: 0 6px; }
 .md .puntos { min-width: 15px; height: 15px; font-size: 9px; }
 .md .pie { padding-top: 3px; gap: 4px; }
+.md .pie .material-icons { display: none; }
 .md .avatar, .md .avatarVacio { width: 15px; height: 15px; font-size: 6.5px; }
 .md .quien, .md .sinAsignar { font-size: 8px; }
 .md .etiqueta { display: none; }

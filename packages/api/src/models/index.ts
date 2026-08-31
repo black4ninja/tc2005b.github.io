@@ -62,3 +62,8 @@ export { EtapaScrum } from './EtapaScrum.js';
 export { DinamicaScrum } from './DinamicaScrum.js';
 export { EquipoScrum } from './EquipoScrum.js';
 export { HistoriaUsuario } from './HistoriaUsuario.js';
+export { SprintScrum } from './SprintScrum.js';
+export { EpicaScrum } from './EpicaScrum.js';
+export { TarjetaRetro } from './TarjetaRetro.js';
+export { SprintEquipo } from './SprintEquipo.js';
+export type { CorteBurndown } from './SprintEquipo.js';

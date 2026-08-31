@@ -1,13 +1,21 @@
-import type { PointerEvent } from 'react';
-import { iniciales, type Escala, type Historia } from '../../../../utils/scrum';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import {
+  iniciales, puntosTexto, type Epica, type Escala, type Historia, type Persona,
+} from '../../../../utils/scrum';
 import styles from './PostItHistoria.module.css';
 
 interface Props {
   historia: Historia;
   /** `full` en el tablero, `md` y `sm` según cuántos equipos se proyecten. */
   escala?: Escala;
+  /** La épica a la que pertenece: pinta el borde de arriba. */
+  epica?: Epica | null;
+  /** Para la asignación rápida. Sin esto el pie es solo informativo. */
+  miembros?: Persona[];
   /** Sin esto la tarjeta es solo lectura: es lo que ve la proyección. */
   onAbrir?: (historia: Historia) => void;
+  /** Asignar sin abrir el detalle: el gesto que más se repite. */
+  onAsignar?: (historiaId: string, alumnoId: string | null) => void;
   /** Arranca el arrastre (dedo, ratón o lápiz). Ver `useArrastre`. */
   onPointerDown?: (e: PointerEvent<HTMLElement>) => void;
   /** La está arrastrando: se apaga y el fantasma es el que sigue al dedo. */
@@ -19,33 +27,49 @@ interface Props {
 /**
  * Una historia de usuario como post-it.
  *
- * En el tablero se ve SOLO el «qué», con su rótulo. El «por qué» y el «cómo» se
- * escriben y se leen al abrir la historia: con los tres campos, la tarjeta
- * crecía tanto que en una columna cabían dos y el tablero dejaba de leerse de
- * un vistazo, que es justo para lo que sirve un tablero.
+ * En el tablero se ve SOLO el título. El «por qué» —qué valor aporta— y el
+ * «cómo» se escriben y se leen al abrirla: con los tres campos la tarjeta crecía
+ * tanto que en una columna cabían dos y el tablero dejaba de leerse de un
+ * vistazo, que es justo para lo que sirve un tablero.
  *
- * Al reducir la escala se caen el rótulo y el responsable. Lo último que
- * sobrevive son la prioridad y los puntos, que son color y una cifra: es lo que
- * sigue diciendo algo desde el fondo del aula cuando se proyectan nueve
- * tableros y el texto ya no se lee.
+ * El borde de arriba es el color de su ÉPICA. Es lo que deja ver sin leer nada
+ * si en el sprint se coló un trozo de otro modelo, que es la restricción que
+ * más se rompe.
+ *
+ * Al reducir la escala se cae el pie. Lo último que sobrevive son la prioridad y
+ * los puntos, que son color y una cifra: es lo que sigue diciendo algo desde el
+ * fondo del aula cuando se proyectan nueve tableros.
  */
 export default function PostItHistoria({
-  historia, escala = 'full', onAbrir, onPointerDown, atenuada, fantasma,
+  historia, escala = 'full', epica, miembros, onAbrir, onAsignar,
+  onPointerDown, atenuada, fantasma,
 }: Props) {
   const completo = escala === 'full';
   const quien = historia.responsable;
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const caja = useRef<HTMLElement>(null);
 
-  const contenido = completo ? (
-    <div>
-      <div className={styles.etiqueta}>¿Qué?</div>
-      <div className={styles.que}>{historia.que}</div>
-    </div>
-  ) : (
-    <div className={styles.que}>{historia.que}</div>
-  );
+  // Un menú abierto que no se cierra al pulsar fuera acaba tapando la columna
+  // de al lado justo cuando alguien intenta soltar una tarjeta ahí.
+  useEffect(() => {
+    if (!menuAbierto) return;
+    function fuera(e: MouseEvent) {
+      if (!caja.current?.contains(e.target as Node)) setMenuAbierto(false);
+    }
+    document.addEventListener('mousedown', fuera);
+    return () => document.removeEventListener('mousedown', fuera);
+  }, [menuAbierto]);
+
+  function asignar(alumnoId: string | null) {
+    setMenuAbierto(false);
+    onAsignar?.(historia.id, alumnoId);
+  }
+
+  const puedeAsignar = !!onAsignar && !!miembros?.length && completo;
 
   return (
     <article
+      ref={caja}
       className={[
         styles.postit,
         styles[escala],
@@ -54,6 +78,7 @@ export default function PostItHistoria({
         atenuada ? styles.atenuada : '',
         fantasma ? styles.fantasma : '',
       ].filter(Boolean).join(' ')}
+      style={epica ? { borderTopColor: epica.color } : undefined}
       onPointerDown={onPointerDown}
       onClick={onAbrir ? () => onAbrir(historia) : undefined}
       role={onAbrir ? 'button' : undefined}
@@ -73,31 +98,76 @@ export default function PostItHistoria({
         <span className={`${styles.prioridad} ${styles[historia.prioridad]}`}>
           {historia.prioridad === 'wont' ? "Won't" : historia.prioridad}
         </span>
-        <span className={styles.puntos} title={historia.puntos === 0 ? 'Sin estimar' : 'Puntos de historia'}>
-          {historia.puntos === 0 ? '–' : historia.puntos}
+        <span
+          className={`${styles.puntos} ${historia.puntos <= 0 ? styles.puntosSinEstimar : ''}`}
+          title={
+            historia.puntos === 0 ? 'Sin estimar'
+              : historia.puntos < 0 ? 'Demasiado grande: conviene partirla'
+                : 'Puntos de historia'
+          }
+        >
+          {puntosTexto(historia.puntos)}
         </span>
       </header>
 
-      {contenido}
+      <div className={styles.que}>{historia.que}</div>
 
       {/* Una persona o ninguna, nunca varias: en Scrum la historia tiene un
-          dueño. El hueco se ve a propósito — es la señal de que falta repartir. */}
+          dueño. El hueco se ve a propósito — es la señal de que falta repartir —
+          y el pie entero es el botón de asignar, sin abrir el detalle. */}
       {escala !== 'sm' && (
-        <footer className={styles.pie}>
-          {quien ? (
-            <>
-              <span className={styles.avatar}>{iniciales(quien.name)}</span>
-              <span className={styles.quien}>
-                {completo ? quien.name : quien.name.split(' ')[0]}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className={styles.avatarVacio} />
-              <span className={styles.sinAsignar}>Sin asignar</span>
-            </>
+        <div className={styles.pieCaja}>
+          <button
+            type="button"
+            className={`${styles.pie} ${puedeAsignar ? styles.pieAsignable : ''}`}
+            disabled={!puedeAsignar}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (puedeAsignar) setMenuAbierto((v) => !v);
+            }}
+            title={puedeAsignar ? 'Asignar responsable' : undefined}
+          >
+            {quien ? (
+              <>
+                <span className={styles.avatar}>{iniciales(quien.name)}</span>
+                <span className={styles.quien}>
+                  {completo ? quien.name : quien.name.split(' ')[0]}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className={styles.avatarVacio} />
+                <span className={styles.sinAsignar}>Sin asignar</span>
+              </>
+            )}
+            {puedeAsignar && <span className="material-icons">expand_more</span>}
+          </button>
+
+          {menuAbierto && (
+            <div className={styles.menu} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.menuTitulo}>Asignar a</div>
+              <button
+                type="button"
+                className={`${styles.menuItem} ${!quien ? styles.menuItemActivo : ''}`}
+                onClick={() => asignar(null)}
+              >
+                <span className={styles.avatarVacio} />
+                Sin asignar
+              </button>
+              {miembros!.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={`${styles.menuItem} ${quien?.id === m.id ? styles.menuItemActivo : ''}`}
+                  onClick={() => asignar(m.id)}
+                >
+                  <span className={styles.avatar}>{iniciales(m.name)}</span>
+                  {m.name}
+                </button>
+              ))}
+            </div>
           )}
-        </footer>
+        </div>
       )}
     </article>
   );

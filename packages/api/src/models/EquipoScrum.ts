@@ -2,6 +2,7 @@ import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
 import type { AppUser } from './AppUser.js';
 import type { DinamicaScrum } from './DinamicaScrum.js';
+import type { EpicaScrum } from './EpicaScrum.js';
 
 /**
  * Un equipo dentro de una dinámica, con su gente y su objetivo de sprint.
@@ -53,6 +54,46 @@ export class EquipoScrum extends BaseModel {
     this.set('objetivo', objetivo);
   }
 
+  /**
+   * El Product Owner del equipo. Lo elige el propio equipo y es UNO: escribe y
+   * prioriza las historias, y reporta en el review las restricciones que no se
+   * cumplieron. No es un candado —el visto bueno lo marca cualquiera— porque en
+   * un sprint de 90 segundos un cuello de botella de una persona cuesta más de
+   * lo que enseña.
+   */
+  getPo(): AppUser | undefined {
+    return this.get('po');
+  }
+  setPo(alumno: AppUser | null): void {
+    if (alumno) this.set('po', alumno);
+    else this.unset('po');
+  }
+
+  getPoId(): string | null {
+    return this.get('po')?.id ?? null;
+  }
+
+  /** La épica que este equipo está trabajando: un modelo a la vez. */
+  getEpicaActual(): EpicaScrum | undefined {
+    return this.get('epicaActual');
+  }
+  setEpicaActual(epica: EpicaScrum | null): void {
+    if (epica) this.set('epicaActual', epica);
+    else this.unset('epicaActual');
+  }
+
+  /**
+   * Puntos de deuda que el equipo arrastra al siguiente sprint. Se calcula al
+   * cerrar un sprint y se consume al salir del planning del siguiente, cuando
+   * el sistema devuelve historias al backlog hasta cubrirlo.
+   */
+  getBloqueoPendiente(): number {
+    return this.get('bloqueoPendiente') ?? 0;
+  }
+  setBloqueoPendiente(puntos: number): void {
+    this.set('bloqueoPendiente', Math.max(0, puntos));
+  }
+
   getMiembros(): AppUser[] {
     return this.get('miembros') ?? [];
   }
@@ -79,6 +120,9 @@ export class EquipoScrum extends BaseModel {
       color: this.getColor(),
       objetivo: this.getObjetivo(),
       orden: this.getOrden(),
+      po: this.getPoId(),
+      epicaActual: this.getEpicaActual()?.id ?? null,
+      bloqueoPendiente: this.getBloqueoPendiente(),
       miembros: this.getMiembros().map((m) => ({
         id: m.id,
         name: m.get('name') ?? '',

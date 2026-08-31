@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import TableroScrum from '../../organisms/TableroScrum/TableroScrum';
+import ReglasScrumModal from '../../organisms/ReglasScrumModal/ReglasScrumModal';
 import { useArrastre } from '../../../../hooks/useArrastre';
 import { avisar, confirmar, pedirTexto } from '../../../../utils/dialogos';
 import {
   iniciales, rangoFechas, rejillaProyeccion,
-  type Dinamica, type EquipoTablero, type Persona,
+  type Dinamica, type EquipoTablero, type Marcador, type Persona, type Sprint,
 } from '../../../../utils/scrum';
 import styles from './DinamicaScrumPage.module.css';
 
@@ -32,7 +33,14 @@ export default function DinamicaScrumPage() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [vista, setVista] = useState<'equipos' | 'tableros'>('equipos');
+  const [vista, setVista] = useState<'equipos' | 'tableros' | 'sprints'>('equipos');
+  const [sprints, setSprints] = useState<Sprint[]>([]);
+  const [sprintActual, setSprintActual] = useState<string | null>(null);
+  const [marcadores, setMarcadores] = useState<Marcador[]>([]);
+  // Las penalizaciones se teclean mientras el PO las canta y solo se mandan al
+  // cerrar el sprint: hasta entonces son un borrador del profesor.
+  const [penalizaciones, setPenalizaciones] = useState<Record<string, number>>({});
+  const [reglas, setReglas] = useState<'done' | 'restricciones' | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [marcados, setMarcados] = useState<Set<string>>(new Set());
   const [mandoAbierto, setMandoAbierto] = useState(false);
@@ -58,6 +66,9 @@ export default function DinamicaScrumPage() {
       setEquipos(json.equipos ?? []);
       setSinEquipo(json.sinEquipo ?? []);
       setMaxEquipos(json.maxEquipos ?? 9);
+      setSprints(json.sprints ?? []);
+      setSprintActual(json.sprintActual ?? null);
+      setMarcadores(json.marcadores ?? []);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cargar');
@@ -186,6 +197,66 @@ export default function DinamicaScrumPage() {
     await mandar(`${base}/equipos/${equipo.id}`, 'DELETE');
   }
 
+  const enCurso = sprints.find((sp) => sp.id === sprintActual) ?? null;
+
+  async function nuevoSprint() {
+    const ok = await confirmar({
+      titulo: '¿Abrir el siguiente sprint?',
+      texto: 'Los equipos empezarán su planning con el bloqueo que arrastren del anterior.',
+      confirmar: 'Abrir sprint',
+    });
+    if (!ok) return;
+    await mandar(`${base}/sprints`, 'POST', {});
+  }
+
+  async function cerrarSprintActual() {
+    if (!enCurso) return;
+    const pendientes = equipos.reduce((t, e) => t + e.historias.filter(
+      (h) => h.columna !== 'backlog' && h.columna !== 'done',
+    ).length, 0);
+    const ok = await confirmar({
+      titulo: `¿Cerrar el Sprint ${enCurso.numero}?`,
+      html: `Lo terminado pasa a <strong>Archived</strong> y lo que quede abierto —hoy `
+        + `<strong>${pendientes}</strong> ${pendientes === 1 ? 'historia' : 'historias'}— se `
+        + 'convierte en bloqueo, junto con las penalizaciones que hayas anotado.',
+      confirmar: 'Cerrar sprint',
+    });
+    if (!ok) return;
+    await mandar(`${base}/sprints/${enCurso.id}/cerrar`, 'POST', { penalizaciones });
+    setPenalizaciones({});
+  }
+
+  async function editarObjetivoSprint() {
+    if (!enCurso) return;
+    const valor = await pedirTexto({
+      titulo: `Objetivo del Sprint ${enCurso.numero}`,
+      html: 'Es el mismo para todos los equipos, como en la dinámica.',
+      valor: enCurso.objetivo,
+      placeholder: 'Trabajar contra tiempo',
+      confirmar: 'Guardar',
+    });
+    if (valor === null) return;
+    await mandar(`${base}/sprints/${enCurso.id}`, 'PUT', { objetivo: valor });
+  }
+
+  async function finalizar() {
+    const ok = await confirmar({
+      titulo: '¿Finalizar la dinámica?',
+      texto: 'Los tableros dejan de tocarse y cada equipo pasa a ver su resumen: qué cerró, qué le faltó y cuánta deuda arrastró.',
+      confirmar: 'Finalizar',
+      peligro: true,
+    });
+    if (!ok) return;
+    await mandar(`${base}/finalizar`, 'POST', {});
+  }
+
+  function ajustarPenalizacion(equipoId: string, delta: number) {
+    setPenalizaciones((previas) => ({
+      ...previas,
+      [equipoId]: Math.max(0, (previas[equipoId] ?? 0) + delta),
+    }));
+  }
+
   function abrirProyeccion() {
     const ids = [...proyectados];
     if (ids.length === 0) return;
@@ -228,6 +299,10 @@ export default function DinamicaScrumPage() {
               {dinamica.etapaActual.nombre}
             </span>
           )}
+          <button type="button" className={styles.outline} onClick={() => setReglas('done')}>
+            <span className="material-icons">rule</span>
+            Reglas
+          </button>
           <button
             type="button"
             className={styles.outline}
@@ -251,19 +326,33 @@ export default function DinamicaScrumPage() {
       )}
 
       <div className={styles.tabs}>
-        {(['equipos', 'tableros'] as const).map((v) => (
+        {(['equipos', 'tableros', 'sprints'] as const).map((v) => (
           <button
             key={v}
             type="button"
             className={`${styles.tab} ${vista === v ? styles.tabActiva : ''}`}
             onClick={() => setVista(v)}
           >
-            {v === 'equipos' ? 'Equipos' : 'Tableros'}
+            {v === 'equipos' ? 'Equipos' : v === 'tableros' ? 'Tableros' : 'Sprints y marcador'}
           </button>
         ))}
       </div>
 
-      {vista === 'equipos' ? (
+      {vista === 'sprints' ? (
+        <SprintsYMarcador
+          sprints={sprints}
+          enCurso={enCurso}
+          equipos={equipos}
+          marcadores={marcadores}
+          penalizaciones={penalizaciones}
+          finalizada={dinamica?.finalizada === true}
+          onNuevo={nuevoSprint}
+          onCerrar={cerrarSprintActual}
+          onObjetivo={editarObjetivoSprint}
+          onFinalizar={finalizar}
+          onPenalizacion={ajustarPenalizacion}
+        />
+      ) : vista === 'equipos' ? (
         <div className={styles.reparto}>
           <aside className={styles.pool}>
             <div className={styles.poolCabecera}>
@@ -449,6 +538,19 @@ export default function DinamicaScrumPage() {
         </div>
       )}
 
+      <ReglasScrumModal
+        abierto={reglas !== null}
+        tipo={reglas ?? 'done'}
+        items={reglas === 'restricciones'
+          ? dinamica?.restricciones ?? []
+          : dinamica?.definicionDone ?? []}
+        editable
+        onGuardar={(items) =>
+          void mandar(`${base}/reglas`, 'PUT',
+            reglas === 'restricciones' ? { restricciones: items } : { definicionDone: items })}
+        onCerrar={() => setReglas(null)}
+      />
+
       {mandoAbierto && (
         <div className={styles.mandoFondo} onClick={() => setMandoAbierto(false)}>
           <div className={styles.mando} onClick={(e) => e.stopPropagation()}>
@@ -529,6 +631,164 @@ export default function DinamicaScrumPage() {
               </div>
             </footer>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Las iteraciones y el marcador.
+ *
+ * El contador de penalizaciones es lo que hace que la deuda técnica exista: el
+ * PO de cada equipo canta en el review cuántas restricciones no cumplieron y el
+ * profesor las teclea aquí. No se deducen solas — comprobar si un modelo mide
+ * más de diez centímetros es justo lo que un sistema no puede hacer — y hasta
+ * que se cierra el sprint son un borrador.
+ */
+function SprintsYMarcador({
+  sprints, enCurso, equipos, marcadores, penalizaciones, finalizada,
+  onNuevo, onCerrar, onObjetivo, onFinalizar, onPenalizacion,
+}: {
+  sprints: Sprint[];
+  enCurso: Sprint | null;
+  equipos: EquipoTablero[];
+  marcadores: Marcador[];
+  penalizaciones: Record<string, number>;
+  finalizada: boolean;
+  onNuevo: () => void;
+  onCerrar: () => void;
+  onObjetivo: () => void;
+  onFinalizar: () => void;
+  onPenalizacion: (equipoId: string, delta: number) => void;
+}) {
+  const porEquipo = new Map(marcadores.map((m) => [m.equipo ?? '', m]));
+
+  return (
+    <div className={styles.sprints}>
+      <section className={styles.iteraciones}>
+        <span className={styles.etiqueta}>Iteraciones</span>
+        <div className={styles.fichasSprint}>
+          {sprints.map((sp) => (
+            <span
+              key={sp.id}
+              className={[
+                styles.fichaSprint,
+                sp.id === enCurso?.id ? styles.fichaActiva : '',
+                sp.cerrado ? styles.fichaCerrada : '',
+              ].filter(Boolean).join(' ')}
+            >
+              {sp.cerrado && <span className="material-icons">check</span>}
+              Sprint {sp.numero}
+              {sp.id === enCurso?.id && ' · en curso'}
+            </span>
+          ))}
+          {!finalizada && (
+            <button type="button" className={styles.nuevoSprint} onClick={onNuevo}>
+              <span className="material-icons">add</span>
+              Nuevo sprint
+            </button>
+          )}
+        </div>
+
+        {enCurso && (
+          <div className={styles.objetivoSprint}>
+            <span className={styles.etiqueta}>Objetivo del Sprint {enCurso.numero}</span>
+            <button type="button" className={styles.objetivoBtn} onClick={onObjetivo}>
+              <span className={enCurso.objetivo ? styles.objetivoTexto : styles.objetivoVacio}>
+                {enCurso.objetivo || 'Sin definir'}
+              </span>
+              <span className="material-icons">edit</span>
+            </button>
+            <span className={styles.pista}>lo ven los equipos, no lo editan</span>
+          </div>
+        )}
+      </section>
+
+      <table className={styles.tabla}>
+        <thead>
+          <tr>
+            <th>Equipo</th>
+            <th className={styles.colCorta}>Cerrado</th>
+            <th className={styles.colCorta}>Sin terminar</th>
+            <th className={styles.colPen}>Penalizaciones · las reporta el PO</th>
+            <th className={styles.colCorta}>Bloqueo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {equipos.map((e) => {
+            const marcador = porEquipo.get(e.id);
+            const abiertas = e.historias.filter(
+              (h) => h.columna !== 'backlog' && h.columna !== 'done',
+            );
+            const abiertosPts = abiertas.reduce((t, h) => t + Math.max(0, h.puntos), 0);
+            const cerrados = e.historias
+              .filter((h) => h.columna === 'done')
+              .reduce((t, h) => t + Math.max(0, h.puntos), 0);
+            const pen = penalizaciones[e.id] ?? 0;
+            const bloqueo = abiertosPts + pen;
+            return (
+              <tr key={e.id}>
+                <td>
+                  <span className={styles.equipoCelda}>
+                    <span className={styles.punto} style={{ background: e.color }} />
+                    {e.nombre}
+                  </span>
+                  {e.bloqueoPendiente > 0 && (
+                    <span className={styles.arrastra}>
+                      arrastra {e.bloqueoPendiente} pts del sprint anterior
+                    </span>
+                  )}
+                </td>
+                <td>{marcador?.cerrados || cerrados} pts</td>
+                <td>{abiertas.length} HU · {abiertosPts} pts</td>
+                <td>
+                  <span className={styles.contadorPen}>
+                    <button type="button" className={styles.iconBtn} onClick={() => onPenalizacion(e.id, -1)}>
+                      <span className="material-icons">remove</span>
+                    </button>
+                    <span className={pen > 0 ? styles.penValor : styles.penCero}>{pen}</span>
+                    <button type="button" className={styles.iconBtn} onClick={() => onPenalizacion(e.id, 1)}>
+                      <span className="material-icons">add</span>
+                    </button>
+                  </span>
+                </td>
+                <td>
+                  <span className={bloqueo > 0 ? styles.bloqueoMal : styles.bloqueoBien}>
+                    {bloqueo > 0 ? `${bloqueo} pts` : 'sin deuda'}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+          {equipos.length === 0 && (
+            <tr><td colSpan={5} className={styles.hint}>Todavía no hay equipos.</td></tr>
+          )}
+        </tbody>
+      </table>
+
+      <p className={styles.explicacion}>
+        <strong>Bloqueo</strong> = puntos de las historias que no se cerraron + una por cada
+        restricción incumplida. Al cerrar el sprint, lo terminado pasa a <strong>Archived</strong>,
+        lo abierto se queda donde está, y en el planning del siguiente el sistema devuelve al
+        backlog historias al azar hasta cubrirlo.
+      </p>
+
+      {!finalizada && (
+        <div className={styles.accionesSprint}>
+          <button
+            type="button"
+            className={styles.outline}
+            onClick={onCerrar}
+            disabled={!enCurso || equipos.length === 0}
+          >
+            <span className="material-icons">lock</span>
+            Cerrar {enCurso ? `Sprint ${enCurso.numero}` : 'sprint'}
+          </button>
+          <button type="button" className={styles.primario} onClick={onFinalizar}>
+            <span className="material-icons">check_circle</span>
+            Finalizar dinámica
+          </button>
         </div>
       )}
     </div>

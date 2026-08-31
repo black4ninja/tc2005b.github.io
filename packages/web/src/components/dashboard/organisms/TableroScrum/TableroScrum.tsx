@@ -1,9 +1,9 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import PostItHistoria from '../PostItHistoria/PostItHistoria';
 import { useArrastre } from '../../../../hooks/useArrastre';
 import {
-  COLUMNAS, COLUMNAS_SPRINT, agruparPorColumna, sumaPuntos,
-  type Columna, type Escala, type EquipoTablero, type Historia,
+  COLUMNAS, COLUMNAS_SPRINT, POLITICA_POR_DEFECTO, agruparPorColumna, permiteMover, sumaPuntos,
+  type Columna, type Escala, type EquipoTablero, type Historia, type PoliticaEtapa, type Visibilidad,
 } from '../../../../utils/scrum';
 import styles from './TableroScrum.module.css';
 
@@ -12,9 +12,14 @@ interface Props {
   escala?: Escala;
   /** Sin esto el tablero es de lectura: es como lo ve la proyección. */
   editable?: boolean;
+  /** Qué deja tocar la etapa en curso. */
+  politica?: PoliticaEtapa;
+  /** Cuántas historias hay archivadas de sprints anteriores. */
+  archivadas?: number;
   onNuevaHistoria?: () => void;
   onAbrirHistoria?: (historia: Historia) => void;
   onMover?: (historiaId: string, columna: Columna) => void;
+  onAsignar?: (historiaId: string, alumnoId: string | null) => void;
   onEditarObjetivo?: () => void;
 }
 
@@ -25,50 +30,110 @@ const CLAVES = new Set<string>(COLUMNAS.map((c) => c.key));
  *
  * La forma es la enseñanza: `backlog` queda FUERA del recuadro punteado y las
  * otras cuatro dentro. Ese recuadro es el sprint backlog —a lo que el equipo se
- * comprometió— y lleva el objetivo del sprint dentro, no encima, porque el
- * objetivo es lo que da sentido a que esas tarjetas y no otras estén ahí.
+ * comprometió— y lleva el objetivo del sprint dentro, no encima.
  *
- * El mismo componente sirve para el tablero del alumno y para cada panel de la
- * proyección; lo único que cambia es la escala y si acepta que le toquen algo.
+ * Y lo que se puede tocar lo decide la ETAPA, no el componente: en planning el
+ * sprint backlog se ve apagado con su candado, en grooming se pliega, en la
+ * daily se pliega el backlog. La regla deja de ser algo que el profesor repite
+ * y pasa a ser algo que la pantalla hace.
  */
 export default function TableroScrum({
   equipo,
   escala = 'full',
   editable = false,
+  politica = POLITICA_POR_DEFECTO,
+  archivadas = 0,
   onNuevaHistoria,
   onAbrirHistoria,
   onMover,
+  onAsignar,
   onEditarObjetivo,
 }: Props) {
   const porColumna = agruparPorColumna(equipo.historias);
   const tablero = useRef<HTMLDivElement>(null);
+  const epicas = useMemo(
+    () => new Map(equipo.epicas.map((e) => [e.id, e])),
+    [equipo.epicas],
+  );
+
+  // Plegar a mano lo que la etapa no pliega sola: en una pantalla pequeña con
+  // muchos equipos es la diferencia entre leer las tarjetas y adivinarlas.
+  const [plegadasManual, setPlegadasManual] = useState<Set<Columna>>(new Set());
 
   const soltar = useCallback(
     (historia: Historia, zona: string) => {
-      // La zona viene de un `data-zona` del DOM, así que se comprueba: entre
-      // las columnas hay otros elementos con atributos y no todos son destinos.
-      if (CLAVES.has(zona) && zona !== historia.columna) onMover?.(historia.id, zona as Columna);
+      if (!CLAVES.has(zona) || zona === historia.columna) return;
+      if (!permiteMover(politica.movimientos, historia.columna, zona as Columna)) return;
+      onMover?.(historia.id, zona as Columna);
     },
-    [onMover],
+    [onMover, politica.movimientos],
   );
 
-  const seMueve = editable && !!onMover;
   const { iniciar, arrastrando, posicion, zona } = useArrastre<Historia>({
     alSoltar: soltar,
     contenedor: tablero,
   });
 
-  function columna(key: Columna, label: string, conAlta: boolean) {
+  const visBacklog: Visibilidad = politica.backlog;
+  const visSprint: Visibilidad = politica.sprint;
+
+  function plegada(key: Columna, vis: Visibilidad): boolean {
+    return vis === 'plegado' || plegadasManual.has(key);
+  }
+
+  function alternarPliegue(key: Columna) {
+    setPlegadasManual((previas) => {
+      const copia = new Set(previas);
+      if (copia.has(key)) copia.delete(key);
+      else copia.add(key);
+      return copia;
+    });
+  }
+
+  function columna(key: Columna, label: string, vis: Visibilidad) {
     const historias = porColumna[key];
     const puntos = sumaPuntos(historias);
-    const destino = !!arrastrando && zona === key && key !== arrastrando.columna;
+    const seTocan = editable && vis === 'editable' && !!onMover;
+    const destino = !!arrastrando
+      && zona === key
+      && key !== arrastrando.columna
+      && permiteMover(politica.movimientos, arrastrando.columna, key);
+
+    if (plegada(key, vis)) {
+      return (
+        <button
+          key={key}
+          type="button"
+          className={styles.plegada}
+          onClick={() => alternarPliegue(key)}
+          title={`Desplegar ${label}`}
+        >
+          <span className="material-icons">chevron_right</span>
+          <span className={styles.plegadaTitulo}>{label}</span>
+          <span className={styles.contador}>{historias.length}</span>
+        </button>
+      );
+    }
+
     return (
       <section
         key={key}
         data-zona={key}
-        className={`${styles.columna} ${destino ? styles.columnaDestino : ''}`}
+        className={[
+          styles.columna,
+          destino ? styles.columnaDestino : '',
+          vis === 'lectura' ? styles.columnaApagada : '',
+        ].filter(Boolean).join(' ')}
       >
         <header className={styles.columnaCabecera}>
+          <button
+            type="button"
+            className={styles.plegar}
+            onClick={() => alternarPliegue(key)}
+            title={`Plegar ${label}`}
+          >
+            <span className="material-icons">expand_more</span>
+          </button>
           <span className={styles.columnaTitulo}>{label}</span>
           <span className={styles.contador}>
             {historias.length}
@@ -83,8 +148,11 @@ export default function TableroScrum({
             key={h.id}
             historia={h}
             escala={escala}
+            epica={h.epica ? epicas.get(h.epica) ?? null : null}
+            miembros={equipo.miembros}
             onAbrir={editable && onAbrirHistoria ? onAbrirHistoria : undefined}
-            onPointerDown={seMueve ? iniciar(h) : undefined}
+            onAsignar={seTocan ? onAsignar : undefined}
+            onPointerDown={seTocan ? iniciar(h) : undefined}
             atenuada={arrastrando?.id === h.id}
           />
         ))}
@@ -92,7 +160,7 @@ export default function TableroScrum({
         {/* El alta va SOLO en Backlog: las historias nacen ahí y de ahí se
             mueven. Meterlas directamente en «doing» es el hábito contra el que
             existe el sprint backlog. */}
-        {conAlta && editable && onNuevaHistoria && (
+        {key === 'backlog' && seTocan && onNuevaHistoria && (
           <button type="button" className={styles.alta} onClick={onNuevaHistoria}>
             <span className="material-icons">add</span>
             Nueva historia
@@ -102,46 +170,74 @@ export default function TableroScrum({
     );
   }
 
+  const bloqueado = visSprint === 'lectura';
+
   return (
     <div
       ref={tablero}
       className={`${styles.tablero} ${styles[escala]} ${arrastrando ? styles.enArrastre : ''}`}
     >
-      {columna('backlog', 'Backlog', true)}
+      {visBacklog !== 'oculto' && columna('backlog', 'Backlog', visBacklog)}
 
-      <div className={styles.sprint}>
-        <span className={styles.leyenda}>Sprint backlog</span>
-
-        <div className={styles.objetivo}>
-          <span className={styles.objetivoEtiqueta}>Objetivo del sprint</span>
-          <span className={equipo.objetivo ? styles.objetivoTexto : styles.objetivoVacio}>
-            {equipo.objetivo || 'Sin definir'}
+      {visSprint !== 'oculto' && (
+        <div className={`${styles.sprint} ${bloqueado ? styles.sprintBloqueado : ''}`}>
+          <span className={styles.leyenda}>
+            Sprint backlog
+            {bloqueado && (
+              <span className={styles.candado}>
+                <span className="material-icons">lock</span>
+                {politica.movimientos === 'backlog-a-planned'
+                  ? 'Solo entra de Backlog a Planned'
+                  : 'No se toca en esta etapa'}
+              </span>
+            )}
           </span>
-          {editable && onEditarObjetivo && (
-            <button
-              type="button"
-              className={styles.objetivoBtn}
-              onClick={onEditarObjetivo}
-              title="Editar el objetivo del sprint"
-            >
-              <span className="material-icons">edit</span>
-            </button>
-          )}
-        </div>
 
-        <div className={styles.columnas}>
-          {COLUMNAS_SPRINT.map((c) => columna(c.key, c.label, false))}
-        </div>
-      </div>
+          <div className={styles.objetivo}>
+            <span className={styles.objetivoEtiqueta}>Objetivo del sprint</span>
+            <span className={equipo.objetivo ? styles.objetivoTexto : styles.objetivoVacio}>
+              {equipo.objetivo || 'Sin definir'}
+            </span>
+            {editable && onEditarObjetivo && politica.cobraDeuda ? (
+              <button
+                type="button"
+                className={styles.objetivoBtn}
+                onClick={onEditarObjetivo}
+                title="Editar el objetivo del sprint"
+              >
+                <span className="material-icons">edit</span>
+              </button>
+            ) : (
+              escala === 'full' && <span className={styles.objetivoNota}>se ajusta en el planning</span>
+            )}
+          </div>
 
-      {/* La copia que sigue al dedo. Va fuera de la columna —y en `fixed`— para
-          que no la recorte, y sin eventos para que se vea qué hay debajo. */}
+          <div className={styles.columnas}>
+            {COLUMNAS_SPRINT.map((c) => columna(c.key, c.label, visSprint))}
+          </div>
+        </div>
+      )}
+
+      {/* Siempre plegada: es el histórico, no trabajo en curso. */}
+      {archivadas > 0 && (
+        <div className={styles.archivada} title="Historias terminadas en sprints anteriores">
+          <span className="material-icons">inventory_2</span>
+          <span className={styles.plegadaTitulo}>Archived</span>
+          <span className={styles.contador}>{archivadas}</span>
+        </div>
+      )}
+
       {arrastrando && posicion && (
         <div
           className={styles.capaFantasma}
           style={{ transform: `translate(${posicion.x - 116}px, ${posicion.y - 40}px)` }}
         >
-          <PostItHistoria historia={arrastrando} escala="full" fantasma />
+          <PostItHistoria
+            historia={arrastrando}
+            escala="full"
+            epica={arrastrando.epica ? epicas.get(arrastrando.epica) ?? null : null}
+            fantasma
+          />
         </div>
       )}
     </div>

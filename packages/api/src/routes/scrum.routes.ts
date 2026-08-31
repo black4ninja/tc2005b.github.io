@@ -18,6 +18,12 @@ import {
   crearEtapa,
   actualizarEtapa,
   borrarEtapa,
+  crearSprintCtrl,
+  actualizarSprint,
+  cerrarSprintCtrl,
+  finalizarDinamica,
+  setReglas,
+  getResumen,
 } from '../controllers/scrum.controller.js';
 import {
   getMiTablero,
@@ -28,6 +34,15 @@ import {
   setObjetivoEquipo,
   getProyeccionScrum,
   streamProyeccionScrum,
+  setProductOwner,
+  crearEpica,
+  actualizarEpica,
+  setEpicaActual,
+  crearTarjetaRetro,
+  actualizarTarjetaRetro,
+  borrarTarjetaRetro,
+  marcarCompromiso,
+  getResumenEquipo,
 } from '../controllers/scrum-tablero.controller.js';
 
 /**
@@ -53,6 +68,18 @@ router.put('/admin/grupos/:grupoId/scrum/dinamicas/:dinamicaId', actualizarDinam
 router.delete('/admin/grupos/:grupoId/scrum/dinamicas/:dinamicaId', borrarDinamica);
 router.put('/admin/grupos/:grupoId/scrum/dinamicas/:dinamicaId/etapa', setEtapaActual);
 router.post('/admin/grupos/:grupoId/scrum/dinamicas/:dinamicaId/repartir', repartirAlumnos);
+
+// Iteraciones. El ritual del ciclo —archivar, contar el bloqueo y cobrarlo—
+// ocurre al cerrar un sprint y al salir del planning del siguiente.
+router.post('/admin/grupos/:grupoId/scrum/dinamicas/:dinamicaId/sprints', crearSprintCtrl);
+router.put('/admin/grupos/:grupoId/scrum/dinamicas/:dinamicaId/sprints/:sprintId', actualizarSprint);
+router.post(
+  '/admin/grupos/:grupoId/scrum/dinamicas/:dinamicaId/sprints/:sprintId/cerrar',
+  cerrarSprintCtrl,
+);
+router.post('/admin/grupos/:grupoId/scrum/dinamicas/:dinamicaId/finalizar', finalizarDinamica);
+router.put('/admin/grupos/:grupoId/scrum/dinamicas/:dinamicaId/reglas', setReglas);
+router.get('/admin/grupos/:grupoId/scrum/dinamicas/:dinamicaId/resumen', getResumen);
 
 // Equipos y su gente
 router.post('/admin/grupos/:grupoId/scrum/dinamicas/:dinamicaId/equipos', crearEquipo);
@@ -87,5 +114,18 @@ router.post('/alumno/grupos/:grupoId/scrum/historias', crearHistoria);
 router.put('/alumno/grupos/:grupoId/scrum/historias/:historiaId', actualizarHistoria);
 router.delete('/alumno/grupos/:grupoId/scrum/historias/:historiaId', borrarHistoria);
 router.put('/alumno/grupos/:grupoId/scrum/objetivo', setObjetivoEquipo);
+router.get('/alumno/grupos/:grupoId/scrum/resumen', getResumenEquipo);
+
+// El equipo se organiza solo: su PO y su épica en curso.
+router.put('/alumno/grupos/:grupoId/scrum/po', setProductOwner);
+router.put('/alumno/grupos/:grupoId/scrum/epica-actual', setEpicaActual);
+router.post('/alumno/grupos/:grupoId/scrum/epicas', crearEpica);
+router.put('/alumno/grupos/:grupoId/scrum/epicas/:epicaId', actualizarEpica);
+
+// Retrospectiva: tarjetas del sprint en curso y compromisos que se arrastran.
+router.post('/alumno/grupos/:grupoId/scrum/retro', crearTarjetaRetro);
+router.put('/alumno/grupos/:grupoId/scrum/retro/:tarjetaId', actualizarTarjetaRetro);
+router.delete('/alumno/grupos/:grupoId/scrum/retro/:tarjetaId', borrarTarjetaRetro);
+router.put('/alumno/grupos/:grupoId/scrum/compromisos/:tarjetaId', marcarCompromiso);
 
 export default router;

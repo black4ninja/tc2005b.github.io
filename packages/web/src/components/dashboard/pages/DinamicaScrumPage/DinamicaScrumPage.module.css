@@ -657,3 +657,196 @@
   .reparto { flex-direction: column; }
   .pool { width: 100%; }
 }
+
+/* ── Sprints y marcador ───────────────────────────────────────────────── */
+.sprints {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.iteraciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+.fichasSprint { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.fichaSprint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.fichaCerrada { color: var(--text-secondary); }
+.fichaCerrada .material-icons { font-size: 15px; color: var(--estado-exito-color); }
+
+.fichaActiva {
+  border-color: var(--sidebar-active-color);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
+  font-weight: 600;
+}
+
+.nuevoSprint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px dashed var(--border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.nuevoSprint:hover { border-color: var(--text-muted); color: var(--text-primary); }
+.nuevoSprint .material-icons { font-size: 16px; }
+
+.objetivoSprint {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.objetivoBtn {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-page);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.objetivoBtn:hover { border-color: var(--sidebar-active-color); }
+.objetivoBtn .material-icons { font-size: 16px; color: var(--text-muted); }
+
+.objetivoTexto { flex: 1; font-size: 0.87rem; color: var(--text-primary); }
+.objetivoVacio { flex: 1; font-size: 0.87rem; color: var(--text-muted); font-style: italic; }
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.tabla th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tabla td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.87rem;
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+.tabla tr:last-child td { border-bottom: none; }
+
+.colCorta { width: 130px; }
+.colPen { width: 240px; }
+
+.equipoCelda {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.arrastra {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  color: var(--estado-aviso-color);
+}
+
+.contadorPen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+}
+
+.penValor,
+.penCero {
+  min-width: 20px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.penValor { color: var(--estado-aviso-color); }
+.penCero { color: var(--text-muted); }
+
+.bloqueoMal,
+.bloqueoBien {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bloqueoMal {
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+  border: 1px solid var(--estado-error-border);
+}
+
+.bloqueoBien {
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+  border: 1px solid var(--estado-exito-border);
+}
+
+.explicacion {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.accionesSprint {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}

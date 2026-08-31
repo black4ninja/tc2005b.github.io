@@ -1,6 +1,7 @@
 import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
 import type { Grupo } from './Grupo.js';
+import { POLITICA_POR_DEFECTO, type PoliticaEtapa } from '../constants/scrum.js';
 
 /**
  * Una etapa del ciclo de Scrum ("Planning", "Daily", "Retrospectiva") con el
@@ -53,6 +54,20 @@ export class EtapaScrum extends BaseModel {
     this.set('pista', pista);
   }
 
+  /**
+   * Qué deja ver y tocar esta etapa. Es lo que convierte al tablero en la
+   * explicación del ciclo en vez de en cinco columnas siempre iguales: en
+   * planning el sprint backlog se ve pero no se toca, en la daily se pliega el
+   * backlog, en la retrospectiva se esconde el kanban entero.
+   */
+  getPolitica(): PoliticaEtapa {
+    const guardada = this.get('politica') as Partial<PoliticaEtapa> | undefined;
+    return { ...POLITICA_POR_DEFECTO, ...(guardada ?? {}) };
+  }
+  setPolitica(politica: Partial<PoliticaEtapa>): void {
+    this.set('politica', { ...this.getPolitica(), ...politica });
+  }
+
   getOrden(): number {
     return this.get('orden') ?? 0;
   }
@@ -66,6 +81,7 @@ export class EtapaScrum extends BaseModel {
       nombre: this.getNombre(),
       color: this.getColor(),
       pista: this.getPista(),
+      politica: this.getPolitica(),
       orden: this.getOrden(),
     };
   }

@@ -2,6 +2,8 @@ import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
 import type { AppUser } from './AppUser.js';
 import type { EquipoScrum } from './EquipoScrum.js';
+import type { EpicaScrum } from './EpicaScrum.js';
+import type { SprintScrum } from './SprintScrum.js';
 import {
   PRIORIDAD_POR_DEFECTO, type Columna, type Prioridad,
 } from '../constants/scrum.js';
@@ -80,6 +82,38 @@ export class HistoriaUsuario extends BaseModel {
     else this.unset('responsable');
   }
 
+  /**
+   * La épica a la que pertenece: qué entregable es este trozo. Vacío mientras el
+   * equipo no haya definido ninguna.
+   */
+  getEpica(): EpicaScrum | undefined {
+    return this.get('epica');
+  }
+  setEpica(epica: EpicaScrum | null): void {
+    if (epica) this.set('epica', epica);
+    else this.unset('epica');
+  }
+
+  /**
+   * Archivada al cerrar el sprint en el que se terminó. Sale del tablero pero
+   * no se borra: la columna «Archived» va siempre plegada y es el histórico.
+   */
+  getArchivada(): boolean {
+    return this.get('archivada') === true;
+  }
+  setArchivada(v: boolean): void {
+    this.set('archivada', v);
+  }
+
+  /** En qué sprint se archivó. Vacío mientras siga viva en el tablero. */
+  getSprintCerrado(): SprintScrum | undefined {
+    return this.get('sprintCerrado');
+  }
+  setSprintCerrado(sprint: SprintScrum | null): void {
+    if (sprint) this.set('sprintCerrado', sprint);
+    else this.unset('sprintCerrado');
+  }
+
   getColumna(): Columna {
     return this.get('columna') ?? 'backlog';
   }
@@ -107,6 +141,8 @@ export class HistoriaUsuario extends BaseModel {
       columna: this.getColumna(),
       orden: this.getOrden(),
       equipo: this.getEquipoId(),
+      epica: this.getEpica()?.id ?? null,
+      archivada: this.getArchivada(),
       responsable: responsable
         ? { id: responsable.id, name: responsable.get('name') ?? '' }
         : null,

@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { agruparPorColumna, rejillaProyeccion, sumaPuntos, iniciales, rangoFechas } from './scrum';
+import {
+  agruparPorColumna, rejillaProyeccion, sumaPuntos, iniciales, rangoFechas,
+  permiteMover, puntosTexto, estaEstimada, cuentaRegresiva, historiasDeOtraEpica,
+  PUNTOS_DEMASIADO, PUNTOS_DESCONOCIDO,
+} from './scrum';
 import type { Historia } from './scrum';
 
 function historia(parcial: Partial<Historia>): Historia {
@@ -13,6 +17,8 @@ function historia(parcial: Partial<Historia>): Historia {
     columna: 'backlog',
     orden: 0,
     responsable: null,
+    epica: null,
+    archivada: false,
     ...parcial,
   };
 }
@@ -87,6 +93,82 @@ describe('iniciales', () => {
 
   it('no se atraganta con espacios de sobra', () => {
     expect(iniciales('  Diego   Montoya ')).toBe('DM');
+  });
+});
+
+describe('puntosTexto', () => {
+  it('«?» y «∞» no se enseñan como cifras', () => {
+    expect(puntosTexto(PUNTOS_DESCONOCIDO)).toBe('?');
+    expect(puntosTexto(PUNTOS_DEMASIADO)).toBe('∞');
+    expect(puntosTexto(3)).toBe('3');
+  });
+
+  it('ninguna de las dos cuenta como estimación', () => {
+    expect(estaEstimada(PUNTOS_DESCONOCIDO)).toBe(false);
+    expect(estaEstimada(PUNTOS_DEMASIADO)).toBe(false);
+    expect(estaEstimada(5)).toBe(true);
+  });
+});
+
+describe('permiteMover', () => {
+  it('espeja la regla del servidor: en planning solo backlog → planned', () => {
+    expect(permiteMover('backlog-a-planned', 'backlog', 'planned')).toBe(true);
+    expect(permiteMover('backlog-a-planned', 'planned', 'doing')).toBe(false);
+  });
+
+  it('quedarse en la misma columna siempre vale', () => {
+    expect(permiteMover('ninguno', 'doing', 'doing')).toBe(true);
+  });
+});
+
+describe('cuentaRegresiva', () => {
+  const arranque = '2026-09-08T12:00:00.000Z';
+  const t = (segundos: number) => new Date(arranque).getTime() + segundos * 1000;
+
+  it('cuenta hacia atrás en mm:ss', () => {
+    expect(cuentaRegresiva(arranque, 180, t(30))?.texto).toBe('2:30');
+  });
+
+  it('pasado el tiempo sigue contando en negativo, no se queda en cero', () => {
+    // Cuánto se pasaron es justo el dato del que habla la retrospectiva.
+    const fuera = cuentaRegresiva(arranque, 60, t(75));
+    expect(fuera?.agotado).toBe(true);
+    expect(fuera?.texto).toBe('-0:15');
+  });
+
+  it('sin duración no hay reloj', () => {
+    expect(cuentaRegresiva(arranque, null, t(10))).toBeNull();
+    expect(cuentaRegresiva(null, 60, t(10))).toBeNull();
+  });
+});
+
+describe('historiasDeOtraEpica', () => {
+  const equipo = (epicaActual: string | null, historias: Historia[]) => ({
+    id: 'e', nombre: '', color: '', objetivo: '', orden: 0, po: null,
+    epicaActual, bloqueoPendiente: 0, miembros: [], historias,
+    epicas: [], retro: [], compromisos: [], marcador: null, archivadas: 0,
+  });
+
+  it('señala lo que está en el sprint y no es de la épica en curso', () => {
+    const fuera = historiasDeOtraEpica(equipo('A', [
+      historia({ id: '1', columna: 'doing', epica: 'B' }),
+      historia({ id: '2', columna: 'doing', epica: 'A' }),
+    ]));
+    expect(fuera.map((h) => h.id)).toEqual(['1']);
+  });
+
+  it('el backlog puede tener de todo: ahí no hay compromiso', () => {
+    const fuera = historiasDeOtraEpica(equipo('A', [
+      historia({ id: '1', columna: 'backlog', epica: 'B' }),
+    ]));
+    expect(fuera).toEqual([]);
+  });
+
+  it('sin épica elegida no hay nada que romper', () => {
+    const fuera = historiasDeOtraEpica(equipo(null, [
+      historia({ id: '1', columna: 'doing', epica: 'B' }),
+    ]));
+    expect(fuera).toEqual([]);
   });
 });
 

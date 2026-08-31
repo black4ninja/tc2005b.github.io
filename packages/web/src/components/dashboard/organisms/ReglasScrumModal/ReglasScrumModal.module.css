@@ -1,0 +1,125 @@
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+}
+
+.intro {
+  margin: 0;
+  font-size: 0.87rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.item:last-child { border-bottom: none; }
+
+.numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--dash-bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  flex: none;
+}
+
+.texto {
+  flex: 1;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.vacio { padding: var(--space-md) 0; color: var(--text-muted); font-size: 0.87rem; }
+
+.pie {
+  margin: 0;
+  padding: var(--space-md);
+  border-radius: var(--border-radius);
+  background: var(--bg-page);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.campo {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.campo:hover, .campo:focus {
+  border-color: var(--border-color);
+  background: var(--bg-page);
+  outline: none;
+}
+
+.quitar {
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.quitar:hover { color: var(--estado-error-color); background: var(--dash-bg-subtle); }
+.quitar .material-icons { font-size: 16px; }
+
+.alta {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  padding: var(--space-sm);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius);
+}
+
+.alta .campo { border-color: var(--border-color); background: var(--bg-card); }
+
+.agregar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--dash-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.agregar:disabled { opacity: 0.5; cursor: default; }
+.agregar .material-icons { font-size: 17px; }

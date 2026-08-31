@@ -2,6 +2,8 @@ import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
 import type { Grupo } from './Grupo.js';
 import type { EtapaScrum } from './EtapaScrum.js';
+import type { SprintScrum } from './SprintScrum.js';
+import { DEFINICION_DONE_SEMILLA, RESTRICCIONES_SEMILLA } from '../constants/scrum.js';
 
 /**
  * Una dinámica de Scrum de un grupo: normalmente un sprint ("Sprint 2 —
@@ -65,6 +67,57 @@ export class DinamicaScrum extends BaseModel {
     this.set('cerrada', cerrada);
   }
 
+  /**
+   * La definición de terminado y las restricciones son de la DINÁMICA: son las
+   * reglas del ejercicio, iguales para todos los equipos. Nacen con las de la
+   * actividad y el profesor las edita.
+   */
+  getDefinicionDone(): string[] {
+    const guardada = this.get('definicionDone') as string[] | undefined;
+    return guardada ?? [...DEFINICION_DONE_SEMILLA];
+  }
+  setDefinicionDone(items: string[]): void {
+    this.set('definicionDone', items);
+  }
+
+  getRestricciones(): string[] {
+    const guardadas = this.get('restricciones') as string[] | undefined;
+    return guardadas ?? [...RESTRICCIONES_SEMILLA];
+  }
+  setRestricciones(items: string[]): void {
+    this.set('restricciones', items);
+  }
+
+  /** El sprint en curso. Sin él la dinámica existe pero no se puede trabajar. */
+  getSprintActual(): SprintScrum | undefined {
+    return this.get('sprintActual');
+  }
+  setSprintActual(sprint: SprintScrum | null): void {
+    if (sprint) this.set('sprintActual', sprint);
+    else this.unset('sprintActual');
+  }
+
+  /**
+   * Cuándo se puso la etapa actual. De aquí sale el cronómetro: el servidor no
+   * cuenta, sella la hora y cada pantalla calcula lo que queda. Así entrar a
+   * mitad enseña el número correcto y los relojes desajustados no importan.
+   */
+  getEtapaIniciadaEn(): Date | null {
+    return (this.get('etapaIniciadaEn') as Date | undefined) ?? null;
+  }
+  setEtapaIniciadaEn(fecha: Date | null): void {
+    if (fecha) this.set('etapaIniciadaEn', fecha);
+    else this.unset('etapaIniciadaEn');
+  }
+
+  /** Terminada del todo: cada equipo ve su resumen y ya no se toca nada. */
+  getFinalizada(): boolean {
+    return this.get('finalizada') === true;
+  }
+  setFinalizada(v: boolean): void {
+    this.set('finalizada', v);
+  }
+
   /** La etapa que se está trabajando ahora mismo. Vacío = ninguna señalada. */
   getEtapaActual(): EtapaScrum | undefined {
     return this.get('etapaActual');
@@ -82,6 +135,10 @@ export class DinamicaScrum extends BaseModel {
       inicio: this.getInicio()?.toISOString() ?? null,
       fin: this.getFin()?.toISOString() ?? null,
       cerrada: this.getCerrada(),
+      finalizada: this.getFinalizada(),
+      definicionDone: this.getDefinicionDone(),
+      restricciones: this.getRestricciones(),
+      etapaIniciadaEn: this.getEtapaIniciadaEn()?.toISOString() ?? null,
       // Se sirve la etapa ENTERA y no su id: quien pinta la banda necesita el
       // color y el nombre, y sin esto tendría que cargar el catálogo aparte.
       etapaActual: etapa

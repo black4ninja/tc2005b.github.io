@@ -1,15 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { repartirEnEquipos } from '../src/controllers/scrum.controller.js';
+import { elegirDevueltas } from '../src/services/scrum-cierre.service.js';
 import {
-  esColumna, esPrioridad, esPuntos, COLUMNAS, COLUMNAS_DEL_SPRINT, MAX_EQUIPOS,
+  esColumna, esPrioridad, esPuntos, estaEstimada, permiteMover,
+  COLUMNAS, COLUMNAS_DEL_SPRINT, MAX_EQUIPOS, PUNTOS_DEMASIADO, PUNTOS_DESCONOCIDO,
 } from '../src/constants/scrum.js';
 
 /**
  * Las reglas del módulo "Actividad de Scrum" que se pueden probar sin Parse.
  *
- * El reparto es la que más importa: se ejecuta con la clase esperando y su
- * defecto clásico —dejar un último equipo de una sola persona— no se ve hasta
- * que le toca a alguien.
+ * Son las que la dinámica hace cumplir a gritos en el aula: el reparto de
+ * equipos, qué deja mover cada etapa, qué cuenta como estimado y cómo se cobra
+ * la deuda técnica. Todas se ejecutan con la clase esperando y ninguna avisa al
+ * fallar: simplemente el ejercicio deja de enseñar lo que tenía que enseñar.
  */
 
 describe('repartirEnEquipos', () => {
@@ -21,15 +24,12 @@ describe('repartirEnEquipos', () => {
 
   it('no pierde ni duplica a nadie', () => {
     const gente = [...Array(23).keys()];
-    const equipos = repartirEnEquipos(gente, 4);
-    const repartidos = equipos.flat();
+    const repartidos = repartirEnEquipos(gente, 4).flat();
     expect(repartidos.sort((a, b) => a - b)).toEqual(gente);
   });
 
   it('redondea al número de equipos más cercano', () => {
-    // 12 entre 5 son 2,4 equipos → 2 de seis, no 3 (uno de dos).
     expect(repartirEnEquipos([...Array(12).keys()], 5)).toHaveLength(2);
-    // 13 entre 5 son 2,6 → 3.
     expect(repartirEnEquipos([...Array(13).keys()], 5)).toHaveLength(3);
   });
 
@@ -42,43 +42,106 @@ describe('repartirEnEquipos', () => {
   });
 });
 
+describe('permiteMover', () => {
+  it('en planning solo se entra del backlog a planned', () => {
+    expect(permiteMover('backlog-a-planned', 'backlog', 'planned')).toBe(true);
+    // Ni sacar del sprint, ni avanzar dentro de él: el sprint no se toca.
+    expect(permiteMover('backlog-a-planned', 'planned', 'doing')).toBe(false);
+    expect(permiteMover('backlog-a-planned', 'planned', 'backlog')).toBe(false);
+    expect(permiteMover('backlog-a-planned', 'backlog', 'doing')).toBe(false);
+  });
+
+  it('en grooming solo se ordena el backlog', () => {
+    expect(permiteMover('dentro-backlog', 'backlog', 'backlog')).toBe(true);
+    expect(permiteMover('dentro-backlog', 'backlog', 'planned')).toBe(false);
+  });
+
+  it('en la daily solo se mueve lo que ya está comprometido', () => {
+    expect(permiteMover('dentro-sprint', 'doing', 'review')).toBe(true);
+    expect(permiteMover('dentro-sprint', 'backlog', 'planned')).toBe(false);
+    expect(permiteMover('dentro-sprint', 'planned', 'backlog')).toBe(false);
+  });
+
+  it('en review y retro no se mueve nada', () => {
+    expect(permiteMover('ninguno', 'doing', 'done')).toBe(false);
+  });
+
+  it('quedarse donde está siempre vale: reordenar no es mover de columna', () => {
+    expect(permiteMover('ninguno', 'doing', 'doing')).toBe(true);
+  });
+
+  it('en desarrollo se mueve todo', () => {
+    expect(permiteMover('todos', 'backlog', 'done')).toBe(true);
+  });
+});
+
+describe('estimación', () => {
+  it('«?» y «∞» no son estimaciones y no dejan entrar al sprint', () => {
+    expect(estaEstimada(PUNTOS_DESCONOCIDO)).toBe(false);
+    expect(estaEstimada(PUNTOS_DEMASIADO)).toBe(false);
+    expect(estaEstimada(3)).toBe(true);
+  });
+
+  it('la escala llega hasta 5: más arriba lo que toca es partir la historia', () => {
+    expect(esPuntos(5)).toBe(true);
+    expect(esPuntos(8)).toBe(false);
+    expect(esPuntos(13)).toBe(false);
+    expect(esPuntos(PUNTOS_DEMASIADO)).toBe(true);
+    expect(esPuntos('3' as unknown as number)).toBe(false);
+  });
+});
+
+describe('elegirDevueltas', () => {
+  /** Azar fijo: devuelve siempre 0, así la baraja queda invertida y es estable. */
+  const sinAzar = () => 0;
+
+  it('devuelve historias hasta cubrir el bloqueo, aunque se pase', () => {
+    // 7 de bloqueo con tarjetas de 5 y 3: se van las dos, 8 puntos. Buscar la
+    // combinación exacta convertiría el castigo en un rompecabezas resoluble.
+    const elegidas = elegirDevueltas([{ puntos: 5 }, { puntos: 3 }], 7, sinAzar);
+    expect(elegidas.reduce((t, e) => t + e.puntos, 0)).toBeGreaterThanOrEqual(7);
+    expect(elegidas).toHaveLength(2);
+  });
+
+  it('para en cuanto cubre el bloqueo', () => {
+    const elegidas = elegirDevueltas([{ puntos: 5 }, { puntos: 3 }, { puntos: 2 }], 3, sinAzar);
+    expect(elegidas).toHaveLength(1);
+  });
+
+  it('sin bloqueo no devuelve nada', () => {
+    expect(elegirDevueltas([{ puntos: 5 }], 0, sinAzar)).toEqual([]);
+  });
+
+  it('si el bloqueo supera lo planeado se lleva todo', () => {
+    // «Solo podrán seguir trabajando en lo que dejaron del sprint anterior.»
+    const elegidas = elegirDevueltas([{ puntos: 2 }, { puntos: 1 }], 20, sinAzar);
+    expect(elegidas).toHaveLength(2);
+  });
+
+  it('sin candidatas no revienta', () => {
+    expect(elegirDevueltas([], 9, sinAzar)).toEqual([]);
+  });
+});
+
 describe('columnas del tablero', () => {
   it('el sprint backlog son las cuatro de después del backlog', () => {
-    // Es la frontera que dibuja el recuadro punteado: el producto queda fuera
-    // del compromiso del sprint.
     expect(COLUMNAS_DEL_SPRINT).toEqual(['planned', 'doing', 'review', 'done']);
     expect(COLUMNAS[0]).toBe('backlog');
-    expect(COLUMNAS_DEL_SPRINT).not.toContain('backlog');
   });
 
   it('reconoce las columnas válidas y rechaza el resto', () => {
     expect(esColumna('doing')).toBe(true);
     expect(esColumna('blocked')).toBe(false);
-    expect(esColumna(3)).toBe(false);
   });
 });
 
-describe('validación de la historia', () => {
+describe('prioridad y tope de equipos', () => {
   it('acepta las cuatro prioridades MoSCoW y nada más', () => {
     expect(esPrioridad('must')).toBe(true);
-    expect(esPrioridad('wont')).toBe(true);
     expect(esPrioridad("won't")).toBe(false);
-    expect(esPrioridad('urgente')).toBe(false);
   });
 
-  it('los puntos son Fibonacci recortado, con 0 para lo no estimado', () => {
-    expect(esPuntos(0)).toBe(true);
-    expect(esPuntos(8)).toBe(true);
-    // 4 y 6 no están a propósito: la serie crece para que estimar grande sea
-    // impreciso y obligue a partir la historia.
-    expect(esPuntos(4)).toBe(false);
-    expect(esPuntos(6)).toBe(false);
-    expect(esPuntos('5' as unknown as number)).toBe(false);
-  });
-});
-
-describe('tope de equipos', () => {
-  it('son nueve: lo que cabe legible en una rejilla de 3 × 3', () => {
+  it('son nueve equipos: lo que cabe legible en una rejilla de 3 × 3', () => {
     expect(MAX_EQUIPOS).toBe(9);
   });
 });

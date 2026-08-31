@@ -1,10 +1,10 @@
 /**
  * Tipos y reglas de pintado del módulo "Actividad de Scrum".
  *
- * Vive aparte de los componentes porque lo comparten tres pantallas que no se
- * conocen entre sí: el tablero del alumno, el panel del profesor y la
- * proyección. Cualquier divergencia entre ellas se nota en clase, que es cuando
- * las tres están abiertas a la vez.
+ * Vive aparte de los componentes porque lo comparten pantallas que no se
+ * conocen entre sí: el tablero del alumno, el panel del profesor, la
+ * retrospectiva y la proyección. Cualquier divergencia entre ellas se nota en
+ * clase, que es cuando están todas abiertas a la vez.
  */
 
 export type Columna = 'backlog' | 'planned' | 'doing' | 'review' | 'done';
@@ -33,31 +33,48 @@ export const PRIORIDADES: { key: Prioridad; label: string }[] = [
   { key: 'wont', label: "Won't" },
 ];
 
-/** Fibonacci recortado, como en planning poker. 0 = sin estimar. */
-export const PUNTOS = [0, 1, 2, 3, 5, 8, 13, 21];
-
 /**
- * Qué significa cada cifra, para que estimar no sea elegir un número al azar.
+ * La escala de estimación. Dos de las opciones NO son números:
+ *  - `0` es **?**: todavía no se sabe.
+ *  - `-1` es **∞**: demasiado grande, hay que partirla.
  *
- * La serie crece a propósito: a partir de 13 la estimación deja de ser útil y
- * lo que hay que hacer es partir la historia. Decirlo en la propia opción es
- * más eficaz que explicarlo una vez al principio de la sesión.
+ * Ninguna de las dos deja entrar la historia al sprint. El ∞ no es un castigo:
+ * es la manera de que partirla sea el único camino hacia adelante.
  */
-export const PUNTOS_ETIQUETA: Record<number, string> = {
-  0: 'Sin estimar',
-  1: '1 · muy simple',
-  2: '2 · simple',
-  3: '3 · con varias partes',
-  5: '5 · compleja',
-  8: '8 · muy compleja',
-  13: '13 · demasiado grande, conviene partirla',
-  21: '21 · demasiado grande, conviene partirla',
-};
+export const PUNTOS_DESCONOCIDO = 0;
+export const PUNTOS_DEMASIADO = -1;
+
+export const ESTIMACIONES: { valor: number; etiqueta: string; descripcion: string }[] = [
+  { valor: PUNTOS_DESCONOCIDO, etiqueta: '?', descripcion: 'Desconocido, todavía no se puede estimar' },
+  { valor: 1, etiqueta: '1', descripcion: 'Muy simple' },
+  { valor: 2, etiqueta: '2', descripcion: 'Simple' },
+  { valor: 3, etiqueta: '3', descripcion: 'Con varias partes' },
+  { valor: 5, etiqueta: '5', descripcion: 'Compleja' },
+  { valor: PUNTOS_DEMASIADO, etiqueta: '∞', descripcion: 'Demasiado grande, conviene partirla' },
+];
+
+/** Cómo se enseña la estimación en la tarjeta: `?` y `∞` no son cifras. */
+export function puntosTexto(puntos: number): string {
+  if (puntos === PUNTOS_DESCONOCIDO) return '?';
+  if (puntos < 0) return '∞';
+  return String(puntos);
+}
+
+export function estaEstimada(puntos: number): boolean {
+  return puntos > 0;
+}
 
 export interface Persona {
   id: string;
   name: string;
   matricula?: string;
+}
+
+export interface Epica {
+  id: string;
+  nombre: string;
+  color: string;
+  orden: number;
 }
 
 export interface Historia {
@@ -70,6 +87,40 @@ export interface Historia {
   columna: Columna;
   orden: number;
   responsable: Persona | null;
+  epica: string | null;
+  archivada: boolean;
+}
+
+export type ColumnaRetro = 'bien' | 'mal' | 'mejorar';
+
+export interface TarjetaRetro {
+  id: string;
+  columna: ColumnaRetro;
+  texto: string;
+  estado: 'cumplido' | 'fallado' | null;
+  sprint: string;
+  responsable: Persona | null;
+}
+
+export interface CorteBurndown {
+  en: string;
+  etiqueta: string;
+  restantes: number;
+}
+
+export interface Marcador {
+  id: string;
+  planeados: number;
+  cerrados: number;
+  abiertas: number;
+  abiertosPts: number;
+  penalizaciones: number;
+  bloqueo: number;
+  devueltos: number;
+  cortes: CorteBurndown[];
+  equipo?: string;
+  numero?: number;
+  objetivo?: string;
 }
 
 export interface EquipoTablero {
@@ -78,16 +129,75 @@ export interface EquipoTablero {
   color: string;
   objetivo: string;
   orden: number;
+  po: string | null;
+  epicaActual: string | null;
+  bloqueoPendiente: number;
   miembros: Persona[];
   historias: Historia[];
+  epicas: Epica[];
+  retro: TarjetaRetro[];
+  compromisos: TarjetaRetro[];
+  marcador: Marcador | null;
+  /** Cuántas terminó en sprints anteriores. La columna «Archived» va plegada. */
+  archivadas: number;
 }
+
+/* ── Política de la etapa ─────────────────────────────────────────────── */
+
+export type Visibilidad = 'editable' | 'lectura' | 'plegado' | 'oculto';
+export type Movimiento =
+  | 'todos' | 'backlog-a-planned' | 'dentro-backlog' | 'dentro-sprint' | 'ninguno';
+
+export interface PoliticaEtapa {
+  backlog: Visibilidad;
+  sprint: Visibilidad;
+  movimientos: Movimiento;
+  burndown: boolean;
+  retro: boolean;
+  cobraDeuda: boolean;
+  duracionSegundos: number | null;
+}
+
+export const POLITICA_POR_DEFECTO: PoliticaEtapa = {
+  backlog: 'editable',
+  sprint: 'editable',
+  movimientos: 'todos',
+  burndown: false,
+  retro: false,
+  cobraDeuda: false,
+  duracionSegundos: null,
+};
+
+export const VISIBILIDADES: { key: Visibilidad; label: string }[] = [
+  { key: 'editable', label: 'Editable' },
+  { key: 'lectura', label: 'Solo lectura' },
+  { key: 'plegado', label: 'Plegado' },
+  { key: 'oculto', label: 'Oculto' },
+];
+
+export const MOVIMIENTOS: { key: Movimiento; label: string }[] = [
+  { key: 'todos', label: 'Todos' },
+  { key: 'backlog-a-planned', label: 'Backlog → Planned' },
+  { key: 'dentro-backlog', label: 'Dentro del backlog' },
+  { key: 'dentro-sprint', label: 'Dentro del sprint' },
+  { key: 'ninguno', label: 'Ninguno' },
+];
 
 export interface Etapa {
   id: string;
   nombre: string;
   color: string;
   pista: string;
+  politica: PoliticaEtapa;
   orden: number;
+}
+
+export interface Sprint {
+  id: string;
+  numero: number;
+  objetivo: string;
+  cerrado: boolean;
+  cerradoEn?: string | null;
 }
 
 export interface Dinamica {
@@ -96,10 +206,36 @@ export interface Dinamica {
   inicio: string | null;
   fin: string | null;
   cerrada: boolean;
-  etapaActual: Omit<Etapa, 'orden'> | null;
+  finalizada: boolean;
+  definicionDone: string[];
+  restricciones: string[];
+  etapaIniciadaEn: string | null;
+  etapaActual: { id: string; nombre: string; color: string; pista: string } | null;
   /** Solo en el listado del profesor. */
   equipos?: number;
   alumnos?: number;
+}
+
+/**
+ * Espejo de la regla del servidor. Se repite en el cliente a propósito: la
+ * pantalla tiene que poder apagar lo que no se puede arrastrar ANTES de que
+ * alguien lo intente, y el servidor la vuelve a comprobar porque la lección es
+ * la regla, no el aviso.
+ */
+export function permiteMover(
+  movimientos: Movimiento,
+  desde: Columna,
+  hasta: Columna,
+): boolean {
+  if (desde === hasta) return true;
+  switch (movimientos) {
+    case 'todos': return true;
+    case 'ninguno': return false;
+    case 'backlog-a-planned': return desde === 'backlog' && hasta === 'planned';
+    case 'dentro-backlog': return desde === 'backlog' && hasta === 'backlog';
+    case 'dentro-sprint': return desde !== 'backlog' && hasta !== 'backlog';
+    default: return false;
+  }
 }
 
 /** Las historias de un equipo repartidas por columna, ya en orden. */
@@ -124,10 +260,8 @@ export type Escala = 'full' | 'md' | 'sm';
  *
  * No es solo dividir en columnas: a partir de cuatro equipos, seguir estirando
  * la fila deja tarjetas de dos centímetros que nadie lee desde el fondo del
- * aula. Se pasa a rejilla de dos y tres filas, y con ella baja también el
- * detalle de cada tarjeta.
- *
- * Nueve es el tope y por eso la tabla acaba ahí: es lo último que se lee.
+ * aula. Se pasa a rejilla de dos y tres filas, y con ella baja el detalle de
+ * cada tarjeta. Nueve es el tope y por eso la tabla acaba ahí.
  */
 export function rejillaProyeccion(n: number): { cols: number; filas: number; escala: Escala } {
   if (n <= 1) return { cols: 1, filas: 1, escala: 'full' };
@@ -138,7 +272,7 @@ export function rejillaProyeccion(n: number): { cols: number; filas: number; esc
   return { cols: 3, filas: 3, escala: 'sm' };
 }
 
-/** Iniciales para el avatar de un responsable. */
+/** Iniciales para el avatar. */
 export function iniciales(nombre: string): string {
   return nombre
     .split(' ')
@@ -148,12 +282,40 @@ export function iniciales(nombre: string): string {
     .join('');
 }
 
-/** Suma de puntos de una lista. Se enseña en la cabecera de cada columna. */
+/** Suma de puntos; `?` y `∞` no suman. */
 export function sumaPuntos(historias: Historia[]): number {
-  return historias.reduce((total, h) => total + (h.puntos ?? 0), 0);
+  return historias.reduce((total, h) => total + Math.max(0, h.puntos ?? 0), 0);
 }
 
-/** `8 – 19 sep`, o solo una fecha, o vacío. Para la cabecera de la dinámica. */
+/**
+ * Historias del sprint que NO son de la épica en curso.
+ *
+ * «Solo se puede trabajar en 1 modelo a la vez»: si aparecen dos épicas dentro
+ * del recuadro, la restricción está rota y hay que decirlo donde se vea.
+ */
+export function historiasDeOtraEpica(equipo: EquipoTablero): Historia[] {
+  if (!equipo.epicaActual) return [];
+  return equipo.historias.filter(
+    (h) => h.columna !== 'backlog' && h.epica && h.epica !== equipo.epicaActual,
+  );
+}
+
+/** `mm:ss` de lo que queda de la etapa, o null si no lleva tiempo. */
+export function cuentaRegresiva(
+  iniciadaEn: string | null,
+  duracionSegundos: number | null,
+  ahora: number,
+): { texto: string; agotado: boolean } | null {
+  if (!iniciadaEn || !duracionSegundos) return null;
+  const pasado = Math.floor((ahora - new Date(iniciadaEn).getTime()) / 1000);
+  const resta = duracionSegundos - pasado;
+  const agotado = resta <= 0;
+  const abs = Math.abs(resta);
+  const texto = `${agotado ? '-' : ''}${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, '0')}`;
+  return { texto, agotado };
+}
+
+/** `8 – 19 sep`, o solo una fecha, o vacío. */
 export function rangoFechas(inicio: string | null, fin: string | null): string {
   const fmt = (iso: string) =>
     new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });

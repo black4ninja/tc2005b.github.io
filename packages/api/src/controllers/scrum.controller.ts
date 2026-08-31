@@ -13,15 +13,25 @@ import {
   cargarDinamica,
   cargarEquipo,
   colorParaEquipo,
+  asegurarSprint,
+  crearSprint,
   dinamicasDeGrupo,
   equiposDeDinamica,
   etapasDeGrupo,
   historiasDeEquipos,
+  historicoDeEquipo,
+  marcadoresDeSprint,
+  sprintsDeDinamica,
   difundirTablero,
 } from '../services/scrum.service.js';
+import {
+  cerrarSprint, cobrarDeuda, fijarPlaneados, tomarCorte,
+} from '../services/scrum-cierre.service.js';
+import { SprintScrum } from '../models/SprintScrum.js';
 
 import {
   LARGO_DESCRIPCION_ETAPA, LARGO_NOMBRE, LARGO_OBJETIVO, MAX_EQUIPOS, PALETA_ETAPAS,
+  MOVIMIENTOS, VISIBILIDADES, type PoliticaEtapa,
 } from '../constants/scrum.js';
 
 /**
@@ -130,6 +140,9 @@ export async function crearDinamica(req: Request, res: Response): Promise<void> 
     if (inicio !== undefined) dinamica.setInicio(inicio);
     if (fin !== undefined) dinamica.setFin(fin);
     await dinamica.save(null, { useMasterKey: true });
+    // Con su primer sprint ya abierto: una dinámica sin sprint no tiene dónde
+    // guardar el burndown ni contra qué calcular la deuda.
+    await asegurarSprint(dinamica);
     res.status(201).json({ status: 'ok', dinamica: { ...dinamica.toSafeJSON(), equipos: 0, alumnos: 0 } });
   } catch {
     error(res, 500, 'Error al crear la dinámica');
@@ -197,7 +210,16 @@ export async function borrarDinamica(req: Request, res: Response): Promise<void>
   }
 }
 
-/** PUT …/dinamicas/:dinamicaId/etapa — `{ etapaId: string | null }`. */
+/**
+ * PUT …/dinamicas/:dinamicaId/etapa — `{ etapaId: string | null }`.
+ *
+ * Cambiar de etapa no es solo repintar una banda: es el único momento en el que
+ * ocurre el ritual del ciclo. Al SALIR de una etapa que cobra deuda —el
+ * planning— se fija cuánto se comprometió cada equipo y se le devuelven al
+ * backlog las historias que no le caben por el bloqueo que arrastra. Y al
+ * ENTRAR en cualquiera se toma el corte del burndown, que es el ritmo al que la
+ * actividad pide «actualicen su burndown chart».
+ */
 export async function setEtapaActual(req: Request, res: Response): Promise<void> {
   const { grupoId, dinamicaId } = req.params;
   const { etapaId } = req.body as { etapaId?: string | null };
@@ -209,23 +231,46 @@ export async function setEtapaActual(req: Request, res: Response): Promise<void>
       return;
     }
 
-    if (etapaId) {
-      const etapas = await etapasDeGrupo(grupoId);
-      const etapa = etapas.find((e) => e.id === etapaId);
-      if (!etapa) {
-        error(res, 404, 'Esa etapa no es de este grupo');
-        return;
-      }
-      dinamica.setEtapaActual(etapa);
-    } else {
-      dinamica.setEtapaActual(null);
+    const etapas = await etapasDeGrupo(grupoId);
+    const anterior = dinamica.getEtapaActual();
+    const nueva = etapaId ? etapas.find((e) => e.id === etapaId) : null;
+    if (etapaId && !nueva) {
+      error(res, 404, 'Esa etapa no es de este grupo');
+      return;
     }
 
+    const sprint = dinamica.getSprintActual();
+    const equipos = await equiposDeDinamica(dinamicaId);
+    const cobros: Record<string, unknown> = {};
+
+    // Al salir del planning se salda la deuda del sprint anterior.
+    const anteriorViva = anterior ? etapas.find((e) => e.id === anterior.id) : null;
+    if (sprint && anteriorViva?.getPolitica().cobraDeuda && anteriorViva.id !== nueva?.id) {
+      for (const equipo of equipos) {
+        // Primero se cobra y DESPUÉS se fija lo planeado: el burndown tiene que
+        // arrancar de lo que al equipo le queda de verdad, no de lo que llegó a
+        // escribir. Si empezara más arriba, la línea ideal sería inalcanzable
+        // desde el primer segundo y dejaría de decir nada.
+        const cobro = await cobrarDeuda(equipo.id!);
+        if (cobro) cobros[equipo.id!] = cobro;
+        await fijarPlaneados(sprint.id!, equipo.id!, cobro?.puntos ?? 0);
+      }
+    }
+
+    dinamica.setEtapaActual(nueva ?? null);
+    dinamica.setEtapaIniciadaEn(nueva ? new Date() : null);
     await dinamica.save(null, { useMasterKey: true });
+
+    if (sprint && nueva) {
+      for (const equipo of equipos) {
+        await tomarCorte(sprint.id!, equipo.id!, nueva.getNombre());
+      }
+    }
+
     // Es el cambio que más corre: el profesor lo pulsa y a treinta tableros les
-    // cambia la banda de color. Va por el bus antes de contestar.
+    // cambia lo que pueden tocar. Va por el bus antes de contestar.
     void difundirTablero(dinamicaId);
-    res.json({ status: 'ok', dinamica: dinamica.toSafeJSON() });
+    res.json({ status: 'ok', dinamica: dinamica.toSafeJSON(), cobros });
   } catch {
     error(res, 500, 'Error al cambiar la etapa');
   }
@@ -263,12 +308,20 @@ export async function getDinamica(req: Request, res: Response): Promise<void> {
       }))
       .sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
+    await asegurarSprint(dinamica);
+    const sprints = await sprintsDeDinamica(dinamicaId);
+    const actual = dinamica.getSprintActual();
+    const marcadores = actual ? await marcadoresDeSprint(actual.id!) : [];
+
     res.json({
       status: 'ok',
       dinamica: dinamica.toSafeJSON(),
       equipos: armarTableros(equipos, historias),
       sinEquipo,
       maxEquipos: MAX_EQUIPOS,
+      sprints: sprints.map((sp) => sp.toSafeJSON()),
+      sprintActual: actual?.id ?? null,
+      marcadores: marcadores.map((m) => m.toSafeJSON()),
     });
   } catch {
     error(res, 500, 'Error al leer la dinámica');
@@ -601,6 +654,12 @@ export async function crearEtapa(req: Request, res: Response): Promise<void> {
     etapa.setNombre(nombre);
     etapa.setColor(normalizarColor(req.body?.color) ?? PALETA_ETAPAS[etapas.length % PALETA_ETAPAS.length]);
     etapa.setPista(String(req.body?.pista ?? '').trim().slice(0, LARGO_DESCRIPCION_ETAPA));
+    const politicaNueva = leerPolitica(req.body?.politica);
+    if (typeof politicaNueva === 'string') {
+      error(res, 400, politicaNueva);
+      return;
+    }
+    etapa.setPolitica(politicaNueva);
     etapa.setOrden(etapas.length);
     await etapa.save(null, { useMasterKey: true });
     res.status(201).json({ status: 'ok', etapa: etapa.toSafeJSON() });
@@ -638,7 +697,20 @@ export async function actualizarEtapa(req: Request, res: Response): Promise<void
     if (req.body?.pista !== undefined) {
       etapa.setPista(String(req.body.pista ?? '').trim().slice(0, LARGO_DESCRIPCION_ETAPA));
     }
+    if (req.body?.politica !== undefined) {
+      const politica = leerPolitica(req.body.politica);
+      if (typeof politica === 'string') {
+        error(res, 400, politica);
+        return;
+      }
+      etapa.setPolitica(politica);
+    }
     await etapa.save(null, { useMasterKey: true });
+    // Cambiar lo que deja tocar la etapa EN CURSO cambia el tablero de todos.
+    const dinamicas = await dinamicasDeGrupo(grupoId);
+    for (const d of dinamicas) {
+      if (d.getEtapaActual()?.id === etapaId) void difundirTablero(d.id!);
+    }
     res.json({ status: 'ok', etapa: etapa.toSafeJSON() });
   } catch {
     error(res, 500, 'Error al actualizar la etapa');
@@ -670,4 +742,259 @@ export async function borrarEtapa(req: Request, res: Response): Promise<void> {
   } catch {
     error(res, 500, 'Error al borrar la etapa');
   }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Sprints                                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * POST …/dinamicas/:dinamicaId/sprints — abre la siguiente iteración.
+ *
+ * El profesor abre los que quiera: la actividad trae cuatro, pero el objetivo
+ * de los primeros sale de la presentación y a partir de ahí queda vacío para
+ * que lo escriba. No se abre uno nuevo con el anterior sin cerrar: el bloqueo
+ * de un sprint se calcula al cerrarlo, y sin ese número el siguiente no puede
+ * cobrar nada.
+ */
+export async function crearSprintCtrl(req: Request, res: Response): Promise<void> {
+  const { grupoId, dinamicaId } = req.params;
+  try {
+    const dinamica = await cargarDinamica(dinamicaId, grupoId);
+    if (!dinamica) {
+      error(res, 404, 'La dinámica no existe en este grupo');
+      return;
+    }
+    const actual = dinamica.getSprintActual();
+    if (actual) {
+      const vivo = await new Parse.Query<SprintScrum>('SprintScrum')
+        .get(actual.id!, { useMasterKey: true }).catch(() => null);
+      if (vivo && !vivo.getCerrado()) {
+        error(res, 409, 'Cierra el sprint en curso antes de abrir el siguiente');
+        return;
+      }
+    }
+
+    const objetivo = typeof req.body?.objetivo === 'string' ? req.body.objetivo.trim() : undefined;
+    const sprint = await crearSprint(dinamicaId, objetivo || undefined);
+    dinamica.setSprintActual(sprint);
+    await dinamica.save(null, { useMasterKey: true });
+
+    void difundirTablero(dinamicaId);
+    res.status(201).json({ status: 'ok', sprint: sprint.toSafeJSON() });
+  } catch {
+    error(res, 500, 'Error al abrir el sprint');
+  }
+}
+
+/** PUT …/sprints/:sprintId — `{ objetivo }`. El objetivo es de todo el grupo. */
+export async function actualizarSprint(req: Request, res: Response): Promise<void> {
+  const { grupoId, dinamicaId, sprintId } = req.params;
+  try {
+    const dinamica = await cargarDinamica(dinamicaId, grupoId);
+    if (!dinamica) {
+      error(res, 404, 'La dinámica no existe en este grupo');
+      return;
+    }
+    const sprint = await new Parse.Query<SprintScrum>('SprintScrum')
+      .get(sprintId, { useMasterKey: true }).catch(() => null);
+    if (!sprint || sprint.getDinamicaId() !== dinamicaId) {
+      error(res, 404, 'Ese sprint no es de esta dinámica');
+      return;
+    }
+    if (req.body?.objetivo !== undefined) {
+      const objetivo = String(req.body.objetivo ?? '').trim();
+      if (objetivo.length > LARGO_OBJETIVO) {
+        error(res, 400, `El objetivo no puede pasar de ${LARGO_OBJETIVO} caracteres`);
+        return;
+      }
+      sprint.setObjetivo(objetivo);
+    }
+    await sprint.save(null, { useMasterKey: true });
+    void difundirTablero(dinamicaId);
+    res.json({ status: 'ok', sprint: sprint.toSafeJSON() });
+  } catch {
+    error(res, 500, 'Error al actualizar el sprint');
+  }
+}
+
+/**
+ * POST …/sprints/:sprintId/cerrar — `{ penalizaciones: { equipoId: n } }`.
+ *
+ * Las penalizaciones las trae el profesor del review, donde el PO de cada
+ * equipo cuenta cuántas restricciones no se cumplieron. No se deducen solas:
+ * comprobar si un modelo mide más de diez centímetros es justo lo que un
+ * sistema no puede hacer.
+ */
+export async function cerrarSprintCtrl(req: Request, res: Response): Promise<void> {
+  const { grupoId, dinamicaId, sprintId } = req.params;
+  const { penalizaciones } = req.body as { penalizaciones?: Record<string, unknown> };
+
+  const limpias: Record<string, number> = {};
+  for (const [id, valor] of Object.entries(penalizaciones ?? {})) {
+    const n = Number(valor);
+    if (!Number.isFinite(n) || n < 0 || n > 99) {
+      error(res, 400, 'Las penalizaciones deben ser números entre 0 y 99');
+      return;
+    }
+    limpias[id] = Math.trunc(n);
+  }
+
+  try {
+    const dinamica = await cargarDinamica(dinamicaId, grupoId);
+    if (!dinamica) {
+      error(res, 404, 'La dinámica no existe en este grupo');
+      return;
+    }
+    const sprint = await new Parse.Query<SprintScrum>('SprintScrum')
+      .get(sprintId, { useMasterKey: true }).catch(() => null);
+    if (!sprint || sprint.getDinamicaId() !== dinamicaId) {
+      error(res, 404, 'Ese sprint no es de esta dinámica');
+      return;
+    }
+    if (sprint.getCerrado()) {
+      error(res, 409, 'Ese sprint ya está cerrado');
+      return;
+    }
+
+    const cierre = await cerrarSprint(dinamicaId, sprintId, limpias);
+    void difundirTablero(dinamicaId);
+    res.json({ status: 'ok', cierre });
+  } catch {
+    error(res, 500, 'Error al cerrar el sprint');
+  }
+}
+
+/** POST …/dinamicas/:dinamicaId/finalizar — cada equipo pasa a ver su resumen. */
+export async function finalizarDinamica(req: Request, res: Response): Promise<void> {
+  const { grupoId, dinamicaId } = req.params;
+  try {
+    const dinamica = await cargarDinamica(dinamicaId, grupoId);
+    if (!dinamica) {
+      error(res, 404, 'La dinámica no existe en este grupo');
+      return;
+    }
+    dinamica.setFinalizada(true);
+    dinamica.setCerrada(true);
+    dinamica.setEtapaActual(null);
+    dinamica.setEtapaIniciadaEn(null);
+    await dinamica.save(null, { useMasterKey: true });
+    void difundirTablero(dinamicaId);
+    res.json({ status: 'ok', dinamica: dinamica.toSafeJSON() });
+  } catch {
+    error(res, 500, 'Error al finalizar la dinámica');
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Definición de terminado y restricciones                            */
+/* ------------------------------------------------------------------ */
+
+function limpiarLista(valor: unknown, largo = 160): string[] | null {
+  if (!Array.isArray(valor)) return null;
+  const items = valor
+    .map((v) => String(v ?? '').trim().replace(/\s+/g, ' '))
+    .filter((v) => v !== '')
+    .map((v) => v.slice(0, largo));
+  return items.slice(0, 30);
+}
+
+/** PUT …/dinamicas/:dinamicaId/reglas — `{ definicionDone?, restricciones? }`. */
+export async function setReglas(req: Request, res: Response): Promise<void> {
+  const { grupoId, dinamicaId } = req.params;
+  try {
+    const dinamica = await cargarDinamica(dinamicaId, grupoId);
+    if (!dinamica) {
+      error(res, 404, 'La dinámica no existe en este grupo');
+      return;
+    }
+    if (req.body?.definicionDone !== undefined) {
+      const lista = limpiarLista(req.body.definicionDone);
+      if (!lista) {
+        error(res, 400, 'La definición de terminado debe ser una lista de textos');
+        return;
+      }
+      dinamica.setDefinicionDone(lista);
+    }
+    if (req.body?.restricciones !== undefined) {
+      const lista = limpiarLista(req.body.restricciones);
+      if (!lista) {
+        error(res, 400, 'Las restricciones deben ser una lista de textos');
+        return;
+      }
+      dinamica.setRestricciones(lista);
+    }
+    await dinamica.save(null, { useMasterKey: true });
+    void difundirTablero(dinamicaId);
+    res.json({ status: 'ok', dinamica: dinamica.toSafeJSON() });
+  } catch {
+    error(res, 500, 'Error al guardar las reglas');
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Resumen final                                                      */
+/* ------------------------------------------------------------------ */
+
+/** GET …/dinamicas/:dinamicaId/resumen — el histórico de todos los equipos. */
+export async function getResumen(req: Request, res: Response): Promise<void> {
+  const { grupoId, dinamicaId } = req.params;
+  try {
+    const dinamica = await cargarDinamica(dinamicaId, grupoId);
+    if (!dinamica) {
+      error(res, 404, 'La dinámica no existe en este grupo');
+      return;
+    }
+    const equipos = await equiposDeDinamica(dinamicaId);
+    const resumenes = await Promise.all(
+      equipos.map(async (e) => ({
+        equipo: e.toSafeJSON(),
+        historico: (await historicoDeEquipo(e.id!)).map((m) => m.toSafeJSON()),
+      })),
+    );
+    res.json({ status: 'ok', dinamica: dinamica.toSafeJSON(), resumenes });
+  } catch {
+    error(res, 500, 'Error al leer el resumen');
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Política de la etapa                                               */
+/* ------------------------------------------------------------------ */
+
+/** Valida el trozo de política que venga en el cuerpo. */
+export function leerPolitica(valor: unknown): Partial<PoliticaEtapa> | string {
+  if (valor === undefined) return {};
+  if (typeof valor !== 'object' || valor === null) return 'La política no es válida';
+  const p = valor as Record<string, unknown>;
+  const salida: Partial<PoliticaEtapa> = {};
+
+  for (const campo of ['backlog', 'sprint'] as const) {
+    if (p[campo] === undefined) continue;
+    if (!(VISIBILIDADES as readonly string[]).includes(String(p[campo]))) {
+      return `«${campo}» debe ser: ${VISIBILIDADES.join(', ')}`;
+    }
+    salida[campo] = p[campo] as PoliticaEtapa['backlog'];
+  }
+  if (p.movimientos !== undefined) {
+    if (!(MOVIMIENTOS as readonly string[]).includes(String(p.movimientos))) {
+      return `«movimientos» debe ser: ${MOVIMIENTOS.join(', ')}`;
+    }
+    salida.movimientos = p.movimientos as PoliticaEtapa['movimientos'];
+  }
+  for (const campo of ['burndown', 'retro', 'cobraDeuda'] as const) {
+    if (typeof p[campo] === 'boolean') salida[campo] = p[campo] as boolean;
+  }
+  if (p.duracionSegundos !== undefined) {
+    if (p.duracionSegundos === null) {
+      salida.duracionSegundos = null;
+    } else {
+      const n = Number(p.duracionSegundos);
+      if (!Number.isFinite(n) || n < 5 || n > 3600) {
+        return 'La duración debe ir entre 5 segundos y una hora';
+      }
+      salida.duracionSegundos = Math.trunc(n);
+    }
+  }
+  return salida;
 }
