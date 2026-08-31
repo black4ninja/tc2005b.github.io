@@ -38,6 +38,30 @@
   opacity: 0.35;
 }
 
+/* Ocupada por otra persona: se ve, pero no se toca. El aviso lleva el nombre
+   porque «bloqueada» a secas hace pensar que la aplicación se rompió. */
+.bloqueada {
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.bloqueada .que, .bloqueada .cabecera, .bloqueada .pieCaja { opacity: 0.55; }
+
+.candado {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: -2px 0 2px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.candado .material-icons { font-size: 12px; }
+
 /* La copia que sigue al dedo. Va en `position: fixed` para escaparse del
    recorte de la columna, y sin eventos para que `elementFromPoint` vea la
    columna que hay debajo y no a sí misma. */

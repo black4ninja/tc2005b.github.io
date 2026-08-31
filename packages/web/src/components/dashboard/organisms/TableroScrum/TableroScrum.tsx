@@ -2,8 +2,10 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import PostItHistoria from '../PostItHistoria/PostItHistoria';
 import { useArrastre } from '../../../../hooks/useArrastre';
 import {
-  COLUMNAS, COLUMNAS_SPRINT, POLITICA_POR_DEFECTO, agruparPorColumna, permiteMover, sumaPuntos,
-  type Columna, type Escala, type EquipoTablero, type Historia, type PoliticaEtapa, type Visibilidad,
+  COLUMNAS, COLUMNAS_SPRINT, POLITICA_POR_DEFECTO, agruparPorColumna, bloqueoAjeno,
+  permiteMover, sumaPuntos,
+  type Bloqueo, type Columna, type Escala, type EquipoTablero, type Historia,
+  type PoliticaEtapa, type Visibilidad,
 } from '../../../../utils/scrum';
 import styles from './TableroScrum.module.css';
 
@@ -16,6 +18,9 @@ interface Props {
   politica?: PoliticaEtapa;
   /** Cuántas historias hay archivadas de sprints anteriores. */
   archivadas?: number;
+  /** Quién está editando qué: la tarjeta ocupada no se abre ni se arrastra. */
+  bloqueos?: Bloqueo[];
+  yoId?: string;
   onNuevaHistoria?: () => void;
   onAbrirHistoria?: (historia: Historia) => void;
   onMover?: (historiaId: string, columna: Columna) => void;
@@ -43,6 +48,8 @@ export default function TableroScrum({
   editable = false,
   politica = POLITICA_POR_DEFECTO,
   archivadas = 0,
+  bloqueos = [],
+  yoId = '',
   onNuevaHistoria,
   onAbrirHistoria,
   onMover,
@@ -143,19 +150,23 @@ export default function TableroScrum({
           </span>
         </header>
 
-        {historias.map((h) => (
-          <PostItHistoria
-            key={h.id}
-            historia={h}
-            escala={escala}
-            epica={h.epica ? epicas.get(h.epica) ?? null : null}
-            miembros={equipo.miembros}
-            onAbrir={editable && onAbrirHistoria ? onAbrirHistoria : undefined}
-            onAsignar={seTocan ? onAsignar : undefined}
-            onPointerDown={seTocan ? iniciar(h) : undefined}
-            atenuada={arrastrando?.id === h.id}
-          />
-        ))}
+        {historias.map((h) => {
+          const ajeno = bloqueoAjeno(bloqueos, `historia:${h.id}`, yoId);
+          return (
+            <PostItHistoria
+              key={h.id}
+              historia={h}
+              escala={escala}
+              epica={h.epica ? epicas.get(h.epica) ?? null : null}
+              miembros={equipo.miembros}
+              bloqueadaPor={ajeno?.nombre}
+              onAbrir={editable && onAbrirHistoria ? onAbrirHistoria : undefined}
+              onAsignar={seTocan && !ajeno ? onAsignar : undefined}
+              onPointerDown={seTocan && !ajeno ? iniciar(h) : undefined}
+              atenuada={arrastrando?.id === h.id}
+            />
+          );
+        })}
 
         {/* El alta va SOLO en Backlog: las historias nacen ahí y de ahí se
             mueven. Meterlas directamente en «doing» es el hábito contra el que

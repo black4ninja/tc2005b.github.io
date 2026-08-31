@@ -11,16 +11,21 @@ import ReglasScrumModal from '../../organisms/ReglasScrumModal/ReglasScrumModal'
 import ResumenEquipo, { type DatosResumen } from './ResumenEquipo';
 import { avisar, pedirTexto } from '../../../../utils/dialogos';
 import {
-  POLITICA_POR_DEFECTO, cuentaRegresiva, historiasDeOtraEpica, iniciales, sumaPuntos,
-  type Columna, type ColumnaRetro, type Dinamica, type EquipoTablero, type Etapa,
-  type Historia, type Sprint,
+  POLITICA_POR_DEFECTO, bloqueoAjeno, cuentaRegresiva, historiasDeOtraEpica, iniciales,
+  sumaPuntos,
+  type Bloqueo, type Columna, type ColumnaRetro, type Dinamica, type EquipoTablero,
+  type Etapa, type Historia, type Sprint,
 } from '../../../../utils/scrum';
 import styles from './ScrumTableroPage.module.css';
 
 const API = '/api';
 
-/** Red de seguridad del stream: si la conexión muere sin avisar, esto lo salva. */
-const REFRESCO_MS = 60000;
+/**
+ * Red de seguridad del stream. Veinte segundos y no sesenta: en una dinámica
+ * donde una etapa dura treinta segundos, enterarse un minuto tarde de que la
+ * conexión se cayó es enterarse cuando ya pasó todo.
+ */
+const REFRESCO_MS = 20000;
 
 /**
  * El tablero del alumno.
@@ -57,6 +62,9 @@ export default function ScrumTableroPage() {
   const [resumen, setResumen] = useState<DatosResumen | null>(null);
   const [cobro, setCobro] = useState<number | null>(null);
   const bloqueoPrevio = useRef<number | null>(null);
+  const [bloqueos, setBloqueos] = useState<Bloqueo[]>([]);
+  // ¿Está llegando el stream? Si no, hay que recargar a mano tras cada cambio.
+  const streamVivo = useRef(false);
 
   const base = `${API}/alumno/grupos/${grupoId}/scrum`;
 
@@ -68,11 +76,19 @@ export default function ScrumTableroPage() {
     [sessionToken],
   );
 
+  /**
+   * Un cambio de etapa llega como PARCHE: solo la cabecera, sin equipos, y sin
+   * que el servidor haya tenido que reconstruir nada. Fusionarlo en vez de
+   * reemplazar el estado es lo que hace que la instrucción de la pantalla
+   * cambie a la vez que el profesor pulsa.
+   */
   const aplicar = useCallback((json: any) => {
     setDinamica(json?.dinamica ?? null);
     setEtapa(json?.etapa ?? null);
     setSprint(json?.sprint ?? null);
+    if (json?.tipo === 'etapa') return;
     setEquipo(json?.equipo ?? null);
+    setBloqueos(json?.bloqueos ?? []);
     setEditable(json?.editable === true);
   }, []);
 
@@ -106,9 +122,10 @@ export default function ScrumTableroPage() {
     if (!grupoId || !sessionToken) return;
     const fuente = new EventSource(`${base}/stream`, { withCredentials: true });
     fuente.onmessage = (ev) => {
+      streamVivo.current = true;
       try { aplicar(JSON.parse(ev.data)); } catch { /* trama a medias: llega otra */ }
     };
-    return () => fuente.close();
+    return () => { fuente.close(); streamVivo.current = false; };
   }, [base, grupoId, sessionToken, aplicar]);
 
   useEffect(() => {
@@ -139,7 +156,10 @@ export default function ScrumTableroPage() {
           await cargar();
           return false;
         }
-        await cargar();
+        // Cuando el stream está vivo NO se recarga: el nuevo estado llega solo,
+        // y pedirlo otra vez era duplicar el viaje más caro de cada gesto. Sin
+        // stream —una pestaña vieja, un proxy que lo corta— sí hace falta.
+        if (!streamVivo.current) await cargar();
         return true;
       } catch {
         await avisar({ titulo: 'Sin conexión', texto: 'No se pudo contactar al servidor', icono: 'error' });
@@ -171,13 +191,102 @@ export default function ScrumTableroPage() {
   );
   const intrusas = equipo ? historiasDeOtraEpica(equipo) : [];
 
+  const yoId = user?.id ?? '';
+
+  /**
+   * Pide el candado de un recurso. `false` si lo tiene alguien más —y entonces
+   * ya se dijo quién—. El servidor lo vuelve a comprobar al guardar: entre que
+   * alguien abre una historia y a los demás les llega el aviso caben los
+   * milisegundos justos para que dos crean que la tienen.
+   */
+  const tomarCandado = useCallback(
+    async (recurso: string, latido = false): Promise<boolean> => {
+      try {
+        const r = await fetch(`${base}/bloqueos`, {
+          method: 'PUT',
+          headers: cabeceras(),
+          body: JSON.stringify({ recurso, tomar: true, latido }),
+        });
+        if (r.ok) return true;
+        const json = await r.json().catch(() => ({}));
+        if (!latido) {
+          await avisar({
+            titulo: 'Ocupado',
+            texto: json?.message ?? 'Alguien más lo está editando',
+            icono: 'warning',
+          });
+        }
+        return false;
+      } catch {
+        // Sin red no se bloquea a nadie: es preferible arriesgar un choque a
+        // dejar el tablero inutilizable.
+        return true;
+      }
+    },
+    [base, cabeceras],
+  );
+
+  const soltarCandado = useCallback(
+    (recurso: string) => {
+      void fetch(`${base}/bloqueos`, {
+        method: 'PUT',
+        headers: cabeceras(),
+        body: JSON.stringify({ recurso, tomar: false }),
+        keepalive: true,
+      }).catch(() => {});
+    },
+    [base, cabeceras],
+  );
+
+  // Mientras el formulario esté abierto se refresca el candado. Sin latido
+  // caduca solo a los treinta segundos, que es lo que salva a la tarjeta de
+  // quien cerró la pestaña con la historia abierta.
+  const recursoAbierto = formAbierto && enEdicion ? `historia:${enEdicion.id}` : null;
+  useEffect(() => {
+    if (!recursoAbierto) return;
+    const t = setInterval(() => { void tomarCandado(recursoAbierto, true); }, 10000);
+    return () => clearInterval(t);
+  }, [recursoAbierto, tomarCandado]);
+
+  // Y al salir del tablero se sueltan todos: cerrar la pestaña no debería dejar
+  // una tarjeta bloqueada medio minuto.
+  useEffect(() => {
+    const soltarTodo = () => {
+      void fetch(`${base}/bloqueos`, { method: 'DELETE', headers: cabeceras(), keepalive: true })
+        .catch(() => {});
+    };
+    window.addEventListener('pagehide', soltarTodo);
+    return () => { window.removeEventListener('pagehide', soltarTodo); soltarTodo(); };
+  }, [base, cabeceras]);
+
+  async function abrirHistoria(historia: Historia) {
+    const ajeno = bloqueoAjeno(bloqueos, `historia:${historia.id}`, yoId);
+    if (ajeno) {
+      await avisar({
+        titulo: 'Ocupado',
+        texto: `${ajeno.nombre.split(' ')[0]} está editando esta historia ahora mismo.`,
+        icono: 'warning',
+      });
+      return;
+    }
+    if (!(await tomarCandado(`historia:${historia.id}`))) return;
+    setEnEdicion(historia);
+    setFormAbierto(true);
+  }
+
+  function cerrarHistoria() {
+    if (enEdicion) soltarCandado(`historia:${enEdicion.id}`);
+    setFormAbierto(false);
+    setEnEdicion(null);
+  }
+
   async function guardarHistoria(datos: DatosHistoria) {
     setGuardando(true);
     const ok = enEdicion
       ? await mandar(`${base}/historias/${enEdicion.id}`, 'PUT', datos)
       : await mandar(`${base}/historias`, 'POST', datos);
     setGuardando(false);
-    if (ok) { setFormAbierto(false); setEnEdicion(null); }
+    if (ok) cerrarHistoria();
   }
 
   /** Mover se pinta ANTES de que conteste el servidor: es un gesto de arrastrar. */
@@ -378,8 +487,10 @@ export default function ScrumTableroPage() {
                   editable={editable}
                   politica={politica}
                   archivadas={equipo.archivadas}
+                  bloqueos={bloqueos}
+                  yoId={yoId}
                   onNuevaHistoria={() => { setEnEdicion(null); setFormAbierto(true); }}
-                  onAbrirHistoria={(h) => { setEnEdicion(h); setFormAbierto(true); }}
+                  onAbrirHistoria={abrirHistoria}
                   onMover={mover}
                   onAsignar={asignar}
                   onEditarObjetivo={editarObjetivo}
@@ -430,9 +541,9 @@ export default function ScrumTableroPage() {
         onGuardar={guardarHistoria}
         onBorrar={async (id) => {
           const ok = await mandar(`${base}/historias/${id}`, 'DELETE');
-          if (ok) { setFormAbierto(false); setEnEdicion(null); }
+          if (ok) cerrarHistoria();
         }}
-        onCerrar={() => { setFormAbierto(false); setEnEdicion(null); }}
+        onCerrar={cerrarHistoria}
       />
 
       <RolesScrumModal

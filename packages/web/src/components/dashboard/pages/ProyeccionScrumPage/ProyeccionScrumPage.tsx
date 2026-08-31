@@ -12,7 +12,7 @@ import styles from './ProyeccionScrumPage.module.css';
 const API = '/api';
 
 /** Red de seguridad del stream, por si la conexión muere sin avisar. */
-const REFRESCO_MS = 45000;
+const REFRESCO_MS = 20000;
 
 type Vista = 'tableros' | 'resumen';
 
@@ -46,10 +46,12 @@ export default function ProyeccionScrumPage() {
 
   const base = `${API}/admin/grupos/${grupoId}/scrum/dinamicas/${dinamicaId}/proyeccion`;
 
+  /** El parche de etapa no trae equipos: se fusiona la cabecera y ya. */
   const aplicar = useCallback((json: any) => {
     setDinamica(json?.dinamica ?? null);
     setEtapa(json?.etapa ?? null);
     setSprint(json?.sprint ?? null);
+    if (json?.tipo === 'etapa') return;
     setEquipos(json?.equipos ?? []);
   }, []);
 

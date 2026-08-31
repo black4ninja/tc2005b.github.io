@@ -192,6 +192,22 @@ export interface Etapa {
   orden: number;
 }
 
+/** Quién está editando qué. Ver `scrum-bloqueos` en el servidor. */
+export interface Bloqueo {
+  recurso: string;
+  quien: string;
+  nombre: string;
+}
+
+/** El candado de un recurso, si lo tiene alguien que no sea `yo`. */
+export function bloqueoAjeno(
+  bloqueos: Bloqueo[],
+  recurso: string,
+  yo: string,
+): Bloqueo | null {
+  return bloqueos.find((b) => b.recurso === recurso && b.quien !== yo) ?? null;
+}
+
 export interface Sprint {
   id: string;
   numero: number;

@@ -8,6 +8,33 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **El aula va deprisa: la etapa llega a todas las pantallas a la vez, y nadie
+  pisa el trabajo de nadie.**
+  - **Cambiar de etapa era el gesto más lento** justo siendo el que más corre:
+    reconstruía el estado entero —ocho consultas contra una base remota— antes
+    de avisar a nadie, y encima hacía el ritual del ciclo por delante. Ahora
+    manda un **aviso barato** que no consulta nada, contesta antes de escribir,
+    y deja el ritual —fijar lo planeado, cobrar la deuda, tomar el corte— para
+    después. Medido: del clic del profesor a que al alumno le cambie la
+    instrucción hay **10 ms**; antes había más de un segundo de desfase.
+  - **El ritual ya no va en fila india.** Era una consulta por equipo y por
+    paso; ahora es una lectura para todos y el trabajo en paralelo.
+  - **Cada gesto del alumno hace un viaje y no dos.** Mover una tarjeta pedía el
+    estado completo otra vez justo cuando el stream ya lo traía. Si el stream no
+    está vivo, se sigue recargando.
+  - **Indicadores de carga donde hacían falta**: la etapa que se está aplicando
+    gira y bloquea las demás, y cerrar un sprint o abrir el siguiente deshabilita
+    su botón. Sin eso el profesor pulsaba dos veces.
+  - **Semáforo de edición.** Abrir una historia la reserva: quien llegue después
+    ve «Fulano está editando esto ahora mismo» y no puede ni abrirla ni
+    arrastrarla. El candado se comprueba también en el servidor —entre que
+    alguien abre y a los demás les llega el aviso caben milisegundos—, se
+    refresca mientras el formulario esté abierto y **caduca solo a los treinta
+    segundos**, que es lo que salva a la tarjeta de quien cerró la pestaña.
+  - La red de seguridad del stream baja de un minuto a **veinte segundos**: en
+    una dinámica donde una etapa dura treinta, enterarse un minuto tarde de que
+    la conexión se cayó es enterarse cuando ya pasó todo.
+
 - **La dinámica de Scrum completa: sprints, deuda técnica, retrospectiva y
   cierre.** El módulo pasa de ser un tablero a ser la actividad entera, con las
   reglas que la clase repetía en voz alta puestas donde se cumplen solas.

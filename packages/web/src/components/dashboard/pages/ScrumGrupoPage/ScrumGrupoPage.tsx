@@ -27,6 +27,9 @@ export default function ScrumGrupoPage() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [etapasAbierto, setEtapasAbierto] = useState(false);
+  // Qué etapa se está aplicando. Sin esto el profesor pulsa y no pasa nada
+  // visible durante medio segundo, así que vuelve a pulsar.
+  const [aplicando, setAplicando] = useState<string | null>(null);
 
   const cabeceras = useCallback(
     (): HeadersInit => ({
@@ -96,7 +99,8 @@ export default function ScrumGrupoPage() {
   }
 
   async function cambiarEtapa(etapaId: string | null) {
-    if (!vigente) return;
+    if (!vigente || aplicando) return;
+    setAplicando(etapaId ?? 'ninguna');
     // Optimista: la etapa se pulsa delante de la clase y esperar al servidor
     // para repintar el botón hace dudar de si se registró.
     setDinamicas((ds) =>
@@ -107,6 +111,7 @@ export default function ScrumGrupoPage() {
       ),
     );
     await mandar(`${API}/admin/grupos/${grupoId}/scrum/dinamicas/${vigente.id}/etapa`, 'PUT', { etapaId });
+    setAplicando(null);
   }
 
   async function alternarCierre(d: Dinamica) {
@@ -162,6 +167,7 @@ export default function ScrumGrupoPage() {
           <div className={styles.etapas}>
             {etapas.map((e) => {
               const activa = vigente?.etapaActual?.id === e.id;
+              const enMarcha = aplicando === e.id;
               return (
                 <button
                   key={e.id}
@@ -169,11 +175,14 @@ export default function ScrumGrupoPage() {
                   className={`${styles.etapa} ${activa ? styles.etapaActiva : ''}`}
                   style={activa ? { background: e.color, borderColor: e.color } : undefined}
                   onClick={() => cambiarEtapa(activa ? null : e.id)}
-                  disabled={!vigente}
+                  disabled={!vigente || !!aplicando}
                   title={e.pista || e.nombre}
                   aria-pressed={activa}
+                  aria-busy={enMarcha}
                 >
-                  {!activa && <span className={styles.punto} style={{ background: e.color }} />}
+                  {enMarcha
+                    ? <span className={styles.girando} aria-hidden />
+                    : !activa && <span className={styles.punto} style={{ background: e.color }} />}
                   {e.nombre}
                 </button>
               );

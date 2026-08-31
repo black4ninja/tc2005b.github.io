@@ -17,6 +17,9 @@ import {
   type EstadoDinamica,
 } from '../services/scrum.service.js';
 import { suscribirTablero } from '../services/scrum-bus.js';
+import {
+  ocupadoPor, soltarBloqueo, soltarTodoDe, tomarBloqueo,
+} from '../services/scrum-bloqueos.js';
 import { SprintScrum } from '../models/SprintScrum.js';
 import {
   esColumna, esColumnaRetro, esPrioridad, esPuntos, estaEstimada, permiteMover,
@@ -152,6 +155,7 @@ function sobreAlumno(ctx: ContextoAlumno) {
     dinamica: ctx.estado?.dinamica ?? null,
     etapa: ctx.estado?.etapa ?? null,
     sprint: ctx.estado?.sprint ?? null,
+    bloqueos: ctx.estado?.bloqueos ?? [],
     // Solo su equipo: el alumno no tiene por qué leer el tablero de los demás,
     // y la pantalla no lo pinta.
     equipo: recortarAEquipo(ctx.estado, ctx.equipo?.id ?? null),
@@ -200,16 +204,25 @@ export async function streamMiTablero(req: Request, res: Response): Promise<void
   res.flushHeaders?.();
 
   const equipoId = ctx.equipo?.id ?? null;
-  const enviar = (estado: unknown) => {
-    const completo = estado as EstadoDinamica;
+  const enviar = (carga: unknown) => {
+    const c = carga as EstadoDinamica & { tipo?: string };
+    // El parche de etapa no trae equipos: se manda tal cual y la pantalla
+    // fusiona solo la cabecera. Es lo que hace que cambiar de etapa se vea al
+    // instante en vez de al cabo de dos segundos.
+    if (c.tipo === 'etapa') {
+      res.write(`data: ${JSON.stringify({ status: 'ok', ...c })}\n\n`);
+      return;
+    }
     res.write(`data: ${JSON.stringify({
       status: 'ok',
-      serverNow: completo.serverNow,
-      dinamica: completo.dinamica,
-      etapa: completo.etapa,
-      sprint: completo.sprint,
-      equipo: recortarAEquipo(completo, equipoId),
-      editable: !!equipoId && completo.dinamica?.cerrada !== true,
+      tipo: 'completo',
+      serverNow: c.serverNow,
+      dinamica: c.dinamica,
+      etapa: c.etapa,
+      sprint: c.sprint,
+      bloqueos: c.bloqueos,
+      equipo: recortarAEquipo(c, equipoId),
+      editable: !!equipoId && c.dinamica?.cerrada !== true,
       puntosValidos: PUNTOS_VALIDOS,
     })}\n\n`);
   };
@@ -218,7 +231,7 @@ export async function streamMiTablero(req: Request, res: Response): Promise<void
   const latido = setInterval(() => res.write(': latido\n\n'), LATIDO_MS);
   req.on('close', () => { baja(); clearInterval(latido); });
 
-  res.write(`data: ${JSON.stringify(sobreAlumno(ctx))}\n\n`);
+  res.write(`data: ${JSON.stringify({ tipo: 'completo', ...sobreAlumno(ctx) })}\n\n`);
 }
 
 /* ------------------------------------------------------------------ */
@@ -398,6 +411,8 @@ export async function actualizarHistoria(req: Request, res: Response): Promise<v
     if (!ctx) return;
     const equipo = ctx.equipo!;
 
+    if (ocupado(res, ctx, `historia:${historiaId}`)) return;
+
     const historia = await cargarHistoriaDelEquipo(historiaId, equipo.id!);
     if (!historia) {
       error(res, 404, 'Esa historia no es de tu equipo');
@@ -497,6 +512,23 @@ export async function actualizarHistoria(req: Request, res: Response): Promise<v
   }
 }
 
+/**
+ * Comprueba el semáforo: si otro tiene ese recurso abierto, esto responde y
+ * devuelve `true` para que quien llama se pare.
+ *
+ * Va en el servidor y no solo en la pantalla porque el candado se pinta con lo
+ * que llegó por el stream, y entre que alguien abre una historia y a los demás
+ * les llega el aviso caben unos milisegundos: los justos para que dos personas
+ * crean que la tienen.
+ */
+function ocupado(res: Response, ctx: ContextoAlumno, recurso: string): boolean {
+  if (!ctx.dinamicaId) return false;
+  const ajeno = ocupadoPor(ctx.dinamicaId, recurso, ctx.alumno.id!);
+  if (!ajeno) return false;
+  error(res, 409, `${ajeno.nombre.split(' ')[0]} está editando esto ahora mismo`);
+  return true;
+}
+
 /** Por qué la etapa no deja hacer ese movimiento, en las palabras del ciclo. */
 function mensajeMovimiento(movimientos: string): string {
   switch (movimientos) {
@@ -519,6 +551,7 @@ export async function borrarHistoria(req: Request, res: Response): Promise<void>
   try {
     const ctx = await equipoEditable(req, res);
     if (!ctx) return;
+    if (ocupado(res, ctx, `historia:${historiaId}`)) return;
     const historia = await cargarHistoriaDelEquipo(historiaId, ctx.equipo!.id!);
     if (!historia) {
       error(res, 404, 'Esa historia no es de tu equipo');
@@ -548,6 +581,7 @@ export async function setObjetivoEquipo(req: Request, res: Response): Promise<vo
       error(res, 409, 'El objetivo del sprint se escribe en el planning');
       return;
     }
+    if (ocupado(res, ctx, `objetivo:${ctx.equipo!.id}`)) return;
     const objetivo = String(req.body?.objetivo ?? '').trim().replace(/\s+/g, ' ');
     if (objetivo.length > LARGO_OBJETIVO) {
       error(res, 400, `El objetivo no puede pasar de ${LARGO_OBJETIVO} caracteres`);
@@ -605,8 +639,8 @@ export async function streamProyeccionScrum(req: Request, res: Response): Promis
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders?.();
 
-  const enviar = (estado: unknown) => {
-    res.write(`data: ${JSON.stringify({ status: 'ok', ...(estado as EstadoDinamica) })}\n\n`);
+  const enviar = (carga: unknown) => {
+    res.write(`data: ${JSON.stringify({ status: 'ok', ...(carga as EstadoDinamica) })}\n\n`);
   };
   // Suscribir ANTES de la primera lectura: si alguien mueve una tarjeta
   // justo mientras se resuelve, el aviso llega igual.
@@ -616,7 +650,7 @@ export async function streamProyeccionScrum(req: Request, res: Response): Promis
 
   try {
     const estado = await construirEstadoDinamica(dinamicaId);
-    if (estado) enviar(estado);
+    if (estado) enviar({ tipo: 'completo', ...estado });
   } catch {
     res.write('event: error\ndata: {}\n\n');
   }
@@ -1055,4 +1089,76 @@ async function compromisosDeTodos(equipoId: string): Promise<TarjetaRetro[]> {
   q.include('responsable' as any);
   q.limit(200);
   return q.find({ useMasterKey: true });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Semáforo de edición                                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * PUT /alumno/grupos/:grupoId/scrum/bloqueos — `{ recurso, tomar }`.
+ *
+ * El cliente lo llama al abrir un formulario y lo repite cada diez segundos
+ * mientras lo tenga abierto; al cerrarlo, lo suelta. Si el candado ya es de
+ * otro, contesta 409 con su nombre para que la pantalla pueda decir quién.
+ *
+ * `recurso` es una etiqueta libre —`historia:<id>`, `objetivo:<equipo>`— para no
+ * tener que tocar esto cada vez que algo más se pueda editar a cuatro manos.
+ */
+export async function setBloqueo(req: Request, res: Response): Promise<void> {
+  try {
+    const ctx = await contextoAlumno(req, res, false);
+    if (!ctx) return;
+    if (!ctx.dinamicaId || !ctx.equipo) {
+      error(res, 409, 'No hay nada que bloquear todavía');
+      return;
+    }
+
+    const recurso = String(req.body?.recurso ?? '').trim().slice(0, 80);
+    if (!recurso) {
+      error(res, 400, 'Falta qué recurso bloquear');
+      return;
+    }
+
+    if (req.body?.tomar === false) {
+      soltarBloqueo(ctx.dinamicaId, recurso, ctx.alumno.id!);
+      void difundirTablero(ctx.dinamicaId);
+      res.json({ status: 'ok', tomado: false });
+      return;
+    }
+
+    const ajeno = tomarBloqueo(
+      ctx.dinamicaId, recurso, ctx.alumno.id!, ctx.alumno.get('name') ?? 'Alguien',
+    );
+    if (ajeno) {
+      res.status(409).json({
+        status: 'error',
+        message: `${ajeno.nombre.split(' ')[0]} está editando esto ahora mismo`,
+        ocupadoPor: ajeno.nombre,
+      });
+      return;
+    }
+    // Solo se difunde al TOMARLO, no en cada latido: repintar treinta pantallas
+    // cada diez segundos por alguien que dejó un formulario abierto sería peor
+    // que el problema que esto resuelve.
+    if (req.body?.latido !== true) void difundirTablero(ctx.dinamicaId);
+    res.json({ status: 'ok', tomado: true });
+  } catch {
+    error(res, 500, 'Error al bloquear');
+  }
+}
+
+/** DELETE …/scrum/bloqueos — suelta todo lo del alumno. Al salir del tablero. */
+export async function soltarBloqueos(req: Request, res: Response): Promise<void> {
+  try {
+    const ctx = await contextoAlumno(req, res, false);
+    if (!ctx) return;
+    if (ctx.dinamicaId) {
+      soltarTodoDe(ctx.dinamicaId, ctx.alumno.id!);
+      void difundirTablero(ctx.dinamicaId);
+    }
+    res.json({ status: 'ok' });
+  } catch {
+    error(res, 500, 'Error al soltar los bloqueos');
+  }
 }

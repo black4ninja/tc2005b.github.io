@@ -41,6 +41,9 @@ export default function DinamicaScrumPage() {
   // cerrar el sprint: hasta entonces son un borrador del profesor.
   const [penalizaciones, setPenalizaciones] = useState<Record<string, number>>({});
   const [reglas, setReglas] = useState<'done' | 'restricciones' | null>(null);
+  // Hay una petición en marcha: cerrar un sprint recorre todos los equipos y
+  // tarda. Sin esta señal el profesor pulsa dos veces y cierra dos sprints.
+  const [enVuelo, setEnVuelo] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [marcados, setMarcados] = useState<Set<string>>(new Set());
   const [mandoAbierto, setMandoAbierto] = useState(false);
@@ -89,6 +92,7 @@ export default function DinamicaScrumPage() {
 
   const mandar = useCallback(
     async (url: string, metodo: string, cuerpo?: unknown): Promise<boolean> => {
+      setEnVuelo(true);
       try {
         const r = await fetch(url, {
           method: metodo,
@@ -105,6 +109,8 @@ export default function DinamicaScrumPage() {
       } catch {
         await avisar({ titulo: 'Sin conexión', texto: 'No se pudo contactar al servidor', icono: 'error' });
         return false;
+      } finally {
+        setEnVuelo(false);
       }
     },
     [cabeceras, cargar],
@@ -347,6 +353,7 @@ export default function DinamicaScrumPage() {
 
       {vista === 'sprints' ? (
         <SprintsYMarcador
+          enVuelo={enVuelo}
           sprints={sprints}
           enCurso={enCurso}
           equipos={equipos}
@@ -654,9 +661,10 @@ export default function DinamicaScrumPage() {
  * que se cierra el sprint son un borrador.
  */
 function SprintsYMarcador({
-  sprints, enCurso, equipos, marcadores, penalizaciones, finalizada,
+  sprints, enCurso, equipos, marcadores, penalizaciones, finalizada, enVuelo,
   onNuevo, onCerrar, onObjetivo, onFinalizar, onPenalizacion,
 }: {
+  enVuelo: boolean;
   sprints: Sprint[];
   enCurso: Sprint | null;
   equipos: EquipoTablero[];
@@ -691,8 +699,8 @@ function SprintsYMarcador({
             </span>
           ))}
           {!finalizada && (
-            <button type="button" className={styles.nuevoSprint} onClick={onNuevo}>
-              <span className="material-icons">add</span>
+            <button type="button" className={styles.nuevoSprint} onClick={onNuevo} disabled={enVuelo}>
+              <span className="material-icons">{enVuelo ? 'hourglass_empty' : 'add'}</span>
               Nuevo sprint
             </button>
           )}
@@ -787,12 +795,12 @@ function SprintsYMarcador({
             type="button"
             className={styles.outline}
             onClick={onCerrar}
-            disabled={!enCurso || equipos.length === 0}
+            disabled={!enCurso || equipos.length === 0 || enVuelo}
           >
-            <span className="material-icons">lock</span>
-            Cerrar {enCurso ? `Sprint ${enCurso.numero}` : 'sprint'}
+            <span className="material-icons">{enVuelo ? 'hourglass_empty' : 'lock'}</span>
+            {enVuelo ? 'Cerrando…' : `Cerrar ${enCurso ? `Sprint ${enCurso.numero}` : 'sprint'}`}
           </button>
-          <button type="button" className={styles.primario} onClick={onFinalizar}>
+          <button type="button" className={styles.primario} onClick={onFinalizar} disabled={enVuelo}>
             <span className="material-icons">check_circle</span>
             Finalizar dinámica
           </button>

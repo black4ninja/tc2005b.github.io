@@ -19,6 +19,7 @@ import {
   equiposDeDinamica,
   etapasDeGrupo,
   historiasDeEquipos,
+  difundirEtapa,
   historicoDeEquipo,
   marcadoresDeSprint,
   sprintsDeDinamica,
@@ -225,13 +226,16 @@ export async function setEtapaActual(req: Request, res: Response): Promise<void>
   const { etapaId } = req.body as { etapaId?: string | null };
 
   try {
-    const dinamica = await cargarDinamica(dinamicaId, grupoId);
+    // Las dos lecturas en paralelo: en fila india eran dos viajes a una base
+    // remota antes de siquiera empezar.
+    const [dinamica, etapas] = await Promise.all([
+      cargarDinamica(dinamicaId, grupoId),
+      etapasDeGrupo(grupoId),
+    ]);
     if (!dinamica) {
       error(res, 404, 'La dinámica no existe en este grupo');
       return;
     }
-
-    const etapas = await etapasDeGrupo(grupoId);
     const anterior = dinamica.getEtapaActual();
     const nueva = etapaId ? etapas.find((e) => e.id === etapaId) : null;
     if (etapaId && !nueva) {
@@ -240,40 +244,96 @@ export async function setEtapaActual(req: Request, res: Response): Promise<void>
     }
 
     const sprint = dinamica.getSprintActual();
-    const equipos = await equiposDeDinamica(dinamicaId);
-    const cobros: Record<string, unknown> = {};
-
-    // Al salir del planning se salda la deuda del sprint anterior.
     const anteriorViva = anterior ? etapas.find((e) => e.id === anterior.id) : null;
-    if (sprint && anteriorViva?.getPolitica().cobraDeuda && anteriorViva.id !== nueva?.id) {
-      for (const equipo of equipos) {
-        // Primero se cobra y DESPUÉS se fija lo planeado: el burndown tiene que
-        // arrancar de lo que al equipo le queda de verdad, no de lo que llegó a
-        // escribir. Si empezara más arriba, la línea ideal sería inalcanzable
-        // desde el primer segundo y dejaría de decir nada.
-        const cobro = await cobrarDeuda(equipo.id!);
-        if (cobro) cobros[equipo.id!] = cobro;
-        await fijarPlaneados(sprint.id!, equipo.id!, cobro?.puntos ?? 0);
-      }
-    }
 
     dinamica.setEtapaActual(nueva ?? null);
     dinamica.setEtapaIniciadaEn(nueva ? new Date() : null);
-    await dinamica.save(null, { useMasterKey: true });
 
-    if (sprint && nueva) {
-      for (const equipo of equipos) {
-        await tomarCorte(sprint.id!, equipo.id!, nueva.getNombre());
+    /*
+     * Aquí se avisa y se contesta ANTES de guardar, y es deliberado.
+     *
+     * Cambiar de etapa es el gesto que más corre en clase: el profesor lo pulsa
+     * con treinta personas mirando y lo que cambia es la INSTRUCCIÓN que todos
+     * tienen en pantalla. Esperar a la escritura contra una base remota es medio
+     * segundo largo en el que ni él sabe si su clic llegó ni a nadie le ha
+     * cambiado nada, y lo que hace entonces es volver a pulsar.
+     *
+     * El aviso no cuesta ninguna consulta —todo lo que lleva ya está en
+     * memoria—, así que sale primero. La escritura y el resto del ritual van
+     * detrás; si la escritura fallara, la difusión completa que viene después
+     * devuelve a todas las pantallas el estado de verdad.
+     */
+    difundirEtapa(dinamica, nueva ?? null);
+    res.json({ status: 'ok', dinamica: dinamica.toSafeJSON() });
+
+    void (async () => {
+      try {
+        await dinamica.save(null, { useMasterKey: true });
+        await ritualDeEtapa(
+          dinamicaId, sprint?.id ?? null, anteriorViva, nueva?.getNombre() ?? null,
+        );
+      } catch {
+        await difundirTablero(dinamicaId);
       }
-    }
-
-    // Es el cambio que más corre: el profesor lo pulsa y a treinta tableros les
-    // cambia lo que pueden tocar. Va por el bus antes de contestar.
-    void difundirTablero(dinamicaId);
-    res.json({ status: 'ok', dinamica: dinamica.toSafeJSON(), cobros });
+    })();
   } catch {
     error(res, 500, 'Error al cambiar la etapa');
   }
+}
+
+/**
+ * Lo que ocurre al cambiar de etapa y no hace falta que el profesor espere.
+ *
+ * Al SALIR de la etapa que cobra deuda —el planning— se le devuelven al backlog
+ * a cada equipo las historias que no le caben por su bloqueo, y se fija cuánto
+ * se comprometió de verdad. Al ENTRAR en cualquiera se toma el corte del
+ * burndown. Todo con UNA lectura de historias para todos los equipos y en
+ * paralelo: antes era una consulta por equipo y por paso, en fila india.
+ */
+async function ritualDeEtapa(
+  dinamicaId: string,
+  sprintId: string | null,
+  anterior: EtapaScrum | null | undefined,
+  etiqueta: string | null,
+): Promise<void> {
+  if (!sprintId) return;
+  try {
+    const equipos = await equiposDeDinamica(dinamicaId);
+    if (equipos.length === 0) return;
+
+    const cobra = anterior?.getPolitica().cobraDeuda === true;
+    if (cobra) {
+      const historias = await historiasDeEquipos(equipos.map((e) => e.id!));
+      const porEquipo = new Map<string, typeof historias>();
+      for (const h of historias) {
+        const suyas = porEquipo.get(h.getEquipoId()) ?? [];
+        suyas.push(h);
+        porEquipo.set(h.getEquipoId(), suyas);
+      }
+      await Promise.all(equipos.map(async (equipo) => {
+        const suyas = porEquipo.get(equipo.id!) ?? [];
+        const cobro = await cobrarDeuda(equipo, suyas);
+        await fijarPlaneados(sprintId, equipo.id!, cobro?.puntos ?? 0, suyas);
+      }));
+    }
+
+    if (etiqueta) {
+      // Después del cobro: el corte tiene que reflejar lo que al equipo le
+      // queda de verdad, no lo que llegó a escribir antes de que se lo quitaran.
+      const historias = await historiasDeEquipos(equipos.map((e) => e.id!));
+      const porEquipo = new Map<string, typeof historias>();
+      for (const h of historias) {
+        const suyas = porEquipo.get(h.getEquipoId()) ?? [];
+        suyas.push(h);
+        porEquipo.set(h.getEquipoId(), suyas);
+      }
+      await Promise.all(equipos.map((equipo) =>
+        tomarCorte(sprintId, equipo.id!, etiqueta, porEquipo.get(equipo.id!) ?? [])));
+    }
+
+    // Segunda difusión: la primera llevó la etapa, esta lleva las consecuencias.
+    await difundirTablero(dinamicaId);
+  } catch { /* el tablero se pone al día en el siguiente refresco */ }
 }
 
 /* ------------------------------------------------------------------ */

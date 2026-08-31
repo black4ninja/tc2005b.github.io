@@ -35,9 +35,12 @@ export async function tomarCorte(
   sprintId: string,
   equipoId: string,
   etiqueta: string,
+  /** Ya traídas por quien llama: en un cambio de etapa son cinco equipos y
+   *  pedirlas una vez por equipo eran cinco viajes a la base de más. */
+  yaTraidas?: HistoriaUsuario[],
 ): Promise<void> {
   const marcador = await marcadorVivo(sprintId, equipoId);
-  const historias = await historiasDeEquipos([equipoId]);
+  const historias = yaTraidas ?? await historiasDeEquipos([equipoId]);
   const corte: CorteBurndown = {
     en: new Date().toISOString(),
     etiqueta,
@@ -64,9 +67,10 @@ export async function fijarPlaneados(
   sprintId: string,
   equipoId: string,
   devueltos = 0,
+  yaTraidas?: HistoriaUsuario[],
 ): Promise<void> {
   const marcador = await marcadorVivo(sprintId, equipoId);
-  const historias = await historiasDeEquipos([equipoId]);
+  const historias = yaTraidas ?? await historiasDeEquipos([equipoId]);
   marcador.setPlaneados(puntosComprometidos(historias));
   if (devueltos > 0) marcador.setDevueltos(devueltos);
   await marcador.save(null, { useMasterKey: true });
@@ -123,22 +127,26 @@ export interface CobroDeuda {
  * podrán seguir trabajando en lo que dejaron del sprint anterior» es
  * exactamente eso.
  */
-export async function cobrarDeuda(equipoId: string): Promise<CobroDeuda | null> {
-  const equipo = await new Parse.Query<EquipoScrum>('EquipoScrum')
-    .equalTo('exists' as any, true as any)
-    .get(equipoId, { useMasterKey: true })
-    .catch(() => null);
-  if (!equipo) return null;
-
+export async function cobrarDeuda(
+  equipo: EquipoScrum,
+  yaTraidas?: HistoriaUsuario[],
+): Promise<CobroDeuda | null> {
   const bloqueo = equipo.getBloqueoPendiente();
   if (bloqueo <= 0) return null;
 
-  const historias = await historiasDeEquipos([equipoId]);
+  const historias = yaTraidas ?? await historiasDeEquipos([equipo.id!]);
   const candidatas = historias.filter((h) => h.getColumna() === 'planned');
   const elegidas = elegirDevueltas(
     candidatas.map((h) => ({ id: h.id!, puntos: Math.max(0, h.getPuntos()), historia: h })),
     bloqueo,
   );
+  if (elegidas.length === 0 && candidatas.length === 0) {
+    // Sin nada que devolver la deuda se salda igual: arrastrarla otra vez
+    // castigaría dos veces lo mismo.
+    equipo.setBloqueoPendiente(0);
+    await equipo.save(null, { useMasterKey: true });
+    return { devueltas: [], puntos: 0, arrasó: false };
+  }
 
   const aGuardar: Parse.Object[] = [];
   let puntos = 0;

@@ -43,6 +43,8 @@ import {
   borrarTarjetaRetro,
   marcarCompromiso,
   getResumenEquipo,
+  setBloqueo,
+  soltarBloqueos,
 } from '../controllers/scrum-tablero.controller.js';
 
 /**
@@ -127,5 +129,9 @@ router.post('/alumno/grupos/:grupoId/scrum/retro', crearTarjetaRetro);
 router.put('/alumno/grupos/:grupoId/scrum/retro/:tarjetaId', actualizarTarjetaRetro);
 router.delete('/alumno/grupos/:grupoId/scrum/retro/:tarjetaId', borrarTarjetaRetro);
 router.put('/alumno/grupos/:grupoId/scrum/compromisos/:tarjetaId', marcarCompromiso);
+
+// Semáforo: quién está editando qué, para que dos no se pisen el trabajo.
+router.put('/alumno/grupos/:grupoId/scrum/bloqueos', setBloqueo);
+router.delete('/alumno/grupos/:grupoId/scrum/bloqueos', soltarBloqueos);
 
 export default router;

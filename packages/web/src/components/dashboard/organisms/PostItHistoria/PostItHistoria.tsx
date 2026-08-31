@@ -22,6 +22,8 @@ interface Props {
   atenuada?: boolean;
   /** Copia que va pegada al puntero mientras se arrastra. */
   fantasma?: boolean;
+  /** Quién la tiene abierta ahora mismo. Si hay alguien, no se toca. */
+  bloqueadaPor?: string;
 }
 
 /**
@@ -42,7 +44,7 @@ interface Props {
  */
 export default function PostItHistoria({
   historia, escala = 'full', epica, miembros, onAbrir, onAsignar,
-  onPointerDown, atenuada, fantasma,
+  onPointerDown, atenuada, fantasma, bloqueadaPor,
 }: Props) {
   const completo = escala === 'full';
   const quien = historia.responsable;
@@ -65,7 +67,7 @@ export default function PostItHistoria({
     onAsignar?.(historia.id, alumnoId);
   }
 
-  const puedeAsignar = !!onAsignar && !!miembros?.length && completo;
+  const puedeAsignar = !!onAsignar && !!miembros?.length && completo && !bloqueadaPor;
 
   return (
     <article
@@ -77,6 +79,7 @@ export default function PostItHistoria({
         onPointerDown ? styles.arrastrable : '',
         atenuada ? styles.atenuada : '',
         fantasma ? styles.fantasma : '',
+        bloqueadaPor ? styles.bloqueada : '',
       ].filter(Boolean).join(' ')}
       style={epica ? { borderTopColor: epica.color } : undefined}
       onPointerDown={onPointerDown}
@@ -94,6 +97,13 @@ export default function PostItHistoria({
           : undefined
       }
     >
+      {bloqueadaPor && completo && (
+        <div className={styles.candado} title={`${bloqueadaPor} la está editando`}>
+          <span className="material-icons">lock</span>
+          {bloqueadaPor.split(' ')[0]} la está editando
+        </div>
+      )}
+
       <header className={styles.cabecera}>
         <span className={`${styles.prioridad} ${styles[historia.prioridad]}`}>
           {historia.prioridad === 'wont' ? "Won't" : historia.prioridad}

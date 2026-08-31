@@ -133,6 +133,24 @@
   flex: none;
 }
 
+/* La etapa que se está aplicando. Cambiarla toca treinta pantallas y el viaje
+   no es instantáneo: sin esta señal el profesor cree que no pulsó y repite. */
+.girando {
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--sidebar-active-color);
+  border-radius: 50%;
+  flex: none;
+  animation: girar 700ms linear infinite;
+}
+
+@keyframes girar { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .girando { animation-duration: 2s; }
+}
+
 .aplicaA { font-size: 0.82rem; color: var(--text-muted); }
 
 .enlaceBtn {

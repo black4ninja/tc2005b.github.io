@@ -14,6 +14,7 @@ import {
   OBJETIVOS_SPRINT_SEMILLA, POLITICA_POR_DEFECTO, type Columna,
 } from '../constants/scrum.js';
 import { cuantosEscuchanTablero, publicarTablero } from './scrum-bus.js';
+import { bloqueosVigentes } from './scrum-bloqueos.js';
 
 /**
  * Lecturas compartidas del módulo "Actividad de Scrum".
@@ -296,6 +297,8 @@ export interface EstadoDinamica {
   etapa: Record<string, unknown> | null;
   sprint: Record<string, unknown> | null;
   equipos: EquipoConTablero[];
+  /** Quién está editando qué ahora mismo. Ver `scrum-bloqueos`. */
+  bloqueos: { recurso: string; quien: string; nombre: string }[];
   serverNow: string;
 }
 
@@ -384,6 +387,9 @@ export async function construirEstadoDinamica(dinamicaId: string): Promise<Estad
       marcador: mPorEquipo.get(e.id!)?.toSafeJSON() ?? null,
       archivadas: archivadas.get(e.id!) ?? 0,
     })),
+    bloqueos: bloqueosVigentes(dinamicaId).map(({ recurso, quien, nombre }) => ({
+      recurso, quien, nombre,
+    })),
     serverNow: new Date().toISOString(),
   };
 }
@@ -450,11 +456,48 @@ async function compromisosDeEquipos(
  * clase. Nunca lanza: un fallo avisando no puede tumbar la petición que ya
  * guardó el cambio — la pantalla se enteraría igual en su siguiente refresco.
  */
+/**
+ * Aviso BARATO de que cambió solo la cabecera: la etapa, su reloj o el sprint.
+ *
+ * Es el cambio que más corre en clase y el que peor se notaba: reconstruir el
+ * estado entero son ocho consultas contra una base remota, casi dos segundos
+ * durante los cuales el profesor ya pulsó y a nadie le ha cambiado nada. Aquí
+ * no se consulta nada —lo que hace falta ya está en memoria— y cada pantalla
+ * fusiona solo esos campos.
+ */
+export function difundirEtapa(dinamica: DinamicaScrum, etapa: EtapaScrum | null): void {
+  const dinamicaId = dinamica.id!;
+  if (cuantosEscuchanTablero(dinamicaId) === 0) return;
+  const sprint = dinamica.getSprintActual();
+  publicarTablero(dinamicaId, {
+    tipo: 'etapa',
+    dinamica: dinamica.toSafeJSON(),
+    etapa: etapa
+      ? {
+        id: etapa.id,
+        nombre: etapa.getNombre(),
+        color: etapa.getColor(),
+        pista: etapa.getPista(),
+        politica: etapa.getPolitica(),
+      }
+      : null,
+    sprint: sprint
+      ? {
+        id: sprint.id,
+        numero: sprint.get('numero') ?? 1,
+        objetivo: sprint.get('objetivo') ?? '',
+        cerrado: sprint.get('cerrado') === true,
+      }
+      : null,
+    serverNow: new Date().toISOString(),
+  });
+}
+
 export async function difundirTablero(dinamicaId: string): Promise<void> {
   if (cuantosEscuchanTablero(dinamicaId) === 0) return;
   try {
     const estado = await construirEstadoDinamica(dinamicaId);
-    if (estado) publicarTablero(dinamicaId, estado);
+    if (estado) publicarTablero(dinamicaId, { tipo: 'completo', ...estado });
   } catch { /* la pantalla se pone al día en su siguiente refresco */ }
 }
 
