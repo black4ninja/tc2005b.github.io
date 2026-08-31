@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
+import { useCuentaRegresiva } from '../../../../hooks/useCuentaRegresiva';
 import TableroScrum from '../../organisms/TableroScrum/TableroScrum';
 import TableroRetro from '../../organisms/TableroRetro/TableroRetro';
 import Burndown from '../../organisms/Burndown/Burndown';
@@ -11,7 +12,7 @@ import ReglasScrumModal from '../../organisms/ReglasScrumModal/ReglasScrumModal'
 import ResumenEquipo, { type DatosResumen } from './ResumenEquipo';
 import { avisar, pedirTexto } from '../../../../utils/dialogos';
 import {
-  POLITICA_SIN_ETAPA, bloqueoAjeno, cuentaRegresiva, historiasDeOtraEpica,
+  POLITICA_SIN_ETAPA, bloqueoAjeno, historiasDeOtraEpica,
   historiasVivasPorPersona, iniciales,
   necesitaResponsable,
   sumaPuntos,
@@ -53,7 +54,6 @@ export default function ScrumTableroPage() {
   const [editable, setEditable] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [ahora, setAhora] = useState(() => Date.now());
 
   const [formAbierto, setFormAbierto] = useState(false);
   const [enEdicion, setEnEdicion] = useState<Historia | null>(null);
@@ -138,15 +138,6 @@ export default function ScrumTableroPage() {
     return () => clearInterval(t);
   }, [cargar]);
 
-  // El reloj de la etapa lo lleva el cliente: el servidor sella la hora de
-  // arranque y aquí se cuenta, para que una pantalla que entra a mitad enseñe el
-  // número correcto sin preguntar.
-  useEffect(() => {
-    if (!etapa?.politica.duracionSegundos || !dinamica?.etapaIniciadaEn) return;
-    const t = setInterval(() => setAhora(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [etapa?.politica.duracionSegundos, dinamica?.etapaIniciadaEn]);
-
   const mandar = useCallback(
     async (
       url: string,
@@ -203,10 +194,7 @@ export default function ScrumTableroPage() {
   // Sin etapa abierta el tablero se mira y no se toca; el servidor rechaza
   // igual lo que se intente, esto es para no enseñar mandos muertos.
   const politica = etapa?.politica ?? POLITICA_SIN_ETAPA;
-  const reloj = useMemo(
-    () => cuentaRegresiva(dinamica?.etapaIniciadaEn ?? null, politica.duracionSegundos, ahora),
-    [dinamica?.etapaIniciadaEn, politica.duracionSegundos, ahora],
-  );
+  const reloj = useCuentaRegresiva(dinamica?.etapaIniciadaEn, politica.duracionSegundos);
   const intrusas = equipo ? historiasDeOtraEpica(equipo) : [];
 
   const yoId = user?.id ?? '';

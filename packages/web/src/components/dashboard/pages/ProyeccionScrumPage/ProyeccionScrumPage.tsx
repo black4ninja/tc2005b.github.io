@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
+import { useCuentaRegresiva } from '../../../../hooks/useCuentaRegresiva';
 import TableroScrum from '../../organisms/TableroScrum/TableroScrum';
 import Burndown from '../../organisms/Burndown/Burndown';
 import {
@@ -113,6 +114,11 @@ export default function ProyeccionScrumPage() {
   // Sin etapa abierta el tablero se mira y no se toca; el servidor rechaza
   // igual lo que se intente, esto es para no enseñar mandos muertos.
   const politica = etapa?.politica ?? POLITICA_SIN_ETAPA;
+  // El reloj de la etapa, en la pantalla donde lo mira toda la clase a la vez.
+  // Con la dinámica cerrada no se enseña: seguiría contando sobre la última
+  // etapa que se abrió y marcaría las horas que han pasado desde la clase.
+  const cuenta = useCuentaRegresiva(dinamica?.etapaIniciadaEn, politica.duracionSegundos);
+  const reloj = dinamica?.cerrada ? null : cuenta;
 
   return (
     <div className={styles.pantalla}>
@@ -144,6 +150,12 @@ export default function ProyeccionScrumPage() {
           {etapa && (
             <span className={styles.etapa} style={{ background: etapa.color }}>
               {etapa.nombre}
+            </span>
+          )}
+          {reloj && (
+            <span className={`${styles.reloj} ${reloj.agotado ? styles.relojAgotado : ''}`}>
+              <span className={styles.relojEtiqueta}>{reloj.agotado ? 'De más' : 'Queda'}</span>
+              <span className={styles.relojCifra}>{reloj.texto}</span>
             </span>
           )}
         </div>
