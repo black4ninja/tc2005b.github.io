@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   agruparPorColumna, rejillaProyeccion, sumaPuntos, iniciales, rangoFechas,
   permiteMover, puntosTexto, estaEstimada, cuentaRegresiva, historiasDeOtraEpica,
+  historiasVivasPorPersona,
   PUNTOS_DEMASIADO, PUNTOS_DESCONOCIDO,
 } from './scrum';
 import type { Historia } from './scrum';
@@ -185,5 +186,36 @@ describe('rangoFechas', () => {
   it('con una sola dice cuál es', () => {
     expect(rangoFechas('2026-09-08T12:00:00.000Z', null)).toMatch(/^desde el /);
     expect(rangoFechas(null, '2026-09-19T12:00:00.000Z')).toMatch(/^hasta el /);
+  });
+});
+
+describe('historiasVivasPorPersona', () => {
+  const ana = { id: 'ana', name: 'Ana Ruiz' };
+
+  it('quien lleva algo sin terminar cuenta como ocupado', () => {
+    const vivas = historiasVivasPorPersona([
+      historia({ id: 'a', columna: 'doing', responsable: ana }),
+    ]);
+    expect(vivas.get('ana')?.id).toBe('a');
+  });
+
+  it('lo que está en done ya no ocupa a nadie', () => {
+    // Es lo que hace que la regla no atasque al equipo: se termina y se coge
+    // otra, que es exactamente el ritmo que enseña.
+    const vivas = historiasVivasPorPersona([
+      historia({ id: 'a', columna: 'done', responsable: ana }),
+    ]);
+    expect(vivas.has('ana')).toBe(false);
+  });
+
+  it('las archivadas tampoco: son de sprints pasados', () => {
+    const vivas = historiasVivasPorPersona([
+      historia({ id: 'a', columna: 'doing', responsable: ana, archivada: true }),
+    ]);
+    expect(vivas.has('ana')).toBe(false);
+  });
+
+  it('sin responsable no ocupa a nadie', () => {
+    expect(historiasVivasPorPersona([historia({ id: 'a', columna: 'doing' })]).size).toBe(0);
   });
 });

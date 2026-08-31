@@ -14,6 +14,7 @@ import {
   equipoDelAlumno,
   equiposDeDinamica,
   historiasDeEquipos,
+  otraHistoriaViva,
   siguienteOrdenEnColumna,
   type EstadoDinamica,
 } from '../services/scrum.service.js';
@@ -477,6 +478,7 @@ export async function actualizarHistoria(req: Request, res: Response): Promise<v
       error(res, 404, 'Esa historia no es de tu equipo');
       return;
     }
+    const columnaOriginal = historia.getColumna();
 
     const tocaTexto = ['porQue', 'que', 'como'].some((k) => req.body?.[k] !== undefined);
     if (tocaTexto) {
@@ -508,12 +510,14 @@ export async function actualizarHistoria(req: Request, res: Response): Promise<v
       }
       historia.setPrioridad(req.body.prioridad);
     }
+    let cambiaResponsable = false;
     if (req.body?.responsableId !== undefined) {
       const responsable = resolverResponsable(req.body.responsableId, equipo);
       if (responsable === false) {
         error(res, 400, 'El responsable tiene que ser alguien del equipo');
         return;
       }
+      cambiaResponsable = responsable?.id !== historia.getResponsable()?.id;
       historia.setResponsable(responsable);
     }
     if (req.body?.epicaId !== undefined) {
@@ -568,6 +572,27 @@ export async function actualizarHistoria(req: Request, res: Response): Promise<v
     }
     if (typeof req.body?.orden === 'number' && Number.isFinite(req.body.orden)) {
       historia.setOrden(req.body.orden);
+    }
+
+    // Una persona, una historia a la vez.
+    //
+    // Se mira cuando se le acaba de dar el trabajo a alguien, y también cuando
+    // una historia SALE de `done`: ahí su dueño vuelve a tener trabajo vivo, y
+    // si mientras tanto había cogido otra se estaría saltando la regla por la
+    // puerta de atrás.
+    const dueño = historia.getResponsable()?.id;
+    const saleDeDone = req.body?.columna !== undefined
+      && historia.getColumna() !== 'done'
+      && columnaOriginal === 'done';
+    if (dueño && (cambiaResponsable || saleDeDone)) {
+      const hermanas = await historiasDeEquipos([equipo.id!]);
+      const otra = otraHistoriaViva<HistoriaUsuario>(hermanas, dueño, historia.id);
+      if (otra) {
+        const nombre = historia.getResponsable()?.get('name')?.split(' ')[0] ?? 'Esa persona';
+        error(res, 409, `${nombre} ya lleva «${otra.getPorQue() || otra.getQue()}» y todavía no está `
+          + 'en Done. Una historia por persona: que la termine o pásensela a alguien libre');
+        return;
+      }
     }
 
     // En el backlog nadie es responsable de nada.

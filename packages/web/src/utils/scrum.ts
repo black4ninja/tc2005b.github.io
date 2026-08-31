@@ -247,6 +247,23 @@ export interface Dinamica {
 }
 
 /**
+ * Quién tiene trabajo vivo y cuál es.
+ *
+ * «Vivo» es todo lo que no está en `done`. Sirve para no ofrecer a alguien que
+ * ya lleva una historia: la regla la impone el servidor, pero enseñarla en el
+ * menú evita el intento y explica por qué sin tener que fallar primero.
+ */
+export function historiasVivasPorPersona(historias: Historia[]): Map<string, Historia> {
+  const mapa = new Map<string, Historia>();
+  for (const h of historias) {
+    const id = h.responsable?.id;
+    if (!id || h.archivada || h.columna === 'done') continue;
+    if (!mapa.has(id)) mapa.set(id, h);
+  }
+  return mapa;
+}
+
+/**
  * ¿Hay que tener un responsable para llegar a esta columna?
  *
  * Sí en cuanto la historia se pone en marcha: `doing`, `review` y `done`. En

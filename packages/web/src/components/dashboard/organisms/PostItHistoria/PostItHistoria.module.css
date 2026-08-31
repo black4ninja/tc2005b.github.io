@@ -279,3 +279,16 @@
 
 .sm .prioridad { font-size: 6.5px; padding: 0 5px; }
 .sm .puntos { min-width: 13px; height: 13px; font-size: 8px; padding: 0 3px; }
+
+/* Quien ya lleva una historia sin terminar sale en el menú, pero apagado: ver
+   que está ocupado enseña la regla mejor que no verlo. */
+.menuOcupado {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.menuItem:disabled { opacity: 0.55; cursor: default; }

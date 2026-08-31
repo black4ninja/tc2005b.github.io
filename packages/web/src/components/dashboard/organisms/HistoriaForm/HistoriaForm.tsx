@@ -23,6 +23,8 @@ interface Props {
   /** `null` = alta. Las altas nacen siempre en Backlog. */
   historia: Historia | null;
   miembros: Persona[];
+  /** Quién lleva ya una historia sin terminar, y cuál. Una persona, una historia. */
+  ocupados?: Map<string, Historia>;
   epicas: Epica[];
   guardando?: boolean;
   onGuardar: (datos: DatosHistoria) => void;
@@ -59,7 +61,7 @@ const VACIA: DatosHistoria = {
  * acorte la frase antes de guardarla.
  */
 export default function HistoriaForm({
-  abierto, historia, miembros, epicas, guardando, onGuardar, onBorrar, onCerrar,
+  abierto, historia, miembros, ocupados, epicas, guardando, onGuardar, onBorrar, onCerrar,
 }: Props) {
   const [datos, setDatos] = useState<DatosHistoria>(VACIA);
 
@@ -219,9 +221,15 @@ export default function HistoriaForm({
                     setDatos((d) => ({ ...d, responsableId: e.target.value || null }))}
                 >
                   <option value="">Sin asignar</option>
-                  {miembros.map((m) => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
-                  ))}
+                  {miembros.map((m) => {
+                    const suya = ocupados?.get(m.id);
+                    const ocupado = !!suya && suya.id !== historia?.id;
+                    return (
+                      <option key={m.id} value={m.id} disabled={ocupado}>
+                        {m.name}{ocupado ? ' · ya lleva una' : ''}
+                      </option>
+                    );
+                  })}
                 </select>
               )}
             </div>

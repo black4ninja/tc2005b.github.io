@@ -16,6 +16,12 @@ interface Props {
   onAbrir?: (historia: Historia) => void;
   /** Asignar sin abrir el detalle: el gesto que más se repite. */
   onAsignar?: (historiaId: string, alumnoId: string | null) => void;
+  /**
+   * Quién lleva ya una historia sin terminar, y cuál. Los que salen aquí no se
+   * pueden elegir: una persona, una historia. Se enseña en vez de esconderse,
+   * para que el equipo vea con qué está cada quien.
+   */
+  ocupados?: Map<string, Historia>;
   /** Arranca el arrastre (dedo, ratón o lápiz). Ver `useArrastre`. */
   onPointerDown?: (e: PointerEvent<HTMLElement>) => void;
   /** La está arrastrando: se apaga y el fantasma es el que sigue al dedo. */
@@ -43,7 +49,7 @@ interface Props {
  * fondo del aula cuando se proyectan nueve tableros.
  */
 export default function PostItHistoria({
-  historia, escala = 'full', epica, miembros, onAbrir, onAsignar,
+  historia, escala = 'full', epica, miembros, ocupados, onAbrir, onAsignar,
   onPointerDown, atenuada, fantasma, bloqueadaPor,
 }: Props) {
   const completo = escala === 'full';
@@ -172,17 +178,26 @@ export default function PostItHistoria({
                 <span className={styles.avatarVacio} />
                 Sin asignar
               </button>
-              {miembros!.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  className={`${styles.menuItem} ${quien?.id === m.id ? styles.menuItemActivo : ''}`}
-                  onClick={() => asignar(m.id)}
-                >
-                  <span className={styles.avatar}>{iniciales(m.name)}</span>
-                  {m.name}
-                </button>
-              ))}
+              {miembros!.map((m) => {
+                // La suya propia no cuenta: reasignarle la que ya lleva no es
+                // darle una segunda.
+                const suya = ocupados?.get(m.id);
+                const ocupado = !!suya && suya.id !== historia.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={`${styles.menuItem} ${quien?.id === m.id ? styles.menuItemActivo : ''}`}
+                    disabled={ocupado}
+                    title={ocupado ? `Ya lleva «${suya!.porQue || suya!.que}»` : undefined}
+                    onClick={() => asignar(m.id)}
+                  >
+                    <span className={styles.avatar}>{iniciales(m.name)}</span>
+                    {m.name}
+                    {ocupado && <span className={styles.menuOcupado}>ocupado</span>}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

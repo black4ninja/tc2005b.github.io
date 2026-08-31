@@ -3,7 +3,7 @@ import PostItHistoria from '../PostItHistoria/PostItHistoria';
 import { useArrastre } from '../../../../hooks/useArrastre';
 import {
   COLUMNAS, COLUMNAS_SPRINT, POLITICA_POR_DEFECTO, agruparPorColumna, bloqueoAjeno,
-  permiteMover, sumaPuntos,
+  historiasVivasPorPersona, permiteMover, sumaPuntos,
   type Bloqueo, type Columna, type Escala, type EquipoTablero, type Historia,
   type PoliticaEtapa, type Visibilidad,
 } from '../../../../utils/scrum';
@@ -67,6 +67,12 @@ export default function TableroScrum({
   // Con `?? []` a propósito: un equipo sin épicas es un caso normal, y que a
   // esta lista le faltara el campo tumbaba la pestaña entera en vez de pintar
   // un tablero sin colores de épica.
+  // Quién lleva ya una historia sin terminar: se calcula una vez para todo el
+  // tablero, no una por tarjeta.
+  const ocupados = useMemo(
+    () => historiasVivasPorPersona(equipo.historias ?? []),
+    [equipo.historias],
+  );
   const epicas = useMemo(
     () => new Map((equipo.epicas ?? []).map((e) => [e.id, e])),
     [equipo.epicas],
@@ -168,6 +174,7 @@ export default function TableroScrum({
               escala={escala}
               epica={h.epica ? epicas.get(h.epica) ?? null : null}
               miembros={equipo.miembros}
+              ocupados={ocupados}
               bloqueadaPor={ajeno?.nombre}
               onAbrir={editable && onAbrirHistoria ? onAbrirHistoria : undefined}
               onAsignar={seTocan && !ajeno ? onAsignar : undefined}

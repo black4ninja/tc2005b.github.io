@@ -11,7 +11,8 @@ import ReglasScrumModal from '../../organisms/ReglasScrumModal/ReglasScrumModal'
 import ResumenEquipo, { type DatosResumen } from './ResumenEquipo';
 import { avisar, pedirTexto } from '../../../../utils/dialogos';
 import {
-  POLITICA_SIN_ETAPA, bloqueoAjeno, cuentaRegresiva, historiasDeOtraEpica, iniciales,
+  POLITICA_SIN_ETAPA, bloqueoAjeno, cuentaRegresiva, historiasDeOtraEpica,
+  historiasVivasPorPersona, iniciales,
   necesitaResponsable,
   sumaPuntos,
   type Bloqueo, type Columna, type ColumnaRetro, type Dinamica, type Epica, type EquipoTablero,
@@ -595,6 +596,7 @@ export default function ScrumTableroPage() {
         abierto={formAbierto}
         historia={enEdicion}
         miembros={equipo.miembros}
+        ocupados={historiasVivasPorPersona(equipo.historias)}
         epicas={equipo.epicas}
         guardando={guardando}
         onGuardar={guardarHistoria}

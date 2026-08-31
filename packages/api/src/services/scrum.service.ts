@@ -404,6 +404,30 @@ export async function construirEstadoDinamica(
   };
 }
 
+
+/**
+ * ¿Tiene esta persona otra historia viva a su cargo?
+ *
+ * «Viva» es todo lo que no está en `done`: si sigue por terminar, sigue siendo
+ * su trabajo. Una persona lleva UNA historia a la vez —lo dice la teoría y es lo
+ * que hace que el reparto sea una decisión y no un adorno—, y sin esto el equipo
+ * se lo repartía todo el primer día y luego nadie sabía de qué respondía.
+ *
+ * `exceptoId` es la historia que se está tocando: reasignarle a alguien la que
+ * ya lleva no es darle una segunda.
+ */
+export function otraHistoriaViva<T extends {
+  id?: string;
+  getResponsable(): { id?: string } | null | undefined;
+  getColumna(): Columna;
+  getArchivada(): boolean;
+}>(historias: T[], responsableId: string, exceptoId?: string): T | null {
+  return historias.find((h) => h.id !== exceptoId
+    && !h.getArchivada()
+    && h.getColumna() !== 'done'
+    && h.getResponsable()?.id === responsableId) ?? null;
+}
+
 /**
  * Cuántas historias archivadas tiene cada equipo. Solo el número: la columna
  * «Archived» va siempre plegada y no enseña las tarjetas, así que traérselas
