@@ -11,7 +11,7 @@ import ReglasScrumModal from '../../organisms/ReglasScrumModal/ReglasScrumModal'
 import ResumenEquipo, { type DatosResumen } from './ResumenEquipo';
 import { avisar, pedirTexto } from '../../../../utils/dialogos';
 import {
-  POLITICA_POR_DEFECTO, bloqueoAjeno, cuentaRegresiva, historiasDeOtraEpica, iniciales,
+  POLITICA_SIN_ETAPA, bloqueoAjeno, cuentaRegresiva, historiasDeOtraEpica, iniciales,
   sumaPuntos,
   type Bloqueo, type Columna, type ColumnaRetro, type Dinamica, type Epica, type EquipoTablero,
   type Etapa, type Historia, type Sprint,
@@ -195,7 +195,9 @@ export default function ScrumTableroPage() {
     bloqueoPrevio.current = bloqueo;
   }, [equipo?.bloqueoPendiente]);
 
-  const politica = etapa?.politica ?? POLITICA_POR_DEFECTO;
+  // Sin etapa abierta el tablero se mira y no se toca; el servidor rechaza
+  // igual lo que se intente, esto es para no enseñar mandos muertos.
+  const politica = etapa?.politica ?? POLITICA_SIN_ETAPA;
   const reloj = useMemo(
     () => cuentaRegresiva(dinamica?.etapaIniciadaEn ?? null, politica.duracionSegundos, ahora),
     [dinamica?.etapaIniciadaEn, politica.duracionSegundos, ahora],
@@ -407,7 +409,13 @@ export default function ScrumTableroPage() {
               )}
             </div>
           ) : (
-            <div className={styles.bandaVacia}>El profesor todavía no ha señalado ninguna etapa.</div>
+            /* Sin etapa el tablero está en pausa, no roto: se dice qué se puede
+               hacer —mirar— y de quién depende que se abra. */
+            <div className={styles.bandaVacia}>
+              <strong>La actividad no ha empezado.</strong>
+              {' '}El profesor todavía no ha abierto ninguna etapa: por ahora el tablero se mira,
+              no se toca.
+            </div>
           )}
 
           <div className={styles.barraReglas}>

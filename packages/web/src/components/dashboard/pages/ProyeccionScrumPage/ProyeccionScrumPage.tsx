@@ -4,7 +4,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import TableroScrum from '../../organisms/TableroScrum/TableroScrum';
 import Burndown from '../../organisms/Burndown/Burndown';
 import {
-  POLITICA_POR_DEFECTO, rejillaProyeccion, sumaPuntos,
+  POLITICA_SIN_ETAPA, rejillaProyeccion, sumaPuntos,
   type Dinamica, type EquipoTablero, type Etapa, type Sprint,
 } from '../../../../utils/scrum';
 import styles from './ProyeccionScrumPage.module.css';
@@ -93,7 +93,9 @@ export default function ProyeccionScrumPage() {
     : equipos;
 
   const { cols, filas, escala } = rejillaProyeccion(visibles.length);
-  const politica = etapa?.politica ?? POLITICA_POR_DEFECTO;
+  // Sin etapa abierta el tablero se mira y no se toca; el servidor rechaza
+  // igual lo que se intente, esto es para no enseñar mandos muertos.
+  const politica = etapa?.politica ?? POLITICA_SIN_ETAPA;
 
   return (
     <div className={styles.pantalla}>

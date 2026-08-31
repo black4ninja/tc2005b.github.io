@@ -3,7 +3,8 @@ import { repartirEnEquipos } from '../src/controllers/scrum.controller.js';
 import { elegirDevueltas } from '../src/services/scrum-cierre.service.js';
 import {
   esColumna, esPrioridad, esPuntos, estaEstimada, permiteMover,
-  COLUMNAS, COLUMNAS_DEL_SPRINT, MAX_EQUIPOS, PUNTOS_DEMASIADO, PUNTOS_DESCONOCIDO,
+  COLUMNAS, COLUMNAS_DEL_SPRINT, MAX_EQUIPOS, POLITICA_POR_DEFECTO, POLITICA_SIN_ETAPA,
+  PUNTOS_DEMASIADO, PUNTOS_DESCONOCIDO,
 } from '../src/constants/scrum.js';
 
 /**
@@ -72,6 +73,29 @@ describe('permiteMover', () => {
 
   it('en desarrollo se mueve todo', () => {
     expect(permiteMover('todos', 'backlog', 'done')).toBe(true);
+  });
+});
+
+describe('sin etapa abierta', () => {
+  it('no deja tocar ninguna de las dos mitades del tablero', () => {
+    // La actividad la abre el profesor. Un equipo que se adelanta a escribir
+    // historias está trabajando fuera del ciclo, que es lo que esto enseña.
+    expect(POLITICA_SIN_ETAPA.backlog).toBe('lectura');
+    expect(POLITICA_SIN_ETAPA.sprint).toBe('lectura');
+    expect(permiteMover(POLITICA_SIN_ETAPA.movimientos, 'backlog', 'planned')).toBe(false);
+    expect(permiteMover(POLITICA_SIN_ETAPA.movimientos, 'doing', 'done')).toBe(false);
+  });
+
+  it('no es la política de base, que sí deja hacerlo todo', () => {
+    // Son dos cosas distintas y confundirlas abría el tablero entero: la de
+    // base es el punto de partida sobre el que cada etapa recorta.
+    expect(POLITICA_POR_DEFECTO.backlog).toBe('editable');
+    expect(permiteMover(POLITICA_POR_DEFECTO.movimientos, 'backlog', 'done')).toBe(true);
+  });
+
+  it('tampoco saca el burndown ni el tablero de retrospectiva', () => {
+    expect(POLITICA_SIN_ETAPA.burndown).toBe(false);
+    expect(POLITICA_SIN_ETAPA.retro).toBe(false);
   });
 });
 

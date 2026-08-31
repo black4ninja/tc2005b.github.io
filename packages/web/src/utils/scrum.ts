@@ -158,10 +158,25 @@ export interface PoliticaEtapa {
   duracionSegundos: number | null;
 }
 
+/** La base sobre la que se monta la política de cada etapa: lo que no diga, se puede. */
 export const POLITICA_POR_DEFECTO: PoliticaEtapa = {
   backlog: 'editable',
   sprint: 'editable',
   movimientos: 'todos',
+  burndown: false,
+  retro: false,
+  cobraDeuda: false,
+  duracionSegundos: null,
+};
+
+/**
+ * Sin etapa abierta no se toca nada: el tablero se ve y se lee. La misma que
+ * aplica el servidor —aquí solo evita enseñar mandos que van a ser rechazados—.
+ */
+export const POLITICA_SIN_ETAPA: PoliticaEtapa = {
+  backlog: 'lectura',
+  sprint: 'lectura',
+  movimientos: 'ninguno',
   burndown: false,
   retro: false,
   cobraDeuda: false,

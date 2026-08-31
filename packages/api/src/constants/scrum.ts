@@ -96,10 +96,33 @@ export interface PoliticaEtapa {
   duracionSegundos: number | null;
 }
 
+/**
+ * La base sobre la que se monta la política de cada etapa: lo que no diga la
+ * etapa, se puede. Es un punto de partida permisivo A PROPÓSITO, para que una
+ * etapa que solo toca el sprint backlog no tenga que repetir lo demás.
+ */
 export const POLITICA_POR_DEFECTO: PoliticaEtapa = {
   backlog: 'editable',
   sprint: 'editable',
   movimientos: 'todos',
+  burndown: false,
+  retro: false,
+  cobraDeuda: false,
+  duracionSegundos: null,
+};
+
+/**
+ * Lo que rige cuando el profesor NO ha abierto ninguna etapa: nada.
+ *
+ * El tablero se ve entero y no se toca. La actividad la marca el profesor —cada
+ * etapa se abre cuando toca y con lo que toca—, así que mientras no haya
+ * ninguna, un equipo que se adelanta a escribir historias está trabajando fuera
+ * del ciclo, que es justo lo que el módulo enseña a no hacer.
+ */
+export const POLITICA_SIN_ETAPA: PoliticaEtapa = {
+  backlog: 'lectura',
+  sprint: 'lectura',
+  movimientos: 'ninguno',
   burndown: false,
   retro: false,
   cobraDeuda: false,

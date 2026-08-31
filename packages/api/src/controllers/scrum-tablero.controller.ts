@@ -25,7 +25,8 @@ import { SprintScrum } from '../models/SprintScrum.js';
 import {
   esColumna, esColumnaRetro, esPrioridad, esPuntos, estaEstimada, permiteMover,
   COLUMNAS_DEL_SPRINT, ESTADOS_COMPROMISO, LARGO_CAMPO, LARGO_OBJETIVO,
-  LARGO_TARJETA_RETRO, POLITICA_POR_DEFECTO, PRIORIDAD_POR_DEFECTO, PUNTOS_VALIDOS,
+  LARGO_TARJETA_RETRO, POLITICA_POR_DEFECTO, POLITICA_SIN_ETAPA, PRIORIDAD_POR_DEFECTO,
+  PUNTOS_VALIDOS,
   COLORES_EPICA, LARGO_NOMBRE,
   type Columna, type ColumnaRetro, type EstadoCompromiso, type PoliticaEtapa,
 } from '../constants/scrum.js';
@@ -68,6 +69,8 @@ interface ContextoAlumno {
   sprintId: string | null;
   equipo: EquipoScrum | null;
   cerrada: boolean;
+  /** El profesor no ha abierto ninguna etapa: se mira, no se toca. */
+  sinEtapa: boolean;
   politica: PoliticaEtapa;
   estado: EstadoDinamica | null;
 }
@@ -129,7 +132,7 @@ async function contextoAlumno(
   if (!dinamica) {
     return {
       grupoId, alumno, dinamicaId: null, sprintId: null, equipo: null,
-      cerrada: false, politica: POLITICA_POR_DEFECTO, estado: null,
+      cerrada: false, sinEtapa: true, politica: POLITICA_SIN_ETAPA, estado: null,
     };
   }
   if (!dinamica.getFinalizada()) await asegurarSprint(dinamica);
@@ -148,10 +151,12 @@ async function contextoAlumno(
     equipo = await equipoDelAlumno(dinamica.id!, alumno.id);
   }
   const etapa = dinamica.getEtapaActual();
-  const politica: PoliticaEtapa = {
-    ...POLITICA_POR_DEFECTO,
-    ...((etapa?.get('politica') as Partial<PoliticaEtapa> | undefined) ?? {}),
-  };
+  // Sin etapa abierta no rige la política permisiva de siempre, rige la que no
+  // deja hacer nada: la actividad la abre el profesor, y un equipo que se
+  // adelanta trabaja fuera del ciclo.
+  const politica: PoliticaEtapa = etapa
+    ? { ...POLITICA_POR_DEFECTO, ...((etapa.get('politica') as Partial<PoliticaEtapa> | undefined) ?? {}) }
+    : POLITICA_SIN_ETAPA;
   return {
     grupoId,
     alumno,
@@ -159,6 +164,7 @@ async function contextoAlumno(
     sprintId: dinamica.getSprintActual()?.id ?? null,
     equipo,
     cerrada: dinamica.getCerrada(),
+    sinEtapa: !etapa,
     politica,
     estado,
   };
@@ -182,7 +188,7 @@ function sobreAlumno(ctx: ContextoAlumno) {
     // y la pantalla no lo pinta.
     equipo: recortarAEquipo(ctx.estado, ctx.equipo?.id ?? null),
     // Con la dinámica cerrada el tablero se lee pero no se toca.
-    editable: !!ctx.equipo && !ctx.cerrada,
+    editable: !!ctx.equipo && !ctx.cerrada && !ctx.sinEtapa,
     puntosValidos: PUNTOS_VALIDOS,
   };
 }
@@ -244,7 +250,7 @@ export async function streamMiTablero(req: Request, res: Response): Promise<void
       sprint: c.sprint,
       bloqueos: c.bloqueos,
       equipo: recortarAEquipo(c, equipoId),
-      editable: !!equipoId && c.dinamica?.cerrada !== true,
+      editable: !!equipoId && c.dinamica?.cerrada !== true && c.etapa !== null,
       puntosValidos: PUNTOS_VALIDOS,
     })}\n\n`);
   };
@@ -326,6 +332,13 @@ async function equipoEditable(
   }
   if (ctx.cerrada) {
     error(res, 409, 'Esta dinámica está cerrada');
+    return null;
+  }
+  // Antes que cualquier política de zona: sin etapa abierta no se escribe nada,
+  // ni el tablero, ni las épicas, ni los roles. La comprobación va aquí y no en
+  // cada endpoint para que no se quede fuera ninguno.
+  if (ctx.sinEtapa) {
+    error(res, 409, 'El profesor todavía no ha abierto ninguna etapa');
     return null;
   }
 
