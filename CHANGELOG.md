@@ -79,6 +79,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 - **Cerrar el sprint** pedía las historias y el marcador dentro del bucle de
   equipos: con nueve, dieciocho viajes encadenados en el botón que se pulsa con
   la clase esperando el marcador.
+- **Marcar un compromiso previo parecía no hacer nada.** Marcarlo lo cierra y el
+  servidor lo saca de la lista, pero la pantalla solo lo sustituía en su sitio, y
+  la tarjeta se pinta igual con estado o sin él: quedaba idéntica hasta que un
+  par de segundos después bajaba el tablero entero. Y el loader que sí había se
+  iba al 45 % de opacidad, porque mientras uno viaja se apagan los dos botones.
 
 ### Performance
 - **El tablero del alumno pasa de ~3,5 s a ~1,2 s.** La mayor parte se iba antes
