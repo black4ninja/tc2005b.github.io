@@ -224,3 +224,30 @@
 }
 
 .entrada:focus { outline: none; }
+
+/* Lo que se ve entre el Enter y la tarjeta. El recuadro se queda con su texto,
+   apagado, en vez de vaciarse y dejar la duda de si se guardó. */
+.guardando {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.girando {
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--sidebar-active-color);
+  border-radius: 50%;
+  flex: none;
+  animation: girarRetro 700ms linear infinite;
+}
+
+@keyframes girarRetro { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .girando { animation: none; }
+}

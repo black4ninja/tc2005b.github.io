@@ -16,7 +16,7 @@ import {
   necesitaResponsable,
   sumaPuntos,
   type Bloqueo, type Columna, type ColumnaRetro, type Dinamica, type Epica, type EquipoTablero,
-  type Etapa, type Historia, type Sprint,
+  type Etapa, type Historia, type Sprint, type TarjetaRetro,
 } from '../../../../utils/scrum';
 import styles from './ScrumTableroPage.module.css';
 
@@ -318,6 +318,25 @@ export default function ScrumTableroPage() {
     });
   }, []);
 
+  /** La tarjeta de retro que devuelve el servidor, en su columna. */
+  const fusionarRetro = useCallback((t: TarjetaRetro) => {
+    setEquipo((eq) => {
+      if (!eq) return eq;
+      const estaba = eq.retro.some((x) => x.id === t.id);
+      return {
+        ...eq,
+        retro: estaba ? eq.retro.map((x) => (x.id === t.id ? t : x)) : [...eq.retro, t],
+      };
+    });
+  }, []);
+
+  /** Los compromisos vienen del sprint anterior y viven en su propia lista. */
+  const fusionarCompromiso = useCallback((t: TarjetaRetro) => {
+    setEquipo((eq) => (eq
+      ? { ...eq, compromisos: eq.compromisos.map((x) => (x.id === t.id ? t : x)) }
+      : eq));
+  }, []);
+
   async function guardarHistoria(datos: DatosHistoria) {
     setGuardando(true);
     const ok = enEdicion
@@ -531,13 +550,26 @@ export default function ScrumTableroPage() {
                   equipo={equipo}
                   yoId={user?.id ?? ''}
                   editable={editable}
+                  // Todas fusionan lo que devuelve el servidor: en la retro se
+                  // escriben tarjetas a ráfagas y esperar a que baje el tablero
+                  // entero por el stream era lo que la hacía sentir muerta.
                   onCrear={(columna: ColumnaRetro, texto, responsableId) =>
-                    void mandar(`${base}/retro`, 'POST', { columna, texto, responsableId })}
+                    mandar(`${base}/retro`, 'POST', { columna, texto, responsableId }, (json) => {
+                      if (json?.tarjeta?.id) fusionarRetro(json.tarjeta);
+                    })}
                   onAsignar={(id, alumnoId) =>
-                    void mandar(`${base}/retro/${id}`, 'PUT', { responsableId: alumnoId })}
-                  onBorrar={(id) => void mandar(`${base}/retro/${id}`, 'DELETE')}
+                    mandar(`${base}/retro/${id}`, 'PUT', { responsableId: alumnoId }, (json) => {
+                      if (json?.tarjeta?.id) fusionarRetro(json.tarjeta);
+                    })}
+                  onBorrar={(id) => mandar(`${base}/retro/${id}`, 'DELETE', undefined, () => {
+                    setEquipo((eq) => (eq
+                      ? { ...eq, retro: eq.retro.filter((t) => t.id !== id) }
+                      : eq));
+                  })}
                   onMarcar={(id, estado) =>
-                    void mandar(`${base}/compromisos/${id}`, 'PUT', { estado })}
+                    mandar(`${base}/compromisos/${id}`, 'PUT', { estado }, (json) => {
+                      if (json?.tarjeta?.id) fusionarCompromiso(json.tarjeta);
+                    })}
                 />
               ) : (
                 <TableroScrum

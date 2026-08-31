@@ -1015,7 +1015,10 @@ export async function crearTarjetaRetro(req: Request, res: Response): Promise<vo
         error(res, 409, fallo);
         return;
       }
-      responsable = AppUser.createWithoutData(String(req.body.responsableId)) as AppUser;
+      // El miembro tal como viene en el equipo: la tarjeta guardada se devuelve
+      // en la respuesta y la pantalla la pinta, así que un puntero sin datos
+      // dejaba el compromiso a nombre de nadie hasta el siguiente refresco.
+      responsable = equipo.getMiembros().find((m) => m.id === String(req.body.responsableId)) ?? null;
     }
 
     const tarjeta = new TarjetaRetro().initDefaults();
@@ -1026,8 +1029,8 @@ export async function crearTarjetaRetro(req: Request, res: Response): Promise<vo
     tarjeta.setResponsable(responsable);
     await tarjeta.save(null, { useMasterKey: true });
 
-    void difundirTablero(ctx.dinamicaId!);
     res.status(201).json({ status: 'ok', tarjeta: tarjeta.toSafeJSON() });
+    void difundirTablero(ctx.dinamicaId!);
   } catch {
     error(res, 500, 'Error al crear la tarjeta');
   }
@@ -1063,10 +1066,12 @@ async function validarResponsableCompromiso(
 export async function actualizarTarjetaRetro(req: Request, res: Response): Promise<void> {
   const { tarjetaId } = req.params;
   try {
-    const ctx = await equipoEditable(req, res, 'retro');
+    const [ctx, tarjeta] = await Promise.all([
+      equipoEditable(req, res, 'retro'),
+      cargarTarjeta(tarjetaId),
+    ]);
     if (!ctx) return;
-    const tarjeta = await cargarTarjetaRetro(tarjetaId, ctx.equipo!.id!);
-    if (!tarjeta) {
+    if (!tarjeta || tarjeta.getEquipoId() !== ctx.equipo!.id!) {
       error(res, 404, 'Esa tarjeta no es de tu equipo');
       return;
     }
@@ -1094,13 +1099,15 @@ export async function actualizarTarjetaRetro(req: Request, res: Response): Promi
           error(res, 409, fallo);
           return;
         }
-        tarjeta.setResponsable(AppUser.createWithoutData(String(req.body.responsableId)) as AppUser);
+        tarjeta.setResponsable(
+          ctx.equipo!.getMiembros().find((m) => m.id === String(req.body.responsableId)) ?? null,
+        );
       }
     }
 
     await tarjeta.save(null, { useMasterKey: true });
-    void difundirTablero(ctx.dinamicaId!);
     res.json({ status: 'ok', tarjeta: tarjeta.toSafeJSON() });
+    void difundirTablero(ctx.dinamicaId!);
   } catch {
     error(res, 500, 'Error al actualizar la tarjeta');
   }
@@ -1110,17 +1117,19 @@ export async function actualizarTarjetaRetro(req: Request, res: Response): Promi
 export async function borrarTarjetaRetro(req: Request, res: Response): Promise<void> {
   const { tarjetaId } = req.params;
   try {
-    const ctx = await equipoEditable(req, res, 'retro');
+    const [ctx, tarjeta] = await Promise.all([
+      equipoEditable(req, res, 'retro'),
+      cargarTarjeta(tarjetaId),
+    ]);
     if (!ctx) return;
-    const tarjeta = await cargarTarjetaRetro(tarjetaId, ctx.equipo!.id!);
-    if (!tarjeta) {
+    if (!tarjeta || tarjeta.getEquipoId() !== ctx.equipo!.id!) {
       error(res, 404, 'Esa tarjeta no es de tu equipo');
       return;
     }
     tarjeta.softDelete();
     await tarjeta.save(null, { useMasterKey: true });
-    void difundirTablero(ctx.dinamicaId!);
     res.json({ status: 'ok' });
+    void difundirTablero(ctx.dinamicaId!);
   } catch {
     error(res, 500, 'Error al borrar la tarjeta');
   }
@@ -1136,10 +1145,12 @@ export async function borrarTarjetaRetro(req: Request, res: Response): Promise<v
 export async function marcarCompromiso(req: Request, res: Response): Promise<void> {
   const { tarjetaId } = req.params;
   try {
-    const ctx = await equipoEditable(req, res, 'retro');
+    const [ctx, tarjeta] = await Promise.all([
+      equipoEditable(req, res, 'retro'),
+      cargarTarjeta(tarjetaId),
+    ]);
     if (!ctx) return;
-    const tarjeta = await cargarTarjetaRetro(tarjetaId, ctx.equipo!.id!);
-    if (!tarjeta || tarjeta.getColumna() !== 'mejorar') {
+    if (!tarjeta || tarjeta.getEquipoId() !== ctx.equipo!.id! || tarjeta.getColumna() !== 'mejorar') {
       error(res, 404, 'Ese compromiso no es de tu equipo');
       return;
     }
@@ -1156,23 +1167,26 @@ export async function marcarCompromiso(req: Request, res: Response): Promise<voi
     }
     tarjeta.setEstado(estado as EstadoCompromiso);
     await tarjeta.save(null, { useMasterKey: true });
-    void difundirTablero(ctx.dinamicaId!);
     res.json({ status: 'ok', tarjeta: tarjeta.toSafeJSON() });
+    void difundirTablero(ctx.dinamicaId!);
   } catch {
     error(res, 500, 'Error al marcar el compromiso');
   }
 }
 
-async function cargarTarjetaRetro(
-  tarjetaId: string,
-  equipoId: string,
-): Promise<TarjetaRetro | null> {
+/**
+ * La tarjeta por id, sin mirar de quién es.
+ *
+ * Separada de la comprobación para poder pedirla A LA VEZ que el contexto del
+ * alumno: son dos viajes independientes y en la retrospectiva se encadenan en
+ * cada tarjeta que se escribe, se asigna o se marca.
+ */
+async function cargarTarjeta(tarjetaId: string): Promise<TarjetaRetro | null> {
   const q = new Parse.Query<TarjetaRetro>('TarjetaRetro');
   q.equalTo('exists' as any, true as any);
   q.include('responsable' as any);
   try {
-    const tarjeta = await q.get(tarjetaId, { useMasterKey: true });
-    return tarjeta.getEquipoId() === equipoId ? tarjeta : null;
+    return await q.get(tarjetaId, { useMasterKey: true });
   } catch {
     return null;
   }

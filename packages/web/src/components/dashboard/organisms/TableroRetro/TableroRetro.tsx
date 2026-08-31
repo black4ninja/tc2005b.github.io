@@ -10,10 +10,11 @@ interface Props {
   /** Quién está mirando: solo el responsable marca su propio compromiso. */
   yoId: string;
   editable?: boolean;
-  onCrear: (columna: ColumnaRetro, texto: string, responsableId: string | null) => void;
+  /** Devuelven la promesa del viaje para poder esperarla y decirlo en pantalla. */
+  onCrear: (columna: ColumnaRetro, texto: string, responsableId: string | null) => Promise<unknown>;
   onAsignar: (tarjetaId: string, alumnoId: string | null) => void;
   onBorrar: (tarjetaId: string) => void;
-  onMarcar: (tarjetaId: string, estado: 'cumplido' | 'fallado') => void;
+  onMarcar: (tarjetaId: string, estado: 'cumplido' | 'fallado') => Promise<unknown>;
 }
 
 const COLUMNAS: { key: ColumnaRetro; titulo: string; pista: string }[] = [
@@ -51,16 +52,42 @@ export default function TableroRetro({
 }: Props) {
   const [redactando, setRedactando] = useState<ColumnaRetro | null>(null);
   const [texto, setTexto] = useState('');
+  // La retro se escribe a ráfagas, y hasta ahora al pulsar Enter el recuadro se
+  // vaciaba y se cerraba al instante: la tarjeta no aparecía hasta un par de
+  // segundos después y no se sabía si se había ido o se había perdido. Ahora se
+  // queda ahí, apagado, hasta que el servidor confirma.
+  const [guardando, setGuardando] = useState(false);
+  // La tarjeta que se está marcando. Cerrar un compromiso también es un viaje, y
+  // dos personas dándole al mismo botón porque «no pasó nada» es lo que había.
+  const [marcando, setMarcando] = useState<string | null>(null);
 
-  function guardar(columna: ColumnaRetro) {
+  async function marcar(tarjetaId: string, estado: 'cumplido' | 'fallado') {
+    if (marcando) return;
+    setMarcando(tarjetaId);
+    try {
+      await onMarcar(tarjetaId, estado);
+    } finally {
+      setMarcando(null);
+    }
+  }
+
+  async function guardar(columna: ColumnaRetro) {
+    if (guardando) return;
     const limpio = texto.trim();
     if (!limpio) {
       setRedactando(null);
       return;
     }
-    onCrear(columna, limpio, null);
-    setTexto('');
-    setRedactando(null);
+    setGuardando(true);
+    try {
+      await onCrear(columna, limpio, null);
+      // Si falla, el texto se queda escrito: reescribirlo de memoria es lo
+      // último que hace falta con el cronómetro de la retro corriendo.
+      setTexto('');
+      setRedactando(null);
+    } finally {
+      setGuardando(false);
+    }
   }
 
   async function borrar(t: TarjetaRetro) {
@@ -137,21 +164,27 @@ export default function TableroRetro({
           <button
             type="button"
             className={styles.si}
-            disabled={!editable || !mio}
-            onClick={() => onMarcar(t.id, 'cumplido')}
+            disabled={!editable || !mio || marcando !== null}
+            aria-busy={marcando === t.id}
+            onClick={() => void marcar(t.id, 'cumplido')}
             title="Sí lo cumplimos: el compromiso se cierra"
           >
-            <span className="material-icons">check</span>
+            {marcando === t.id
+              ? <span className={styles.girando} aria-hidden />
+              : <span className="material-icons">check</span>}
             Sí
           </button>
           <button
             type="button"
             className={styles.no}
-            disabled={!editable || !mio}
-            onClick={() => onMarcar(t.id, 'fallado')}
+            disabled={!editable || !mio || marcando !== null}
+            aria-busy={marcando === t.id}
+            onClick={() => void marcar(t.id, 'fallado')}
             title="No lo cumplimos: se cierra igual, pero queda registrado"
           >
-            <span className="material-icons">close</span>
+            {marcando === t.id
+              ? <span className={styles.girando} aria-hidden />
+              : <span className="material-icons">close</span>}
             No
           </button>
         </div>
@@ -202,17 +235,24 @@ export default function TableroRetro({
                     maxLength={200}
                     autoFocus
                     value={texto}
+                    disabled={guardando}
                     placeholder="Escribe y pulsa Enter"
                     onChange={(e) => setTexto(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
-                        guardar(key);
+                        void guardar(key);
                       }
-                      if (e.key === 'Escape') { setTexto(''); setRedactando(null); }
+                      if (e.key === 'Escape' && !guardando) { setTexto(''); setRedactando(null); }
                     }}
-                    onBlur={() => guardar(key)}
+                    onBlur={() => void guardar(key)}
                   />
+                  {guardando && (
+                    <span className={styles.guardando}>
+                      <span className={styles.girando} aria-hidden />
+                      Guardando…
+                    </span>
+                  )}
                 </div>
               ) : (
                 <button
