@@ -113,7 +113,7 @@ export function elegirDevueltas<T extends { puntos: number }>(
 }
 
 export interface CobroDeuda {
-  devueltas: { id: string; que: string; puntos: number }[];
+  devueltas: { id: string; porQue: string; puntos: number }[];
   puntos: number;
   /** Se llevó por delante TODO lo que habían planeado. */
   arrasó: boolean;
@@ -165,7 +165,7 @@ export async function cobrarDeuda(
   return {
     devueltas: elegidas.map((e) => ({
       id: e.id,
-      que: e.historia.getQue(),
+      porQue: e.historia.getPorQue(),
       puntos: e.puntos,
     })),
     puntos,

@@ -120,7 +120,11 @@ export default function PostItHistoria({
         </span>
       </header>
 
-      <div className={styles.que}>{historia.que}</div>
+      {/* El titular es el «por qué»: el valor que aporta. Las historias
+          escritas antes de que fuera el campo principal pueden no tenerlo, y
+          una tarjeta en blanco no se puede ni arrastrar con criterio: en ese
+          caso se enseña el «qué», que es lo que entonces se pedía. */}
+      <div className={styles.titulo}>{historia.porQue || historia.que}</div>
 
       {/* Una persona o ninguna, nunca varias: en Scrum la historia tiene un
           dueño. El hueco se ve a propósito — es la señal de que falta repartir —

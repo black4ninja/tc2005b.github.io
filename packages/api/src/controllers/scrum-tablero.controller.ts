@@ -272,9 +272,11 @@ function leerCampos(body: any): { porQue: string; que: string; como: string } | 
   const porQue = campo(body?.porQue);
   const que = campo(body?.que);
   const como = campo(body?.como);
-  // El «qué» es el único obligatorio: es lo que se lee en la tarjeta al
-  // arrastrarla. Los otros dos pueden completarse en el grooming.
-  if (que === '') return 'La historia necesita al menos el «qué»';
+  // El «por qué» es el único obligatorio: es el VALOR que aporta la historia,
+  // lo que decide si merece la pena hacerla y lo que se lee en la tarjeta al
+  // arrastrarla. El «qué» y el «cómo» son cómo se piensa resolver y pueden
+  // completarse en el grooming; una historia sin valor no es una historia.
+  if (porQue === '') return 'La historia necesita al menos el «por qué»: el valor que aporta';
   for (const [nombre, valor] of [['por qué', porQue], ['qué', que], ['cómo', como]] as const) {
     if (valor.length > LARGO_CAMPO) {
       return `El «${nombre}» no puede pasar de ${LARGO_CAMPO} caracteres`;
@@ -1113,7 +1115,7 @@ export async function getResumenEquipo(req: Request, res: Response): Promise<voi
       })),
       sinEmpezar: todas
         .filter((h) => !h.getArchivada() && h.getColumna() === 'backlog')
-        .map((h) => ({ que: h.getQue(), puntos: h.getPuntos(), prioridad: h.getPrioridad() })),
+        .map((h) => ({ porQue: h.getPorQue(), puntos: h.getPuntos(), prioridad: h.getPrioridad() })),
       porIntegrante: [...porIntegrante.entries()].map(([id, v]) => ({ id, ...v })),
       sinResponsable,
       compromisos: compromisos.map((t) => t.toSafeJSON()),

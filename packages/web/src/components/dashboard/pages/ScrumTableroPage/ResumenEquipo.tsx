@@ -5,7 +5,7 @@ import styles from './ResumenEquipo.module.css';
 export interface DatosResumen {
   equipo: { nombre: string; miembros: Persona[] } | null;
   historico: Marcador[];
-  sinEmpezar: { que: string; puntos: number; prioridad: string }[];
+  sinEmpezar: { porQue: string; puntos: number; prioridad: string }[];
   porIntegrante: { id: string; name: string; puntos: number }[];
   sinResponsable: number;
   compromisos: TarjetaRetro[];
@@ -163,9 +163,9 @@ export default function ResumenEquipo({ datos }: { datos: DatosResumen }) {
               <>
                 <ul className={styles.pendientes}>
                   {sinEmpezar.slice(0, 6).map((h, i) => (
-                    <li key={`${i}-${h.que}`}>
+                    <li key={`${i}-${h.porQue}`}>
                       <span className={styles.punto} />
-                      {h.que}
+                      {h.porQue}
                     </li>
                   ))}
                 </ul>

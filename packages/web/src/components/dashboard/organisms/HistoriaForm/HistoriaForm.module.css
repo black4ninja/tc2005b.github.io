@@ -210,3 +210,12 @@
 @media (max-width: 720px) {
   .previa { width: 100%; }
 }
+
+/* El «por qué» es el único campo que no se puede dejar en blanco, y la etiqueta
+   lo dice: es más barato que descubrirlo con el botón de guardar apagado. */
+.obligatorio {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}

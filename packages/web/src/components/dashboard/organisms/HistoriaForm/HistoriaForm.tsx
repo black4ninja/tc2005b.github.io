@@ -83,14 +83,14 @@ export default function HistoriaForm({
   }, [abierto, historia, epicas]);
 
   const editando = !!historia;
-  const puedeGuardar = datos.que.trim() !== '' && !guardando;
+  const puedeGuardar = datos.porQue.trim() !== '' && !guardando;
 
   const epicaPrevia = epicas.find((e) => e.id === datos.epicaId) ?? null;
 
   const previa: Historia = {
     id: historia?.id ?? 'previa',
-    porQue: datos.porQue,
-    que: datos.que || 'Qué tiene que poder hacer',
+    porQue: datos.porQue || 'Qué valor aporta',
+    que: datos.que,
     como: datos.como,
     puntos: datos.puntos,
     prioridad: datos.prioridad,
@@ -107,7 +107,7 @@ export default function HistoriaForm({
     if (!historia || !onBorrar) return;
     const ok = await confirmar({
       titulo: '¿Borrar la historia?',
-      texto: historia.que,
+      texto: historia.porQue,
       confirmar: 'Borrar',
       peligro: true,
     });
@@ -130,11 +130,14 @@ export default function HistoriaForm({
             </p>
           )}
 
+          {/* El único obligatorio, y se dice: es el valor que aporta la
+              historia, no un preámbulo del «qué». */}
           <Campo
             etiqueta="¿Por qué?"
             pista="Qué valor aporta"
             valor={datos.porQue}
             onChange={(porQue) => setDatos((d) => ({ ...d, porQue }))}
+            obligatorio
           />
           <Campo
             etiqueta="¿Qué?"
@@ -249,7 +252,7 @@ export default function HistoriaForm({
             type="button"
             className={styles.guardar}
             disabled={!puedeGuardar}
-            onClick={() => onGuardar({ ...datos, que: datos.que.trim() })}
+            onClick={() => onGuardar({ ...datos, porQue: datos.porQue.trim() })}
           >
             {guardando ? 'Guardando…' : editando ? 'Guardar' : 'Guardar historia'}
           </button>
@@ -260,16 +263,20 @@ export default function HistoriaForm({
 }
 
 function Campo({
-  etiqueta, pista, valor, onChange,
+  etiqueta, pista, valor, onChange, obligatorio = false,
 }: {
   etiqueta: string;
   pista: string;
   valor: string;
   onChange: (v: string) => void;
+  obligatorio?: boolean;
 }) {
   return (
     <label className={styles.campo}>
-      <span className={styles.etiqueta}>{etiqueta}</span>
+      <span className={styles.etiqueta}>
+        {etiqueta}
+        {obligatorio && <span className={styles.obligatorio}> · obligatorio</span>}
+      </span>
       <textarea
         className={styles.entrada}
         rows={2}

@@ -130,7 +130,7 @@ export default function EpicasScrumModal({
               <strong>Restricción rota: hay más de una épica en el sprint.</strong>
               <p>
                 {intrusas.length === 1 ? 'Esta historia no es' : 'Estas historias no son'} de la
-                épica que están trabajando: {intrusas.map((h) => `«${h.que}»`).join(', ')}. Solo se
+                épica que están trabajando: {intrusas.map((h) => `«${h.porQue}»`).join(', ')}. Solo se
                 trabaja un entregable a la vez: sáquenla del sprint o cambien la épica.
               </p>
             </div>
