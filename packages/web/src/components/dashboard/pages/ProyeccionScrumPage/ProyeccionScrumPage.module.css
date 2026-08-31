@@ -131,6 +131,46 @@
   white-space: nowrap;
 }
 
+/* El reloj de la etapa. Se lee desde el fondo del aula, así que la cifra manda
+   sobre todo lo demás de la barra. */
+.reloj {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--dash-bg-subtle);
+  white-space: nowrap;
+}
+
+.relojEtiqueta {
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.relojCifra {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Pasado el tiempo sigue contando en negativo en vez de quedarse en cero:
+   cuánto se pasaron es justo el dato de la retrospectiva. */
+.relojAgotado {
+  border-color: var(--estado-aviso-border);
+  background: var(--estado-aviso-bg);
+}
+
+.relojAgotado .relojEtiqueta,
+.relojAgotado .relojCifra { color: var(--estado-aviso-color); }
+
 .rejilla {
   flex: 1;
   min-height: 0;

@@ -1,9 +1,12 @@
+import { useCuentaRegresiva } from '../../../../hooks/useCuentaRegresiva';
 import type { Etapa } from '../../../../utils/scrum';
 import styles from './BarraEtapasScrum.module.css';
 
 interface Props {
   etapas: Etapa[];
   etapaActualId: string | null;
+  /** Cuándo se abrió la etapa en curso, para contar lo que le queda. */
+  iniciadaEn?: string | null;
   /** El id que se está aplicando, o `'ninguna'` al quitar la etapa. */
   aplicando: string | null;
   /** Sin dinámica abierta no hay a qué aplicarla. */
@@ -22,10 +25,18 @@ interface Props {
  * abierta, donde están los demás mandos. Pulsar una etapa reescribe la
  * instrucción de treinta pantallas a la vez, así que el botón dice que está
  * viajando: sin eso el profesor cree que no pulsó y vuelve a pulsar.
+ *
+ * Lleva el mismo reloj que ve el alumno. El tiempo de la etapa es lo que marca
+ * el ritmo de la clase y quien decide cuándo se corta es el profesor: tenerlo
+ * solo en la pantalla de enfrente le obligaba a leerlo del proyector.
  */
 export default function BarraEtapasScrum({
-  etapas, etapaActualId, aplicando, deshabilitada = false, nota, onCambiar, onConfigurar,
+  etapas, etapaActualId, iniciadaEn = null, aplicando, deshabilitada = false,
+  nota, onCambiar, onConfigurar,
 }: Props) {
+  const actual = etapas.find((e) => e.id === etapaActualId) ?? null;
+  const reloj = useCuentaRegresiva(iniciadaEn, actual?.politica.duracionSegundos ?? null);
+
   return (
     <section className={styles.barra}>
       <div className={styles.izquierda}>
@@ -56,6 +67,15 @@ export default function BarraEtapasScrum({
         </div>
       </div>
       <div className={styles.derecha}>
+        {/* Solo mientras la etapa esté viva. Con la dinámica cerrada el contador
+            seguiría corriendo sobre la última que se abrió y enseñaría las horas
+            que han pasado desde la clase, que no es un dato de nada. */}
+        {reloj && !deshabilitada && (
+          <span className={`${styles.reloj} ${reloj.agotado ? styles.relojAgotado : ''}`}>
+            <span className={styles.relojEtiqueta}>{reloj.agotado ? 'De más' : 'Queda'}</span>
+            <span className={styles.relojCifra}>{reloj.texto}</span>
+          </span>
+        )}
         <span className={styles.nota}>{nota}</span>
         {onConfigurar && (
           <button type="button" className={styles.enlace} onClick={onConfigurar}>

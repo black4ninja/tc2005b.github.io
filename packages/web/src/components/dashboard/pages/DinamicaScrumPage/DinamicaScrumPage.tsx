@@ -329,8 +329,17 @@ export default function DinamicaScrumPage() {
     if (!dinamica || aplicandoEtapa) return;
     setAplicandoEtapa(etapaId ?? 'ninguna');
     const previa = dinamica.etapaActual ?? null;
+    const previaIniciadaEn = dinamica.etapaIniciadaEn ?? null;
+    // La hora de arranque va con la etapa: es de donde cuelga el reloj, y sin
+    // ella el contador se quedaba en el de la etapa anterior hasta el siguiente
+    // refresco. El servidor la sella con la suya al recibir la petición; el
+    // desfase es el del viaje.
     setDinamica((d) => (d
-      ? { ...d, etapaActual: etapaId ? etapas.find((e) => e.id === etapaId) ?? null : null }
+      ? {
+        ...d,
+        etapaActual: etapaId ? etapas.find((e) => e.id === etapaId) ?? null : null,
+        etapaIniciadaEn: etapaId ? new Date().toISOString() : null,
+      }
       : d));
     try {
       const r = await fetch(`${base}/etapa`, {
@@ -340,11 +349,11 @@ export default function DinamicaScrumPage() {
       });
       if (!r.ok) {
         const json = await r.json().catch(() => ({}));
-        setDinamica((d) => (d ? { ...d, etapaActual: previa } : d));
+        setDinamica((d) => (d ? { ...d, etapaActual: previa, etapaIniciadaEn: previaIniciadaEn } : d));
         await avisar({ titulo: 'No se pudo', texto: json?.message ?? 'Inténtalo de nuevo', icono: 'error' });
       }
     } catch {
-      setDinamica((d) => (d ? { ...d, etapaActual: previa } : d));
+      setDinamica((d) => (d ? { ...d, etapaActual: previa, etapaIniciadaEn: previaIniciadaEn } : d));
       await avisar({ titulo: 'Sin conexión', texto: 'No se pudo contactar al servidor', icono: 'error' });
     } finally {
       setAplicandoEtapa(null);
@@ -422,6 +431,7 @@ export default function DinamicaScrumPage() {
         <BarraEtapasScrum
           etapas={etapas}
           etapaActualId={dinamica?.etapaActual?.id ?? null}
+          iniciadaEn={dinamica?.etapaIniciadaEn ?? null}
           aplicando={aplicandoEtapa}
           deshabilitada={!dinamica || dinamica.cerrada}
           nota={dinamica?.cerrada

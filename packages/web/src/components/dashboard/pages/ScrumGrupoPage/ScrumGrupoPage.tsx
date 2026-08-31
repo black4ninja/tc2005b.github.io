@@ -145,10 +145,19 @@ export default function ScrumGrupoPage() {
     setAplicando(etapaId ?? 'ninguna');
     // Optimista: la etapa se pulsa delante de la clase y esperar al servidor
     // para repintar el botón hace dudar de si se registró.
+    // La hora de arranque va con la etapa: es de donde cuelga el reloj, y sin
+    // ella el contador se quedaba en el de la etapa anterior hasta el siguiente
+    // refresco. El servidor la sella con la suya al recibir la petición; el
+    // desfase es el del viaje.
+    const iniciadaEn = etapaId ? new Date().toISOString() : null;
     setDinamicas((ds) =>
       ds.map((d) =>
         d.id === vigente.id
-          ? { ...d, etapaActual: etapaId ? etapas.find((e) => e.id === etapaId) ?? null : null }
+          ? {
+            ...d,
+            etapaActual: etapaId ? etapas.find((e) => e.id === etapaId) ?? null : null,
+            etapaIniciadaEn: iniciadaEn,
+          }
           : d,
       ),
     );
@@ -229,6 +238,7 @@ export default function ScrumGrupoPage() {
       <BarraEtapasScrum
         etapas={etapas}
         etapaActualId={vigente?.etapaActual?.id ?? null}
+        iniciadaEn={vigente?.etapaIniciadaEn ?? null}
         aplicando={aplicando}
         deshabilitada={!vigente}
         nota={vigente ? `Se aplica a ${vigente.nombre}` : 'Sin dinámica abierta'}

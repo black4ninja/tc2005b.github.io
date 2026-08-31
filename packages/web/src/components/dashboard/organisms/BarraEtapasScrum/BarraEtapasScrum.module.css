@@ -98,3 +98,42 @@
 @media (prefers-reduced-motion: reduce) {
   .girando { animation: none; }
 }
+
+/* El mismo reloj que ve el alumno, en el tamaño de una barra de mandos: se
+   consulta de reojo mientras se atiende a la clase, no se proyecta. */
+.reloj {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--dash-bg-subtle);
+  white-space: nowrap;
+}
+
+.relojEtiqueta {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.relojCifra {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pasado el tiempo sigue contando en negativo en vez de quedarse en cero:
+   cuánto se pasaron es justo el dato de la retrospectiva. */
+.relojAgotado {
+  border-color: var(--estado-aviso-border);
+  background: var(--estado-aviso-bg);
+}
+
+.relojAgotado .relojEtiqueta,
+.relojAgotado .relojCifra { color: var(--estado-aviso-color); }

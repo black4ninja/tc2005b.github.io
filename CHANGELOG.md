@@ -8,6 +8,17 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **El reloj de la etapa, también donde manda el profesor.** El tiempo de cada
+  etapa lo veían solo los alumnos, en la banda de su tablero. Pero quien decide
+  cuándo se corta es el profesor, y para saber cuánto queda tenía que leerlo del
+  proyector o preguntar. Ahora el mismo contador sale en tres sitios: la
+  pantalla que se proyecta —en grande, junto al nombre de la etapa— y la barra
+  de mandos, que vive tanto en el listado de dinámicas como dentro de la
+  dinámica abierta. Pasado el tiempo sigue contando en negativo, igual que lo ve
+  el alumno: cuánto se pasaron es justo el dato de la retrospectiva. Con la
+  dinámica cerrada no se enseña, porque entonces marcaría las horas que han
+  pasado desde la clase. El reloj pasa a un `useCuentaRegresiva` compartido en
+  vez de repetir el intervalo en cada pantalla.
 - **Las reglas del Scrum dejan de ser un aviso y las hace cumplir el servidor.**
   - **Sin etapa abierta no se toca nada.** Hasta ahora, mientras el profesor no
     señalaba una etapa regía la política de base —que lo permite todo— y un
