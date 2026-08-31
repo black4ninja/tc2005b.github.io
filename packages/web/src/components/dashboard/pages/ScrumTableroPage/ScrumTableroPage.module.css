@@ -1,0 +1,417 @@
+.page {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-height: calc(100vh - var(--dashboard-header-height));
+}
+
+.cargando { padding: 24px; color: var(--text-secondary); }
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.subtitulo {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+/* Las caras del equipo SON el botón de los roles: es donde se mira para saber
+   quién es el PO, así que es donde tiene que poder cambiarse. */
+.miembros {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.miembros:hover { border-color: var(--border-color); background: var(--bg-card); }
+
+.miembro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.avatarPo { background: var(--sidebar-active-bg); color: var(--sidebar-active-color); }
+
+.insigniaPo {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--sidebar-active-color);
+  color: #fff;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--dash-bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  flex: none;
+}
+
+/* El color lo elige el profesor en el catálogo de etapas, así que viene por
+   `style`. El texto va en blanco: la paleta que se ofrece son todos tonos
+   oscuros y es lo que mantiene el contraste. */
+.banda {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding: 14px 20px;
+  border-radius: var(--border-radius);
+  color: #fff;
+}
+
+.bandaTitulo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: none;
+}
+
+.bandaEtiqueta {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.85;
+}
+
+.bandaNombre { font-size: 1.45rem; font-weight: 700; line-height: 1.1; }
+
+/* La descripción de la etapa, separada del nombre por una línea: es un texto de
+   dos o tres frases y pegado al nombre se leía como parte de él. */
+.bandaPista {
+  flex: 1;
+  min-width: 220px;
+  margin: 0;
+  padding-left: 20px;
+  border-left: 1px solid rgba(255, 255, 255, 0.35);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  opacity: 0.95;
+}
+
+.bandaNota { font-size: 0.75rem; opacity: 0.8; white-space: nowrap; align-self: flex-start; }
+
+@media (max-width: 900px) {
+  .bandaPista {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+    padding-top: 10px;
+  }
+}
+
+.bandaVacia {
+  padding: 12px 20px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.cerrada {
+  padding: 10px 14px;
+  border: 1px solid var(--estado-aviso-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  font-size: 0.85rem;
+}
+
+.error {
+  padding: 10px 14px;
+  border: 1px solid var(--estado-error-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+}
+
+.apagado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-2xl);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.apagado .material-icons { font-size: 44px; color: var(--text-muted); }
+.apagadoTitulo { margin: 0; font-size: 1rem; font-weight: 500; }
+.hint { font-size: 0.85rem; color: var(--text-muted); max-width: 48ch; }
+
+/* ── Barra de reglas ──────────────────────────────────────────────────
+   Los botones que dejan consultar la definición de terminado y las
+   restricciones sin salirse del tablero. Hasta ahora vivían en una diapositiva
+   que nadie tiene delante mientras trabaja. */
+.barraReglas {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.chip,
+.chipEpica,
+.chipAlerta,
+.chipDeuda {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chip:hover, .chipEpica:hover { border-color: var(--text-muted); color: var(--text-primary); }
+.chip .material-icons, .chipEpica .material-icons { font-size: 17px; }
+
+.chipEtiqueta {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.sinEpica { color: var(--text-muted); font-style: italic; }
+
+.punto { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+
+.chipAlerta {
+  background: var(--estado-error-bg);
+  border-color: var(--estado-error-border);
+  color: var(--estado-error-color);
+  font-weight: 600;
+}
+
+.chipAlerta .material-icons { font-size: 17px; }
+
+.chipDeuda {
+  background: var(--estado-aviso-bg);
+  border-color: var(--estado-aviso-border);
+  color: var(--estado-aviso-color);
+  font-weight: 600;
+  cursor: default;
+}
+
+.chipDeuda .material-icons { font-size: 17px; }
+
+/* ── Reloj de la etapa ────────────────────────────────────────────────
+   El servidor sella la hora de arranque y aquí se cuenta: una pantalla que
+   entra a mitad enseña el número correcto sin preguntar. */
+.reloj {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: none;
+}
+
+.relojEtiqueta {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+}
+
+.relojCifra {
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Pasado el tiempo el reloj sigue contando en negativo en vez de quedarse en
+   cero: cuánto se pasaron es justo el dato de la retrospectiva. */
+.relojAgotado { opacity: 0.75; }
+
+.cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: var(--space-md);
+}
+
+.tableroCaja {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.lateral {
+  width: 290px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* ── Compromisos de la última retro ───────────────────────────────────
+   Siempre a la vista bajo el tablero: una retro que se olvida al minuto
+   siguiente no cambia nada. */
+.compromisos {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+.compromisosTitulo {
+  flex: none;
+  white-space: nowrap;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.compromisosLista {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.compromiso {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px 5px 5px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--dash-bg-subtle);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.avatarMini,
+.avatarVacio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex: none;
+  font-size: 0.5rem;
+  font-weight: 600;
+}
+
+.avatarMini { background: var(--bg-card); color: var(--text-secondary); }
+.avatarVacio { border: 1px dashed var(--text-muted); }
+
+/* Solo para lectores de pantalla: el rol del PO ya se ve en la insignia. */
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .cuerpo { flex-direction: column; }
+  .lateral { width: 100%; flex-direction: row; flex-wrap: wrap; }
+}
+
+/* El cobro de la deuda: llega por el stream como tarjetas que se mueven solas,
+   así que hace falta decir en voz alta qué acaba de pasar. Entra deslizándose
+   para que se note que es NUEVO y no parte de la pantalla. */
+.cobro {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--estado-error-border);
+  border-left: 4px solid var(--estado-error-color);
+  border-radius: var(--border-radius);
+  background: var(--estado-error-bg);
+  animation: entrarCobro 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes entrarCobro {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cobro { animation: none; }
+}
+
+.cobro > .material-icons { font-size: 22px; color: var(--estado-error-color); flex: none; }
+
+.cobroTexto {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.cobroTexto strong { color: var(--estado-error-color); }
+
+.cobroCerrar {
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex: none;
+}
+
+.cobroCerrar:hover { color: var(--text-primary); }
+.cobroCerrar .material-icons { font-size: 18px; }

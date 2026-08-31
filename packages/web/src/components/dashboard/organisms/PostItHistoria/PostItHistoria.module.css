@@ -1,0 +1,294 @@
+/* El post-it. Todo sale de los tokens `--scrum-*`: el amarillo pastel de claro
+   deslumbra proyectado en oscuro, y ahí pasa a ámbar translúcido solo. */
+/* El borde de ARRIBA lleva el color de la épica: es lo que deja ver de un
+   vistazo si en el sprint se coló un trozo de otro modelo. */
+.postit {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: var(--scrum-postit-bg);
+  border: 1px solid var(--scrum-postit-borde);
+  border-top: 3px solid var(--scrum-postit-linea);
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+  padding: 10px 12px;
+  color: var(--text-primary);
+}
+
+.pulsable {
+  cursor: pointer;
+  text-align: left;
+}
+
+/* `touch-action: manipulation` quita el retardo del doble toque sin renunciar
+   al desplazamiento con el dedo: quién se queda con el gesto lo decide
+   `useArrastre` según cuánto se mantenga pulsado, no el navegador.
+   `user-select` evita que mantener pulsado seleccione el texto de la tarjeta. */
+.arrastrable {
+  cursor: grab;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* El original se queda en su sitio, apagado: sin él la columna se recompone al
+   levantar la tarjeta y las de abajo dan un salto. */
+.atenuada {
+  opacity: 0.35;
+}
+
+/* Ocupada por otra persona: se ve, pero no se toca. El aviso lleva el nombre
+   porque «bloqueada» a secas hace pensar que la aplicación se rompió. */
+.bloqueada {
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.bloqueada .titulo, .bloqueada .cabecera, .bloqueada .pieCaja { opacity: 0.55; }
+
+.candado {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: -2px 0 2px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.candado .material-icons { font-size: 12px; }
+
+/* La copia que sigue al dedo. Va en `position: fixed` para escaparse del
+   recorte de la columna, y sin eventos para que `elementFromPoint` vea la
+   columna que hay debajo y no a sí misma. */
+.fantasma {
+  pointer-events: none;
+  width: 232px;
+  cursor: grabbing;
+  box-shadow: var(--shadow-lg);
+  transform: rotate(-2deg);
+  opacity: 0.95;
+}
+
+.pulsable:hover {
+  border-color: var(--scrum-postit-linea);
+}
+
+.pulsable:focus-visible {
+  outline: 2px solid var(--sidebar-active-color);
+  outline-offset: 2px;
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.prioridad {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.must { background: var(--scrum-must-bg); color: var(--scrum-must-color); }
+.should { background: var(--scrum-should-bg); color: var(--scrum-should-color); }
+.could { background: var(--scrum-could-bg); color: var(--scrum-could-color); }
+.wont { background: var(--scrum-wont-bg); color: var(--scrum-wont-color); }
+
+/* Los puntos en un círculo: es un número suelto y sin el borde se leía como
+   parte del texto de la tarjeta. */
+/* Sin estimar («?») o demasiado grande («∞»): se apaga, porque ninguna de las
+   dos deja entrar la historia al sprint. */
+.puntosSinEstimar {
+  color: var(--text-muted);
+  border-style: dashed;
+}
+
+.puntos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 1px solid var(--scrum-postit-linea);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.titulo {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  /* Un identificador largo sin espacios («CredentialManager…») ensanchaba la
+     tarjeta y con ella la columna entera. */
+  overflow-wrap: anywhere;
+}
+
+/* El pie ES el botón de asignar: el gesto que más se repite no debería costar
+   abrir el detalle de la historia. */
+.pieCaja { position: relative; }
+
+.pie {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 2px;
+  padding: 5px 0 0;
+  border: none;
+  border-top: 1px dashed var(--scrum-postit-borde);
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+}
+
+.pieAsignable { cursor: pointer; }
+.pieAsignable:hover .quien, .pieAsignable:hover .sinAsignar { color: var(--text-primary); }
+.pie .material-icons { font-size: 15px; color: var(--text-muted); }
+
+.menu {
+  position: absolute;
+  top: 100%;
+  left: -4px;
+  right: -4px;
+  z-index: 20;
+  margin-top: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.menuTitulo {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menuItem:hover { background: var(--dash-bg-subtle); }
+.menuItemActivo { background: var(--sidebar-active-bg); color: var(--sidebar-active-color); }
+
+.avatar,
+.avatarVacio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.avatar {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.avatarVacio { border: 1px dashed var(--scrum-postit-linea); }
+
+.quien,
+.sinAsignar {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quien { color: var(--text-secondary); }
+.sinAsignar { color: var(--text-muted); }
+
+/* ── Escalas de la proyección ──────────────────────────────────────────
+   Con cuatro tableros en pantalla cabe el «qué» en dos líneas; con nueve, una.
+   El resto del post-it no se encoge: desaparece. */
+.md {
+  gap: 3px;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.md .titulo {
+  font-size: 10px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.md .prioridad { font-size: 7.5px; padding: 0 6px; }
+.md .puntos { min-width: 15px; height: 15px; font-size: 9px; }
+.md .pie { padding-top: 3px; gap: 4px; }
+.md .pie .material-icons { display: none; }
+.md .avatar, .md .avatarVacio { width: 15px; height: 15px; font-size: 6.5px; }
+.md .quien, .md .sinAsignar { font-size: 8px; }
+.md .etiqueta { display: none; }
+
+.sm {
+  gap: 2px;
+  padding: 4px 6px;
+  border-radius: 5px;
+}
+
+.sm .titulo {
+  font-size: 8.5px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sm .prioridad { font-size: 6.5px; padding: 0 5px; }
+.sm .puntos { min-width: 13px; height: 13px; font-size: 8px; padding: 0 3px; }
+
+/* Quien ya lleva una historia sin terminar sale en el menú, pero apagado: ver
+   que está ocupado enseña la regla mejor que no verlo. */
+.menuOcupado {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.menuItem:disabled { opacity: 0.55; cursor: default; }

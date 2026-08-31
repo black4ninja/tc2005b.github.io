@@ -1,0 +1,248 @@
+.cuerpo {
+  display: flex;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.campos {
+  flex: 1;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.nota {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.etiqueta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.aclaracion {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.entrada {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.entrada:focus {
+  outline: none;
+  border-color: var(--sidebar-active-color);
+}
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bloqueTitulo {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Responsable y estimación en una fila: son dos desplegables cortos y juntos
+   ocupan lo que antes ocupaba una sola fila de fichas. */
+.tresBloques {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.tresBloques .bloque {
+  flex: 1;
+  min-width: 200px;
+}
+
+.fichas {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Fichas EXCLUYENTES: al marcar una se apaga la anterior. Es lo que impide
+   asignar dos responsables a la misma historia. */
+.ficha {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ficha:hover { border-color: var(--text-muted); }
+
+.fichaActiva {
+  border-color: var(--sidebar-active-color);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
+}
+
+/* La ficha de prioridad seleccionada toma SU color, no el azul del panel: es el
+   mismo tinte que va a llevar el post-it. */
+.fichaPrioridadActiva.must { background: var(--scrum-must-bg); color: var(--scrum-must-color); border-color: var(--scrum-must-color); }
+.fichaPrioridadActiva.should { background: var(--scrum-should-bg); color: var(--scrum-should-color); border-color: var(--scrum-should-color); }
+.fichaPrioridadActiva.could { background: var(--scrum-could-bg); color: var(--scrum-could-color); border-color: var(--scrum-could-color); }
+.fichaPrioridadActiva.wont { background: var(--scrum-wont-bg); color: var(--scrum-wont-color); border-color: var(--scrum-wont-color); }
+
+.select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.previa {
+  width: 260px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.pista {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg) var(--space-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+.accionesDerecha {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-left: auto;
+}
+
+.borrar,
+.cancelar,
+.guardar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.87rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.borrar {
+  border: 1px solid var(--estado-error-border);
+  background: transparent;
+  color: var(--estado-error-color);
+}
+
+.borrar:hover { background: var(--estado-error-bg); }
+.borrar .material-icons { font-size: 18px; }
+
+.cancelar {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.cancelar:hover { background: var(--bg-page); }
+
+.guardar {
+  border: none;
+  background: var(--dash-primary);
+  color: #fff;
+}
+
+.guardar:hover:not(:disabled) { opacity: 0.9; }
+.guardar:disabled { opacity: 0.5; cursor: default; }
+
+@media (max-width: 720px) {
+  .previa { width: 100%; }
+}
+
+/* El «por qué» es el único campo que no se puede dejar en blanco, y la etiqueta
+   lo dice: es más barato que descubrirlo con el botón de guardar apagado. */
+.obligatorio {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+/* Donde iría el desplegable de responsable cuando la historia está en el
+   backlog: se dice la regla en lugar de dejar un control apagado. */
+.aviso {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+/* Guardar es un viaje al servidor y no siempre es corto: el botón lo dice
+   mientras el formulario está quieto. */
+.girando {
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  flex: none;
+  animation: girarHistoria 700ms linear infinite;
+}
+
+@keyframes girarHistoria { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .girando { animation: none; }
+}

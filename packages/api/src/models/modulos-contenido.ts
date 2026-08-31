@@ -26,6 +26,7 @@ export const MODULOS_CONTENIDO = [
   'ejercicios',
   'diagramas',
   'preguntas',
+  'scrum',
 ] as const;
 
 export type ModuloContenido = (typeof MODULOS_CONTENIDO)[number];
@@ -35,6 +36,7 @@ const MODULOS_OPT_IN: ReadonlySet<ModuloContenido> = new Set<ModuloContenido>([
   'ejercicios',
   'diagramas',
   'preguntas',
+  'scrum',
 ]);
 
 export function esModuloValido(v: unknown): v is ModuloContenido {

@@ -100,6 +100,24 @@
   --destacado-anillo: #d97706;
   --destacado-halo: #d9770659;
   --destacado-fondo: #fef3c7;
+
+  /* ── Actividad de Scrum ───────────────────────────────────────────────
+     El post-it amarillo y las cuatro prioridades MoSCoW. Salen de tokens y no
+     escritos a mano porque el tablero se proyecta: en oscuro un pastel
+     deslumbra desde el cañón y hay que poder cambiarlo de un sitio. */
+  --scrum-postit-bg: #fef9c3;
+  --scrum-postit-borde: #fde68a;
+  --scrum-postit-linea: #eab308;
+  /* El recuadro punteado que rodea al sprint backlog. */
+  --scrum-sprint-borde: #94a3b8;
+  --scrum-must-bg: #fee2e2;
+  --scrum-must-color: #b91c1c;
+  --scrum-should-bg: #ffedd5;
+  --scrum-should-color: #c2410c;
+  --scrum-could-bg: #cffafe;
+  --scrum-could-color: #0e7490;
+  --scrum-wont-bg: #e2e8f0;
+  --scrum-wont-color: #475569;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -200,4 +218,23 @@
   --destacado-anillo: #fbbf24;
   --destacado-halo: #fbbf2466;
   --destacado-fondo: #78350f73;
+
+  /* Scrum: el post-it en oscuro.
+     El ámbar translúcido que había (#78350f4d) se mezclaba con el azul del
+     fondo y salía MARRÓN ROJIZO: una tarjeta que parece en rojo se lee como
+     una tarjeta con un problema, y aquí el rojo ya significa otra cosa (la
+     prioridad «must»). Se cambia por un oliva cálido opaco, que sigue leyéndose
+     como papel amarillo pero no se confunde con una alarma. */
+  --scrum-postit-bg: #3a3620;
+  --scrum-postit-borde: #6b6130;
+  --scrum-postit-linea: #e0bb45;
+  --scrum-sprint-borde: #475569;
+  --scrum-must-bg: #7f1d1d4d;
+  --scrum-must-color: #fca5a5;
+  --scrum-should-bg: #7c2d124d;
+  --scrum-should-color: #fdba74;
+  --scrum-could-bg: #0e74904d;
+  --scrum-could-color: #67e8f9;
+  --scrum-wont-bg: #47556933;
+  --scrum-wont-color: #cbd5e1;
 }

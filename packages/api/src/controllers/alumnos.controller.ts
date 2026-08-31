@@ -9,6 +9,7 @@ import {
   getAlumnosDeGrupo,
   findGrupoAlumnoLink,
   createGrupoAlumnoLink,
+  olvidarGruposDeAlumno,
 } from '../services/grupo-alumno.service.js';
 import { invalidateColeccionesPermitidas } from '../services/contenidos.service.js';
 import { escaparRegex } from '../utils/regex.js';
@@ -322,6 +323,7 @@ export async function deleteAlumno(req: Request, res: Response): Promise<void> {
     link.softDelete();
     await link.save(null, { useMasterKey: true });
     invalidateColeccionesPermitidas(alumnoId);
+    olvidarGruposDeAlumno(alumnoId);
 
     res.json({ status: 'ok', message: 'Alumno eliminado del grupo' });
   } catch (error: any) {

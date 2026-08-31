@@ -1,0 +1,253 @@
+.tablero {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  overflow-x: auto;
+}
+
+.columna {
+  flex: 1 1 0;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--dash-bg-subtle);
+  overflow-y: auto;
+}
+
+/* Los compromisos que se arrastran y la columna que los genera se distinguen
+   del resto: son las dos que tienen consecuencias. */
+.columnaCompromisos { background: var(--estado-info-bg); }
+.columnaMejorar { background: var(--estado-aviso-bg); }
+
+.cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.titulo {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.contador {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--border-color);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  flex: none;
+}
+
+.pista {
+  margin: -2px 0 2px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.tarjeta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px 12px;
+  border: 1px solid var(--scrum-postit-borde);
+  border-radius: 10px;
+  background: var(--scrum-postit-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.tarjetaTexto {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  padding-right: 14px;
+}
+
+.responsable {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--scrum-postit-borde);
+}
+
+.avatar,
+.avatarVacio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex: none;
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.avatar { background: var(--bg-card); color: var(--text-secondary); }
+.avatarVacio { border: 1px dashed var(--scrum-postit-linea); }
+
+.nombre,
+.sinAsignar {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nombre { color: var(--text-secondary); }
+.sinAsignar { color: var(--text-muted); }
+
+/* El selector va encima del nombre, invisible: pulsar el pie abre la lista sin
+   que haya que explicar dónde se cambia. */
+.selector {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 30px;
+  opacity: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.marcar {
+  display: flex;
+  gap: 6px;
+}
+
+.si,
+.no {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.si:hover:not(:disabled) {
+  border-color: var(--estado-exito-color);
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+}
+
+.no:hover:not(:disabled) {
+  border-color: var(--estado-error-color);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+}
+
+.si:disabled, .no:disabled { opacity: 0.45; cursor: default; }
+.si .material-icons, .no .material-icons { font-size: 14px; }
+
+.ajeno {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.compromiso { border-color: var(--estado-info-border); }
+
+.borrar {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: inline-flex;
+  padding: 2px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.tarjeta:hover .borrar { opacity: 1; }
+.borrar:hover { color: var(--estado-error-color); }
+.borrar .material-icons { font-size: 15px; }
+
+.agregar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px;
+  border: 1px dashed var(--scrum-postit-linea);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.agregar:hover { background: var(--scrum-postit-bg); color: var(--text-primary); }
+.agregar .material-icons { font-size: 15px; }
+
+.entrada {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--sidebar-active-color);
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.35;
+  resize: vertical;
+}
+
+.entrada:focus { outline: none; }
+
+/* Lo que se ve entre el Enter y la tarjeta. El recuadro se queda con su texto,
+   apagado, en vez de vaciarse y dejar la duda de si se guardó. */
+.guardando {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.girando {
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--sidebar-active-color);
+  border-radius: 50%;
+  flex: none;
+  animation: girarRetro 700ms linear infinite;
+}
+
+@keyframes girarRetro { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .girando { animation: none; }
+}

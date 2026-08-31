@@ -8,6 +8,149 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **El aula va deprisa: la etapa llega a todas las pantallas a la vez, y nadie
+  pisa el trabajo de nadie.**
+  - **Cambiar de etapa era el gesto más lento** justo siendo el que más corre:
+    reconstruía el estado entero —ocho consultas contra una base remota— antes
+    de avisar a nadie, y encima hacía el ritual del ciclo por delante. Ahora
+    manda un **aviso barato** que no consulta nada, contesta antes de escribir,
+    y deja el ritual —fijar lo planeado, cobrar la deuda, tomar el corte— para
+    después. Medido: del clic del profesor a que al alumno le cambie la
+    instrucción hay **10 ms**; antes había más de un segundo de desfase.
+  - **El ritual ya no va en fila india.** Era una consulta por equipo y por
+    paso; ahora es una lectura para todos y el trabajo en paralelo.
+  - **Cada gesto del alumno hace un viaje y no dos.** Mover una tarjeta pedía el
+    estado completo otra vez justo cuando el stream ya lo traía. Si el stream no
+    está vivo, se sigue recargando.
+  - **Indicadores de carga donde hacían falta**: la etapa que se está aplicando
+    gira y bloquea las demás, y cerrar un sprint o abrir el siguiente deshabilita
+    su botón. Sin eso el profesor pulsaba dos veces.
+  - **Semáforo de edición.** Abrir una historia la reserva: quien llegue después
+    ve «Fulano está editando esto ahora mismo» y no puede ni abrirla ni
+    arrastrarla. El candado se comprueba también en el servidor —entre que
+    alguien abre y a los demás les llega el aviso caben milisegundos—, se
+    refresca mientras el formulario esté abierto y **caduca solo a los treinta
+    segundos**, que es lo que salva a la tarjeta de quien cerró la pestaña.
+  - La red de seguridad del stream baja de un minuto a **veinte segundos**: en
+    una dinámica donde una etapa dura treinta, enterarse un minuto tarde de que
+    la conexión se cayó es enterarse cuando ya pasó todo.
+
+- **La dinámica de Scrum completa: sprints, deuda técnica, retrospectiva y
+  cierre.** El módulo pasa de ser un tablero a ser la actividad entera, con las
+  reglas que la clase repetía en voz alta puestas donde se cumplen solas.
+  - **La etapa manda sobre el tablero.** Cada etapa declara qué deja ver y tocar
+    —backlog y sprint backlog por separado: editable, solo lectura, plegado u
+    oculto—, qué movimientos permite y cuánto dura. En **planning** el sprint
+    backlog se ve apagado con su candado y solo se entra de Backlog a Planned;
+    en **grooming** se pliega; en la **daily** se pliega el backlog y salen los
+    burndown; en **review** no se mueve nada; en la **retrospectiva** desaparece
+    el kanban entero. Se añade **Desarrollo**, que no es una ceremonia de Scrum
+    pero hace falta: es el momento en que se construye sin que ninguna regla
+    estorbe.
+  - **Solo entra al sprint lo estimado.** La escala pasa a `?` · 1 · 2 · 3 · 5 ·
+    `∞`, y ni «desconocido» ni «demasiado grande» dejan pasar una historia. El ∞
+    no es un castigo: es la manera de que partirla sea el único camino.
+  - **Sprints de verdad.** El profesor abre los que quiera —el objetivo de los
+    cuatro primeros sale de la presentación de la actividad— y al cerrar uno lo
+    terminado se archiva, lo abierto se queda donde está y de ahí sale el
+    **bloqueo**: puntos sin cerrar más una por cada restricción incumplida, que
+    el profesor recoge del PO en el review.
+  - **La deuda técnica se cobra sola.** Al salir del planning del siguiente
+    sprint, el sistema devuelve al backlog historias AL AZAR hasta cubrir el
+    bloqueo —pasándose de largo si hace falta— y avisa al equipo de qué acaba de
+    pasar. Si el bloqueo supera lo que planearon, solo les queda lo que dejaron
+    abierto: exactamente la regla de la dinámica.
+  - **Retrospectiva con consecuencias.** Su propio tablero de tres columnas —qué
+    hicimos bien, qué hicimos mal, qué podemos mejorar—, donde solo la última
+    lleva responsable porque solo ella genera un compromiso. Los compromisos se
+    arrastran al siguiente sprint, se ven bajo el tablero durante todo el sprint
+    y aparecen en la retro siguiente con sus botones de sí/no. **Una persona solo
+    puede llevar un compromiso abierto**: un equipo que no los cierra se queda
+    sin gente a quien asignarle los nuevos.
+  - **Burndown**: del sprint y del proyecto, con un corte en cada cambio de
+    etapa, que es el ritmo al que la actividad pide actualizarlo. Y el reparto
+    por integrante, con lo que hay que decir en voz alta: si una historia es de
+    todos a la vez, no es de nadie.
+  - **Épicas**: el entregable completo del que cuelgan las historias. El borde de
+    la tarjeta lleva su color, y meter en el sprint una historia de otra épica
+    sale señalado — «solo se puede trabajar en 1 modelo a la vez».
+  - **Roles**: el equipo elige a su Product Owner desde su propia cabecera, con
+    la descripción de qué se espera de cada rol al lado.
+  - **Definición de terminado y restricciones** a un botón del tablero, editables
+    por el profesor. Dejan de vivir en una diapositiva que nadie tiene delante.
+  - **Resumen final**: al terminar la dinámica cada equipo ve lo que logró y lo
+    que le faltó —sprint a sprint, quién cerró qué, qué nunca salió del backlog,
+    cuánto costó la deuda—, que es lo que contesta las preguntas del cierre de
+    la sesión.
+  - **En la proyección** las columnas tienen ancho fijo y cada panel se desplaza:
+    apretarlas hasta que el rótulo diga «PL…» es peor que tener que desplazar. Y
+    un interruptor cambia los tableros por un resumen por equipo, que es lo que
+    hace falta en la daily con seis o nueve.
+
+- **Módulo «Actividad de Scrum»: el profesor arma equipos y cada equipo lleva su
+  tablero kanban con historias de usuario.** Es un módulo de APRENDIZAJE, no un
+  gestor de proyectos: todo está recortado a propósito para que lo que se
+  practique sea el ciclo, no la herramienta. Se enciende por colección, como
+  Ejercicios y Diagramas.
+  - **El profesor** crea *dinámicas* (un sprint, un taller) y dentro de cada una
+    los equipos. El reparto está pensado para el clic repetido de los primeros
+    diez minutos de clase: los alumnos sin equipo a la izquierda, se marcan
+    varios y se mandan de golpe, se arrastra uno a su tarjeta, o se reparte todo
+    con **Repartir automáticamente** —en rueda, para que 13 personas en equipos
+    de 5 salgan 5-4-4 y no 5-5-3—.
+  - Los equipos son de la DINÁMICA y no del grupo: se rehacen en cada sprint,
+    que es parte del ejercicio, y no tocan los equipos del proyecto semestral.
+    Un alumno pertenece a un solo equipo por dinámica; asignarlo lo saca del
+    anterior en vez de fallar.
+  - **La etapa del Scrum** (planning, grooming, daily, review, retrospectiva) es
+    un catálogo POR GRUPO con color propio y **descripción**, editable: cada
+    materia corre su versión del ciclo. El profesor la cambia desde su panel y a
+    todos los tableros abiertos les cambia la banda al instante. La descripción
+    dice **qué hay que hacer en ese momento** y se lee en la propia banda: es lo
+    que necesita quien levanta la vista a mitad de la sesión y no se acuerda de
+    en qué punto del ciclo va la clase.
+  - **El alumno** ve el tablero de su equipo con cinco columnas. Las cuatro del
+    sprint —planned, doing, review, done— van dentro de un recuadro punteado
+    rotulado **sprint backlog**, con el **objetivo del sprint** dentro; el
+    backlog del producto queda fuera. La forma es la enseñanza: lo que el equipo
+    se comprometió a hacer se ve separado de lo que solo está anotado.
+  - **Las historias son post-its** con tres campos separados —¿por qué? (qué
+    valor aporta), ¿qué? y ¿cómo?—, estimación en puntos (Fibonacci recortado,
+    con «sin estimar» y con el significado de cada cifra en la propia opción) y
+    prioridad **MoSCoW**. Separar los campos es lo que impide omitir el valor,
+    que es la parte que se cae cuando el formato es texto libre.
+  - En el TABLERO la tarjeta enseña solo el «qué»; el porqué y el cómo se leen
+    al abrirla. Con los tres campos la tarjeta crecía tanto que en una columna
+    cabían dos y el tablero dejaba de leerse de un vistazo, que es justo para lo
+    que sirve un tablero.
+  - **Una sola persona responsable por historia**, o ninguna. No es una
+    advertencia: el selector es excluyente y el servidor exige que sea alguien
+    del equipo. Dejar marcar a varios es la manera silenciosa de que al final no
+    la lleve nadie. «Sin asignar» se ve, no se esconde: es la señal de que falta
+    repartir.
+  - **Las historias nacen en el backlog** y solo ahí. Meter trabajo directamente
+    en «doing» es justo el hábito contra el que existe el sprint backlog.
+  - **Proyección**: `Proyectar` abre en otra pestaña los tableros de los equipos
+    elegidos. A partir de cuatro deja de repartirse en columnas —seguir
+    estirando la fila deja tarjetas que no se leen desde el fondo del aula— y
+    pasa a rejilla: 4 en 2 × 2, 5 y 6 en 3 × 2, de 7 a 9 en 3 × 3, bajando
+    también el detalle de cada post-it. Nueve equipos es el tope por esa razón,
+    no por una limitación técnica.
+  - **Las tarjetas se arrastran con el dedo, con el ratón y con el lápiz**, por
+    el mismo camino de código (eventos de puntero). El arrastre nativo de HTML5
+    no existe en táctil: en una tableta el tablero no se podía mover. Con el
+    dedo hay que **mantener pulsado** antes de arrastrar, que es lo que deja
+    convivir el arrastre con tocar la tarjeta para abrirla y con deslizar para
+    desplazar la columna; con ratón arranca al mover. El contenedor se desplaza
+    solo al acercarse a un borde, porque mientras se arrastra el
+    desplazamiento con el dedo está bloqueado. Quien no quiera arrastrar sigue
+    teniendo el desplegable de columna dentro de la historia.
+  - Las pantallas **escuchan en vez de preguntar** (SSE): quien arrastra una
+    tarjeta la mueve también en la de sus compañeros y en el proyector. El
+    estado se construye una sola vez por cambio y se reparte a todos los que
+    escuchan, con un refresco lento de red de seguridad por si el wifi del aula
+    corta la conexión sin avisar.
+
 - **Agenda de entrevistas: el alumno elige su hora y de ahí sale el orden de la
   proyección.** El profesor puede repartir las preguntas semanas antes, pero
   quién pasa primero no lo decide él: lo escriben los alumnos al apuntarse, y

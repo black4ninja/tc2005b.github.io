@@ -1,0 +1,330 @@
+/* `min-width: 0` es obligatorio: el tablero es hijo de un contenedor flex en
+   fila —comparte sitio con el panel del burndown— y sin esto no se encoge por
+   debajo de su contenido, así que la última columna se salía de la pantalla. */
+.tablero {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.columna {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--dash-bg-subtle);
+  overflow-y: auto;
+  /* Sin esto una palabra larga sacaba una barra de desplazamiento horizontal
+     dentro de la columna, que proyectada se lee como un defecto. */
+  overflow-x: hidden;
+}
+
+/* Mientras se arrastra encima: el destino se señala en el propio hueco, no con
+   un cursor, que en una rejilla de cinco columnas no dice a cuál va a caer.
+   Con el dedo esto es lo ÚNICO que lo dice: no hay puntero que mirar. */
+.columnaDestino {
+  outline: 2px dashed var(--sidebar-active-color);
+  outline-offset: -2px;
+  background: var(--sidebar-active-bg);
+}
+
+/* Mientras hay un arrastre vivo nada más responde al puntero: sin esto, pasar
+   por encima de otra tarjeta la resaltaba como si fuera pulsable. */
+.enArrastre .columna * {
+  pointer-events: none;
+}
+
+.capaFantasma {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 4000;
+  pointer-events: none;
+}
+
+.columnaCabecera {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Una columna en solo lectura no se esconde: se apaga. Sigue haciendo falta
+   verla —en el planning el sprint backlog es justo lo que hay que mirar—, pero
+   tiene que quedar claro que no se toca. */
+.columnaApagada { opacity: 0.5; }
+
+.plegar {
+  display: inline-flex;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.plegar:hover { color: var(--text-primary); }
+.plegar .material-icons { font-size: 14px; }
+
+/* Una columna plegada: una tira vertical. La usa la etapa (en la daily el
+   backlog estorba) y también quien proyecta con muchos equipos. */
+.plegada,
+.archivada {
+  flex: none;
+  width: 46px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 4px;
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+  background: var(--dash-bg-subtle);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.archivada {
+  background: var(--bg-card);
+  cursor: default;
+}
+
+.plegada:hover { border-color: var(--text-muted); }
+
+.plegada .material-icons,
+.archivada .material-icons { font-size: 16px; color: var(--text-muted); }
+
+.plegadaTitulo {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* 11px y poco interletraje: con el panel del burndown al lado las columnas se
+   quedan en unos 150 px y a 12px el rótulo salía cortado en «PL…». */
+.columnaTitulo {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* `gap` y no un espacio en el texto: dentro de un contenedor flex el espacio
+   inicial de un hijo se pierde, y el contador salía como «3· 11 pts». */
+.contador {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--border-color);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex: none;
+}
+
+.puntosCol { font-weight: 500; }
+
+.alta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border: 1px dashed var(--scrum-postit-linea);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.alta:hover {
+  background: var(--scrum-postit-bg);
+  color: var(--text-primary);
+}
+
+.alta .material-icons { font-size: 16px; }
+
+/* ── El recuadro del sprint backlog ────────────────────────────────────
+   Punteado y con la leyenda montada sobre el borde, como el `legend` de un
+   fieldset: es lo que hace que se lea como UN grupo y no como cuatro columnas
+   sueltas al lado del backlog. */
+.sprint {
+  position: relative;
+  flex: 4 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 2px dashed var(--scrum-sprint-borde);
+  border-radius: 12px;
+  background: var(--bg-card);
+}
+
+.leyenda {
+  position: absolute;
+  top: -9px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  white-space: nowrap;
+}
+
+/* Por qué el sprint backlog está apagado, dicho donde se está mirando. */
+.candado {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  border: 1px solid var(--estado-aviso-border);
+  letter-spacing: 0.06em;
+}
+
+.candado .material-icons { font-size: 12px; }
+
+.sprintBloqueado { border-color: var(--estado-aviso-border); }
+
+.objetivo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-page);
+}
+
+.objetivoEtiqueta {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.objetivoTexto,
+.objetivoVacio {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.objetivoTexto { color: var(--text-primary); }
+.objetivoVacio { color: var(--text-muted); font-style: italic; }
+
+.objetivoBtn {
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.objetivoBtn:hover { background: var(--dash-bg-subtle); color: var(--text-primary); }
+.objetivoBtn .material-icons { font-size: 16px; }
+
+.objetivoNota {
+  flex: none;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.columnas {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* ── Escalas de la proyección ───────────────────────────────────────── */
+/* En la proyección las columnas tienen ancho FIJO y el panel se desplaza:
+   apretarlas hasta que el rótulo diga «PL…» es peor que tener que desplazar. */
+.md, .sm { overflow-x: auto; }
+.md .columnas, .sm .columnas { overflow-x: auto; }
+.md .columna { flex: 0 0 152px; }
+.sm .columna { flex: 0 0 128px; }
+.md .plegada, .md .archivada { width: 30px; padding: 8px 3px; }
+.sm .plegada, .sm .archivada { width: 26px; padding: 6px 3px; }
+.md .plegadaTitulo { font-size: 8.5px; }
+.sm .plegadaTitulo { font-size: 7px; }
+.md .plegar, .sm .plegar { display: none; }
+.md .plegada .material-icons, .md .archivada .material-icons,
+.sm .plegada .material-icons, .sm .archivada .material-icons { font-size: 12px; }
+
+.md { gap: 11px; }
+.md .columna { gap: 5px; padding: 8px; border-radius: 8px; }
+/* Con cuatro columnas dentro de un panel de la rejilla el rótulo va justo:
+   sin bajar el interletraje, «PLANNED» sale cortado con puntos suspensivos. */
+.md .columnaTitulo { font-size: 8.5px; letter-spacing: 0.02em; }
+.md .contador { min-height: 15px; padding: 0 5px; font-size: 8px; }
+.md .sprint { gap: 7px; padding: 10px; border-radius: 10px; }
+.md .leyenda { top: -7px; font-size: 8px; }
+.md .objetivo { gap: 7px; padding: 5px 8px; border-radius: 6px; }
+.md .objetivoEtiqueta { font-size: 8px; }
+.md .objetivoTexto, .md .objetivoVacio { font-size: 10px; }
+.md .columnas { gap: 7px; }
+
+.sm { gap: 9px; }
+.sm .columna { gap: 4px; padding: 6px; border-radius: 6px; }
+.sm .columnaTitulo { font-size: 7px; letter-spacing: 0; }
+.sm .contador { min-height: 13px; padding: 0 5px; font-size: 7px; }
+.sm .sprint { gap: 5px; padding: 8px; border-radius: 8px; }
+.sm .leyenda { top: -6px; font-size: 6.5px; }
+.sm .objetivo { gap: 5px; padding: 4px 7px; border-radius: 5px; }
+.sm .objetivoEtiqueta { font-size: 7px; }
+.sm .objetivoTexto, .sm .objetivoVacio { font-size: 8.5px; }
+.sm .columnas { gap: 5px; }
+
+/* En pantallas estrechas el tablero se desplaza en horizontal en vez de
+   apretar cinco columnas hasta que no cabe una tarjeta. */
+@media (max-width: 1100px) {
+  .tablero {
+    overflow-x: auto;
+    padding-bottom: var(--space-sm);
+  }
+  .columna { min-width: 210px; }
+  .sprint { min-width: 720px; }
+}
