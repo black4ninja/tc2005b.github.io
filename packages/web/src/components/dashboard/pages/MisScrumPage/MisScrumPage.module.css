@@ -186,9 +186,7 @@
 
 .itemDato { font-size: 0.78rem; color: var(--text-muted); }
 
-/* Las terminadas no llevan botón: la fila entera es texto. */
-.item > .itemNombre { flex: 1; min-width: 0; }
-.item > .itemDato { flex: none; }
+.flecha { color: var(--text-muted); flex: none; font-size: 20px; }
 
 .etapaTag {
   display: inline-flex;

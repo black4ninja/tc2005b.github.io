@@ -240,26 +240,33 @@ export default function MisScrumPage() {
         )}
 
         {pasadas.length > 0 && (
+          /* Se entra a todas, no solo a la vigente: en cada una está el resumen
+             de lo que ese equipo cerró y su burndown, que es lo que se mira
+             después de la sesión. El tablero es de consulta —están cerradas—,
+             así que no hace falta ninguna regla nueva para abrirlas. */
           <ul className={styles.lista}>
             {pasadas.map((d) => (
               <li key={d.id} className={styles.item}>
-                <span className={styles.itemNombre}>{d.nombre}</span>
-                <span className={styles.itemDato}>
-                  {d.sprint ? `${d.sprint.numero} sprints` : '—'}
-                  {rangoFechas(d.inicio, d.fin) && ` · ${rangoFechas(d.inicio, d.fin)}`}
+                <button
+                  type="button"
+                  className={styles.itemBoton}
+                  onClick={() => irA(`dinamicas/${d.id}`)}
+                  disabled={enVuelo}
+                >
+                  <span className={styles.itemNombre}>{d.nombre}</span>
+                  <span className={styles.itemDato}>
+                    {d.sprint ? `${d.sprint.numero} sprints` : 'Sin sprints'}
+                    {d.miEquipo && ` · ${d.miEquipo.nombre}`}
+                    {rangoFechas(d.inicio, d.fin) && ` · ${rangoFechas(d.inicio, d.fin)}`}
+                  </span>
+                </button>
+                <span className={styles.tagCerrada}>
+                  {d.finalizada ? 'Terminada' : 'Cerrada'}
                 </span>
-                <span className={styles.tagCerrada}>Terminada</span>
+                <span className={`material-icons ${styles.flecha}`}>chevron_right</span>
               </li>
             ))}
           </ul>
-        )}
-        {pasadas.length > 0 && (
-          /* Sin enlace a propósito: el tablero abre SIEMPRE la de arriba, que es
-             la que el servidor da por vigente. Poner un botón en estas sería
-             mentir sobre lo que hace. */
-          <p className={styles.nota}>
-            Las anteriores se conservan para consultarlas en clase.
-          </p>
         )}
       </section>
 

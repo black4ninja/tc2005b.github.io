@@ -21,9 +21,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     del ciclo son literalmente los controladores del profesor detrás de otro
     candado. Cualquier ajuste futuro a una regla llega a las dos a la vez.
   - **Una pantalla de entrada.** «Actividad de Scrum» ya no lleva directo a un
-    tablero: enseña la dinámica de clase —en curso, o terminada con el resumen
-    del equipo— y las partidas propias. Volver a lo jugado dejaba de ser posible
-    en cuanto terminaba la sesión.
+    tablero: enseña **todas** las dinámicas de clase que el alumno jugó —la que
+    esté en curso y las anteriores— y sus partidas propias. De cualquiera de las
+    anteriores se entra a su resumen: qué cerró el equipo, quién cerró qué, el
+    burndown del proyecto y el de cada sprint. Antes, en cuanto terminaba la
+    sesión, todo eso dejaba de ser alcanzable.
   - **El profesor las ve en un listado de solo lectura**, debajo de sus
     dinámicas: quién practica y por dónde va, sin entrar al tablero.
   - Tope de cinco partidas vivas por alumno y ocho personas por partida.

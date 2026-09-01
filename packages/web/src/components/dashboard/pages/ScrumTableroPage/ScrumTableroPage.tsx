@@ -45,7 +45,9 @@ const REFRESCO_MS = 20000;
  * es la única manera de que se aprenda.
  */
 export default function ScrumTableroPage() {
-  const { grupoId, partidaId } = useParams<{ grupoId: string; partidaId?: string }>();
+  const { grupoId, partidaId, dinamicaId } = useParams<{
+    grupoId: string; partidaId?: string; dinamicaId?: string;
+  }>();
   const { sessionToken, user } = useAuth();
   const navegar = useNavigate();
 
@@ -77,14 +79,18 @@ export default function ScrumTableroPage() {
   /**
    * De qué dinámica es este tablero.
    *
-   * Es lo ÚNICO que separa el tablero de la clase del de una partida de
-   * práctica: la misma pantalla, las mismas reglas, otra URL. Todo lo que hay
-   * debajo —arrastrar, estimar, la retro, los bloqueos— cuelga de aquí y no
-   * sabe ni le importa en cuál de las dos está.
+   * Es lo ÚNICO que separa los tres tableros que enseña esta pantalla: la
+   * dinámica que la clase tiene en curso, una anterior a la que se vuelve para
+   * consultar el resumen, y una partida de práctica propia. La misma pantalla,
+   * las mismas reglas, otra URL. Todo lo que hay debajo —arrastrar, estimar, la
+   * retro, los bloqueos— cuelga de aquí y no sabe ni le importa cuál es.
    */
+  const raiz = `${API}/alumno/grupos/${grupoId}/scrum`;
   const base = partidaId
-    ? `${API}/alumno/grupos/${grupoId}/scrum/partidas/${partidaId}`
-    : `${API}/alumno/grupos/${grupoId}/scrum/tablero`;
+    ? `${raiz}/partidas/${partidaId}`
+    : dinamicaId
+      ? `${raiz}/dinamicas/${dinamicaId}`
+      : `${raiz}/tablero`;
 
   const cabeceras = useCallback(
     (): HeadersInit => ({
@@ -528,7 +534,7 @@ export default function ScrumTableroPage() {
   async function invitar() {
     setMandando(true);
     try {
-      const r = await fetch(`${API}/alumno/grupos/${grupoId}/scrum/companeros`, {
+      const r = await fetch(`${raiz}/companeros`, {
         headers: cabeceras(),
       });
       const json = await r.json();

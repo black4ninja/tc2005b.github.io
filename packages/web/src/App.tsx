@@ -322,11 +322,16 @@ export default function App() {
         <Route path="alumno/grupos/:grupoId/entrevistas" element={<AgendaEntrevistasAlumnoPage />} />
         {/* El módulo de Scrum del alumno. Al revés que "Preguntas", este SÍ le
             añade pantallas propias, y desde que existen las partidas de práctica
-            son tres: el listado por delante, el tablero de la clase y el de cada
-            partida. Las dos últimas son la MISMA pantalla —el tablero no sabe
-            en cuál de las dos está, solo cambia a qué URL le pregunta. */}
+            son varias: el listado por delante y, detrás, el tablero. Todas las
+            de tablero son la MISMA pantalla —no sabe sobre cuál está, solo
+            cambia a qué URL le pregunta—: la dinámica vigente de la clase, una
+            anterior a la que se vuelve a consultar, o una partida propia. */}
         <Route path="alumno/grupos/:grupoId/scrum" element={<MisScrumPage />} />
         <Route path="alumno/grupos/:grupoId/scrum/tablero" element={<ScrumTableroPage />} />
+        <Route
+          path="alumno/grupos/:grupoId/scrum/dinamicas/:dinamicaId"
+          element={<ScrumTableroPage />}
+        />
         <Route
           path="alumno/grupos/:grupoId/scrum/partidas/:partidaId"
           element={<ScrumTableroPage />}

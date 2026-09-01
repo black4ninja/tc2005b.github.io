@@ -3,7 +3,7 @@ import { identifyUser } from '../middlewares/auth.middleware.js';
 import { requireAlumno } from '../middlewares/abac.middleware.js';
 import { requireGrupoAccess } from '../middlewares/grupo-scope.middleware.js';
 import {
-  requireDuenoDePartida, requireMiembroDePartida,
+  requireDuenoDePartida, requireMiembroDeDinamica, requireMiembroDePartida,
 } from '../middlewares/scrum-partida.middleware.js';
 import {
   getScrumGrupo,
@@ -172,8 +172,22 @@ router.get('/alumno/grupos/:grupoId/scrum/partidas', listarMisPartidas);
 router.post('/alumno/grupos/:grupoId/scrum/partidas', crearPartida);
 router.get('/alumno/grupos/:grupoId/scrum/companeros', companerosDeGrupo);
 
-// El tablero de la clase.
+// El tablero de la clase: la dinámica VIGENTE, sin tener que saber su id.
 router.use('/alumno/grupos/:grupoId/scrum/tablero', tablero);
+
+/*
+ * Una dinámica de clase CONCRETA, para volver a las que ya se jugaron.
+ *
+ * El mismo tablero y nada más: los mandos del ciclo son del profesor y aquí no
+ * se montan. Lo que se puede tocar lo sigue decidiendo la dinámica —cerrada se
+ * mira, finalizada enseña el resumen del equipo—, así que no hace falta ninguna
+ * regla nueva para que esto sea de consulta.
+ */
+router.use(
+  '/alumno/grupos/:grupoId/scrum/dinamicas/:dinamicaId',
+  requireMiembroDeDinamica,
+  tablero,
+);
 
 /*
  * La partida de práctica: el mismo tablero, y encima los mandos del ciclo.
