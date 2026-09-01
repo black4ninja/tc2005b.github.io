@@ -243,9 +243,41 @@ export interface Dinamica {
   restricciones: string[];
   etapaIniciadaEn: string | null;
   etapaActual: { id: string; nombre: string; color: string; pista: string } | null;
+  /**
+   * Quién la abrió, cuando no la abrió el profesor. Null = dinámica de clase;
+   * con dueño = partida de práctica de un alumno. Es lo único que las
+   * distingue: por dentro son el mismo ejercicio con las mismas reglas.
+   */
+  propietario?: { id: string; name: string } | null;
   /** Solo en el listado del profesor. */
   equipos?: number;
   alumnos?: number;
+}
+
+/** Una fila del listado del alumno: una dinámica con quién juega y por dónde va. */
+export interface FilaScrum extends Dinamica {
+  sprint: { id: string; numero: number; objetivo: string } | null;
+  integrantes: { id: string; name: string }[];
+  miEquipo: { id: string; nombre: string; color: string } | null;
+}
+
+/** El mismo tope que valida el servidor. Aquí solo evita el viaje en balde. */
+export const LARGO_NOMBRE = 60;
+
+/** ¿Es una partida de práctica de un alumno, y no una dinámica de clase? */
+export function esPractica(d: { propietario?: { id: string } | null }): boolean {
+  return !!d.propietario?.id;
+}
+
+/**
+ * En una partida de práctica manda cualquiera de los que están dentro.
+ *
+ * Espeja `esDeLaPartida` del servidor, que es quien decide de verdad: esto solo
+ * evita enseñar mandos que van a ser rechazados.
+ */
+export function puedeMandarEnPartida(d: FilaScrum | null, alumnoId: string): boolean {
+  if (!d || !esPractica(d) || d.finalizada) return false;
+  return d.propietario?.id === alumnoId || d.integrantes.some((i) => i.id === alumnoId);
 }
 
 /**

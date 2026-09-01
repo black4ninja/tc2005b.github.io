@@ -8,6 +8,54 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Una historia de usuario siempre pertenece a una épica.** Hasta ahora se podían
+  escribir historias sueltas, y el propio modal de épicas ya decía la regla que el
+  código no hacía cumplir: «primero se define la épica y después se le cuelgan
+  historias». Sin ella el backlog acaba siendo una lista de tareas que no dice a
+  qué se está apuntando el equipo, y la regla de «un modelo a la vez» —que compara
+  contra la épica del sprint— se queda sin nada contra qué comparar. Ahora, sin
+  ninguna épica definida, «Nueva historia» explica por qué y abre el sitio donde
+  se define; con épicas, elegir una es obligatorio y ya no se puede dejar
+  huérfana una historia al editarla. Rige igual en la dinámica de clase y en las
+  partidas de práctica.
+- **Partidas de práctica: el alumno recorre el Scrum a su paso.** Hasta ahora el
+  módulo solo existía en una forma —el profesor abre la dinámica en clase y
+  conduce el ciclo—, así que fuera de esa hora no se podía tocar. Ahora el alumno
+  puede abrir **su propia partida**, donde manda él: abre las etapas, mueve el
+  tablero, cierra el sprint y la termina. Sola o **invitando a compañeros de su
+  grupo** para simular el equipo de clase; dentro de una partida manda cualquiera
+  de los que están, porque en un equipo el turno de conducir rota.
+  - **No hay motor nuevo.** Una partida ES una dinámica con dueño: mismas etapas
+    del grupo, mismas reglas, mismo tablero, misma deuda y mismo burndown. El
+    tablero del alumno se monta dos veces sobre la misma pantalla, y los mandos
+    del ciclo son literalmente los controladores del profesor detrás de otro
+    candado. Cualquier ajuste futuro a una regla llega a las dos a la vez.
+  - **Una pantalla de entrada.** «Actividad de Scrum» ya no lleva directo a un
+    tablero: enseña **todas** las dinámicas de clase que el alumno jugó —la que
+    esté en curso y las anteriores— y sus partidas propias. De cualquiera de las
+    anteriores se entra a su resumen: qué cerró el equipo, quién cerró qué, el
+    burndown del proyecto y el de cada sprint. Antes, en cuanto terminaba la
+    sesión, todo eso dejaba de ser alcanzable.
+  - **El profesor las ve en un listado de solo lectura**, debajo de sus
+    dinámicas: quién practica y por dónde va, sin entrar al tablero.
+  - **Quién juega** se maneja desde el propio tablero: se invita a compañeros del
+    grupo y también se les puede sacar —invitar sin poder deshacerlo dejaba sin
+    salida a quien se equivocaba de persona—. A quien abrió la partida no se le
+    saca; para eso está borrarla.
+  - Tope de cinco partidas vivas por alumno y ocho personas por partida.
+
+### Fixed
+- **En una partida de práctica, la pantalla mandaba a esperar al profesor.** Sin
+  etapa abierta decía «el profesor todavía no ha abierto ninguna etapa», y en una
+  partida no hay profesor: el mando está un centímetro más abajo y lo maneja quien
+  está dentro. Lo mismo con la nota de la banda y con el pie de las restricciones,
+  que atribuía al profesor unas reglas que en realidad se heredan de la actividad.
+- **El tablero del alumno se quedaba en solo lectura al abrirse una etapa.** El
+  parche que viaja por el stream al cambiar de etapa no lleva el permiso de
+  edición —no hace falta, se puede deducir—, pero la pantalla lo guardaba tal
+  como llegaba: hasta el refresco de seguridad, veinte segundos con la etapa
+  abierta delante y sin poder mover una tarjeta. Ahora se deduce del estado, con
+  la misma regla que aplica el servidor.
 - **El reloj de la etapa, también donde manda el profesor.** El tiempo de cada
   etapa lo veían solo los alumnos, en la banda de su tablero. Pero quien decide
   cuándo se corta es el profesor, y para saber cuánto queda tenía que leerlo del

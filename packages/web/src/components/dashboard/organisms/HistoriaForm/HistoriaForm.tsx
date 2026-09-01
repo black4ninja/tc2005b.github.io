@@ -101,7 +101,10 @@ export default function HistoriaForm({
   }, [abierto, historiaId]);
 
   const editando = !!historia;
-  const puedeGuardar = datos.porQue.trim() !== '' && !guardando;
+  // La épica es obligatoria: una historia es un trozo de un entregable, y sin
+  // decir de cuál el backlog es una lista de tareas sueltas. El servidor lo
+  // rechaza igual; esto evita el viaje en balde.
+  const puedeGuardar = datos.porQue.trim() !== '' && !!datos.epicaId && !guardando;
 
   const epicaPrevia = epicas.find((e) => e.id === datos.epicaId) ?? null;
   // Una historia nueva nace en el backlog, así que el caso «sin historia» cuenta
@@ -177,25 +180,36 @@ export default function HistoriaForm({
           />
 
           <div className={styles.tresBloques}>
-            {epicas.length > 0 && (
-              <div className={styles.bloque}>
-                <div className={styles.bloqueTitulo}>
-                  <span className={styles.etiqueta}>Épica</span>
-                  <span className={styles.aclaracion}>de qué entregable es</span>
-                </div>
+            <div className={styles.bloque}>
+              <div className={styles.bloqueTitulo}>
+                <span className={styles.etiqueta}>Épica</span>
+                <span className={styles.aclaracion}>· obligatorio</span>
+              </div>
+              {epicas.length === 0 ? (
+                /* Se llega aquí abriendo una historia ESCRITA antes de que la
+                   épica fuera obligatoria, en un equipo que nunca definió
+                   ninguna. Sin este aviso, «Guardar» se quedaba apagado para
+                   siempre y sin decir por qué. */
+                <p className={styles.aviso}>
+                  Este equipo todavía no tiene ninguna épica, y toda historia pertenece a una.
+                  Defínela en «Épica» —arriba del tablero— y vuelve.
+                </p>
+              ) : (
+                /* Sin «sin épica»: toda historia pertenece a un entregable. La
+                   primera de la lista viene elegida, así que no hay forma de
+                   dejarla en blanco sin querer. */
                 <select
                   className={styles.select}
                   disabled={guardando}
                   value={datos.epicaId ?? ''}
                   onChange={(e) => setDatos((d) => ({ ...d, epicaId: e.target.value || null }))}
                 >
-                  <option value="">Sin épica</option>
                   {epicas.map((e) => (
                     <option key={e.id} value={e.id}>{e.nombre}</option>
                   ))}
                 </select>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* En el backlog no se reparte: la historia todavía no es de nadie
                 porque el equipo no se ha comprometido a hacerla. En vez de un

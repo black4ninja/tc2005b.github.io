@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { repartirEnEquipos } from '../src/controllers/scrum.controller.js';
 import { elegirDevueltas } from '../src/services/scrum-cierre.service.js';
+import { esDeLaPartida } from '../src/services/scrum.service.js';
 import {
-  esColumna, esPrioridad, esPuntos, estaEstimada, necesitaResponsable, permiteMover,
-  COLUMNAS, COLUMNAS_DEL_SPRINT, ETAPAS_SEMILLA, MAX_EQUIPOS, POLITICA_POR_DEFECTO,
+  esColumna, esPrioridad, esPuntos, estaEstimada, faltaEpica, necesitaResponsable,
+  permiteMover,
+  COLUMNAS, COLUMNAS_DEL_SPRINT, ETAPAS_SEMILLA, MAX_EQUIPOS, MAX_INVITADOS,
+  MAX_PARTIDAS_VIVAS, POLITICA_POR_DEFECTO,
   POLITICA_SIN_ETAPA,
   PUNTOS_DEMASIADO, PUNTOS_DESCONOCIDO,
 } from '../src/constants/scrum.js';
@@ -221,5 +224,59 @@ describe('prioridad y tope de equipos', () => {
 
   it('son nueve equipos: lo que cabe legible en una rejilla de 3 × 3', () => {
     expect(MAX_EQUIPOS).toBe(9);
+  });
+});
+
+describe('quién es de una partida de práctica', () => {
+  it('manda cualquiera de dentro, no solo quien la abrió', () => {
+    // La partida simula el equipo de la clase, y en un equipo el turno de
+    // conducir el ciclo rota. Si mandara solo el dueño, un invitado no podría
+    // ni pasar de etapa cuando le toca.
+    expect(esDeLaPartida('ana', ['ana', 'beto'], 'beto')).toBe(true);
+    expect(esDeLaPartida('ana', ['ana', 'beto'], 'ana')).toBe(true);
+  });
+
+  it('quien la abrió sigue dentro aunque no figure en el equipo', () => {
+    expect(esDeLaPartida('ana', [], 'ana')).toBe(true);
+  });
+
+  it('deja fuera a quien no está invitado', () => {
+    expect(esDeLaPartida('ana', ['ana', 'beto'], 'carla')).toBe(false);
+  });
+
+  it('una dinámica de clase no tiene dueño, y eso no mete a nadie', () => {
+    // El caso que importa: `getPropietarioId()` devuelve null en las del
+    // profesor. Sin este corte, un alumno sin sesión resuelta pasaría el filtro.
+    expect(esDeLaPartida(null, [], '')).toBe(false);
+    expect(esDeLaPartida(null, ['ana'], 'beto')).toBe(false);
+  });
+});
+
+describe('topes de las partidas de práctica', () => {
+  it('cinco partidas vivas por alumno: la base es la de producción', () => {
+    expect(MAX_PARTIDAS_VIVAS).toBe(5);
+  });
+
+  it('caben menos personas que en la clase entera', () => {
+    expect(MAX_INVITADOS).toBeLessThan(MAX_EQUIPOS * 6);
+  });
+});
+
+describe('una historia pertenece a una épica', () => {
+  it('sin ninguna épica definida no hay historia que escribir', () => {
+    // El backlog sin épicas es una lista de tareas sueltas: no dice a qué se
+    // está apuntando el equipo, que es justo lo contrario de lo que se enseña.
+    expect(faltaEpica(0, null)).toBe('ninguna');
+    expect(faltaEpica(0, 'aBcD1234')).toBe('ninguna');
+  });
+
+  it('habiéndolas, hay que decir a cuál pertenece', () => {
+    expect(faltaEpica(2, null)).toBe('sin-elegir');
+    expect(faltaEpica(2, '')).toBe('sin-elegir');
+    expect(faltaEpica(2, undefined)).toBe('sin-elegir');
+  });
+
+  it('con épica elegida se puede escribir', () => {
+    expect(faltaEpica(1, 'aBcD1234')).toBeNull();
   });
 });

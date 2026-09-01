@@ -30,6 +30,7 @@ import AgendaEntrevistasAlumnoPage from './components/dashboard/pages/AgendaEntr
 import ScrumGrupoPage from './components/dashboard/pages/ScrumGrupoPage/ScrumGrupoPage';
 import DinamicaScrumPage from './components/dashboard/pages/DinamicaScrumPage/DinamicaScrumPage';
 import ScrumTableroPage from './components/dashboard/pages/ScrumTableroPage/ScrumTableroPage';
+import MisScrumPage from './components/dashboard/pages/MisScrumPage/MisScrumPage';
 import ProyeccionScrumPage from './components/dashboard/pages/ProyeccionScrumPage/ProyeccionScrumPage';
 import EvaluacionEntrevistaPage from './components/dashboard/pages/EvaluacionEntrevistaPage/EvaluacionEntrevistaPage';
 import AlumnoCalendarioPage from './components/dashboard/pages/AlumnoCalendarioPage/AlumnoCalendarioPage';
@@ -319,9 +320,22 @@ export default function App() {
         {/* Lo ÚNICO del módulo "Preguntas" que el alumno ve: su agenda. Ni el
             banco, ni qué pregunta le tocará, ni la de nadie más. */}
         <Route path="alumno/grupos/:grupoId/entrevistas" element={<AgendaEntrevistasAlumnoPage />} />
-        {/* El tablero del equipo del alumno. Al revés que "Preguntas", este
-            módulo SÍ le añade una pantalla propia. */}
-        <Route path="alumno/grupos/:grupoId/scrum" element={<ScrumTableroPage />} />
+        {/* El módulo de Scrum del alumno. Al revés que "Preguntas", este SÍ le
+            añade pantallas propias, y desde que existen las partidas de práctica
+            son varias: el listado por delante y, detrás, el tablero. Todas las
+            de tablero son la MISMA pantalla —no sabe sobre cuál está, solo
+            cambia a qué URL le pregunta—: la dinámica vigente de la clase, una
+            anterior a la que se vuelve a consultar, o una partida propia. */}
+        <Route path="alumno/grupos/:grupoId/scrum" element={<MisScrumPage />} />
+        <Route path="alumno/grupos/:grupoId/scrum/tablero" element={<ScrumTableroPage />} />
+        <Route
+          path="alumno/grupos/:grupoId/scrum/dinamicas/:dinamicaId"
+          element={<ScrumTableroPage />}
+        />
+        <Route
+          path="alumno/grupos/:grupoId/scrum/partidas/:partidaId"
+          element={<ScrumTableroPage />}
+        />
         {/* Taller libre: fuera del árbol de :slug porque no pertenece a ninguna
             colección. Colgarlo de una haría creer que lo guardado es del curso. */}
         <Route

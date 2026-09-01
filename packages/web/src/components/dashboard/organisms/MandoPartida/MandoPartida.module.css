@@ -1,0 +1,38 @@
+.botones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.boton:hover:not(:disabled) {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+.boton:disabled { opacity: 0.45; cursor: default; }
+.boton .material-icons { font-size: 16px; }
+
+/* Terminar la partida no se deshace: se pinta como lo que es. */
+.terminar { color: var(--estado-aviso-color); border-color: var(--estado-aviso-border); }
+.terminar:hover:not(:disabled) {
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  border-color: var(--estado-aviso-color);
+}

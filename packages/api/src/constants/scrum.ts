@@ -54,6 +54,24 @@ export const LARGO_DESCRIPCION_ETAPA = 400;
 /** Nueve equipos: lo que cabe legible en una rejilla de 3 × 3 proyectada. */
 export const MAX_EQUIPOS = 9;
 
+/**
+ * Cuántas partidas de práctica puede tener vivas un alumno a la vez.
+ *
+ * El tope no es de diseño, es de cordura: cada partida son una dinámica, un
+ * equipo, un sprint y un marcador por equipo contra una base remota, y sin
+ * límite cualquiera puede abrirlas en bucle. Cinco es más de lo que nadie
+ * necesita para practicar; las finalizadas no cuentan.
+ */
+export const MAX_PARTIDAS_VIVAS = 5;
+
+/**
+ * Cuánta gente cabe en el equipo de una partida de práctica.
+ *
+ * Simula el equipo de la dinámica de clase, que son cinco o seis: ocho deja
+ * margen sin convertir la práctica en otra clase entera.
+ */
+export const MAX_INVITADOS = 8;
+
 export const LARGO_NOMBRE = 60;
 export const LARGO_OBJETIVO = 160;
 export const LARGO_TARJETA_RETRO = 200;
@@ -324,6 +342,27 @@ export function esColumnaRetro(v: unknown): v is ColumnaRetro {
  */
 export function necesitaResponsable(destino: Columna): boolean {
   return COLUMNAS_DEL_SPRINT.includes(destino) && destino !== 'planned';
+}
+
+/**
+ * ¿Por qué NO se puede escribir esta historia? `null` si sí se puede.
+ *
+ * Una historia es un trozo de un entregable, y el entregable es la épica. Sin
+ * decir de cuál, el backlog acaba siendo una lista de tareas sueltas: no dice a
+ * qué se está apuntando el equipo, y la regla de «un modelo a la vez» —que
+ * compara contra la épica del sprint— se queda sin nada contra qué comparar.
+ *
+ * Dos maneras distintas de fallar, y a cada una le toca decir otra cosa: si el
+ * equipo no ha definido ninguna épica hay que mandarlo a definirla; si la hay
+ * pero no eligió, basta con que elija.
+ */
+export function faltaEpica(
+  cuantasEpicas: number,
+  epicaId: unknown,
+): 'ninguna' | 'sin-elegir' | null {
+  if (cuantasEpicas === 0) return 'ninguna';
+  if (!epicaId) return 'sin-elegir';
+  return null;
 }
 
 /**

@@ -1,5 +1,6 @@
 import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
+import type { AppUser } from './AppUser.js';
 import type { Grupo } from './Grupo.js';
 import type { EtapaScrum } from './EtapaScrum.js';
 import type { SprintScrum } from './SprintScrum.js';
@@ -110,6 +111,33 @@ export class DinamicaScrum extends BaseModel {
     else this.unset('etapaIniciadaEn');
   }
 
+  /**
+   * Quién la abrió, cuando no la abrió el profesor.
+   *
+   * Vacío = dinámica de clase, la que el profesor conduce. Con dueño = PARTIDA
+   * DE PRÁCTICA: un alumno recorriendo el ciclo a su paso, solo o con
+   * compañeros invitados. Es el único campo que las distingue, y a propósito:
+   * las dos son el mismo ejercicio con las mismas reglas, las mismas etapas del
+   * grupo y el mismo tablero. Un modelo aparte habría sido dos sitios donde
+   * arreglar cada regla que se ajuste en el futuro.
+   */
+  getPropietario(): AppUser | undefined {
+    return this.get('propietario');
+  }
+  setPropietario(alumno: AppUser | null): void {
+    if (alumno) this.set('propietario', alumno);
+    else this.unset('propietario');
+  }
+
+  getPropietarioId(): string | null {
+    return this.get('propietario')?.id ?? null;
+  }
+
+  /** ¿Es una partida de práctica de un alumno, y no una dinámica de clase? */
+  esPractica(): boolean {
+    return !!this.getPropietarioId();
+  }
+
   /** Terminada del todo: cada equipo ve su resumen y ya no se toca nada. */
   getFinalizada(): boolean {
     return this.get('finalizada') === true;
@@ -129,6 +157,7 @@ export class DinamicaScrum extends BaseModel {
 
   toSafeJSON(): Record<string, unknown> {
     const etapa = this.getEtapaActual();
+    const dueño = this.getPropietario();
     return {
       id: this.id,
       nombre: this.getNombre(),
@@ -139,6 +168,9 @@ export class DinamicaScrum extends BaseModel {
       definicionDone: this.getDefinicionDone(),
       restricciones: this.getRestricciones(),
       etapaIniciadaEn: this.getEtapaIniciadaEn()?.toISOString() ?? null,
+      // Null en las de clase. El nombre sale vacío si el puntero no viene
+      // desplegado: quien sirva partidas tiene que hacer `include('propietario')`.
+      propietario: dueño ? { id: dueño.id, name: dueño.get('name') ?? '' } : null,
       // Se sirve la etapa ENTERA y no su id: quien pinta la banda necesita el
       // color y el nombre, y sin esto tendría que cargar el catálogo aparte.
       etapaActual: etapa

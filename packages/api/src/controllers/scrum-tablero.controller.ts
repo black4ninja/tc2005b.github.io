@@ -8,11 +8,13 @@ import { moduloActivoEnGrupo } from '../services/grupo-colecciones.service.js';
 import {
   asegurarSprint,
   cargarDinamica,
+  cargarDinamicaConSprint,
   construirEstadoDinamica,
   difundirTablero,
   dinamicaVigente,
   equipoDelAlumno,
   equiposDeDinamica,
+  etapasDeGrupo,
   historiasDeEquipos,
   historicoDeEquipos,
   otraHistoriaViva,
@@ -25,7 +27,8 @@ import {
 } from '../services/scrum-bloqueos.js';
 import { SprintScrum } from '../models/SprintScrum.js';
 import {
-  esColumna, esColumnaRetro, esPrioridad, esPuntos, estaEstimada, necesitaResponsable,
+  esColumna, esColumnaRetro, esPrioridad, esPuntos, estaEstimada, faltaEpica,
+  necesitaResponsable,
   permiteMover,
   COLUMNAS_DEL_SPRINT, ESTADOS_COMPROMISO, LARGO_CAMPO, LARGO_OBJETIVO,
   LARGO_TARJETA_RETRO, POLITICA_POR_DEFECTO, POLITICA_SIN_ETAPA, PRIORIDAD_POR_DEFECTO,
@@ -76,6 +79,15 @@ interface ContextoAlumno {
   sinEtapa: boolean;
   politica: PoliticaEtapa;
   estado: EstadoDinamica | null;
+  /**
+   * El catálogo de etapas del grupo, SOLO en una partida de práctica.
+   *
+   * Ahí el ciclo lo conduce el propio alumno, así que su pantalla necesita la
+   * lista entera para pintar la barra de mando. En el tablero de clase no hace
+   * falta —la etapa la pone el profesor— y pedirlo sería un viaje de más en la
+   * pantalla que más se abre del módulo.
+   */
+  etapas: Record<string, unknown>[] | null;
 }
 
 /**
@@ -105,7 +117,7 @@ async function contextoAlumno(
    */
   conEstado = true,
 ): Promise<ContextoAlumno | null> {
-  const { grupoId } = req.params;
+  const { grupoId, dinamicaId } = req.params;
   const alumno = (req as any).appUser as AppUser | undefined;
 
   if (!alumno?.id || !grupoId) {
@@ -118,10 +130,15 @@ async function contextoAlumno(
   // épica, cada historia. Si el acceso resulta denegado se habrá pedido la
   // dinámica de más; es un camino de error y sale mucho más barato que el peaje
   // en el camino bueno.
-  const [enElGrupo, moduloActivo, dinamica] = await Promise.all([
+  // Con `dinamicaId` en la ruta se está mirando una PARTIDA DE PRÁCTICA, y la
+  // dinámica es esa; sin él, la del grupo. Es lo único que cambia entre los dos
+  // caminos: de aquí abajo todo —la política de la etapa, el equipo, las reglas
+  // de responsable— sale del contexto y no sabe ni le importa de cuál viene.
+  const [enElGrupo, moduloActivo, dinamica, etapas] = await Promise.all([
     alumnoTieneAccesoAGrupo(alumno.id, grupoId),
     moduloActivoEnGrupo(grupoId, 'scrum'),
-    dinamicaVigente(grupoId),
+    dinamicaId ? cargarDinamicaConSprint(dinamicaId, grupoId) : dinamicaVigente(grupoId),
+    dinamicaId ? etapasDeGrupo(grupoId) : Promise.resolve(null),
   ]);
   if (!enElGrupo) {
     error(res, 403, 'No perteneces a este grupo');
@@ -136,6 +153,7 @@ async function contextoAlumno(
     return {
       grupoId, alumno, dinamicaId: null, sprintId: null, equipo: null,
       cerrada: false, sinEtapa: true, politica: POLITICA_SIN_ETAPA, estado: null,
+      etapas: null,
     };
   }
   if (!dinamica.getFinalizada()) await asegurarSprint(dinamica);
@@ -170,6 +188,7 @@ async function contextoAlumno(
     sinEtapa: !etapa,
     politica,
     estado,
+    etapas: etapas?.map((e) => e.toSafeJSON()) ?? null,
   };
 }
 
@@ -192,6 +211,8 @@ function sobreAlumno(ctx: ContextoAlumno) {
     equipo: recortarAEquipo(ctx.estado, ctx.equipo?.id ?? null),
     // Con la dinámica cerrada el tablero se lee pero no se toca.
     editable: !!ctx.equipo && !ctx.cerrada && !ctx.sinEtapa,
+    // Solo en una partida de práctica: la barra de mando del alumno.
+    etapas: ctx.etapas,
     puntosValidos: PUNTOS_VALIDOS,
   };
 }
@@ -417,13 +438,42 @@ export async function crearHistoria(req: Request, res: Response): Promise<void> 
       return;
     }
     const responsable = null;
-    const epica = await resolverEpica(req.body?.epicaId, equipo.id!);
+
+    /*
+     * Una historia SIEMPRE pertenece a una épica.
+     *
+     * Sin esto el backlog acababa siendo una lista de tareas sueltas, que es
+     * justo lo contrario de lo que la dinámica enseña: la épica es el
+     * entregable, y una historia es un trozo de ese entregable. Un backlog sin
+     * épicas no dice a qué se está apuntando el equipo, y la regla de «un
+     * modelo a la vez» —que compara contra la épica del sprint— se queda sin
+     * nada contra qué comparar.
+     *
+     * Se comprueba aquí y no solo en la pantalla porque la lección es la regla,
+     * no el aviso.
+     */
+    const [existentes, epicas] = await Promise.all([
+      historiasDeEquipos([equipo.id!]),
+      epicasDeEquipos([equipo.id!]),
+    ]);
+    const falta = faltaEpica(epicas.length, req.body?.epicaId);
+    if (falta === 'ninguna') {
+      error(
+        res,
+        409,
+        'Antes de escribir historias, define al menos una épica: es el entregable al que pertenecen',
+      );
+      return;
+    }
+    if (falta === 'sin-elegir') {
+      error(res, 400, 'Elige a qué épica pertenece la historia');
+      return;
+    }
+    const epica = await resolverEpica(req.body.epicaId, equipo.id!);
     if (epica === false) {
       error(res, 400, 'Esa épica no es de tu equipo');
       return;
     }
-
-    const existentes = await historiasDeEquipos([equipo.id!]);
     const historia = new HistoriaUsuario().initDefaults();
     historia.setEquipo(EquipoScrum.createWithoutData(equipo.id!) as EquipoScrum);
     historia.setPorQue(campos.porQue);
@@ -543,6 +593,12 @@ export async function actualizarHistoria(req: Request, res: Response): Promise<v
       historia.setResponsable(responsable);
     }
     if (req.body?.epicaId !== undefined) {
+      // Se puede cambiar de épica, no quedarse sin ninguna: una historia
+      // huérfana es la misma lista de tareas sueltas que se evita al crearla.
+      if (!req.body.epicaId) {
+        error(res, 400, 'Una historia siempre pertenece a una épica');
+        return;
+      }
       const epica = await resolverEpica(req.body.epicaId, equipo.id!);
       if (epica === false) {
         error(res, 400, 'Esa épica no es de tu equipo');

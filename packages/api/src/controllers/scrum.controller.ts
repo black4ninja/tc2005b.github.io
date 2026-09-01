@@ -24,7 +24,9 @@ import {
   historiasDeEquipos,
   difundirEtapa,
   historicoDeEquipo,
+  liberarHistoriasDeExmiembros,
   marcadoresDeSprint,
+  moverMiembros,
   sprintsDeDinamica,
   difundirTablero,
 } from '../services/scrum.service.js';
@@ -87,10 +89,13 @@ function error(res: Response, codigo: number, mensaje: string): void {
 export async function getScrumGrupo(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
   try {
-    const [dinamicas, etapas] = await Promise.all([
+    const [todas, etapas] = await Promise.all([
       dinamicasDeGrupo(grupoId),
       etapasDeGrupo(grupoId),
     ]);
+    // Las partidas de práctica de los alumnos NO van en esta tabla: son suyas y
+    // no del temario. Tienen su propio listado de solo lectura más abajo.
+    const dinamicas = todas.filter((d) => !d.esPractica());
 
     // Cuántos equipos y cuánta gente tiene cada dinámica, para el listado. Es
     // una consulta por todas ellas, no una por fila.
@@ -628,25 +633,7 @@ export async function asignarMiembros(req: Request, res: Response): Promise<void
       return;
     }
 
-    const aGuardar: Parse.Object[] = [];
-    const mudados = new Set(nuevos);
-    let veniaDeOtroEquipo = false;
-
-    for (const equipo of equipos) {
-      const antes = equipo.getMiembroIds();
-      if (equipo.id === equipoId) continue;
-      const quedan = antes.filter((id) => !mudados.has(id));
-      if (quedan.length !== antes.length) {
-        veniaDeOtroEquipo = true;
-        equipo.setMiembros(quedan.map((id) => AppUser.createWithoutData(id) as AppUser));
-        aGuardar.push(equipo);
-      }
-    }
-
-    const finales = [...new Set([...destino.getMiembroIds(), ...nuevos])];
-    destino.setMiembros(finales.map((id) => AppUser.createWithoutData(id) as AppUser));
-    aGuardar.push(destino);
-    await Parse.Object.saveAll(aGuardar, { useMasterKey: true });
+    const veniaDeOtroEquipo = await moverMiembros(equipos, equipoId, nuevos);
 
     // La foto sale de lo que ya está en memoria: el panel no tiene que volver a
     // pedir el detalle entero por cada alumno que se mueve.
@@ -666,35 +653,6 @@ export async function asignarMiembros(req: Request, res: Response): Promise<void
   } catch {
     error(res, 500, 'Error al asignar los alumnos');
   }
-}
-
-/**
- * Quita como responsable a quien acaba de cambiarse de equipo.
- *
- * Sin esto, mover a alguien de equipo dejaba su cara en las historias del
- * anterior, y el tablero pasaba a decir que una historia la lleva alguien que ya
- * no está ahí — que es la única manera de romper la regla de un responsable por
- * historia sin darse cuenta.
- */
-async function liberarHistoriasDeExmiembros(
-  dinamicaId: string,
-  equipos: EquipoScrum[],
-  equipoDestinoId: string,
-  alumnoIds: string[],
-): Promise<void> {
-  const otros = equipos.filter((e) => e.id !== equipoDestinoId).map((e) => e.id!);
-  if (otros.length === 0 || alumnoIds.length === 0) return;
-
-  const q = new Parse.Query<HistoriaUsuario>('HistoriaUsuario');
-  q.containedIn('equipo' as any, otros.map((id) => EquipoScrum.createWithoutData(id)) as any);
-  q.containedIn('responsable' as any, alumnoIds.map((id) => AppUser.createWithoutData(id)) as any);
-  q.equalTo('exists' as any, true as any);
-  q.limit(1000);
-  const huerfanas = await q.find({ useMasterKey: true });
-  if (huerfanas.length === 0) return;
-  for (const h of huerfanas) h.setResponsable(null);
-  await Parse.Object.saveAll(huerfanas, { useMasterKey: true });
-  void difundirTablero(dinamicaId);
 }
 
 /** DELETE …/equipos/:equipoId/miembros/:alumnoId */
