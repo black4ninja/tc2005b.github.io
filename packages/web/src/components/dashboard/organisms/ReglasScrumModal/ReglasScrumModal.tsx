@@ -8,6 +8,12 @@ interface Props {
   items: string[];
   /** El profesor las edita; el alumno solo las consulta. */
   editable?: boolean;
+  /**
+   * En una partida de práctica no hay profesor que las haya escrito: son las de
+   * la actividad, heredadas. Decir lo contrario deja al alumno buscando a quien
+   * pedirle un cambio que nadie va a hacer.
+   */
+  dePractica?: boolean;
   onGuardar?: (items: string[]) => void;
   onCerrar: () => void;
 }
@@ -21,7 +27,7 @@ interface Props {
  * tiene delante mientras trabaja. Aquí están a un botón de distancia.
  */
 export default function ReglasScrumModal({
-  abierto, tipo, items, editable, onGuardar, onCerrar,
+  abierto, tipo, items, editable, dePractica = false, onGuardar, onCerrar,
 }: Props) {
   const esDone = tipo === 'done';
   const [lista, setLista] = useState<string[]>(items);
@@ -111,7 +117,9 @@ export default function ReglasScrumModal({
         <p className={styles.pie}>
           {esDone
             ? 'El visto bueno del Product Owner es un acuerdo del equipo, no un candado del sistema: la lista la marca cualquiera.'
-            : 'Las escribe el profesor por dinámica.'}
+            : dePractica
+              ? 'Son las de la actividad: en tu partida se juegan tal cual.'
+              : 'Las escribe el profesor por dinámica.'}
         </p>
       </div>
     </Modal>

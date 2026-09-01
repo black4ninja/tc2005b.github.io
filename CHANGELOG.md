@@ -41,6 +41,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   - Tope de cinco partidas vivas por alumno y ocho personas por partida.
 
 ### Fixed
+- **En una partida de práctica, la pantalla mandaba a esperar al profesor.** Sin
+  etapa abierta decía «el profesor todavía no ha abierto ninguna etapa», y en una
+  partida no hay profesor: el mando está un centímetro más abajo y lo maneja quien
+  está dentro. Lo mismo con la nota de la banda y con el pie de las restricciones,
+  que atribuía al profesor unas reglas que en realidad se heredan de la actividad.
 - **El tablero del alumno se quedaba en solo lectura al abrirse una etapa.** El
   parche que viaja por el stream al cambiar de etapa no lleva el permiso de
   edición —no hace falta, se puede deducir—, pero la pantalla lo guardaba tal

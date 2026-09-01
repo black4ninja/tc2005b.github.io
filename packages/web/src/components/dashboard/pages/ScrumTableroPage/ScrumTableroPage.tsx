@@ -671,8 +671,18 @@ export default function ScrumTableroPage() {
                   <span className={styles.relojCifra}>{reloj.texto}</span>
                 </div>
               ) : (
-                <span className={styles.bandaNota}>La cambia el profesor</span>
+                <span className={styles.bandaNota}>
+                  {esPractica(dinamica) ? 'La cambias tú' : 'La cambia el profesor'}
+                </span>
               )}
+            </div>
+          ) : esPractica(dinamica) ? (
+            /* En una partida no hay profesor a quien esperar: el mando está a un
+               centímetro de aquí. Decir «el profesor todavía no ha abierto
+               ninguna etapa» dejaba al alumno esperando a nadie. */
+            <div className={styles.bandaVacia}>
+              <strong>Tu partida no ha empezado.</strong>
+              {' '}Abre una etapa aquí abajo —normalmente el planning— y el tablero se despierta.
             </div>
           ) : (
             /* Sin etapa el tablero está en pausa, no roto: se dice qué se puede
@@ -905,6 +915,7 @@ export default function ScrumTableroPage() {
         abierto={reglas !== null}
         tipo={reglas ?? 'done'}
         items={reglas === 'restricciones' ? dinamica.restricciones : dinamica.definicionDone}
+        dePractica={esPractica(dinamica)}
         onCerrar={() => setReglas(null)}
       />
 
