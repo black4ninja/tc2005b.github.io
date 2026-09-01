@@ -38,6 +38,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
     sesión, todo eso dejaba de ser alcanzable.
   - **El profesor las ve en un listado de solo lectura**, debajo de sus
     dinámicas: quién practica y por dónde va, sin entrar al tablero.
+  - **Quién juega** se maneja desde el propio tablero: se invita a compañeros del
+    grupo y también se les puede sacar —invitar sin poder deshacerlo dejaba sin
+    salida a quien se equivocaba de persona—. A quien abrió la partida no se le
+    saca; para eso está borrarla.
   - Tope de cinco partidas vivas por alumno y ocho personas por partida.
 
 ### Fixed

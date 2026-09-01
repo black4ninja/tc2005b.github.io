@@ -8,6 +8,7 @@ import Burndown from '../../organisms/Burndown/Burndown';
 import HistoriaForm, { type DatosHistoria } from '../../organisms/HistoriaForm/HistoriaForm';
 import RolesScrumModal from '../../organisms/RolesScrumModal/RolesScrumModal';
 import EpicasScrumModal from '../../organisms/EpicasScrumModal/EpicasScrumModal';
+import InvitadosPartidaModal from '../../organisms/InvitadosPartidaModal/InvitadosPartidaModal';
 import ReglasScrumModal from '../../organisms/ReglasScrumModal/ReglasScrumModal';
 import MandoPartida from '../../organisms/MandoPartida/MandoPartida';
 import ResumenEquipo, { type DatosResumen } from './ResumenEquipo';
@@ -63,6 +64,7 @@ export default function ScrumTableroPage() {
   const [guardando, setGuardando] = useState(false);
   const [rolesAbierto, setRolesAbierto] = useState(false);
   const [epicasAbierto, setEpicasAbierto] = useState(false);
+  const [invitadosAbierto, setInvitadosAbierto] = useState(false);
   const [reglas, setReglas] = useState<'done' | 'restricciones' | null>(null);
   const [resumen, setResumen] = useState<DatosResumen | null>(null);
   const [cobro, setCobro] = useState<number | null>(null);
@@ -543,6 +545,21 @@ export default function ScrumTableroPage() {
     setMandando(false);
   }
 
+  async function sacarInvitado(alumnoId: string) {
+    const quien = equipo?.miembros.find((m) => m.id === alumnoId);
+    const ok = await confirmar({
+      titulo: `¿Sacar a ${quien?.name ?? 'esta persona'}?`,
+      texto: 'Dejará de ver la partida y soltará las historias que llevara.',
+      confirmar: 'Sacar',
+      peligro: true,
+    });
+    if (!ok) return;
+    setMandando(true);
+    await mandar(`${base}/invitados/${alumnoId}`, 'DELETE');
+    await cargar();
+    setMandando(false);
+  }
+
   async function finalizarPartida() {
     const ok = await confirmar({
       titulo: '¿Terminar la partida?',
@@ -708,7 +725,7 @@ export default function ScrumTableroPage() {
               onNuevoSprint={() => void nuevoSprint()}
               onCerrarSprint={() => void cerrarSprint()}
               onObjetivo={() => void editarObjetivoPartida()}
-              onInvitar={() => void invitar()}
+              onInvitar={() => setInvitadosAbierto(true)}
               onFinalizar={() => void finalizarPartida()}
             />
           )}
@@ -884,6 +901,18 @@ export default function ScrumTableroPage() {
         onElegir={(alumnoId) => void mandar(`${base}/po`, 'PUT', { alumnoId })}
         onCerrar={() => setRolesAbierto(false)}
       />
+
+      {esPractica(dinamica) && (
+        <InvitadosPartidaModal
+          abierto={invitadosAbierto}
+          miembros={equipo.miembros}
+          propietarioId={dinamica.propietario?.id ?? null}
+          enVuelo={mandando}
+          onInvitar={() => void invitar()}
+          onSacar={(id) => void sacarInvitado(id)}
+          onCerrar={() => setInvitadosAbierto(false)}
+        />
+      )}
 
       <EpicasScrumModal
         abierto={epicasAbierto}
