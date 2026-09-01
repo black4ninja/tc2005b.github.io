@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import EtapasScrumModal from '../../organisms/EtapasScrumModal/EtapasScrumModal';
 import { avisar, confirmar, pedirTexto } from '../../../../utils/dialogos';
-import { rangoFechas, type Dinamica, type Etapa } from '../../../../utils/scrum';
+import { rangoFechas, type Dinamica, type Etapa, type FilaScrum } from '../../../../utils/scrum';
 import BarraEtapasScrum from '../../organisms/BarraEtapasScrum/BarraEtapasScrum';
 import styles from './ScrumGrupoPage.module.css';
 
@@ -25,6 +25,9 @@ export default function ScrumGrupoPage() {
   const [dinamicas, setDinamicas] = useState<Dinamica[]>([]);
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [paleta, setPaleta] = useState<string[]>([]);
+  // Lo que sus alumnos practican por su cuenta. Se pide aparte porque no es del
+  // temario y la pantalla se compone igual sin ello.
+  const [partidas, setPartidas] = useState<FilaScrum[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [etapasAbierto, setEtapasAbierto] = useState(false);
@@ -70,6 +73,20 @@ export default function ScrumGrupoPage() {
   }, [grupoId, sessionToken, cabeceras]);
 
   useEffect(() => { void cargar(); }, [cargar]);
+
+  useEffect(() => {
+    if (!grupoId) return;
+    void (async () => {
+      try {
+        const r = await fetch(`${API}/admin/grupos/${grupoId}/scrum/partidas`, {
+          headers: cabeceras(),
+        });
+        if (!r.ok) return;
+        const json = await r.json();
+        setPartidas(json.partidas ?? []);
+      } catch { /* la lista de práctica no es crítica: se queda vacía */ }
+    })();
+  }, [grupoId, cabeceras]);
 
   /**
    * Envuelve una llamada que cambia algo.
@@ -327,6 +344,60 @@ export default function ScrumGrupoPage() {
             ))}
           </tbody>
         </table>
+      )}
+
+      {partidas.length > 0 && (
+        /* Lo que sus alumnos practican por su cuenta. Solo lectura y sin entrar
+           al tablero: la partida es suya y no cuenta para la clase. Lo que el
+           profesor necesita saber es QUE se practica y quién, no qué escriben. */
+        <section className={styles.practica}>
+          <h2 className={styles.tituloPractica}>Partidas de práctica</h2>
+          <p className={styles.hint}>
+            Partidas que tus alumnos han abierto por su cuenta para recorrer el ciclo a su
+            paso. Usan las etapas y las reglas de este grupo.
+          </p>
+          <table className={styles.tabla}>
+            <thead>
+              <tr>
+                <th>Partida</th>
+                <th className={styles.colCorta}>Sprint</th>
+                <th>Quién juega</th>
+                <th className={styles.colEtapa}>Etapa</th>
+                <th className={styles.colCorta}>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {partidas.map((p) => (
+                <tr key={p.id}>
+                  <td>
+                    <span className={styles.nombrePartida}>{p.nombre}</span>
+                    <span className={styles.rango}>la abrió {p.propietario?.name ?? '—'}</span>
+                  </td>
+                  <td>{p.sprint?.numero ?? '—'}</td>
+                  <td>
+                    {p.integrantes.length === 1
+                      ? p.integrantes[0]?.name
+                      : p.integrantes.map((i) => i.name.split(' ')[0]).join(', ')}
+                  </td>
+                  <td>
+                    {p.etapaActual ? (
+                      <span className={styles.etapaTag} style={{ background: p.etapaActual.color }}>
+                        {p.etapaActual.nombre}
+                      </span>
+                    ) : (
+                      <span className={styles.vacioCelda}>—</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className={p.finalizada ? styles.tagCerrada : styles.tagAbierta}>
+                      {p.finalizada ? 'Terminada' : 'En curso'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
       )}
 
       <EtapasScrumModal

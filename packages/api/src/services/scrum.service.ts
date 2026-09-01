@@ -185,6 +185,35 @@ export async function cargarDinamica(
 }
 
 /**
+ * Como la anterior, pero con el sprint desplegado.
+ *
+ * La necesita quien va a construir el estado del tablero: `construirEstadoDinamica`
+ * lee el NÚMERO y el OBJETIVO del sprint, y un puntero pelado solo trae el id —
+ * la pantalla enseñaría «Sprint 0» sin objetivo. `dinamicaVigente` ya despliega
+ * los dos por eso mismo; esta es su gemela para cuando la dinámica se pide por
+ * id, que es el caso de una partida de práctica.
+ *
+ * Se queda aparte de `cargarDinamica` a propósito: cada `include` es un viaje
+ * más contra una base remota, y a los mandos del profesor —que solo escriben—
+ * el sprint desplegado no les hace ninguna falta.
+ */
+export async function cargarDinamicaConSprint(
+  dinamicaId: string,
+  grupoId: string,
+): Promise<DinamicaScrum | null> {
+  const q = new Parse.Query<DinamicaScrum>('DinamicaScrum');
+  q.equalTo('exists' as any, true as any);
+  q.include('etapaActual' as any);
+  q.include('sprintActual' as any);
+  try {
+    const dinamica = await q.get(dinamicaId, { useMasterKey: true });
+    return dinamica.getGrupoId() === grupoId ? dinamica : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * La dinámica que el alumno ve al entrar: la ABIERTA más reciente.
  *
  * Y si no hay ninguna abierta, la última FINALIZADA. Sin esto, terminar la
@@ -197,6 +226,7 @@ export async function dinamicaVigente(grupoId: string): Promise<DinamicaScrum | 
   abierta.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
   abierta.equalTo('exists' as any, true as any);
   abierta.notEqualTo('cerrada' as any, true as any);
+  soloDeClase(abierta);
   abierta.include('etapaActual' as any);
   abierta.include('sprintActual' as any);
   abierta.descending('createdAt');
@@ -207,10 +237,23 @@ export async function dinamicaVigente(grupoId: string): Promise<DinamicaScrum | 
   terminada.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
   terminada.equalTo('exists' as any, true as any);
   terminada.equalTo('finalizada' as any, true as any);
+  soloDeClase(terminada);
   terminada.include('etapaActual' as any);
   terminada.include('sprintActual' as any);
   terminada.descending('updatedAt');
   return (await terminada.first({ useMasterKey: true })) ?? null;
+}
+
+/**
+ * Deja fuera las partidas de práctica de los alumnos.
+ *
+ * Es el filtro que sostiene todo el reparto: la dinámica «vigente» de un grupo
+ * es la del PROFESOR, y las consultas de arriba ordenan por fecha descendente.
+ * Sin esto, la primera partida que un alumno abriera para practicar pasaría a
+ * ser el tablero de la clase entera al minuto siguiente.
+ */
+function soloDeClase(q: Parse.Query<DinamicaScrum>): void {
+  q.doesNotExist('propietario' as any);
 }
 
 export async function equiposDeDinamica(dinamicaId: string): Promise<EquipoScrum[]> {
@@ -270,6 +313,172 @@ export async function equipoDelAlumno(
   q.equalTo('miembros' as any, AppUser.createWithoutData(alumnoId) as any);
   q.include('miembros' as any);
   return (await q.first({ useMasterKey: true })) ?? null;
+}
+
+/**
+ * En qué dinámicas del grupo ha estado el alumno, sea de clase o de práctica.
+ *
+ * Una sola consulta de equipos para las dos listas del alumno: las dinámicas
+ * que jugó con su clase y las partidas que abrió o a las que le invitaron. Ir
+ * por separado eran dos viajes a una base remota para responder la misma
+ * pregunta —«¿dónde has estado?»— con distinta cara.
+ */
+export async function equiposDelAlumno(alumnoId: string): Promise<EquipoScrum[]> {
+  const q = new Parse.Query<EquipoScrum>('EquipoScrum');
+  q.equalTo('exists' as any, true as any);
+  q.equalTo('miembros' as any, AppUser.createWithoutData(alumnoId) as any);
+  q.limit(500);
+  return q.find({ useMasterKey: true });
+}
+
+/**
+ * Las dinámicas del grupo donde el alumno pinta algo, repartidas en dos.
+ *
+ * `clase` son las que condujo el profesor y en las que tuvo equipo; `practica`
+ * son sus partidas —las que abrió y aquellas a las que le invitaron—. Se
+ * resuelven juntas porque la pantalla las enseña juntas.
+ */
+export async function scrumDelAlumno(
+  grupoId: string,
+  alumnoId: string,
+): Promise<{ clase: DinamicaScrum[]; practica: DinamicaScrum[] }> {
+  const [equipos, propias] = await Promise.all([
+    equiposDelAlumno(alumnoId),
+    partidasPropias(grupoId, alumnoId),
+  ]);
+
+  const conEquipo = [...new Set(equipos.map((e) => e.getDinamicaId()).filter(Boolean))];
+  const ids = [...new Set([...conEquipo, ...propias.map((d) => d.id!)])];
+  if (ids.length === 0) return { clase: [], practica: [] };
+
+  const q = new Parse.Query<DinamicaScrum>('DinamicaScrum');
+  q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  q.equalTo('exists' as any, true as any);
+  q.containedIn('objectId', ids);
+  // El dueño se despliega o el nombre llega vacío: el listado dice «la abrió
+  // Fulano» y un puntero pelado no trae el nombre.
+  q.include('propietario' as any);
+  q.include('etapaActual' as any);
+  q.include('sprintActual' as any);
+  q.descending('createdAt');
+  q.limit(200);
+  const todas = await q.find({ useMasterKey: true });
+
+  return {
+    clase: todas.filter((d) => !d.esPractica()),
+    practica: todas.filter((d) => d.esPractica()),
+  };
+}
+
+/** Las partidas que ABRIÓ el alumno, estén como estén. */
+export async function partidasPropias(
+  grupoId: string,
+  alumnoId: string,
+): Promise<DinamicaScrum[]> {
+  const q = new Parse.Query<DinamicaScrum>('DinamicaScrum');
+  q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  q.equalTo('exists' as any, true as any);
+  q.equalTo('propietario' as any, AppUser.createWithoutData(alumnoId) as any);
+  q.limit(200);
+  return q.find({ useMasterKey: true });
+}
+
+/** Todas las partidas de práctica del grupo, para el listado del profesor. */
+export async function partidasDeGrupo(grupoId: string): Promise<DinamicaScrum[]> {
+  const q = new Parse.Query<DinamicaScrum>('DinamicaScrum');
+  q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  q.equalTo('exists' as any, true as any);
+  q.exists('propietario' as any);
+  q.include('propietario' as any);
+  q.include('etapaActual' as any);
+  q.include('sprintActual' as any);
+  q.descending('createdAt');
+  q.limit(500);
+  return q.find({ useMasterKey: true });
+}
+
+/**
+ * Mete a un puñado de alumnos en un equipo de la dinámica, sacándolos del suyo.
+ *
+ * Vive aquí y no en el controlador porque la usan los dos caminos: el profesor
+ * repartiendo la clase y el alumno invitando compañeros a su partida. Nadie
+ * puede estar en dos equipos de la misma dinámica, y esa regla tiene que ser la
+ * misma en los dos sitios.
+ *
+ * Devuelve si alguien venía de otro equipo, que es lo único que decide si hay
+ * que ir a soltar historias huérfanas después.
+ */
+export async function moverMiembros(
+  equipos: EquipoScrum[],
+  equipoDestinoId: string,
+  nuevos: string[],
+): Promise<boolean> {
+  const aGuardar: Parse.Object[] = [];
+  const mudados = new Set(nuevos);
+  let veniaDeOtroEquipo = false;
+
+  for (const equipo of equipos) {
+    if (equipo.id === equipoDestinoId) continue;
+    const antes = equipo.getMiembroIds();
+    const quedan = antes.filter((id) => !mudados.has(id));
+    if (quedan.length !== antes.length) {
+      veniaDeOtroEquipo = true;
+      equipo.setMiembros(quedan.map((id) => AppUser.createWithoutData(id) as AppUser));
+      aGuardar.push(equipo);
+    }
+  }
+
+  const destino = equipos.find((e) => e.id === equipoDestinoId)!;
+  const finales = [...new Set([...destino.getMiembroIds(), ...nuevos])];
+  destino.setMiembros(finales.map((id) => AppUser.createWithoutData(id) as AppUser));
+  aGuardar.push(destino);
+  await Parse.Object.saveAll(aGuardar, { useMasterKey: true });
+  return veniaDeOtroEquipo;
+}
+
+/**
+ * Quita como responsable a quien acaba de cambiarse de equipo.
+ *
+ * Sin esto, mover a alguien de equipo dejaba su cara en las historias del
+ * anterior, y el tablero pasaba a decir que una historia la lleva alguien que ya
+ * no está ahí — que es la única manera de romper la regla de un responsable por
+ * historia sin darse cuenta.
+ */
+export async function liberarHistoriasDeExmiembros(
+  dinamicaId: string,
+  equipos: EquipoScrum[],
+  equipoDestinoId: string,
+  alumnoIds: string[],
+): Promise<void> {
+  const otros = equipos.filter((e) => e.id !== equipoDestinoId).map((e) => e.id!);
+  if (otros.length === 0 || alumnoIds.length === 0) return;
+
+  const q = new Parse.Query<HistoriaUsuario>('HistoriaUsuario');
+  q.containedIn('equipo' as any, otros.map((id) => EquipoScrum.createWithoutData(id)) as any);
+  q.containedIn('responsable' as any, alumnoIds.map((id) => AppUser.createWithoutData(id)) as any);
+  q.equalTo('exists' as any, true as any);
+  q.limit(1000);
+  const huerfanas = await q.find({ useMasterKey: true });
+  if (huerfanas.length === 0) return;
+  for (const h of huerfanas) h.setResponsable(null);
+  await Parse.Object.saveAll(huerfanas, { useMasterKey: true });
+  void difundirTablero(dinamicaId);
+}
+
+/**
+ * ¿Este alumno es de esta partida?
+ *
+ * Manda cualquiera de los que están dentro, no solo quien la abrió: la partida
+ * simula el equipo de la clase, y en un equipo el turno de conducir el ciclo
+ * rota. Pura para poder probarla sin base de datos.
+ */
+export function esDeLaPartida(
+  propietarioId: string | null,
+  miembroIds: string[],
+  alumnoId: string,
+): boolean {
+  if (!alumnoId) return false;
+  return propietarioId === alumnoId || miembroIds.includes(alumnoId);
 }
 
 /** Un equipo por id, comprobando que sea de la dinámica indicada. */

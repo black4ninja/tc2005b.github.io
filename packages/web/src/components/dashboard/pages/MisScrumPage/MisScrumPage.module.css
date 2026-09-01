@@ -1,0 +1,253 @@
+.page {
+  position: relative;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.page[aria-busy='true'] { opacity: 0.65; pointer-events: none; }
+
+.cargando { padding: 24px; color: var(--text-secondary); }
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.subtitulo {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  max-width: 80ch;
+}
+
+.error {
+  padding: 10px 14px;
+  border: 1px solid var(--estado-error-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+  cursor: pointer;
+}
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.cabeceraBloque {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.tituloBloque {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.ayuda {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  max-width: 80ch;
+}
+
+.nota {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  max-width: 80ch;
+}
+
+.vacio {
+  margin: 0;
+  padding: var(--space-lg);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* La dinámica de clase en curso. Es lo que se busca en mitad de la sesión, así
+   que ocupa lo que ocupa: encontrarla no puede costar una lectura. */
+.destacada {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--sidebar-active-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.destacada:hover { box-shadow: var(--shadow-md); }
+.destacada:disabled { cursor: default; }
+.destacada .material-icons { color: var(--text-muted); flex: none; }
+
+.destacadaTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.destacadaEtiqueta {
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--sidebar-active-color);
+}
+
+.destacadaNombre {
+  font-size: 1.1rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.destacadaPie { font-size: 0.82rem; color: var(--text-secondary); }
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.item:last-child { border-bottom: none; }
+
+.itemBoton {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.itemBoton:hover .itemNombre { color: var(--sidebar-active-color); }
+.itemBoton:disabled { cursor: default; }
+
+.itemNombre {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemDato { font-size: 0.78rem; color: var(--text-muted); }
+
+/* Las terminadas no llevan botón: la fila entera es texto. */
+.item > .itemNombre { flex: 1; min-width: 0; }
+.item > .itemDato { flex: none; }
+
+.etapaTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex: none;
+}
+
+.sinEtapa,
+.tagCerrada {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--dash-bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex: none;
+}
+
+.primario {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--dash-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.primario:hover { opacity: 0.9; }
+.primario:disabled { opacity: 0.5; cursor: default; }
+.primario .material-icons { font-size: 18px; }
+
+.iconBtn {
+  display: inline-flex;
+  padding: 5px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex: none;
+}
+
+.iconBtn:hover { background: var(--dash-bg-subtle); color: var(--text-primary); }
+.iconBtn:disabled { opacity: 0.4; cursor: default; }
+.iconBtn .material-icons { font-size: 18px; }

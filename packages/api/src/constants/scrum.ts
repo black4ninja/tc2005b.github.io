@@ -54,6 +54,24 @@ export const LARGO_DESCRIPCION_ETAPA = 400;
 /** Nueve equipos: lo que cabe legible en una rejilla de 3 × 3 proyectada. */
 export const MAX_EQUIPOS = 9;
 
+/**
+ * Cuántas partidas de práctica puede tener vivas un alumno a la vez.
+ *
+ * El tope no es de diseño, es de cordura: cada partida son una dinámica, un
+ * equipo, un sprint y un marcador por equipo contra una base remota, y sin
+ * límite cualquiera puede abrirlas en bucle. Cinco es más de lo que nadie
+ * necesita para practicar; las finalizadas no cuentan.
+ */
+export const MAX_PARTIDAS_VIVAS = 5;
+
+/**
+ * Cuánta gente cabe en el equipo de una partida de práctica.
+ *
+ * Simula el equipo de la dinámica de clase, que son cinco o seis: ocho deja
+ * margen sin convertir la práctica en otra clase entera.
+ */
+export const MAX_INVITADOS = 8;
+
 export const LARGO_NOMBRE = 60;
 export const LARGO_OBJETIVO = 160;
 export const LARGO_TARJETA_RETRO = 200;

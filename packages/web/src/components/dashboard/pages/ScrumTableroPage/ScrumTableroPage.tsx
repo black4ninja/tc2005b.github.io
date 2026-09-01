@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import { useCuentaRegresiva } from '../../../../hooks/useCuentaRegresiva';
 import TableroScrum from '../../organisms/TableroScrum/TableroScrum';
@@ -9,10 +9,11 @@ import HistoriaForm, { type DatosHistoria } from '../../organisms/HistoriaForm/H
 import RolesScrumModal from '../../organisms/RolesScrumModal/RolesScrumModal';
 import EpicasScrumModal from '../../organisms/EpicasScrumModal/EpicasScrumModal';
 import ReglasScrumModal from '../../organisms/ReglasScrumModal/ReglasScrumModal';
+import MandoPartida from '../../organisms/MandoPartida/MandoPartida';
 import ResumenEquipo, { type DatosResumen } from './ResumenEquipo';
-import { avisar, pedirTexto } from '../../../../utils/dialogos';
+import { avisar, confirmar, elegirDeLista, pedirTexto } from '../../../../utils/dialogos';
 import {
-  POLITICA_SIN_ETAPA, bloqueoAjeno, historiasDeOtraEpica,
+  POLITICA_SIN_ETAPA, bloqueoAjeno, esPractica, historiasDeOtraEpica,
   historiasVivasPorPersona, iniciales,
   necesitaResponsable,
   sumaPuntos,
@@ -44,14 +45,14 @@ const REFRESCO_MS = 20000;
  * es la única manera de que se aprenda.
  */
 export default function ScrumTableroPage() {
-  const { grupoId } = useParams<{ grupoId: string }>();
+  const { grupoId, partidaId } = useParams<{ grupoId: string; partidaId?: string }>();
   const { sessionToken, user } = useAuth();
+  const navegar = useNavigate();
 
   const [dinamica, setDinamica] = useState<Dinamica | null>(null);
   const [etapa, setEtapa] = useState<Etapa | null>(null);
   const [sprint, setSprint] = useState<Sprint | null>(null);
   const [equipo, setEquipo] = useState<EquipoTablero | null>(null);
-  const [editable, setEditable] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,10 +66,25 @@ export default function ScrumTableroPage() {
   const [cobro, setCobro] = useState<number | null>(null);
   const bloqueoPrevio = useRef<number | null>(null);
   const [bloqueos, setBloqueos] = useState<Bloqueo[]>([]);
+  // Solo en una partida de práctica: el catálogo del grupo, para la barra de
+  // mando, y la etapa que se está aplicando.
+  const [etapas, setEtapas] = useState<Etapa[]>([]);
+  const [aplicandoEtapa, setAplicandoEtapa] = useState<string | null>(null);
+  const [mandando, setMandando] = useState(false);
   // ¿Está llegando el stream? Si no, hay que recargar a mano tras cada cambio.
   const streamVivo = useRef(false);
 
-  const base = `${API}/alumno/grupos/${grupoId}/scrum`;
+  /**
+   * De qué dinámica es este tablero.
+   *
+   * Es lo ÚNICO que separa el tablero de la clase del de una partida de
+   * práctica: la misma pantalla, las mismas reglas, otra URL. Todo lo que hay
+   * debajo —arrastrar, estimar, la retro, los bloqueos— cuelga de aquí y no
+   * sabe ni le importa en cuál de las dos está.
+   */
+  const base = partidaId
+    ? `${API}/alumno/grupos/${grupoId}/scrum/partidas/${partidaId}`
+    : `${API}/alumno/grupos/${grupoId}/scrum/tablero`;
 
   const cabeceras = useCallback(
     (): HeadersInit => ({
@@ -91,10 +107,10 @@ export default function ScrumTableroPage() {
     // hay. Antes venía a medias y el número y el objetivo se borraban durante
     // los dos segundos que tardaba en llegar el estado completo.
     if (json?.tipo === 'etapa') return;
+    if (Array.isArray(json?.etapas)) setEtapas(json.etapas);
     setSprint(json?.sprint ?? null);
     setEquipo(json?.equipo ?? null);
     setBloqueos(json?.bloqueos ?? []);
-    setEditable(json?.editable === true);
   }, []);
 
   const cargar = useCallback(async () => {
@@ -194,6 +210,16 @@ export default function ScrumTableroPage() {
   // Sin etapa abierta el tablero se mira y no se toca; el servidor rechaza
   // igual lo que se intente, esto es para no enseñar mandos muertos.
   const politica = etapa?.politica ?? POLITICA_SIN_ETAPA;
+  /**
+   * Si el tablero se toca o solo se mira.
+   *
+   * Se DEDUCE del estado en vez de guardarse tal como llega, y es la misma regla
+   * que aplica el servidor. El parche de etapa no trae este dato —no lo
+   * necesita, se puede calcular—, y guardarlo dejaba el tablero en solo lectura
+   * hasta el refresco de seguridad: veinte segundos con la etapa abierta
+   * delante y sin poder mover una tarjeta.
+   */
+  const editable = !!equipo && !!etapa && !dinamica?.cerrada;
   const reloj = useCuentaRegresiva(dinamica?.etapaIniciadaEn, politica.duracionSegundos);
   const intrusas = equipo ? historiasDeOtraEpica(equipo) : [];
 
@@ -393,6 +419,146 @@ export default function ScrumTableroPage() {
     await mandar(`${base}/objetivo`, 'PUT', { objetivo: valor });
   }
 
+  /* ---------------------------------------------------------------- */
+  /*  Los mandos, cuando la partida es suya                             */
+  /* ---------------------------------------------------------------- */
+
+  /**
+   * En una partida de práctica el ciclo lo conduce el alumno.
+   *
+   * Llaman a los MISMOS endpoints que el panel del profesor —el servidor monta
+   * sus controladores detrás de otro candado—, así que las reglas del cierre,
+   * del cobro de la deuda y del corte del burndown son literalmente las de
+   * clase. Aquí solo está el gesto.
+   */
+  async function cambiarEtapa(etapaId: string | null) {
+    if (!dinamica || aplicandoEtapa) return;
+    setAplicandoEtapa(etapaId ?? 'ninguna');
+    const previa = dinamica.etapaActual ?? null;
+    const previaIniciadaEn = dinamica.etapaIniciadaEn;
+    const nueva = etapaId ? etapas.find((e) => e.id === etapaId) ?? null : null;
+    // Optimista: es su propia pantalla y esperar al servidor para repintar la
+    // banda hace dudar de si se registró.
+    setDinamica((d) => (d
+      ? {
+        ...d,
+        etapaActual: nueva,
+        etapaIniciadaEn: etapaId ? new Date().toISOString() : null,
+      }
+      : d));
+    setEtapa(nueva);
+    const ok = await mandar(`${base}/etapa`, 'PUT', { etapaId });
+    if (!ok) {
+      setDinamica((d) => (d
+        ? { ...d, etapaActual: previa, etapaIniciadaEn: previaIniciadaEn }
+        : d));
+    }
+    setAplicandoEtapa(null);
+  }
+
+  async function mandarEnPartida(url: string, cuerpo?: unknown) {
+    setMandando(true);
+    await mandar(url, 'POST', cuerpo);
+    await cargar();
+    setMandando(false);
+  }
+
+  async function nuevoSprint() {
+    const ok = await confirmar({
+      titulo: '¿Abrir el siguiente sprint?',
+      texto: 'Empezarás su planning con el bloqueo que arrastres del anterior.',
+      confirmar: 'Abrir sprint',
+    });
+    if (!ok) return;
+    await mandarEnPartida(`${base}/sprints`, {});
+  }
+
+  async function cerrarSprint() {
+    if (!sprint || !equipo) return;
+    const pendientes = equipo.historias.filter(
+      (h) => h.columna !== 'backlog' && h.columna !== 'done',
+    ).length;
+    const cuantas = await pedirTexto({
+      titulo: `Cerrar el Sprint ${sprint.numero}`,
+      html: `Lo terminado pasa a <strong>Archived</strong> y lo que quede abierto —hoy `
+        + `<strong>${pendientes}</strong> ${pendientes === 1 ? 'historia' : 'historias'}— se `
+        + 'convierte en bloqueo. Cuenta cuántas <strong>restricciones</strong> incumpliste: '
+        + 'cada una suma un punto más de deuda.',
+      valor: '0',
+      confirmar: 'Cerrar sprint',
+      validar: (v) => {
+        const n = Number(v);
+        return Number.isInteger(n) && n >= 0 && n <= 99 ? null : 'Un número entre 0 y 99';
+      },
+    });
+    if (cuantas === null) return;
+    await mandarEnPartida(`${base}/sprints/${sprint.id}/cerrar`, {
+      penalizaciones: { [equipo.id]: Number(cuantas) },
+    });
+  }
+
+  async function editarObjetivoPartida() {
+    if (!sprint) return;
+    const valor = await pedirTexto({
+      titulo: `Objetivo del Sprint ${sprint.numero}`,
+      html: 'Una frase: a qué te comprometes en este sprint.',
+      valor: sprint.objetivo,
+      placeholder: 'Terminar el modelo con todos sus detalles…',
+      confirmar: 'Guardar',
+    });
+    if (valor === null) return;
+    setMandando(true);
+    await mandar(`${base}/sprints/${sprint.id}`, 'PUT', { objetivo: valor });
+    await cargar();
+    setMandando(false);
+  }
+
+  async function finalizarPartida() {
+    const ok = await confirmar({
+      titulo: '¿Terminar la partida?',
+      texto: 'El tablero deja de tocarse y pasas a ver tu resumen: qué cerraste, qué te faltó '
+        + 'y cuánta deuda arrastraste.',
+      confirmar: 'Terminar',
+      peligro: true,
+    });
+    if (!ok) return;
+    await mandarEnPartida(`${base}/finalizar`, {});
+  }
+
+  async function invitar() {
+    setMandando(true);
+    try {
+      const r = await fetch(`${API}/alumno/grupos/${grupoId}/scrum/companeros`, {
+        headers: cabeceras(),
+      });
+      const json = await r.json();
+      if (!r.ok) throw new Error(json?.message ?? 'No se pudo leer tu grupo');
+      const dentro = new Set((equipo?.miembros ?? []).map((m) => m.id));
+      const fuera = (json.companeros as { id: string; name: string }[])
+        .filter((c) => !dentro.has(c.id));
+      if (fuera.length === 0) {
+        await avisar({ titulo: 'Ya están todos', texto: 'No queda nadie de tu grupo por invitar.' });
+        return;
+      }
+      const elegido = await elegirDeLista(fuera, {
+        titulo: 'Invitar a tu partida',
+        html: 'Entrará a tu equipo y podrá mover el tablero y conducir el ciclo contigo.',
+        confirmar: 'Invitar',
+      });
+      if (!elegido) return;
+      await mandar(`${base}/invitados`, 'POST', { alumnoIds: [elegido] });
+      await cargar();
+    } catch (e) {
+      await avisar({
+        titulo: 'No se pudo',
+        texto: e instanceof Error ? e.message : 'Inténtalo de nuevo',
+        icono: 'error',
+      });
+    } finally {
+      setMandando(false);
+    }
+  }
+
   if (cargando) return <p className={styles.cargando}>Cargando tu tablero…</p>;
 
   if (error) {
@@ -424,6 +590,14 @@ export default function ScrumTableroPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
+          <button
+            type="button"
+            className={styles.volver}
+            onClick={() => navegar(`/alumno/grupos/${grupoId}/scrum`)}
+          >
+            <span className="material-icons">chevron_left</span>
+            {esPractica(dinamica) ? 'Mis partidas' : 'Actividad de Scrum'}
+          </button>
           <h1 className={styles.pageTitle}>{equipo.nombre}</h1>
           <p className={styles.subtitulo}>
             {dinamica.nombre}
@@ -478,6 +652,25 @@ export default function ScrumTableroPage() {
               {' '}El profesor todavía no ha abierto ninguna etapa: por ahora el tablero se mira,
               no se toca.
             </div>
+          )}
+
+          {/* En una partida el ciclo lo conduce quien está dentro. Va DEBAJO de
+              la banda: lo primero que se lee sigue siendo en qué etapa se está
+              y qué deja hacer, igual que en clase. */}
+          {esPractica(dinamica) && (
+            <MandoPartida
+              dinamica={dinamica}
+              etapas={etapas}
+              sprint={sprint}
+              aplicando={aplicandoEtapa}
+              enVuelo={mandando}
+              onCambiarEtapa={(id) => void cambiarEtapa(id)}
+              onNuevoSprint={() => void nuevoSprint()}
+              onCerrarSprint={() => void cerrarSprint()}
+              onObjetivo={() => void editarObjetivoPartida()}
+              onInvitar={() => void invitar()}
+              onFinalizar={() => void finalizarPartida()}
+            />
           )}
 
           <div className={styles.barraReglas}>

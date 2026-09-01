@@ -185,3 +185,29 @@ export async function pedirTexto({
   const bruto = String(res.value ?? '');
   return normalizar ? normalizar(bruto) : bruto;
 }
+
+/**
+ * Elegir uno de una lista corta. Devuelve su id, o `null` si se canceló.
+ *
+ * Un desplegable y no una pantalla propia a propósito: los sitios donde hace
+ * falta —invitar a un compañero a una partida— son gestos sueltos, y montarles
+ * un modal con su búsqueda sería más de lo que el gesto pide.
+ */
+export async function elegirDeLista(
+  opciones: { id: string; name: string }[],
+  opts: { titulo: string; html?: string; confirmar?: string } = { titulo: 'Elige' },
+): Promise<string | null> {
+  const res = await Swal.fire({
+    ...BASE,
+    title: opts.titulo,
+    html: opts.html,
+    input: 'select',
+    inputOptions: Object.fromEntries(opciones.map((o) => [o.id, o.name])),
+    inputPlaceholder: 'Elige a alguien',
+    showCancelButton: true,
+    confirmButtonText: opts.confirmar ?? 'Añadir',
+    cancelButtonText: 'Cancelar',
+    inputValidator: (v) => (v ? null : 'Elige a alguien de la lista'),
+  });
+  return res.isConfirmed ? String(res.value ?? '') || null : null;
+}

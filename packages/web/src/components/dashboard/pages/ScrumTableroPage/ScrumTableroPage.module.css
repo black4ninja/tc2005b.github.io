@@ -16,6 +16,26 @@
   flex-wrap: wrap;
 }
 
+/* La vuelta al listado. Desde que hay más de un tablero —el de clase y las
+   partidas de práctica— salir de uno tiene que costar un clic y no el botón
+   atrás del navegador. */
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0 0 4px -4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.volver:hover { color: var(--sidebar-active-color); }
+.volver .material-icons { font-size: 18px; }
+
 .pageTitle {
   margin: 0;
   font-size: 24px;

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useCuentaRegresiva } from '../../../../hooks/useCuentaRegresiva';
 import type { Etapa } from '../../../../utils/scrum';
 import styles from './BarraEtapasScrum.module.css';
@@ -13,6 +14,15 @@ interface Props {
   deshabilitada?: boolean;
   /** Qué se dice a la derecha: a qué dinámica se le aplica, o por qué no. */
   nota: string;
+  /**
+   * El rótulo de la izquierda. En el panel del profesor dice qué etapa está
+   * puesta, porque eso no se ve en ningún otro sitio de la pantalla; en el
+   * tablero del alumno la banda de arriba ya lo grita, y ahí el rótulo tiene
+   * que decir para qué sirven los botones.
+   */
+  titulo?: string;
+  /** Mandos que acompañan a la barra —abrir sprint, cerrarlo, invitar—. */
+  extra?: ReactNode;
   onCambiar: (etapaId: string | null) => void;
   onConfigurar?: () => void;
 }
@@ -32,7 +42,7 @@ interface Props {
  */
 export default function BarraEtapasScrum({
   etapas, etapaActualId, iniciadaEn = null, aplicando, deshabilitada = false,
-  nota, onCambiar, onConfigurar,
+  nota, titulo = 'Etapa en curso', extra, onCambiar, onConfigurar,
 }: Props) {
   const actual = etapas.find((e) => e.id === etapaActualId) ?? null;
   const reloj = useCuentaRegresiva(iniciadaEn, actual?.politica.duracionSegundos ?? null);
@@ -40,7 +50,7 @@ export default function BarraEtapasScrum({
   return (
     <section className={styles.barra}>
       <div className={styles.izquierda}>
-        <span className={styles.titulo}>Etapa en curso</span>
+        <span className={styles.titulo}>{titulo}</span>
         <div className={styles.etapas}>
           {etapas.map((e) => {
             const activa = etapaActualId === e.id;
@@ -77,6 +87,7 @@ export default function BarraEtapasScrum({
           </span>
         )}
         <span className={styles.nota}>{nota}</span>
+        {extra}
         {onConfigurar && (
           <button type="button" className={styles.enlace} onClick={onConfigurar}>
             Configurar etapas
