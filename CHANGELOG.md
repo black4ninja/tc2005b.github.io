@@ -8,6 +8,17 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **El profesor puede apuntar a un alumno en un hueco de la agenda de
+  entrevistas.** La agenda la escriben los alumnos, y esa es la gracia. Pero el
+  día de las entrevistas siempre pasa algo que la hoja no previó —alguien no
+  reservó, un cambio de última hora, un hueco que se quedó suelto— y el profesor
+  no tenía forma de arreglarlo desde el panel: la única salida era pedirle al
+  alumno que se apuntara desde su móvil, que es justo cuando no funciona. El
+  endpoint existía desde el principio; lo que faltaba era la pantalla. Ahora cada
+  tramo libre de la tabla lleva su botón, y el diálogo enseña cuántas
+  oportunidades lleva cada alumno en esa competencia y apaga a los que ya no
+  tienen —contando todas las citas de todos los días, que es como las cuenta el
+  servidor—.
 - **Una historia de usuario siempre pertenece a una épica.** Hasta ahora se podían
   escribir historias sueltas, y el propio modal de épicas ya decía la regla que el
   código no hacía cumplir: «primero se define la épica y después se le cuelgan

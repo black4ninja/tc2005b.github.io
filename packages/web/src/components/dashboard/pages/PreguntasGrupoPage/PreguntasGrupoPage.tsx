@@ -6,6 +6,7 @@ import DashButton from '../../atoms/DashButton/DashButton';
 import Modal from '../../atoms/Modal/Modal';
 import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta';
 import SelectorAlumno from '../../organisms/SelectorAlumno/SelectorAlumno';
+import AsignarCitaModal from '../../organisms/AsignarCitaModal/AsignarCitaModal';
 import {
   aplicarAsignaciones, ajustarUso, faseProyeccion, formatearDuracion, quitarAsignaciones,
   repartirPreguntas, resumenPregunta,
@@ -134,6 +135,9 @@ export default function PreguntasGrupoPage() {
    * de la proyección lo deciden los alumnos al apuntarse.
    */
   const [agenda, setAgenda] = useState<Agenda | null>(null);
+  /** El hueco libre que el profesor pulsó para apuntar a alguien a mano. */
+  const [asignandoEn, setAsignandoEn] = useState<string | null>(null);
+  const [asignandoCita, setAsignandoCita] = useState(false);
   const [diaActivo, setDiaActivo] = useState<string | null>(null);
   const [creandoDia, setCreandoDia] = useState(false);
   const [borradorDia, setBorradorDia] = useState({ fecha: '', desde: '09:00', hasta: '13:00', nota: '' });
@@ -280,6 +284,39 @@ export default function PreguntasGrupoPage() {
       await cargarAgenda();
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'No se pudo borrar el día'));
+    }
+  }
+
+  /**
+   * Apuntar a un alumno en un hueco sin que él lo reserve.
+   *
+   * El endpoint ya existía —el profesor podía crear citas desde el primer día—
+   * pero no había por dónde llamarlo. El día de las entrevistas siempre pasa
+   * algo que la hoja no previó, y sin esto la única salida era pedirle al
+   * alumno que se apuntara desde su móvil, que es justo cuando no funciona.
+   *
+   * El servidor sigue siendo quien manda: comprueba que el hueco exista y siga
+   * libre, y que al alumno le queden oportunidades en esa competencia.
+   */
+  async function asignarCita(inicio: string, alumnoId: string, competenciaId: string) {
+    if (!dia) return;
+    setAsignandoCita(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/citas`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ diaId: dia.id, inicio, alumnoId, competenciaId }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message || 'No se pudo apuntar la cita');
+      }
+      setAsignandoEn(null);
+      await cargarAgenda();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'No se pudo apuntar la cita'));
+    } finally {
+      setAsignandoCita(false);
     }
   }
 
@@ -498,6 +535,33 @@ export default function PreguntasGrupoPage() {
       : null;
     return { inicio: h.inicio, cita, alumno, asignacion };
   }), [dia, alumnos]);
+
+  /** Las horas del día que siguen libres, para poder ofrecerlas a mano. */
+  const libresDelDia = useMemo(
+    () => (dia?.huecos ?? []).filter((h) => !h.cita).map((h) => h.inicio),
+    [dia],
+  );
+
+  /**
+   * Cuántas citas lleva cada alumno por competencia, clave `alumnoId::compId`.
+   *
+   * Sale de la agenda entera y no del día abierto: las oportunidades se gastan
+   * en cualquier día. Es la misma cuenta que hace el servidor antes de aceptar
+   * una cita; aquí solo evita ofrecer a quien va a ser rechazado.
+   */
+  const usadosPorAlumno = useMemo(() => {
+    const cuenta = new Map<string, number>();
+    for (const d of agenda?.dias ?? []) {
+      for (const h of d.huecos) {
+        const alumnoId = h.cita?.alumno?.id;
+        const compId = h.cita?.competencia?.id;
+        if (!alumnoId || !compId) continue;
+        const clave = `${alumnoId}::${compId}`;
+        cuenta.set(clave, (cuenta.get(clave) ?? 0) + 1);
+      }
+    }
+    return cuenta;
+  }, [agenda]);
 
   /** Pares (alumno, asignación) proyectables, en el orden en que se ven. */
   const paraProyectarRoster = useMemo(
@@ -1200,9 +1264,22 @@ export default function PreguntasGrupoPage() {
                       return (
                         <tr key={`vacio-${f.desde}`} className={styles.filaVacia}>
                           <td className={styles.colCorta}>{hora(f.desde)}</td>
-                          <td colSpan={4}>
+                          <td colSpan={3}>
                             Sin entrevistas hasta las {hora(f.hasta)}
                             <span className={styles.huecoCuenta}> · {f.cuantos} libre{f.cuantos === 1 ? '' : 's'}</span>
+                          </td>
+                          <td className={styles.colAcciones}>
+                            {/* La agenda la escriben los alumnos; esto es el
+                                arreglo del día de las entrevistas, y por eso
+                                vive en el hueco vacío y no en una barra aparte:
+                                se pulsa donde se está mirando. */}
+                            <button
+                              className={styles.iconBtn}
+                              onClick={() => setAsignandoEn(f.desde)}
+                              title="Apuntar a alguien en este hueco"
+                            >
+                              <Icon name="person_add" size="sm" />
+                            </button>
                           </td>
                         </tr>
                       );
@@ -1575,6 +1652,20 @@ export default function PreguntasGrupoPage() {
       )}
 
       {/* Alumno → pregunta */}
+      {asignandoEn && (
+        <AsignarCitaModal
+          libres={libresDelDia}
+          inicioSugerido={asignandoEn}
+          competencias={agenda?.competencias ?? []}
+          alumnos={alumnos}
+          usados={usadosPorAlumno}
+          maxIntentos={agenda?.reglas.maxIntentos ?? MAX_INTENTOS}
+          guardando={asignandoCita}
+          onAsignar={asignarCita}
+          onCerrar={() => setAsignandoEn(null)}
+        />
+      )}
+
       {eligiendoPara && (() => {
         const alumno = alumnos.find((a) => a.id === eligiendoPara.alumnoId);
         if (!alumno) return null;
