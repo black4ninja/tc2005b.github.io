@@ -8,6 +8,16 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Una historia de usuario siempre pertenece a una épica.** Hasta ahora se podían
+  escribir historias sueltas, y el propio modal de épicas ya decía la regla que el
+  código no hacía cumplir: «primero se define la épica y después se le cuelgan
+  historias». Sin ella el backlog acaba siendo una lista de tareas que no dice a
+  qué se está apuntando el equipo, y la regla de «un modelo a la vez» —que compara
+  contra la épica del sprint— se queda sin nada contra qué comparar. Ahora, sin
+  ninguna épica definida, «Nueva historia» explica por qué y abre el sitio donde
+  se define; con épicas, elegir una es obligatorio y ya no se puede dejar
+  huérfana una historia al editarla. Rige igual en la dinámica de clase y en las
+  partidas de práctica.
 - **Partidas de práctica: el alumno recorre el Scrum a su paso.** Hasta ahora el
   módulo solo existía en una forma —el profesor abre la dinámica en clase y
   conduce el ciclo—, así que fuera de esa hora no se podía tocar. Ahora el alumno

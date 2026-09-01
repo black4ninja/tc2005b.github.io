@@ -27,7 +27,8 @@ import {
 } from '../services/scrum-bloqueos.js';
 import { SprintScrum } from '../models/SprintScrum.js';
 import {
-  esColumna, esColumnaRetro, esPrioridad, esPuntos, estaEstimada, necesitaResponsable,
+  esColumna, esColumnaRetro, esPrioridad, esPuntos, estaEstimada, faltaEpica,
+  necesitaResponsable,
   permiteMover,
   COLUMNAS_DEL_SPRINT, ESTADOS_COMPROMISO, LARGO_CAMPO, LARGO_OBJETIVO,
   LARGO_TARJETA_RETRO, POLITICA_POR_DEFECTO, POLITICA_SIN_ETAPA, PRIORIDAD_POR_DEFECTO,
@@ -437,13 +438,42 @@ export async function crearHistoria(req: Request, res: Response): Promise<void> 
       return;
     }
     const responsable = null;
-    const epica = await resolverEpica(req.body?.epicaId, equipo.id!);
+
+    /*
+     * Una historia SIEMPRE pertenece a una épica.
+     *
+     * Sin esto el backlog acababa siendo una lista de tareas sueltas, que es
+     * justo lo contrario de lo que la dinámica enseña: la épica es el
+     * entregable, y una historia es un trozo de ese entregable. Un backlog sin
+     * épicas no dice a qué se está apuntando el equipo, y la regla de «un
+     * modelo a la vez» —que compara contra la épica del sprint— se queda sin
+     * nada contra qué comparar.
+     *
+     * Se comprueba aquí y no solo en la pantalla porque la lección es la regla,
+     * no el aviso.
+     */
+    const [existentes, epicas] = await Promise.all([
+      historiasDeEquipos([equipo.id!]),
+      epicasDeEquipos([equipo.id!]),
+    ]);
+    const falta = faltaEpica(epicas.length, req.body?.epicaId);
+    if (falta === 'ninguna') {
+      error(
+        res,
+        409,
+        'Antes de escribir historias, define al menos una épica: es el entregable al que pertenecen',
+      );
+      return;
+    }
+    if (falta === 'sin-elegir') {
+      error(res, 400, 'Elige a qué épica pertenece la historia');
+      return;
+    }
+    const epica = await resolverEpica(req.body.epicaId, equipo.id!);
     if (epica === false) {
       error(res, 400, 'Esa épica no es de tu equipo');
       return;
     }
-
-    const existentes = await historiasDeEquipos([equipo.id!]);
     const historia = new HistoriaUsuario().initDefaults();
     historia.setEquipo(EquipoScrum.createWithoutData(equipo.id!) as EquipoScrum);
     historia.setPorQue(campos.porQue);
@@ -563,6 +593,12 @@ export async function actualizarHistoria(req: Request, res: Response): Promise<v
       historia.setResponsable(responsable);
     }
     if (req.body?.epicaId !== undefined) {
+      // Se puede cambiar de épica, no quedarse sin ninguna: una historia
+      // huérfana es la misma lista de tareas sueltas que se evita al crearla.
+      if (!req.body.epicaId) {
+        error(res, 400, 'Una historia siempre pertenece a una épica');
+        return;
+      }
       const epica = await resolverEpica(req.body.epicaId, equipo.id!);
       if (epica === false) {
         error(res, 400, 'Esa épica no es de tu equipo');

@@ -101,7 +101,10 @@ export default function HistoriaForm({
   }, [abierto, historiaId]);
 
   const editando = !!historia;
-  const puedeGuardar = datos.porQue.trim() !== '' && !guardando;
+  // La épica es obligatoria: una historia es un trozo de un entregable, y sin
+  // decir de cuál el backlog es una lista de tareas sueltas. El servidor lo
+  // rechaza igual; esto evita el viaje en balde.
+  const puedeGuardar = datos.porQue.trim() !== '' && !!datos.epicaId && !guardando;
 
   const epicaPrevia = epicas.find((e) => e.id === datos.epicaId) ?? null;
   // Una historia nueva nace en el backlog, así que el caso «sin historia» cuenta
@@ -181,15 +184,17 @@ export default function HistoriaForm({
               <div className={styles.bloque}>
                 <div className={styles.bloqueTitulo}>
                   <span className={styles.etiqueta}>Épica</span>
-                  <span className={styles.aclaracion}>de qué entregable es</span>
+                  <span className={styles.aclaracion}>· obligatorio</span>
                 </div>
+                {/* Sin «sin épica»: toda historia pertenece a un entregable. La
+                    primera de la lista viene elegida, así que no hay forma de
+                    dejarla en blanco sin querer. */}
                 <select
                   className={styles.select}
                   disabled={guardando}
                   value={datos.epicaId ?? ''}
                   onChange={(e) => setDatos((d) => ({ ...d, epicaId: e.target.value || null }))}
                 >
-                  <option value="">Sin épica</option>
                   {epicas.map((e) => (
                     <option key={e.id} value={e.id}>{e.nombre}</option>
                   ))}

@@ -412,6 +412,30 @@ export default function ScrumTableroPage() {
     await mandar(`${base}/historias/${historiaId}`, 'PUT', { responsableId: alumnoId }, fusionarHistoria);
   }
 
+  /**
+   * Abrir el formulario de una historia nueva, si tiene sentido abrirlo.
+   *
+   * Una historia pertenece a una épica —es un trozo de un entregable—, así que
+   * sin ninguna épica definida no hay historia que escribir. En vez de dejar
+   * teclear y que el servidor lo rechace al guardar, se dice antes y se abre el
+   * sitio donde se arregla.
+   */
+  async function nuevaHistoria() {
+    if (!equipo) return;
+    if (equipo.epicas.length === 0) {
+      await avisar({
+        titulo: 'Primero, ¿de qué va el entregable?',
+        texto: 'Las historias pertenecen a una épica. Define al menos una y vuelve: '
+          + 'así el backlog dice a qué se está apuntando el equipo.',
+        icono: 'info',
+      });
+      setEpicasAbierto(true);
+      return;
+    }
+    setEnEdicion(null);
+    setFormAbierto(true);
+  }
+
   async function editarObjetivo() {
     const valor = await pedirTexto({
       titulo: 'Objetivo del sprint',
@@ -783,7 +807,7 @@ export default function ScrumTableroPage() {
                   objetivo={sprint?.objetivo ?? ''}
                   bloqueos={bloqueos}
                   yoId={yoId}
-                  onNuevaHistoria={() => { setEnEdicion(null); setFormAbierto(true); }}
+                  onNuevaHistoria={() => void nuevaHistoria()}
                   onAbrirHistoria={abrirHistoria}
                   onMover={mover}
                   onAsignar={asignar}

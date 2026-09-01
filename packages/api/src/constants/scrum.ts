@@ -345,6 +345,27 @@ export function necesitaResponsable(destino: Columna): boolean {
 }
 
 /**
+ * ¿Por qué NO se puede escribir esta historia? `null` si sí se puede.
+ *
+ * Una historia es un trozo de un entregable, y el entregable es la épica. Sin
+ * decir de cuál, el backlog acaba siendo una lista de tareas sueltas: no dice a
+ * qué se está apuntando el equipo, y la regla de «un modelo a la vez» —que
+ * compara contra la épica del sprint— se queda sin nada contra qué comparar.
+ *
+ * Dos maneras distintas de fallar, y a cada una le toca decir otra cosa: si el
+ * equipo no ha definido ninguna épica hay que mandarlo a definirla; si la hay
+ * pero no eligió, basta con que elija.
+ */
+export function faltaEpica(
+  cuantasEpicas: number,
+  epicaId: unknown,
+): 'ninguna' | 'sin-elegir' | null {
+  if (cuantasEpicas === 0) return 'ninguna';
+  if (!epicaId) return 'sin-elegir';
+  return null;
+}
+
+/**
  * ¿La etapa permite ESTE movimiento? Función pura porque es la regla que más se
  * ejecuta —cada tarjeta que alguien arrastra pasa por aquí— y la que peor se
  * nota si falla: dejar mover algo en planning rompe la lección de la etapa.
