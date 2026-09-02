@@ -8,6 +8,7 @@ import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta'
 import SelectorAlumno from '../../organisms/SelectorAlumno/SelectorAlumno';
 import AsignarCitaModal from '../../organisms/AsignarCitaModal/AsignarCitaModal';
 import MoverCitaModal from '../../organisms/MoverCitaModal/MoverCitaModal';
+import AbrirDiasModal, { type FilaPlan } from '../../organisms/AbrirDiasModal/AbrirDiasModal';
 import {
   aplicarAsignaciones, ajustarUso, faseProyeccion, formatearDuracion, quitarAsignaciones,
   repartirPreguntas, resumenPregunta,
@@ -17,7 +18,7 @@ import type {
   Pregunta, PreguntaAsignacion, Proyeccion,
 } from '../../../../types/preguntas';
 import { confirmar } from '../../../../utils/dialogos';
-import { agruparVacios, fechaLarga, hora, rangoHoras } from '../../../../utils/agenda';
+import { agruparVacios, fechaCorta, fechaLarga, hora, rangoHoras } from '../../../../utils/agenda';
 import type { Agenda, CitaProfesor, DiaProfesor } from '../../../../types/agenda';
 import styles from './PreguntasGrupoPage.module.css';
 
@@ -153,7 +154,10 @@ export default function PreguntasGrupoPage() {
   const [moviendo, setMoviendo] = useState<CitaProfesor | null>(null);
   const [diaActivo, setDiaActivo] = useState<string | null>(null);
   const [creandoDia, setCreandoDia] = useState(false);
-  const [borradorDia, setBorradorDia] = useState({ fecha: '', desde: '09:00', hasta: '13:00', nota: '' });
+  /** Qué bloques están marcados para actuar sobre ellos a la vez. */
+  const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
+  const [enSeleccion, setEnSeleccion] = useState(false);
+  const [guardandoDias, setGuardandoDias] = useState(false);
 
   /** La pestaña proyectada, para volver a ella en vez de abrir otra. */
   const ventanaRef = useRef<Window | null>(null);
@@ -220,29 +224,94 @@ export default function PreguntasGrupoPage() {
 
   useEffect(() => { cargarAgenda(); }, [cargarAgenda]);
 
-  /** Une la fecha y la hora del formulario en un instante, en la zona del profesor. */
-  function instante(fecha: string, hhmm: string): string {
-    return new Date(`${fecha}T${hhmm}`).toISOString();
+  /**
+   * La vista previa del alta en lote: qué se abriría, sin escribir nada.
+   *
+   * La decide el SERVIDOR y no el navegador, aunque el navegador ya tenga los
+   * días cargados: la regla de qué choca con qué vive en un solo sitio, y así
+   * lo que se enseña aquí es exactamente lo que se va a crear al pulsar.
+   */
+  async function simularLote(bloques: { inicio: string; fin: string }[]): Promise<FilaPlan[] | null> {
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/dias/lote`, {
+        method: 'POST', headers, body: JSON.stringify({ bloques, simular: true }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json() as { plan: FilaPlan[] };
+      return data.plan;
+    } catch {
+      return null;
+    }
   }
 
-  async function crearDia() {
-    const { fecha, desde, hasta, nota } = borradorDia;
-    if (!fecha) { setError('Elige la fecha del día de entrevistas'); return; }
+  async function abrirDias(bloques: { inicio: string; fin: string }[], nota: string) {
+    setGuardandoDias(true);
     try {
-      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/dias`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ inicio: instante(fecha, desde), fin: instante(fecha, hasta), nota }),
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/dias/lote`, {
+        method: 'POST', headers, body: JSON.stringify({ bloques, nota }),
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { message?: string };
-        throw new Error(err.message || 'No se pudo crear el día');
+        throw new Error(err.message || 'No se pudieron abrir los días');
       }
       setCreandoDia(false);
-      setBorradorDia({ fecha: '', desde: '09:00', hasta: '13:00', nota: '' });
       await cargarAgenda();
     } catch (err: unknown) {
-      setError(mensajeDeError(err, 'No se pudo crear el día'));
+      setError(mensajeDeError(err, 'No se pudieron abrir los días'));
+    } finally {
+      setGuardandoDias(false);
+    }
+  }
+
+  /** Cerrar o reabrir las reservas de todo lo seleccionado, de una vez. */
+  async function cambiarSeleccion(cerrado: boolean) {
+    if (seleccion.size === 0) return;
+    setGuardandoDias(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/dias/lote`, {
+        method: 'PUT', headers, body: JSON.stringify({ diaIds: [...seleccion], cerrado }),
+      });
+      if (!res.ok) throw new Error('No se pudieron guardar los días');
+      await cargarAgenda();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'No se pudieron guardar los días'));
+    } finally {
+      setGuardandoDias(false);
+    }
+  }
+
+  /**
+   * Borrar lo seleccionado. El servidor CONSERVA los que tengan gente apuntada
+   * en vez de fallar entero, así que aquí se dice cuántos se quedaron y por qué.
+   */
+  async function borrarSeleccion() {
+    if (seleccion.size === 0) return;
+    const conCitas = (agenda?.dias ?? [])
+      .filter((d) => seleccion.has(d.id) && d.huecos.some((h) => h.cita)).length;
+    if (!(await confirmar({
+      titulo: `¿Borrar ${seleccion.size} bloque${seleccion.size === 1 ? '' : 's'}?`,
+      texto: conCitas > 0
+        ? `${conCitas} tiene${conCitas === 1 ? '' : 'n'} citas apuntadas y se quedará${conCitas === 1 ? '' : 'n'}: primero hay que cancelarlas. El resto desaparece de la agenda.`
+        : 'Desaparecerán de la agenda del grupo.',
+      confirmar: 'Borrar',
+      peligro: true,
+    }))) return;
+    setGuardandoDias(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/dias/lote`, {
+        method: 'DELETE', headers, body: JSON.stringify({ diaIds: [...seleccion] }),
+      });
+      if (!res.ok) throw new Error('No se pudieron borrar los días');
+      const data = await res.json() as { conservados: number };
+      if (data.conservados > 0) {
+        setError(`${data.conservados} bloque${data.conservados === 1 ? ' se quedó' : 's se quedaron'}: tiene${data.conservados === 1 ? '' : 'n'} citas apuntadas.`);
+      }
+      setSeleccion(new Set());
+      await cargarAgenda();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'No se pudieron borrar los días'));
+    } finally {
+      setGuardandoDias(false);
     }
   }
 
@@ -579,6 +648,26 @@ export default function PreguntasGrupoPage() {
       : null;
     return { inicio: h.inicio, cita, alumno, asignacion };
   }), [dia, alumnos]);
+
+  /**
+   * Los bloques agrupados por FECHA.
+   *
+   * Desde que un mismo día puede tener varios bloques, repetir la fecha en cada
+   * chip era ilegible: la fecha pasa a encabezar la fila y los chips solo llevan
+   * su hora. Cada fila se desplaza por dentro, así que un día con ocho bloques
+   * no empuja a los botones de la derecha.
+   */
+  const porFecha = useMemo(() => {
+    const mapa = new Map<string, DiaProfesor[]>();
+    for (const d of agenda?.dias ?? []) {
+      const clave = fechaCorta(d.inicio);
+      mapa.set(clave, [...(mapa.get(clave) ?? []), d]);
+    }
+    return [...mapa].map(([fecha, dias]) => ({
+      fecha,
+      dias: [...dias].sort((a, b) => a.inicio.localeCompare(b.inicio)),
+    }));
+  }, [agenda]);
 
   /** Las horas del día que siguen libres, para poder ofrecerlas a mano. */
   const libresDelDia = useMemo(
@@ -1246,26 +1335,60 @@ export default function PreguntasGrupoPage() {
         <>
           <div className={styles.barra}>
             <div className={styles.dias}>
-              {(agenda?.dias ?? []).length === 0 && (
+              {porFecha.length === 0 && (
                 <span className={styles.hint}>Todavía no has abierto ningún día.</span>
               )}
-              {(agenda?.dias ?? []).map((d) => (
-                <button
-                  key={d.id}
-                  className={`${styles.chip} ${diaActivo === d.id ? styles.chipActivo : ''}`}
-                  onClick={() => setDiaActivo(d.id)}
-                  title={rangoHoras(d.inicio, d.fin)}
-                >
-                  {fechaLarga(d.inicio)}
-                  <span className={styles.chipContador}>
-                    {d.huecos.filter((h) => h.cita).length}/{d.huecos.length}
-                  </span>
-                </button>
+              {porFecha.map(({ fecha, dias }) => (
+                <div key={fecha} className={styles.filaDia}>
+                  <span className={styles.filaDiaFecha}>{fecha}</span>
+                  {/* Una tira por día: si no caben, se desplazan AQUÍ dentro y la
+                      fila sigue siendo una sola línea. */}
+                  <div className={styles.tiraDia}>
+                    {dias.map((d) => {
+                      const marcado = seleccion.has(d.id);
+                      return (
+                        <button
+                          key={d.id}
+                          className={`${styles.chip} ${styles.chipBloque} ${(enSeleccion ? marcado : diaActivo === d.id) ? styles.chipActivo : ''}`}
+                          onClick={() => {
+                            if (!enSeleccion) { setDiaActivo(d.id); return; }
+                            setSeleccion((s) => {
+                              const siguiente = new Set(s);
+                              if (siguiente.has(d.id)) siguiente.delete(d.id);
+                              else siguiente.add(d.id);
+                              return siguiente;
+                            });
+                          }}
+                          title={d.nota || rangoHoras(d.inicio, d.fin)}
+                        >
+                          {enSeleccion && (
+                            <Icon name={marcado ? 'check_box' : 'check_box_outline_blank'} size="sm" />
+                          )}
+                          {rangoHoras(d.inicio, d.fin)}
+                          <span className={styles.chipContador}>
+                            {d.huecos.filter((h) => h.cita).length}/{d.huecos.length}
+                          </span>
+                          {d.cerrado && <Icon name="lock" size="sm" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </div>
             <div className={styles.acciones}>
+              <DashButton
+                variant="outline"
+                onClick={() => {
+                  setEnSeleccion((v) => !v);
+                  setSeleccion(new Set());
+                }}
+                title="Cerrar, reabrir o borrar varios bloques a la vez"
+              >
+                <Icon name="checklist" size="sm" /> {enSeleccion ? 'Salir' : 'Seleccionar'}
+              </DashButton>
               <DashButton variant="outline" onClick={() => setCreandoDia(true)}>
-                <Icon name="add" size="sm" /> Abrir un día
+                <Icon name="add" size="sm" /> Abrir días
               </DashButton>
               <DashButton
                 onClick={() => {
@@ -1288,6 +1411,42 @@ export default function PreguntasGrupoPage() {
           </div>
 
           {mando}
+
+          {enSeleccion && (
+            /* Actuar sobre varios bloques a la vez. Aparece solo en modo
+               selección: fuera de él, ocupar sitio con mandos apagados es ruido
+               en la pantalla que se mira el día de las entrevistas. */
+            <div className={styles.barraLote}>
+              <span className={styles.loteCuenta}>
+                {seleccion.size === 0
+                  ? 'Marca los bloques que quieras cambiar'
+                  : `${seleccion.size} bloque${seleccion.size === 1 ? '' : 's'} seleccionado${seleccion.size === 1 ? '' : 's'}`}
+              </span>
+              <div className={styles.loteAcciones}>
+                <button
+                  className={styles.loteBtn}
+                  disabled={seleccion.size === 0 || guardandoDias}
+                  onClick={() => void cambiarSeleccion(true)}
+                >
+                  <Icon name="lock" size="sm" /> Cerrar reservas
+                </button>
+                <button
+                  className={styles.loteBtn}
+                  disabled={seleccion.size === 0 || guardandoDias}
+                  onClick={() => void cambiarSeleccion(false)}
+                >
+                  <Icon name="lock_open" size="sm" /> Reabrir
+                </button>
+                <button
+                  className={`${styles.loteBtn} ${styles.loteBtnPeligro}`}
+                  disabled={seleccion.size === 0 || guardandoDias}
+                  onClick={() => void borrarSeleccion()}
+                >
+                  <Icon name="delete" size="sm" /> Borrar
+                </button>
+              </div>
+            </div>
+          )}
 
           {dia && (
             <>
@@ -1842,51 +2001,15 @@ export default function PreguntasGrupoPage() {
       {/* Abrir un día: fecha y franja. Los huecos salen solos, del tiempo que
           rige en el grupo, y quedan congelados en el día para que cambiarlo
           después no mueva las citas que los alumnos ya tienen apuntadas. */}
-      <Modal isOpen={creandoDia} onClose={() => setCreandoDia(false)} title="Abrir un día de entrevistas">
-        <div className={styles.formDia}>
-          <label>
-            <span>Fecha</span>
-            <input
-              type="date"
-              value={borradorDia.fecha}
-              onChange={(e) => setBorradorDia({ ...borradorDia, fecha: e.target.value })}
-            />
-          </label>
-          <label>
-            <span>Desde</span>
-            <input
-              type="time"
-              value={borradorDia.desde}
-              onChange={(e) => setBorradorDia({ ...borradorDia, desde: e.target.value })}
-            />
-          </label>
-          <label>
-            <span>Hasta</span>
-            <input
-              type="time"
-              value={borradorDia.hasta}
-              onChange={(e) => setBorradorDia({ ...borradorDia, hasta: e.target.value })}
-            />
-          </label>
-          <label className={styles.formAncho}>
-            <span>Nota para el alumno (opcional)</span>
-            <input
-              type="text"
-              placeholder="p. ej. Sala 3, o el enlace de la videollamada"
-              value={borradorDia.nota}
-              onChange={(e) => setBorradorDia({ ...borradorDia, nota: e.target.value })}
-            />
-          </label>
-        </div>
-        <p className={styles.hint}>
-          Se parte en bloques de {formatearDuracion(duracionVigente)}, el tiempo que rige ahora en
-          este grupo. Los alumnos verán los huecos libres y elegirán el suyo.
-        </p>
-        <div className={styles.formAcciones}>
-          <DashButton variant="outline" onClick={() => setCreandoDia(false)}>Cancelar</DashButton>
-          <DashButton onClick={crearDia}>Abrir el día</DashButton>
-        </div>
-      </Modal>
+      {creandoDia && (
+        <AbrirDiasModal
+          duracionSegundos={duracionVigente}
+          guardando={guardandoDias}
+          onSimular={simularLote}
+          onAbrir={(bloques, nota) => void abrirDias(bloques, nota)}
+          onCerrar={() => setCreandoDia(false)}
+        />
+      )}
 
       {/* Notas de un alumno, todas juntas. Es la vista que se abre antes de la
           segunda entrevista: qué se le preguntó ya y qué se apuntó entonces. */}

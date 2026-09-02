@@ -11,10 +11,13 @@ import { CitaEntrevista } from '../models/CitaEntrevista.js';
 import { coleccionesDeGrupo } from '../services/grupo-colecciones.service.js';
 import { getVinculoConGrupoActivo } from '../services/grupo-alumno.service.js';
 import {
-  huecosDelDia, numerarIntentos, puedeAgendar, puedeCancelar, sumarHorasHabiles,
+  huecosDelDia, numerarIntentos, planificarBloques, puedeAgendar, puedeCancelar,
+  sumarHorasHabiles,
+  type FilaPlan, type Rango,
 } from '../services/agenda-entrevistas.service.js';
 import {
-  DURACION_POR_DEFECTO, MAX_INTENTOS, HORAS_HABILES_ANTELACION, MARGEN_CANCELACION_MINUTOS,
+  DURACION_POR_DEFECTO, MAX_BLOQUES_POR_LOTE, MAX_INTENTOS, HORAS_HABILES_ANTELACION,
+  MARGEN_CANCELACION_MINUTOS,
 } from '../constants/preguntas.js';
 
 /**
@@ -223,18 +226,184 @@ export async function crearDia(req: Request, res: Response): Promise<void> {
     return;
   }
   try {
-    const dia = new DiaEntrevistas().initDefaults();
-    dia.setGrupo(Grupo.createWithoutData(grupoId) as Grupo);
-    dia.setInicio(rango.inicio);
-    dia.setFin(rango.fin);
-    // Copiado al crear: cambiar el tiempo del módulo después no puede mover los
-    // huecos de un día en el que ya hay gente apuntada.
-    dia.setDuracionSegundos(await duracionDelGrupo(grupoId));
-    dia.setNota(String(req.body?.nota ?? '').trim());
-    await dia.save(null, { useMasterKey: true });
+    // El alta suelta pasa por la MISMA regla que el lote. Antes no miraba nada,
+    // así que abrir a mano un horario que se pisaba con otro partía las mismas
+    // horas dos veces y el hueco de las 10:00 existía por duplicado.
+    const [plan] = planificarBloques([rango], await rangosDelGrupo(grupoId));
+    if (plan.estado !== 'nuevo') {
+      res.status(409).json({ status: 'error', message: porQueNoEntra(plan) });
+      return;
+    }
+    const dia = await abrirDia(grupoId, rango, req.body?.nota, await duracionDelGrupo(grupoId));
     res.status(201).json({ status: 'ok', dia: dia.toSafeJSON() });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al crear el día' });
+  }
+}
+
+/** Los tramos que ya ocupan los días abiertos del grupo. */
+async function rangosDelGrupo(grupoId: string): Promise<Rango[]> {
+  return (await diasDelGrupo(grupoId)).map((d) => ({ inicio: d.getInicio(), fin: d.getFin() }));
+}
+
+function horaCorta(fecha: Date): string {
+  return fecha.toISOString();
+}
+
+/** En palabras, por qué un bloque no se abre. */
+function porQueNoEntra(fila: FilaPlan): string {
+  if (fila.estado === 'duplicado') return 'Ese bloque ya está abierto';
+  return `Ese horario se pisa con un bloque que ya existe (${horaCorta(fila.choca!.inicio)})`;
+}
+
+/**
+ * Crea un bloque. `duracionSegundos` se copia al crear y no se lee del módulo:
+ * si mañana el profesor pasa las entrevistas de cinco a tres minutos, los días
+ * ya abiertos tienen que seguir partiéndose igual.
+ */
+async function abrirDia(
+  grupoId: string,
+  rango: Rango,
+  nota: unknown,
+  duracionSegundos: number,
+): Promise<DiaEntrevistas> {
+  const dia = new DiaEntrevistas().initDefaults();
+  dia.setGrupo(Grupo.createWithoutData(grupoId) as Grupo);
+  dia.setInicio(rango.inicio);
+  dia.setFin(rango.fin);
+  dia.setDuracionSegundos(duracionSegundos);
+  dia.setNota(String(nota ?? '').trim());
+  await dia.save(null, { useMasterKey: true });
+  return dia;
+}
+
+/**
+ * POST /admin/grupos/:grupoId/agenda-entrevistas/dias/lote
+ * `{ bloques: [{inicio, fin}], nota?, simular? }`
+ *
+ * Abrir un mes de entrevistas era abrir el modal treinta veces. Aquí llegan
+ * todos los bloques de golpe —ya expandidos por el navegador, que es quien sabe
+ * qué fechas caen en martes y en qué zona está el profesor— y el servidor decide
+ * cuáles entran.
+ *
+ * Con `simular` no escribe nada y devuelve el mismo plan: es la vista previa,
+ * que dice exactamente qué se va a crear ANTES de pulsar. Sin ella, «abrir 7
+ * bloques» es un botón a ciegas.
+ */
+export async function crearDiasEnLote(req: Request, res: Response): Promise<void> {
+  const { grupoId } = req.params;
+  const crudos = req.body?.bloques;
+  if (!Array.isArray(crudos) || crudos.length === 0) {
+    res.status(400).json({ status: 'error', message: 'No hay ningún bloque que abrir' });
+    return;
+  }
+  if (crudos.length > MAX_BLOQUES_POR_LOTE) {
+    res.status(400).json({
+      status: 'error',
+      message: `De una vez se pueden abrir hasta ${MAX_BLOQUES_POR_LOTE} bloques`,
+    });
+    return;
+  }
+
+  const candidatos: Rango[] = [];
+  for (const crudo of crudos) {
+    const rango = leerRango(crudo);
+    if (!rango) {
+      res.status(400).json({ status: 'error', message: 'Hay un bloque con horas no válidas' });
+      return;
+    }
+    candidatos.push(rango);
+  }
+
+  try {
+    const plan = planificarBloques(candidatos, await rangosDelGrupo(grupoId));
+    const nuevos = plan.filter((p) => p.estado === 'nuevo');
+
+    if (req.body?.simular === true) {
+      res.json({ status: 'ok', plan: plan.map(filaJSON), simulado: true });
+      return;
+    }
+
+    const duracion = await duracionDelGrupo(grupoId);
+    // En serie y no en paralelo: son escrituras contra una base remota y el
+    // profesor está esperando a que vuelva la lista, no a que vuelva rápido.
+    // Treinta `save` a la vez es lo que la tumba.
+    for (const fila of nuevos) {
+      await abrirDia(grupoId, fila, req.body?.nota, duracion);
+    }
+    res.status(201).json({ status: 'ok', plan: plan.map(filaJSON), creados: nuevos.length });
+  } catch {
+    res.status(500).json({ status: 'error', message: 'Error al abrir los días' });
+  }
+}
+
+function filaJSON(fila: FilaPlan) {
+  return {
+    inicio: fila.inicio.toISOString(),
+    fin: fila.fin.toISOString(),
+    estado: fila.estado,
+    choca: fila.choca
+      ? { inicio: fila.choca.inicio.toISOString(), fin: fila.choca.fin.toISOString() }
+      : null,
+  };
+}
+
+/**
+ * PUT /admin/grupos/:grupoId/agenda-entrevistas/dias/lote — `{ diaIds, cerrado }`
+ *
+ * Cerrar las reservas de una semana entera de una vez. Es el mismo gesto que el
+ * de un día, repetido, y por eso no tiene reglas propias.
+ */
+export async function actualizarDiasEnLote(req: Request, res: Response): Promise<void> {
+  const { grupoId } = req.params;
+  const { diaIds, cerrado } = req.body ?? {};
+  if (!Array.isArray(diaIds) || diaIds.length === 0 || typeof cerrado !== 'boolean') {
+    res.status(400).json({ status: 'error', message: 'Faltan los días o qué hacer con ellos' });
+    return;
+  }
+  try {
+    const dias = (await diasDelGrupo(grupoId)).filter((d) => diaIds.includes(d.id!));
+    for (const dia of dias) dia.setCerrado(cerrado);
+    if (dias.length > 0) await Parse.Object.saveAll(dias, { useMasterKey: true });
+    res.json({ status: 'ok', cambiados: dias.length });
+  } catch {
+    res.status(500).json({ status: 'error', message: 'Error al guardar los días' });
+  }
+}
+
+/**
+ * DELETE /admin/grupos/:grupoId/agenda-entrevistas/dias/lote — `{ diaIds }`
+ *
+ * Borra los que se puedan y DEJA los que tengan gente apuntada, diciendo
+ * cuántos. Fallar entero por uno solo obligaría a ir descartándolos a mano hasta
+ * dar con el que estorba, que es justo el trabajo que esto viene a quitar.
+ */
+export async function borrarDiasEnLote(req: Request, res: Response): Promise<void> {
+  const { grupoId } = req.params;
+  const { diaIds } = req.body ?? {};
+  if (!Array.isArray(diaIds) || diaIds.length === 0) {
+    res.status(400).json({ status: 'error', message: 'No hay días que borrar' });
+    return;
+  }
+  try {
+    const [dias, citas] = await Promise.all([
+      diasDelGrupo(grupoId),
+      citasDelGrupo(grupoId),
+    ]);
+    const conCitas = new Set(citas.map((c) => c.getDia()?.id).filter(Boolean) as string[]);
+    const pedidos = dias.filter((d) => diaIds.includes(d.id!));
+    const borrables = pedidos.filter((d) => !conCitas.has(d.id!));
+
+    for (const dia of borrables) dia.softDelete();
+    if (borrables.length > 0) await Parse.Object.saveAll(borrables, { useMasterKey: true });
+
+    res.json({
+      status: 'ok',
+      borrados: borrables.length,
+      conservados: pedidos.length - borrables.length,
+    });
+  } catch {
+    res.status(500).json({ status: 'error', message: 'Error al borrar los días' });
   }
 }
 

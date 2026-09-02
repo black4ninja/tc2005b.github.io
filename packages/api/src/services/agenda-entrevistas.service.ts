@@ -122,3 +122,61 @@ export function numerarIntentos<T extends { inicio: Date; id?: string }>(citas: 
   });
   return new Map(orden.map((c, i) => [c.id ?? String(i), i + 1]));
 }
+
+/* ------------------------------------------------------------------ */
+/*  Abrir días en lote                                                 */
+/* ------------------------------------------------------------------ */
+
+export interface Rango { inicio: Date; fin: Date }
+
+/** Qué se va a hacer con cada bloque pedido, y por qué. */
+export type EstadoPlan = 'nuevo' | 'duplicado' | 'solapa';
+
+export interface FilaPlan extends Rango {
+  estado: EstadoPlan;
+  /** Con qué choca, cuando no es nuevo. Para poder decirlo, no solo negarlo. */
+  choca?: Rango;
+}
+
+/** ¿Se pisan estos dos tramos? Tocarse por el extremo no es pisarse. */
+function seSolapan(a: Rango, b: Rango): boolean {
+  return a.inicio.getTime() < b.fin.getTime() && b.inicio.getTime() < a.fin.getTime();
+}
+
+function esElMismo(a: Rango, b: Rango): boolean {
+  return a.inicio.getTime() === b.inicio.getTime() && a.fin.getTime() === b.fin.getTime();
+}
+
+/**
+ * Qué bloques de los pedidos se pueden abrir, y cuáles se saltan.
+ *
+ * Abrir un mes de entrevistas es pedir decenas de bloques de golpe, y algunos
+ * van a chocar con lo que ya hay: se repite un día que ya estaba, o el horario
+ * nuevo se mete dentro de uno abierto. Eso NO puede crearse. Un día que se pisa
+ * con otro parte las mismas horas dos veces, y entonces un hueco de las 10:00
+ * existe por duplicado: dos alumnos lo ven libre, los dos lo reservan y solo uno
+ * cabe. Hasta ahora nada lo impedía —el alta suelta tampoco miraba—.
+ *
+ * Se distinguen dos maneras de chocar porque no se explican igual: el DUPLICADO
+ * exacto es «esto ya lo tienes» y no hay nada que decidir; el SOLAPE parcial es
+ * «esto se pisa con aquello» y a lo mejor lo que quiere es mover el horario.
+ *
+ * Y los candidatos se comparan también entre ellos: dos bloques del mismo lote
+ * pueden pisarse sin que exista todavía ninguno de los dos.
+ *
+ * Pura y por instantes: el calendario —qué fechas caen en martes— se resuelve
+ * en el navegador del profesor, que es quien sabe en qué zona está.
+ */
+export function planificarBloques(candidatos: Rango[], existentes: Rango[]): FilaPlan[] {
+  const yaHay: Rango[] = [...existentes];
+  return candidatos.map((c) => {
+    const igual = yaHay.find((e) => esElMismo(c, e));
+    if (igual) return { ...c, estado: 'duplicado' as const, choca: igual };
+    const pisa = yaHay.find((e) => seSolapan(c, e));
+    if (pisa) return { ...c, estado: 'solapa' as const, choca: pisa };
+    // Entra en la lista: el siguiente candidato tiene que verlo para que dos
+    // bloques del mismo lote no se pisen entre ellos.
+    yaHay.push(c);
+    return { ...c, estado: 'nuevo' as const };
+  });
+}

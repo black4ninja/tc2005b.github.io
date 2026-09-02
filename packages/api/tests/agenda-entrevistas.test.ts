@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   esDiaHabil, sumarHorasHabiles, puedeAgendar, puedeCancelar, huecosDelDia, numerarIntentos,
+  planificarBloques,
 } from '../src/services/agenda-entrevistas.service.js';
 
 /**
@@ -164,5 +165,59 @@ describe('el umbral se mueve al minuto y nunca hacia atrás', () => {
     // A paso más grueso: el barrido fino ya cubre las dos fronteras, y aquí lo
     // que se comprueba es que no aparezca otra en medio.
     expect(retrocesos('2026-09-03T06:00:00Z', 60 * 24 * 7, 15)).toBe(0);
+  });
+});
+
+describe('planificarBloques', () => {
+  const bloque = (desde: string, hasta: string) => ({ inicio: qro(desde), fin: qro(hasta) });
+
+  it('lo que no choca con nada, entra', () => {
+    const plan = planificarBloques(
+      [bloque('2026-09-07T09:00:00', '2026-09-07T11:00:00')],
+      [],
+    );
+    expect(plan.map((p) => p.estado)).toEqual(['nuevo']);
+  });
+
+  it('el mismo bloque otra vez es un duplicado, no un solape', () => {
+    // Se distinguen porque no se explican igual: «esto ya lo tienes» no deja
+    // nada que decidir; «se pisa con aquello» a lo mejor sí.
+    const ya = [bloque('2026-09-07T09:00:00', '2026-09-07T11:00:00')];
+    const plan = planificarBloques([bloque('2026-09-07T09:00:00', '2026-09-07T11:00:00')], ya);
+    expect(plan[0].estado).toBe('duplicado');
+    expect(plan[0].choca).toEqual(ya[0]);
+  });
+
+  it('un horario que se mete dentro de otro abierto se salta', () => {
+    // Es el caso que partía las mismas horas dos veces: el hueco de las 10:00
+    // existía por duplicado y dos alumnos lo veían libre.
+    const ya = [bloque('2026-09-09T15:30:00', '2026-09-09T17:00:00')];
+    const plan = planificarBloques([bloque('2026-09-09T16:00:00', '2026-09-09T18:00:00')], ya);
+    expect(plan[0].estado).toBe('solapa');
+  });
+
+  it('tocarse por el extremo no es pisarse', () => {
+    const ya = [bloque('2026-09-07T09:00:00', '2026-09-07T11:00:00')];
+    const plan = planificarBloques([bloque('2026-09-07T11:00:00', '2026-09-07T13:00:00')], ya);
+    expect(plan[0].estado).toBe('nuevo');
+  });
+
+  it('dos bloques del MISMO lote tampoco pueden pisarse entre ellos', () => {
+    // Nadie los ha creado todavía, así que compararlos solo contra lo existente
+    // los dejaba pasar a los dos.
+    const plan = planificarBloques([
+      bloque('2026-09-07T09:00:00', '2026-09-07T11:00:00'),
+      bloque('2026-09-07T10:00:00', '2026-09-07T12:00:00'),
+    ], []);
+    expect(plan.map((p) => p.estado)).toEqual(['nuevo', 'solapa']);
+  });
+
+  it('días distintos a la misma hora no se estorban', () => {
+    const plan = planificarBloques([
+      bloque('2026-09-07T09:00:00', '2026-09-07T11:00:00'),
+      bloque('2026-09-08T09:00:00', '2026-09-08T11:00:00'),
+      bloque('2026-09-09T09:00:00', '2026-09-09T11:00:00'),
+    ], []);
+    expect(plan.every((p) => p.estado === 'nuevo')).toBe(true);
   });
 });

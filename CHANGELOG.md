@@ -8,6 +8,16 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Los días de entrevistas se abren en lote, y un día admite varios bloques.**
+  Montar un mes de entrevistas era abrir el modal treinta veces: una fecha y una
+  franja por vez. Ahora se pide un rango de fechas y una lista de **bloques**,
+  cada uno con sus propios días de la semana y su horario —«de lunes a jueves de
+  9 a 11» y, además, «de martes a viernes de 4 a 6»—. Una **vista previa** dice
+  exactamente qué se va a crear antes de pulsar.
+- **Administrar los días en lote.** Los bloques se agrupan por fecha —cada día en
+  una línea, con su tira de horarios y su propia barra de desplazamiento, para
+  que un día con ocho bloques no empuje a los botones— y se pueden marcar varios
+  para cerrar reservas, reabrir o borrar de una vez.
 - **Un selector en el mando de la proyección para saltar a cualquiera.** Las
   flechas sirven para recorrer el día seguido; esto, para cuando alguien pide su
   turno antes o llega tarde y hay que rescatarlo, sin pasar por los de en medio.
@@ -68,6 +78,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   - Tope de cinco partidas vivas por alumno y ocho personas por partida.
 
 ### Fixed
+- **Nada impedía abrir dos días de entrevistas que se pisaran.** Dos bloques
+  solapados parten las mismas horas dos veces, así que el hueco de las 10:00
+  existía por duplicado: dos alumnos lo veían libre, los dos lo reservaban y solo
+  uno cabía. Ni el alta suelta ni ninguna otra cosa lo miraba. Ahora se rechaza,
+  distinguiendo el bloque repetido —«esto ya lo tienes»— del que se pisa a medias
+  con otro, que se explica diciendo con cuál.
 - **Los huecos de la agenda se cerraban a tirones y a veces volvían a abrirse.**
   La cuenta de las 24 horas hábiles avanzaba a pasos de media hora anclados en el
   instante de consulta, así que el límite saltaba de 30 en 30 minutos y —al

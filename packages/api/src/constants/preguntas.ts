@@ -55,3 +55,12 @@ export const HORAS_HABILES_ANTELACION = 24;
  * Pasado ese margen la cita se da por celebrada aunque no se presente.
  */
 export const MARGEN_CANCELACION_MINUTOS = 5;
+
+/**
+ * Cuántos bloques se pueden abrir de una vez.
+ *
+ * No es una regla de diseño, es de cordura: cada bloque es una escritura contra
+ * una base remota, y un rango de fechas mal puesto —dos años en vez de dos
+ * semanas— pediría cientos. Un semestre de entrevistas cabe de sobra.
+ */
+export const MAX_BLOQUES_POR_LOTE = 120;

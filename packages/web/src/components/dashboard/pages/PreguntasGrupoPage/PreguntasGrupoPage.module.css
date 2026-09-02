@@ -781,13 +781,114 @@
 .notaBloque .nota { border-color: var(--border-color); }
 
 /* ── Agenda de entrevistas ─────────────────────────────────────────────── */
+/* Una fila por FECHA, en columna. Antes era una nube de chips con la fecha
+   repetida en cada uno; con varios bloques por día eso dejó de leerse. */
 .dias {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.filaDia {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.filaDiaFecha {
+  width: 92px;
+  flex: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+/* La tira de bloques de un día. NUNCA envuelve: si no caben se desplazan aquí
+   dentro, así que la fila sigue midiendo una línea y los botones de la derecha
+   no se mueven de sitio por mucho que se abran bloques. */
+.tiraDia {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
-  min-width: 0;
   flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 5px;
+}
+
+.tiraDia::-webkit-scrollbar { height: 10px; }
+.tiraDia::-webkit-scrollbar-track { background: transparent; }
+
+/* Agarrable a propósito: con muchos bloques es la única forma de llegar a los
+   del final, y una barra fina cuesta trabajo pillarla. */
+.tiraDia::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 999px;
+  border: 2px solid var(--bg-card);
+}
+
+.tiraDia::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+.chipBloque {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Actuar sobre varios bloques a la vez. */
+.barraLote {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border: 1px solid var(--sidebar-active-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+.loteCuenta { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+
+.loteAcciones {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.loteBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.loteBtn:hover:not(:disabled) { color: var(--text-primary); border-color: var(--text-muted); }
+.loteBtn:disabled { opacity: 0.45; cursor: default; }
+
+.loteBtnPeligro {
+  border-color: var(--estado-error-border);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
 }
 
 .diaCabecera {
