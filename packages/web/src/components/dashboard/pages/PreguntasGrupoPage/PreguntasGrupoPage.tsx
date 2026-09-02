@@ -309,6 +309,10 @@ export default function PreguntasGrupoPage() {
         setError(`${data.conservados} bloque${data.conservados === 1 ? ' se quedó' : 's se quedaron'}: tiene${data.conservados === 1 ? '' : 'n'} citas apuntadas.`);
       }
       setSeleccion(new Set());
+      // Si entre los borrados iba el bloque que se está mirando, hay que soltar
+      // la referencia: `cargarAgenda` elige otro cuando está en null. Sin esto,
+      // el chip del día se quedaba resaltado y la tabla de abajo vacía.
+      if (diaActivo && seleccion.has(diaActivo)) setDiaActivo(null);
       await cargarAgenda();
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'No se pudieron borrar los días'));

@@ -17,7 +17,7 @@ import {
 } from '../services/agenda-entrevistas.service.js';
 import {
   DURACION_POR_DEFECTO, MAX_BLOQUES_POR_LOTE, MAX_INTENTOS, HORAS_HABILES_ANTELACION,
-  MARGEN_CANCELACION_MINUTOS,
+  MARGEN_CANCELACION_MINUTOS, ZONA_CURSO,
 } from '../constants/preguntas.js';
 
 /**
@@ -226,15 +226,21 @@ export async function crearDia(req: Request, res: Response): Promise<void> {
     return;
   }
   try {
+    // Las dos lecturas van juntas: son independientes y en fila india eran dos
+    // viajes seguidos a una base remota antes de escribir nada.
+    const [ocupados, duracion] = await Promise.all([
+      rangosDelGrupo(grupoId),
+      duracionDelGrupo(grupoId),
+    ]);
     // El alta suelta pasa por la MISMA regla que el lote. Antes no miraba nada,
     // así que abrir a mano un horario que se pisaba con otro partía las mismas
     // horas dos veces y el hueco de las 10:00 existía por duplicado.
-    const [plan] = planificarBloques([rango], await rangosDelGrupo(grupoId));
+    const [plan] = planificarBloques([rango], ocupados);
     if (plan.estado !== 'nuevo') {
       res.status(409).json({ status: 'error', message: porQueNoEntra(plan) });
       return;
     }
-    const dia = await abrirDia(grupoId, rango, req.body?.nota, await duracionDelGrupo(grupoId));
+    const dia = await abrirDia(grupoId, rango, req.body?.nota, duracion);
     res.status(201).json({ status: 'ok', dia: dia.toSafeJSON() });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al crear el día' });
@@ -246,14 +252,23 @@ async function rangosDelGrupo(grupoId: string): Promise<Rango[]> {
   return (await diasDelGrupo(grupoId)).map((d) => ({ inicio: d.getInicio(), fin: d.getFin() }));
 }
 
-function horaCorta(fecha: Date): string {
-  return fecha.toISOString();
+/** `09:00 – 13:00` en la zona del curso, para poder decirlo en un mensaje. */
+function rangoLegible(rango: Rango): string {
+  const hhmm = (fecha: Date) => new Intl.DateTimeFormat('es-MX', {
+    timeZone: ZONA_CURSO, hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(fecha);
+  return `${hhmm(rango.inicio)} – ${hhmm(rango.fin)}`;
 }
 
-/** En palabras, por qué un bloque no se abre. */
+/**
+ * En palabras, por qué un bloque no se abre.
+ *
+ * Con la hora puesta y no el instante en crudo: quien lee esto está mirando su
+ * agenda, no una marca de tiempo.
+ */
 function porQueNoEntra(fila: FilaPlan): string {
   if (fila.estado === 'duplicado') return 'Ese bloque ya está abierto';
-  return `Ese horario se pisa con un bloque que ya existe (${horaCorta(fila.choca!.inicio)})`;
+  return `Ese horario se pisa con el bloque de ${rangoLegible(fila.choca!)} que ya existe`;
 }
 
 /**
