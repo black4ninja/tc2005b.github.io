@@ -781,13 +781,104 @@
 .notaBloque .nota { border-color: var(--border-color); }
 
 /* ── Agenda de entrevistas ─────────────────────────────────────────────── */
+/* Dos tiras: primero los DÍAS, después los horarios del día elegido. Con un
+   bloque por día —lo normal— una fila por fecha eran ocho líneas para nada. */
 .dias {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+/* Los dos tipos de chip de la agenda comparten forma: en una sola línea, sin
+   encoger, para que la tira se desplace en vez de partirlos. */
+/* Los dos tipos de chip de la agenda comparten forma: una sola línea y sin
+   encoger, para que la tira se desplace en vez de partirlos. */
+.chipDia,
+.chipBloque {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* El nombre del día va tal cual: en versalitas se lee como un código. */
+.chipDia { text-transform: none; }
+
+/* Las tiras NUNCA envuelven: si no caben se desplazan aquí dentro, así que
+   siguen midiendo una línea y los botones de la derecha no se mueven de sitio
+   por muchos días que se abran. */
+.tiraDia {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
-  min-width: 0;
   flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 5px;
+}
+
+.tiraDia::-webkit-scrollbar { height: 10px; }
+.tiraDia::-webkit-scrollbar-track { background: transparent; }
+
+/* Agarrable a propósito: con muchos bloques es la única forma de llegar a los
+   del final, y una barra fina cuesta trabajo pillarla. */
+.tiraDia::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 999px;
+  border: 2px solid var(--bg-card);
+}
+
+.tiraDia::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Actuar sobre varios bloques a la vez. */
+.barraLote {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border: 1px solid var(--sidebar-active-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+.loteCuenta { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+
+.loteAcciones {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.loteBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.loteBtn:hover:not(:disabled) { color: var(--text-primary); border-color: var(--text-muted); }
+.loteBtn:disabled { opacity: 0.45; cursor: default; }
+
+.loteBtnPeligro {
+  border-color: var(--estado-error-border);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
 }
 
 .diaCabecera {
@@ -900,3 +991,21 @@
   gap: var(--space-sm);
   margin-top: var(--space-md);
 }
+
+/* El salto a cualquiera de la fila. Va entre las flechas y los mandos del
+   reloj: es la misma familia —a quién se está enseñando— y no una acción sobre
+   la pantalla. Ancho corto y con recorte: los nombres largos no pueden empujar
+   los botones que se pulsan a oscuras. */
+.mandoSalto {
+  max-width: 190px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.mandoSalto:disabled { opacity: 0.5; cursor: default; }

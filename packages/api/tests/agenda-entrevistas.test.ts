@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   esDiaHabil, sumarHorasHabiles, puedeAgendar, puedeCancelar, huecosDelDia, numerarIntentos,
+  planificarBloques,
 } from '../src/services/agenda-entrevistas.service.js';
 
 /**
@@ -119,5 +120,104 @@ describe('numerarIntentos', () => {
     const n = numerarIntentos([{ id: 'z', inicio: misma }, { id: 'a', inicio: misma }]);
     expect(n.get('a')).toBe(1);
     expect(n.get('z')).toBe(2);
+  });
+});
+
+describe('el umbral se mueve al minuto y nunca hacia atrás', () => {
+  /**
+   * La regla cierra huecos, y cerrarlos es lo que el alumno ve. El paso con el
+   * que se cuenta se ancla en `desde`, así que su tamaño es también el grano del
+   * resultado: con media hora, el umbral saltaba de 30 en 30 y RETROCEDÍA 29 al
+   * cruzar la noche del viernes —un hueco cerrado volvía a abrirse—.
+   */
+  it('avanzar un minuto mueve el umbral un minuto', () => {
+    const martes = new Date('2026-09-08T16:00:00Z');
+    const antes = sumarHorasHabiles(martes).getTime();
+    const despues = sumarHorasHabiles(new Date(martes.getTime() + 60_000)).getTime();
+    expect((despues - antes) / 60_000).toBe(1);
+  });
+
+  /** Cuántas veces el umbral da un paso atrás en un barrido. */
+  function retrocesos(desdeISO: string, minutos: number, paso = 1): number {
+    let previo = -Infinity;
+    let cuantos = 0;
+    const inicio = new Date(desdeISO).getTime();
+    for (let i = 0; i < minutos; i += paso) {
+      const umbral = sumarHorasHabiles(new Date(inicio + i * 60_000)).getTime();
+      if (umbral < previo) cuantos += 1;
+      previo = umbral;
+    }
+    return cuantos;
+  }
+
+  it('no retrocede al cruzar la noche del viernes, que es donde fallaba', () => {
+    // Tres horas a caballo de la medianoche del viernes, minuto a minuto: es
+    // ahí donde cambiaba qué pasos caían en fin de semana y el umbral daba
+    // marcha atrás.
+    expect(retrocesos('2026-09-04T04:30:00Z', 180)).toBe(0);
+  });
+
+  it('tampoco al volver el lunes', () => {
+    expect(retrocesos('2026-09-07T04:30:00Z', 180)).toBe(0);
+  });
+
+  it('ni en el resto de la semana', () => {
+    // A paso más grueso: el barrido fino ya cubre las dos fronteras, y aquí lo
+    // que se comprueba es que no aparezca otra en medio.
+    expect(retrocesos('2026-09-03T06:00:00Z', 60 * 24 * 7, 15)).toBe(0);
+  });
+});
+
+describe('planificarBloques', () => {
+  const bloque = (desde: string, hasta: string) => ({ inicio: qro(desde), fin: qro(hasta) });
+
+  it('lo que no choca con nada, entra', () => {
+    const plan = planificarBloques(
+      [bloque('2026-09-07T09:00:00', '2026-09-07T11:00:00')],
+      [],
+    );
+    expect(plan.map((p) => p.estado)).toEqual(['nuevo']);
+  });
+
+  it('el mismo bloque otra vez es un duplicado, no un solape', () => {
+    // Se distinguen porque no se explican igual: «esto ya lo tienes» no deja
+    // nada que decidir; «se pisa con aquello» a lo mejor sí.
+    const ya = [bloque('2026-09-07T09:00:00', '2026-09-07T11:00:00')];
+    const plan = planificarBloques([bloque('2026-09-07T09:00:00', '2026-09-07T11:00:00')], ya);
+    expect(plan[0].estado).toBe('duplicado');
+    expect(plan[0].choca).toEqual(ya[0]);
+  });
+
+  it('un horario que se mete dentro de otro abierto se salta', () => {
+    // Es el caso que partía las mismas horas dos veces: el hueco de las 10:00
+    // existía por duplicado y dos alumnos lo veían libre.
+    const ya = [bloque('2026-09-09T15:30:00', '2026-09-09T17:00:00')];
+    const plan = planificarBloques([bloque('2026-09-09T16:00:00', '2026-09-09T18:00:00')], ya);
+    expect(plan[0].estado).toBe('solapa');
+  });
+
+  it('tocarse por el extremo no es pisarse', () => {
+    const ya = [bloque('2026-09-07T09:00:00', '2026-09-07T11:00:00')];
+    const plan = planificarBloques([bloque('2026-09-07T11:00:00', '2026-09-07T13:00:00')], ya);
+    expect(plan[0].estado).toBe('nuevo');
+  });
+
+  it('dos bloques del MISMO lote tampoco pueden pisarse entre ellos', () => {
+    // Nadie los ha creado todavía, así que compararlos solo contra lo existente
+    // los dejaba pasar a los dos.
+    const plan = planificarBloques([
+      bloque('2026-09-07T09:00:00', '2026-09-07T11:00:00'),
+      bloque('2026-09-07T10:00:00', '2026-09-07T12:00:00'),
+    ], []);
+    expect(plan.map((p) => p.estado)).toEqual(['nuevo', 'solapa']);
+  });
+
+  it('días distintos a la misma hora no se estorban', () => {
+    const plan = planificarBloques([
+      bloque('2026-09-07T09:00:00', '2026-09-07T11:00:00'),
+      bloque('2026-09-08T09:00:00', '2026-09-08T11:00:00'),
+      bloque('2026-09-09T09:00:00', '2026-09-09T11:00:00'),
+    ], []);
+    expect(plan.every((p) => p.estado === 'nuevo')).toBe(true);
   });
 });

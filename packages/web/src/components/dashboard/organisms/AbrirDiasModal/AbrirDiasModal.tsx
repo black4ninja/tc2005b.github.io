@@ -1,0 +1,283 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Modal from '../../atoms/Modal/Modal';
+import Icon from '../../atoms/Icon/Icon';
+import DashButton from '../../atoms/DashButton/DashButton';
+import {
+  DIAS_SEMANA, expandirBloques, fechaCorta, hora, type BloquePedido,
+} from '../../../../utils/agenda';
+import styles from './AbrirDiasModal.module.css';
+
+/** Una fila del plan que devuelve el servidor. */
+export interface FilaPlan {
+  inicio: string;
+  fin: string;
+  estado: 'nuevo' | 'duplicado' | 'solapa';
+  choca: { inicio: string; fin: string } | null;
+}
+
+interface Props {
+  /** Cuánto dura cada entrevista, para poder decir cuántos huecos salen. */
+  duracionSegundos: number;
+  guardando: boolean;
+  /** Pide la simulación al servidor. Null si todavía no hay nada que pedir. */
+  onSimular: (bloques: { inicio: string; fin: string }[]) => Promise<FilaPlan[] | null>;
+  onAbrir: (bloques: { inicio: string; fin: string }[], nota: string) => void;
+  onCerrar: () => void;
+}
+
+const NUEVO: BloquePedido = { dias: [1, 2, 3, 4, 5], desde: '09:00', hasta: '13:00' };
+
+/** Cuánto se espera antes de pedir la vista previa, para no ir por tecla. */
+const ESPERA_MS = 350;
+
+/**
+ * Abrir días de entrevistas en lote.
+ *
+ * Antes esto era un día y una franja por vez: montar un mes de entrevistas
+ * significaba abrir el modal treinta veces. Aquí se pide un RANGO de fechas y
+ * una lista de bloques, cada uno con sus propios días de la semana y su horario
+ * —«de lunes a jueves de 9 a 11» y, además, «de martes a viernes de 4 a 6»—.
+ *
+ * La vista previa no es un adorno: dice exactamente qué se va a crear antes de
+ * pulsar y marca lo que se salta. Sin ella «abrir 7 bloques» es un botón a
+ * ciegas, y un horario que se pisa con otro parte las mismas horas dos veces
+ * —el hueco de las 10:00 acaba existiendo por duplicado y dos alumnos lo ven
+ * libre—. Quien decide es el servidor; esto solo lo enseña.
+ */
+export default function AbrirDiasModal({
+  duracionSegundos, guardando, onSimular, onAbrir, onCerrar,
+}: Props) {
+  const [desde, setDesde] = useState('');
+  const [hasta, setHasta] = useState('');
+  const [bloques, setBloques] = useState<BloquePedido[]>([{ ...NUEVO }]);
+  const [nota, setNota] = useState('');
+  const [plan, setPlan] = useState<FilaPlan[] | null>(null);
+  const [simulando, setSimulando] = useState(false);
+  /** La vista previa no se pudo calcular. Hay que decirlo, no quedarse pensando. */
+  const [fallo, setFallo] = useState(false);
+  /** Cuál simulación es la última pedida: las que vuelven tarde se descartan. */
+  const ultima = useRef(0);
+
+  const candidatos = useMemo(
+    () => expandirBloques(desde, hasta, bloques),
+    [desde, hasta, bloques],
+  );
+
+  useEffect(() => {
+    if (candidatos.length === 0) { setPlan(null); setFallo(false); return; }
+    const mia = ultima.current + 1;
+    ultima.current = mia;
+    setSimulando(true);
+    const id = window.setTimeout(async () => {
+      const resultado = await onSimular(candidatos);
+      // Una respuesta de una petición vieja no puede pisar a la nueva.
+      if (ultima.current !== mia) return;
+      setPlan(resultado);
+      // Sin esto, una simulación que no vuelve dejaba el panel diciendo
+      // «Calculando…» para siempre, y el botón apagado sin explicar por qué.
+      setFallo(resultado === null);
+      setSimulando(false);
+    }, ESPERA_MS);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidatos]);
+
+  const nuevos = plan?.filter((f) => f.estado === 'nuevo') ?? [];
+  const saltados = (plan?.length ?? 0) - nuevos.length;
+  const huecos = nuevos.reduce(
+    (t, f) => t + Math.floor(
+      (new Date(f.fin).getTime() - new Date(f.inicio).getTime()) / (duracionSegundos * 1000),
+    ),
+    0,
+  );
+  const fechasDistintas = new Set(nuevos.map((f) => f.inicio.slice(0, 10))).size;
+
+  function cambiarBloque(indice: number, cambio: Partial<BloquePedido>) {
+    setBloques((bs) => bs.map((b, i) => (i === indice ? { ...b, ...cambio } : b)));
+  }
+
+  function alternarDia(indice: number, dia: number) {
+    setBloques((bs) => bs.map((b, i) => {
+      if (i !== indice) return b;
+      const dentro = b.dias.includes(dia);
+      return { ...b, dias: dentro ? b.dias.filter((d) => d !== dia) : [...b.dias, dia] };
+    }));
+  }
+
+  return (
+    <Modal isOpen onClose={onCerrar} title="Abrir días de entrevistas">
+      <div className={styles.caja}>
+
+        <div className={styles.campo}>
+          <span className={styles.etiqueta}>Entre qué fechas</span>
+          <div className={styles.fechas}>
+            <input
+              type="date"
+              className={styles.input}
+              value={desde}
+              disabled={guardando}
+              onChange={(e) => {
+                setDesde(e.target.value);
+                // Un solo día es el caso más común: se rellena el otro extremo
+                // para no obligar a teclear la misma fecha dos veces.
+                if (!hasta || hasta < e.target.value) setHasta(e.target.value);
+              }}
+            />
+            <span className={styles.entre}>hasta</span>
+            <input
+              type="date"
+              className={styles.input}
+              value={hasta}
+              min={desde || undefined}
+              disabled={guardando}
+              onChange={(e) => setHasta(e.target.value)}
+            />
+            <span className={styles.pista}>La misma fecha en las dos abre un solo día.</span>
+          </div>
+        </div>
+
+        <div className={styles.campo}>
+          <div className={styles.cabeceraCampo}>
+            <span className={styles.etiqueta}>Bloques</span>
+            <span className={styles.pista}>Cada bloque tiene sus días y su horario.</span>
+          </div>
+
+          <div className={styles.bloques}>
+            {bloques.map((bloque, i) => (
+              // eslint-disable-next-line react/no-array-index-key
+              <div key={i} className={styles.bloque}>
+                <div className={styles.dias}>
+                  {DIAS_SEMANA.map(({ dia, letra, nombre }) => (
+                    <button
+                      key={dia}
+                      type="button"
+                      className={`${styles.dia} ${bloque.dias.includes(dia) ? styles.diaActivo : ''}`}
+                      disabled={guardando}
+                      onClick={() => alternarDia(i, dia)}
+                      title={nombre}
+                      aria-pressed={bloque.dias.includes(dia)}
+                    >
+                      {letra}
+                    </button>
+                  ))}
+                </div>
+                <div className={styles.horas}>
+                  <input
+                    type="time"
+                    className={styles.input}
+                    value={bloque.desde}
+                    disabled={guardando}
+                    onChange={(e) => cambiarBloque(i, { desde: e.target.value })}
+                  />
+                  <span className={styles.entre}>–</span>
+                  <input
+                    type="time"
+                    className={styles.input}
+                    value={bloque.hasta}
+                    disabled={guardando}
+                    onChange={(e) => cambiarBloque(i, { hasta: e.target.value })}
+                  />
+                </div>
+                {bloques.length > 1 && (
+                  <button
+                    type="button"
+                    className={styles.quitar}
+                    disabled={guardando}
+                    onClick={() => setBloques((bs) => bs.filter((_, j) => j !== i))}
+                    aria-label="Quitar este bloque"
+                  >
+                    <Icon name="close" size="sm" />
+                  </button>
+                )}
+              </div>
+            ))}
+
+            <button
+              type="button"
+              className={styles.anadir}
+              disabled={guardando}
+              onClick={() => setBloques((bs) => [...bs, { ...NUEVO }])}
+            >
+              <Icon name="add" size="sm" /> Añadir bloque
+            </button>
+          </div>
+        </div>
+
+        <label className={styles.campo}>
+          <span className={styles.etiquetaSuave}>Nota para el alumno (opcional)</span>
+          <input
+            type="text"
+            className={styles.input}
+            placeholder="p. ej. Sala 3, o el enlace de la videollamada"
+            value={nota}
+            disabled={guardando}
+            onChange={(e) => setNota(e.target.value)}
+          />
+        </label>
+
+        {/* La vista previa: lo que decide si se pulsa o no. */}
+        {candidatos.length > 0 && (
+          <div className={styles.previa}>
+            <div className={styles.previaCabecera}>
+              <span className={styles.previaTitulo}>
+                {fallo
+                  ? 'No se pudo calcular la vista previa'
+                  : simulando || !plan
+                    ? 'Calculando…'
+                    : nuevos.length === 0
+                      ? 'No hay nada que abrir'
+                      : `Se abrirán ${nuevos.length} bloque${nuevos.length === 1 ? '' : 's'} en ${fechasDistintas} día${fechasDistintas === 1 ? '' : 's'}`}
+              </span>
+              {fallo && (
+                <span className={styles.previaDato}>Vuelve a intentarlo en un momento.</span>
+              )}
+              {plan && !simulando && (
+                <span className={styles.previaDato}>
+                  {huecos} huecos{saltados > 0 && ` · ${saltados} se salta${saltados === 1 ? '' : 'n'}`}
+                </span>
+              )}
+            </div>
+
+            {plan && !simulando && (
+              <ul className={styles.filas}>
+                {plan.map((fila) => (
+                  <li
+                    key={`${fila.inicio}-${fila.fin}`}
+                    className={`${styles.fila} ${fila.estado === 'solapa' ? styles.filaSolapa : ''} ${fila.estado === 'duplicado' ? styles.filaDuplicada : ''}`}
+                  >
+                    <span className={styles.filaFecha}>{fechaCorta(fila.inicio)}</span>
+                    <span className={styles.filaHora}>
+                      {hora(fila.inicio)} – {hora(fila.fin)}
+                    </span>
+                    <span className={styles.filaMotivo}>
+                      {fila.estado === 'nuevo'
+                        ? `${Math.floor((new Date(fila.fin).getTime() - new Date(fila.inicio).getTime()) / (duracionSegundos * 1000))} huecos`
+                        : fila.estado === 'duplicado'
+                          ? 'ese bloque ya está abierto'
+                          : `se pisa con el de ${hora(fila.choca!.inicio)} – ${hora(fila.choca!.fin)}`}
+                    </span>
+                    <span className={fila.estado === 'nuevo' ? styles.tagNuevo : styles.tagSalta}>
+                      {fila.estado === 'nuevo' ? 'nuevo' : 'se salta'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        <div className={styles.acciones}>
+          <DashButton variant="outline" onClick={onCerrar} disabled={guardando}>Cancelar</DashButton>
+          <DashButton
+            onClick={() => onAbrir(candidatos, nota)}
+            disabled={guardando || simulando || nuevos.length === 0}
+          >
+            {guardando
+              ? 'Abriendo…'
+              : `Abrir ${nuevos.length} bloque${nuevos.length === 1 ? '' : 's'}`}
+          </DashButton>
+        </div>
+      </div>
+    </Modal>
+  );
+}

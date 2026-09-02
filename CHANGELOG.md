@@ -8,6 +8,43 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Los días de entrevistas se abren en lote, y un día admite varios bloques.**
+  Montar un mes de entrevistas era abrir el modal treinta veces: una fecha y una
+  franja por vez. Ahora se pide un rango de fechas y una lista de **bloques**,
+  cada uno con sus propios días de la semana y su horario —«de lunes a jueves de
+  9 a 11» y, además, «de martes a viernes de 4 a 6»—. Una **vista previa** dice
+  exactamente qué se va a crear antes de pulsar.
+- **Administrar los días en lote.** La barra pasa a dos niveles: primero una tira
+  horizontal con los DÍAS —con el nombre entero, «lunes 7 de sep», porque lo que
+  se busca es «el martes» y no «el 8»— y, solo cuando el día elegido tiene más de
+  un horario, una segunda tira con sus bloques. Con un bloque por día, que es lo
+  normal, ocho fechas ocupaban ocho líneas; ahora caben en una. Las dos tiras se
+  desplazan por dentro, así que los botones de la derecha no se mueven de sitio.
+  Y se pueden marcar varios —el día entero o un bloque suelto— para cerrar
+  reservas, reabrir o borrar de una vez.
+- **Un selector en el mando de la proyección para saltar a cualquiera.** Las
+  flechas sirven para recorrer el día seguido; esto, para cuando alguien pide su
+  turno antes o llega tarde y hay que rescatarlo, sin pasar por los de en medio.
+  Cada opción lleva su hora delante —o su competencia e intento, en la vista por
+  alumno— para distinguir a quien viene dos veces el mismo día.
+- **El profesor puede mover una cita de hueco, incluso a otro día.** Es lo que
+  más se pide el día de las entrevistas: dos alumnos que se cambian entre ellos,
+  uno que llega tarde y se pasa al final, juntar a los de una competencia. Antes
+  había que cancelar y volver a apuntar —dos gestos, y entre uno y otro el hueco
+  quedaba libre para que lo tomara otro—. Ahora es una sola escritura, y el
+  diálogo avisa de que mover una cita puede cambiar su número de intento, que es
+  lo que decide qué pregunta le toca.
+- **El profesor puede apuntar a un alumno en un hueco de la agenda de
+  entrevistas.** La agenda la escriben los alumnos, y esa es la gracia. Pero el
+  día de las entrevistas siempre pasa algo que la hoja no previó —alguien no
+  reservó, un cambio de última hora, un hueco que se quedó suelto— y el profesor
+  no tenía forma de arreglarlo desde el panel: la única salida era pedirle al
+  alumno que se apuntara desde su móvil, que es justo cuando no funciona. El
+  endpoint existía desde el principio; lo que faltaba era la pantalla. Ahora cada
+  tramo libre de la tabla lleva su botón, y el diálogo enseña cuántas
+  oportunidades lleva cada alumno en esa competencia y apaga a los que ya no
+  tienen —contando todas las citas de todos los días, que es como las cuenta el
+  servidor—.
 - **Una historia de usuario siempre pertenece a una épica.** Hasta ahora se podían
   escribir historias sueltas, y el propio modal de épicas ya decía la regla que el
   código no hacía cumplir: «primero se define la épica y después se le cuelgan
@@ -45,6 +82,26 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   - Tope de cinco partidas vivas por alumno y ocho personas por partida.
 
 ### Fixed
+- **Nada impedía abrir dos días de entrevistas que se pisaran.** Dos bloques
+  solapados parten las mismas horas dos veces, así que el hueco de las 10:00
+  existía por duplicado: dos alumnos lo veían libre, los dos lo reservaban y solo
+  uno cabía. Ni el alta suelta ni ninguna otra cosa lo miraba. Ahora se rechaza,
+  distinguiendo el bloque repetido —«esto ya lo tienes»— del que se pisa a medias
+  con otro, que se explica diciendo con cuál.
+- **Los huecos de la agenda se cerraban a tirones y a veces volvían a abrirse.**
+  La cuenta de las 24 horas hábiles avanzaba a pasos de media hora anclados en el
+  instante de consulta, así que el límite saltaba de 30 en 30 minutos y —al
+  cruzar la noche del viernes— **retrocedía 29**: un hueco cerrado volvía a
+  aparecer libre y se cerraba otra vez. Ahora la cuenta va al minuto y nunca da
+  marcha atrás.
+- **El alumno se llevaba rechazos que parecían falsos.** La pantalla congelaba la
+  hora del servidor entre refrescos, así que durante hasta un minuto enseñaba
+  como libre un hueco que ya había cruzado el límite: el alumno lo pulsaba y le
+  salía un «no se puede» sin motivo visible. Ahora el reloj de la pantalla corre
+  solo —los huecos se van apagando a su hora, sin esperar al refresco— y va medio
+  minuto por delante del servidor, para que el error caiga siempre del lado de
+  apagar antes y no de dejar pulsar en balde. Y si aun así el servidor rechaza,
+  la agenda se recarga en el acto en vez de dejar la pantalla mintiendo.
 - **En una partida de práctica, la pantalla mandaba a esperar al profesor.** Sin
   etapa abierta decía «el profesor todavía no ha abierto ninguna etapa», y en una
   partida no hay profesor: el mando está un centímetro más abajo y lo maneja quien

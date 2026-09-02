@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { agruparVacios, estadoHueco } from './agenda';
+import { agruparVacios, estadoHueco, expandirBloques } from './agenda';
 
 describe('estadoHueco', () => {
   const agendableDesde = '2026-08-27T16:00:00.000Z';
@@ -65,5 +65,47 @@ describe('agruparVacios', () => {
     const filas = agruparVacios([h(0), h(5), h(10)], 300);
     expect(filas).toHaveLength(1);
     expect(filas[0]).toMatchObject({ tipo: 'vacio', cuantos: 3 });
+  });
+});
+
+describe('expandirBloques', () => {
+  it('repite el bloque en cada fecha del rango que caiga en sus días', () => {
+    // Del lunes 7 al viernes 11 de septiembre de 2026, martes y jueves.
+    const salida = expandirBloques('2026-09-07', '2026-09-11', [
+      { dias: [2, 4], desde: '09:00', hasta: '11:00' },
+    ]);
+    expect(salida).toHaveLength(2);
+    expect(salida.map((s) => new Date(s.inicio).getDay())).toEqual([2, 4]);
+  });
+
+  it('varios bloques con días distintos conviven, y salen en orden', () => {
+    // El caso que se pidió: lunes a jueves de 9 a 11 y, además, martes a
+    // viernes de 16 a 18.
+    const salida = expandirBloques('2026-09-07', '2026-09-11', [
+      { dias: [1, 2, 3, 4], desde: '09:00', hasta: '11:00' },
+      { dias: [2, 3, 4, 5], desde: '16:00', hasta: '18:00' },
+    ]);
+    expect(salida).toHaveLength(8);
+    const ordenado = [...salida].sort((a, b) => a.inicio.localeCompare(b.inicio));
+    expect(salida).toEqual(ordenado);
+    // El martes sale dos veces: por la mañana y por la tarde.
+    const martes = salida.filter((s) => new Date(s.inicio).getDay() === 2);
+    expect(martes).toHaveLength(2);
+  });
+
+  it('una sola fecha en las dos puntas abre un solo día', () => {
+    const salida = expandirBloques('2026-09-08', '2026-09-08', [
+      { dias: [2], desde: '09:00', hasta: '11:00' },
+    ]);
+    expect(salida).toHaveLength(1);
+  });
+
+  it('no devuelve nada si el rango está del revés o el bloque no cierra', () => {
+    expect(expandirBloques('2026-09-11', '2026-09-07', [
+      { dias: [1], desde: '09:00', hasta: '11:00' },
+    ])).toEqual([]);
+    expect(expandirBloques('2026-09-07', '2026-09-11', [
+      { dias: [1], desde: '11:00', hasta: '09:00' },
+    ])).toEqual([]);
   });
 });
