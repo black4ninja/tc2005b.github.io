@@ -40,6 +40,16 @@ function mensajeDeError(e: unknown, porDefecto: string): string {
   return e instanceof Error && e.message ? e.message : porDefecto;
 }
 
+/**
+ * «STC0203. Diseño de componentes de software» → «STC0203».
+ *
+ * Para el selector del mando, donde el nombre entero no cabe y lo único que hace
+ * falta es distinguir una competencia de la otra.
+ */
+function codigoCompetencia(nombre: string | null | undefined): string {
+  return (nombre ?? '').split('.')[0].trim();
+}
+
 type Vista = 'alumnos' | 'preguntas' | 'agenda';
 
 /** Cómo se llama cada fase en el mando. En la pantalla proyectada no se escribe. */
@@ -604,7 +614,13 @@ export default function PreguntasGrupoPage() {
         ? [asignacionDe(alumno, c.id, intentoActivo)]
         : Array.from({ length: MAX_INTENTOS }, (_, i) => asignacionDe(alumno, c.id, i + 1))))
       .filter((a): a is PreguntaAsignacion => !!a?.pregunta)
-      .map((a) => ({ alumno, asignacion: a }))),
+      // La pista distingue dos filas del mismo alumno en el selector del mando:
+      // aquí, de qué competencia e intento son.
+      .map((a) => ({
+        alumno,
+        asignacion: a,
+        pista: `${codigoCompetencia(a.pregunta?.competencia)} ${a.intento}.º`.trim(),
+      }))),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [visibles, huecosVisibles, competenciaActiva, intentoActivo],
   );
@@ -619,7 +635,9 @@ export default function PreguntasGrupoPage() {
     () => (vista === 'agenda'
       ? filaDelDia
         .filter((f) => f.alumno && f.asignacion)
-        .map((f) => ({ alumno: f.alumno!, asignacion: f.asignacion! }))
+        // En la agenda la pista es la HORA: es lo que el profesor está leyendo
+        // en la tabla, y lo que separa las dos citas de quien viene dos veces.
+        .map((f) => ({ alumno: f.alumno!, asignacion: f.asignacion!, pista: hora(f.inicio) }))
       : paraProyectarRoster),
     [vista, filaDelDia, paraProyectarRoster],
   );
@@ -648,7 +666,17 @@ export default function PreguntasGrupoPage() {
   function moverProyeccion(paso: number) {
     if (paraProyectar.length === 0) return;
     const desde = indiceProyectado < 0 ? (paso > 0 ? -1 : 0) : indiceProyectado;
-    const destino = Math.min(paraProyectar.length - 1, Math.max(0, desde + paso));
+    irAProyeccion(Math.min(paraProyectar.length - 1, Math.max(0, desde + paso)));
+  }
+
+  /**
+   * Poner en la pantalla al que ocupa ese lugar de la fila.
+   *
+   * Las flechas se apoyan en esto y el selector también: ir al siguiente y
+   * saltar al séptimo son el mismo gesto con distinto destino, y separarlos
+   * habría dejado dos sitios donde acordarse de reiniciar el reloj.
+   */
+  function irAProyeccion(destino: number) {
     const siguiente = paraProyectar[destino];
     if (!siguiente || siguiente.asignacion.id === proyeccion?.asignacionId) return;
     // Lo que el mando enseña se sabe ya de la tabla; el texto de la pregunta no
@@ -970,6 +998,24 @@ export default function PreguntasGrupoPage() {
               >
                 <Icon name="chevron_right" size="sm" />
               </button>
+
+              {/* Ir a cualquiera sin pasar por los de en medio. Las flechas
+                  sirven para el día seguido; esto, para cuando alguien pide su
+                  turno antes o llega tarde y hay que rescatarlo. */}
+              <select
+                className={styles.mandoSalto}
+                value={indiceProyectado}
+                disabled={paraProyectar.length === 0 || mandando !== null}
+                onChange={(e) => irAProyeccion(Number(e.target.value))}
+                title="Saltar a cualquiera de la lista"
+              >
+                {indiceProyectado < 0 && <option value={-1}>Elige a quién proyectar…</option>}
+                {paraProyectar.map((x, i) => (
+                  <option key={x.asignacion.id} value={i}>
+                    {x.pista} · {x.alumno.name}
+                  </option>
+                ))}
+              </select>
 
               {/* El botón dice lo que está pasando mientras pasa: la pantalla que
                   cambia está en otro aparato y el profesor no la tiene delante. */}

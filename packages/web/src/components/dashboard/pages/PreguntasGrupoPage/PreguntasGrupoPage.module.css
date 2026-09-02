@@ -900,3 +900,21 @@
   gap: var(--space-sm);
   margin-top: var(--space-md);
 }
+
+/* El salto a cualquiera de la fila. Va entre las flechas y los mandos del
+   reloj: es la misma familia —a quién se está enseñando— y no una acción sobre
+   la pantalla. Ancho corto y con recorte: los nombres largos no pueden empujar
+   los botones que se pulsan a oscuras. */
+.mandoSalto {
+  max-width: 190px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.mandoSalto:disabled { opacity: 0.5; cursor: default; }

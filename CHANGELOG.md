@@ -8,6 +8,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Un selector en el mando de la proyección para saltar a cualquiera.** Las
+  flechas sirven para recorrer el día seguido; esto, para cuando alguien pide su
+  turno antes o llega tarde y hay que rescatarlo, sin pasar por los de en medio.
+  Cada opción lleva su hora delante —o su competencia e intento, en la vista por
+  alumno— para distinguir a quien viene dos veces el mismo día.
 - **El profesor puede mover una cita de hueco, incluso a otro día.** Es lo que
   más se pide el día de las entrevistas: dos alumnos que se cambian entre ellos,
   uno que llega tarde y se pasa al final, juntar a los de una competencia. Antes
