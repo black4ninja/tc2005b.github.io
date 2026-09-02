@@ -8,6 +8,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **El profesor puede mover una cita de hueco, incluso a otro día.** Es lo que
+  más se pide el día de las entrevistas: dos alumnos que se cambian entre ellos,
+  uno que llega tarde y se pasa al final, juntar a los de una competencia. Antes
+  había que cancelar y volver a apuntar —dos gestos, y entre uno y otro el hueco
+  quedaba libre para que lo tomara otro—. Ahora es una sola escritura, y el
+  diálogo avisa de que mover una cita puede cambiar su número de intento, que es
+  lo que decide qué pregunta le toca.
 - **El profesor puede apuntar a un alumno en un hueco de la agenda de
   entrevistas.** La agenda la escriben los alumnos, y esa es la gracia. Pero el
   día de las entrevistas siempre pasa algo que la hoja no previó —alguien no
@@ -56,6 +63,20 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   - Tope de cinco partidas vivas por alumno y ocho personas por partida.
 
 ### Fixed
+- **Los huecos de la agenda se cerraban a tirones y a veces volvían a abrirse.**
+  La cuenta de las 24 horas hábiles avanzaba a pasos de media hora anclados en el
+  instante de consulta, así que el límite saltaba de 30 en 30 minutos y —al
+  cruzar la noche del viernes— **retrocedía 29**: un hueco cerrado volvía a
+  aparecer libre y se cerraba otra vez. Ahora la cuenta va al minuto y nunca da
+  marcha atrás.
+- **El alumno se llevaba rechazos que parecían falsos.** La pantalla congelaba la
+  hora del servidor entre refrescos, así que durante hasta un minuto enseñaba
+  como libre un hueco que ya había cruzado el límite: el alumno lo pulsaba y le
+  salía un «no se puede» sin motivo visible. Ahora el reloj de la pantalla corre
+  solo —los huecos se van apagando a su hora, sin esperar al refresco— y va medio
+  minuto por delante del servidor, para que el error caiga siempre del lado de
+  apagar antes y no de dejar pulsar en balde. Y si aun así el servidor rechaza,
+  la agenda se recarga en el acto en vez de dejar la pantalla mintiendo.
 - **En una partida de práctica, la pantalla mandaba a esperar al profesor.** Sin
   etapa abierta decía «el profesor todavía no ha abierto ninguna etapa», y en una
   partida no hay profesor: el mando está un centímetro más abajo y lo maneja quien

@@ -121,3 +121,48 @@ describe('numerarIntentos', () => {
     expect(n.get('z')).toBe(2);
   });
 });
+
+describe('el umbral se mueve al minuto y nunca hacia atrás', () => {
+  /**
+   * La regla cierra huecos, y cerrarlos es lo que el alumno ve. El paso con el
+   * que se cuenta se ancla en `desde`, así que su tamaño es también el grano del
+   * resultado: con media hora, el umbral saltaba de 30 en 30 y RETROCEDÍA 29 al
+   * cruzar la noche del viernes —un hueco cerrado volvía a abrirse—.
+   */
+  it('avanzar un minuto mueve el umbral un minuto', () => {
+    const martes = new Date('2026-09-08T16:00:00Z');
+    const antes = sumarHorasHabiles(martes).getTime();
+    const despues = sumarHorasHabiles(new Date(martes.getTime() + 60_000)).getTime();
+    expect((despues - antes) / 60_000).toBe(1);
+  });
+
+  /** Cuántas veces el umbral da un paso atrás en un barrido. */
+  function retrocesos(desdeISO: string, minutos: number, paso = 1): number {
+    let previo = -Infinity;
+    let cuantos = 0;
+    const inicio = new Date(desdeISO).getTime();
+    for (let i = 0; i < minutos; i += paso) {
+      const umbral = sumarHorasHabiles(new Date(inicio + i * 60_000)).getTime();
+      if (umbral < previo) cuantos += 1;
+      previo = umbral;
+    }
+    return cuantos;
+  }
+
+  it('no retrocede al cruzar la noche del viernes, que es donde fallaba', () => {
+    // Tres horas a caballo de la medianoche del viernes, minuto a minuto: es
+    // ahí donde cambiaba qué pasos caían en fin de semana y el umbral daba
+    // marcha atrás.
+    expect(retrocesos('2026-09-04T04:30:00Z', 180)).toBe(0);
+  });
+
+  it('tampoco al volver el lunes', () => {
+    expect(retrocesos('2026-09-07T04:30:00Z', 180)).toBe(0);
+  });
+
+  it('ni en el resto de la semana', () => {
+    // A paso más grueso: el barrido fino ya cubre las dos fronteras, y aquí lo
+    // que se comprueba es que no aparezca otra en medio.
+    expect(retrocesos('2026-09-03T06:00:00Z', 60 * 24 * 7, 15)).toBe(0);
+  });
+});

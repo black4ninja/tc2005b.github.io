@@ -9,13 +9,42 @@
  */
 import { ZONA_CURSO, HORAS_HABILES_ANTELACION, MARGEN_CANCELACION_MINUTOS } from '../constants/preguntas.js';
 
-/** Paso con el que se avanza al contar horas hábiles. Media hora es de sobra. */
-const PASO_MS = 30 * 60 * 1000;
+/**
+ * Paso con el que se avanza al contar horas hábiles.
+ *
+ * Un MINUTO, y no media hora como antes. El paso se ancla en `desde`, así que su
+ * tamaño es también el grano con el que se mueve el resultado: con media hora,
+ * el umbral daba saltos de 30 minutos y —peor— RETROCEDÍA 29 al cruzar la noche
+ * del viernes, porque al avanzar `desde` un minuto cambiaba qué pasos caían en
+ * fin de semana. Un hueco cerrado volvía a abrirse y se cerraba otra vez.
+ *
+ * Con un minuto el umbral avanza minuto a minuto y nunca retrocede, que es como
+ * se espera que se vayan cerrando los huecos.
+ */
+const PASO_MS = 60 * 1000;
+
+/**
+ * El formateador se construye UNA vez y se reutiliza.
+ *
+ * Con el paso de un minuto esto se llama hasta unos pocos miles de veces por
+ * cuenta —24 horas hábiles son 1440 pasos, y un fin de semana por medio suma
+ * dos días más—, y construir un `Intl.DateTimeFormat` cada vez costaba más que
+ * toda la consulta a la base.
+ */
+const DIA_SEMANA = new Map<string, Intl.DateTimeFormat>();
+
+function formateador(zona: string): Intl.DateTimeFormat {
+  let f = DIA_SEMANA.get(zona);
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-US', { timeZone: zona, weekday: 'short' });
+    DIA_SEMANA.set(zona, f);
+  }
+  return f;
+}
 
 /** ¿Ese instante cae en día hábil (lunes a viernes) en la zona del curso? */
 export function esDiaHabil(momento: Date, zona = ZONA_CURSO): boolean {
-  const dia = new Intl.DateTimeFormat('en-US', { timeZone: zona, weekday: 'short' })
-    .format(momento);
+  const dia = formateador(zona).format(momento);
   return dia !== 'Sat' && dia !== 'Sun';
 }
 
@@ -28,15 +57,20 @@ export function esDiaHabil(momento: Date, zona = ZONA_CURSO): boolean {
  * cálculo en milisegundos se desfasaría una hora sin avisar.
  */
 export function sumarHorasHabiles(desde: Date, horas = HORAS_HABILES_ANTELACION, zona = ZONA_CURSO): Date {
-  let restantes = horas;
+  // La cuenta va en MINUTOS ENTEROS. Restando fracciones de hora, los 1440
+  // pasos de un día acumulaban un error de coma flotante que dejaba un resto
+  // positivo minúsculo al final: una vuelta de más y el umbral salía un minuto
+  // tarde. Con el paso de media hora no se notaba porque 0,5 es exacto en
+  // binario; al afinar el paso, sí.
+  let restantes = Math.round(horas * 60);
   let t = desde.getTime();
   // Tope de seguridad: 24 h hábiles nunca pasan de una semana natural.
   const limite = t + 30 * 24 * 60 * 60 * 1000;
   while (restantes > 0 && t < limite) {
     // Cuenta el tramo por donde EMPIEZA, no por donde acaba: el salto de las
-    // 23:30 del domingo a las 00:00 del lunes no es tiempo hábil, y midiéndolo
-    // por el final se colaba media hora que dejaba el límite corto.
-    if (esDiaHabil(new Date(t), zona)) restantes -= PASO_MS / (60 * 60 * 1000);
+    // 23:59 del domingo a las 00:00 del lunes no es tiempo hábil, y midiéndolo
+    // por el final se colaba un minuto que dejaba el límite corto.
+    if (esDiaHabil(new Date(t), zona)) restantes -= 1;
     t += PASO_MS;
   }
   return new Date(t);

@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Modal from '../../atoms/Modal/Modal';
-import { estadoHueco, fechaLarga, fechaYHora, hora, rangoHoras } from '../../../../utils/agenda';
+import { adelantar, estadoHueco, fechaLarga, fechaYHora, hora, rangoHoras } from '../../../../utils/agenda';
 import type { AgendaAlumno, DiaAlumno, HuecoAlumno } from '../../../../types/agenda';
 import styles from './AgendaEntrevistasAlumnoPage.module.css';
 
@@ -19,6 +19,25 @@ const API_BASE = '/api';
  * otros van tomando, que el día que se abre la agenda pasa a cada rato.
  */
 const PERIODO_REFRESCO = 60000;
+
+/**
+ * Cada cuánto corre el reloj de la pantalla entre refresco y refresco.
+ *
+ * El refresco trae los instantes buenos del servidor; esto los adelanta mientras
+ * tanto, para que los huecos se vayan cerrando SOLOS en vez de en tandas de un
+ * minuto. Diez segundos bastan: los huecos van de cinco en cinco minutos.
+ */
+const PERIODO_RELOJ = 10000;
+
+/**
+ * Cuánto se adelanta la pantalla al servidor al decidir si un hueco sigue
+ * abierto.
+ *
+ * El error tiene que caer siempre del mismo lado: es mejor apagar un hueco medio
+ * minuto antes de tiempo que dejar pulsar uno que el servidor va a rechazar. Lo
+ * primero se explica solo —«ya no da tiempo»—; lo segundo parece una avería.
+ */
+const MARGEN_MS = 30000;
 
 function mensajeDeError(e: unknown, porDefecto: string): string {
   return e instanceof Error && e.message ? e.message : porDefecto;
@@ -51,6 +70,9 @@ export default function AgendaEntrevistasAlumnoPage() {
   const [guardando, setGuardando] = useState(false);
   /** Hueco elegido, a la espera de que diga qué competencia viene a evaluar. */
   const [eligiendo, setEligiendo] = useState<{ dia: DiaAlumno; hueco: HuecoAlumno } | null>(null);
+  /** Cuándo llegó la agenda que se está enseñando, para adelantar sus relojes. */
+  const recibidaEn = useRef(Date.now());
+  const [ahoraLocal, setAhoraLocal] = useState(() => Date.now());
 
   const headers = useMemo<Record<string, string>>(() => ({
     'Content-Type': 'application/json',
@@ -66,6 +88,8 @@ export default function AgendaEntrevistasAlumnoPage() {
       });
       if (!res.ok) throw new Error('No se pudo cargar la agenda');
       setAgenda(await res.json() as AgendaAlumno);
+      recibidaEn.current = Date.now();
+      setAhoraLocal(Date.now());
     } catch (err: unknown) {
       // Un refresco que falla no borra lo que ya se ve: se reintenta al minuto.
       if (!silencioso) setError(mensajeDeError(err, 'No se pudo cargar la agenda'));
@@ -75,6 +99,13 @@ export default function AgendaEntrevistasAlumnoPage() {
   }, [grupoId, sessionToken]);
 
   useEffect(() => { cargar(); }, [cargar]);
+
+  // El reloj de la pantalla. Sin esto los huecos se cerraban de golpe al llegar
+  // el refresco; con esto se van apagando a su hora.
+  useEffect(() => {
+    const id = window.setInterval(() => setAhoraLocal(Date.now()), PERIODO_RELOJ);
+    return () => window.clearInterval(id);
+  }, []);
 
   useEffect(() => {
     const id = window.setInterval(() => cargar(true), PERIODO_REFRESCO);
@@ -110,6 +141,11 @@ export default function AgendaEntrevistasAlumnoPage() {
       await cargar();
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'No se pudo agendar'));
+      // Y se recarga: si el servidor dijo que no, la pantalla estaba enseñando
+      // algo que ya no era verdad —el hueco lo tomaron, o cruzó el límite—.
+      // Dejar el error sin refrescar es lo que hacía que pareciera una avería.
+      setEligiendo(null);
+      await cargar(true);
     } finally {
       setGuardando(false);
     }
@@ -153,6 +189,18 @@ export default function AgendaEntrevistasAlumnoPage() {
 
   const { reglas } = agenda;
   const sinOportunidades = agenda.competencias.every((c) => c.usados >= reglas.maxIntentos);
+
+  /*
+   * Los dos relojes del servidor, adelantados lo que lleva la pantalla abierta.
+   *
+   * El de «desde cuándo se puede agendar» va con MARGEN_MS de propina: entre
+   * semana ese umbral avanza un minuto por minuto igual que el reloj, así que
+   * adelantarlo así es exacto, y el margen deja el error siempre del lado
+   * seguro —apagar un hueco un poco antes, nunca dejar pulsar uno muerto—.
+   */
+  const transcurrido = Math.max(0, ahoraLocal - recibidaEn.current);
+  const ahoraServidor = adelantar(agenda.serverNow, transcurrido);
+  const agendableAhora = adelantar(agenda.agendableDesde, transcurrido + MARGEN_MS);
 
   return (
     <div className={styles.page}>
@@ -233,7 +281,7 @@ export default function AgendaEntrevistasAlumnoPage() {
           {dia.nota && <p className={styles.diaNota}>{dia.nota}</p>}
           <div className={styles.huecos}>
             {dia.huecos.map((hueco) => {
-              const estado = estadoHueco(hueco, agenda.agendableDesde, agenda.serverNow);
+              const estado = estadoHueco(hueco, agendableAhora, ahoraServidor);
               const puedo = estado === 'libre' && !dia.cerrado && !sinOportunidades;
               return (
                 <button

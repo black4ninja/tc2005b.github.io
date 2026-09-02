@@ -38,6 +38,24 @@ export function rangoHoras(inicio: string, fin: string): string {
  */
 export type EstadoHueco = 'libre' | 'mio' | 'ocupado' | 'pronto' | 'pasado';
 
+/**
+ * Adelanta una marca de tiempo del servidor lo que ha corrido el reloj local.
+ *
+ * La agenda llega con dos instantes del SERVIDOR —qué hora es y desde cuándo se
+ * puede agendar— y se refresca cada minuto. Entre refresco y refresco esos dos
+ * valores se quedaban congelados, así que la pantalla seguía enseñando como
+ * libre un hueco que el servidor ya había cerrado: el alumno lo pulsaba y le
+ * salía un «no se puede» que desde su lado parecía falso.
+ *
+ * Adelantar aquí lo que ha pasado desde que llegó la respuesta cierra esa
+ * ventana sin duplicar la regla —la cuenta de las horas hábiles sigue siendo
+ * del servidor— porque entre semana el umbral avanza al mismo ritmo que el
+ * reloj: un minuto por minuto.
+ */
+export function adelantar(iso: string, transcurridoMs: number): string {
+  return new Date(new Date(iso).getTime() + Math.max(0, transcurridoMs)).toISOString();
+}
+
 export function estadoHueco(
   hueco: { inicio: string; ocupado: boolean; mia: unknown | null },
   agendableDesde: string,
