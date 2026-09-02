@@ -16,6 +16,26 @@ export function fechaLarga(iso: string): string {
   }).format(new Date(iso));
 }
 
+/**
+ * `lunes, 7 de sep` — el día con su nombre entero.
+ *
+ * Para elegir día en una tira: «lun» abreviado se lee como un código y hay que
+ * traducirlo mentalmente, y lo que el profesor tiene en la cabeza es «el
+ * martes», no «el 8».
+ */
+export function fechaConDia(iso: string): string {
+  return new Intl.DateTimeFormat('es-MX', {
+    timeZone: ZONA, weekday: 'long', day: 'numeric', month: 'short',
+  }).format(new Date(iso));
+}
+
+/** `2026-09-07` — la fecha del calendario del curso, para agrupar por día. */
+export function claveFecha(iso: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZONA, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date(iso));
+}
+
 /** `mié 27 ago` — la columna de fecha de una lista, donde el mes largo no cabe. */
 export function fechaCorta(iso: string): string {
   return new Intl.DateTimeFormat('es-MX', {

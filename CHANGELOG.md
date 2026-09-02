@@ -14,10 +14,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   cada uno con sus propios días de la semana y su horario —«de lunes a jueves de
   9 a 11» y, además, «de martes a viernes de 4 a 6»—. Una **vista previa** dice
   exactamente qué se va a crear antes de pulsar.
-- **Administrar los días en lote.** Los bloques se agrupan por fecha —cada día en
-  una línea, con su tira de horarios y su propia barra de desplazamiento, para
-  que un día con ocho bloques no empuje a los botones— y se pueden marcar varios
-  para cerrar reservas, reabrir o borrar de una vez.
+- **Administrar los días en lote.** La barra pasa a dos niveles: primero una tira
+  horizontal con los DÍAS —con el nombre entero, «lunes 7 de sep», porque lo que
+  se busca es «el martes» y no «el 8»— y, solo cuando el día elegido tiene más de
+  un horario, una segunda tira con sus bloques. Con un bloque por día, que es lo
+  normal, ocho fechas ocupaban ocho líneas; ahora caben en una. Las dos tiras se
+  desplazan por dentro, así que los botones de la derecha no se mueven de sitio.
+  Y se pueden marcar varios —el día entero o un bloque suelto— para cerrar
+  reservas, reabrir o borrar de una vez.
 - **Un selector en el mando de la proyección para saltar a cualquiera.** Las
   flechas sirven para recorrer el día seguido; esto, para cuando alguien pide su
   turno antes o llega tarde y hay que rescatarlo, sin pasar por los de en medio.

@@ -781,37 +781,36 @@
 .notaBloque .nota { border-color: var(--border-color); }
 
 /* ── Agenda de entrevistas ─────────────────────────────────────────────── */
-/* Una fila por FECHA, en columna. Antes era una nube de chips con la fecha
-   repetida en cada uno; con varios bloques por día eso dejó de leerse. */
+/* Dos tiras: primero los DÍAS, después los horarios del día elegido. Con un
+   bloque por día —lo normal— una fila por fecha eran ocho líneas para nada. */
 .dias {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
   flex: 1;
 }
 
-.filaDia {
-  display: flex;
+/* Los dos tipos de chip de la agenda comparten forma: en una sola línea, sin
+   encoger, para que la tira se desplace en vez de partirlos. */
+/* Los dos tipos de chip de la agenda comparten forma: una sola línea y sin
+   encoger, para que la tira se desplace en vez de partirlos. */
+.chipDia,
+.chipBloque {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: nowrap;
-  min-width: 0;
-}
-
-.filaDiaFecha {
-  width: 92px;
+  gap: 6px;
   flex: none;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
-/* La tira de bloques de un día. NUNCA envuelve: si no caben se desplazan aquí
-   dentro, así que la fila sigue midiendo una línea y los botones de la derecha
-   no se mueven de sitio por mucho que se abran bloques. */
+/* El nombre del día va tal cual: en versalitas se lee como un código. */
+.chipDia { text-transform: none; }
+
+/* Las tiras NUNCA envuelven: si no caben se desplazan aquí dentro, así que
+   siguen midiendo una línea y los botones de la derecha no se mueven de sitio
+   por muchos días que se abran. */
 .tiraDia {
   display: flex;
   align-items: center;
@@ -835,15 +834,6 @@
 }
 
 .tiraDia::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-
-.chipBloque {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex: none;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
 
 /* Actuar sobre varios bloques a la vez. */
 .barraLote {

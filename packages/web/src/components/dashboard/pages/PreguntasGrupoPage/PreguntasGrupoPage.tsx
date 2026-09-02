@@ -18,7 +18,9 @@ import type {
   Pregunta, PreguntaAsignacion, Proyeccion,
 } from '../../../../types/preguntas';
 import { confirmar } from '../../../../utils/dialogos';
-import { agruparVacios, fechaCorta, fechaLarga, hora, rangoHoras } from '../../../../utils/agenda';
+import {
+  agruparVacios, claveFecha, fechaConDia, fechaLarga, hora, rangoHoras,
+} from '../../../../utils/agenda';
 import type { Agenda, CitaProfesor, DiaProfesor } from '../../../../types/agenda';
 import styles from './PreguntasGrupoPage.module.css';
 
@@ -660,14 +662,28 @@ export default function PreguntasGrupoPage() {
   const porFecha = useMemo(() => {
     const mapa = new Map<string, DiaProfesor[]>();
     for (const d of agenda?.dias ?? []) {
-      const clave = fechaCorta(d.inicio);
+      const clave = claveFecha(d.inicio);
       mapa.set(clave, [...(mapa.get(clave) ?? []), d]);
     }
-    return [...mapa].map(([fecha, dias]) => ({
-      fecha,
-      dias: [...dias].sort((a, b) => a.inicio.localeCompare(b.inicio)),
-    }));
+    return [...mapa]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([clave, dias]) => {
+        const bloques = [...dias].sort((a, b) => a.inicio.localeCompare(b.inicio));
+        return {
+          clave,
+          etiqueta: fechaConDia(bloques[0].inicio),
+          bloques,
+          citas: bloques.reduce((t, d) => t + d.huecos.filter((h) => h.cita).length, 0),
+          huecos: bloques.reduce((t, d) => t + d.huecos.length, 0),
+        };
+      });
   }, [agenda]);
+
+  /** El día que se está mirando, con todos sus bloques. */
+  const fechaActiva = useMemo(
+    () => porFecha.find((f) => f.bloques.some((d) => d.id === diaActivo)) ?? porFecha[0] ?? null,
+    [porFecha, diaActivo],
+  );
 
   /** Las horas del día que siguen libres, para poder ofrecerlas a mano. */
   const libresDelDia = useMemo(
@@ -1338,43 +1354,93 @@ export default function PreguntasGrupoPage() {
               {porFecha.length === 0 && (
                 <span className={styles.hint}>Todavía no has abierto ningún día.</span>
               )}
-              {porFecha.map(({ fecha, dias }) => (
-                <div key={fecha} className={styles.filaDia}>
-                  <span className={styles.filaDiaFecha}>{fecha}</span>
-                  {/* Una tira por día: si no caben, se desplazan AQUÍ dentro y la
-                      fila sigue siendo una sola línea. */}
-                  <div className={styles.tiraDia}>
-                    {dias.map((d) => {
-                      const marcado = seleccion.has(d.id);
-                      return (
-                        <button
-                          key={d.id}
-                          className={`${styles.chip} ${styles.chipBloque} ${(enSeleccion ? marcado : diaActivo === d.id) ? styles.chipActivo : ''}`}
-                          onClick={() => {
-                            if (!enSeleccion) { setDiaActivo(d.id); return; }
-                            setSeleccion((s) => {
-                              const siguiente = new Set(s);
-                              if (siguiente.has(d.id)) siguiente.delete(d.id);
+
+              {/* Primero el DÍA, en una tira horizontal. Con un bloque por día
+                  —lo normal— una fila por fecha eran ocho líneas para nada.
+                  Aquí caben todas en una, y el nombre del día va entero porque
+                  lo que se busca es «el martes», no «el 8». */}
+              {porFecha.length > 0 && (
+                <div className={styles.tiraDia}>
+                  {porFecha.map((f) => {
+                    // En modo selección la casilla del día resume sus bloques:
+                    // marcarla es marcarlos todos, que es como se cierra una
+                    // semana entera de una vez.
+                    const marcados = f.bloques.filter((d) => seleccion.has(d.id)).length;
+                    const todos = marcados === f.bloques.length;
+                    const activa = fechaActiva?.clave === f.clave;
+                    return (
+                      <button
+                        key={f.clave}
+                        className={`${styles.chip} ${styles.chipDia} ${(enSeleccion ? marcados > 0 : activa) ? styles.chipActivo : ''}`}
+                        onClick={() => {
+                          if (!enSeleccion) { setDiaActivo(f.bloques[0].id); return; }
+                          setSeleccion((s) => {
+                            const siguiente = new Set(s);
+                            for (const d of f.bloques) {
+                              if (todos) siguiente.delete(d.id);
                               else siguiente.add(d.id);
-                              return siguiente;
-                            });
-                          }}
-                          title={d.nota || rangoHoras(d.inicio, d.fin)}
-                        >
-                          {enSeleccion && (
-                            <Icon name={marcado ? 'check_box' : 'check_box_outline_blank'} size="sm" />
-                          )}
-                          {rangoHoras(d.inicio, d.fin)}
-                          <span className={styles.chipContador}>
-                            {d.huecos.filter((h) => h.cita).length}/{d.huecos.length}
-                          </span>
-                          {d.cerrado && <Icon name="lock" size="sm" />}
-                        </button>
-                      );
-                    })}
-                  </div>
+                            }
+                            return siguiente;
+                          });
+                        }}
+                        title={f.bloques.length === 1
+                          ? rangoHoras(f.bloques[0].inicio, f.bloques[0].fin)
+                          : `${f.bloques.length} bloques`}
+                      >
+                        {enSeleccion && (
+                          <Icon
+                            name={todos
+                              ? 'check_box'
+                              : marcados > 0 ? 'indeterminate_check_box' : 'check_box_outline_blank'}
+                            size="sm"
+                          />
+                        )}
+                        {f.etiqueta}
+                        <span className={styles.chipContador}>{f.citas}/{f.huecos}</span>
+                        {f.bloques.length > 1 && (
+                          <span className={styles.chipContador}>· {f.bloques.length} bloques</span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
-              ))}
+              )}
+
+              {/* Y después sus horarios, solo cuando hay más de uno: con uno
+                  solo, una segunda tira con un único chip es una línea que no
+                  dice nada. */}
+              {fechaActiva && fechaActiva.bloques.length > 1 && (
+                <div className={styles.tiraDia}>
+                  {fechaActiva.bloques.map((d) => {
+                    const marcado = seleccion.has(d.id);
+                    return (
+                      <button
+                        key={d.id}
+                        className={`${styles.chip} ${styles.chipBloque} ${(enSeleccion ? marcado : diaActivo === d.id) ? styles.chipActivo : ''}`}
+                        onClick={() => {
+                          if (!enSeleccion) { setDiaActivo(d.id); return; }
+                          setSeleccion((s) => {
+                            const siguiente = new Set(s);
+                            if (siguiente.has(d.id)) siguiente.delete(d.id);
+                            else siguiente.add(d.id);
+                            return siguiente;
+                          });
+                        }}
+                        title={d.nota || rangoHoras(d.inicio, d.fin)}
+                      >
+                        {enSeleccion && (
+                          <Icon name={marcado ? 'check_box' : 'check_box_outline_blank'} size="sm" />
+                        )}
+                        {rangoHoras(d.inicio, d.fin)}
+                        <span className={styles.chipContador}>
+                          {d.huecos.filter((h) => h.cita).length}/{d.huecos.length}
+                        </span>
+                        {d.cerrado && <Icon name="lock" size="sm" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             <div className={styles.acciones}>
               <DashButton
