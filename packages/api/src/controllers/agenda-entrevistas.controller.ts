@@ -394,6 +394,76 @@ export async function crearCitaProfesor(req: Request, res: Response): Promise<vo
   }
 }
 
+/**
+ * PUT /admin/grupos/:grupoId/agenda-entrevistas/citas/:citaId — `{ diaId, inicio }`.
+ *
+ * Cambiar una cita de hueco, incluso a otro día. Es lo que más se pide el día de
+ * las entrevistas: dos alumnos se cambian entre ellos, uno llega tarde y se le
+ * pasa al final, hay que juntar a los de una competencia. Antes había que
+ * cancelar y volver a apuntar, y por el camino se perdía el orden.
+ *
+ * No se comprueban las oportunidades: mover no crea ninguna cita, la misma
+ * cambia de sitio. Lo que sí puede cambiar es su NÚMERO de intento, y está
+ * bien: el intento sale del orden de las citas, así que adelantar a alguien lo
+ * convierte de verdad en su primero.
+ */
+export async function moverCitaProfesor(req: Request, res: Response): Promise<void> {
+  const { grupoId, citaId } = req.params;
+  const { diaId, inicio: inicioCrudo } = req.body ?? {};
+  if (!diaId || !inicioCrudo) {
+    res.status(400).json({ status: 'error', message: 'Falta el día o la hora de destino' });
+    return;
+  }
+  const inicio = new Date(inicioCrudo);
+  if (Number.isNaN(inicio.getTime())) {
+    res.status(400).json({ status: 'error', message: 'Hora no válida' });
+    return;
+  }
+
+  try {
+    const q = new Parse.Query<CitaEntrevista>('CitaEntrevista');
+    q.equalTo('exists' as any, true as any);
+    const cita = await q.get(citaId, { useMasterKey: true }).catch(() => null);
+    if (!cita || cita.getGrupo()?.id !== grupoId) {
+      res.status(404).json({ status: 'error', message: 'Esa cita no es de este grupo' });
+      return;
+    }
+
+    const qDia = new Parse.Query<DiaEntrevistas>('DiaEntrevistas');
+    qDia.equalTo('exists' as any, true as any);
+    const dia = await qDia.get(diaId, { useMasterKey: true }).catch(() => null);
+    if (!dia || dia.getGrupo()?.id !== grupoId) {
+      res.status(404).json({ status: 'error', message: 'Ese día de entrevistas no existe' });
+      return;
+    }
+
+    const esHueco = huecosDelDia(dia.getInicio(), dia.getFin(), dia.getDuracionSegundos())
+      .some((h) => h.getTime() === inicio.getTime());
+    if (!esHueco) {
+      res.status(400).json({ status: 'error', message: 'Esa hora no es uno de los huecos del día' });
+      return;
+    }
+
+    // Que el destino esté libre. La propia cita no cuenta: mover algo a donde ya
+    // está no es un choque, es un gesto que no cambia nada.
+    const citas = await citasDelGrupo(grupoId);
+    const chocaCon = citas.find(
+      (c) => c.id !== citaId && c.getInicio()?.getTime() === inicio.getTime(),
+    );
+    if (chocaCon) {
+      res.status(409).json({ status: 'error', message: 'Ese hueco ya está ocupado' });
+      return;
+    }
+
+    cita.setDia(dia);
+    cita.setInicio(inicio);
+    await cita.save(null, { useMasterKey: true });
+    res.json({ status: 'ok', cita: cita.toSafeJSON() });
+  } catch {
+    res.status(500).json({ status: 'error', message: 'Error al mover la cita' });
+  }
+}
+
 /** DELETE /admin/grupos/:grupoId/agenda-entrevistas/citas/:citaId */
 export async function borrarCitaProfesor(req: Request, res: Response): Promise<void> {
   const { grupoId, citaId } = req.params;

@@ -7,6 +7,7 @@ import Modal from '../../atoms/Modal/Modal';
 import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta';
 import SelectorAlumno from '../../organisms/SelectorAlumno/SelectorAlumno';
 import AsignarCitaModal from '../../organisms/AsignarCitaModal/AsignarCitaModal';
+import MoverCitaModal from '../../organisms/MoverCitaModal/MoverCitaModal';
 import {
   aplicarAsignaciones, ajustarUso, faseProyeccion, formatearDuracion, quitarAsignaciones,
   repartirPreguntas, resumenPregunta,
@@ -17,7 +18,7 @@ import type {
 } from '../../../../types/preguntas';
 import { confirmar } from '../../../../utils/dialogos';
 import { agruparVacios, fechaLarga, hora, rangoHoras } from '../../../../utils/agenda';
-import type { Agenda, DiaProfesor } from '../../../../types/agenda';
+import type { Agenda, CitaProfesor, DiaProfesor } from '../../../../types/agenda';
 import styles from './PreguntasGrupoPage.module.css';
 
 const API_BASE = '/api';
@@ -138,6 +139,8 @@ export default function PreguntasGrupoPage() {
   /** El hueco libre que el profesor pulsó para apuntar a alguien a mano. */
   const [asignandoEn, setAsignandoEn] = useState<string | null>(null);
   const [asignandoCita, setAsignandoCita] = useState(false);
+  /** La cita que se está cambiando de hueco. */
+  const [moviendo, setMoviendo] = useState<CitaProfesor | null>(null);
   const [diaActivo, setDiaActivo] = useState<string | null>(null);
   const [creandoDia, setCreandoDia] = useState(false);
   const [borradorDia, setBorradorDia] = useState({ fecha: '', desde: '09:00', hasta: '13:00', nota: '' });
@@ -315,6 +318,37 @@ export default function PreguntasGrupoPage() {
       await cargarAgenda();
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'No se pudo apuntar la cita'));
+    } finally {
+      setAsignandoCita(false);
+    }
+  }
+
+  /**
+   * Cambiar una cita de hueco, incluso a otro día.
+   *
+   * Antes solo se podía cancelar y volver a apuntar: dos gestos, y entre uno y
+   * otro el hueco quedaba libre para que lo tomara alguien. Aquí es una sola
+   * escritura y el servidor comprueba que el destino siga libre.
+   */
+  async function moverCita(diaId: string, inicio: string) {
+    if (!moviendo) return;
+    setAsignandoCita(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/citas/${moviendo.id}`,
+        { method: 'PUT', headers, body: JSON.stringify({ diaId, inicio }) },
+      );
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message || 'No se pudo mover la cita');
+      }
+      setMoviendo(null);
+      // Al día de destino, para no dejar al profesor mirando el hueco vacío que
+      // acaba de dejar.
+      setDiaActivo(diaId);
+      await cargarAgenda();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'No se pudo mover la cita'));
     } finally {
       setAsignandoCita(false);
     }
@@ -1334,6 +1368,13 @@ export default function PreguntasGrupoPage() {
                           </button>
                           <button
                             className={styles.iconBtn}
+                            onClick={() => setMoviendo(cita!)}
+                            title="Cambiarlo de hueco o de día"
+                          >
+                            <Icon name="swap_horiz" size="sm" />
+                          </button>
+                          <button
+                            className={styles.iconBtn}
                             onClick={() => cancelarCita(cita!.id)}
                             title="Cancelar esta cita (no llegó, se cambió de día…)"
                           >
@@ -1652,6 +1693,16 @@ export default function PreguntasGrupoPage() {
       )}
 
       {/* Alumno → pregunta */}
+      {moviendo && (
+        <MoverCitaModal
+          cita={moviendo}
+          dias={agenda?.dias ?? []}
+          guardando={asignandoCita}
+          onMover={moverCita}
+          onCerrar={() => setMoviendo(null)}
+        />
+      )}
+
       {asignandoEn && (
         <AsignarCitaModal
           libres={libresDelDia}

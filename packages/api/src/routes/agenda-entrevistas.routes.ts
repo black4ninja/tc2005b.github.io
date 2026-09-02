@@ -8,6 +8,7 @@ import {
   actualizarDia,
   borrarDia,
   crearCitaProfesor,
+  moverCitaProfesor,
   borrarCitaProfesor,
   getAgendaAlumno,
   crearCitaAlumno,
@@ -30,6 +31,7 @@ router.post('/admin/grupos/:grupoId/agenda-entrevistas/dias', crearDia);
 router.put('/admin/grupos/:grupoId/agenda-entrevistas/dias/:diaId', actualizarDia);
 router.delete('/admin/grupos/:grupoId/agenda-entrevistas/dias/:diaId', borrarDia);
 router.post('/admin/grupos/:grupoId/agenda-entrevistas/citas', crearCitaProfesor);
+router.put('/admin/grupos/:grupoId/agenda-entrevistas/citas/:citaId', moverCitaProfesor);
 router.delete('/admin/grupos/:grupoId/agenda-entrevistas/citas/:citaId', borrarCitaProfesor);
 
 router.use('/alumno/grupos/:grupoId/agenda-entrevistas', identifyUser, requireAlumno);
