@@ -47,6 +47,11 @@ deprecated/backup/
 .playwright-mcp/
 /gate-*.png
 
+# Artboards de Claude Design (`.dc.html`). Son el paso intermedio para acordar
+# un diseño antes de escribirlo: lo que se versiona es el código que sale de
+# ellos, no la propuesta. Se quedaban sueltos en `git status` sesión tras sesión.
+.diseno-*/
+
 # Respaldo del script cleanup-materia.ts
 packages/api/scripts/materia-backup.json
 
