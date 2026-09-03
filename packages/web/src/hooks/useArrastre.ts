@@ -32,10 +32,11 @@ interface Opciones<T> {
   /** Qué hacer al soltar sobre una zona. La zona es su `data-zona`. */
   alSoltar: (item: T, zona: string) => void;
   /**
-   * Contenedor que se desplaza solo cuando el puntero se acerca a un borde.
-   * Sin esto, en una pantalla donde el tablero no cabe entero no hay forma de
-   * llevar una tarjeta de «backlog» a «done»: el desplazamiento está bloqueado
-   * justo mientras se arrastra.
+   * Contenedor que se desplaza solo cuando el puntero se acerca a un borde,
+   * por el eje o los ejes en los que tenga recorrido. Sin esto, en una pantalla
+   * donde el contenido no cabe entero no hay forma de llevar una tarjeta de
+   * «backlog» a «done», ni a alguien de las 10:30 a las 12:55: el
+   * desplazamiento está bloqueado justo mientras se arrastra.
    */
   contenedor?: RefObject<HTMLElement | null>;
   /** ms de presión antes de arrancar con el dedo. */
@@ -45,9 +46,28 @@ interface Opciones<T> {
 }
 
 /** Franja del borde donde el contenedor empieza a desplazarse solo. */
-const BORDE = 64;
-/** px por fotograma. Un valor mayor se pasa de largo y marea. */
-const PASO = 12;
+const BORDE = 72;
+/**
+ * Píxeles por SEGUNDO, no por fotograma.
+ *
+ * Antes era un paso fijo por fotograma, y eso hace dos cosas mal. Una: la
+ * velocidad dependía del monitor —en una pantalla de 120 Hz el contenido corría
+ * al doble que en una de 60—. Y otra: era todo o nada, así que en cuanto el
+ * puntero entraba en la franja el contenido salía disparado y pasarse de sitio
+ * era lo normal.
+ *
+ * Ahora va por tiempo y en PROPORCIÓN a lo metido que esté el puntero: al
+ * asomarse se acerca despacio, y solo corre si se le pega al filo. Que es como
+ * se controla a qué fila se quiere llegar.
+ */
+const VELOCIDAD_MIN = 60;
+const VELOCIDAD_MAX = 480;
+
+/** Cuánto desplazar en este fotograma. `dentro` va de 0 al ancho de la franja. */
+function empuje(dentro: number, dt: number): number {
+  const parte = Math.min(1, Math.max(0, dentro / BORDE));
+  return ((VELOCIDAD_MIN + (VELOCIDAD_MAX - VELOCIDAD_MIN) * parte) * dt) / 1000;
+}
 
 export function useArrastre<T>({
   alSoltar,
@@ -65,6 +85,8 @@ export function useArrastre<T>({
   const activo = useRef(false);
   const temporizador = useRef<number | null>(null);
   const cuadro = useRef<number | null>(null);
+  /** Marca del fotograma anterior, para medir el desplazamiento por tiempo. */
+  const anterior = useRef<number | null>(null);
   const ultima = useRef<PosicionPuntero | null>(null);
 
   const frenar = useCallback((e: TouchEvent) => {
@@ -72,32 +94,57 @@ export function useArrastre<T>({
   }, []);
 
   /** Desplaza el contenedor y la columna bajo el dedo si está pegado a un borde. */
-  const rodar = useCallback(() => {
+  const rodar = useCallback((ahora: number) => {
     cuadro.current = null;
     if (!activo.current || !ultima.current) return;
     const { x, y } = ultima.current;
+    // Cuánto tiempo ha pasado desde el fotograma anterior. El primero no
+    // desplaza nada: no hay contra qué medirlo. Y se pone tope por si la
+    // pestaña estuvo en segundo plano, que si no vuelve dando un salto.
+    const dt = anterior.current === null ? 0 : Math.min(64, ahora - anterior.current);
+    anterior.current = ahora;
 
+    // El contenedor, en los DOS ejes: el tablero de Scrum se desplaza a lo
+    // ancho y la agenda de entrevistas a lo largo, y cada uno solo se mueve por
+    // donde de verdad tiene recorrido.
     const caja = contenedor?.current;
     if (caja) {
       const r = caja.getBoundingClientRect();
-      if (x < r.left + BORDE) caja.scrollLeft -= PASO;
-      else if (x > r.right - BORDE) caja.scrollLeft += PASO;
+      if (caja.scrollWidth > caja.clientWidth) {
+        if (x < r.left + BORDE) caja.scrollLeft -= empuje(r.left + BORDE - x, dt);
+        else if (x > r.right - BORDE) caja.scrollLeft += empuje(x - (r.right - BORDE), dt);
+      }
+      if (caja.scrollHeight > caja.clientHeight) {
+        if (y < r.top + BORDE) caja.scrollTop -= empuje(r.top + BORDE - y, dt);
+        else if (y > r.bottom - BORDE) caja.scrollTop += empuje(y - (r.bottom - BORDE), dt);
+      }
     }
 
     // La página también, y siempre: mientras se arrastra el desplazamiento con
     // el dedo está bloqueado, así que sin esto no hay forma de llegar a lo que
     // queda fuera de la pantalla.
-    if (y < BORDE) window.scrollBy(0, -PASO);
-    else if (y > window.innerHeight - BORDE) window.scrollBy(0, PASO);
+    if (y < BORDE) window.scrollBy(0, -empuje(BORDE - y, dt));
+    else if (y > window.innerHeight - BORDE) {
+      window.scrollBy(0, empuje(y - (window.innerHeight - BORDE), dt));
+    }
 
     const zonaEl = document
       .elementFromPoint(x, y)
       ?.closest<HTMLElement>('[data-zona]');
     if (zonaEl && zonaEl.scrollHeight > zonaEl.clientHeight) {
       const r = zonaEl.getBoundingClientRect();
-      if (y < r.top + BORDE) zonaEl.scrollTop -= PASO;
-      else if (y > r.bottom - BORDE) zonaEl.scrollTop += PASO;
+      if (y < r.top + BORDE) zonaEl.scrollTop -= empuje(r.top + BORDE - y, dt);
+      else if (y > r.bottom - BORDE) zonaEl.scrollTop += empuje(y - (r.bottom - BORDE), dt);
     }
+
+    // Y se relee qué hay debajo, porque acaba de moverse. Mientras el contenido
+    // se desplaza solo el puntero está quieto y no llega ningún `pointermove`:
+    // sin esto, la zona señalada se quedaba congelada en la que estaba al
+    // empezar a desplazarse y lo resaltado dejaba de ser lo que se iba a soltar.
+    setZona((previa) => {
+      const ahoraZona = zonaEl?.dataset.zona ?? null;
+      return ahoraZona === previa ? previa : ahoraZona;
+    });
 
     cuadro.current = requestAnimationFrame(rodar);
   }, [contenedor]);
@@ -114,6 +161,7 @@ export function useArrastre<T>({
     pendiente.current = null;
     activo.current = false;
     ultima.current = null;
+    anterior.current = null;
     setItem(null);
     setPosicion(null);
     setZona(null);
@@ -126,6 +174,7 @@ export function useArrastre<T>({
     setItem(p.item);
     setPosicion({ x: p.x, y: p.y });
     ultima.current = { x: p.x, y: p.y };
+    anterior.current = null;
     cuadro.current = requestAnimationFrame(rodar);
   }, [rodar]);
 

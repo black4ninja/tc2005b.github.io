@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  esDiaHabil, sumarHorasHabiles, puedeAgendar, puedeCancelar, huecosDelDia, numerarIntentos,
-  planificarBloques,
+  esDiaHabil, sumarHorasHabiles, puedeAgendar, puedeCancelar, huecosDelDia, huecoAbierto,
+  numerarIntentos, planificarBloques, puedeSerOtroIntento,
 } from '../src/services/agenda-entrevistas.service.js';
 
 /**
@@ -100,24 +100,99 @@ describe('huecosDelDia', () => {
   });
 });
 
+describe('puedeSerOtroIntento', () => {
+  const primera = qro('2026-09-03T10:00:00');
+
+  it('el primero de una competencia no choca con nada', () => {
+    expect(puedeSerOtroIntento([], qro('2026-09-01T10:00:00'))).toBe(true);
+  });
+
+  it('un día posterior vale', () => {
+    expect(puedeSerOtroIntento([primera], qro('2026-09-04T09:00:00'))).toBe(true);
+  });
+
+  it('el MISMO día no, aunque sea más tarde', () => {
+    // Dos entrevistas de lo mismo con dos horas de diferencia son la misma
+    // entrevista repetida: no da tiempo a repasar nada.
+    expect(puedeSerOtroIntento([primera], qro('2026-09-03T12:00:00'))).toBe(false);
+    expect(puedeSerOtroIntento([primera], qro('2026-09-03T08:00:00'))).toBe(false);
+  });
+
+  it('un día ANTERIOR tampoco: el segundo no pasa antes que el primero', () => {
+    // Es el fallo que había: el número de intento sale del orden de reserva, así
+    // que se podía agendar el «primero» el 3 y el «segundo» el 1.
+    expect(puedeSerOtroIntento([primera], qro('2026-09-01T10:00:00'))).toBe(false);
+  });
+
+  it('con dos previas tiene que ir después de las DOS', () => {
+    const segunda = qro('2026-09-10T10:00:00');
+    expect(puedeSerOtroIntento([primera, segunda], qro('2026-09-05T10:00:00'))).toBe(false);
+    expect(puedeSerOtroIntento([primera, segunda], qro('2026-09-11T10:00:00'))).toBe(true);
+  });
+
+  it('manda el día del curso, no el UTC', () => {
+    // 2026-09-04T02:00Z son todavía las 20:00 del día 3 en Querétaro: mismo día
+    // que la primera, así que no vale.
+    expect(puedeSerOtroIntento([primera], new Date('2026-09-04T02:00:00Z'))).toBe(false);
+  });
+});
+
+describe('huecoAbierto', () => {
+  const nueve = qro('2026-08-27T09:00:00');
+  const nueveCinco = qro('2026-08-27T09:05:00');
+
+  it('un hueco de un día abierto y sin cerrar admite reservas', () => {
+    expect(huecoAbierto(false, [], nueve)).toBe(true);
+  });
+
+  it('el hueco cerrado a mano no las admite', () => {
+    expect(huecoAbierto(false, [nueve.toISOString()], nueve)).toBe(false);
+  });
+
+  it('cerrar un hueco no toca a los demás', () => {
+    expect(huecoAbierto(false, [nueve.toISOString()], nueveCinco)).toBe(true);
+  });
+
+  it('con el día cerrado no admite ninguno, esté o no en la lista', () => {
+    expect(huecoAbierto(true, [], nueve)).toBe(false);
+    expect(huecoAbierto(true, [nueve.toISOString()], nueve)).toBe(false);
+  });
+});
+
 describe('numerarIntentos', () => {
-  it('numera por hora, no por orden de creación', () => {
+  it('numera por orden de reserva', () => {
     const n = numerarIntentos([
-      { id: 'b', inicio: qro('2026-09-02T09:00:00') },
-      { id: 'a', inicio: qro('2026-08-27T09:00:00') },
+      { id: 'b', creada: qro('2026-08-20T12:00:00') },
+      { id: 'a', creada: qro('2026-08-19T12:00:00') },
     ]);
     expect(n.get('a')).toBe(1);
     expect(n.get('b')).toBe(2);
   });
 
+  it('cambiar la cita de hora NO la renumera', () => {
+    // El caso que lo motivó: el profesor mueve a alguien de hueco y le
+    // cambiaban el número de intento —y con él la pregunta que le tocaba—.
+    // Mover es cambiar de sitio; las oportunidades no se tocan.
+    const reservas = [
+      { id: 'primera', creada: qro('2026-08-19T12:00:00') },
+      { id: 'segunda', creada: qro('2026-08-20T12:00:00') },
+    ];
+    const antes = numerarIntentos(reservas);
+    // La hora ya no entra en la cuenta: da igual dónde acabe cada una.
+    const despues = numerarIntentos([...reservas].reverse());
+    expect(antes.get('primera')).toBe(1);
+    expect(despues.get('primera')).toBe(1);
+    expect(despues.get('segunda')).toBe(2);
+  });
+
   it('cancelar la primera asciende a la que queda', () => {
-    const n = numerarIntentos([{ id: 'b', inicio: qro('2026-09-02T09:00:00') }]);
+    const n = numerarIntentos([{ id: 'b', creada: qro('2026-08-20T12:00:00') }]);
     expect(n.get('b')).toBe(1);
   });
 
-  it('con la misma hora desempata el id, para que el número no baile', () => {
-    const misma = qro('2026-08-27T09:00:00');
-    const n = numerarIntentos([{ id: 'z', inicio: misma }, { id: 'a', inicio: misma }]);
+  it('con la misma marca desempata el id, para que el número no baile', () => {
+    const misma = qro('2026-08-19T12:00:00');
+    const n = numerarIntentos([{ id: 'z', creada: misma }, { id: 'a', creada: misma }]);
     expect(n.get('a')).toBe(1);
     expect(n.get('z')).toBe(2);
   });

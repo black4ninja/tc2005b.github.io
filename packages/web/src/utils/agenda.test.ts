@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { agruparVacios, estadoHueco, expandirBloques } from './agenda';
+import {
+  diaMasProximo, estadoHueco, expandirFechas, intentoTerminado, puedeSerOtroIntento, semanasDelMes,
+} from './agenda';
 
 describe('estadoHueco', () => {
   const agendableDesde = '2026-08-27T16:00:00.000Z';
@@ -37,75 +39,158 @@ describe('estadoHueco', () => {
   });
 });
 
-describe('agruparVacios', () => {
-  const h = (min: number, cita: unknown = null) => ({
-    inicio: new Date(Date.UTC(2026, 7, 27, 15, min)).toISOString(), cita,
+describe('diaMasProximo', () => {
+  // Tres días de 9 a 13, hora de Querétaro.
+  const dias = [
+    { id: 'a', inicio: '2026-09-01T15:00:00.000Z', fin: '2026-09-01T19:00:00.000Z' },
+    { id: 'b', inicio: '2026-09-03T15:00:00.000Z', fin: '2026-09-03T19:00:00.000Z' },
+    { id: 'c', inicio: '2026-09-07T15:00:00.000Z', fin: '2026-09-07T19:00:00.000Z' },
+  ];
+
+  it('sin días no hay ninguno que enseñar', () => {
+    expect(diaMasProximo([], new Date('2026-09-02T12:00:00Z'))).toBe(null);
   });
 
-  it('junta los vacíos seguidos en una sola fila', () => {
-    const filas = agruparVacios([h(0), h(5), h(10, { id: 'c' }), h(15)], 300);
-    expect(filas.map((f) => f.tipo)).toEqual(['vacio', 'cita', 'vacio']);
-    expect(filas[0]).toMatchObject({ cuantos: 2 });
+  it('elige el primero que no ha terminado', () => {
+    expect(diaMasProximo(dias, new Date('2026-09-02T12:00:00Z'))).toBe('b');
   });
 
-  it('el hueco vacío llega hasta el final del último bloque', () => {
-    const [fila] = agruparVacios([h(0), h(5)], 300);
-    expect(fila).toMatchObject({
-      desde: h(0).inicio,
-      hasta: new Date(Date.UTC(2026, 7, 27, 15, 10)).toISOString(),
-    });
+  it('un día en curso sigue siendo el suyo', () => {
+    expect(diaMasProximo(dias, new Date('2026-09-03T16:30:00Z'))).toBe('b');
   });
 
-  it('un día lleno no genera filas vacías', () => {
-    const filas = agruparVacios([h(0, { id: 'a' }), h(5, { id: 'b' })], 300);
-    expect(filas.every((f) => f.tipo === 'cita')).toBe(true);
+  it('manda la HORA, no la fecha: acabado el de hoy, pasa al siguiente', () => {
+    // 3 de septiembre a las 22:00 de Querétaro: sigue siendo hoy, pero el día
+    // terminó a la una de la tarde.
+    expect(diaMasProximo(dias, new Date('2026-09-04T04:00:00Z'))).toBe('c');
   });
 
-  it('un día entero vacío es una sola fila', () => {
-    const filas = agruparVacios([h(0), h(5), h(10)], 300);
-    expect(filas).toHaveLength(1);
-    expect(filas[0]).toMatchObject({ tipo: 'vacio', cuantos: 3 });
+  it('justo en el minuto de cierre todavía cuenta', () => {
+    expect(diaMasProximo(dias, new Date('2026-09-03T19:00:00Z'))).toBe('b');
+  });
+
+  it('si ya terminaron todos, el último', () => {
+    expect(diaMasProximo(dias, new Date('2026-10-01T12:00:00Z'))).toBe('c');
+  });
+
+  it('no depende de que vengan ordenados', () => {
+    const revueltos = [dias[2], dias[0], dias[1]];
+    expect(diaMasProximo(revueltos, new Date('2026-09-02T12:00:00Z'))).toBe('b');
   });
 });
 
-describe('expandirBloques', () => {
-  it('repite el bloque en cada fecha del rango que caiga en sus días', () => {
-    // Del lunes 7 al viernes 11 de septiembre de 2026, martes y jueves.
-    const salida = expandirBloques('2026-09-07', '2026-09-11', [
-      { dias: [2, 4], desde: '09:00', hasta: '11:00' },
-    ]);
-    expect(salida).toHaveLength(2);
-    expect(salida.map((s) => new Date(s.inicio).getDay())).toEqual([2, 4]);
+describe('puedeSerOtroIntento', () => {
+  // 3 de septiembre a las 10:00 de Querétaro.
+  const primera = '2026-09-03T16:00:00.000Z';
+
+  it('sin previas, cualquier hora vale', () => {
+    expect(puedeSerOtroIntento([], '2026-09-01T15:00:00.000Z')).toBe(true);
   });
 
-  it('varios bloques con días distintos conviven, y salen en orden', () => {
-    // El caso que se pidió: lunes a jueves de 9 a 11 y, además, martes a
-    // viernes de 16 a 18.
-    const salida = expandirBloques('2026-09-07', '2026-09-11', [
-      { dias: [1, 2, 3, 4], desde: '09:00', hasta: '11:00' },
-      { dias: [2, 3, 4, 5], desde: '16:00', hasta: '18:00' },
+  it('un día posterior vale', () => {
+    expect(puedeSerOtroIntento([primera], '2026-09-04T15:00:00.000Z')).toBe(true);
+  });
+
+  it('el mismo día no, ni antes ni después dentro del día', () => {
+    expect(puedeSerOtroIntento([primera], '2026-09-03T18:00:00.000Z')).toBe(false);
+    expect(puedeSerOtroIntento([primera], '2026-09-03T15:00:00.000Z')).toBe(false);
+  });
+
+  it('un día anterior tampoco', () => {
+    // El fallo que se arregla: el «segundo» intento el día 1 y el «primero» el 3.
+    expect(puedeSerOtroIntento([primera], '2026-09-01T15:00:00.000Z')).toBe(false);
+  });
+
+  it('manda el día del curso, no el UTC', () => {
+    // Las 02:00Z del 4 son las 20:00 del 3 en Querétaro: el mismo día.
+    expect(puedeSerOtroIntento([primera], '2026-09-04T02:00:00.000Z')).toBe(false);
+  });
+});
+
+describe('intentoTerminado', () => {
+  // Una entrevista de cinco minutos el 2 de septiembre a las 10:00 de Querétaro.
+  const cita = { inicio: '2026-09-02T16:00:00.000Z', duracionSegundos: 300 };
+
+  it('sin cita no está hecho: no ha pasado nada', () => {
+    expect(intentoTerminado(null, new Date('2026-09-30T12:00:00Z'))).toBe(false);
+    expect(intentoTerminado(undefined, new Date('2026-09-30T12:00:00Z'))).toBe(false);
+  });
+
+  it('una cita futura no está hecha', () => {
+    expect(intentoTerminado(cita, new Date('2026-09-01T12:00:00Z'))).toBe(false);
+  });
+
+  it('mientras corre el hueco tampoco', () => {
+    expect(intentoTerminado(cita, new Date('2026-09-02T16:03:00Z'))).toBe(false);
+  });
+
+  it('al cerrarse su hueco pasa a hecho', () => {
+    expect(intentoTerminado(cita, new Date('2026-09-02T16:05:00Z'))).toBe(true);
+    expect(intentoTerminado(cita, new Date('2026-09-02T16:05:01Z'))).toBe(true);
+  });
+
+  it('el caso del profesor: el del 2 sí, el del 4 no', () => {
+    // Hoy es 3 de septiembre. El primer intento fue el 2 y el segundo es el 4.
+    const hoy = new Date('2026-09-03T18:00:00Z');
+    const segundo = { inicio: '2026-09-04T16:00:00.000Z', duracionSegundos: 300 };
+    expect(intentoTerminado(cita, hoy)).toBe(true);
+    expect(intentoTerminado(segundo, hoy)).toBe(false);
+  });
+});
+
+describe('expandirFechas', () => {
+  it('un horario abre sus días, y solo esos', () => {
+    const salida = expandirFechas([
+      { fechas: ['2026-09-07', '2026-09-08', '2026-09-09'], desde: '09:00', hasta: '11:00' },
     ]);
-    expect(salida).toHaveLength(8);
+    expect(salida).toHaveLength(3);
+    expect(salida.map((s) => new Date(s.inicio).getDate())).toEqual([7, 8, 9]);
+  });
+
+  it('varios horarios conviven, y salen en orden cronológico', () => {
+    // El caso que se pidió: unos días de mañana y otros de tarde, sin que uno
+    // dependa del otro.
+    const salida = expandirFechas([
+      { fechas: ['2026-09-07', '2026-09-09'], desde: '09:00', hasta: '11:00' },
+      { fechas: ['2026-09-08', '2026-09-09'], desde: '16:00', hasta: '18:00' },
+    ]);
+    expect(salida).toHaveLength(4);
     const ordenado = [...salida].sort((a, b) => a.inicio.localeCompare(b.inicio));
     expect(salida).toEqual(ordenado);
-    // El martes sale dos veces: por la mañana y por la tarde.
-    const martes = salida.filter((s) => new Date(s.inicio).getDay() === 2);
-    expect(martes).toHaveLength(2);
+    // El 9 sale dos veces: por la mañana y por la tarde.
+    expect(salida.filter((s) => new Date(s.inicio).getDate() === 9)).toHaveLength(2);
   });
 
-  it('una sola fecha en las dos puntas abre un solo día', () => {
-    const salida = expandirBloques('2026-09-08', '2026-09-08', [
-      { dias: [2], desde: '09:00', hasta: '11:00' },
-    ]);
-    expect(salida).toHaveLength(1);
+  it('sin días elegidos no hay nada que abrir', () => {
+    expect(expandirFechas([{ fechas: [], desde: '09:00', hasta: '11:00' }])).toEqual([]);
   });
 
-  it('no devuelve nada si el rango está del revés o el bloque no cierra', () => {
-    expect(expandirBloques('2026-09-11', '2026-09-07', [
-      { dias: [1], desde: '09:00', hasta: '11:00' },
+  it('un horario que no cierra se descarta', () => {
+    expect(expandirFechas([
+      { fechas: ['2026-09-07'], desde: '11:00', hasta: '09:00' },
     ])).toEqual([]);
-    expect(expandirBloques('2026-09-07', '2026-09-11', [
-      { dias: [1], desde: '11:00', hasta: '09:00' },
-    ])).toEqual([]);
+  });
+});
+
+describe('semanasDelMes', () => {
+  it('empieza en lunes y rellena los huecos con el mes vecino', () => {
+    // Septiembre de 2026 empieza en martes: el lunes 31 de agosto abre la
+    // rejilla para que no quede un agujero.
+    const semanas = semanasDelMes(2026, 8);
+    expect(semanas[0]).toHaveLength(7);
+    expect(semanas[0][0].dia).toBe(31);
+    expect(semanas[0][0].delMes).toBe(false);
+    expect(semanas[0][1].dia).toBe(1);
+    expect(semanas[0][1].delMes).toBe(true);
+  });
+
+  it('no añade una fila entera del mes siguiente', () => {
+    // Con seis filas fijas, un mes corto acababa con una semana que no pisa
+    // ningún día suyo: sitio gastado que desplaza el resto del formulario.
+    for (const mes of [0, 1, 5, 8, 11]) {
+      const semanas = semanasDelMes(2026, mes);
+      const ultima = semanas[semanas.length - 1];
+      expect(ultima.some((d) => d.delMes)).toBe(true);
+    }
   });
 });

@@ -1,0 +1,130 @@
+.caja { position: relative; }
+
+.disparador {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 210px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.disparador:hover:not(:disabled) { border-color: var(--text-muted); }
+.disparador:disabled { opacity: 0.5; cursor: default; }
+
+.actual {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Se abre HACIA ARRIBA: el mando vive a media pantalla y con la lista abierta
+   hacia abajo tapaba la tabla del día, que es lo que se está mirando. */
+.panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 30;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.buscadorFila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
+
+.buscador {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.cuenta {
+  flex: none;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.lista::-webkit-scrollbar { width: 10px; }
+.lista::-webkit-scrollbar-track { background: transparent; }
+.lista::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 999px;
+  border: 2px solid var(--bg-card);
+}
+
+.opcion {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 7px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.opcionResaltada { background: var(--dash-bg-subtle); }
+
+.opcionActual { color: var(--sidebar-active-color); font-weight: 500; }
+
+.pista {
+  flex: none;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.opcionActual .pista { color: var(--sidebar-active-color); }
+
+.nombre {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vacio {
+  margin: 0;
+  padding: var(--space-md);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
+}

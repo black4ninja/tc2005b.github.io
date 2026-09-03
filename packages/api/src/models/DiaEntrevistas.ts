@@ -68,6 +68,37 @@ export class DiaEntrevistas extends BaseModel {
     this.set('cerrado', cerrado);
   }
 
+  /**
+   * Los huecos SUELTOS que no admiten reservas, por su instante de inicio en ISO.
+   *
+   * Cerrar el día entero es todo o nada, y lo que el profesor hace de verdad es
+   * tapar ratos: la hora de la comida, el trozo en que tiene clase, el hueco que
+   * se guarda para respirar. Se guardan los cerrados y no los abiertos porque lo
+   * normal es que casi todos estén abiertos, y porque así un día ya existente no
+   * necesita migración: sin el campo, ninguno está cerrado.
+   */
+  getHuecosCerrados(): string[] {
+    const guardado = this.get('huecosCerrados');
+    return Array.isArray(guardado) ? guardado : [];
+  }
+
+  /**
+   * Se cierran y se abren con las operaciones de array de Parse, que la base
+   * aplica de forma atómica, y NO leyendo la lista entera para volver a
+   * escribirla.
+   *
+   * Los huecos de un día son un solo objeto: cerrar tres seguidos son tres
+   * peticiones sobre él. Leer-modificar-escribir las pierde —las tres parten de
+   * la misma lista vacía y la última en guardar deja dentro solo su hueco—, y es
+   * justo lo que pasa al ir picando candados uno detrás de otro.
+   */
+  cerrarHueco(inicioISO: string): void {
+    this.addUnique('huecosCerrados', inicioISO);
+  }
+  abrirHueco(inicioISO: string): void {
+    this.remove('huecosCerrados', inicioISO);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     return {
       id: this.id,
@@ -77,6 +108,7 @@ export class DiaEntrevistas extends BaseModel {
       duracionSegundos: this.getDuracionSegundos(),
       nota: this.getNota(),
       cerrado: this.getCerrado(),
+      huecosCerrados: this.getHuecosCerrados(),
     };
   }
 }

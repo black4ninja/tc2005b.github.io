@@ -4,7 +4,10 @@ import { useAuth } from '../../../../context/AuthContext';
 import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Modal from '../../atoms/Modal/Modal';
-import { adelantar, estadoHueco, fechaLarga, fechaYHora, hora, rangoHoras } from '../../../../utils/agenda';
+import ListaEvidencias from '../../molecules/ListaEvidencias/ListaEvidencias';
+import {
+  adelantar, estadoHueco, fechaCorta, fechaLarga, fechaYHora, hora, puedeSerOtroIntento, rangoHoras,
+} from '../../../../utils/agenda';
 import type { AgendaAlumno, DiaAlumno, HuecoAlumno } from '../../../../types/agenda';
 import styles from './AgendaEntrevistasAlumnoPage.module.css';
 
@@ -68,6 +71,10 @@ export default function AgendaEntrevistasAlumnoPage() {
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
   const [guardando, setGuardando] = useState(false);
+  /** El enlace que se está escribiendo, por cita. */
+  const [enlaces, setEnlaces] = useState<Record<string, string>>({});
+  /** Qué evidencia está en vuelo, para apagar solo su fila. */
+  const [subiendo, setSubiendo] = useState<string | null>(null);
   /** Hueco elegido, a la espera de que diga qué competencia viene a evaluar. */
   const [eligiendo, setEligiendo] = useState<{ dia: DiaAlumno; hueco: HuecoAlumno } | null>(null);
   /** Cuándo llegó la agenda que se está enseñando, para adelantar sus relojes. */
@@ -151,6 +158,51 @@ export default function AgendaEntrevistasAlumnoPage() {
     }
   }
 
+  /* ── Evidencias ─────────────────────────────────────────────────────── */
+
+  async function agregarEvidencia(citaId: string) {
+    if (!grupoId) return;
+    const url = (enlaces[citaId] ?? '').trim();
+    if (!url) return;
+    setError('');
+    setSubiendo(citaId);
+    try {
+      const res = await fetch(`${API_BASE}/alumno/grupos/${grupoId}/agenda-entrevistas/evidencias`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ citaId, url }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message || 'No se pudo guardar la evidencia');
+      }
+      setEnlaces((e) => ({ ...e, [citaId]: '' }));
+      await cargar();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'No se pudo guardar la evidencia'));
+    } finally {
+      setSubiendo(null);
+    }
+  }
+
+  async function quitarEvidencia(evidenciaId: string) {
+    if (!grupoId) return;
+    setError('');
+    setSubiendo(evidenciaId);
+    try {
+      const res = await fetch(
+        `${API_BASE}/alumno/grupos/${grupoId}/agenda-entrevistas/evidencias/${evidenciaId}`,
+        { method: 'DELETE', headers },
+      );
+      if (!res.ok) throw new Error('No se pudo quitar la evidencia');
+      await cargar();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'No se pudo quitar la evidencia'));
+    } finally {
+      setSubiendo(null);
+    }
+  }
+
   async function cancelar(citaId: string) {
     if (!grupoId) return;
     setError('');
@@ -225,6 +277,22 @@ export default function AgendaEntrevistasAlumnoPage() {
         </li>
       </ul>
 
+      {/* Debajo de las reglas: es lo que hay que leerse ANTES de agendar, y ahí
+          es donde se está mirando qué hace falta para venir. Sin manual puesto
+          no se enseña nada: un enlace vacío es peor que ninguno. */}
+      {agenda.manualUrl && (
+        <a
+          className={styles.manual}
+          href={agenda.manualUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Icon name="menu_book" size="sm" />
+          Manual de competencias
+          <Icon name="open_in_new" size="sm" />
+        </a>
+      )}
+
       {error && <div className={styles.error} onClick={() => setError('')}>{error}</div>}
       {aviso && <div className={styles.aviso} onClick={() => setAviso('')}>{aviso}</div>}
 
@@ -236,26 +304,74 @@ export default function AgendaEntrevistasAlumnoPage() {
           <ul className={styles.misCitas}>
             {agenda.misCitas.map((cita) => (
               <li key={cita.id} className={styles.miCita}>
-                <div>
-                  <span className={styles.citaHora}>{fechaYHora(cita.inicio)}</span>
-                  <span className={styles.citaCompetencia}>
-                    {cita.competencia?.nombre ?? 'Sin competencia'} · {cita.intento}.º intento
-                  </span>
-                  {cita.diaNota && <span className={styles.citaNota}>{cita.diaNota}</span>}
+                <div className={styles.citaCabecera}>
+                  <div>
+                    <span className={styles.citaHora}>{fechaYHora(cita.inicio)}</span>
+                    <span className={styles.citaCompetencia}>
+                      {cita.competencia?.nombre ?? 'Sin competencia'} · {cita.intento}.º intento
+                    </span>
+                    {cita.diaNota && <span className={styles.citaNota}>{cita.diaNota}</span>}
+                  </div>
+                  <DashButton
+                    variant="outline"
+                    disabled={!cita.cancelable || guardando}
+                    onClick={() => cancelar(cita.id)}
+                    title={cita.cancelable
+                      ? 'Cancelar esta cita'
+                      : `Ya pasó el margen de ${reglas.margenCancelacionMinutos} minutos`}
+                  >
+                    Cancelar
+                  </DashButton>
                 </div>
-                <DashButton
-                  variant="outline"
-                  disabled={!cita.cancelable || guardando}
-                  onClick={() => cancelar(cita.id)}
-                  title={cita.cancelable
-                    ? 'Cancelar esta cita'
-                    : `Ya pasó el margen de ${reglas.margenCancelacionMinutos} minutos`}
-                >
-                  Cancelar
-                </DashButton>
+
+                {/* Las evidencias van AQUÍ, dentro de la cita, y no en una
+                    sección aparte: son de esta entrevista, y verlas al lado de
+                    su hora es lo que dice si falta algo por entregar. */}
+                <ListaEvidencias
+                  evidencias={cita.evidencias}
+                  enVuelo={subiendo}
+                  onQuitar={quitarEvidencia}
+                />
+                <div className={styles.evidenciaAlta}>
+                  <input
+                    type="url"
+                    className={styles.evidenciaInput}
+                    placeholder="https://… enlace a tu repo, documento o vídeo"
+                    value={enlaces[cita.id] ?? ''}
+                    disabled={subiendo === cita.id}
+                    onChange={(e) => setEnlaces((x) => ({ ...x, [cita.id]: e.target.value }))}
+                    onKeyDown={(e) => { if (e.key === 'Enter') void agregarEvidencia(cita.id); }}
+                  />
+                  <DashButton
+                    variant="outline"
+                    disabled={!(enlaces[cita.id] ?? '').trim() || subiendo === cita.id}
+                    onClick={() => void agregarEvidencia(cita.id)}
+                  >
+                    {subiendo === cita.id ? 'Guardando…' : 'Agregar evidencia'}
+                  </DashButton>
+                </div>
               </li>
             ))}
           </ul>
+        )}
+
+        {agenda.evidenciasSueltas.length > 0 && (
+          /* Cancelar una cita no se lleva lo que ya habías entregado: se queda
+             aquí y vuelve sola a la próxima que reserves de esa competencia. */
+          <div className={styles.sueltas}>
+            <span className={styles.sueltasTitulo}>
+              <Icon name="link_off" size="sm" /> Evidencias de citas que cancelaste
+            </span>
+            <p className={styles.hint}>
+              No se han perdido. Vuelven solas a tu próxima cita de esa competencia.
+            </p>
+            <ListaEvidencias
+              evidencias={agenda.evidenciasSueltas}
+              enVuelo={subiendo}
+              conCompetencia
+              onQuitar={quitarEvidencia}
+            />
+          </div>
         )}
       </section>
 
@@ -313,17 +429,36 @@ export default function AgendaEntrevistasAlumnoPage() {
           <div className={styles.elegirComp}>
             {agenda.competencias.map((c) => {
               const agotada = c.usados >= reglas.maxIntentos;
+              // El siguiente intento va en un día POSTERIOR al que ya tiene: el
+              // mismo día es la misma entrevista repetida, y antes haría que el
+              // «segundo» pasara primero. Lo decide el servidor; aquí solo se
+              // evita ofrecer un botón que va a decir que no.
+              const suyas = agenda.misCitas.filter((m) => m.competencia?.id === c.id);
+              // Cuál de ellas estorba, para poder decir la fecha en el botón.
+              const estorba = agotada ? undefined : suyas.find(
+                (m) => !puedeSerOtroIntento([m.inicio], eligiendo.hueco.inicio),
+              );
+              const bloqueada = agotada || !!estorba;
               return (
                 <button
                   key={c.id}
                   className={styles.opcionComp}
-                  disabled={agotada || guardando}
+                  disabled={bloqueada || guardando}
                   onClick={() => reservar(c.id)}
-                  title={agotada ? 'Ya usaste tus dos oportunidades en esta competencia' : undefined}
+                  title={agotada
+                    ? 'Ya usaste tus dos oportunidades en esta competencia'
+                    : estorba
+                      ? 'Tu otra entrevista de esta competencia es ese día o después:'
+                        + ' el siguiente intento va en un día posterior'
+                      : undefined}
                 >
                   <span>{c.nombre}</span>
                   <span className={styles.compCuenta}>
-                    {agotada ? 'sin oportunidades' : `${c.usados + 1}.º intento`}
+                    {agotada
+                      ? 'sin oportunidades'
+                      : estorba
+                        ? `ya tienes una el ${fechaCorta(estorba.inicio)}`
+                        : `${c.usados + 1}.º intento`}
                   </span>
                 </button>
               );

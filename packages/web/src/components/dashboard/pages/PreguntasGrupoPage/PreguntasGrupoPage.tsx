@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useArrastre } from '../../../../hooks/useArrastre';
 import { useParams, Link } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import Icon from '../../atoms/Icon/Icon';
@@ -7,7 +8,9 @@ import Modal from '../../atoms/Modal/Modal';
 import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta';
 import SelectorAlumno from '../../organisms/SelectorAlumno/SelectorAlumno';
 import AsignarCitaModal from '../../organisms/AsignarCitaModal/AsignarCitaModal';
-import MoverCitaModal from '../../organisms/MoverCitaModal/MoverCitaModal';
+import SaltoProyeccion from '../../organisms/SaltoProyeccion/SaltoProyeccion';
+import ListaEvidencias from '../../molecules/ListaEvidencias/ListaEvidencias';
+import TagIntento from '../../atoms/TagIntento/TagIntento';
 import AbrirDiasModal, { type FilaPlan } from '../../organisms/AbrirDiasModal/AbrirDiasModal';
 import {
   aplicarAsignaciones, ajustarUso, faseProyeccion, formatearDuracion, quitarAsignaciones,
@@ -19,13 +22,16 @@ import type {
 } from '../../../../types/preguntas';
 import { confirmar } from '../../../../utils/dialogos';
 import {
-  agruparVacios, claveFecha, fechaConDia, fechaLarga, hora, rangoHoras,
+  claveFecha, diaMasProximo, fechaConDia, fechaLarga, fechaYHora, hora,
+  intentoTerminado, rangoHoras,
 } from '../../../../utils/agenda';
-import type { Agenda, CitaProfesor, DiaProfesor } from '../../../../types/agenda';
+import type { Agenda, CitaProfesor, DiaProfesor, Evidencia } from '../../../../types/agenda';
 import styles from './PreguntasGrupoPage.module.css';
 
 const API_BASE = '/api';
 const SIN_COMPETENCIA = 'sin-competencia';
+/** Prefijo de la zona de soltar de un chip de día, para distinguirla de una hora. */
+const ZONA_DIA = 'dia:';
 /** Espejo de `MAX_INTENTOS` del API: hasta dos entrevistas por competencia. */
 const MAX_INTENTOS = 2;
 /**
@@ -96,6 +102,8 @@ export default function PreguntasGrupoPage() {
   const [preguntas, setPreguntas] = useState<Pregunta[]>([]);
   const [competencias, setCompetencias] = useState<CompetenciaEnBanco[]>([]);
   const [duracion, setDuracion] = useState<DuracionConfig | null>(null);
+  /** El manual de competencias del grupo, tal como está guardado. */
+  const [manualUrl, setManualUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
@@ -152,17 +160,69 @@ export default function PreguntasGrupoPage() {
   /** El hueco libre que el profesor pulsó para apuntar a alguien a mano. */
   const [asignandoEn, setAsignandoEn] = useState<string | null>(null);
   const [asignandoCita, setAsignandoCita] = useState(false);
-  /** La cita que se está cambiando de hueco. */
-  const [moviendo, setMoviendo] = useState<CitaProfesor | null>(null);
+  /**
+   * El traslado que está en vuelo: de quién, a qué hueco y de qué día.
+   *
+   * No vale mirar `arrastrando`: al soltar, el gesto TERMINA y ese estado se
+   * vacía, así que la señal de «se está guardando» no llegaba a pintarse ni un
+   * fotograma. Con esto las dos filas —la que suelta y la que recibe— lo dicen
+   * hasta que la agenda vuelve del servidor.
+   */
+  const [moviendo, setMoviendo] = useState<
+    { citaId: string; diaId: string; destino: string; quien: string } | null
+  >(null);
+  /** Lo último que se movió bien. Se enseña hasta el siguiente gesto. */
+  const [movida, setMovida] = useState<string | null>(null);
   const [diaActivo, setDiaActivo] = useState<string | null>(null);
+  /** La cita cuyas evidencias se están mirando. */
+  const [evidenciasDe, setEvidenciasDe] = useState<CitaProfesor | null>(null);
+  /**
+   * Las notas, tapadas.
+   *
+   * El modal se abre con la clase delante y a veces con el proyector puesto: lo
+   * que el profesor apuntó de un alumno no tiene por qué verse. Tapadas, además,
+   * el enunciado cabe entero, que es lo que hace falta para leer la pregunta.
+   */
+  const [notasVisibles, setNotasVisibles] = useState(true);
+  /** El manual de competencias del grupo, mientras se edita. */
+  const [editandoManual, setEditandoManual] = useState(false);
+  const [manualBorrador, setManualBorrador] = useState('');
+  const [guardandoManual, setGuardandoManual] = useState(false);
+  /**
+   * Las preguntas de los intentos que todavía no han pasado.
+   *
+   * El modal se le enseña al alumno para darle la retroalimentación, y si tiene
+   * el primer intento el 2 y el segundo el 4, el día 3 no puede ver la pregunta
+   * del 4: se le estaría adelantando. Aparte de las notas a propósito —son dos
+   * cosas distintas y a veces hace falta tapar solo una—.
+   */
+  const [pendientesVisibles, setPendientesVisibles] = useState(true);
   const [creandoDia, setCreandoDia] = useState(false);
-  /** Qué bloques están marcados para actuar sobre ellos a la vez. */
-  const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
-  const [enSeleccion, setEnSeleccion] = useState(false);
   const [guardandoDias, setGuardandoDias] = useState(false);
+  /**
+   * Los huecos cuyo cierre está en vuelo. Es un conjunto y no uno solo porque
+   * cerrar un rato son varios candados seguidos, y hay que poder picarlos de
+   * golpe: cada fila dice por su cuenta que ya recibieron su petición.
+   */
+  const [huecosEnVuelo, setHuecosEnVuelo] = useState<Set<string>>(new Set());
+  /** Cuántas peticiones de hueco quedan vivas, para recargar UNA vez al final. */
+  const enVuelo = useRef(0);
 
   /** La pestaña proyectada, para volver a ella en vez de abrir otra. */
   const ventanaRef = useRef<Window | null>(null);
+  /**
+   * El profesor picó un día a mano: a partir de ahí no se le mueve solo.
+   *
+   * Sin esto, cualquier recarga de la agenda —cerrar un hueco, mover una cita—
+   * le devolvería al día de hoy mientras está mirando el de la semana que viene.
+   */
+  const elegidoAMano = useRef(false);
+  /** La tira de días, para traer a la vista el que se elige solo. */
+  const tiraDias = useRef<HTMLDivElement | null>(null);
+  /** El mando, para poder traerlo a la vista al proyectar desde una fila. */
+  const mandoRef = useRef<HTMLDivElement | null>(null);
+  /** Hay una petición de bajar al mando esperando a que el mando exista. */
+  const [irAlMando, setIrAlMando] = useState(false);
   /**
    * Qué orden está en vuelo. El mando escribe en el servidor y la pantalla que
    * cambia está en otro aparato, así que sin esto pulsar «Iniciar» parece no
@@ -189,12 +249,14 @@ export default function PreguntasGrupoPage() {
         preguntas?: Pregunta[];
         competencias?: CompetenciaEnBanco[];
         duracion?: DuracionConfig;
+        manualUrl?: string;
       };
       setHabilitado(data.habilitado !== false);
       setAlumnos(data.alumnos ?? []);
       setPreguntas(data.preguntas ?? []);
       setCompetencias(data.competencias ?? []);
       setDuracion(data.duracion ?? null);
+      setManualUrl(data.manualUrl ?? '');
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'Error al cargar las preguntas del grupo'));
     } finally {
@@ -213,12 +275,13 @@ export default function PreguntasGrupoPage() {
       if (!res.ok) return;
       const data = await res.json() as Agenda;
       setAgenda(data);
-      // Al entrar, el día que toca: el primero que no haya terminado. Es el que
-      // se quiere ver el día de las entrevistas, sin buscarlo.
-      setDiaActivo((actual) => actual
-        ?? data.dias.find((d) => new Date(d.fin) >= new Date())?.id
-        ?? data.dias[data.dias.length - 1]?.id
-        ?? null);
+      // El día que toca: el más próximo que no haya terminado, por HORA. Se
+      // vuelve a decidir en cada recarga mientras el profesor no haya picado
+      // uno: su pestaña se queda abierta toda la mañana, y cuando el día de hoy
+      // se acaba lo que quiere ver es el siguiente, no el que ya pasó.
+      setDiaActivo((actual) => (elegidoAMano.current && actual
+        ? actual
+        : diaMasProximo(data.dias) ?? actual));
     } catch {
       setError('No se pudo cargar la agenda de entrevistas');
     }
@@ -265,59 +328,34 @@ export default function PreguntasGrupoPage() {
     }
   }
 
-  /** Cerrar o reabrir las reservas de todo lo seleccionado, de una vez. */
-  async function cambiarSeleccion(cerrado: boolean) {
-    if (seleccion.size === 0) return;
-    setGuardandoDias(true);
-    try {
-      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/dias/lote`, {
-        method: 'PUT', headers, body: JSON.stringify({ diaIds: [...seleccion], cerrado }),
-      });
-      if (!res.ok) throw new Error('No se pudieron guardar los días');
-      await cargarAgenda();
-    } catch (err: unknown) {
-      setError(mensajeDeError(err, 'No se pudieron guardar los días'));
-    } finally {
-      setGuardandoDias(false);
-    }
-  }
-
   /**
-   * Borrar lo seleccionado. El servidor CONSERVA los que tengan gente apuntada
-   * en vez de fallar entero, así que aquí se dice cuántos se quedaron y por qué.
+   * Cerrar o reabrir UN hueco.
+   *
+   * Es lo que el profesor usa de verdad: lo que quiere tapar son ratos sueltos
+   * —la comida, la clase que le pisa las once—, y cerrar el día entero es el
+   * caso raro. Sin confirmación: se deshace pulsando otra vez en el mismo sitio.
    */
-  async function borrarSeleccion() {
-    if (seleccion.size === 0) return;
-    const conCitas = (agenda?.dias ?? [])
-      .filter((d) => seleccion.has(d.id) && d.huecos.some((h) => h.cita)).length;
-    if (!(await confirmar({
-      titulo: `¿Borrar ${seleccion.size} bloque${seleccion.size === 1 ? '' : 's'}?`,
-      texto: conCitas > 0
-        ? `${conCitas} tiene${conCitas === 1 ? '' : 'n'} citas apuntadas y se quedará${conCitas === 1 ? '' : 'n'}: primero hay que cancelarlas. El resto desaparece de la agenda.`
-        : 'Desaparecerán de la agenda del grupo.',
-      confirmar: 'Borrar',
-      peligro: true,
-    }))) return;
-    setGuardandoDias(true);
+  async function cerrarHueco(diaId: string, inicio: string, cerrado: boolean) {
+    if (huecosEnVuelo.has(inicio)) return;
+    setHuecosEnVuelo((s) => new Set(s).add(inicio));
+    enVuelo.current += 1;
     try {
-      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/dias/lote`, {
-        method: 'DELETE', headers, body: JSON.stringify({ diaIds: [...seleccion] }),
-      });
-      if (!res.ok) throw new Error('No se pudieron borrar los días');
-      const data = await res.json() as { conservados: number };
-      if (data.conservados > 0) {
-        setError(`${data.conservados} bloque${data.conservados === 1 ? ' se quedó' : 's se quedaron'}: tiene${data.conservados === 1 ? '' : 'n'} citas apuntadas.`);
-      }
-      setSeleccion(new Set());
-      // Si entre los borrados iba el bloque que se está mirando, hay que soltar
-      // la referencia: `cargarAgenda` elige otro cuando está en null. Sin esto,
-      // el chip del día se quedaba resaltado y la tabla de abajo vacía.
-      if (diaActivo && seleccion.has(diaActivo)) setDiaActivo(null);
-      await cargarAgenda();
+      const res = await fetch(
+        `${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/dias/${diaId}/huecos`,
+        { method: 'PUT', headers, body: JSON.stringify({ inicio, cerrado }) },
+      );
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.message ?? 'No se pudo guardar el hueco');
     } catch (err: unknown) {
-      setError(mensajeDeError(err, 'No se pudieron borrar los días'));
+      setError(mensajeDeError(err, 'No se pudo guardar el hueco'));
     } finally {
-      setGuardandoDias(false);
+      enVuelo.current -= 1;
+      // Una sola recarga para toda la ráfaga, y las filas siguen marcadas hasta
+      // que llega: soltarlas antes las devolvería un instante a como estaban,
+      // que es justo el parpadeo que hace dudar de si el clic entró.
+      if (enVuelo.current === 0) {
+        await cargarAgenda();
+        setHuecosEnVuelo(new Set());
+      }
     }
   }
 
@@ -368,7 +406,11 @@ export default function PreguntasGrupoPage() {
         const err = (await res.json().catch(() => ({}))) as { message?: string };
         throw new Error(err.message || 'No se pudo borrar el día');
       }
-      if (diaActivo === dia.id) setDiaActivo(null);
+      if (diaActivo === dia.id) {
+        // Se va el que se estaba mirando: que vuelva a decidirlo la hora.
+        elegidoAMano.current = false;
+        setDiaActivo(null);
+      }
       await cargarAgenda();
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'No se pudo borrar el día'));
@@ -415,19 +457,33 @@ export default function PreguntasGrupoPage() {
    * otro el hueco quedaba libre para que lo tomara alguien. Aquí es una sola
    * escritura y el servidor comprueba que el destino siga libre.
    */
-  async function moverCita(diaId: string, inicio: string) {
-    if (!moviendo) return;
+  /**
+   * Mover una cita al hueco donde la soltaron.
+   *
+   * El reorganizador NO se cierra al terminar: mover a uno suele ser el primero
+   * de tres, y cerrarlo obligaba a volver a abrirlo por cada persona. Lo que sí
+   * hace falta es decir que salió bien, porque la tarjeta puede acabar fuera de
+   * lo que se está viendo.
+   */
+  async function moverCita(citaId: string, diaId: string, inicio: string) {
+    // El nombre se busca ANTES de mover: después de recargar, la cita ya no
+    // está en el hueco viejo y la búsqueda no encontraría nada.
+    const quien = (agenda?.dias ?? [])
+      .flatMap((d) => d.huecos)
+      .find((h) => h.cita?.id === citaId)?.cita?.alumno?.name ?? 'La cita';
     setAsignandoCita(true);
+    setMoviendo({ citaId, diaId, destino: inicio, quien });
+    setMovida(null);
     try {
       const res = await fetch(
-        `${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/citas/${moviendo.id}`,
+        `${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/citas/${citaId}`,
         { method: 'PUT', headers, body: JSON.stringify({ diaId, inicio }) },
       );
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { message?: string };
         throw new Error(err.message || 'No se pudo mover la cita');
       }
-      setMoviendo(null);
+      setMovida(`${quien} pasa a las ${hora(inicio)}.`);
       // Al día de destino, para no dejar al profesor mirando el hueco vacío que
       // acaba de dejar.
       setDiaActivo(diaId);
@@ -435,6 +491,10 @@ export default function PreguntasGrupoPage() {
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'No se pudo mover la cita'));
     } finally {
+      // Se sueltan DESPUÉS de recargar: quitarlas antes devolvería las dos filas
+      // un instante a como estaban, que es el parpadeo que hace dudar de si el
+      // gesto entró.
+      setMoviendo(null);
       setAsignandoCita(false);
     }
   }
@@ -540,10 +600,28 @@ export default function PreguntasGrupoPage() {
    * Con nombre de ventana a propósito: pulsar «Proyectar» dos veces tiene que
    * llevar a la misma pantalla, no dejar dos abiertas peleándose por el cañón.
    */
-  function abrirPantalla() {
+  function abrirPantalla(traerAlFrente = true) {
     const abierta = ventanaRef.current;
-    if (abierta && !abierta.closed) { abierta.focus(); return; }
+    if (abierta && !abierta.closed) {
+      // Desde una fila NO se trae al frente: el gesto es «prepara a este y
+      // déjame darle a Iniciar», y saltar a la otra ventana obliga a volver.
+      if (traerAlFrente) abierta.focus();
+      return;
+    }
     ventanaRef.current = window.open(urlProyeccion, `proyeccion-${grupoId}`);
+  }
+
+  /**
+   * Poner a alguien en la pantalla desde su fila y bajar al mando.
+   *
+   * Elegir a quién proyectar y arrancarlo son dos gestos, y el segundo está en
+   * el mando, que con un día lleno queda lejos de la fila que se acaba de
+   * pulsar. Sin esto hay que ir a buscarlo —y el alumno ya está sentado—.
+   */
+  function proyectarDesdeFila(asignacionId: string) {
+    proyectar({ asignacionId });
+    abrirPantalla(false);
+    setIrAlMando(true);
   }
 
   const porId = useMemo(() => new Map(preguntas.map((p) => [p.id, p])), [preguntas]);
@@ -652,8 +730,36 @@ export default function PreguntasGrupoPage() {
     const asignacion = cita?.asignacionId
       ? alumno?.asignaciones.find((x) => x.id === cita.asignacionId) ?? null
       : null;
-    return { inicio: h.inicio, cita, alumno, asignacion };
+    return { inicio: h.inicio, cita, alumno, asignacion, cerrado: h.cerrado };
   }), [dia, alumnos]);
+
+  /**
+   * Qué hay en cada hueco `alumnoId::competenciaId::intento`: su cita y lo que
+   * entregó.
+   *
+   * Sale de las CITAS y no de una consulta aparte: la evidencia cuelga de la
+   * cita, y la cita ya sabe de qué competencia y qué intento es. Así el modal de
+   * notas —que va por (competencia, intento)— encuentra sin pedir nada más
+   * tanto las evidencias como la HORA, que es lo que dice si ese intento ya
+   * pasó.
+   */
+  const porHueco = useMemo(() => {
+    const mapa = new Map<string, {
+      inicio: string; duracionSegundos: number; evidencias: Evidencia[];
+    }>();
+    for (const dia of agenda?.dias ?? []) {
+      for (const h of dia.huecos) {
+        const c = h.cita;
+        if (!c?.alumno || !c.competencia) continue;
+        mapa.set(`${c.alumno.id}::${c.competencia.id}::${c.intento}`, {
+          inicio: h.inicio,
+          duracionSegundos: dia.duracionSegundos,
+          evidencias: c.evidencias,
+        });
+      }
+    }
+    return mapa;
+  }, [agenda]);
 
   /**
    * Los bloques agrupados por FECHA.
@@ -688,6 +794,35 @@ export default function PreguntasGrupoPage() {
     () => porFecha.find((f) => f.bloques.some((d) => d.id === diaActivo)) ?? porFecha[0] ?? null,
     [porFecha, diaActivo],
   );
+
+  /**
+   * Reorganizar el día arrastrando, sobre la propia tabla.
+   *
+   * Antes esto era un diálogo con dos desplegables —día y hora— y había que
+   * saber de memoria qué hueco estaba libre. Aquí se arrastra a alguien a su
+   * hora nueva sobre la misma tabla que se está leyendo, que es donde el
+   * profesor ya tiene los ojos el día de las entrevistas.
+   *
+   * La zona de destino es el instante del hueco. Los chips de los días también
+   * son zona: soltar a alguien encima lo manda a ese día, a su primer hueco
+   * libre, y la vista salta allí para poder colocarlo a la hora exacta.
+   */
+  const cuerpoAgenda = useRef<HTMLDivElement>(null);
+  const { iniciar, arrastrando, posicion, zona } = useArrastre<CitaProfesor>({
+    alSoltar: (cita, destino) => {
+      if (asignandoCita) return;
+      if (destino.startsWith(ZONA_DIA)) {
+        const otro = (agenda?.dias ?? []).find((d) => d.id === destino.slice(ZONA_DIA.length));
+        const libre = otro?.huecos.find((h) => !h.cita);
+        if (!otro || !libre) return;
+        void moverCita(cita.id, otro.id, libre.inicio);
+        return;
+      }
+      if (!dia || destino === cita.inicio) return;
+      void moverCita(cita.id, dia.id, destino);
+    },
+    contenedor: cuerpoAgenda,
+  });
 
   /** Las horas del día que siguen libres, para poder ofrecerlas a mano. */
   const libresDelDia = useMemo(
@@ -770,6 +905,36 @@ export default function PreguntasGrupoPage() {
       .find((a) => a.id === proyeccion?.asignacionId) ?? null,
     [alumnos, proyeccion],
   );
+
+  /**
+   * Trae a la vista el día elegido.
+   *
+   * La tira se desplaza por dentro y con nueve fechas no caben todas: el que se
+   * elige solo puede quedar fuera, y entonces parece que no hay ninguno puesto.
+   * Con `nearest` no hace nada si ya se veía, así que picar uno no da tirones.
+   */
+  useEffect(() => {
+    tiraDias.current
+      ?.querySelector<HTMLElement>('[data-activo]')
+      ?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+    // `vista` entra en la cuenta porque la tira solo existe en la agenda: al
+    // entrar por otra pestaña, el día ya estaba elegido y sin esto el efecto
+    // no llegaba a correr con la tira pintada.
+  }, [diaActivo, vista, porFecha.length]);
+
+  /**
+   * Baja al mando cuando se ha pedido desde una fila.
+   *
+   * No se puede desplazar en el mismo clic: el mando solo existe cuando hay algo
+   * proyectado, y eso llega con la respuesta del servidor. Se deja la petición
+   * apuntada y se atiende en cuanto el mando está pintado.
+   */
+  useEffect(() => {
+    if (!irAlMando || !mandoRef.current) return;
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    mandoRef.current.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'center' });
+    setIrAlMando(false);
+  }, [irAlMando, proyeccion?.asignacionId]);
 
   /** Salta a la pregunta de al lado en el orden en que se ve la tabla. */
   function moverProyeccion(paso: number) {
@@ -931,6 +1096,34 @@ export default function PreguntasGrupoPage() {
     }
   }
 
+  /**
+   * El enlace que el alumno ve como «Manual de competencias».
+   *
+   * Va por el MISMO endpoint que el tiempo —los dos son configuración del módulo
+   * en este grupo— y manda solo su campo, así que guardar uno no pisa el otro.
+   */
+  async function guardarManual() {
+    setGuardandoManual(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/preguntas/configuracion`, {
+        method: 'PUT',
+        headers,
+        // Vacío = quitar el manual; el alumno deja de ver el enlace.
+        body: JSON.stringify({ manualUrl: manualBorrador.trim() }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message || 'Error al guardar el manual');
+      }
+      setEditandoManual(false);
+      await fetchTodo();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'Error al guardar el manual'));
+    } finally {
+      setGuardandoManual(false);
+    }
+  }
+
   async function guardarDuracion() {
     const crudo = duracionBorrador.trim();
     try {
@@ -1062,7 +1255,7 @@ export default function PreguntasGrupoPage() {
    */
   const mando = proyeccion?.asignacionId && enPantalla ? (
 
-          <div className={styles.mando}>
+          <div className={styles.mando} ref={mandoRef}>
             <div className={styles.mandoQuien}>
               <span className={styles.mandoNombre}>{proyeccion.alumno?.name}</span>
               <span className={styles.mandoCompetencia}>
@@ -1111,20 +1304,16 @@ export default function PreguntasGrupoPage() {
               {/* Ir a cualquiera sin pasar por los de en medio. Las flechas
                   sirven para el día seguido; esto, para cuando alguien pide su
                   turno antes o llega tarde y hay que rescatarlo. */}
-              <select
-                className={styles.mandoSalto}
-                value={indiceProyectado}
-                disabled={paraProyectar.length === 0 || mandando !== null}
-                onChange={(e) => irAProyeccion(Number(e.target.value))}
-                title="Saltar a cualquiera de la lista"
-              >
-                {indiceProyectado < 0 && <option value={-1}>Elige a quién proyectar…</option>}
-                {paraProyectar.map((x, i) => (
-                  <option key={x.asignacion.id} value={i}>
-                    {x.pista} · {x.alumno.name}
-                  </option>
-                ))}
-              </select>
+              <SaltoProyeccion
+                opciones={paraProyectar.map((x) => ({
+                  id: x.asignacion.id,
+                  nombre: x.alumno.name,
+                  pista: x.pista,
+                }))}
+                indice={indiceProyectado}
+                deshabilitado={mandando !== null}
+                onElegir={irAProyeccion}
+              />
 
               {/* El botón dice lo que está pasando mientras pasa: la pantalla que
                   cambia está en otro aparato y el profesor no la tiene delante. */}
@@ -1159,7 +1348,7 @@ export default function PreguntasGrupoPage() {
                 <Icon name="restart_alt" size="sm" />
               </button>
 
-              <button className={styles.iconBtn} onClick={abrirPantalla} title="Abrir o traer al frente la pantalla proyectada">
+              <button className={styles.iconBtn} onClick={() => abrirPantalla()} title="Abrir o traer al frente la pantalla proyectada">
                 <Icon name="open_in_new" size="sm" />
               </button>
               <button
@@ -1275,6 +1464,60 @@ export default function PreguntasGrupoPage() {
           </div>
           <span className={styles.contador}>{llenos} de {totalHuecos} asignadas</span>
         </div>
+
+        {/* El manual del grupo, debajo del tiempo: los dos son lo mismo —cómo
+            está configurado el módulo aquí— y se tocan una vez al semestre. */}
+        <div className={styles.duracion}>
+          {editandoManual ? (
+            <>
+              <span>Manual de competencias:</span>
+              <input
+                className={styles.manualInput}
+                type="url"
+                autoFocus
+                value={manualBorrador}
+                disabled={guardandoManual}
+                onChange={(e) => setManualBorrador(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void guardarManual();
+                  if (e.key === 'Escape') setEditandoManual(false);
+                }}
+                placeholder="https://… el documento que el alumno tiene que leerse"
+              />
+              <button className={styles.enlaceBtn} disabled={guardandoManual} onClick={() => void guardarManual()}>
+                {guardandoManual ? 'Guardando…' : 'Guardar'}
+              </button>
+              <button className={styles.enlaceBtn} disabled={guardandoManual} onClick={() => setEditandoManual(false)}>
+                Cancelar
+              </button>
+            </>
+          ) : (
+            <>
+              <span>
+                <Icon name="menu_book" size="sm" /> Manual de competencias:{' '}
+                {manualUrl ? (
+                  <a
+                    className={styles.manualEnlace}
+                    href={manualUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {manualUrl}
+                  </a>
+                ) : (
+                  <span className={styles.duracionFuente}>sin poner</span>
+                )}
+              </span>
+              <button
+                className={styles.enlaceBtn}
+                onClick={() => { setManualBorrador(manualUrl); setEditandoManual(true); }}
+                title="El enlace que el alumno ve al agendar su entrevista"
+              >
+                {manualUrl ? 'editar' : 'poner'}
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {error && <div className={styles.error} onClick={() => setError('')}>{error}</div>}
@@ -1364,45 +1607,37 @@ export default function PreguntasGrupoPage() {
                   Aquí caben todas en una, y el nombre del día va entero porque
                   lo que se busca es «el martes», no «el 8». */}
               {porFecha.length > 0 && (
-                <div className={styles.tiraDia}>
+                <div className={styles.tiraDia} ref={tiraDias}>
                   {porFecha.map((f) => {
-                    // En modo selección la casilla del día resume sus bloques:
-                    // marcarla es marcarlos todos, que es como se cierra una
-                    // semana entera de una vez.
-                    const marcados = f.bloques.filter((d) => seleccion.has(d.id)).length;
-                    const todos = marcados === f.bloques.length;
                     const activa = fechaActiva?.clave === f.clave;
                     return (
                       <button
                         key={f.clave}
-                        className={`${styles.chip} ${styles.chipDia} ${(enSeleccion ? marcados > 0 : activa) ? styles.chipActivo : ''}`}
+                        data-activo={activa || undefined}
+                        // Soltar a alguien encima lo manda a ese día. Solo con
+                        // UN horario: con varios no hay respuesta a «a cuál».
+                        data-zona={arrastrando && f.bloques.length === 1
+                          ? `${ZONA_DIA}${f.bloques[0].id}`
+                          : undefined}
+                        className={[
+                          styles.chip,
+                          styles.chipDia,
+                          activa ? styles.chipActivo : '',
+                          arrastrando && f.bloques.length === 1 ? styles.chipSoltable : '',
+                          zona === `${ZONA_DIA}${f.bloques[0].id}` ? styles.chipDestino : '',
+                        ].filter(Boolean).join(' ')}
                         onClick={() => {
-                          if (!enSeleccion) { setDiaActivo(f.bloques[0].id); return; }
-                          setSeleccion((s) => {
-                            const siguiente = new Set(s);
-                            for (const d of f.bloques) {
-                              if (todos) siguiente.delete(d.id);
-                              else siguiente.add(d.id);
-                            }
-                            return siguiente;
-                          });
+                          elegidoAMano.current = true;
+                          setDiaActivo(f.bloques[0].id);
                         }}
                         title={f.bloques.length === 1
                           ? rangoHoras(f.bloques[0].inicio, f.bloques[0].fin)
                           : `${f.bloques.length} bloques`}
                       >
-                        {enSeleccion && (
-                          <Icon
-                            name={todos
-                              ? 'check_box'
-                              : marcados > 0 ? 'indeterminate_check_box' : 'check_box_outline_blank'}
-                            size="sm"
-                          />
-                        )}
                         {f.etiqueta}
                         <span className={styles.chipContador}>{f.citas}/{f.huecos}</span>
                         {f.bloques.length > 1 && (
-                          <span className={styles.chipContador}>· {f.bloques.length} bloques</span>
+                          <span className={styles.chipContador}>· {f.bloques.length} horarios</span>
                         )}
                       </button>
                     );
@@ -1415,48 +1650,27 @@ export default function PreguntasGrupoPage() {
                   dice nada. */}
               {fechaActiva && fechaActiva.bloques.length > 1 && (
                 <div className={styles.tiraDia}>
-                  {fechaActiva.bloques.map((d) => {
-                    const marcado = seleccion.has(d.id);
-                    return (
+                  {fechaActiva.bloques.map((d) => (
                       <button
                         key={d.id}
-                        className={`${styles.chip} ${styles.chipBloque} ${(enSeleccion ? marcado : diaActivo === d.id) ? styles.chipActivo : ''}`}
+                        className={`${styles.chip} ${styles.chipBloque} ${diaActivo === d.id ? styles.chipActivo : ''}`}
                         onClick={() => {
-                          if (!enSeleccion) { setDiaActivo(d.id); return; }
-                          setSeleccion((s) => {
-                            const siguiente = new Set(s);
-                            if (siguiente.has(d.id)) siguiente.delete(d.id);
-                            else siguiente.add(d.id);
-                            return siguiente;
-                          });
+                          elegidoAMano.current = true;
+                          setDiaActivo(d.id);
                         }}
                         title={d.nota || rangoHoras(d.inicio, d.fin)}
                       >
-                        {enSeleccion && (
-                          <Icon name={marcado ? 'check_box' : 'check_box_outline_blank'} size="sm" />
-                        )}
                         {rangoHoras(d.inicio, d.fin)}
                         <span className={styles.chipContador}>
                           {d.huecos.filter((h) => h.cita).length}/{d.huecos.length}
                         </span>
                         {d.cerrado && <Icon name="lock" size="sm" />}
                       </button>
-                    );
-                  })}
+                  ))}
                 </div>
               )}
             </div>
             <div className={styles.acciones}>
-              <DashButton
-                variant="outline"
-                onClick={() => {
-                  setEnSeleccion((v) => !v);
-                  setSeleccion(new Set());
-                }}
-                title="Cerrar, reabrir o borrar varios bloques a la vez"
-              >
-                <Icon name="checklist" size="sm" /> {enSeleccion ? 'Salir' : 'Seleccionar'}
-              </DashButton>
               <DashButton variant="outline" onClick={() => setCreandoDia(true)}>
                 <Icon name="add" size="sm" /> Abrir días
               </DashButton>
@@ -1482,40 +1696,12 @@ export default function PreguntasGrupoPage() {
 
           {mando}
 
-          {enSeleccion && (
-            /* Actuar sobre varios bloques a la vez. Aparece solo en modo
-               selección: fuera de él, ocupar sitio con mandos apagados es ruido
-               en la pantalla que se mira el día de las entrevistas. */
-            <div className={styles.barraLote}>
-              <span className={styles.loteCuenta}>
-                {seleccion.size === 0
-                  ? 'Marca los bloques que quieras cambiar'
-                  : `${seleccion.size} bloque${seleccion.size === 1 ? '' : 's'} seleccionado${seleccion.size === 1 ? '' : 's'}`}
-              </span>
-              <div className={styles.loteAcciones}>
-                <button
-                  className={styles.loteBtn}
-                  disabled={seleccion.size === 0 || guardandoDias}
-                  onClick={() => void cambiarSeleccion(true)}
-                >
-                  <Icon name="lock" size="sm" /> Cerrar reservas
-                </button>
-                <button
-                  className={styles.loteBtn}
-                  disabled={seleccion.size === 0 || guardandoDias}
-                  onClick={() => void cambiarSeleccion(false)}
-                >
-                  <Icon name="lock_open" size="sm" /> Reabrir
-                </button>
-                <button
-                  className={`${styles.loteBtn} ${styles.loteBtnPeligro}`}
-                  disabled={seleccion.size === 0 || guardandoDias}
-                  onClick={() => void borrarSeleccion()}
-                >
-                  <Icon name="delete" size="sm" /> Borrar
-                </button>
-              </div>
-            </div>
+          {movida && !arrastrando && (
+            /* Mover a alguien lo saca de donde estaba: si el destino quedó
+               fuera de lo que se ve, el cambio no se nota. Se dice. */
+            <p className={styles.movida} role="status">
+              <Icon name="check_circle" size="sm" /> {movida}
+            </p>
           )}
 
           {dia && (
@@ -1550,6 +1736,15 @@ export default function PreguntasGrupoPage() {
                 </span>
               </div>
 
+              {/* La tabla se desplaza DENTRO de su caja, y no la página.
+                  Mientras se arrastra la lista se abre a los cuarenta y ocho
+                  huecos: sin un contenedor propio, la página crecería de golpe
+                  y el hook no tendría qué desplazar al llegar al borde —llevar
+                  a alguien de las 10:30 a las 12:55 sería imposible sin soltar. */}
+              <div
+                className={`${styles.cuerpoAgenda} ${arrastrando ? styles.cuerpoEnArrastre : ''}`}
+                ref={cuerpoAgenda}
+              >
               <table className={styles.tabla}>
                 <thead>
                   {/* Anchos fijos: con un día lleno, dejar que la tabla
@@ -1565,40 +1760,115 @@ export default function PreguntasGrupoPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Los huecos vacíos seguidos se resumen en una fila: un día de
-                      cuatro horas son 48 bloques, y lo que hace falta saber es
-                      dónde hay un respiro y a qué hora se vuelve a empezar. */}
-                  {agruparVacios(filaDelDia, dia.duracionSegundos).map((f) => {
-                    if (f.tipo === 'vacio') {
+                  {/* UNA FILA POR HUECO, sin agrupar los vacíos.
+                      Antes los vacíos seguidos se resumían en «sin entrevistas
+                      hasta las 09:10 · 2 libres». Se lee bien, pero sobre un
+                      resumen no se puede actuar: cerrar las 09:00 y dejar
+                      abiertas las 09:05 no tiene dónde pulsarse. Y cerrar
+                      huecos sueltos es justo lo que el profesor hace —tapar la
+                      comida, el rato de la otra clase—, así que manda eso. */}
+                  {filaDelDia.map((f) => {
+                    if (!f.cita) {
+                      const encima = zona === f.inicio && !f.cerrado;
+                      const yendo = huecosEnVuelo.has(f.inicio);
+                      // Este hueco es el destino de un traslado que va en vuelo.
+                      const recibiendo = moviendo?.destino === f.inicio && moviendo.diaId === dia.id;
                       return (
-                        <tr key={`vacio-${f.desde}`} className={styles.filaVacia}>
-                          <td className={styles.colCorta}>{hora(f.desde)}</td>
+                        <tr
+                          key={`libre-${f.inicio}`}
+                          // Un hueco cerrado no recibe a nadie: soltar ahí sería
+                          // meter una cita en el rato que se acaba de tapar.
+                          data-zona={f.cerrado ? undefined : f.inicio}
+                          className={[
+                            styles.filaVacia,
+                            f.cerrado ? styles.filaCerrada : styles.filaSoltable,
+                            encima || recibiendo ? styles.filaDestino : '',
+                            yendo ? styles.filaEnVuelo : '',
+                          ].filter(Boolean).join(' ')}
+                        >
+                          <td className={styles.colCorta}>
+                            {hora(f.inicio)}
+                            {/* El cierre va al servidor y vuelve. Sin decirlo,
+                                picar tres candados seguidos no da señal de que
+                                los tres entraron y se vuelven a picar. */}
+                            {(yendo || recibiendo)
+                              && <span className={styles.girandoFila} aria-label="Guardando" />}
+                          </td>
+                          {/* Mientras se arrastra, solo el hueco de DEBAJO DEL
+                              PUNTERO dice algo, y dice a quién va a recibir:
+                              cuarenta y ocho filas repitiendo «soltar aquí» son
+                              cuarenta y ocho iguales y no se sabe en cuál se
+                              está. */}
                           <td colSpan={3}>
-                            Sin entrevistas hasta las {hora(f.hasta)}
-                            <span className={styles.huecoCuenta}> · {f.cuantos} libre{f.cuantos === 1 ? '' : 's'}</span>
+                            {/* Soltado ya: el hueco dice a quién está esperando
+                                mientras el servidor contesta. Antes se quedaba
+                                en «libre» y el cambio aparecía de golpe. */}
+                            {recibiendo
+                              ? <span className={styles.destinoAviso}>
+                                  <Icon name="south_east" size="sm" />
+                                  Llegando: {moviendo.quien}…
+                                </span>
+                              : encima
+                              ? <span className={styles.destinoAviso}>
+                                  <Icon name="south_east" size="sm" />
+                                  Aquí: {arrastrando?.alumno?.name}
+                                </span>
+                              : f.cerrado
+                                ? <span className={styles.cerradoAviso}>
+                                    <Icon name="lock" size="sm" /> cerrado
+                                  </span>
+                                : <span className={styles.libreTenue}>libre</span>}
                           </td>
                           <td className={styles.colAcciones}>
-                            {/* La agenda la escriben los alumnos; esto es el
-                                arreglo del día de las entrevistas, y por eso
-                                vive en el hueco vacío y no en una barra aparte:
-                                se pulsa donde se está mirando. */}
-                            <button
-                              className={styles.iconBtn}
-                              onClick={() => setAsignandoEn(f.desde)}
-                              title="Apuntar a alguien en este hueco"
-                            >
-                              <Icon name="person_add" size="sm" />
-                            </button>
+                            {/* Las acciones salen al pasar por encima: con
+                                cuarenta y ocho filas, dos iconos fijos en cada
+                                una tapan la agenda que se está leyendo. El
+                                candado de un hueco cerrado sí se queda: es lo
+                                que explica por qué esa fila está apagada. */}
+                            {!arrastrando && !recibiendo && !f.cerrado && (
+                              <button
+                                className={`${styles.iconBtn} ${styles.accionHover}`}
+                                disabled={yendo}
+                                onClick={() => setAsignandoEn(f.inicio)}
+                                title="Apuntar a alguien en este hueco"
+                              >
+                                <Icon name="person_add" size="sm" />
+                              </button>
+                            )}
+                            {!arrastrando && !recibiendo && (
+                              <button
+                                className={`${styles.iconBtn} ${f.cerrado ? '' : styles.accionHover}`}
+                                disabled={yendo}
+                                onClick={() => void cerrarHueco(dia.id, f.inicio, !f.cerrado)}
+                                title={f.cerrado
+                                  ? 'Volver a ofrecer este hueco'
+                                  : 'Cerrar este hueco: nadie podrá apuntarse a esta hora'}
+                              >
+                                <Icon name={f.cerrado ? 'lock_open' : 'block'} size="sm" />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
                     }
-                    const { inicio, cita, alumno, asignacion } = f.hueco;
+                    const { inicio, cita, alumno, asignacion } = f;
                     const enPantalla = !!asignacion && asignacion.id === proyeccion?.asignacionId;
+                    // Al soltar, `arrastrando` ya se vació: manda `moviendo`.
+                    const viajando = moviendo?.citaId === cita!.id;
                     return (
-                      <tr key={inicio} className={enPantalla ? styles.filaProyectada : ''}>
+                      <tr
+                        key={inicio}
+                        onPointerDown={asignandoCita ? undefined : iniciar(cita!)}
+                        className={[
+                          styles.filaCita,
+                          enPantalla ? styles.filaProyectada : '',
+                          arrastrando?.id === cita!.id || viajando ? styles.filaAtenuada : '',
+                        ].filter(Boolean).join(' ')}
+                        title="Arrástralo para cambiarlo de hora"
+                      >
                         <td className={styles.colCorta}>
                           <strong>{hora(inicio)}</strong>
+                          {viajando && <span className={styles.girandoFila} aria-label="Moviendo" />}
                         </td>
                         <td className={styles.colAlumno}>
                           <span className={styles.alumnoNombre}>{cita!.alumno?.name}</span>
@@ -1624,14 +1894,23 @@ export default function PreguntasGrupoPage() {
                           <button
                             className={`${styles.iconBtn} ${enPantalla ? styles.iconBtnOn : ''}`}
                             disabled={!asignacion}
-                            onClick={() => {
-                              if (!asignacion) return;
-                              proyectar({ asignacionId: asignacion.id });
-                              abrirPantalla();
-                            }}
-                            title="Poner esta pregunta en la pantalla proyectada"
+                            onClick={() => asignacion && proyectarDesdeFila(asignacion.id)}
+                            title="Poner esta pregunta en la pantalla y bajar al mando"
                           >
                             <Icon name="cast" size="sm" />
+                          </button>
+                          {/* Si entregó o no, de un vistazo y sin abrir nada:
+                              es lo primero que se mira al sentarse con alguien.
+                              Encendido = hay evidencias; apagado = no subió. */}
+                          <button
+                            className={`${styles.iconBtn} ${cita!.evidencias.length > 0 ? styles.iconBtnOn : ''}`}
+                            disabled={cita!.evidencias.length === 0}
+                            onClick={() => setEvidenciasDe(cita!)}
+                            title={cita!.evidencias.length > 0
+                              ? `Ver sus ${cita!.evidencias.length} evidencia${cita!.evidencias.length === 1 ? '' : 's'}`
+                              : 'No ha subido evidencias'}
+                          >
+                            <Icon name={cita!.evidencias.length > 0 ? 'attachment' : 'block'} size="sm" />
                           </button>
                           <button
                             className={`${styles.iconBtn} ${alumno?.asignaciones.some((a) => a.nota) ? styles.iconBtnOn : ''}`}
@@ -1640,13 +1919,6 @@ export default function PreguntasGrupoPage() {
                             title="Notas de todos sus intentos"
                           >
                             <Icon name="edit_note" size="sm" />
-                          </button>
-                          <button
-                            className={styles.iconBtn}
-                            onClick={() => setMoviendo(cita!)}
-                            title="Cambiarlo de hueco o de día"
-                          >
-                            <Icon name="swap_horiz" size="sm" />
                           </button>
                           <button
                             className={styles.iconBtn}
@@ -1664,6 +1936,7 @@ export default function PreguntasGrupoPage() {
                   )}
                 </tbody>
               </table>
+              </div>
             </>
           )}
         </>
@@ -1827,14 +2100,11 @@ export default function PreguntasGrupoPage() {
                           <button
                             className={`${styles.iconBtn} ${unica && unica.id === proyeccion?.asignacionId ? styles.iconBtnOn : ''}`}
                             disabled={!unica?.pregunta}
-                            onClick={() => {
-                              if (!unica) return;
-                              // Poner en pantalla es una cosa y arrancar el reloj
-                              // es otra: esto solo la pone, en «por iniciar».
-                              proyectar({ asignacionId: unica.id });
-                              abrirPantalla();
-                            }}
-                            title="Poner esta pregunta en la pantalla proyectada"
+                            // Poner en pantalla es una cosa y arrancar el reloj
+                            // es otra: esto solo la pone, en «por iniciar», y
+                            // lleva al mando, que es donde se arranca.
+                            onClick={() => unica && proyectarDesdeFila(unica.id)}
+                            title="Poner esta pregunta en la pantalla y subir al mando"
                           >
                             <Icon name="cast" size="sm" />
                           </button>
@@ -1968,14 +2238,25 @@ export default function PreguntasGrupoPage() {
       )}
 
       {/* Alumno → pregunta */}
-      {moviendo && (
-        <MoverCitaModal
-          cita={moviendo}
-          dias={agenda?.dias ?? []}
-          guardando={asignandoCita}
-          onMover={moverCita}
-          onCerrar={() => setMoviendo(null)}
-        />
+      {/* La tarjeta que sigue al puntero. Fuera de la tabla para que no la
+          recorte el desplazamiento. */}
+      {arrastrando && posicion && (
+        <div
+          className={styles.fantasma}
+          style={{ transform: `translate(${posicion.x}px, ${posicion.y}px)` }}
+        >
+          <span className={styles.fantasmaNombre}>{arrastrando.alumno?.name}</span>
+          {/* La hora de destino viaja con el puntero: mirando la tarjeta ya se
+              sabe dónde va a caer, sin tener que buscar cuál fila está
+              encendida entre cuarenta y ocho. */}
+          <span className={zona ? styles.fantasmaHora : styles.fantasmaFuera}>
+            {zona
+              ? (zona.startsWith(ZONA_DIA)
+                ? '→ a ese día'
+                : `→ ${hora(zona)}`)
+              : 'suelta sobre un hueco libre'}
+          </span>
+        </div>
       )}
 
       {asignandoEn && (
@@ -2009,7 +2290,9 @@ export default function PreguntasGrupoPage() {
             subtitulo={suyas.length >= MAX_INTENTOS
               ? `${nombreCompetencia} · ya tiene sus ${MAX_INTENTOS} intentos. Quita una para poner otra.`
               : `${nombreCompetencia} · lleva ${suyas.length} de ${MAX_INTENTOS}. Lo que elijas entra en el ${destino}.º intento.`}
-            seleccionadas={new Set(suyas.map((a) => a.pregunta?.id).filter((id): id is string => !!id))}
+            asignadas={new Map(suyas
+              .filter((a) => a.pregunta?.id)
+              .map((a) => [a.pregunta!.id, a.intento]))}
             permiteAgregar={suyas.length < MAX_INTENTOS}
             guardando={guardando > 0}
             onAlternar={(p) => {
@@ -2092,15 +2375,46 @@ export default function PreguntasGrupoPage() {
           .filter((h) => h.asignacion));
         return (
           <Modal isOpen onClose={() => setNotasDe(null)} title={`Notas — ${alumno.name}`} wide>
+            <div className={styles.notasBarra}>
+              <button
+                type="button"
+                className={styles.notasTapar}
+                onClick={() => setPendientesVisibles((v) => !v)}
+                title={pendientesVisibles
+                  ? 'Tapar las preguntas de los intentos que todavía no ha tenido'
+                  : 'Enseñar también las preguntas de los intentos que faltan'}
+              >
+                <Icon name={pendientesVisibles ? 'lock_open' : 'lock'} size="sm" />
+                {pendientesVisibles ? 'Ocultar lo que falta' : 'Ver lo que falta'}
+              </button>
+              <button
+                type="button"
+                className={styles.notasTapar}
+                onClick={() => setNotasVisibles((v) => !v)}
+                title={notasVisibles
+                  ? 'Tapar las notas: el enunciado se lee entero'
+                  : 'Volver a enseñar las notas'}
+              >
+                <Icon name={notasVisibles ? 'visibility_off' : 'visibility'} size="sm" />
+                {notasVisibles ? 'Ocultar notas' : 'Ver notas'}
+              </button>
+            </div>
             {huecos.length === 0 ? (
               <p className={styles.hint}>Todavía no tiene ninguna pregunta asignada.</p>
             ) : (
               <div className={styles.notasLista}>
-                {huecos.map(({ competencia, intento, asignacion }) => (
+                {huecos.map(({ competencia, intento, asignacion }) => {
+                  const suHueco = porHueco.get(`${alumno.id}::${competencia.id}::${intento}`);
+                  // Con el reloj del SERVIDOR: el del profesor puede ir
+                  // adelantado, y de eso depende si se enseña la pregunta.
+                  const terminado = intentoTerminado(
+                    suHueco, new Date(ahora + desfaseRef.current),
+                  );
+                  return (
                   <div key={asignacion!.id} className={styles.notaBloque}>
                     <div className={styles.notaCabecera}>
                       <span className={styles.competenciaTag}>{competencia.nombre}</span>
-                      <span className={styles.historialIntento}>{intento}.º intento</span>
+                      <TagIntento intento={intento} />
                       {asignacion!.usada && <span className={styles.libreTag}>ya preguntada</span>}
                       {asignacion!.id === proyeccion?.asignacionId && (
                         <span className={styles.tomadaTag}>
@@ -2108,29 +2422,75 @@ export default function PreguntasGrupoPage() {
                         </span>
                       )}
                     </div>
-                    <p className={styles.notaEnunciado}>
-                      {asignacion!.pregunta ? resumenPregunta(asignacion!.pregunta.texto, 160) : '—'}
-                    </p>
-                    <NotaInline
-                      key={asignacion!.id}
-                      valor={asignacion!.nota}
-                      deshabilitado={!!asignacion!.pendiente}
-                      className={styles.notaAncha}
-                      lineas={3}
-                      placeholder="Qué respondió, en qué insistir…"
-                      onGuardar={(nota) => actualizar(asignacion!.id, { nota })}
-                    />
+                    {/* Entero, sin cortar: recortado a 160 no se sabe qué se
+                        le preguntó, que es justo lo que se viene a mirar. Pero
+                        solo si ese intento YA PASÓ o se pidió verlo todo: la
+                        pregunta de una entrevista que aún no ha ocurrido se le
+                        estaría adelantando al alumno que está mirando. */}
+                    {terminado || pendientesVisibles ? (
+                      <p className={styles.notaEnunciado}>
+                        {asignacion!.pregunta ? asignacion!.pregunta.texto : '—'}
+                      </p>
+                    ) : (
+                      <p className={styles.pendienteAviso}>
+                        <Icon name="lock" size="sm" />
+                        {suHueco
+                          ? `Todavía no le toca: ${fechaYHora(suHueco.inicio)}`
+                          : 'Todavía no ha agendado este intento'}
+                      </p>
+                    )}
+                    {/* Las evidencias, DENTRO del intento y no en filas aparte:
+                        pertenecen a esta entrevista, y una fila por enlace
+                        haría del modal una lista interminable. Se enseñan
+                        siempre: son del alumno, no hay nada que adelantarle. */}
+                    {(suHueco?.evidencias.length ?? 0) > 0 && (
+                      <ListaEvidencias evidencias={suHueco!.evidencias} />
+                    )}
+                    {notasVisibles && (
+                      <NotaInline
+                        key={asignacion!.id}
+                        valor={asignacion!.nota}
+                        deshabilitado={!!asignacion!.pendiente}
+                        className={styles.notaAncha}
+                        lineas={3}
+                        placeholder="Qué respondió, en qué insistir…"
+                        onGuardar={(nota) => actualizar(asignacion!.id, { nota })}
+                      />
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             <p className={styles.hint}>
-              Se guardan al salir del campo. Solo las ves tú: no se proyectan ni afectan a la
-              calificación.
+              {notasVisibles
+                ? 'Se guardan al salir del campo. Solo las ves tú: no se proyectan ni afectan a la calificación.'
+                : 'Notas ocultas. Los enlaces son lo que entregó el alumno.'}
+              {!pendientesVisibles
+                && ' Un intento cuenta como hecho cuando tuvo cita y ya pasó su hora.'}
             </p>
           </Modal>
         );
       })()}
+
+      {/* Lo que entregó para ESA entrevista. Se abre desde su fila, para no
+          tener que buscarlo en el modal de notas con el alumno sentado. */}
+      {evidenciasDe && (
+        <Modal
+          isOpen
+          onClose={() => setEvidenciasDe(null)}
+          title={`Evidencias — ${evidenciasDe.alumno?.name ?? ''}`}
+        >
+          <p className={styles.hint}>
+            {evidenciasDe.competencia?.nombre ?? 'Sin competencia'} · {evidenciasDe.intento}.º intento
+            {' · '}{hora(evidenciasDe.inicio)}
+          </p>
+          <ListaEvidencias
+            evidencias={evidenciasDe.evidencias}
+            vacio="No ha subido ninguna evidencia para esta entrevista."
+          />
+        </Modal>
+      )}
 
       <Modal
         isOpen={historialDe !== null}

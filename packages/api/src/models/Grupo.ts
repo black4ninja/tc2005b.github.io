@@ -137,6 +137,22 @@ export class Grupo extends BaseModel {
   }
 
   /**
+   * El «manual de competencias» del grupo: un enlace a lo que el alumno tiene
+   * que leer antes de venir a la entrevista.
+   *
+   * Por grupo y no por módulo porque el documento cambia con la materia y con el
+   * semestre. Vacío = no hay manual y el alumno no ve ningún enlace, que es como
+   * están todos los grupos hoy.
+   */
+  getPreguntasManualUrl(): string {
+    return this.get('preguntasManualUrl') ?? '';
+  }
+  setPreguntasManualUrl(url: string): void {
+    if (!url) this.unset('preguntasManualUrl');
+    else this.set('preguntasManualUrl', url);
+  }
+
+  /**
    * Campos del perfil del alumno que ESTE grupo no pide. Ausente o vacío = los
    * pide todos, que es el comportamiento de siempre (cero migración).
    *
@@ -184,6 +200,7 @@ export class Grupo extends BaseModel {
       // habilitado). Vacío = todo habilitado.
       modulosDeshabilitados: this.getModulosDeshabilitados(),
       preguntasDuracionSegundos: this.getPreguntasDuracionSegundos() ?? null,
+      preguntasManualUrl: this.getPreguntasManualUrl(),
       // Campos del perfil que este grupo NO pide (vacío = los pide todos).
       camposPerfilDeshabilitados: this.getCamposPerfilDeshabilitados(),
       active: this.get('active'),

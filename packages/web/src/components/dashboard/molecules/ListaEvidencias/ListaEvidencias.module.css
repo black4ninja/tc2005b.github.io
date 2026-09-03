@@ -1,0 +1,68 @@
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Filas bajas: en el modal de notas van dentro de cada intento, y si cada
+   evidencia pesa como una fila de tabla el modal se va de alto. */
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 3px 6px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.fila:hover { background: var(--dash-bg-subtle); }
+
+.filaEnVuelo { opacity: 0.5; }
+
+.enlace {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--sidebar-active-color);
+  text-decoration: none;
+}
+
+.enlace:hover { text-decoration: underline; }
+
+.competencia {
+  flex: none;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.quitar {
+  display: inline-flex;
+  flex: none;
+  padding: 2px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.quitar:hover:not(:disabled) { background: var(--estado-error-bg); color: var(--estado-error-color); }
+.quitar:disabled { opacity: 0.4; cursor: default; }
+
+.vacio {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}

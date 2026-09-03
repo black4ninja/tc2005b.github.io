@@ -836,51 +836,6 @@
 .tiraDia::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* Actuar sobre varios bloques a la vez. */
-.barraLote {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
-  flex-wrap: wrap;
-  padding: 10px 14px;
-  border: 1px solid var(--sidebar-active-color);
-  border-radius: var(--border-radius);
-  background: var(--bg-card);
-}
-
-.loteCuenta { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
-
-.loteAcciones {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-}
-
-.loteBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.loteBtn:hover:not(:disabled) { color: var(--text-primary); border-color: var(--text-muted); }
-.loteBtn:disabled { opacity: 0.45; cursor: default; }
-
-.loteBtnPeligro {
-  border-color: var(--estado-error-border);
-  background: var(--estado-error-bg);
-  color: var(--estado-error-color);
-}
-
 .diaCabecera {
   display: flex;
   align-items: center;
@@ -992,20 +947,270 @@
   margin-top: var(--space-md);
 }
 
-/* El salto a cualquiera de la fila. Va entre las flechas y los mandos del
-   reloj: es la misma familia —a quién se está enseñando— y no una acción sobre
-   la pantalla. Ancho corto y con recorte: los nombres largos no pueden empujar
-   los botones que se pulsan a oscuras. */
-.mandoSalto {
-  max-width: 190px;
-  padding: 5px 8px;
+/* ── Reorganizar el día arrastrando ─────────────────────────────────── */
+
+/* La fila de una cita se agarra y se mueve. Los botones de la derecha siguen
+   pulsándose: el hook ignora el gesto que empieza sobre un control.
+
+   `user-select` apagado: arrastrar sobre una tabla llena de texto acababa
+   pintando de azul media pantalla, y encima el navegador se quedaba con el
+   gesto. */
+.filaCita {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.filaCita:active { cursor: grabbing; }
+.filaAtenuada { opacity: 0.3; }
+
+/* Y mientras dura el gesto, en toda la caja: el puntero sale de la fila
+   enseguida y a partir de ahí selecciona lo que pilla. */
+.cuerpoEnArrastre { user-select: none; -webkit-user-select: none; cursor: grabbing; }
+
+/* Cada hueco libre es su propia fila, para poder actuar sobre él. BAJAS y
+   calladas: son cuarenta y ocho, y si cada una grita «libre» el día deja de
+   reconocerse —lo que se busca al mirar la agenda son las citas, y las filas
+   vacías solo tienen que dejarlas verse—. */
+.filaSoltable td,
+.filaCerrada td {
+  padding: 1px 12px;
+  font-size: 0.72rem;
+  font-style: normal;
+  color: var(--text-muted);
+  background: var(--bg-page);
+}
+
+.libreTenue { opacity: 0.5; }
+
+/* Un hueco cerrado: rayado, para que se lea como «aquí no» de un vistazo y no
+   se confunda con uno libre que nadie ha tomado todavía. */
+.filaCerrada td { background: var(--dash-bg-subtle); }
+.filaCerrada td:first-child { text-decoration: line-through; opacity: 0.6; }
+
+/* Mientras su cierre va y vuelve, la fila espera: apagada y con el girador al
+   lado de la hora. Con varios candados picados de golpe, se ve de un vistazo
+   cuáles están por procesarse. */
+.filaEnVuelo td { opacity: 0.55; }
+
+.cerradoAviso {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+/* Las acciones de un hueco libre solo salen al pasar por encima: dos iconos
+   fijos en cuarenta y ocho filas tapan la agenda que se está leyendo. Se
+   quedan si el teclado llega a ellas, que si no, no hay forma de alcanzarlas. */
+.accionHover { opacity: 0; }
+.filaVacia:hover .accionHover,
+.accionHover:focus-visible { opacity: 1; }
+
+@media (hover: none) {
+  /* Sin puntero no hay «pasar por encima»: se ven siempre. */
+  .accionHover { opacity: 1; }
+}
+
+/* El único que habla es el de debajo del puntero, y dice a quién recibe. */
+/* El recuadro del destino se dibuja alrededor de la FILA, no de cada celda.
+   Con un `inset` completo en todas, cada `td` traía sus dos verticales y el
+   hueco quedaba partido en columnas: parecía una tabla dentro de la tabla en vez
+   de una fila señalada. Arriba y abajo en todas; los lados, solo en los
+   extremos. */
+.filaDestino td {
+  padding: 6px 12px;
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 var(--estado-exito-color),
+    inset 0 -1px 0 var(--estado-exito-color);
+}
+
+.filaDestino td:first-child {
+  box-shadow:
+    inset 0 1px 0 var(--estado-exito-color),
+    inset 0 -1px 0 var(--estado-exito-color),
+    inset 1px 0 0 var(--estado-exito-color);
+}
+
+.filaDestino td:last-child {
+  box-shadow:
+    inset 0 1px 0 var(--estado-exito-color),
+    inset 0 -1px 0 var(--estado-exito-color),
+    inset -1px 0 0 var(--estado-exito-color);
+}
+
+.destinoAviso { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Un chip de día también admite soltar: manda a esa fecha, a su primer hueco. */
+.chipSoltable { border-style: dashed; border-color: var(--estado-exito-color); }
+.chipDestino {
+  border-style: solid;
+  border-color: var(--sidebar-active-color);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
+}
+
+/* La cita viaja: hasta que el servidor confirma, su fila lo dice. */
+.girandoFila {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  margin-left: 6px;
+  vertical-align: middle;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--sidebar-active-color);
+  border-radius: 50%;
+  animation: girarFila 700ms linear infinite;
+}
+
+@keyframes girarFila { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .girandoFila { animation-duration: 2s; }
+}
+
+.movida {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--estado-exito-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+  font-size: 0.85rem;
+}
+
+/* Lo que sigue al puntero. Lleva la hora de destino encima: así se sabe dónde
+   va a caer sin apartar la vista para buscar qué fila está encendida. */
+.fantasma {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 10px 0 0 14px;
+  padding: 6px 12px;
+  border: 1px solid var(--sidebar-active-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+}
+
+.fantasmaNombre { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); }
+
+.fantasmaHora {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--estado-exito-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.fantasmaFuera { font-size: 0.72rem; color: var(--text-muted); }
+
+/* La caja que se desplaza mientras se arrastra. Su altura la marca lo que se
+   quiere ver de un día sin perder de vista la barra de arriba. */
+.cuerpoAgenda {
+  max-height: 62vh;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+.cuerpoAgenda .tabla { border: none; border-radius: 0; }
+
+.cuerpoAgenda::-webkit-scrollbar { width: 10px; }
+.cuerpoAgenda::-webkit-scrollbar-track { background: transparent; }
+.cuerpoAgenda::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 999px;
+  border: 2px solid var(--bg-card);
+}
+
+/* La cabecera se queda pegada: con el día abierto a 48 filas, saber qué columna
+   es cuál sin volver arriba. */
+.cuerpoAgenda .tabla th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-card);
+}
+
+/* La barra del modal de notas: tapar lo apuntado deja el enunciado a la vista,
+   que es lo que hace falta con la clase delante o el proyector puesto. */
+.notasBarra {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-sm);
+}
+
+/* El intento que aún no ha pasado: se dice cuándo le toca, en lugar de la
+   pregunta. Que se lea como «todavía no», y no como que falta un dato. */
+.pendienteAviso {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 5px 10px;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+.notasTapar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: var(--bg-card);
-  color: var(--text-primary);
+  background: transparent;
+  color: var(--text-secondary);
   font-family: inherit;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   cursor: pointer;
 }
 
-.mandoSalto:disabled { opacity: 0.5; cursor: default; }
+.notasTapar:hover { color: var(--text-primary); border-color: var(--text-muted); }
+
+/* El manual del grupo, en la misma fila fina que el tiempo. */
+.manualInput {
+  flex: 1;
+  min-width: 240px;
+  max-width: 520px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.manualInput:disabled { opacity: 0.5; }
+
+/* Recortado: una URL de Drive ocupa media pantalla y esta fila es un pie. */
+.manualEnlace {
+  display: inline-block;
+  max-width: 380px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  color: var(--sidebar-active-color);
+}

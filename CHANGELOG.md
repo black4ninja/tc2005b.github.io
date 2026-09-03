@@ -8,12 +8,142 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- **Los días de entrevistas se abren en lote, y un día admite varios bloques.**
+- **La agenda se reorganiza arrastrando, sobre la propia tabla.** Cambiar a un
+  alumno de hora era un diálogo con dos desplegables —día y hora— y había que
+  saber de memoria qué hueco estaba libre. Ahora se arrastra su fila a la hora
+  nueva sobre la misma tabla que se está leyendo. Los huecos libres son líneas
+  finas que solo dicen «libre»: el único que habla es el de debajo del puntero,
+  que dice a quién va a recibir. La tarjeta que sigue al cursor lleva la hora de
+  destino escrita,
+  así que se sabe dónde va a caer sin apartar la vista. Soltar a alguien sobre el
+  chip de otro día lo manda allí, a su primer hueco libre. Al acercar el puntero
+  al borde, la lista se desplaza sola: despacio si apenas se asoma y más rápido
+  cuanto más se le pega, para poder pararse en la fila que se quiere. La fila dice que está viajando mientras el
+  servidor responde, y al terminar se confirma a dónde fue —el destino puede
+  quedar fuera de lo que se ve—.
+- **De qué intento es algo se ve por el color.** La marca de una pregunta
+  asignada decía «asignada» y ya está, pero cada competencia lleva dos
+  entrevistas: con las dos puestas no había forma de saber cuál era la de la
+  primera y cuál la de la segunda sin cerrar el modal. Ahora la marca dice el
+  intento y lo pinta —el primero en verde, el segundo en ámbar, que es como se
+  lee: la última oportunidad—, y es la misma en el selector de preguntas y en el
+  modal de notas.
+
+- **Manual de competencias.** El profesor pone un enlace —debajo del tiempo, en
+  la cabecera del módulo— y el alumno lo ve como «Manual de competencias» justo
+  debajo de las reglas, que es donde está mirando qué hace falta para venir. Es
+  del grupo, porque el documento cambia con la materia y con el semestre; sin
+  poner, el alumno no ve ningún enlace. Solo se admiten enlaces `http(s)`.
+- **El alumno entrega evidencias de su entrevista.** Un enlace a lo que ya tiene
+  hecho —su repositorio, su documento, su vídeo—, igual que en la malla de
+  competencias. Se pone desde su propia cita, y ahí se ve lo que lleva
+  entregado.
+  - **Cancelar o mover no las pierde, y no se traslapan.** No cuelgan del número
+    de intento, que no se guarda en ningún sitio —se deduce del orden de reserva
+    y cambia al cancelar—, sino de la CITA: moverla es el mismo objeto, y
+    renumerarla se lleva sus evidencias con ella, así que lo que se preparó para
+    una entrevista no aparece nunca en la otra. Al cancelar no se borran: se
+    quedan sueltas en su competencia, el alumno las sigue viendo, y vuelven
+    solas a la próxima cita que reserve de esa competencia.
+  - **El profesor ve de un vistazo quién entregó.** Cada fila de la agenda lleva
+    su marca —encendida si hay evidencias, apagada si no subió nada— y se abren
+    en un modal desde la propia fila. En las notas salen dentro de su intento,
+    sin filas nuevas.
+  - Guardadas por `(alumno, competencia)` y no por entrevista, a propósito: son
+    las mismas que la malla de evaluación acabará enseñando, y así el día que se
+    conecte no hace falta otra tabla ni otro endpoint.
+- **Cada hueco de la agenda se puede cerrar por separado.** Cerrar reservas era
+  todo o nada: o el día entero admitía gente o no admitía a nadie. Pero lo que
+  el profesor tapa son ratos sueltos —la comida, el rato en que tiene otra
+  clase—, así que ahora cada hueco libre lleva su candado. Un hueco cerrado
+  desaparece de la lista del alumno y no acepta que le suelten a nadie
+  arrastrando; el profesor lo sigue viendo, tachado, para poder reabrirlo. No se
+  puede cerrar uno que ya tenga una entrevista apuntada: primero se cancela.
+  Se pueden picar varios candados seguidos sin esperar: cada fila se apaga y
+  enseña su girador hasta que el cambio está guardado, así que se ve cuáles
+  están por procesarse, y ninguno se pierde por el camino.
+- **Proyectar desde una fila lleva al mando.** Elegir a quién proyectar y
+  arrancarlo son dos gestos, y el segundo está en el mando, que con un día lleno
+  queda lejos de la fila que se acaba de pulsar: había que ir a buscarlo con el
+  alumno ya sentado. Ahora el botón de proyectar de una fila pone a esa persona
+  en el mando y baja hasta él, listo para darle a «Iniciar». Y ya no salta a la
+  pantalla proyectada: el gesto es «prepara a este y déjame arrancarlo», así que
+  el foco se queda donde está el botón que hay que pulsar.
+- **Buscador en el selector de la proyección.** Era un desplegable nativo que con
+  cuarenta alumnos había que recorrer a ojo. Ahora se escribe, la lista se reduce
+  y se navega con las flechas.
+
+### Fixed
+- **Mover a alguien lo dice en las dos filas mientras se guarda.** El aviso de
+  «se está guardando» colgaba del arrastre, y al soltar el arrastre TERMINA: no
+  llegaba a pintarse ni un fotograma, así que entre el gesto y el cambio no
+  pasaba nada visible. Ahora la fila que suelta se apaga con su girador y la que
+  recibe se marca en verde diciendo a quién espera, hasta que la agenda vuelve
+  del servidor.
+- **El hueco de destino se recuadra entero, sin partirse en columnas.** El
+  recuadro verde se dibujaba en cada celda, así que traía las verticales de cada
+  una: el hueco parecía una tabla dentro de la tabla en vez de una fila
+  señalada. Ahora el borde va alrededor de la fila.
+- **Contraste de la marca de intento en modo oscuro.** Estaba puesta con el
+  color de acento de fondo y texto blanco; en oscuro ese color es el CLARO de la
+  pareja, así que quedaba blanco sobre verde claro: 1,5:1, ilegible. Ahora usa
+  los tokens de estado enteros —fondo, borde y texto—, que están hechos para los
+  dos temas: 9:1 en oscuro y 4,8:1 en claro.
+- **El segundo intento ya no puede caer antes que el primero, ni el mismo día.**
+  El número de intento se deduce del ORDEN DE RESERVA, así que un alumno podía
+  apuntar su «primero» el día 3 y, si quedaban huecos, su «segundo» el día 1: el
+  segundo intento pasaba antes que el primero. Y el mismo día tampoco sirve —dos
+  entrevistas de lo mismo con una hora de diferencia son la misma entrevista
+  repetida, sin tiempo de repasar nada—. Ahora el siguiente intento tiene que
+  ser en un día posterior: el servidor lo rechaza y la pantalla del alumno ya no
+  ofrece esa competencia, diciendo qué día tiene la otra. La regla no alcanza al
+  profesor, que apunta a mano para arreglar el día de las entrevistas.
+
+### Removed
+- **El modo «Seleccionar» de la agenda.** Era un botón que encendía casillas en
+  los chips de arriba para cerrar, reabrir o borrar varios horarios de una vez,
+  y no se entendía qué prometía: ni qué se marcaba, ni dónde. Cada día conserva
+  sus botones de cerrar y borrar, y lo que se pedía de verdad —cerrar un rato
+  suelto— ahora se hace en el propio hueco.
+
+### Changed
+- **El modal de notas: enunciado entero, y dos cosas que se pueden tapar.** La
+  pregunta se cortaba a 160 caracteres, que es justo lo que no deja saber qué se
+  le preguntó. Y hay dos botones, porque el modal se le enseña al alumno para
+  darle la retroalimentación:
+  - **Ocultar notas**, que son del profesor y no tienen por qué verse con la
+    clase delante o el proyector puesto.
+  - **Ocultar lo que falta**: tapa la pregunta de los intentos que TODAVÍA NO
+    HAN PASADO, dejando la competencia y las evidencias. Un intento cuenta como
+    hecho cuando tuvo cita y ya se cerró la hora que le tocaba, así que con el
+    primero el 2 y el segundo el 4, el día 3 solo se ve el del 2. Sin esto, al
+    abrir el modal se le adelantaba al alumno la pregunta de su siguiente
+    entrevista.
+- **El día que se abre por defecto se recalcula, y se trae a la vista.** La
+  regla no cambia —el más próximo que no haya TERMINADO, por hora: un día de 9 a
+  11 a las diez de la noche ya pasó aunque siga siendo hoy—, pero antes se
+  decidía solo al abrir la página. Con la pestaña abierta toda la mañana, el día
+  se acababa y la agenda se quedaba en él. Ahora se vuelve a decidir en cada
+  recarga mientras el profesor no haya picado un día; en cuanto pica uno, manda
+  el suyo. Y la tira se desplaza para enseñar el día elegido: con nueve fechas no
+  caben todas, y el elegido podía quedar fuera.
+- **La agenda enseña un hueco por fila, sin agrupar los vacíos.** Los libres
+  seguidos se resumían en «sin entrevistas hasta las 09:10 · 2 libres». Se lee
+  bien, pero sobre un resumen no se puede actuar: cerrar las 09:00 y dejar
+  abiertas las 09:05 no tiene dónde pulsarse. Las filas vacías son bajas y
+  calladas, y sus acciones salen al pasar por encima.
+- **«Bloques» pasa a llamarse «horarios» en pantalla.** Dentro se llamaban
+  bloques y fuera también, pero para quien lo usa un bloque no es nada: lo que
+  abre son horarios.
+- **Los días de entrevistas se abren en lote, picándolos en un calendario.**
   Montar un mes de entrevistas era abrir el modal treinta veces: una fecha y una
-  franja por vez. Ahora se pide un rango de fechas y una lista de **bloques**,
-  cada uno con sus propios días de la semana y su horario —«de lunes a jueves de
-  9 a 11» y, además, «de martes a viernes de 4 a 6»—. Una **vista previa** dice
-  exactamente qué se va a crear antes de pulsar.
+  franja por vez. Ahora se abre un calendario, se pican los días que se quieran
+  —el 7, el 8, el 9— y se les pone su horario; y se pueden añadir tantos
+  **horarios** como haga falta, cada uno con sus propios días y sus propias
+  horas: «el 7, 8 y 9 de 9 a 11» y, además, «el 16 y el 17 de 4 a 6». Un mismo
+  día admite varios horarios. Una **vista previa** dice exactamente qué se va a
+  crear antes de pulsar, y marca lo que se salta por estar ya abierto o por
+  pisarse con otro.
 - **Administrar los días en lote.** La barra pasa a dos niveles: primero una tira
   horizontal con los DÍAS —con el nombre entero, «lunes 7 de sep», porque lo que
   se busca es «el martes» y no «el 8»— y, solo cuando el día elegido tiene más de
@@ -82,6 +212,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   - Tope de cinco partidas vivas por alumno y ocho personas por partida.
 
 ### Fixed
+- **Mover a un alumno de hueco le cambiaba el número de intento, y con él la
+  pregunta que le tocaba.** El intento se deducía del orden por HORA de sus
+  citas, así que adelantar su primera entrevista después de la segunda las
+  intercambiaba. Reasignar es cambiar de sitio y nada más. Ahora el orden es el
+  de RESERVA: mover no toca las oportunidades de nadie, y cancelar la primera
+  sigue ascendiendo a la que queda, que era la razón de calcularlo al leer.
 - **Nada impedía abrir dos días de entrevistas que se pisaran.** Dos bloques
   solapados parten las mismas horas dos veces, así que el hueco de las 10:00
   existía por duplicado: dos alumnos lo veían libre, los dos lo reservaban y solo

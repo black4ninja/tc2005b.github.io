@@ -105,19 +105,76 @@ export function huecosDelDia(inicio: Date, fin: Date, duracionSegundos: number):
   return huecos;
 }
 
+/** Caché de formateadores de fecha, por el mismo motivo que el de días. */
+const CLAVE_DIA = new Map<string, Intl.DateTimeFormat>();
+
+/** `2026-09-03`: qué día del calendario del curso es ese instante. */
+export function claveDia(momento: Date, zona = ZONA_CURSO): string {
+  let f = CLAVE_DIA.get(zona);
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-CA', {
+      timeZone: zona, year: 'numeric', month: '2-digit', day: '2-digit',
+    });
+    CLAVE_DIA.set(zona, f);
+  }
+  return f.format(momento);
+}
+
 /**
- * En qué intento va cada cita de un alumno en una competencia: la más temprana
- * es el 1.º y así.
+ * Si una entrevista nueva puede ir en ese hueco, habiendo ya estas otras de la
+ * MISMA competencia.
+ *
+ * Tiene que caer en un día POSTERIOR a todas ellas. Dos motivos, y los dos
+ * salen de para qué es el segundo intento:
+ *
+ *  - El mismo día no sirve: entre una y otra hay que poder repasar lo que
+ *    salió mal, y dos entrevistas de lo mismo con una hora de diferencia son
+ *    la misma entrevista repetida.
+ *  - Y antes, menos: el número de intento se deduce del ORDEN DE RESERVA, así
+ *    que quedaba abierto agendar el «primero» el día 3 y el «segundo» el día 1.
+ *    El segundo intento pasaba antes que el primero, que es justo lo que no
+ *    quiere decir «segundo».
+ */
+export function puedeSerOtroIntento(
+  previas: Date[],
+  candidato: Date,
+  zona = ZONA_CURSO,
+): boolean {
+  const dia = claveDia(candidato, zona);
+  return previas.every((p) => claveDia(p, zona) < dia);
+}
+
+/**
+ * Si un hueco admite reservas del alumno.
+ *
+ * Manda el hueco: cerrar uno suelto es lo que el profesor usa de verdad —tapar
+ * la hora de la comida, el rato en que tiene clase—, y cerrar el día entero es
+ * el caso raro. Cerrado el día, lo están todos sus huecos; abierto, solo los que
+ * no se hayan cerrado a mano.
+ */
+export function huecoAbierto(diaCerrado: boolean, cerrados: string[], inicio: Date): boolean {
+  return !diaCerrado && !cerrados.includes(inicio.toISOString());
+}
+
+/**
+ * En qué intento va cada cita de un alumno en una competencia: la que APARTÓ
+ * primero es el 1.º y así.
  *
  * Se calcula al leer y no se guarda a propósito. Si el alumno cancela su primera
  * cita, la que le queda pasa a ser la primera —y le toca la primera pregunta—,
  * que es lo que espera cualquiera; con el número guardado se quedaría en un
  * segundo intento sin haber tenido el primero.
+ *
+ * Pero el orden es el de RESERVA, no el de la hora. Ordenando por hora, cambiar
+ * a alguien de sitio le renumeraba los intentos: pasar su primera entrevista
+ * después de la segunda las intercambiaba, y con ellas las preguntas que le
+ * tocaban. Mover a alguien de hueco es cambiarlo de sitio y nada más; el
+ * profesor lo hace mirando su agenda del día, no las oportunidades de nadie.
  */
-export function numerarIntentos<T extends { inicio: Date; id?: string }>(citas: T[]): Map<string, number> {
+export function numerarIntentos<T extends { creada: Date; id?: string }>(citas: T[]): Map<string, number> {
   const orden = [...citas].sort((a, b) => {
-    const d = a.inicio.getTime() - b.inicio.getTime();
-    // Empate por hora: el id desempata para que el número no baile entre cargas.
+    const d = a.creada.getTime() - b.creada.getTime();
+    // Empate: el id desempata para que el número no baile entre cargas.
     return d !== 0 ? d : (a.id ?? '').localeCompare(b.id ?? '');
   });
   return new Map(orden.map((c, i) => [c.id ?? String(i), i + 1]));

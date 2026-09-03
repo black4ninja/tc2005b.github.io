@@ -1,0 +1,27 @@
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* La pareja entera de cada estado: en claro el fondo es pálido y el texto
+   oscuro, y en oscuro al revés. Poniendo el color de acento como FONDO y el
+   texto en blanco, en oscuro queda blanco sobre verde claro y no se lee. */
+.primero {
+  background: var(--estado-exito-bg);
+  border-color: var(--estado-exito-border);
+  color: var(--estado-exito-color);
+}
+
+.segundo {
+  background: var(--estado-aviso-bg);
+  border-color: var(--estado-aviso-border);
+  color: var(--estado-aviso-color);
+}
