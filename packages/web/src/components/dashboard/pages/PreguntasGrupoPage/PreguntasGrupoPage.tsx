@@ -9,6 +9,7 @@ import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta'
 import SelectorAlumno from '../../organisms/SelectorAlumno/SelectorAlumno';
 import AsignarCitaModal from '../../organisms/AsignarCitaModal/AsignarCitaModal';
 import SaltoProyeccion from '../../organisms/SaltoProyeccion/SaltoProyeccion';
+import ListaEvidencias from '../../molecules/ListaEvidencias/ListaEvidencias';
 import AbrirDiasModal, { type FilaPlan } from '../../organisms/AbrirDiasModal/AbrirDiasModal';
 import {
   aplicarAsignaciones, ajustarUso, faseProyeccion, formatearDuracion, quitarAsignaciones,
@@ -22,7 +23,7 @@ import { confirmar } from '../../../../utils/dialogos';
 import {
   claveFecha, diaMasProximo, fechaConDia, fechaLarga, hora, rangoHoras,
 } from '../../../../utils/agenda';
-import type { Agenda, CitaProfesor, DiaProfesor } from '../../../../types/agenda';
+import type { Agenda, CitaProfesor, DiaProfesor, Evidencia } from '../../../../types/agenda';
 import styles from './PreguntasGrupoPage.module.css';
 
 const API_BASE = '/api';
@@ -158,6 +159,16 @@ export default function PreguntasGrupoPage() {
   /** Lo último que se movió bien. Se enseña hasta el siguiente gesto. */
   const [movida, setMovida] = useState<string | null>(null);
   const [diaActivo, setDiaActivo] = useState<string | null>(null);
+  /** La cita cuyas evidencias se están mirando. */
+  const [evidenciasDe, setEvidenciasDe] = useState<CitaProfesor | null>(null);
+  /**
+   * Las notas, tapadas.
+   *
+   * El modal se abre con la clase delante y a veces con el proyector puesto: lo
+   * que el profesor apuntó de un alumno no tiene por qué verse. Tapadas, además,
+   * el enunciado cabe entero, que es lo que hace falta para leer la pregunta.
+   */
+  const [notasVisibles, setNotasVisibles] = useState(true);
   const [creandoDia, setCreandoDia] = useState(false);
   const [guardandoDias, setGuardandoDias] = useState(false);
   /**
@@ -684,6 +695,26 @@ export default function PreguntasGrupoPage() {
       : null;
     return { inicio: h.inicio, cita, alumno, asignacion, cerrado: h.cerrado };
   }), [dia, alumnos]);
+
+  /**
+   * Las evidencias por hueco: `alumnoId::competenciaId::intento`.
+   *
+   * Salen de las CITAS y no de una consulta aparte: la evidencia cuelga de la
+   * cita, y la cita ya sabe de qué competencia y qué intento es. Así el modal de
+   * notas —que va por (competencia, intento)— las encuentra sin pedir nada más,
+   * y sin que quede una segunda regla de a quién pertenece cada evidencia.
+   */
+  const evidenciasPorHueco = useMemo(() => {
+    const mapa = new Map<string, Evidencia[]>();
+    for (const dia of agenda?.dias ?? []) {
+      for (const h of dia.huecos) {
+        const c = h.cita;
+        if (!c?.alumno || !c.competencia || c.evidencias.length === 0) continue;
+        mapa.set(`${c.alumno.id}::${c.competencia.id}::${c.intento}`, c.evidencias);
+      }
+    }
+    return mapa;
+  }, [agenda]);
 
   /**
    * Los bloques agrupados por FECHA.
@@ -1729,6 +1760,19 @@ export default function PreguntasGrupoPage() {
                           >
                             <Icon name="cast" size="sm" />
                           </button>
+                          {/* Si entregó o no, de un vistazo y sin abrir nada:
+                              es lo primero que se mira al sentarse con alguien.
+                              Encendido = hay evidencias; apagado = no subió. */}
+                          <button
+                            className={`${styles.iconBtn} ${cita!.evidencias.length > 0 ? styles.iconBtnOn : ''}`}
+                            disabled={cita!.evidencias.length === 0}
+                            onClick={() => setEvidenciasDe(cita!)}
+                            title={cita!.evidencias.length > 0
+                              ? `Ver sus ${cita!.evidencias.length} evidencia${cita!.evidencias.length === 1 ? '' : 's'}`
+                              : 'No ha subido evidencias'}
+                          >
+                            <Icon name={cita!.evidencias.length > 0 ? 'attachment' : 'block'} size="sm" />
+                          </button>
                           <button
                             className={`${styles.iconBtn} ${alumno?.asignaciones.some((a) => a.nota) ? styles.iconBtnOn : ''}`}
                             disabled={!alumno}
@@ -2190,6 +2234,19 @@ export default function PreguntasGrupoPage() {
           .filter((h) => h.asignacion));
         return (
           <Modal isOpen onClose={() => setNotasDe(null)} title={`Notas — ${alumno.name}`} wide>
+            <div className={styles.notasBarra}>
+              <button
+                type="button"
+                className={styles.notasTapar}
+                onClick={() => setNotasVisibles((v) => !v)}
+                title={notasVisibles
+                  ? 'Tapar las notas: el enunciado se lee entero'
+                  : 'Volver a enseñar las notas'}
+              >
+                <Icon name={notasVisibles ? 'visibility_off' : 'visibility'} size="sm" />
+                {notasVisibles ? 'Ocultar notas' : 'Ver notas'}
+              </button>
+            </div>
             {huecos.length === 0 ? (
               <p className={styles.hint}>Todavía no tiene ninguna pregunta asignada.</p>
             ) : (
@@ -2206,29 +2263,61 @@ export default function PreguntasGrupoPage() {
                         </span>
                       )}
                     </div>
+                    {/* Entero, sin cortar: recortado a 160 no se sabe qué se
+                        le preguntó, que es justo lo que se viene a mirar. */}
                     <p className={styles.notaEnunciado}>
-                      {asignacion!.pregunta ? resumenPregunta(asignacion!.pregunta.texto, 160) : '—'}
+                      {asignacion!.pregunta ? asignacion!.pregunta.texto : '—'}
                     </p>
-                    <NotaInline
-                      key={asignacion!.id}
-                      valor={asignacion!.nota}
-                      deshabilitado={!!asignacion!.pendiente}
-                      className={styles.notaAncha}
-                      lineas={3}
-                      placeholder="Qué respondió, en qué insistir…"
-                      onGuardar={(nota) => actualizar(asignacion!.id, { nota })}
-                    />
+                    {/* Las evidencias, DENTRO del intento y no en filas aparte:
+                        pertenecen a esta entrevista, y una fila por enlace
+                        haría del modal una lista interminable. */}
+                    {(evidenciasPorHueco.get(`${alumno.id}::${competencia.id}::${intento}`) ?? []).length > 0 && (
+                      <ListaEvidencias
+                        evidencias={evidenciasPorHueco.get(`${alumno.id}::${competencia.id}::${intento}`)!}
+                      />
+                    )}
+                    {notasVisibles && (
+                      <NotaInline
+                        key={asignacion!.id}
+                        valor={asignacion!.nota}
+                        deshabilitado={!!asignacion!.pendiente}
+                        className={styles.notaAncha}
+                        lineas={3}
+                        placeholder="Qué respondió, en qué insistir…"
+                        onGuardar={(nota) => actualizar(asignacion!.id, { nota })}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
             )}
             <p className={styles.hint}>
-              Se guardan al salir del campo. Solo las ves tú: no se proyectan ni afectan a la
-              calificación.
+              {notasVisibles
+                ? 'Se guardan al salir del campo. Solo las ves tú: no se proyectan ni afectan a la calificación.'
+                : 'Notas ocultas. Los enlaces son lo que entregó el alumno.'}
             </p>
           </Modal>
         );
       })()}
+
+      {/* Lo que entregó para ESA entrevista. Se abre desde su fila, para no
+          tener que buscarlo en el modal de notas con el alumno sentado. */}
+      {evidenciasDe && (
+        <Modal
+          isOpen
+          onClose={() => setEvidenciasDe(null)}
+          title={`Evidencias — ${evidenciasDe.alumno?.name ?? ''}`}
+        >
+          <p className={styles.hint}>
+            {evidenciasDe.competencia?.nombre ?? 'Sin competencia'} · {evidenciasDe.intento}.º intento
+            {' · '}{hora(evidenciasDe.inicio)}
+          </p>
+          <ListaEvidencias
+            evidencias={evidenciasDe.evidencias}
+            vacio="No ha subido ninguna evidencia para esta entrevista."
+          />
+        </Modal>
+      )}
 
       <Modal
         isOpen={historialDe !== null}

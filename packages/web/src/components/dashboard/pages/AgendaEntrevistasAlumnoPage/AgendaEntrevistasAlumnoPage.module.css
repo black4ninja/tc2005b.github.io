@@ -109,18 +109,18 @@
   gap: 6px;
 }
 
+/* Apilada, no en una fila: debajo de la hora van las evidencias de esa cita. */
 .miCita {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
+  flex-direction: column;
+  gap: 6px;
   padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   background: var(--bg-card);
 }
 
-.miCita > div {
+.citaCabecera > div {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -215,4 +215,59 @@
 .aviso {
   background: var(--estado-exito-bg);
   color: var(--estado-exito-color);
+}
+
+/* ── Evidencias de la cita ─────────────────────────────────────────────── */
+
+/* La cita pasa a tener dos partes: la cabecera con su hora y el botón de
+   cancelar, y debajo lo que se entrega. */
+.citaCabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.evidenciaAlta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.evidenciaInput {
+  flex: 1;
+  min-width: 220px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.evidenciaInput:disabled { opacity: 0.5; }
+
+/* Lo que quedó sin cita al cancelar. Se enseña aparte y se dice por qué: si
+   apareciera sin más, parecería que se ha perdido de sitio. */
+.sueltas {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--border-radius);
+}
+
+.sueltasTitulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
 }

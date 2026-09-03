@@ -1125,3 +1125,27 @@
   z-index: 1;
   background: var(--bg-card);
 }
+
+/* La barra del modal de notas: tapar lo apuntado deja el enunciado a la vista,
+   que es lo que hace falta con la clase delante o el proyector puesto. */
+.notasBarra {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-sm);
+}
+
+.notasTapar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.notasTapar:hover { color: var(--text-primary); border-color: var(--text-muted); }

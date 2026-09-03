@@ -56,6 +56,10 @@ export type { EstadoProyeccion } from './ProyeccionPregunta.js';
 // alumnos reservan. De ahí sale el ORDEN en que se proyecta.
 export { DiaEntrevistas } from './DiaEntrevistas.js';
 export { CitaEntrevista } from './CitaEntrevista.js';
+// Los enlaces que el alumno entrega. Por (alumno, competencia) a propósito: hoy
+// solo las escribe la entrevista, pero son las mismas que la malla acabará
+// enseñando, y por eso no cuelgan de la entrevista.
+export { EvidenciaCompetencia } from './EvidenciaCompetencia.js';
 // Módulo "Actividad de Scrum": el profesor arma dinámicas con equipos y el
 // alumno lleva el tablero kanban de su equipo con historias de usuario.
 export { EtapaScrum } from './EtapaScrum.js';

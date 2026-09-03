@@ -8,6 +8,7 @@ import { Pregunta } from '../models/Pregunta.js';
 import { PreguntaAsignacion } from '../models/PreguntaAsignacion.js';
 import { DiaEntrevistas } from '../models/DiaEntrevistas.js';
 import { CitaEntrevista } from '../models/CitaEntrevista.js';
+import { EvidenciaCompetencia } from '../models/EvidenciaCompetencia.js';
 import { coleccionesDeGrupo } from '../services/grupo-colecciones.service.js';
 import { getVinculoConGrupoActivo } from '../services/grupo-alumno.service.js';
 import {
@@ -15,6 +16,10 @@ import {
   sumarHorasHabiles,
   type FilaPlan, type Rango,
 } from '../services/agenda-entrevistas.service.js';
+import {
+  MAX_EVIDENCIAS, agruparEvidencias, engancharSueltas, evidenciasDelGrupo, llaveDeEvidencia,
+  soltarEvidenciasDeCita, urlDeEvidencia,
+} from '../services/evidencias.service.js';
 import {
   DURACION_POR_DEFECTO, MAX_BLOQUES_POR_LOTE, MAX_INTENTOS, HORAS_HABILES_ANTELACION,
   MARGEN_CANCELACION_MINUTOS, ZONA_CURSO,
@@ -165,14 +170,18 @@ const REGLAS = {
 export async function getAgenda(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
   try {
-    const [duracionSegundos, dias, citas, competencias, asignaciones] = await Promise.all([
+    const [duracionSegundos, dias, citas, competencias, asignaciones, evidencias] = await Promise.all([
       duracionDelGrupo(grupoId),
       diasDelGrupo(grupoId),
       citasDelGrupo(grupoId),
       competenciasDelBanco(grupoId),
       asignacionesPorHueco(grupoId),
+      evidenciasDelGrupo(grupoId),
     ]);
     const intentos = intentosDeTodas(citas);
+    // Por cita: es lo que la fila necesita para poner la marca y abrir la lista
+    // sin una petición más por alumno.
+    const porCita = agruparEvidencias(evidencias, llaveDeEvidencia);
 
     res.json({
       status: 'ok',
@@ -202,6 +211,7 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
                 cerrado,
                 cita: {
                   ...cita.toSafeJSON(),
+                  evidencias: (porCita.get(`cita:${cita.id}`) ?? []).map((e) => e.toSafeJSON()),
                   intento,
                   // Lo que se proyectará cuando le toque. Vacío = el profesor no
                   // le ha asignado pregunta para ese intento, y hay que decirlo
@@ -595,7 +605,19 @@ async function altaDeCita(
   cita.setCreadaPor(quien);
   await cita.save(null, { useMasterKey: true });
 
-  res.status(201).json({ status: 'ok', cita: cita.toSafeJSON(), intento: yaTiene.length + 1 });
+  // Si canceló y vuelve, se le devuelven las evidencias que dejó sueltas: no
+  // tiene por qué pegar otra vez los mismos enlaces. Solo las sueltas, así que
+  // nunca se le quitan a una entrevista viva.
+  const recuperadas = await engancharSueltas(
+    grupoId, datos.alumnoId, datos.competenciaId, cita,
+  );
+
+  res.status(201).json({
+    status: 'ok',
+    cita: cita.toSafeJSON(),
+    intento: yaTiene.length + 1,
+    evidenciasRecuperadas: recuperadas,
+  });
 }
 
 /** POST /admin/grupos/:grupoId/agenda-entrevistas/citas */
@@ -684,6 +706,106 @@ export async function moverCitaProfesor(req: Request, res: Response): Promise<vo
   }
 }
 
+/* ── Evidencias ───────────────────────────────────────────────────────── */
+
+/**
+ * POST /alumno/grupos/:grupoId/agenda-entrevistas/evidencias
+ * `{ citaId, url, titulo }`
+ *
+ * El alumno deja el enlace de lo que trae a su entrevista. La evidencia se
+ * guarda por (alumno, competencia) y apuntando a la CITA, que es lo que la
+ * mantiene en su sitio cuando la cita se mueve o se renumera.
+ */
+export async function crearEvidenciaAlumno(req: Request, res: Response): Promise<void> {
+  const alumnoId = await exigirAlumnoDelGrupo(req, res);
+  if (!alumnoId) return;
+  const { grupoId } = req.params;
+  const { citaId, titulo } = req.body ?? {};
+
+  const url = urlDeEvidencia(req.body?.url);
+  if (!url) {
+    res.status(400).json({
+      status: 'error',
+      message: 'Pon un enlace que empiece por http:// o https://',
+    });
+    return;
+  }
+  if (!citaId) {
+    res.status(400).json({ status: 'error', message: 'Falta la entrevista' });
+    return;
+  }
+
+  try {
+    const q = new Parse.Query<CitaEntrevista>('CitaEntrevista');
+    q.equalTo('exists' as any, true as any);
+    const cita = await q.get(citaId, { useMasterKey: true }).catch(() => null);
+    if (!cita || cita.getGrupo()?.id !== grupoId || cita.getAlumno()?.id !== alumnoId) {
+      res.status(403).json({ status: 'error', message: 'Esa entrevista no es tuya' });
+      return;
+    }
+    const competenciaId = cita.getCompetencia()?.id;
+    if (!competenciaId) {
+      res.status(409).json({ status: 'error', message: 'Esa entrevista no tiene competencia' });
+      return;
+    }
+
+    const suyas = (await evidenciasDelGrupo(grupoId))
+      .filter((e) => e.getAlumno()?.id === alumnoId && e.getCita()?.id === citaId);
+    if (suyas.length >= MAX_EVIDENCIAS) {
+      res.status(409).json({
+        status: 'error',
+        message: `Como mucho ${MAX_EVIDENCIAS} evidencias por entrevista`,
+      });
+      return;
+    }
+    // Repetir el mismo enlace no añade nada y ensucia la lista del profesor.
+    if (suyas.some((e) => e.getUrl() === url)) {
+      res.status(409).json({ status: 'error', message: 'Ese enlace ya está puesto' });
+      return;
+    }
+
+    const evidencia = new EvidenciaCompetencia().initDefaults();
+    evidencia.setGrupo(Grupo.createWithoutData(grupoId) as Grupo);
+    evidencia.setAlumno(AppUser.createWithoutData(alumnoId) as AppUser);
+    evidencia.setCompetencia(Competencia.createWithoutData(competenciaId));
+    evidencia.setCita(cita);
+    evidencia.setOrigen('entrevista');
+    evidencia.setUrl(url);
+    evidencia.setTitulo(String(titulo ?? '').trim().slice(0, 120));
+    await evidencia.save(null, { useMasterKey: true });
+
+    res.status(201).json({ status: 'ok', evidencia: evidencia.toSafeJSON() });
+  } catch {
+    res.status(500).json({ status: 'error', message: 'Error al guardar la evidencia' });
+  }
+}
+
+/**
+ * DELETE /alumno/grupos/:grupoId/agenda-entrevistas/evidencias/:evidenciaId
+ *
+ * Borrado suave, como todo lo demás: lo que el alumno entregó y luego quitó
+ * sigue existiendo para quien tenga que revisar qué pasó.
+ */
+export async function borrarEvidenciaAlumno(req: Request, res: Response): Promise<void> {
+  const alumnoId = await exigirAlumnoDelGrupo(req, res);
+  if (!alumnoId) return;
+  const { grupoId, evidenciaId } = req.params;
+  try {
+    const q = new Parse.Query<EvidenciaCompetencia>('EvidenciaCompetencia');
+    q.equalTo('exists' as any, true as any);
+    const evidencia = await q.get(evidenciaId, { useMasterKey: true }).catch(() => null);
+    if (!evidencia || evidencia.getGrupo()?.id !== grupoId || evidencia.getAlumno()?.id !== alumnoId) {
+      res.status(403).json({ status: 'error', message: 'Esa evidencia no es tuya' });
+      return;
+    }
+    evidencia.softDelete();
+    await evidencia.save(null, { useMasterKey: true });
+    res.json({ status: 'ok' });
+  } catch {
+    res.status(500).json({ status: 'error', message: 'Error al borrar la evidencia' });
+  }
+}
+
 /** DELETE /admin/grupos/:grupoId/agenda-entrevistas/citas/:citaId */
 export async function borrarCitaProfesor(req: Request, res: Response): Promise<void> {
   const { grupoId, citaId } = req.params;
@@ -699,7 +821,10 @@ export async function borrarCitaProfesor(req: Request, res: Response): Promise<v
     // es justo cuando hace falta —el alumno no llegó—.
     cita.cancelar();
     await cita.save(null, { useMasterKey: true });
-    res.json({ status: 'ok' });
+    // Lo que ya había entregado NO se va con la cita: se queda suelto en su
+    // competencia y vuelve solo si reserva otra vez.
+    const sueltas = await soltarEvidenciasDeCita(cita.id!);
+    res.json({ status: 'ok', evidenciasSueltas: sueltas });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al cancelar la cita' });
   }
@@ -735,14 +860,17 @@ export async function getAgendaAlumno(req: Request, res: Response): Promise<void
   if (!alumnoId) return;
   const { grupoId } = req.params;
   try {
-    const [dias, citas, competencias] = await Promise.all([
+    const [dias, citas, competencias, evidencias] = await Promise.all([
       diasDelGrupo(grupoId),
       citasDelGrupo(grupoId),
       competenciasDelBanco(grupoId),
+      evidenciasDelGrupo(grupoId),
     ]);
     const intentos = intentosDeTodas(citas);
     const mias = citas.filter((c) => c.getAlumno()?.id === alumnoId);
     const ahora = new Date();
+    const misEvidencias = evidencias.filter((e) => e.getAlumno()?.id === alumnoId);
+    const porLlave = agruparEvidencias(misEvidencias, llaveDeEvidencia);
 
     res.json({
       status: 'ok',
@@ -761,7 +889,14 @@ export async function getAgendaAlumno(req: Request, res: Response): Promise<void
         intento: intentos.get(c.id!) ?? 1,
         diaNota: c.getDia()?.get('nota') ?? '',
         cancelable: puedeCancelar(c.getInicio(), ahora),
+        evidencias: (porLlave.get(`cita:${c.id}`) ?? []).map((e) => e.toSafeJSON()),
       })),
+      // Las que quedaron sin cita porque canceló. Se le siguen enseñando —no se
+      // pierde lo entregado— y vuelven solas a la próxima cita de esa
+      // competencia que reserve.
+      evidenciasSueltas: misEvidencias
+        .filter((e) => !e.getCita())
+        .map((e) => e.toSafeJSON()),
       dias: dias.filter((d) => !d.getCerrado() || citas.some((c) => c.getDia()?.id === d.id))
         .map((dia) => ({
           ...dia.toSafeJSON(),
@@ -829,7 +964,10 @@ export async function borrarCitaAlumno(req: Request, res: Response): Promise<voi
     }
     cita.cancelar();
     await cita.save(null, { useMasterKey: true });
-    res.json({ status: 'ok' });
+    // Igual que cuando cancela el profesor: lo entregado se queda suelto en su
+    // competencia, no se va con la cita.
+    const sueltas = await soltarEvidenciasDeCita(cita.id!);
+    res.json({ status: 'ok', evidenciasSueltas: sueltas });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al cancelar la cita' });
   }

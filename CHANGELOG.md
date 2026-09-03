@@ -21,6 +21,24 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   cuanto más se le pega, para poder pararse en la fila que se quiere. La fila dice que está viajando mientras el
   servidor responde, y al terminar se confirma a dónde fue —el destino puede
   quedar fuera de lo que se ve—.
+- **El alumno entrega evidencias de su entrevista.** Un enlace a lo que ya tiene
+  hecho —su repositorio, su documento, su vídeo—, igual que en la malla de
+  competencias. Se pone desde su propia cita, y ahí se ve lo que lleva
+  entregado.
+  - **Cancelar o mover no las pierde, y no se traslapan.** No cuelgan del número
+    de intento, que no se guarda en ningún sitio —se deduce del orden de reserva
+    y cambia al cancelar—, sino de la CITA: moverla es el mismo objeto, y
+    renumerarla se lleva sus evidencias con ella, así que lo que se preparó para
+    una entrevista no aparece nunca en la otra. Al cancelar no se borran: se
+    quedan sueltas en su competencia, el alumno las sigue viendo, y vuelven
+    solas a la próxima cita que reserve de esa competencia.
+  - **El profesor ve de un vistazo quién entregó.** Cada fila de la agenda lleva
+    su marca —encendida si hay evidencias, apagada si no subió nada— y se abren
+    en un modal desde la propia fila. En las notas salen dentro de su intento,
+    sin filas nuevas.
+  - Guardadas por `(alumno, competencia)` y no por entrevista, a propósito: son
+    las mismas que la malla de evaluación acabará enseñando, y así el día que se
+    conecte no hace falta otra tabla ni otro endpoint.
 - **Cada hueco de la agenda se puede cerrar por separado.** Cerrar reservas era
   todo o nada: o el día entero admitía gente o no admitía a nadie. Pero lo que
   el profesor tapa son ratos sueltos —la comida, el rato en que tiene otra
@@ -50,6 +68,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   suelto— ahora se hace en el propio hueco.
 
 ### Changed
+- **El modal de notas: enunciado entero y notas que se pueden tapar.** La
+  pregunta se cortaba a 160 caracteres, que es justo lo que no deja saber qué se
+  le preguntó. Y ahora hay un botón para ocultar las notas: el modal se abre con
+  la clase delante y a veces con el proyector puesto, y lo que el profesor
+  apuntó de alguien no tiene por qué verse.
 - **El día que se abre por defecto se recalcula, y se trae a la vista.** La
   regla no cambia —el más próximo que no haya TERMINADO, por hora: un día de 9 a
   11 a las diez de la noche ya pasó aunque siga siendo hoy—, pero antes se
