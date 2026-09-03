@@ -29,6 +29,21 @@ export async function evidenciasDelGrupo(grupoId: string): Promise<EvidenciaComp
 }
 
 /**
+ * Las de UNA cita.
+ *
+ * Acotada a propósito: el alta las necesita para dos comprobaciones —el tope y
+ * el enlace repetido— y traer las del grupo entero para eso, además de costar,
+ * las contaba mal en cuanto el grupo pasara del tope de la consulta.
+ */
+export async function evidenciasDeCita(citaId: string): Promise<EvidenciaCompetencia[]> {
+  const q = new Parse.Query<EvidenciaCompetencia>('EvidenciaCompetencia');
+  q.equalTo('cita' as any, { __type: 'Pointer', className: 'CitaEntrevista', objectId: citaId } as any);
+  q.equalTo('exists' as any, true as any);
+  q.limit(MAX_EVIDENCIAS + 1);
+  return q.find({ useMasterKey: true });
+}
+
+/**
  * Con qué llave se agrupan para enseñarlas: la CITA si la tienen, y si no, la
  * competencia a secas —son las que quedaron sueltas al cancelar—.
  */

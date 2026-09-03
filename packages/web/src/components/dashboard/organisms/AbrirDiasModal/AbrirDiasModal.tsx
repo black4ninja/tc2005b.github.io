@@ -26,7 +26,12 @@ interface Props {
   onCerrar: () => void;
 }
 
-const NUEVO: BloqueFechas = { fechas: [], desde: '09:00', hasta: '13:00' };
+/** Un horario recién puesto. `id` solo vive en la pantalla; el servidor no lo ve. */
+let siguienteId = 0;
+function nuevoBloque(): BloqueFechas & { id: number } {
+  siguienteId += 1;
+  return { id: siguienteId, fechas: [], desde: '09:00', hasta: '13:00' };
+}
 
 /** Cuánto se espera antes de pedir la vista previa, para no ir por tecla. */
 const ESPERA_MS = 350;
@@ -53,7 +58,16 @@ const ESPERA_MS = 350;
 export default function AbrirDiasModal({
   duracionSegundos, guardando, onSimular, onAbrir, onCerrar,
 }: Props) {
-  const [bloques, setBloques] = useState<BloqueFechas[]>([{ ...NUEVO }]);
+  /**
+   * Cada horario con un id propio, y no identificado por su posición.
+   *
+   * `SelectorDias` guarda estado suyo —el mes que enseña—, así que con la
+   * posición como clave, quitar un horario del medio le pasaba ese estado al que
+   * ocupaba su sitio: el calendario se abría en el mes de uno que ya no estaba.
+   */
+  const [bloques, setBloques] = useState<(BloqueFechas & { id: number })[]>(
+    () => [nuevoBloque()],
+  );
   const [nota, setNota] = useState('');
   const [plan, setPlan] = useState<FilaPlan[] | null>(null);
   const [simulando, setSimulando] = useState(false);
@@ -109,8 +123,7 @@ export default function AbrirDiasModal({
 
           <div className={styles.bloques}>
             {bloques.map((bloque, i) => (
-              // eslint-disable-next-line react/no-array-index-key
-              <div key={i} className={styles.bloque}>
+              <div key={bloque.id} className={styles.bloque}>
                 <SelectorDias
                   fechas={bloque.fechas}
                   deshabilitado={guardando}
@@ -151,7 +164,7 @@ export default function AbrirDiasModal({
               type="button"
               className={styles.anadir}
               disabled={guardando}
-              onClick={() => setBloques((bs) => [...bs, { ...NUEVO }])}
+              onClick={() => setBloques((bs) => [...bs, nuevoBloque()])}
             >
               <Icon name="add" size="sm" /> Añadir horario
             </button>

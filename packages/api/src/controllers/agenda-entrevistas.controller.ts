@@ -17,8 +17,8 @@ import {
   type FilaPlan, type Rango,
 } from '../services/agenda-entrevistas.service.js';
 import {
-  MAX_EVIDENCIAS, agruparEvidencias, engancharSueltas, evidenciasDelGrupo, llaveDeEvidencia,
-  soltarEvidenciasDeCita,
+  MAX_EVIDENCIAS, agruparEvidencias, engancharSueltas, evidenciasDeCita, evidenciasDelGrupo,
+  llaveDeEvidencia, soltarEvidenciasDeCita,
 } from '../services/evidencias.service.js';
 import { sanitizarUrlHref } from '../utils/url.js';
 import {
@@ -512,13 +512,6 @@ export async function borrarDia(req: Request, res: Response): Promise<void> {
 }
 
 /**
- * Alta de una cita, común al alumno y al profesor.
- *
- * `comoAlumno` es lo único que cambia: al alumno se le exige la antelación de 24
- * horas hábiles, al profesor no —está apuntando a alguien que tiene delante—.
- * El tope de intentos se aplica a los dos: esa no es una regla de cortesía.
- */
-/**
  * Quita un hueco de la lista de cerrados, si estaba. Se llama al meterle una
  * cita: un hueco ocupado y a la vez cerrado no significa nada, y dejarlo así
  * haría que al cancelar la cita el hueco reapareciera cerrado sin que nadie lo
@@ -531,6 +524,13 @@ async function reabrirHueco(dia: DiaEntrevistas, inicio: Date): Promise<void> {
   await dia.save(null, { useMasterKey: true });
 }
 
+/**
+ * Alta de una cita, común al alumno y al profesor.
+ *
+ * `comoAlumno` es lo único que cambia: al alumno se le exige la antelación de 24
+ * horas hábiles, al profesor no —está apuntando a alguien que tiene delante—.
+ * El tope de intentos se aplica a los dos: esa no es una regla de cortesía.
+ */
 async function altaDeCita(
   res: Response,
   grupoId: string,
@@ -768,8 +768,7 @@ export async function crearEvidenciaAlumno(req: Request, res: Response): Promise
       return;
     }
 
-    const suyas = (await evidenciasDelGrupo(grupoId))
-      .filter((e) => e.getAlumno()?.id === alumnoId && e.getCita()?.id === citaId);
+    const suyas = await evidenciasDeCita(citaId);
     if (suyas.length >= MAX_EVIDENCIAS) {
       res.status(409).json({
         status: 'error',
