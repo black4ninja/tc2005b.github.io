@@ -17,7 +17,9 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   dicen «libre»: el único que habla es el de debajo del puntero, que dice a quién
   va a recibir. La tarjeta que sigue al cursor lleva la hora de destino escrita,
   así que se sabe dónde va a caer sin apartar la vista. Soltar a alguien sobre el
-  chip de otro día lo manda allí, a su primer hueco libre. La fila dice que está viajando mientras el
+  chip de otro día lo manda allí, a su primer hueco libre. Al acercar el puntero
+  al borde, la lista se desplaza sola: despacio si apenas se asoma y más rápido
+  cuanto más se le pega, para poder pararse en la fila que se quiere. La fila dice que está viajando mientras el
   servidor responde, y al terminar se confirma a dónde fue —el destino puede
   quedar fuera de lo que se ve—.
 - **Buscador en el selector de la proyección.** Era un desplegable nativo que con
