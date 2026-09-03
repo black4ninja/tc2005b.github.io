@@ -95,6 +95,25 @@ export function estadoHueco(
   return 'libre';
 }
 
+/**
+ * Qué día de la agenda enseñar sin que se lo pidan: el más próximo que no haya
+ * TERMINADO.
+ *
+ * Manda la hora y no la fecha. Un día de 9 a 11 a las diez de la noche ya pasó,
+ * aunque siga siendo hoy, y lo que el profesor quiere ver entonces es el
+ * siguiente. Si ya terminaron todos, el último: es donde están las entrevistas
+ * que acaba de hacer, y una agenda en blanco no dice nada.
+ */
+export function diaMasProximo<T extends { id: string; inicio: string; fin: string }>(
+  dias: T[],
+  ahora: Date = new Date(),
+): string | null {
+  if (dias.length === 0) return null;
+  const enOrden = [...dias].sort((a, b) => a.inicio.localeCompare(b.inicio));
+  const vivo = enOrden.find((d) => new Date(d.fin).getTime() >= ahora.getTime());
+  return (vivo ?? enOrden[enOrden.length - 1]).id;
+}
+
 /* ── Abrir días en lote ───────────────────────────────────────────────── */
 
 /** Un horario pedido: en qué fechas y de qué hora a qué hora. */

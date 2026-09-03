@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { estadoHueco, expandirFechas, semanasDelMes } from './agenda';
+import { diaMasProximo, estadoHueco, expandirFechas, semanasDelMes } from './agenda';
 
 describe('estadoHueco', () => {
   const agendableDesde = '2026-08-27T16:00:00.000Z';
@@ -34,6 +34,46 @@ describe('estadoHueco', () => {
     expect(estadoHueco(
       { inicio: '2026-08-27T16:00:00.000Z', ocupado: false, mia: null }, agendableDesde, ahora,
     )).toBe('libre');
+  });
+});
+
+describe('diaMasProximo', () => {
+  // Tres días de 9 a 13, hora de Querétaro.
+  const dias = [
+    { id: 'a', inicio: '2026-09-01T15:00:00.000Z', fin: '2026-09-01T19:00:00.000Z' },
+    { id: 'b', inicio: '2026-09-03T15:00:00.000Z', fin: '2026-09-03T19:00:00.000Z' },
+    { id: 'c', inicio: '2026-09-07T15:00:00.000Z', fin: '2026-09-07T19:00:00.000Z' },
+  ];
+
+  it('sin días no hay ninguno que enseñar', () => {
+    expect(diaMasProximo([], new Date('2026-09-02T12:00:00Z'))).toBe(null);
+  });
+
+  it('elige el primero que no ha terminado', () => {
+    expect(diaMasProximo(dias, new Date('2026-09-02T12:00:00Z'))).toBe('b');
+  });
+
+  it('un día en curso sigue siendo el suyo', () => {
+    expect(diaMasProximo(dias, new Date('2026-09-03T16:30:00Z'))).toBe('b');
+  });
+
+  it('manda la HORA, no la fecha: acabado el de hoy, pasa al siguiente', () => {
+    // 3 de septiembre a las 22:00 de Querétaro: sigue siendo hoy, pero el día
+    // terminó a la una de la tarde.
+    expect(diaMasProximo(dias, new Date('2026-09-04T04:00:00Z'))).toBe('c');
+  });
+
+  it('justo en el minuto de cierre todavía cuenta', () => {
+    expect(diaMasProximo(dias, new Date('2026-09-03T19:00:00Z'))).toBe('b');
+  });
+
+  it('si ya terminaron todos, el último', () => {
+    expect(diaMasProximo(dias, new Date('2026-10-01T12:00:00Z'))).toBe('c');
+  });
+
+  it('no depende de que vengan ordenados', () => {
+    const revueltos = [dias[2], dias[0], dias[1]];
+    expect(diaMasProximo(revueltos, new Date('2026-09-02T12:00:00Z'))).toBe('b');
   });
 });
 

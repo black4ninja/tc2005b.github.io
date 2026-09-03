@@ -50,6 +50,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   suelto— ahora se hace en el propio hueco.
 
 ### Changed
+- **El día que se abre por defecto se recalcula, y se trae a la vista.** La
+  regla no cambia —el más próximo que no haya TERMINADO, por hora: un día de 9 a
+  11 a las diez de la noche ya pasó aunque siga siendo hoy—, pero antes se
+  decidía solo al abrir la página. Con la pestaña abierta toda la mañana, el día
+  se acababa y la agenda se quedaba en él. Ahora se vuelve a decidir en cada
+  recarga mientras el profesor no haya picado un día; en cuanto pica uno, manda
+  el suyo. Y la tira se desplaza para enseñar el día elegido: con nueve fechas no
+  caben todas, y el elegido podía quedar fuera.
 - **La agenda enseña un hueco por fila, sin agrupar los vacíos.** Los libres
   seguidos se resumían en «sin entrevistas hasta las 09:10 · 2 libres». Se lee
   bien, pero sobre un resumen no se puede actuar: cerrar las 09:00 y dejar

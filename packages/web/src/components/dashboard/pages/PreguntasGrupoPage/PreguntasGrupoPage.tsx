@@ -20,7 +20,7 @@ import type {
 } from '../../../../types/preguntas';
 import { confirmar } from '../../../../utils/dialogos';
 import {
-  claveFecha, fechaConDia, fechaLarga, hora, rangoHoras,
+  claveFecha, diaMasProximo, fechaConDia, fechaLarga, hora, rangoHoras,
 } from '../../../../utils/agenda';
 import type { Agenda, CitaProfesor, DiaProfesor } from '../../../../types/agenda';
 import styles from './PreguntasGrupoPage.module.css';
@@ -171,6 +171,15 @@ export default function PreguntasGrupoPage() {
 
   /** La pestaña proyectada, para volver a ella en vez de abrir otra. */
   const ventanaRef = useRef<Window | null>(null);
+  /**
+   * El profesor picó un día a mano: a partir de ahí no se le mueve solo.
+   *
+   * Sin esto, cualquier recarga de la agenda —cerrar un hueco, mover una cita—
+   * le devolvería al día de hoy mientras está mirando el de la semana que viene.
+   */
+  const elegidoAMano = useRef(false);
+  /** La tira de días, para traer a la vista el que se elige solo. */
+  const tiraDias = useRef<HTMLDivElement | null>(null);
   /** El mando, para poder traerlo a la vista al proyectar desde una fila. */
   const mandoRef = useRef<HTMLDivElement | null>(null);
   /** Hay una petición de bajar al mando esperando a que el mando exista. */
@@ -225,12 +234,13 @@ export default function PreguntasGrupoPage() {
       if (!res.ok) return;
       const data = await res.json() as Agenda;
       setAgenda(data);
-      // Al entrar, el día que toca: el primero que no haya terminado. Es el que
-      // se quiere ver el día de las entrevistas, sin buscarlo.
-      setDiaActivo((actual) => actual
-        ?? data.dias.find((d) => new Date(d.fin) >= new Date())?.id
-        ?? data.dias[data.dias.length - 1]?.id
-        ?? null);
+      // El día que toca: el más próximo que no haya terminado, por HORA. Se
+      // vuelve a decidir en cada recarga mientras el profesor no haya picado
+      // uno: su pestaña se queda abierta toda la mañana, y cuando el día de hoy
+      // se acaba lo que quiere ver es el siguiente, no el que ya pasó.
+      setDiaActivo((actual) => (elegidoAMano.current && actual
+        ? actual
+        : diaMasProximo(data.dias) ?? actual));
     } catch {
       setError('No se pudo cargar la agenda de entrevistas');
     }
@@ -355,7 +365,11 @@ export default function PreguntasGrupoPage() {
         const err = (await res.json().catch(() => ({}))) as { message?: string };
         throw new Error(err.message || 'No se pudo borrar el día');
       }
-      if (diaActivo === dia.id) setDiaActivo(null);
+      if (diaActivo === dia.id) {
+        // Se va el que se estaba mirando: que vuelva a decidirlo la hora.
+        elegidoAMano.current = false;
+        setDiaActivo(null);
+      }
       await cargarAgenda();
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'No se pudo borrar el día'));
@@ -815,6 +829,22 @@ export default function PreguntasGrupoPage() {
       .find((a) => a.id === proyeccion?.asignacionId) ?? null,
     [alumnos, proyeccion],
   );
+
+  /**
+   * Trae a la vista el día elegido.
+   *
+   * La tira se desplaza por dentro y con nueve fechas no caben todas: el que se
+   * elige solo puede quedar fuera, y entonces parece que no hay ninguno puesto.
+   * Con `nearest` no hace nada si ya se veía, así que picar uno no da tirones.
+   */
+  useEffect(() => {
+    tiraDias.current
+      ?.querySelector<HTMLElement>('[data-activo]')
+      ?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+    // `vista` entra en la cuenta porque la tira solo existe en la agenda: al
+    // entrar por otra pestaña, el día ya estaba elegido y sin esto el efecto
+    // no llegaba a correr con la tira pintada.
+  }, [diaActivo, vista, porFecha.length]);
 
   /**
    * Baja al mando cuando se ha pedido desde una fila.
@@ -1419,12 +1449,13 @@ export default function PreguntasGrupoPage() {
                   Aquí caben todas en una, y el nombre del día va entero porque
                   lo que se busca es «el martes», no «el 8». */}
               {porFecha.length > 0 && (
-                <div className={styles.tiraDia}>
+                <div className={styles.tiraDia} ref={tiraDias}>
                   {porFecha.map((f) => {
                     const activa = fechaActiva?.clave === f.clave;
                     return (
                       <button
                         key={f.clave}
+                        data-activo={activa || undefined}
                         // Soltar a alguien encima lo manda a ese día. Solo con
                         // UN horario: con varios no hay respuesta a «a cuál».
                         data-zona={arrastrando && f.bloques.length === 1
@@ -1437,7 +1468,10 @@ export default function PreguntasGrupoPage() {
                           arrastrando && f.bloques.length === 1 ? styles.chipSoltable : '',
                           zona === `${ZONA_DIA}${f.bloques[0].id}` ? styles.chipDestino : '',
                         ].filter(Boolean).join(' ')}
-                        onClick={() => setDiaActivo(f.bloques[0].id)}
+                        onClick={() => {
+                          elegidoAMano.current = true;
+                          setDiaActivo(f.bloques[0].id);
+                        }}
                         title={f.bloques.length === 1
                           ? rangoHoras(f.bloques[0].inicio, f.bloques[0].fin)
                           : `${f.bloques.length} bloques`}
@@ -1462,7 +1496,10 @@ export default function PreguntasGrupoPage() {
                       <button
                         key={d.id}
                         className={`${styles.chip} ${styles.chipBloque} ${diaActivo === d.id ? styles.chipActivo : ''}`}
-                        onClick={() => setDiaActivo(d.id)}
+                        onClick={() => {
+                          elegidoAMano.current = true;
+                          setDiaActivo(d.id);
+                        }}
                         title={d.nota || rangoHoras(d.inicio, d.fin)}
                       >
                         {rangoHoras(d.inicio, d.fin)}
