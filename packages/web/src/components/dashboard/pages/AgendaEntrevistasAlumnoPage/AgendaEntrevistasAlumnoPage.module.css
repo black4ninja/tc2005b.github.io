@@ -164,11 +164,13 @@
   gap: 6px;
 }
 
+/* Apilada: el nombre arriba y, si está bloqueada, el motivo debajo a lo ancho.
+   Al lado del nombre no cabe una frase, y recortarla es no decir nada. */
 .opcionComp {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
   padding: 10px var(--space-md);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
@@ -184,7 +186,23 @@
   background: var(--dash-bg-subtle);
 }
 
-.opcionComp:disabled { opacity: 0.45; cursor: not-allowed; }
+/* Apagada, pero no ilegible: el motivo es lo que hay que poder leer, así que la
+   opacidad baja lo justo para que se lea «no puedes» sin borrar el texto. */
+.opcionComp:disabled { opacity: 0.7; cursor: not-allowed; }
+.opcionComp:disabled .opcionFila { opacity: 0.6; }
+
+.opcionFila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.opcionMotivo {
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--estado-aviso-color);
+}
 
 .apagado {
   display: flex;
