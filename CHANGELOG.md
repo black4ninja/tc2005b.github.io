@@ -21,11 +21,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   cuanto más se le pega, para poder pararse en la fila que se quiere. La fila dice que está viajando mientras el
   servidor responde, y al terminar se confirma a dónde fue —el destino puede
   quedar fuera de lo que se ve—.
-- **Al asignar preguntas se dice de qué intento es cada una.** La marca verde
-  decía «asignada» y ya está, pero cada competencia lleva dos entrevistas: con
-  las dos puestas no había forma de saber cuál era la de la primera y cuál la de
-  la segunda sin cerrar el modal. Ahora la marca dice «1.º intento» o «2.º
-  intento».
+- **De qué intento es algo se ve por el color.** La marca de una pregunta
+  asignada decía «asignada» y ya está, pero cada competencia lleva dos
+  entrevistas: con las dos puestas no había forma de saber cuál era la de la
+  primera y cuál la de la segunda sin cerrar el modal. Ahora la marca dice el
+  intento y lo pinta —el primero en verde, el segundo en ámbar, que es como se
+  lee: la última oportunidad—, y es la misma en el selector de preguntas y en el
+  modal de notas.
+
 - **Manual de competencias.** El profesor pone un enlace —debajo del tiempo, en
   la cabecera del módulo— y el alumno lo ve como «Manual de competencias» justo
   debajo de las reglas, que es donde está mirando qué hace falta para venir. Es
@@ -71,6 +74,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   y se navega con las flechas.
 
 ### Fixed
+- **Contraste de la marca de intento en modo oscuro.** Estaba puesta con el
+  color de acento de fondo y texto blanco; en oscuro ese color es el CLARO de la
+  pareja, así que quedaba blanco sobre verde claro: 1,5:1, ilegible. Ahora usa
+  los tokens de estado enteros —fondo, borde y texto—, que están hechos para los
+  dos temas: 9:1 en oscuro y 4,8:1 en claro.
 - **El segundo intento ya no puede caer antes que el primero, ni el mismo día.**
   El número de intento se deduce del ORDEN DE RESERVA, así que un alumno podía
   apuntar su «primero» el día 3 y, si quedaban huecos, su «segundo» el día 1: el

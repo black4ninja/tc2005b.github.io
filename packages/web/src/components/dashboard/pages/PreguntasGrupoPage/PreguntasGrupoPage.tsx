@@ -10,6 +10,7 @@ import SelectorAlumno from '../../organisms/SelectorAlumno/SelectorAlumno';
 import AsignarCitaModal from '../../organisms/AsignarCitaModal/AsignarCitaModal';
 import SaltoProyeccion from '../../organisms/SaltoProyeccion/SaltoProyeccion';
 import ListaEvidencias from '../../molecules/ListaEvidencias/ListaEvidencias';
+import TagIntento from '../../atoms/TagIntento/TagIntento';
 import AbrirDiasModal, { type FilaPlan } from '../../organisms/AbrirDiasModal/AbrirDiasModal';
 import {
   aplicarAsignaciones, ajustarUso, faseProyeccion, formatearDuracion, quitarAsignaciones,
@@ -2383,7 +2384,7 @@ export default function PreguntasGrupoPage() {
                   <div key={asignacion!.id} className={styles.notaBloque}>
                     <div className={styles.notaCabecera}>
                       <span className={styles.competenciaTag}>{competencia.nombre}</span>
-                      <span className={styles.historialIntento}>{intento}.º intento</span>
+                      <TagIntento intento={intento} />
                       {asignacion!.usada && <span className={styles.libreTag}>ya preguntada</span>}
                       {asignacion!.id === proyeccion?.asignacionId && (
                         <span className={styles.tomadaTag}>

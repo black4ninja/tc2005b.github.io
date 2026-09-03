@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Modal from '../../atoms/Modal/Modal';
 import Icon from '../../atoms/Icon/Icon';
+import TagIntento from '../../atoms/TagIntento/TagIntento';
 import type { CompetenciaEnBanco, Pregunta } from '../../../../types/preguntas';
 import styles from './SelectorPregunta.module.css';
 
@@ -176,15 +177,10 @@ export default function SelectorPregunta({
                     <span className={styles.opcionMeta}>
                       {/* La marca de elegida va primero: es lo que contesta a
                           «¿entró o no?» sin tener que cerrar y volver a mirar. */}
-                      {elegida && (
-                        <span className={styles.elegidaTag}>
-                          <Icon name="check_circle" size="sm" />
-                          {/* Con dos intentos por competencia, «asignada» a
-                              secas no dice cuál de las dos es: el número es lo
-                              que se viene a mirar. */}
-                          {intento}.º intento
-                        </span>
-                      )}
+                      {/* Con dos intentos por competencia, «asignada» a secas
+                          no dice cuál de las dos es: el número —y su color— es
+                          lo que se viene a mirar. */}
+                      {elegida && <TagIntento intento={intento} icono="check_circle" />}
                       {p.competencia && (
                         <span className={styles.competencia}>{p.competencia.competencia}</span>
                       )}
