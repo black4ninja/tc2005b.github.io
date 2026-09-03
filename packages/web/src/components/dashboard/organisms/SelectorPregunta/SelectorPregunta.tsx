@@ -13,8 +13,15 @@ interface SelectorPreguntaProps {
   competencias?: CompetenciaEnBanco[];
   /** Competencia con la que abrir el filtro (el hueco que se está llenando). */
   competenciaInicial?: string | null;
-  /** Las que este alumno YA tiene en esta competencia. Se marcan y se pueden quitar. */
-  seleccionadas?: Set<string>;
+  /**
+   * Las que este alumno YA tiene en esta competencia, y EN QUÉ INTENTO va cada
+   * una. Se marcan con su número y se pueden quitar.
+   *
+   * Un mapa y no un conjunto porque el número es lo que contesta la pregunta que
+   * uno se hace mirando la lista: no «¿le puse esta?», sino «¿esta es la de su
+   * primera entrevista o la de la segunda?».
+   */
+  asignadas?: Map<string, number>;
   /**
    * false = el alumno llegó al tope de intentos. Las ya asignadas se siguen
    * pudiendo quitar; las demás quedan apagadas.
@@ -52,7 +59,7 @@ interface SelectorPreguntaProps {
  */
 export default function SelectorPregunta({
   preguntas, titulo, subtitulo, competencias = [], competenciaInicial = null,
-  seleccionadas = new Set(), permiteAgregar = true, guardando = false, onAlternar, onCerrar,
+  asignadas = new Map(), permiteAgregar = true, guardando = false, onAlternar, onCerrar,
 }: SelectorPreguntaProps) {
   const [texto, setTexto] = useState('');
   const [competencia, setCompetencia] = useState<string | null>(competenciaInicial);
@@ -92,7 +99,7 @@ export default function SelectorPregunta({
       e.preventDefault();
       const elegida = filtradas[indice];
       if (guardando) return;
-      if (elegida && (seleccionadas.has(elegida.id) || permiteAgregar)) onAlternar(elegida);
+      if (elegida && (asignadas.has(elegida.id) || permiteAgregar)) onAlternar(elegida);
     }
   }
 
@@ -147,7 +154,8 @@ export default function SelectorPregunta({
         ) : (
           <ul className={styles.lista} ref={listaRef}>
             {filtradas.map((p, i) => {
-              const elegida = seleccionadas.has(p.id);
+              const intento = asignadas.get(p.id);
+              const elegida = intento !== undefined;
               const apagada = guardando || (!elegida && !permiteAgregar);
               return (
                 <li key={p.id}>
@@ -171,7 +179,10 @@ export default function SelectorPregunta({
                       {elegida && (
                         <span className={styles.elegidaTag}>
                           <Icon name="check_circle" size="sm" />
-                          asignada
+                          {/* Con dos intentos por competencia, «asignada» a
+                              secas no dice cuál de las dos es: el número es lo
+                              que se viene a mirar. */}
+                          {intento}.º intento
                         </span>
                       )}
                       {p.competencia && (

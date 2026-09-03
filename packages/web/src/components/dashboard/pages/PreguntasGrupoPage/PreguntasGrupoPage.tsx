@@ -2259,7 +2259,9 @@ export default function PreguntasGrupoPage() {
             subtitulo={suyas.length >= MAX_INTENTOS
               ? `${nombreCompetencia} · ya tiene sus ${MAX_INTENTOS} intentos. Quita una para poner otra.`
               : `${nombreCompetencia} · lleva ${suyas.length} de ${MAX_INTENTOS}. Lo que elijas entra en el ${destino}.º intento.`}
-            seleccionadas={new Set(suyas.map((a) => a.pregunta?.id).filter((id): id is string => !!id))}
+            asignadas={new Map(suyas
+              .filter((a) => a.pregunta?.id)
+              .map((a) => [a.pregunta!.id, a.intento]))}
             permiteAgregar={suyas.length < MAX_INTENTOS}
             guardando={guardando > 0}
             onAlternar={(p) => {

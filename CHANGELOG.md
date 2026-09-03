@@ -21,6 +21,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   cuanto más se le pega, para poder pararse en la fila que se quiere. La fila dice que está viajando mientras el
   servidor responde, y al terminar se confirma a dónde fue —el destino puede
   quedar fuera de lo que se ve—.
+- **Al asignar preguntas se dice de qué intento es cada una.** La marca verde
+  decía «asignada» y ya está, pero cada competencia lleva dos entrevistas: con
+  las dos puestas no había forma de saber cuál era la de la primera y cuál la de
+  la segunda sin cerrar el modal. Ahora la marca dice «1.º intento» o «2.º
+  intento».
 - **Manual de competencias.** El profesor pone un enlace —debajo del tiempo, en
   la cabecera del módulo— y el alumno lo ve como «Manual de competencias» justo
   debajo de las reglas, que es donde está mirando qué hace falta para venir. Es
