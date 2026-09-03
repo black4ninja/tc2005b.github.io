@@ -21,7 +21,8 @@ import type {
 } from '../../../../types/preguntas';
 import { confirmar } from '../../../../utils/dialogos';
 import {
-  claveFecha, diaMasProximo, fechaConDia, fechaLarga, hora, rangoHoras,
+  claveFecha, diaMasProximo, fechaConDia, fechaLarga, fechaYHora, hora,
+  intentoTerminado, rangoHoras,
 } from '../../../../utils/agenda';
 import type { Agenda, CitaProfesor, DiaProfesor, Evidencia } from '../../../../types/agenda';
 import styles from './PreguntasGrupoPage.module.css';
@@ -169,6 +170,15 @@ export default function PreguntasGrupoPage() {
    * el enunciado cabe entero, que es lo que hace falta para leer la pregunta.
    */
   const [notasVisibles, setNotasVisibles] = useState(true);
+  /**
+   * Las preguntas de los intentos que todavía no han pasado.
+   *
+   * El modal se le enseña al alumno para darle la retroalimentación, y si tiene
+   * el primer intento el 2 y el segundo el 4, el día 3 no puede ver la pregunta
+   * del 4: se le estaría adelantando. Aparte de las notas a propósito —son dos
+   * cosas distintas y a veces hace falta tapar solo una—.
+   */
+  const [pendientesVisibles, setPendientesVisibles] = useState(true);
   const [creandoDia, setCreandoDia] = useState(false);
   const [guardandoDias, setGuardandoDias] = useState(false);
   /**
@@ -697,20 +707,28 @@ export default function PreguntasGrupoPage() {
   }), [dia, alumnos]);
 
   /**
-   * Las evidencias por hueco: `alumnoId::competenciaId::intento`.
+   * Qué hay en cada hueco `alumnoId::competenciaId::intento`: su cita y lo que
+   * entregó.
    *
-   * Salen de las CITAS y no de una consulta aparte: la evidencia cuelga de la
+   * Sale de las CITAS y no de una consulta aparte: la evidencia cuelga de la
    * cita, y la cita ya sabe de qué competencia y qué intento es. Así el modal de
-   * notas —que va por (competencia, intento)— las encuentra sin pedir nada más,
-   * y sin que quede una segunda regla de a quién pertenece cada evidencia.
+   * notas —que va por (competencia, intento)— encuentra sin pedir nada más
+   * tanto las evidencias como la HORA, que es lo que dice si ese intento ya
+   * pasó.
    */
-  const evidenciasPorHueco = useMemo(() => {
-    const mapa = new Map<string, Evidencia[]>();
+  const porHueco = useMemo(() => {
+    const mapa = new Map<string, {
+      inicio: string; duracionSegundos: number; evidencias: Evidencia[];
+    }>();
     for (const dia of agenda?.dias ?? []) {
       for (const h of dia.huecos) {
         const c = h.cita;
-        if (!c?.alumno || !c.competencia || c.evidencias.length === 0) continue;
-        mapa.set(`${c.alumno.id}::${c.competencia.id}::${c.intento}`, c.evidencias);
+        if (!c?.alumno || !c.competencia) continue;
+        mapa.set(`${c.alumno.id}::${c.competencia.id}::${c.intento}`, {
+          inicio: h.inicio,
+          duracionSegundos: dia.duracionSegundos,
+          evidencias: c.evidencias,
+        });
       }
     }
     return mapa;
@@ -2238,6 +2256,17 @@ export default function PreguntasGrupoPage() {
               <button
                 type="button"
                 className={styles.notasTapar}
+                onClick={() => setPendientesVisibles((v) => !v)}
+                title={pendientesVisibles
+                  ? 'Tapar las preguntas de los intentos que todavía no ha tenido'
+                  : 'Enseñar también las preguntas de los intentos que faltan'}
+              >
+                <Icon name={pendientesVisibles ? 'lock_open' : 'lock'} size="sm" />
+                {pendientesVisibles ? 'Ocultar lo que falta' : 'Ver lo que falta'}
+              </button>
+              <button
+                type="button"
+                className={styles.notasTapar}
                 onClick={() => setNotasVisibles((v) => !v)}
                 title={notasVisibles
                   ? 'Tapar las notas: el enunciado se lee entero'
@@ -2251,7 +2280,14 @@ export default function PreguntasGrupoPage() {
               <p className={styles.hint}>Todavía no tiene ninguna pregunta asignada.</p>
             ) : (
               <div className={styles.notasLista}>
-                {huecos.map(({ competencia, intento, asignacion }) => (
+                {huecos.map(({ competencia, intento, asignacion }) => {
+                  const suHueco = porHueco.get(`${alumno.id}::${competencia.id}::${intento}`);
+                  // Con el reloj del SERVIDOR: el del profesor puede ir
+                  // adelantado, y de eso depende si se enseña la pregunta.
+                  const terminado = intentoTerminado(
+                    suHueco, new Date(ahora + desfaseRef.current),
+                  );
+                  return (
                   <div key={asignacion!.id} className={styles.notaBloque}>
                     <div className={styles.notaCabecera}>
                       <span className={styles.competenciaTag}>{competencia.nombre}</span>
@@ -2264,17 +2300,28 @@ export default function PreguntasGrupoPage() {
                       )}
                     </div>
                     {/* Entero, sin cortar: recortado a 160 no se sabe qué se
-                        le preguntó, que es justo lo que se viene a mirar. */}
-                    <p className={styles.notaEnunciado}>
-                      {asignacion!.pregunta ? asignacion!.pregunta.texto : '—'}
-                    </p>
+                        le preguntó, que es justo lo que se viene a mirar. Pero
+                        solo si ese intento YA PASÓ o se pidió verlo todo: la
+                        pregunta de una entrevista que aún no ha ocurrido se le
+                        estaría adelantando al alumno que está mirando. */}
+                    {terminado || pendientesVisibles ? (
+                      <p className={styles.notaEnunciado}>
+                        {asignacion!.pregunta ? asignacion!.pregunta.texto : '—'}
+                      </p>
+                    ) : (
+                      <p className={styles.pendienteAviso}>
+                        <Icon name="lock" size="sm" />
+                        {suHueco
+                          ? `Todavía no le toca: ${fechaYHora(suHueco.inicio)}`
+                          : 'Todavía no ha agendado este intento'}
+                      </p>
+                    )}
                     {/* Las evidencias, DENTRO del intento y no en filas aparte:
                         pertenecen a esta entrevista, y una fila por enlace
-                        haría del modal una lista interminable. */}
-                    {(evidenciasPorHueco.get(`${alumno.id}::${competencia.id}::${intento}`) ?? []).length > 0 && (
-                      <ListaEvidencias
-                        evidencias={evidenciasPorHueco.get(`${alumno.id}::${competencia.id}::${intento}`)!}
-                      />
+                        haría del modal una lista interminable. Se enseñan
+                        siempre: son del alumno, no hay nada que adelantarle. */}
+                    {(suHueco?.evidencias.length ?? 0) > 0 && (
+                      <ListaEvidencias evidencias={suHueco!.evidencias} />
                     )}
                     {notasVisibles && (
                       <NotaInline
@@ -2288,13 +2335,16 @@ export default function PreguntasGrupoPage() {
                       />
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             <p className={styles.hint}>
               {notasVisibles
                 ? 'Se guardan al salir del campo. Solo las ves tú: no se proyectan ni afectan a la calificación.'
                 : 'Notas ocultas. Los enlaces son lo que entregó el alumno.'}
+              {!pendientesVisibles
+                && ' Un intento cuenta como hecho cuando tuvo cita y ya pasó su hora.'}
             </p>
           </Modal>
         );

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { diaMasProximo, estadoHueco, expandirFechas, semanasDelMes } from './agenda';
+import { diaMasProximo, estadoHueco, expandirFechas, intentoTerminado, semanasDelMes } from './agenda';
 
 describe('estadoHueco', () => {
   const agendableDesde = '2026-08-27T16:00:00.000Z';
@@ -74,6 +74,37 @@ describe('diaMasProximo', () => {
   it('no depende de que vengan ordenados', () => {
     const revueltos = [dias[2], dias[0], dias[1]];
     expect(diaMasProximo(revueltos, new Date('2026-09-02T12:00:00Z'))).toBe('b');
+  });
+});
+
+describe('intentoTerminado', () => {
+  // Una entrevista de cinco minutos el 2 de septiembre a las 10:00 de Querétaro.
+  const cita = { inicio: '2026-09-02T16:00:00.000Z', duracionSegundos: 300 };
+
+  it('sin cita no está hecho: no ha pasado nada', () => {
+    expect(intentoTerminado(null, new Date('2026-09-30T12:00:00Z'))).toBe(false);
+    expect(intentoTerminado(undefined, new Date('2026-09-30T12:00:00Z'))).toBe(false);
+  });
+
+  it('una cita futura no está hecha', () => {
+    expect(intentoTerminado(cita, new Date('2026-09-01T12:00:00Z'))).toBe(false);
+  });
+
+  it('mientras corre el hueco tampoco', () => {
+    expect(intentoTerminado(cita, new Date('2026-09-02T16:03:00Z'))).toBe(false);
+  });
+
+  it('al cerrarse su hueco pasa a hecho', () => {
+    expect(intentoTerminado(cita, new Date('2026-09-02T16:05:00Z'))).toBe(true);
+    expect(intentoTerminado(cita, new Date('2026-09-02T16:05:01Z'))).toBe(true);
+  });
+
+  it('el caso del profesor: el del 2 sí, el del 4 no', () => {
+    // Hoy es 3 de septiembre. El primer intento fue el 2 y el segundo es el 4.
+    const hoy = new Date('2026-09-03T18:00:00Z');
+    const segundo = { inicio: '2026-09-04T16:00:00.000Z', duracionSegundos: 300 };
+    expect(intentoTerminado(cita, hoy)).toBe(true);
+    expect(intentoTerminado(segundo, hoy)).toBe(false);
   });
 });
 

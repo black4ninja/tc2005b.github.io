@@ -68,11 +68,18 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   suelto— ahora se hace en el propio hueco.
 
 ### Changed
-- **El modal de notas: enunciado entero y notas que se pueden tapar.** La
+- **El modal de notas: enunciado entero, y dos cosas que se pueden tapar.** La
   pregunta se cortaba a 160 caracteres, que es justo lo que no deja saber qué se
-  le preguntó. Y ahora hay un botón para ocultar las notas: el modal se abre con
-  la clase delante y a veces con el proyector puesto, y lo que el profesor
-  apuntó de alguien no tiene por qué verse.
+  le preguntó. Y hay dos botones, porque el modal se le enseña al alumno para
+  darle la retroalimentación:
+  - **Ocultar notas**, que son del profesor y no tienen por qué verse con la
+    clase delante o el proyector puesto.
+  - **Ocultar lo que falta**: tapa la pregunta de los intentos que TODAVÍA NO
+    HAN PASADO, dejando la competencia y las evidencias. Un intento cuenta como
+    hecho cuando tuvo cita y ya se cerró la hora que le tocaba, así que con el
+    primero el 2 y el segundo el 4, el día 3 solo se ve el del 2. Sin esto, al
+    abrir el modal se le adelantaba al alumno la pregunta de su siguiente
+    entrevista.
 - **El día que se abre por defecto se recalcula, y se trae a la vista.** La
   regla no cambia —el más próximo que no haya TERMINADO, por hora: un día de 9 a
   11 a las diez de la noche ya pasó aunque siga siendo hoy—, pero antes se

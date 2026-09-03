@@ -114,6 +114,27 @@ export function diaMasProximo<T extends { id: string; inicio: string; fin: strin
   return (vivo ?? enOrden[enOrden.length - 1]).id;
 }
 
+/**
+ * Cuándo se da por HECHO un intento: cuando tuvo cita y su hueco ya terminó.
+ *
+ * No basta con que exista la cita ni con que sea de hoy. El módulo se usa para
+ * enseñarle al alumno su pregunta y darle la retroalimentación, y una pregunta
+ * de una entrevista que todavía no ha pasado es una pregunta que se le está
+ * adelantando: si tiene el primer intento el 2 y el segundo el 4, el día 3 solo
+ * puede ver la del 2.
+ *
+ * Sin cita no está hecho —no hay nada que haya pasado—, y mientras el hueco
+ * corre tampoco: se declara terminado cuando se cierra la hora que le tocaba.
+ */
+export function intentoTerminado(
+  cita: { inicio: string; duracionSegundos: number } | null | undefined,
+  ahora: Date,
+): boolean {
+  if (!cita) return false;
+  const fin = new Date(cita.inicio).getTime() + cita.duracionSegundos * 1000;
+  return Number.isFinite(fin) && ahora.getTime() >= fin;
+}
+
 /* ── Abrir días en lote ───────────────────────────────────────────────── */
 
 /** Un horario pedido: en qué fechas y de qué hora a qué hora. */

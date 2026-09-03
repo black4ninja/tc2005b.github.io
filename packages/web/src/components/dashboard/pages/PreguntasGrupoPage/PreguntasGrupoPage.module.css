@@ -1131,7 +1131,24 @@
 .notasBarra {
   display: flex;
   justify-content: flex-end;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
   margin-bottom: var(--space-sm);
+}
+
+/* El intento que aún no ha pasado: se dice cuándo le toca, en lugar de la
+   pregunta. Que se lea como «todavía no», y no como que falta un dato. */
+.pendienteAviso {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 5px 10px;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-style: italic;
 }
 
 .notasTapar {
