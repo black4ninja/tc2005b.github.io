@@ -126,68 +126,90 @@ export function agruparVacios<T extends { inicio: string; cita: unknown | null }
 
 /* ── Abrir días en lote ───────────────────────────────────────────────── */
 
-/** Un bloque pedido: qué días de la semana y a qué hora. */
-export interface BloquePedido {
-  /** 0 = domingo … 6 = sábado, como `Date.getDay()`. */
-  dias: number[];
+/** Un horario pedido: en qué fechas y de qué hora a qué hora. */
+export interface BloqueFechas {
+  /** `yyyy-mm-dd`, las que el profesor picó en el calendario. */
+  fechas: string[];
   /** `HH:MM` en la zona del profesor, como el alta de un día suelto. */
   desde: string;
   hasta: string;
 }
 
 /**
- * Convierte «del 7 al 18, martes y jueves, de 9 a 11» en los instantes que hay
- * que abrir.
+ * Convierte «el 7, el 8 y el 9, de 9 a 11» en los instantes que hay que abrir.
  *
- * El calendario se resuelve AQUÍ y no en el servidor: qué fechas caen en martes
- * y a qué instante corresponde «las 9:00» depende de la zona del profesor, y su
- * navegador es quien la sabe. Es la misma cuenta que ya hacía el alta de un día
- * suelto, solo que repetida. Al servidor le llegan instantes absolutos y él
- * decide cuáles entran.
+ * Antes esto era un rango de fechas cruzado con los días de la semana —«del 7 al
+ * 18, martes y jueves»—, y el profesor tenía que traducir mentalmente las fechas
+ * que quería a una regla que las produjera. Se pican y ya.
  *
- * Salen en orden cronológico porque así se leen en la vista previa: por fecha,
- * y dentro de cada fecha por hora.
+ * El calendario se resuelve AQUÍ y no en el servidor: a qué instante corresponde
+ * «las 9:00» depende de la zona del profesor, y su navegador es quien la sabe.
+ * Al servidor le llegan instantes absolutos y él decide cuáles entran.
+ *
+ * Salen en orden cronológico porque así se leen en la vista previa.
  */
-export function expandirBloques(
-  desde: string,
-  hasta: string,
-  bloques: BloquePedido[],
-): { inicio: string; fin: string }[] {
-  if (!desde || !hasta) return [];
-  const primera = new Date(`${desde}T00:00`);
-  const ultima = new Date(`${hasta}T00:00`);
-  if (Number.isNaN(primera.getTime()) || Number.isNaN(ultima.getTime())) return [];
-  if (ultima < primera) return [];
-
+export function expandirFechas(bloques: BloqueFechas[]): { inicio: string; fin: string }[] {
   const salida: { inicio: string; fin: string }[] = [];
-  const cursor = new Date(primera);
-  // Tope de seguridad: un rango tecleado mal —dos años en vez de dos semanas—
-  // no puede colgar el navegador antes de que el servidor lo rechace.
-  let vueltas = 0;
-  while (cursor <= ultima && vueltas < 400) {
-    vueltas += 1;
-    const dia = cursor.getDay();
-    const fecha = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`;
-    for (const bloque of bloques) {
-      if (!bloque.dias.includes(dia)) continue;
+  for (const bloque of bloques) {
+    for (const fecha of bloque.fechas) {
       const inicio = new Date(`${fecha}T${bloque.desde}`);
       const fin = new Date(`${fecha}T${bloque.hasta}`);
       if (Number.isNaN(inicio.getTime()) || Number.isNaN(fin.getTime())) continue;
       if (fin <= inicio) continue;
       salida.push({ inicio: inicio.toISOString(), fin: fin.toISOString() });
     }
-    cursor.setDate(cursor.getDate() + 1);
   }
   return salida.sort((a, b) => a.inicio.localeCompare(b.inicio));
 }
 
-/** Las iniciales de los días, empezando en lunes: como se leen en español. */
-export const DIAS_SEMANA: { dia: number; letra: string; nombre: string }[] = [
-  { dia: 1, letra: 'L', nombre: 'lunes' },
-  { dia: 2, letra: 'M', nombre: 'martes' },
-  { dia: 3, letra: 'X', nombre: 'miércoles' },
-  { dia: 4, letra: 'J', nombre: 'jueves' },
-  { dia: 5, letra: 'V', nombre: 'viernes' },
-  { dia: 6, letra: 'S', nombre: 'sábado' },
-  { dia: 0, letra: 'D', nombre: 'domingo' },
-];
+/** `yyyy-mm-dd` de una fecha local, que es como se pican en el calendario. */
+export function claveLocal(fecha: Date): string {
+  const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+  const dd = String(fecha.getDate()).padStart(2, '0');
+  return `${fecha.getFullYear()}-${mm}-${dd}`;
+}
+
+/**
+ * Las semanas de un mes para pintar un calendario, empezando en LUNES.
+ *
+ * Se rellenan los huecos de los extremos con los días del mes vecino para que
+ * la rejilla salga cuadrada; `delMes` dice cuáles son de verdad de este mes.
+ */
+export function semanasDelMes(anio: number, mes: number): {
+  fecha: Date; clave: string; dia: number; delMes: boolean;
+}[][] {
+  const primero = new Date(anio, mes, 1);
+  // getDay(): 0 = domingo. Con la semana empezando en lunes, el domingo va al 6.
+  const desplazamiento = (primero.getDay() + 6) % 7;
+  const arranque = new Date(anio, mes, 1 - desplazamiento);
+
+  const semanas: { fecha: Date; clave: string; dia: number; delMes: boolean }[][] = [];
+  const cursor = new Date(arranque);
+  // Seis semanas cubren cualquier mes: 31 días con seis de desplazamiento.
+  for (let semana = 0; semana < 6; semana += 1) {
+    const dias = [];
+    for (let i = 0; i < 7; i += 1) {
+      dias.push({
+        fecha: new Date(cursor),
+        clave: claveLocal(cursor),
+        dia: cursor.getDate(),
+        delMes: cursor.getMonth() === mes,
+      });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    semanas.push(dias);
+    // Si la semana que viene ya no pisa el mes, se corta: una fila entera del
+    // mes siguiente no dice nada y desplaza el resto del formulario.
+    if (cursor.getMonth() !== mes && cursor > new Date(anio, mes + 1, 0)) break;
+  }
+  return semanas;
+}
+
+/** `L M X J V S D` — la cabecera del calendario, empezando en lunes. */
+export const INICIALES_SEMANA = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+/** `septiembre de 2026` — el título del mes que se está mirando. */
+export function nombreMes(anio: number, mes: number): string {
+  return new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' })
+    .format(new Date(anio, mes, 1));
+}

@@ -31,12 +31,15 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   múltiple decía «Marca los bloques que quieras cambiar» sin decir dónde ni para
   qué; ahora dice «Marca arriba los horarios que quieras cerrar, reabrir o
   borrar».
-- **Los días de entrevistas se abren en lote, y un día admite varios bloques.**
+- **Los días de entrevistas se abren en lote, picándolos en un calendario.**
   Montar un mes de entrevistas era abrir el modal treinta veces: una fecha y una
-  franja por vez. Ahora se pide un rango de fechas y una lista de **bloques**,
-  cada uno con sus propios días de la semana y su horario —«de lunes a jueves de
-  9 a 11» y, además, «de martes a viernes de 4 a 6»—. Una **vista previa** dice
-  exactamente qué se va a crear antes de pulsar.
+  franja por vez. Ahora se abre un calendario, se pican los días que se quieran
+  —el 7, el 8, el 9— y se les pone su horario; y se pueden añadir tantos
+  **horarios** como haga falta, cada uno con sus propios días y sus propias
+  horas: «el 7, 8 y 9 de 9 a 11» y, además, «el 16 y el 17 de 4 a 6». Un mismo
+  día admite varios horarios. Una **vista previa** dice exactamente qué se va a
+  crear antes de pulsar, y marca lo que se salta por estar ya abierto o por
+  pisarse con otro.
 - **Administrar los días en lote.** La barra pasa a dos niveles: primero una tira
   horizontal con los DÍAS —con el nombre entero, «lunes 7 de sep», porque lo que
   se busca es «el martes» y no «el 8»— y, solo cuando el día elegido tiene más de

@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Modal from '../../atoms/Modal/Modal';
 import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
+import SelectorDias from '../SelectorDias/SelectorDias';
 import {
-  DIAS_SEMANA, expandirBloques, fechaCorta, hora, type BloquePedido,
+  expandirFechas, fechaCorta, hora, type BloqueFechas,
 } from '../../../../utils/agenda';
 import styles from './AbrirDiasModal.module.css';
 
@@ -25,7 +26,7 @@ interface Props {
   onCerrar: () => void;
 }
 
-const NUEVO: BloquePedido = { dias: [1, 2, 3, 4, 5], desde: '09:00', hasta: '13:00' };
+const NUEVO: BloqueFechas = { fechas: [], desde: '09:00', hasta: '13:00' };
 
 /** Cuánto se espera antes de pedir la vista previa, para no ir por tecla. */
 const ESPERA_MS = 350;
@@ -34,9 +35,14 @@ const ESPERA_MS = 350;
  * Abrir días de entrevistas en lote.
  *
  * Antes esto era un día y una franja por vez: montar un mes de entrevistas
- * significaba abrir el modal treinta veces. Aquí se pide un RANGO de fechas y
- * una lista de bloques, cada uno con sus propios días de la semana y su horario
- * —«de lunes a jueves de 9 a 11» y, además, «de martes a viernes de 4 a 6»—.
+ * significaba abrir el modal treinta veces. Y el primer intento de arreglarlo
+ * fue un rango de fechas cruzado con los días de la semana —«del 7 al 18,
+ * martes y jueves»—, que obliga a traducir las fechas que uno tiene en la
+ * cabeza a una regla que las produzca, y no sabe decir «el 7, el 8 y el 15».
+ *
+ * Aquí se pican los días en un calendario y se les pone su horario. Y se pueden
+ * añadir tantos horarios como haga falta, cada uno con sus propios días: «el 7,
+ * 8 y 9 de 9 a 11» y, además, «el 10 y el 11 de 4 a 6».
  *
  * La vista previa no es un adorno: dice exactamente qué se va a crear antes de
  * pulsar y marca lo que se salta. Sin ella «abrir 7 bloques» es un botón a
@@ -47,9 +53,7 @@ const ESPERA_MS = 350;
 export default function AbrirDiasModal({
   duracionSegundos, guardando, onSimular, onAbrir, onCerrar,
 }: Props) {
-  const [desde, setDesde] = useState('');
-  const [hasta, setHasta] = useState('');
-  const [bloques, setBloques] = useState<BloquePedido[]>([{ ...NUEVO }]);
+  const [bloques, setBloques] = useState<BloqueFechas[]>([{ ...NUEVO }]);
   const [nota, setNota] = useState('');
   const [plan, setPlan] = useState<FilaPlan[] | null>(null);
   const [simulando, setSimulando] = useState(false);
@@ -58,10 +62,7 @@ export default function AbrirDiasModal({
   /** Cuál simulación es la última pedida: las que vuelven tarde se descartan. */
   const ultima = useRef(0);
 
-  const candidatos = useMemo(
-    () => expandirBloques(desde, hasta, bloques),
-    [desde, hasta, bloques],
-  );
+  const candidatos = useMemo(() => expandirFechas(bloques), [bloques]);
 
   useEffect(() => {
     if (candidatos.length === 0) { setPlan(null); setFallo(false); return; }
@@ -92,16 +93,8 @@ export default function AbrirDiasModal({
   );
   const fechasDistintas = new Set(nuevos.map((f) => f.inicio.slice(0, 10))).size;
 
-  function cambiarBloque(indice: number, cambio: Partial<BloquePedido>) {
+  function cambiarBloque(indice: number, cambio: Partial<BloqueFechas>) {
     setBloques((bs) => bs.map((b, i) => (i === indice ? { ...b, ...cambio } : b)));
-  }
-
-  function alternarDia(indice: number, dia: number) {
-    setBloques((bs) => bs.map((b, i) => {
-      if (i !== indice) return b;
-      const dentro = b.dias.includes(dia);
-      return { ...b, dias: dentro ? b.dias.filter((d) => d !== dia) : [...b.dias, dia] };
-    }));
   }
 
   return (
@@ -109,58 +102,20 @@ export default function AbrirDiasModal({
       <div className={styles.caja}>
 
         <div className={styles.campo}>
-          <span className={styles.etiqueta}>Entre qué fechas</span>
-          <div className={styles.fechas}>
-            <input
-              type="date"
-              className={styles.input}
-              value={desde}
-              disabled={guardando}
-              onChange={(e) => {
-                setDesde(e.target.value);
-                // Un solo día es el caso más común: se rellena el otro extremo
-                // para no obligar a teclear la misma fecha dos veces.
-                if (!hasta || hasta < e.target.value) setHasta(e.target.value);
-              }}
-            />
-            <span className={styles.entre}>hasta</span>
-            <input
-              type="date"
-              className={styles.input}
-              value={hasta}
-              min={desde || undefined}
-              disabled={guardando}
-              onChange={(e) => setHasta(e.target.value)}
-            />
-            <span className={styles.pista}>La misma fecha en las dos abre un solo día.</span>
-          </div>
-        </div>
-
-        <div className={styles.campo}>
           <div className={styles.cabeceraCampo}>
             <span className={styles.etiqueta}>Horarios</span>
-            <span className={styles.pista}>Cada uno con sus días de la semana.</span>
+            <span className={styles.pista}>Elige los días y ponles su hora.</span>
           </div>
 
           <div className={styles.bloques}>
             {bloques.map((bloque, i) => (
               // eslint-disable-next-line react/no-array-index-key
               <div key={i} className={styles.bloque}>
-                <div className={styles.dias}>
-                  {DIAS_SEMANA.map(({ dia, letra, nombre }) => (
-                    <button
-                      key={dia}
-                      type="button"
-                      className={`${styles.dia} ${bloque.dias.includes(dia) ? styles.diaActivo : ''}`}
-                      disabled={guardando}
-                      onClick={() => alternarDia(i, dia)}
-                      title={nombre}
-                      aria-pressed={bloque.dias.includes(dia)}
-                    >
-                      {letra}
-                    </button>
-                  ))}
-                </div>
+                <SelectorDias
+                  fechas={bloque.fechas}
+                  deshabilitado={guardando}
+                  onCambiar={(fechas) => cambiarBloque(i, { fechas })}
+                />
                 <div className={styles.horas}>
                   <input
                     type="time"

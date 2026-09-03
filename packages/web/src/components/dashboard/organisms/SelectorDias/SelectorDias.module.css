@@ -1,0 +1,169 @@
+.caja { position: relative; flex: 1; min-width: 220px; }
+
+.disparador {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.disparador:hover:not(:disabled) { border-color: var(--text-muted); }
+.disparador:disabled { opacity: 0.5; cursor: default; }
+
+.vacio { flex: 1; text-align: left; color: var(--text-muted); }
+
+.elegidas {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.pastilla {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.mas { font-size: 0.75rem; color: var(--text-muted); }
+
+.panel {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  width: 268px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mes {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Solo la primera letra: `capitalize` afecta a cada palabra y dejaba
+   «Septiembre De 2026». */
+.mes::first-letter { text-transform: uppercase; }
+
+.flecha {
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.flecha:hover { background: var(--dash-bg-subtle); color: var(--text-primary); }
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  padding: 8px;
+}
+
+.inicial {
+  padding: 2px 0;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.dia {
+  padding: 6px 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.dia:hover:not(:disabled) { background: var(--dash-bg-subtle); }
+.dia:disabled { opacity: 0.28; cursor: default; }
+
+/* Los del mes vecino se ven, para que la rejilla no tenga agujeros, pero se
+   apagan: son de otro mes y elegirlos ahí despista. */
+.diaFuera { color: var(--text-muted); opacity: 0.55; }
+
+.diaHoy { border-color: var(--border-color); font-weight: 600; }
+
+.diaElegido {
+  background: var(--dash-primary);
+  border-color: var(--dash-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.diaElegido:hover:not(:disabled) { background: var(--dash-primary); opacity: 0.9; }
+
+.pie {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 8px 10px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-page);
+}
+
+.cuenta { flex: 1; font-size: 0.78rem; color: var(--text-secondary); }
+
+.limpiar {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.78rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.limpiar:hover { color: var(--estado-error-color); }
+
+.listo {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--dash-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.listo:hover { opacity: 0.9; }

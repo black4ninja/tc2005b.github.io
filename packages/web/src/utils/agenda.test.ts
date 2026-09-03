@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { agruparVacios, estadoHueco, expandirBloques } from './agenda';
+import { agruparVacios, estadoHueco, expandirFechas, semanasDelMes } from './agenda';
 
 describe('estadoHueco', () => {
   const agendableDesde = '2026-08-27T16:00:00.000Z';
@@ -68,44 +68,59 @@ describe('agruparVacios', () => {
   });
 });
 
-describe('expandirBloques', () => {
-  it('repite el bloque en cada fecha del rango que caiga en sus días', () => {
-    // Del lunes 7 al viernes 11 de septiembre de 2026, martes y jueves.
-    const salida = expandirBloques('2026-09-07', '2026-09-11', [
-      { dias: [2, 4], desde: '09:00', hasta: '11:00' },
+describe('expandirFechas', () => {
+  it('un horario abre sus días, y solo esos', () => {
+    const salida = expandirFechas([
+      { fechas: ['2026-09-07', '2026-09-08', '2026-09-09'], desde: '09:00', hasta: '11:00' },
     ]);
-    expect(salida).toHaveLength(2);
-    expect(salida.map((s) => new Date(s.inicio).getDay())).toEqual([2, 4]);
+    expect(salida).toHaveLength(3);
+    expect(salida.map((s) => new Date(s.inicio).getDate())).toEqual([7, 8, 9]);
   });
 
-  it('varios bloques con días distintos conviven, y salen en orden', () => {
-    // El caso que se pidió: lunes a jueves de 9 a 11 y, además, martes a
-    // viernes de 16 a 18.
-    const salida = expandirBloques('2026-09-07', '2026-09-11', [
-      { dias: [1, 2, 3, 4], desde: '09:00', hasta: '11:00' },
-      { dias: [2, 3, 4, 5], desde: '16:00', hasta: '18:00' },
+  it('varios horarios conviven, y salen en orden cronológico', () => {
+    // El caso que se pidió: unos días de mañana y otros de tarde, sin que uno
+    // dependa del otro.
+    const salida = expandirFechas([
+      { fechas: ['2026-09-07', '2026-09-09'], desde: '09:00', hasta: '11:00' },
+      { fechas: ['2026-09-08', '2026-09-09'], desde: '16:00', hasta: '18:00' },
     ]);
-    expect(salida).toHaveLength(8);
+    expect(salida).toHaveLength(4);
     const ordenado = [...salida].sort((a, b) => a.inicio.localeCompare(b.inicio));
     expect(salida).toEqual(ordenado);
-    // El martes sale dos veces: por la mañana y por la tarde.
-    const martes = salida.filter((s) => new Date(s.inicio).getDay() === 2);
-    expect(martes).toHaveLength(2);
+    // El 9 sale dos veces: por la mañana y por la tarde.
+    expect(salida.filter((s) => new Date(s.inicio).getDate() === 9)).toHaveLength(2);
   });
 
-  it('una sola fecha en las dos puntas abre un solo día', () => {
-    const salida = expandirBloques('2026-09-08', '2026-09-08', [
-      { dias: [2], desde: '09:00', hasta: '11:00' },
-    ]);
-    expect(salida).toHaveLength(1);
+  it('sin días elegidos no hay nada que abrir', () => {
+    expect(expandirFechas([{ fechas: [], desde: '09:00', hasta: '11:00' }])).toEqual([]);
   });
 
-  it('no devuelve nada si el rango está del revés o el bloque no cierra', () => {
-    expect(expandirBloques('2026-09-11', '2026-09-07', [
-      { dias: [1], desde: '09:00', hasta: '11:00' },
+  it('un horario que no cierra se descarta', () => {
+    expect(expandirFechas([
+      { fechas: ['2026-09-07'], desde: '11:00', hasta: '09:00' },
     ])).toEqual([]);
-    expect(expandirBloques('2026-09-07', '2026-09-11', [
-      { dias: [1], desde: '11:00', hasta: '09:00' },
-    ])).toEqual([]);
+  });
+});
+
+describe('semanasDelMes', () => {
+  it('empieza en lunes y rellena los huecos con el mes vecino', () => {
+    // Septiembre de 2026 empieza en martes: el lunes 31 de agosto abre la
+    // rejilla para que no quede un agujero.
+    const semanas = semanasDelMes(2026, 8);
+    expect(semanas[0]).toHaveLength(7);
+    expect(semanas[0][0].dia).toBe(31);
+    expect(semanas[0][0].delMes).toBe(false);
+    expect(semanas[0][1].dia).toBe(1);
+    expect(semanas[0][1].delMes).toBe(true);
+  });
+
+  it('no añade una fila entera del mes siguiente', () => {
+    // Con seis filas fijas, un mes corto acababa con una semana que no pisa
+    // ningún día suyo: sitio gastado que desplaza el resto del formulario.
+    for (const mes of [0, 1, 5, 8, 11]) {
+      const semanas = semanasDelMes(2026, mes);
+      const ultima = semanas[semanas.length - 1];
+      expect(ultima.some((d) => d.delMes)).toBe(true);
+    }
   });
 });
