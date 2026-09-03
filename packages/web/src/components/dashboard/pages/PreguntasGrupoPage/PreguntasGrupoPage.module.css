@@ -995,25 +995,50 @@
 /* ── Reorganizar el día arrastrando ─────────────────────────────────── */
 
 /* La fila de una cita se agarra y se mueve. Los botones de la derecha siguen
-   pulsándose: el hook ignora el gesto que empieza sobre un control. */
-.filaCita { cursor: grab; touch-action: none; }
-.filaCita:active { cursor: grabbing; }
-.filaAtenuada { opacity: 0.35; }
+   pulsándose: el hook ignora el gesto que empieza sobre un control.
 
-/* Mientras se arrastra, los huecos libres se abren uno a uno y dicen que
-   admiten el gesto. Fuera del arrastre siguen resumidos: entonces lo que hace
-   falta es ver dónde hay un respiro, no dónde soltar. */
+   `user-select` apagado: arrastrar sobre una tabla llena de texto acababa
+   pintando de azul media pantalla, y encima el navegador se quedaba con el
+   gesto. */
+.filaCita {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.filaCita:active { cursor: grabbing; }
+.filaAtenuada { opacity: 0.3; }
+
+/* Y mientras dura el gesto, en toda la caja: el puntero sale de la fila
+   enseguida y a partir de ahí selecciona lo que pilla. */
+.cuerpoEnArrastre { user-select: none; -webkit-user-select: none; cursor: grabbing; }
+
+/* Los huecos libres se abren uno a uno mientras se arrastra. BAJOS y callados:
+   son cuarenta y ocho, y si cada uno grita «soltar aquí» el día deja de
+   reconocerse y no se sabe en cuál se está. Fuera del arrastre siguen
+   resumidos, que es lo que hace falta para leerlo. */
 .filaSoltable td {
+  padding: 1px 12px;
+  font-size: 0.72rem;
+  font-style: normal;
+  color: var(--text-muted);
+  background: var(--bg-page);
+}
+
+.libreTenue { opacity: 0.5; }
+
+/* El único que habla es el de debajo del puntero, y dice a quién recibe. */
+.filaDestino td {
+  padding: 6px 12px;
   background: var(--estado-exito-bg);
   color: var(--estado-exito-color);
-  font-style: normal;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--estado-exito-color);
 }
 
-.filaDestino td {
-  background: var(--sidebar-active-bg);
-  color: var(--sidebar-active-color);
-  font-weight: 600;
-}
+.destinoAviso { display: inline-flex; align-items: center; gap: 6px; }
 
 /* Un chip de día también admite soltar: manda a esa fecha, a su primer hueco. */
 .chipSoltable { border-style: dashed; border-color: var(--estado-exito-color); }
@@ -1056,22 +1081,35 @@
   font-size: 0.85rem;
 }
 
-/* Lo que sigue al puntero mientras se arrastra. */
+/* Lo que sigue al puntero. Lleva la hora de destino encima: así se sabe dónde
+   va a caer sin apartar la vista para buscar qué fila está encendida. */
 .fantasma {
   position: fixed;
   top: 0;
   left: 0;
   z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 10px 0 0 14px;
   padding: 6px 12px;
   border: 1px solid var(--sidebar-active-color);
   border-radius: var(--border-radius);
   background: var(--bg-card);
-  color: var(--text-primary);
-  font-size: 0.85rem;
-  font-weight: 500;
   box-shadow: var(--shadow-lg);
   pointer-events: none;
 }
+
+.fantasmaNombre { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); }
+
+.fantasmaHora {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--estado-exito-color);
+  font-variant-numeric: tabular-nums;
+}
+
+.fantasmaFuera { font-size: 0.72rem; color: var(--text-muted); }
 
 /* La caja que se desplaza mientras se arrastra. Su altura la marca lo que se
    quiere ver de un día sin perder de vista la barra de arriba. */

@@ -1613,7 +1613,10 @@ export default function PreguntasGrupoPage() {
                   huecos: sin un contenedor propio, la página crecería de golpe
                   y el hook no tendría qué desplazar al llegar al borde —llevar
                   a alguien de las 10:30 a las 12:55 sería imposible sin soltar. */}
-              <div className={styles.cuerpoAgenda} ref={cuerpoAgenda}>
+              <div
+                className={`${styles.cuerpoAgenda} ${arrastrando ? styles.cuerpoEnArrastre : ''}`}
+                ref={cuerpoAgenda}
+              >
               <table className={styles.tabla}>
                 <thead>
                   {/* Anchos fijos: con un día lleno, dejar que la tabla
@@ -1650,7 +1653,18 @@ export default function PreguntasGrupoPage() {
                           className={`${styles.filaVacia} ${styles.filaSoltable} ${encima ? styles.filaDestino : ''}`}
                         >
                           <td className={styles.colCorta}>{hora(f.hueco.inicio)}</td>
-                          <td colSpan={4}>Soltar aquí</td>
+                          {/* Solo el hueco de DEBAJO DEL PUNTERO dice algo, y dice
+                              a quién va a recibir. Cuarenta y ocho filas repitiendo
+                              «soltar aquí» son cuarenta y ocho iguales: no se sabe
+                              en cuál se está. */}
+                          <td colSpan={4}>
+                            {encima
+                              ? <span className={styles.destinoAviso}>
+                                  <Icon name="south_east" size="sm" />
+                                  Aquí: {arrastrando?.alumno?.name}
+                                </span>
+                              : <span className={styles.libreTenue}>libre</span>}
+                          </td>
                         </tr>
                       );
                     }
@@ -2065,7 +2079,17 @@ export default function PreguntasGrupoPage() {
           className={styles.fantasma}
           style={{ transform: `translate(${posicion.x}px, ${posicion.y}px)` }}
         >
-          {arrastrando.alumno?.name}
+          <span className={styles.fantasmaNombre}>{arrastrando.alumno?.name}</span>
+          {/* La hora de destino viaja con el puntero: mirando la tarjeta ya se
+              sabe dónde va a caer, sin tener que buscar cuál fila está
+              encendida entre cuarenta y ocho. */}
+          <span className={zona ? styles.fantasmaHora : styles.fantasmaFuera}>
+            {zona
+              ? (zona.startsWith(ZONA_DIA)
+                ? '→ a ese día'
+                : `→ ${hora(zona)}`)
+              : 'suelta sobre un hueco libre'}
+          </span>
         </div>
       )}
 

@@ -13,8 +13,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   saber de memoria qué hueco estaba libre. Ahora se arrastra su fila a la hora
   nueva sobre la misma tabla que se está leyendo. Mientras se arrastra, los
   huecos libres se abren uno a uno para poder apuntar a la hora exacta; el resto
-  del tiempo siguen resumidos. Soltar a alguien sobre el chip de otro día lo
-  manda allí, a su primer hueco libre. La fila dice que está viajando mientras el
+  del tiempo siguen resumidos, y mientras se arrastra son líneas finas que solo
+  dicen «libre»: el único que habla es el de debajo del puntero, que dice a quién
+  va a recibir. La tarjeta que sigue al cursor lleva la hora de destino escrita,
+  así que se sabe dónde va a caer sin apartar la vista. Soltar a alguien sobre el
+  chip de otro día lo manda allí, a su primer hueco libre. La fila dice que está viajando mientras el
   servidor responde, y al terminar se confirma a dónde fue —el destino puede
   quedar fuera de lo que se ve—.
 - **Buscador en el selector de la proyección.** Era un desplegable nativo que con
