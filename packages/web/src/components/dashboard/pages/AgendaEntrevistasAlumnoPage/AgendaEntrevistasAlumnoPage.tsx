@@ -6,7 +6,8 @@ import DashButton from '../../atoms/DashButton/DashButton';
 import Modal from '../../atoms/Modal/Modal';
 import ListaEvidencias from '../../molecules/ListaEvidencias/ListaEvidencias';
 import {
-  adelantar, estadoHueco, fechaCorta, fechaLarga, fechaYHora, hora, puedeSerOtroIntento, rangoHoras,
+  adelantar, claveFecha, estadoHueco, fechaCorta, fechaLarga, fechaYHora, hora,
+  puedeSerOtroIntento, rangoHoras,
 } from '../../../../utils/agenda';
 import type { AgendaAlumno, DiaAlumno, HuecoAlumno } from '../../../../types/agenda';
 import styles from './AgendaEntrevistasAlumnoPage.module.css';
@@ -418,7 +419,10 @@ export default function AgendaEntrevistasAlumnoPage() {
                     libre: 'Libre: pulsa para apartarlo',
                     mio: `Tuyo: ${hueco.mia?.competencia ?? ''}`,
                     ocupado: 'Ya lo tomó alguien',
-                    pronto: `Demasiado justo: hay que agendar con ${reglas.horasHabilesAntelacion} horas hábiles`,
+                    pronto: 'Ya no da tiempo: hay que apartar con al menos '
+                      + `${reglas.horasHabilesAntelacion} horas hábiles de anticipación `
+                      + `(sin contar el fin de semana). Lo más pronto que puedes es el `
+                      + `${fechaYHora(agendableAhora)}.`,
                     pasado: 'Ya pasó',
                   }[estado]}
                 >
@@ -441,32 +445,53 @@ export default function AgendaEntrevistasAlumnoPage() {
               // «segundo» pasara primero. Lo decide el servidor; aquí solo se
               // evita ofrecer un botón que va a decir que no.
               const suyas = agenda.misCitas.filter((m) => m.competencia?.id === c.id);
-              // Cuál de ellas estorba, para poder decir la fecha en el botón.
+              // Cuál de ellas estorba, para poder decir cuál es y cuándo.
               const estorba = agotada ? undefined : suyas.find(
                 (m) => !puedeSerOtroIntento([m.inicio], eligiendo.hueco.inicio),
               );
               const bloqueada = agotada || !!estorba;
+
+              /**
+               * Por qué no se puede, en una frase.
+               *
+               * Antes decía «sin oportunidades» y «ya tienes una el dom 27»: los
+               * dos son ciertos y ninguno explica nada. El alumno no ve la regla
+               * —que solo hay dos intentos, o que el siguiente va DESPUÉS del
+               * que ya tiene—, así que lee el botón apagado como una avería.
+               *
+               * El mismo día y un día anterior se dicen distinto a propósito:
+               * son dos motivos distintos de estar bloqueado, y el alumno tiene
+               * que saber hacia dónde moverse.
+               */
+              const mismoDia = estorba
+                && claveFecha(estorba.inicio) === claveFecha(eligiendo.hueco.inicio);
+              const motivo = agotada
+                ? `Ya usaste tus ${reglas.maxIntentos} oportunidades en esta competencia.`
+                : estorba
+                  ? mismoDia
+                    ? `Tu ${estorba.intento}.º intento es ese mismo día, a las `
+                      + `${hora(estorba.inicio)}. El siguiente tiene que ser otro día.`
+                    : `Tu ${estorba.intento}.º intento es el ${fechaCorta(estorba.inicio)}. `
+                      + 'El siguiente tiene que ser en un día posterior, no antes.'
+                  : null;
+
               return (
                 <button
                   key={c.id}
                   className={styles.opcionComp}
                   disabled={bloqueada || guardando}
                   onClick={() => reservar(c.id)}
-                  title={agotada
-                    ? 'Ya usaste tus dos oportunidades en esta competencia'
-                    : estorba
-                      ? 'Tu otra entrevista de esta competencia es ese día o después:'
-                        + ' el siguiente intento va en un día posterior'
-                      : undefined}
+                  title={motivo ?? undefined}
                 >
-                  <span>{c.nombre}</span>
-                  <span className={styles.compCuenta}>
-                    {agotada
-                      ? 'sin oportunidades'
-                      : estorba
-                        ? `ya tienes una el ${fechaCorta(estorba.inicio)}`
-                        : `${c.usados + 1}.º intento`}
+                  <span className={styles.opcionFila}>
+                    <span>{c.nombre}</span>
+                    {!bloqueada && (
+                      <span className={styles.compCuenta}>{c.usados + 1}.º intento</span>
+                    )}
                   </span>
+                  {/* El motivo va DEBAJO y a lo ancho: al lado del nombre no
+                      cabe una frase, y recortarla es volver a no decir nada. */}
+                  {motivo && <span className={styles.opcionMotivo}>{motivo}</span>}
                 </button>
               );
             })}

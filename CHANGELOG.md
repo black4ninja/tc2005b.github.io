@@ -8,6 +8,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Al agendar, el alumno lee POR QUÉ no puede.** Una competencia bloqueada
+  decía «sin oportunidades» o «ya tienes una el dom 27 de sep»: ciertos los dos,
+  y ninguno explica la regla, así que el botón apagado se leía como una avería.
+  Ahora lo dice en una frase, y distingue los dos bloqueos que antes se
+  confundían —tu otro intento es ESE MISMO DÍA, o es POSTERIOR al hueco que
+  estás picando—, que se resuelven moviéndose en direcciones distintas. El hueco
+  al que ya no llegan las 24 horas hábiles añade además desde cuándo sí se puede.
 - **Las reglas del alumno dicen qué pasa si no se presenta.** «Cuenta como
   celebrada» no decía con qué nota, que es justo lo que se acaba reclamando:
   ahora se añade que la evaluación se toma en cuenta y el nivel será Incipiente B.
