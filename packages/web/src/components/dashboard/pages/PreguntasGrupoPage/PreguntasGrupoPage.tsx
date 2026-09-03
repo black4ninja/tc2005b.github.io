@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useArrastre } from '../../../../hooks/useArrastre';
 import { useParams, Link } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import Icon from '../../atoms/Icon/Icon';
@@ -7,7 +8,7 @@ import Modal from '../../atoms/Modal/Modal';
 import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta';
 import SelectorAlumno from '../../organisms/SelectorAlumno/SelectorAlumno';
 import AsignarCitaModal from '../../organisms/AsignarCitaModal/AsignarCitaModal';
-import MoverCitaModal from '../../organisms/MoverCitaModal/MoverCitaModal';
+import SaltoProyeccion from '../../organisms/SaltoProyeccion/SaltoProyeccion';
 import AbrirDiasModal, { type FilaPlan } from '../../organisms/AbrirDiasModal/AbrirDiasModal';
 import {
   aplicarAsignaciones, ajustarUso, faseProyeccion, formatearDuracion, quitarAsignaciones,
@@ -26,6 +27,8 @@ import styles from './PreguntasGrupoPage.module.css';
 
 const API_BASE = '/api';
 const SIN_COMPETENCIA = 'sin-competencia';
+/** Prefijo de la zona de soltar de un chip de día, para distinguirla de una hora. */
+const ZONA_DIA = 'dia:';
 /** Espejo de `MAX_INTENTOS` del API: hasta dos entrevistas por competencia. */
 const MAX_INTENTOS = 2;
 /**
@@ -152,8 +155,8 @@ export default function PreguntasGrupoPage() {
   /** El hueco libre que el profesor pulsó para apuntar a alguien a mano. */
   const [asignandoEn, setAsignandoEn] = useState<string | null>(null);
   const [asignandoCita, setAsignandoCita] = useState(false);
-  /** La cita que se está cambiando de hueco. */
-  const [moviendo, setMoviendo] = useState<CitaProfesor | null>(null);
+  /** Lo último que se movió bien. Se enseña hasta el siguiente gesto. */
+  const [movida, setMovida] = useState<string | null>(null);
   const [diaActivo, setDiaActivo] = useState<string | null>(null);
   const [creandoDia, setCreandoDia] = useState(false);
   /** Qué bloques están marcados para actuar sobre ellos a la vez. */
@@ -291,7 +294,7 @@ export default function PreguntasGrupoPage() {
     const conCitas = (agenda?.dias ?? [])
       .filter((d) => seleccion.has(d.id) && d.huecos.some((h) => h.cita)).length;
     if (!(await confirmar({
-      titulo: `¿Borrar ${seleccion.size} bloque${seleccion.size === 1 ? '' : 's'}?`,
+      titulo: `¿Borrar ${seleccion.size} horario${seleccion.size === 1 ? '' : 's'}?`,
       texto: conCitas > 0
         ? `${conCitas} tiene${conCitas === 1 ? '' : 'n'} citas apuntadas y se quedará${conCitas === 1 ? '' : 'n'}: primero hay que cancelarlas. El resto desaparece de la agenda.`
         : 'Desaparecerán de la agenda del grupo.',
@@ -306,7 +309,7 @@ export default function PreguntasGrupoPage() {
       if (!res.ok) throw new Error('No se pudieron borrar los días');
       const data = await res.json() as { conservados: number };
       if (data.conservados > 0) {
-        setError(`${data.conservados} bloque${data.conservados === 1 ? ' se quedó' : 's se quedaron'}: tiene${data.conservados === 1 ? '' : 'n'} citas apuntadas.`);
+        setError(`${data.conservados} horario${data.conservados === 1 ? ' se quedó' : 's se quedaron'}: tiene${data.conservados === 1 ? '' : 'n'} citas apuntadas.`);
       }
       setSeleccion(new Set());
       // Si entre los borrados iba el bloque que se está mirando, hay que soltar
@@ -415,19 +418,30 @@ export default function PreguntasGrupoPage() {
    * otro el hueco quedaba libre para que lo tomara alguien. Aquí es una sola
    * escritura y el servidor comprueba que el destino siga libre.
    */
-  async function moverCita(diaId: string, inicio: string) {
-    if (!moviendo) return;
+  /**
+   * Mover una cita al hueco donde la soltaron.
+   *
+   * El reorganizador NO se cierra al terminar: mover a uno suele ser el primero
+   * de tres, y cerrarlo obligaba a volver a abrirlo por cada persona. Lo que sí
+   * hace falta es decir que salió bien, porque la tarjeta puede acabar fuera de
+   * lo que se está viendo.
+   */
+  async function moverCita(citaId: string, diaId: string, inicio: string) {
     setAsignandoCita(true);
+    setMovida(null);
     try {
       const res = await fetch(
-        `${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/citas/${moviendo.id}`,
+        `${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/citas/${citaId}`,
         { method: 'PUT', headers, body: JSON.stringify({ diaId, inicio }) },
       );
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { message?: string };
         throw new Error(err.message || 'No se pudo mover la cita');
       }
-      setMoviendo(null);
+      const quien = (agenda?.dias ?? [])
+        .flatMap((d) => d.huecos)
+        .find((h) => h.cita?.id === citaId)?.cita?.alumno?.name;
+      setMovida(`${quien ?? 'La cita'} pasa a las ${hora(inicio)}.`);
       // Al día de destino, para no dejar al profesor mirando el hueco vacío que
       // acaba de dejar.
       setDiaActivo(diaId);
@@ -688,6 +702,35 @@ export default function PreguntasGrupoPage() {
     () => porFecha.find((f) => f.bloques.some((d) => d.id === diaActivo)) ?? porFecha[0] ?? null,
     [porFecha, diaActivo],
   );
+
+  /**
+   * Reorganizar el día arrastrando, sobre la propia tabla.
+   *
+   * Antes esto era un diálogo con dos desplegables —día y hora— y había que
+   * saber de memoria qué hueco estaba libre. Aquí se arrastra a alguien a su
+   * hora nueva sobre la misma tabla que se está leyendo, que es donde el
+   * profesor ya tiene los ojos el día de las entrevistas.
+   *
+   * La zona de destino es el instante del hueco. Los chips de los días también
+   * son zona: soltar a alguien encima lo manda a ese día, a su primer hueco
+   * libre, y la vista salta allí para poder colocarlo a la hora exacta.
+   */
+  const cuerpoAgenda = useRef<HTMLDivElement>(null);
+  const { iniciar, arrastrando, posicion, zona } = useArrastre<CitaProfesor>({
+    alSoltar: (cita, destino) => {
+      if (asignandoCita) return;
+      if (destino.startsWith(ZONA_DIA)) {
+        const otro = (agenda?.dias ?? []).find((d) => d.id === destino.slice(ZONA_DIA.length));
+        const libre = otro?.huecos.find((h) => !h.cita);
+        if (!otro || !libre) return;
+        void moverCita(cita.id, otro.id, libre.inicio);
+        return;
+      }
+      if (!dia || destino === cita.inicio) return;
+      void moverCita(cita.id, dia.id, destino);
+    },
+    contenedor: cuerpoAgenda,
+  });
 
   /** Las horas del día que siguen libres, para poder ofrecerlas a mano. */
   const libresDelDia = useMemo(
@@ -1111,20 +1154,16 @@ export default function PreguntasGrupoPage() {
               {/* Ir a cualquiera sin pasar por los de en medio. Las flechas
                   sirven para el día seguido; esto, para cuando alguien pide su
                   turno antes o llega tarde y hay que rescatarlo. */}
-              <select
-                className={styles.mandoSalto}
-                value={indiceProyectado}
-                disabled={paraProyectar.length === 0 || mandando !== null}
-                onChange={(e) => irAProyeccion(Number(e.target.value))}
-                title="Saltar a cualquiera de la lista"
-              >
-                {indiceProyectado < 0 && <option value={-1}>Elige a quién proyectar…</option>}
-                {paraProyectar.map((x, i) => (
-                  <option key={x.asignacion.id} value={i}>
-                    {x.pista} · {x.alumno.name}
-                  </option>
-                ))}
-              </select>
+              <SaltoProyeccion
+                opciones={paraProyectar.map((x) => ({
+                  id: x.asignacion.id,
+                  nombre: x.alumno.name,
+                  pista: x.pista,
+                }))}
+                indice={indiceProyectado}
+                deshabilitado={mandando !== null}
+                onElegir={irAProyeccion}
+              />
 
               {/* El botón dice lo que está pasando mientras pasa: la pantalla que
                   cambia está en otro aparato y el profesor no la tiene delante. */}
@@ -1375,7 +1414,18 @@ export default function PreguntasGrupoPage() {
                     return (
                       <button
                         key={f.clave}
-                        className={`${styles.chip} ${styles.chipDia} ${(enSeleccion ? marcados > 0 : activa) ? styles.chipActivo : ''}`}
+                        // Soltar a alguien encima lo manda a ese día. Solo con
+                        // UN horario: con varios no hay respuesta a «a cuál».
+                        data-zona={arrastrando && f.bloques.length === 1
+                          ? `${ZONA_DIA}${f.bloques[0].id}`
+                          : undefined}
+                        className={[
+                          styles.chip,
+                          styles.chipDia,
+                          (enSeleccion ? marcados > 0 : activa) ? styles.chipActivo : '',
+                          arrastrando && f.bloques.length === 1 ? styles.chipSoltable : '',
+                          zona === `${ZONA_DIA}${f.bloques[0].id}` ? styles.chipDestino : '',
+                        ].filter(Boolean).join(' ')}
                         onClick={() => {
                           if (!enSeleccion) { setDiaActivo(f.bloques[0].id); return; }
                           setSeleccion((s) => {
@@ -1402,7 +1452,7 @@ export default function PreguntasGrupoPage() {
                         {f.etiqueta}
                         <span className={styles.chipContador}>{f.citas}/{f.huecos}</span>
                         {f.bloques.length > 1 && (
-                          <span className={styles.chipContador}>· {f.bloques.length} bloques</span>
+                          <span className={styles.chipContador}>· {f.bloques.length} horarios</span>
                         )}
                       </button>
                     );
@@ -1453,7 +1503,7 @@ export default function PreguntasGrupoPage() {
                   setEnSeleccion((v) => !v);
                   setSeleccion(new Set());
                 }}
-                title="Cerrar, reabrir o borrar varios bloques a la vez"
+                title="Cerrar, reabrir o borrar varios horarios a la vez"
               >
                 <Icon name="checklist" size="sm" /> {enSeleccion ? 'Salir' : 'Seleccionar'}
               </DashButton>
@@ -1489,8 +1539,8 @@ export default function PreguntasGrupoPage() {
             <div className={styles.barraLote}>
               <span className={styles.loteCuenta}>
                 {seleccion.size === 0
-                  ? 'Marca los bloques que quieras cambiar'
-                  : `${seleccion.size} bloque${seleccion.size === 1 ? '' : 's'} seleccionado${seleccion.size === 1 ? '' : 's'}`}
+                  ? 'Marca arriba los horarios que quieras cerrar, reabrir o borrar'
+                  : `${seleccion.size} horario${seleccion.size === 1 ? '' : 's'} seleccionado${seleccion.size === 1 ? '' : 's'}`}
               </span>
               <div className={styles.loteAcciones}>
                 <button
@@ -1516,6 +1566,14 @@ export default function PreguntasGrupoPage() {
                 </button>
               </div>
             </div>
+          )}
+
+          {movida && !arrastrando && (
+            /* Mover a alguien lo saca de donde estaba: si el destino quedó
+               fuera de lo que se ve, el cambio no se nota. Se dice. */
+            <p className={styles.movida} role="status">
+              <Icon name="check_circle" size="sm" /> {movida}
+            </p>
           )}
 
           {dia && (
@@ -1550,6 +1608,12 @@ export default function PreguntasGrupoPage() {
                 </span>
               </div>
 
+              {/* La tabla se desplaza DENTRO de su caja, y no la página.
+                  Mientras se arrastra la lista se abre a los cuarenta y ocho
+                  huecos: sin un contenedor propio, la página crecería de golpe
+                  y el hook no tendría qué desplazar al llegar al borde —llevar
+                  a alguien de las 10:30 a las 12:55 sería imposible sin soltar. */}
+              <div className={styles.cuerpoAgenda} ref={cuerpoAgenda}>
               <table className={styles.tabla}>
                 <thead>
                   {/* Anchos fijos: con un día lleno, dejar que la tabla
@@ -1567,8 +1631,29 @@ export default function PreguntasGrupoPage() {
                 <tbody>
                   {/* Los huecos vacíos seguidos se resumen en una fila: un día de
                       cuatro horas son 48 bloques, y lo que hace falta saber es
-                      dónde hay un respiro y a qué hora se vuelve a empezar. */}
-                  {agruparVacios(filaDelDia, dia.duracionSegundos).map((f) => {
+                      dónde hay un respiro y a qué hora se vuelve a empezar.
+                      MIENTRAS SE ARRASTRA se abren uno a uno: entonces lo que
+                      hace falta es justo lo contrario, poder apuntar a la hora
+                      exacta donde se suelta. */}
+                  {(arrastrando
+                    ? filaDelDia.map((h) => (h.cita
+                      ? { tipo: 'cita' as const, hueco: h }
+                      : { tipo: 'libre' as const, hueco: h }))
+                    : agruparVacios(filaDelDia, dia.duracionSegundos)
+                  ).map((f) => {
+                    if (f.tipo === 'libre') {
+                      const encima = zona === f.hueco.inicio;
+                      return (
+                        <tr
+                          key={`libre-${f.hueco.inicio}`}
+                          data-zona={f.hueco.inicio}
+                          className={`${styles.filaVacia} ${styles.filaSoltable} ${encima ? styles.filaDestino : ''}`}
+                        >
+                          <td className={styles.colCorta}>{hora(f.hueco.inicio)}</td>
+                          <td colSpan={4}>Soltar aquí</td>
+                        </tr>
+                      );
+                    }
                     if (f.tipo === 'vacio') {
                       return (
                         <tr key={`vacio-${f.desde}`} className={styles.filaVacia}>
@@ -1595,10 +1680,21 @@ export default function PreguntasGrupoPage() {
                     }
                     const { inicio, cita, alumno, asignacion } = f.hueco;
                     const enPantalla = !!asignacion && asignacion.id === proyeccion?.asignacionId;
+                    const viajando = asignandoCita && arrastrando?.id === cita!.id;
                     return (
-                      <tr key={inicio} className={enPantalla ? styles.filaProyectada : ''}>
+                      <tr
+                        key={inicio}
+                        onPointerDown={asignandoCita ? undefined : iniciar(cita!)}
+                        className={[
+                          styles.filaCita,
+                          enPantalla ? styles.filaProyectada : '',
+                          arrastrando?.id === cita!.id ? styles.filaAtenuada : '',
+                        ].filter(Boolean).join(' ')}
+                        title="Arrástralo para cambiarlo de hora"
+                      >
                         <td className={styles.colCorta}>
                           <strong>{hora(inicio)}</strong>
+                          {viajando && <span className={styles.girandoFila} aria-label="Moviendo" />}
                         </td>
                         <td className={styles.colAlumno}>
                           <span className={styles.alumnoNombre}>{cita!.alumno?.name}</span>
@@ -1643,13 +1739,6 @@ export default function PreguntasGrupoPage() {
                           </button>
                           <button
                             className={styles.iconBtn}
-                            onClick={() => setMoviendo(cita!)}
-                            title="Cambiarlo de hueco o de día"
-                          >
-                            <Icon name="swap_horiz" size="sm" />
-                          </button>
-                          <button
-                            className={styles.iconBtn}
                             onClick={() => cancelarCita(cita!.id)}
                             title="Cancelar esta cita (no llegó, se cambió de día…)"
                           >
@@ -1664,6 +1753,7 @@ export default function PreguntasGrupoPage() {
                   )}
                 </tbody>
               </table>
+              </div>
             </>
           )}
         </>
@@ -1968,14 +2058,15 @@ export default function PreguntasGrupoPage() {
       )}
 
       {/* Alumno → pregunta */}
-      {moviendo && (
-        <MoverCitaModal
-          cita={moviendo}
-          dias={agenda?.dias ?? []}
-          guardando={asignandoCita}
-          onMover={moverCita}
-          onCerrar={() => setMoviendo(null)}
-        />
+      {/* La tarjeta que sigue al puntero. Fuera de la tabla para que no la
+          recorte el desplazamiento. */}
+      {arrastrando && posicion && (
+        <div
+          className={styles.fantasma}
+          style={{ transform: `translate(${posicion.x}px, ${posicion.y}px)` }}
+        >
+          {arrastrando.alumno?.name}
+        </div>
       )}
 
       {asignandoEn && (

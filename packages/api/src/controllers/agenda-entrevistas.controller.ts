@@ -134,7 +134,12 @@ function intentosDeTodas(citas: CitaEntrevista[]): Map<string, number> {
   }
   const numeros = new Map<string, number>();
   for (const grupo of porAlumnoYCompetencia.values()) {
-    const n = numerarIntentos(grupo.map((c) => ({ id: c.id!, inicio: c.getInicio() })));
+    // Por cuándo se apartó la cita, no por su hora: mover a alguien de hueco no
+    // puede renumerarle los intentos ni cambiarle la pregunta.
+    const n = numerarIntentos(grupo.map((c) => ({
+      id: c.id!,
+      creada: c.createdAt ?? new Date(0),
+    })));
     for (const [id, intento] of n) numeros.set(id, intento);
   }
   return numeros;

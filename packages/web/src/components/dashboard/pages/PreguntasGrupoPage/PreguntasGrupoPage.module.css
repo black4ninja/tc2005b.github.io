@@ -992,20 +992,112 @@
   margin-top: var(--space-md);
 }
 
-/* El salto a cualquiera de la fila. Va entre las flechas y los mandos del
-   reloj: es la misma familia —a quién se está enseñando— y no una acción sobre
-   la pantalla. Ancho corto y con recorte: los nombres largos no pueden empujar
-   los botones que se pulsan a oscuras. */
-.mandoSalto {
-  max-width: 190px;
-  padding: 5px 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--bg-card);
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: 0.82rem;
-  cursor: pointer;
+/* ── Reorganizar el día arrastrando ─────────────────────────────────── */
+
+/* La fila de una cita se agarra y se mueve. Los botones de la derecha siguen
+   pulsándose: el hook ignora el gesto que empieza sobre un control. */
+.filaCita { cursor: grab; touch-action: none; }
+.filaCita:active { cursor: grabbing; }
+.filaAtenuada { opacity: 0.35; }
+
+/* Mientras se arrastra, los huecos libres se abren uno a uno y dicen que
+   admiten el gesto. Fuera del arrastre siguen resumidos: entonces lo que hace
+   falta es ver dónde hay un respiro, no dónde soltar. */
+.filaSoltable td {
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+  font-style: normal;
 }
 
-.mandoSalto:disabled { opacity: 0.5; cursor: default; }
+.filaDestino td {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
+  font-weight: 600;
+}
+
+/* Un chip de día también admite soltar: manda a esa fecha, a su primer hueco. */
+.chipSoltable { border-style: dashed; border-color: var(--estado-exito-color); }
+.chipDestino {
+  border-style: solid;
+  border-color: var(--sidebar-active-color);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
+}
+
+/* La cita viaja: hasta que el servidor confirma, su fila lo dice. */
+.girandoFila {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  margin-left: 6px;
+  vertical-align: middle;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--sidebar-active-color);
+  border-radius: 50%;
+  animation: girarFila 700ms linear infinite;
+}
+
+@keyframes girarFila { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .girandoFila { animation-duration: 2s; }
+}
+
+.movida {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--estado-exito-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+  font-size: 0.85rem;
+}
+
+/* Lo que sigue al puntero mientras se arrastra. */
+.fantasma {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  padding: 6px 12px;
+  border: 1px solid var(--sidebar-active-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+}
+
+/* La caja que se desplaza mientras se arrastra. Su altura la marca lo que se
+   quiere ver de un día sin perder de vista la barra de arriba. */
+.cuerpoAgenda {
+  max-height: 62vh;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+}
+
+.cuerpoAgenda .tabla { border: none; border-radius: 0; }
+
+.cuerpoAgenda::-webkit-scrollbar { width: 10px; }
+.cuerpoAgenda::-webkit-scrollbar-track { background: transparent; }
+.cuerpoAgenda::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 999px;
+  border: 2px solid var(--bg-card);
+}
+
+/* La cabecera se queda pegada: con el día abierto a 48 filas, saber qué columna
+   es cuál sin volver arriba. */
+.cuerpoAgenda .tabla th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-card);
+}

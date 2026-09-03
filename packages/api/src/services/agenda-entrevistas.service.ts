@@ -106,18 +106,24 @@ export function huecosDelDia(inicio: Date, fin: Date, duracionSegundos: number):
 }
 
 /**
- * En qué intento va cada cita de un alumno en una competencia: la más temprana
- * es el 1.º y así.
+ * En qué intento va cada cita de un alumno en una competencia: la que APARTÓ
+ * primero es el 1.º y así.
  *
  * Se calcula al leer y no se guarda a propósito. Si el alumno cancela su primera
  * cita, la que le queda pasa a ser la primera —y le toca la primera pregunta—,
  * que es lo que espera cualquiera; con el número guardado se quedaría en un
  * segundo intento sin haber tenido el primero.
+ *
+ * Pero el orden es el de RESERVA, no el de la hora. Ordenando por hora, cambiar
+ * a alguien de sitio le renumeraba los intentos: pasar su primera entrevista
+ * después de la segunda las intercambiaba, y con ellas las preguntas que le
+ * tocaban. Mover a alguien de hueco es cambiarlo de sitio y nada más; el
+ * profesor lo hace mirando su agenda del día, no las oportunidades de nadie.
  */
-export function numerarIntentos<T extends { inicio: Date; id?: string }>(citas: T[]): Map<string, number> {
+export function numerarIntentos<T extends { creada: Date; id?: string }>(citas: T[]): Map<string, number> {
   const orden = [...citas].sort((a, b) => {
-    const d = a.inicio.getTime() - b.inicio.getTime();
-    // Empate por hora: el id desempata para que el número no baile entre cargas.
+    const d = a.creada.getTime() - b.creada.getTime();
+    // Empate: el id desempata para que el número no baile entre cargas.
     return d !== 0 ? d : (a.id ?? '').localeCompare(b.id ?? '');
   });
   return new Map(orden.map((c, i) => [c.id ?? String(i), i + 1]));

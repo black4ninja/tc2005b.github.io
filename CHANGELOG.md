@@ -8,6 +8,24 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **La agenda se reorganiza arrastrando, sobre la propia tabla.** Cambiar a un
+  alumno de hora era un diálogo con dos desplegables —día y hora— y había que
+  saber de memoria qué hueco estaba libre. Ahora se arrastra su fila a la hora
+  nueva sobre la misma tabla que se está leyendo. Mientras se arrastra, los
+  huecos libres se abren uno a uno para poder apuntar a la hora exacta; el resto
+  del tiempo siguen resumidos. Soltar a alguien sobre el chip de otro día lo
+  manda allí, a su primer hueco libre. La fila dice que está viajando mientras el
+  servidor responde, y al terminar se confirma a dónde fue —el destino puede
+  quedar fuera de lo que se ve—.
+- **Buscador en el selector de la proyección.** Era un desplegable nativo que con
+  cuarenta alumnos había que recorrer a ojo. Ahora se escribe, la lista se reduce
+  y se navega con las flechas.
+
+### Changed
+- **«Bloques» pasa a llamarse «horarios» en pantalla.** El aviso de la selección
+  múltiple decía «Marca los bloques que quieras cambiar» sin decir dónde ni para
+  qué; ahora dice «Marca arriba los horarios que quieras cerrar, reabrir o
+  borrar».
 - **Los días de entrevistas se abren en lote, y un día admite varios bloques.**
   Montar un mes de entrevistas era abrir el modal treinta veces: una fecha y una
   franja por vez. Ahora se pide un rango de fechas y una lista de **bloques**,
@@ -82,6 +100,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   - Tope de cinco partidas vivas por alumno y ocho personas por partida.
 
 ### Fixed
+- **Mover a un alumno de hueco le cambiaba el número de intento, y con él la
+  pregunta que le tocaba.** El intento se deducía del orden por HORA de sus
+  citas, así que adelantar su primera entrevista después de la segunda las
+  intercambiaba. Reasignar es cambiar de sitio y nada más. Ahora el orden es el
+  de RESERVA: mover no toca las oportunidades de nadie, y cancelar la primera
+  sigue ascendiendo a la que queda, que era la razón de calcularlo al leer.
 - **Nada impedía abrir dos días de entrevistas que se pisaran.** Dos bloques
   solapados parten las mismas horas dos veces, así que el hueco de las 10:00
   existía por duplicado: dos alumnos lo veían libre, los dos lo reservaban y solo

@@ -138,8 +138,8 @@ export default function AbrirDiasModal({
 
         <div className={styles.campo}>
           <div className={styles.cabeceraCampo}>
-            <span className={styles.etiqueta}>Bloques</span>
-            <span className={styles.pista}>Cada bloque tiene sus días y su horario.</span>
+            <span className={styles.etiqueta}>Horarios</span>
+            <span className={styles.pista}>Cada uno con sus días de la semana.</span>
           </div>
 
           <div className={styles.bloques}>
@@ -184,7 +184,7 @@ export default function AbrirDiasModal({
                     className={styles.quitar}
                     disabled={guardando}
                     onClick={() => setBloques((bs) => bs.filter((_, j) => j !== i))}
-                    aria-label="Quitar este bloque"
+                    aria-label="Quitar este horario"
                   >
                     <Icon name="close" size="sm" />
                   </button>
@@ -198,7 +198,7 @@ export default function AbrirDiasModal({
               disabled={guardando}
               onClick={() => setBloques((bs) => [...bs, { ...NUEVO }])}
             >
-              <Icon name="add" size="sm" /> Añadir bloque
+              <Icon name="add" size="sm" /> Añadir horario
             </button>
           </div>
         </div>
@@ -226,7 +226,7 @@ export default function AbrirDiasModal({
                     ? 'Calculando…'
                     : nuevos.length === 0
                       ? 'No hay nada que abrir'
-                      : `Se abrirán ${nuevos.length} bloque${nuevos.length === 1 ? '' : 's'} en ${fechasDistintas} día${fechasDistintas === 1 ? '' : 's'}`}
+                      : `Se abrirán ${nuevos.length} horario${nuevos.length === 1 ? '' : 's'} en ${fechasDistintas} día${fechasDistintas === 1 ? '' : 's'}`}
               </span>
               {fallo && (
                 <span className={styles.previaDato}>Vuelve a intentarlo en un momento.</span>
@@ -253,7 +253,7 @@ export default function AbrirDiasModal({
                       {fila.estado === 'nuevo'
                         ? `${Math.floor((new Date(fila.fin).getTime() - new Date(fila.inicio).getTime()) / (duracionSegundos * 1000))} huecos`
                         : fila.estado === 'duplicado'
-                          ? 'ese bloque ya está abierto'
+                          ? 'ese horario ya está abierto'
                           : `se pisa con el de ${hora(fila.choca!.inicio)} – ${hora(fila.choca!.fin)}`}
                     </span>
                     <span className={fila.estado === 'nuevo' ? styles.tagNuevo : styles.tagSalta}>
@@ -274,7 +274,7 @@ export default function AbrirDiasModal({
           >
             {guardando
               ? 'Abriendo…'
-              : `Abrir ${nuevos.length} bloque${nuevos.length === 1 ? '' : 's'}`}
+              : `Abrir ${nuevos.length} horario${nuevos.length === 1 ? '' : 's'}`}
           </DashButton>
         </div>
       </div>

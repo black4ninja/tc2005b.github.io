@@ -101,23 +101,39 @@ describe('huecosDelDia', () => {
 });
 
 describe('numerarIntentos', () => {
-  it('numera por hora, no por orden de creación', () => {
+  it('numera por orden de reserva', () => {
     const n = numerarIntentos([
-      { id: 'b', inicio: qro('2026-09-02T09:00:00') },
-      { id: 'a', inicio: qro('2026-08-27T09:00:00') },
+      { id: 'b', creada: qro('2026-08-20T12:00:00') },
+      { id: 'a', creada: qro('2026-08-19T12:00:00') },
     ]);
     expect(n.get('a')).toBe(1);
     expect(n.get('b')).toBe(2);
   });
 
+  it('cambiar la cita de hora NO la renumera', () => {
+    // El caso que lo motivó: el profesor mueve a alguien de hueco y le
+    // cambiaban el número de intento —y con él la pregunta que le tocaba—.
+    // Mover es cambiar de sitio; las oportunidades no se tocan.
+    const reservas = [
+      { id: 'primera', creada: qro('2026-08-19T12:00:00') },
+      { id: 'segunda', creada: qro('2026-08-20T12:00:00') },
+    ];
+    const antes = numerarIntentos(reservas);
+    // La hora ya no entra en la cuenta: da igual dónde acabe cada una.
+    const despues = numerarIntentos([...reservas].reverse());
+    expect(antes.get('primera')).toBe(1);
+    expect(despues.get('primera')).toBe(1);
+    expect(despues.get('segunda')).toBe(2);
+  });
+
   it('cancelar la primera asciende a la que queda', () => {
-    const n = numerarIntentos([{ id: 'b', inicio: qro('2026-09-02T09:00:00') }]);
+    const n = numerarIntentos([{ id: 'b', creada: qro('2026-08-20T12:00:00') }]);
     expect(n.get('b')).toBe(1);
   });
 
-  it('con la misma hora desempata el id, para que el número no baile', () => {
-    const misma = qro('2026-08-27T09:00:00');
-    const n = numerarIntentos([{ id: 'z', inicio: misma }, { id: 'a', inicio: misma }]);
+  it('con la misma marca desempata el id, para que el número no baile', () => {
+    const misma = qro('2026-08-19T12:00:00');
+    const n = numerarIntentos([{ id: 'z', creada: misma }, { id: 'a', creada: misma }]);
     expect(n.get('a')).toBe(1);
     expect(n.get('z')).toBe(2);
   });
