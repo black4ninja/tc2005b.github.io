@@ -1015,13 +1015,34 @@
 }
 
 /* El único que habla es el de debajo del puntero, y dice a quién recibe. */
+/* El recuadro del destino se dibuja alrededor de la FILA, no de cada celda.
+   Con un `inset` completo en todas, cada `td` traía sus dos verticales y el
+   hueco quedaba partido en columnas: parecía una tabla dentro de la tabla en vez
+   de una fila señalada. Arriba y abajo en todas; los lados, solo en los
+   extremos. */
 .filaDestino td {
   padding: 6px 12px;
   background: var(--estado-exito-bg);
   color: var(--estado-exito-color);
   font-size: 0.85rem;
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px var(--estado-exito-color);
+  box-shadow:
+    inset 0 1px 0 var(--estado-exito-color),
+    inset 0 -1px 0 var(--estado-exito-color);
+}
+
+.filaDestino td:first-child {
+  box-shadow:
+    inset 0 1px 0 var(--estado-exito-color),
+    inset 0 -1px 0 var(--estado-exito-color),
+    inset 1px 0 0 var(--estado-exito-color);
+}
+
+.filaDestino td:last-child {
+  box-shadow:
+    inset 0 1px 0 var(--estado-exito-color),
+    inset 0 -1px 0 var(--estado-exito-color),
+    inset -1px 0 0 var(--estado-exito-color);
 }
 
 .destinoAviso { display: inline-flex; align-items: center; gap: 6px; }

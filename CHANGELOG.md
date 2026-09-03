@@ -74,6 +74,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   y se navega con las flechas.
 
 ### Fixed
+- **El hueco de destino se recuadra entero, sin partirse en columnas.** El
+  recuadro verde se dibujaba en cada celda, así que traía las verticales de cada
+  una: el hueco parecía una tabla dentro de la tabla en vez de una fila
+  señalada. Ahora el borde va alrededor de la fila.
 - **Contraste de la marca de intento en modo oscuro.** Estaba puesta con el
   color de acento de fondo y texto blanco; en oscuro ese color es el CLARO de la
   pareja, así que quedaba blanco sobre verde claro: 1,5:1, ilegible. Ahora usa
