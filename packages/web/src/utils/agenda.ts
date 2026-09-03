@@ -43,6 +43,42 @@ export function fechaCorta(iso: string): string {
   }).format(new Date(iso));
 }
 
+/**
+ * `3` — el día del mes, suelto.
+ *
+ * Para el chip de fecha de la agenda, donde el número va grande y solo: es el
+ * dato con el que el profesor cuadra la tira con su propio calendario.
+ */
+export function diaDelMes(iso: string): string {
+  return new Intl.DateTimeFormat('es-MX', { timeZone: ZONA, day: 'numeric' }).format(new Date(iso));
+}
+
+/**
+ * `jue` — el día de la semana abreviado.
+ *
+ * Abreviado aquí sí, al revés que en `fechaConDia`: debajo del número grande no
+ * hay que traducir nada, el día entero se lee de las dos cosas juntas.
+ */
+export function diaSemanaCorto(iso: string): string {
+  return new Intl.DateTimeFormat('es-MX', { timeZone: ZONA, weekday: 'short' }).format(new Date(iso));
+}
+
+/** `sep` — el mes abreviado, para separar la tira de días por meses. */
+export function mesCorto(iso: string): string {
+  return new Intl.DateTimeFormat('es-MX', { timeZone: ZONA, month: 'short' }).format(new Date(iso));
+}
+
+/**
+ * ¿Ese instante cae HOY en la zona del curso?
+ *
+ * Por `claveFecha` y no restando milisegundos: lo que se compara es el día del
+ * calendario de Querétaro, que es donde se dan las entrevistas, y no el del
+ * navegador —que en una demo desde otra zona señalaría el día equivocado—.
+ */
+export function esHoy(iso: string, ahora: Date = new Date()): boolean {
+  return claveFecha(iso) === claveFecha(ahora.toISOString());
+}
+
 /** `mié 27 ago, 9:05` — para una cita suelta, fuera de su día. */
 export function fechaYHora(iso: string): string {
   return `${new Intl.DateTimeFormat('es-MX', {
