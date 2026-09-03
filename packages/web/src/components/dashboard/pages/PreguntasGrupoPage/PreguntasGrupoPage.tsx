@@ -160,6 +160,17 @@ export default function PreguntasGrupoPage() {
   /** El hueco libre que el profesor pulsó para apuntar a alguien a mano. */
   const [asignandoEn, setAsignandoEn] = useState<string | null>(null);
   const [asignandoCita, setAsignandoCita] = useState(false);
+  /**
+   * El traslado que está en vuelo: de quién, a qué hueco y de qué día.
+   *
+   * No vale mirar `arrastrando`: al soltar, el gesto TERMINA y ese estado se
+   * vacía, así que la señal de «se está guardando» no llegaba a pintarse ni un
+   * fotograma. Con esto las dos filas —la que suelta y la que recibe— lo dicen
+   * hasta que la agenda vuelve del servidor.
+   */
+  const [moviendo, setMoviendo] = useState<
+    { citaId: string; diaId: string; destino: string; quien: string } | null
+  >(null);
   /** Lo último que se movió bien. Se enseña hasta el siguiente gesto. */
   const [movida, setMovida] = useState<string | null>(null);
   const [diaActivo, setDiaActivo] = useState<string | null>(null);
@@ -455,7 +466,13 @@ export default function PreguntasGrupoPage() {
    * lo que se está viendo.
    */
   async function moverCita(citaId: string, diaId: string, inicio: string) {
+    // El nombre se busca ANTES de mover: después de recargar, la cita ya no
+    // está en el hueco viejo y la búsqueda no encontraría nada.
+    const quien = (agenda?.dias ?? [])
+      .flatMap((d) => d.huecos)
+      .find((h) => h.cita?.id === citaId)?.cita?.alumno?.name ?? 'La cita';
     setAsignandoCita(true);
+    setMoviendo({ citaId, diaId, destino: inicio, quien });
     setMovida(null);
     try {
       const res = await fetch(
@@ -466,10 +483,7 @@ export default function PreguntasGrupoPage() {
         const err = (await res.json().catch(() => ({}))) as { message?: string };
         throw new Error(err.message || 'No se pudo mover la cita');
       }
-      const quien = (agenda?.dias ?? [])
-        .flatMap((d) => d.huecos)
-        .find((h) => h.cita?.id === citaId)?.cita?.alumno?.name;
-      setMovida(`${quien ?? 'La cita'} pasa a las ${hora(inicio)}.`);
+      setMovida(`${quien} pasa a las ${hora(inicio)}.`);
       // Al día de destino, para no dejar al profesor mirando el hueco vacío que
       // acaba de dejar.
       setDiaActivo(diaId);
@@ -477,6 +491,10 @@ export default function PreguntasGrupoPage() {
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'No se pudo mover la cita'));
     } finally {
+      // Se sueltan DESPUÉS de recargar: quitarlas antes devolvería las dos filas
+      // un instante a como estaban, que es el parpadeo que hace dudar de si el
+      // gesto entró.
+      setMoviendo(null);
       setAsignandoCita(false);
     }
   }
@@ -1753,6 +1771,8 @@ export default function PreguntasGrupoPage() {
                     if (!f.cita) {
                       const encima = zona === f.inicio && !f.cerrado;
                       const yendo = huecosEnVuelo.has(f.inicio);
+                      // Este hueco es el destino de un traslado que va en vuelo.
+                      const recibiendo = moviendo?.destino === f.inicio && moviendo.diaId === dia.id;
                       return (
                         <tr
                           key={`libre-${f.inicio}`}
@@ -1762,7 +1782,7 @@ export default function PreguntasGrupoPage() {
                           className={[
                             styles.filaVacia,
                             f.cerrado ? styles.filaCerrada : styles.filaSoltable,
-                            encima ? styles.filaDestino : '',
+                            encima || recibiendo ? styles.filaDestino : '',
                             yendo ? styles.filaEnVuelo : '',
                           ].filter(Boolean).join(' ')}
                         >
@@ -1771,7 +1791,8 @@ export default function PreguntasGrupoPage() {
                             {/* El cierre va al servidor y vuelve. Sin decirlo,
                                 picar tres candados seguidos no da señal de que
                                 los tres entraron y se vuelven a picar. */}
-                            {yendo && <span className={styles.girandoFila} aria-label="Guardando" />}
+                            {(yendo || recibiendo)
+                              && <span className={styles.girandoFila} aria-label="Guardando" />}
                           </td>
                           {/* Mientras se arrastra, solo el hueco de DEBAJO DEL
                               PUNTERO dice algo, y dice a quién va a recibir:
@@ -1779,7 +1800,15 @@ export default function PreguntasGrupoPage() {
                               cuarenta y ocho iguales y no se sabe en cuál se
                               está. */}
                           <td colSpan={3}>
-                            {encima
+                            {/* Soltado ya: el hueco dice a quién está esperando
+                                mientras el servidor contesta. Antes se quedaba
+                                en «libre» y el cambio aparecía de golpe. */}
+                            {recibiendo
+                              ? <span className={styles.destinoAviso}>
+                                  <Icon name="south_east" size="sm" />
+                                  Llegando: {moviendo.quien}…
+                                </span>
+                              : encima
                               ? <span className={styles.destinoAviso}>
                                   <Icon name="south_east" size="sm" />
                                   Aquí: {arrastrando?.alumno?.name}
@@ -1796,7 +1825,7 @@ export default function PreguntasGrupoPage() {
                                 una tapan la agenda que se está leyendo. El
                                 candado de un hueco cerrado sí se queda: es lo
                                 que explica por qué esa fila está apagada. */}
-                            {!arrastrando && !f.cerrado && (
+                            {!arrastrando && !recibiendo && !f.cerrado && (
                               <button
                                 className={`${styles.iconBtn} ${styles.accionHover}`}
                                 disabled={yendo}
@@ -1806,7 +1835,7 @@ export default function PreguntasGrupoPage() {
                                 <Icon name="person_add" size="sm" />
                               </button>
                             )}
-                            {!arrastrando && (
+                            {!arrastrando && !recibiendo && (
                               <button
                                 className={`${styles.iconBtn} ${f.cerrado ? '' : styles.accionHover}`}
                                 disabled={yendo}
@@ -1824,7 +1853,8 @@ export default function PreguntasGrupoPage() {
                     }
                     const { inicio, cita, alumno, asignacion } = f;
                     const enPantalla = !!asignacion && asignacion.id === proyeccion?.asignacionId;
-                    const viajando = asignandoCita && arrastrando?.id === cita!.id;
+                    // Al soltar, `arrastrando` ya se vació: manda `moviendo`.
+                    const viajando = moviendo?.citaId === cita!.id;
                     return (
                       <tr
                         key={inicio}
@@ -1832,7 +1862,7 @@ export default function PreguntasGrupoPage() {
                         className={[
                           styles.filaCita,
                           enPantalla ? styles.filaProyectada : '',
-                          arrastrando?.id === cita!.id ? styles.filaAtenuada : '',
+                          arrastrando?.id === cita!.id || viajando ? styles.filaAtenuada : '',
                         ].filter(Boolean).join(' ')}
                         title="Arrástralo para cambiarlo de hora"
                       >

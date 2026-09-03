@@ -74,6 +74,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   y se navega con las flechas.
 
 ### Fixed
+- **Mover a alguien lo dice en las dos filas mientras se guarda.** El aviso de
+  «se está guardando» colgaba del arrastre, y al soltar el arrastre TERMINA: no
+  llegaba a pintarse ni un fotograma, así que entre el gesto y el cambio no
+  pasaba nada visible. Ahora la fila que suelta se apaga con su girador y la que
+  recibe se marca en verde diciendo a quién espera, hasta que la agenda vuelve
+  del servidor.
 - **El hueco de destino se recuadra entero, sin partirse en columnas.** El
   recuadro verde se dibujaba en cada celda, así que traía las verticales de cada
   una: el hueco parecía una tabla dentro de la tabla en vez de una fila
