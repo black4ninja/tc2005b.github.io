@@ -8,6 +8,9 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Las reglas del alumno dicen qué pasa si no se presenta.** «Cuenta como
+  celebrada» no decía con qué nota, que es justo lo que se acaba reclamando:
+  ahora se añade que la evaluación se toma en cuenta y el nivel será Incipiente B.
 - **La agenda se reorganiza arrastrando, sobre la propia tabla.** Cambiar a un
   alumno de hora era un diálogo con dos desplegables —día y hora— y había que
   saber de memoria qué hueco estaba libre. Ahora se arrastra su fila a la hora

@@ -275,6 +275,13 @@ export default function AgendaEntrevistasAlumnoPage() {
           Puedes cancelar hasta <strong>{reglas.margenCancelacionMinutos} minutos antes</strong> de tu
           hora. Después cuenta como celebrada, aunque no te presentes.
         </li>
+        {/* La consecuencia de lo anterior, dicha con todas las letras: «cuenta
+            como celebrada» no dice con qué nota, y es lo que se acaba
+            reclamando. */}
+        <li>
+          En caso de agendar y no asistir, la evaluación se tomará en cuenta y el nivel será{' '}
+          <strong>Incipiente B</strong>.
+        </li>
       </ul>
 
       {/* Debajo de las reglas: es lo que hay que leerse ANTES de agendar, y ahí
