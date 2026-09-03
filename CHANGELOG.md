@@ -117,6 +117,20 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   suelto— ahora se hace en el propio hueco.
 
 ### Changed
+- **La tira de días de la agenda, en fichas de calendario.** Cada fecha era una
+  línea de texto —«jueves 3 de sep 2/48»—: legible de una en una, pero con un
+  semestre abierto la tira eran quince líneas iguales y encontrar «el 3»
+  obligaba a leerlas todas. Ahora cada día es una ficha con el número grande
+  arriba, el día de la semana debajo y la ocupación al pie, todas del mismo
+  ancho para que los contadores caigan alineados y se puedan comparar de un
+  vistazo. El `2/48` sube de tamaño y pasa al tinte del texto principal: es el
+  dato por el que se abre esta pestaña y apagado había que acercarse a leerlo.
+  Se le suma una barra de llenado, que no dice nada que no esté ya en la cifra
+  pero se ve sin leer. Y dos referencias que antes no estaban: el mes, rotulado
+  una vez por grupo en la propia tira —es lo único que se pierde al
+  desplazarla—, y HOY, con un anillo ámbar y no con el azul, que en este panel
+  ya significa «seleccionado». Todos los tonos cumplen WCAG AA en tema claro y
+  oscuro, incluida la ficha que es hoy y la elegida a la vez.
 - **El modal de notas: enunciado entero, y dos cosas que se pueden tapar.** La
   pregunta se cortaba a 160 caracteres, que es justo lo que no deja saber qué se
   le preguntó. Y hay dos botones, porque el modal se le enseña al alumno para

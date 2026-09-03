@@ -791,11 +791,8 @@
   flex: 1;
 }
 
-/* Los dos tipos de chip de la agenda comparten forma: en una sola línea, sin
-   encoger, para que la tira se desplace en vez de partirlos. */
-/* Los dos tipos de chip de la agenda comparten forma: una sola línea y sin
-   encoger, para que la tira se desplace en vez de partirlos. */
-.chipDia,
+/* El chip de HORARIO sigue siendo una línea: es una hora, no una fecha. Sin
+   encoger, para que la tira se desplace en vez de partirlo. */
 .chipBloque {
   display: inline-flex;
   align-items: center;
@@ -805,15 +802,172 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* El nombre del día va tal cual: en versalitas se lee como un código. */
-.chipDia { text-transform: none; }
+/* ── Ficha de día ─────────────────────────────────────────────────────────
+   Una ficha de calendario y no una píldora de texto corrido. La de antes
+   —«jueves 3 de sep 2/48»— era legible de una en una, pero con un semestre
+   abierto la tira eran quince líneas iguales y encontrar «el 3» obligaba a
+   leerlas todas. Con el número suelto y grande la fecha se localiza como en un
+   calendario, que es donde el profesor la tiene.
+
+   Ancho FIJO a propósito: así la tira sale en columnas y los contadores caen
+   alineados unos sobre otros. Dejando que cada ficha midiera su texto,
+   «martes 1» y «miércoles 10» daban anchos distintos y no había nada que
+   comparar de un vistazo. */
+.chipDia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  width: 4.5rem;
+  padding: 6px 4px 5px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.chipDia:hover { background: var(--dash-bg-subtle); }
+
+.chipDiaNumero {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* El nombre del día va tal cual: en versalitas se lee como un código.
+   En `--text-secondary` y no en `--text-muted`: a 11 px el gris de apoyo se
+   queda en 2,6:1 sobre la tarjeta en tema claro —por debajo del 4,5:1 que pide
+   la WCAG para texto normal— y es el renglón que da sentido al número. */
+.chipDiaSemana {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: none;
+}
+
+/* Agendados sobre lugares: la cifra manda y la barra la acompaña.
+   `margin-top: auto` la pega al PIE de la ficha. Con todas igualadas de alto,
+   el sobrante tiene que caer en algún sitio, y repartido por arriba dejaba las
+   barras a distinta altura —justo lo que se compara de un vistazo—. Así los
+   números cuadran arriba y las barras abajo, lleven o no renglón de horarios. */
+.chipDiaOcupacion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 3px;
+}
+
+/* La cifra, en el mismo tinte que el número del día y no en el gris de apoyo.
+   Es el dato por el que se abre esta pestaña —cuántos van y cuántos caben—, así
+   que pesa lo mismo que la fecha; apagada, había que acercarse a leerla. */
+.chipDiaCuenta {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* La barra no dice ningún dato que no esté ya en la cifra: la traduce a algo
+   que se ve sin leer. Tres píxeles bastan —es un indicador, no un gráfico— y
+   así la ficha no crece. */
+.chipDiaBarra {
+  width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--border-color);
+  overflow: hidden;
+}
+
+.chipDiaBarraLlena {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  /* El azul del panel y no `--dash-primary`: sobre la pista, aquel se quedaba
+     en 2,7:1 en tema claro y la barra desaparecía justo donde hay que verla. */
+  background: var(--sidebar-active-color);
+  transition: width 0.2s;
+}
+
+/* Varios bloques en la misma fecha. La segunda tira los despliega; aquí solo
+   se avisa de que los hay. Es el texto más pequeño de la ficha, así que con más
+   razón que el resto no puede ir en el gris de apoyo. */
+.chipDiaHorarios {
+  font-size: 0.62rem;
+  color: var(--text-secondary);
+}
+
+/* El día que se está mirando. Mismo tratamiento que lo activo del resto del
+   panel para que se lea como «seleccionado». */
+.chipDiaActivo {
+  background: var(--sidebar-active-bg);
+  border-color: var(--sidebar-active-color);
+  color: var(--sidebar-active-color);
+}
+
+.chipDiaActivo:hover { background: var(--sidebar-active-bg); }
+
+.chipDiaActivo .chipDiaNumero,
+.chipDiaActivo .chipDiaSemana,
+.chipDiaActivo .chipDiaCuenta,
+.chipDiaActivo .chipDiaHorarios { color: var(--sidebar-active-color); }
+
+/* HOY, y solo con un anillo. Es una referencia para situarse, no una selección:
+   pintándolo como el activo había dos fichas compitiendo por el mismo
+   significado, y el día que hoy además es el elegido no se distinguía.
+
+   Ámbar por lo mismo que el destacado del Hub (ver `--destacado-anillo`): el
+   azul ES el color de lo seleccionado en este panel. Y va en el anillo y no en
+   el texto porque el ámbar se queda corto para una palabra de 11 px.
+
+   El tono es el de `--estado-aviso-color` y no el de `--destacado-anillo`
+   porque hay una ficha que es hoy Y la elegida a la vez: sobre el azul del
+   activo, el ámbar del destacado cae a 2,8:1 en tema claro —por debajo del 3:1
+   de un elemento que no es texto— y el anillo se pierde justo en la ficha que
+   más se mira. Este pasa en los cuatro casos (4,4:1 el peor). */
+.chipDiaHoy {
+  border-color: var(--estado-aviso-color);
+  box-shadow: inset 0 0 0 1px var(--estado-aviso-color);
+}
+
+.chipDiaHoy .chipDiaSemana { font-weight: 600; }
+
+/* El mes, una vez por grupo y de canto en la tira. En la ficha se repetiría
+   quince veces sin distinguir ninguna; aquí es lo único que se pierde al
+   desplazarse, así que va donde se nota. */
+.rotuloMes {
+  flex: none;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding: 0 2px 0 6px;
+  border-left: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* El primero abre la tira: sin nada a la izquierda, la raya sobra. */
+.rotuloMes:first-child { border-left: none; padding-left: 0; }
 
 /* Las tiras NUNCA envuelven: si no caben se desplazan aquí dentro, así que
    siguen midiendo una línea y los botones de la derecha no se mueven de sitio
    por muchos días que se abran. */
 .tiraDia {
   display: flex;
-  align-items: center;
+  /* `stretch` y no `center`: las fichas con varios horarios llevan un renglón
+     de más, y centradas sobresalían por arriba y por abajo con la tira
+     descuadrada. Igualadas de alto, la fila vuelve a tener un borde superior y
+     otro inferior rectos. */
+  align-items: stretch;
   gap: 6px;
   flex: 1;
   min-width: 0;
@@ -1055,6 +1209,13 @@
   background: var(--sidebar-active-bg);
   color: var(--sidebar-active-color);
 }
+
+/* Los renglones de la ficha llevan color propio, así que el estado de destino
+   no les llega solo por herencia. */
+.chipDestino .chipDiaNumero,
+.chipDestino .chipDiaSemana,
+.chipDestino .chipDiaCuenta,
+.chipDestino .chipDiaHorarios { color: var(--sidebar-active-color); }
 
 /* La cita viaja: hasta que el servidor confirma, su fila lo dice. */
 .girandoFila {
