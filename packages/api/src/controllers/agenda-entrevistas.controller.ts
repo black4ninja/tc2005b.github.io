@@ -13,7 +13,7 @@ import { coleccionesDeGrupo } from '../services/grupo-colecciones.service.js';
 import { getVinculoConGrupoActivo } from '../services/grupo-alumno.service.js';
 import {
   huecoAbierto, huecosDelDia, numerarIntentos, planificarBloques, puedeAgendar, puedeCancelar,
-  sumarHorasHabiles,
+  puedeSerOtroIntento, sumarHorasHabiles,
   type FilaPlan, type Rango,
 } from '../services/agenda-entrevistas.service.js';
 import {
@@ -587,6 +587,22 @@ async function altaDeCita(
     res.status(409).json({
       status: 'error',
       message: `Solo hay ${MAX_INTENTOS} oportunidades por competencia y ya están agendadas`,
+    });
+    return;
+  }
+
+  // El segundo intento va en un día POSTERIOR al primero. El mismo día son la
+  // misma entrevista repetida —no da tiempo a repasar nada—, y antes es peor:
+  // como el número sale del orden de reserva, se podía apuntar el «primero» el
+  // día 3 y el «segundo» el día 1.
+  //
+  // Solo al alumno: el profesor apunta a mano para arreglar el día de las
+  // entrevistas, y ahí manda lo que decida él.
+  if (comoAlumno && !puedeSerOtroIntento(yaTiene.map((c) => c.getInicio()), inicio)) {
+    res.status(409).json({
+      status: 'error',
+      message: 'Tu otra entrevista de esa competencia es ese día o después.'
+        + ' El siguiente intento tiene que ser en un día posterior.',
     });
     return;
   }

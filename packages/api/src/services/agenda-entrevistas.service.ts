@@ -105,6 +105,45 @@ export function huecosDelDia(inicio: Date, fin: Date, duracionSegundos: number):
   return huecos;
 }
 
+/** Caché de formateadores de fecha, por el mismo motivo que el de días. */
+const CLAVE_DIA = new Map<string, Intl.DateTimeFormat>();
+
+/** `2026-09-03`: qué día del calendario del curso es ese instante. */
+export function claveDia(momento: Date, zona = ZONA_CURSO): string {
+  let f = CLAVE_DIA.get(zona);
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-CA', {
+      timeZone: zona, year: 'numeric', month: '2-digit', day: '2-digit',
+    });
+    CLAVE_DIA.set(zona, f);
+  }
+  return f.format(momento);
+}
+
+/**
+ * Si una entrevista nueva puede ir en ese hueco, habiendo ya estas otras de la
+ * MISMA competencia.
+ *
+ * Tiene que caer en un día POSTERIOR a todas ellas. Dos motivos, y los dos
+ * salen de para qué es el segundo intento:
+ *
+ *  - El mismo día no sirve: entre una y otra hay que poder repasar lo que
+ *    salió mal, y dos entrevistas de lo mismo con una hora de diferencia son
+ *    la misma entrevista repetida.
+ *  - Y antes, menos: el número de intento se deduce del ORDEN DE RESERVA, así
+ *    que quedaba abierto agendar el «primero» el día 3 y el «segundo» el día 1.
+ *    El segundo intento pasaba antes que el primero, que es justo lo que no
+ *    quiere decir «segundo».
+ */
+export function puedeSerOtroIntento(
+  previas: Date[],
+  candidato: Date,
+  zona = ZONA_CURSO,
+): boolean {
+  const dia = claveDia(candidato, zona);
+  return previas.every((p) => claveDia(p, zona) < dia);
+}
+
 /**
  * Si un hueco admite reservas del alumno.
  *

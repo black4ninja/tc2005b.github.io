@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   esDiaHabil, sumarHorasHabiles, puedeAgendar, puedeCancelar, huecosDelDia, huecoAbierto,
-  numerarIntentos, planificarBloques,
+  numerarIntentos, planificarBloques, puedeSerOtroIntento,
 } from '../src/services/agenda-entrevistas.service.js';
 
 /**
@@ -97,6 +97,43 @@ describe('huecosDelDia', () => {
   it('un rango vacío o al revés no da huecos', () => {
     expect(huecosDelDia(qro('2026-08-27T09:00:00'), qro('2026-08-27T09:00:00'), 300)).toEqual([]);
     expect(huecosDelDia(qro('2026-08-27T10:00:00'), qro('2026-08-27T09:00:00'), 300)).toEqual([]);
+  });
+});
+
+describe('puedeSerOtroIntento', () => {
+  const primera = qro('2026-09-03T10:00:00');
+
+  it('el primero de una competencia no choca con nada', () => {
+    expect(puedeSerOtroIntento([], qro('2026-09-01T10:00:00'))).toBe(true);
+  });
+
+  it('un día posterior vale', () => {
+    expect(puedeSerOtroIntento([primera], qro('2026-09-04T09:00:00'))).toBe(true);
+  });
+
+  it('el MISMO día no, aunque sea más tarde', () => {
+    // Dos entrevistas de lo mismo con dos horas de diferencia son la misma
+    // entrevista repetida: no da tiempo a repasar nada.
+    expect(puedeSerOtroIntento([primera], qro('2026-09-03T12:00:00'))).toBe(false);
+    expect(puedeSerOtroIntento([primera], qro('2026-09-03T08:00:00'))).toBe(false);
+  });
+
+  it('un día ANTERIOR tampoco: el segundo no pasa antes que el primero', () => {
+    // Es el fallo que había: el número de intento sale del orden de reserva, así
+    // que se podía agendar el «primero» el 3 y el «segundo» el 1.
+    expect(puedeSerOtroIntento([primera], qro('2026-09-01T10:00:00'))).toBe(false);
+  });
+
+  it('con dos previas tiene que ir después de las DOS', () => {
+    const segunda = qro('2026-09-10T10:00:00');
+    expect(puedeSerOtroIntento([primera, segunda], qro('2026-09-05T10:00:00'))).toBe(false);
+    expect(puedeSerOtroIntento([primera, segunda], qro('2026-09-11T10:00:00'))).toBe(true);
+  });
+
+  it('manda el día del curso, no el UTC', () => {
+    // 2026-09-04T02:00Z son todavía las 20:00 del día 3 en Querétaro: mismo día
+    // que la primera, así que no vale.
+    expect(puedeSerOtroIntento([primera], new Date('2026-09-04T02:00:00Z'))).toBe(false);
   });
 });
 

@@ -5,7 +5,9 @@ import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Modal from '../../atoms/Modal/Modal';
 import ListaEvidencias from '../../molecules/ListaEvidencias/ListaEvidencias';
-import { adelantar, estadoHueco, fechaLarga, fechaYHora, hora, rangoHoras } from '../../../../utils/agenda';
+import {
+  adelantar, estadoHueco, fechaCorta, fechaLarga, fechaYHora, hora, puedeSerOtroIntento, rangoHoras,
+} from '../../../../utils/agenda';
 import type { AgendaAlumno, DiaAlumno, HuecoAlumno } from '../../../../types/agenda';
 import styles from './AgendaEntrevistasAlumnoPage.module.css';
 
@@ -411,17 +413,36 @@ export default function AgendaEntrevistasAlumnoPage() {
           <div className={styles.elegirComp}>
             {agenda.competencias.map((c) => {
               const agotada = c.usados >= reglas.maxIntentos;
+              // El siguiente intento va en un día POSTERIOR al que ya tiene: el
+              // mismo día es la misma entrevista repetida, y antes haría que el
+              // «segundo» pasara primero. Lo decide el servidor; aquí solo se
+              // evita ofrecer un botón que va a decir que no.
+              const suyas = agenda.misCitas.filter((m) => m.competencia?.id === c.id);
+              // Cuál de ellas estorba, para poder decir la fecha en el botón.
+              const estorba = agotada ? undefined : suyas.find(
+                (m) => !puedeSerOtroIntento([m.inicio], eligiendo.hueco.inicio),
+              );
+              const bloqueada = agotada || !!estorba;
               return (
                 <button
                   key={c.id}
                   className={styles.opcionComp}
-                  disabled={agotada || guardando}
+                  disabled={bloqueada || guardando}
                   onClick={() => reservar(c.id)}
-                  title={agotada ? 'Ya usaste tus dos oportunidades en esta competencia' : undefined}
+                  title={agotada
+                    ? 'Ya usaste tus dos oportunidades en esta competencia'
+                    : estorba
+                      ? 'Tu otra entrevista de esta competencia es ese día o después:'
+                        + ' el siguiente intento va en un día posterior'
+                      : undefined}
                 >
                   <span>{c.nombre}</span>
                   <span className={styles.compCuenta}>
-                    {agotada ? 'sin oportunidades' : `${c.usados + 1}.º intento`}
+                    {agotada
+                      ? 'sin oportunidades'
+                      : estorba
+                        ? `ya tienes una el ${fechaCorta(estorba.inicio)}`
+                        : `${c.usados + 1}.º intento`}
                   </span>
                 </button>
               );

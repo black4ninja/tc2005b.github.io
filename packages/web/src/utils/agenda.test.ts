@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { diaMasProximo, estadoHueco, expandirFechas, intentoTerminado, semanasDelMes } from './agenda';
+import {
+  diaMasProximo, estadoHueco, expandirFechas, intentoTerminado, puedeSerOtroIntento, semanasDelMes,
+} from './agenda';
 
 describe('estadoHueco', () => {
   const agendableDesde = '2026-08-27T16:00:00.000Z';
@@ -74,6 +76,34 @@ describe('diaMasProximo', () => {
   it('no depende de que vengan ordenados', () => {
     const revueltos = [dias[2], dias[0], dias[1]];
     expect(diaMasProximo(revueltos, new Date('2026-09-02T12:00:00Z'))).toBe('b');
+  });
+});
+
+describe('puedeSerOtroIntento', () => {
+  // 3 de septiembre a las 10:00 de Querétaro.
+  const primera = '2026-09-03T16:00:00.000Z';
+
+  it('sin previas, cualquier hora vale', () => {
+    expect(puedeSerOtroIntento([], '2026-09-01T15:00:00.000Z')).toBe(true);
+  });
+
+  it('un día posterior vale', () => {
+    expect(puedeSerOtroIntento([primera], '2026-09-04T15:00:00.000Z')).toBe(true);
+  });
+
+  it('el mismo día no, ni antes ni después dentro del día', () => {
+    expect(puedeSerOtroIntento([primera], '2026-09-03T18:00:00.000Z')).toBe(false);
+    expect(puedeSerOtroIntento([primera], '2026-09-03T15:00:00.000Z')).toBe(false);
+  });
+
+  it('un día anterior tampoco', () => {
+    // El fallo que se arregla: el «segundo» intento el día 1 y el «primero» el 3.
+    expect(puedeSerOtroIntento([primera], '2026-09-01T15:00:00.000Z')).toBe(false);
+  });
+
+  it('manda el día del curso, no el UTC', () => {
+    // Las 02:00Z del 4 son las 20:00 del 3 en Querétaro: el mismo día.
+    expect(puedeSerOtroIntento([primera], '2026-09-04T02:00:00.000Z')).toBe(false);
   });
 });
 

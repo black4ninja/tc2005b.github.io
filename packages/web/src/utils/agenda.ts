@@ -115,6 +115,20 @@ export function diaMasProximo<T extends { id: string; inicio: string; fin: strin
 }
 
 /**
+ * Si esa hora sirve para otro intento de una competencia en la que el alumno ya
+ * tiene estas otras.
+ *
+ * Espeja la regla del servidor (`puedeSerOtroIntento`), que es quien decide:
+ * aquí solo sirve para no ofrecerle un botón que le va a decir que no. Tiene que
+ * caer en un día POSTERIOR a todas —el mismo día son la misma entrevista
+ * repetida, y antes convertiría al «segundo» intento en el que pasa primero—.
+ */
+export function puedeSerOtroIntento(previas: string[], candidato: string): boolean {
+  const dia = claveFecha(candidato);
+  return previas.every((p) => claveFecha(p) < dia);
+}
+
+/**
  * Cuándo se da por HECHO un intento: cuando tuvo cita y su hueco ya terminó.
  *
  * No basta con que exista la cita ni con que sea de hoy. El módulo se usa para

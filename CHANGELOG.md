@@ -60,6 +60,17 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   cuarenta alumnos había que recorrer a ojo. Ahora se escribe, la lista se reduce
   y se navega con las flechas.
 
+### Fixed
+- **El segundo intento ya no puede caer antes que el primero, ni el mismo día.**
+  El número de intento se deduce del ORDEN DE RESERVA, así que un alumno podía
+  apuntar su «primero» el día 3 y, si quedaban huecos, su «segundo» el día 1: el
+  segundo intento pasaba antes que el primero. Y el mismo día tampoco sirve —dos
+  entrevistas de lo mismo con una hora de diferencia son la misma entrevista
+  repetida, sin tiempo de repasar nada—. Ahora el siguiente intento tiene que
+  ser en un día posterior: el servidor lo rechaza y la pantalla del alumno ya no
+  ofrece esa competencia, diciendo qué día tiene la otra. La regla no alcanza al
+  profesor, que apunta a mano para arreglar el día de las entrevistas.
+
 ### Removed
 - **El modo «Seleccionar» de la agenda.** Era un botón que encendía casillas en
   los chips de arriba para cerrar, reabrir o borrar varios horarios de una vez,
