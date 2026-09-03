@@ -171,6 +171,10 @@ export default function PreguntasGrupoPage() {
 
   /** La pestaña proyectada, para volver a ella en vez de abrir otra. */
   const ventanaRef = useRef<Window | null>(null);
+  /** El mando, para poder traerlo a la vista al proyectar desde una fila. */
+  const mandoRef = useRef<HTMLDivElement | null>(null);
+  /** Hay una petición de bajar al mando esperando a que el mando exista. */
+  const [irAlMando, setIrAlMando] = useState(false);
   /**
    * Qué orden está en vuelo. El mando escribe en el servidor y la pantalla que
    * cambia está en otro aparato, así que sin esto pulsar «Iniciar» parece no
@@ -534,10 +538,28 @@ export default function PreguntasGrupoPage() {
    * Con nombre de ventana a propósito: pulsar «Proyectar» dos veces tiene que
    * llevar a la misma pantalla, no dejar dos abiertas peleándose por el cañón.
    */
-  function abrirPantalla() {
+  function abrirPantalla(traerAlFrente = true) {
     const abierta = ventanaRef.current;
-    if (abierta && !abierta.closed) { abierta.focus(); return; }
+    if (abierta && !abierta.closed) {
+      // Desde una fila NO se trae al frente: el gesto es «prepara a este y
+      // déjame darle a Iniciar», y saltar a la otra ventana obliga a volver.
+      if (traerAlFrente) abierta.focus();
+      return;
+    }
     ventanaRef.current = window.open(urlProyeccion, `proyeccion-${grupoId}`);
+  }
+
+  /**
+   * Poner a alguien en la pantalla desde su fila y bajar al mando.
+   *
+   * Elegir a quién proyectar y arrancarlo son dos gestos, y el segundo está en
+   * el mando, que con un día lleno queda lejos de la fila que se acaba de
+   * pulsar. Sin esto hay que ir a buscarlo —y el alumno ya está sentado—.
+   */
+  function proyectarDesdeFila(asignacionId: string) {
+    proyectar({ asignacionId });
+    abrirPantalla(false);
+    setIrAlMando(true);
   }
 
   const porId = useMemo(() => new Map(preguntas.map((p) => [p.id, p])), [preguntas]);
@@ -793,6 +815,20 @@ export default function PreguntasGrupoPage() {
       .find((a) => a.id === proyeccion?.asignacionId) ?? null,
     [alumnos, proyeccion],
   );
+
+  /**
+   * Baja al mando cuando se ha pedido desde una fila.
+   *
+   * No se puede desplazar en el mismo clic: el mando solo existe cuando hay algo
+   * proyectado, y eso llega con la respuesta del servidor. Se deja la petición
+   * apuntada y se atiende en cuanto el mando está pintado.
+   */
+  useEffect(() => {
+    if (!irAlMando || !mandoRef.current) return;
+    const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    mandoRef.current.scrollIntoView({ behavior: quieto ? 'auto' : 'smooth', block: 'center' });
+    setIrAlMando(false);
+  }, [irAlMando, proyeccion?.asignacionId]);
 
   /** Salta a la pregunta de al lado en el orden en que se ve la tabla. */
   function moverProyeccion(paso: number) {
@@ -1085,7 +1121,7 @@ export default function PreguntasGrupoPage() {
    */
   const mando = proyeccion?.asignacionId && enPantalla ? (
 
-          <div className={styles.mando}>
+          <div className={styles.mando} ref={mandoRef}>
             <div className={styles.mandoQuien}>
               <span className={styles.mandoNombre}>{proyeccion.alumno?.name}</span>
               <span className={styles.mandoCompetencia}>
@@ -1178,7 +1214,7 @@ export default function PreguntasGrupoPage() {
                 <Icon name="restart_alt" size="sm" />
               </button>
 
-              <button className={styles.iconBtn} onClick={abrirPantalla} title="Abrir o traer al frente la pantalla proyectada">
+              <button className={styles.iconBtn} onClick={() => abrirPantalla()} title="Abrir o traer al frente la pantalla proyectada">
                 <Icon name="open_in_new" size="sm" />
               </button>
               <button
@@ -1651,12 +1687,8 @@ export default function PreguntasGrupoPage() {
                           <button
                             className={`${styles.iconBtn} ${enPantalla ? styles.iconBtnOn : ''}`}
                             disabled={!asignacion}
-                            onClick={() => {
-                              if (!asignacion) return;
-                              proyectar({ asignacionId: asignacion.id });
-                              abrirPantalla();
-                            }}
-                            title="Poner esta pregunta en la pantalla proyectada"
+                            onClick={() => asignacion && proyectarDesdeFila(asignacion.id)}
+                            title="Poner esta pregunta en la pantalla y bajar al mando"
                           >
                             <Icon name="cast" size="sm" />
                           </button>
@@ -1848,14 +1880,11 @@ export default function PreguntasGrupoPage() {
                           <button
                             className={`${styles.iconBtn} ${unica && unica.id === proyeccion?.asignacionId ? styles.iconBtnOn : ''}`}
                             disabled={!unica?.pregunta}
-                            onClick={() => {
-                              if (!unica) return;
-                              // Poner en pantalla es una cosa y arrancar el reloj
-                              // es otra: esto solo la pone, en «por iniciar».
-                              proyectar({ asignacionId: unica.id });
-                              abrirPantalla();
-                            }}
-                            title="Poner esta pregunta en la pantalla proyectada"
+                            // Poner en pantalla es una cosa y arrancar el reloj
+                            // es otra: esto solo la pone, en «por iniciar», y
+                            // lleva al mando, que es donde se arranca.
+                            onClick={() => unica && proyectarDesdeFila(unica.id)}
+                            title="Poner esta pregunta en la pantalla y subir al mando"
                           >
                             <Icon name="cast" size="sm" />
                           </button>

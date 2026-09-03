@@ -31,6 +31,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   Se pueden picar varios candados seguidos sin esperar: cada fila se apaga y
   enseña su girador hasta que el cambio está guardado, así que se ve cuáles
   están por procesarse, y ninguno se pierde por el camino.
+- **Proyectar desde una fila lleva al mando.** Elegir a quién proyectar y
+  arrancarlo son dos gestos, y el segundo está en el mando, que con un día lleno
+  queda lejos de la fila que se acaba de pulsar: había que ir a buscarlo con el
+  alumno ya sentado. Ahora el botón de proyectar de una fila pone a esa persona
+  en el mando y baja hasta él, listo para darle a «Iniciar». Y ya no salta a la
+  pantalla proyectada: el gesto es «prepara a este y déjame arrancarlo», así que
+  el foco se queda donde está el botón que hay que pulsar.
 - **Buscador en el selector de la proyección.** Era un desplegable nativo que con
   cuarenta alumnos había que recorrer a ojo. Ahora se escribe, la lista se reduce
   y se navega con las flechas.
