@@ -101,6 +101,8 @@ export default function PreguntasGrupoPage() {
   const [preguntas, setPreguntas] = useState<Pregunta[]>([]);
   const [competencias, setCompetencias] = useState<CompetenciaEnBanco[]>([]);
   const [duracion, setDuracion] = useState<DuracionConfig | null>(null);
+  /** El manual de competencias del grupo, tal como está guardado. */
+  const [manualUrl, setManualUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
@@ -170,6 +172,10 @@ export default function PreguntasGrupoPage() {
    * el enunciado cabe entero, que es lo que hace falta para leer la pregunta.
    */
   const [notasVisibles, setNotasVisibles] = useState(true);
+  /** El manual de competencias del grupo, mientras se edita. */
+  const [editandoManual, setEditandoManual] = useState(false);
+  const [manualBorrador, setManualBorrador] = useState('');
+  const [guardandoManual, setGuardandoManual] = useState(false);
   /**
    * Las preguntas de los intentos que todavía no han pasado.
    *
@@ -231,12 +237,14 @@ export default function PreguntasGrupoPage() {
         preguntas?: Pregunta[];
         competencias?: CompetenciaEnBanco[];
         duracion?: DuracionConfig;
+        manualUrl?: string;
       };
       setHabilitado(data.habilitado !== false);
       setAlumnos(data.alumnos ?? []);
       setPreguntas(data.preguntas ?? []);
       setCompetencias(data.competencias ?? []);
       setDuracion(data.duracion ?? null);
+      setManualUrl(data.manualUrl ?? '');
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'Error al cargar las preguntas del grupo'));
     } finally {
@@ -1069,6 +1077,34 @@ export default function PreguntasGrupoPage() {
     }
   }
 
+  /**
+   * El enlace que el alumno ve como «Manual de competencias».
+   *
+   * Va por el MISMO endpoint que el tiempo —los dos son configuración del módulo
+   * en este grupo— y manda solo su campo, así que guardar uno no pisa el otro.
+   */
+  async function guardarManual() {
+    setGuardandoManual(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/preguntas/configuracion`, {
+        method: 'PUT',
+        headers,
+        // Vacío = quitar el manual; el alumno deja de ver el enlace.
+        body: JSON.stringify({ manualUrl: manualBorrador.trim() }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message || 'Error al guardar el manual');
+      }
+      setEditandoManual(false);
+      await fetchTodo();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'Error al guardar el manual'));
+    } finally {
+      setGuardandoManual(false);
+    }
+  }
+
   async function guardarDuracion() {
     const crudo = duracionBorrador.trim();
     try {
@@ -1408,6 +1444,60 @@ export default function PreguntasGrupoPage() {
             )}
           </div>
           <span className={styles.contador}>{llenos} de {totalHuecos} asignadas</span>
+        </div>
+
+        {/* El manual del grupo, debajo del tiempo: los dos son lo mismo —cómo
+            está configurado el módulo aquí— y se tocan una vez al semestre. */}
+        <div className={styles.duracion}>
+          {editandoManual ? (
+            <>
+              <span>Manual de competencias:</span>
+              <input
+                className={styles.manualInput}
+                type="url"
+                autoFocus
+                value={manualBorrador}
+                disabled={guardandoManual}
+                onChange={(e) => setManualBorrador(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void guardarManual();
+                  if (e.key === 'Escape') setEditandoManual(false);
+                }}
+                placeholder="https://… el documento que el alumno tiene que leerse"
+              />
+              <button className={styles.enlaceBtn} disabled={guardandoManual} onClick={() => void guardarManual()}>
+                {guardandoManual ? 'Guardando…' : 'Guardar'}
+              </button>
+              <button className={styles.enlaceBtn} disabled={guardandoManual} onClick={() => setEditandoManual(false)}>
+                Cancelar
+              </button>
+            </>
+          ) : (
+            <>
+              <span>
+                <Icon name="menu_book" size="sm" /> Manual de competencias:{' '}
+                {manualUrl ? (
+                  <a
+                    className={styles.manualEnlace}
+                    href={manualUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {manualUrl}
+                  </a>
+                ) : (
+                  <span className={styles.duracionFuente}>sin poner</span>
+                )}
+              </span>
+              <button
+                className={styles.enlaceBtn}
+                onClick={() => { setManualBorrador(manualUrl); setEditandoManual(true); }}
+                title="El enlace que el alumno ve al agendar su entrevista"
+              >
+                {manualUrl ? 'editar' : 'poner'}
+              </button>
+            </>
+          )}
         </div>
       </div>
 

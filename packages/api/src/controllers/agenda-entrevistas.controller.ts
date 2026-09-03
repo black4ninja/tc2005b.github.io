@@ -18,8 +18,9 @@ import {
 } from '../services/agenda-entrevistas.service.js';
 import {
   MAX_EVIDENCIAS, agruparEvidencias, engancharSueltas, evidenciasDelGrupo, llaveDeEvidencia,
-  soltarEvidenciasDeCita, urlDeEvidencia,
+  soltarEvidenciasDeCita,
 } from '../services/evidencias.service.js';
+import { sanitizarUrlHref } from '../utils/url.js';
 import {
   DURACION_POR_DEFECTO, MAX_BLOQUES_POR_LOTE, MAX_INTENTOS, HORAS_HABILES_ANTELACION,
   MARGEN_CANCELACION_MINUTOS, ZONA_CURSO,
@@ -738,8 +739,10 @@ export async function crearEvidenciaAlumno(req: Request, res: Response): Promise
   const { grupoId } = req.params;
   const { citaId, titulo } = req.body ?? {};
 
-  const url = urlDeEvidencia(req.body?.url);
-  if (!url) {
+  // El validador de siempre: solo http(s). Devuelve '' cuando no hay nada, que
+  // para una evidencia es tan inválido como un `javascript:`.
+  const url = sanitizarUrlHref(req.body?.url);
+  if (!url || url.length > 2000) {
     res.status(400).json({
       status: 'error',
       message: 'Pon un enlace que empiece por http:// o https://',
@@ -876,11 +879,12 @@ export async function getAgendaAlumno(req: Request, res: Response): Promise<void
   if (!alumnoId) return;
   const { grupoId } = req.params;
   try {
-    const [dias, citas, competencias, evidencias] = await Promise.all([
+    const [dias, citas, competencias, evidencias, grupo] = await Promise.all([
       diasDelGrupo(grupoId),
       citasDelGrupo(grupoId),
       competenciasDelBanco(grupoId),
       evidenciasDelGrupo(grupoId),
+      new Parse.Query<Grupo>('Grupo').get(grupoId, { useMasterKey: true }).catch(() => null),
     ]);
     const intentos = intentosDeTodas(citas);
     const mias = citas.filter((c) => c.getAlumno()?.id === alumnoId);
@@ -891,6 +895,8 @@ export async function getAgendaAlumno(req: Request, res: Response): Promise<void
     res.json({
       status: 'ok',
       serverNow: ahora.toISOString(),
+      // Lo que hay que leerse antes de venir. Vacío = este grupo no lo tiene.
+      manualUrl: grupo?.getPreguntasManualUrl() ?? '',
       // Ya calculado aquí: si cada navegador lo dedujera por su cuenta, dos
       // alumnos con el reloj distinto verían huecos distintos.
       agendableDesde: sumarHorasHabiles(ahora).toISOString(),

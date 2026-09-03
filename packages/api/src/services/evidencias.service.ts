@@ -101,22 +101,3 @@ export async function engancharSueltas(
   if (sueltas.length > 0) await Parse.Object.saveAll(sueltas, { useMasterKey: true });
   return sueltas.length;
 }
-
-/**
- * Una URL que se puede enseñar como enlace.
- *
- * Solo http(s). `javascript:` y `data:` en un enlace que abre el PROFESOR desde
- * su panel son un agujero, no una evidencia.
- */
-export function urlDeEvidencia(texto: unknown): string | null {
-  if (typeof texto !== 'string') return null;
-  const limpio = texto.trim();
-  if (limpio.length === 0 || limpio.length > 2000) return null;
-  try {
-    const u = new URL(limpio);
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
-    return limpio;
-  } catch {
-    return null;
-  }
-}

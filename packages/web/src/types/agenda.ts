@@ -62,6 +62,8 @@ export interface CompetenciaAgendable {
 
 export interface AgendaAlumno {
   serverNow: string;
+  /** El «Manual de competencias» del grupo. Vacío = no tiene. */
+  manualUrl: string;
   /** Lo más pronto que ya cumple las 24 horas hábiles. Lo calcula el servidor. */
   agendableDesde: string;
   reglas: ReglasAgenda;

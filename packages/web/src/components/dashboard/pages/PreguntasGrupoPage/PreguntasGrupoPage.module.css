@@ -1166,3 +1166,30 @@
 }
 
 .notasTapar:hover { color: var(--text-primary); border-color: var(--text-muted); }
+
+/* El manual del grupo, en la misma fila fina que el tiempo. */
+.manualInput {
+  flex: 1;
+  min-width: 240px;
+  max-width: 520px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.manualInput:disabled { opacity: 0.5; }
+
+/* Recortado: una URL de Drive ocupa media pantalla y esta fila es un pie. */
+.manualEnlace {
+  display: inline-block;
+  max-width: 380px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  color: var(--sidebar-active-color);
+}

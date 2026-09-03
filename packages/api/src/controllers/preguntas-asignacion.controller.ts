@@ -10,6 +10,7 @@ import { coleccionesDeGrupo } from '../services/grupo-colecciones.service.js';
 import { normalizarDuracion } from '../services/preguntas.service.js';
 import { usoDePreguntas } from '../services/preguntas-uso.service.js';
 import { DURACION_POR_DEFECTO, MAX_INTENTOS } from '../constants/preguntas.js';
+import { sanitizarUrlHref } from '../utils/url.js';
 
 /**
  * Asignación de preguntas a los alumnos de UN grupo.
@@ -209,6 +210,8 @@ export async function getPreguntasGrupo(req: Request, res: Response): Promise<vo
     res.json({
       status: 'ok',
       habilitado: true,
+      /** El enlace que el alumno ve como «Manual de competencias». */
+      manualUrl: grupo?.getPreguntasManualUrl() ?? '',
       duracion: {
         grupo: duracionGrupo ?? null,
         porDefecto: DURACION_POR_DEFECTO,
@@ -482,7 +485,23 @@ export async function setConfiguracionGrupo(req: Request, res: Response): Promis
   const { grupoId } = req.params;
   if (!(await exigirModulo(grupoId, res))) return;
 
-  const { duracionSegundos } = req.body ?? {};
+  const { duracionSegundos, manualUrl } = req.body ?? {};
+
+  // El manual solo si viene: así este endpoint sigue sirviendo para guardar solo
+  // el tiempo, que es como lo llama la pantalla desde antes.
+  let manual: string | undefined;
+  if (manualUrl !== undefined) {
+    const limpia = sanitizarUrlHref(manualUrl);
+    if (limpia === null) {
+      res.status(400).json({
+        status: 'error',
+        message: 'El manual tiene que ser un enlace que empiece por http:// o https://',
+      });
+      return;
+    }
+    manual = limpia;
+  }
+
   let duracion: number | undefined;
   if (duracionSegundos !== null && duracionSegundos !== undefined && duracionSegundos !== '') {
     const dur = normalizarDuracion(duracionSegundos, undefined);
@@ -500,8 +519,13 @@ export async function setConfiguracionGrupo(req: Request, res: Response): Promis
       return;
     }
     grupo.setPreguntasDuracionSegundos(duracion);
+    if (manual !== undefined) grupo.setPreguntasManualUrl(manual);
     await grupo.save(null, { useMasterKey: true });
-    res.json({ status: 'ok', duracionSegundos: duracion ?? null });
+    res.json({
+      status: 'ok',
+      duracionSegundos: duracion ?? null,
+      manualUrl: grupo.getPreguntasManualUrl(),
+    });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al guardar el tiempo del grupo' });
   }

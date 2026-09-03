@@ -271,3 +271,23 @@
   font-weight: 600;
   color: var(--text-secondary);
 }
+
+/* El manual: enlace y no botón, porque lleva fuera. Con su icono de «se abre en
+   otra pestaña», que si no parece que se pierde lo que se estaba agendando. */
+.manual {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  margin-bottom: var(--space-md);
+  padding: 8px 14px;
+  border: 1px solid var(--sidebar-active-color);
+  border-radius: var(--border-radius);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.manual:hover { text-decoration: underline; }

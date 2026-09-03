@@ -21,6 +21,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   cuanto más se le pega, para poder pararse en la fila que se quiere. La fila dice que está viajando mientras el
   servidor responde, y al terminar se confirma a dónde fue —el destino puede
   quedar fuera de lo que se ve—.
+- **Manual de competencias.** El profesor pone un enlace —debajo del tiempo, en
+  la cabecera del módulo— y el alumno lo ve como «Manual de competencias» justo
+  debajo de las reglas, que es donde está mirando qué hace falta para venir. Es
+  del grupo, porque el documento cambia con la materia y con el semestre; sin
+  poner, el alumno no ve ningún enlace. Solo se admiten enlaces `http(s)`.
 - **El alumno entrega evidencias de su entrevista.** Un enlace a lo que ya tiene
   hecho —su repositorio, su documento, su vídeo—, igual que en la malla de
   competencias. Se pone desde su propia cita, y ahí se ve lo que lleva

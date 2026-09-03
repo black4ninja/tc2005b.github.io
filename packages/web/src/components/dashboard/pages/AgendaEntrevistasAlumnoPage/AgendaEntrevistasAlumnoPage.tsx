@@ -277,6 +277,22 @@ export default function AgendaEntrevistasAlumnoPage() {
         </li>
       </ul>
 
+      {/* Debajo de las reglas: es lo que hay que leerse ANTES de agendar, y ahí
+          es donde se está mirando qué hace falta para venir. Sin manual puesto
+          no se enseña nada: un enlace vacío es peor que ninguno. */}
+      {agenda.manualUrl && (
+        <a
+          className={styles.manual}
+          href={agenda.manualUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Icon name="menu_book" size="sm" />
+          Manual de competencias
+          <Icon name="open_in_new" size="sm" />
+        </a>
+      )}
+
       {error && <div className={styles.error} onClick={() => setError('')}>{error}</div>}
       {aviso && <div className={styles.aviso} onClick={() => setAviso('')}>{aviso}</div>}
 

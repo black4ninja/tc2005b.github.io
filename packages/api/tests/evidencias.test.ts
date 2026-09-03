@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { agruparEvidencias, urlDeEvidencia } from '../src/services/evidencias.service.js';
+import { agruparEvidencias } from '../src/services/evidencias.service.js';
 
 /** Una evidencia de mentira, con lo justo para agrupar. */
 function ev(id: string, citaId: string | null, competenciaId: string) {
@@ -40,36 +40,5 @@ describe('agruparEvidencias', () => {
 
   it('sin evidencias no hay grupos', () => {
     expect(agruparEvidencias([], llave).size).toBe(0);
-  });
-});
-
-describe('urlDeEvidencia', () => {
-  it('acepta http y https', () => {
-    expect(urlDeEvidencia('https://github.com/quien/repo')).toBe('https://github.com/quien/repo');
-    expect(urlDeEvidencia('http://ejemplo.mx/doc.pdf')).toBe('http://ejemplo.mx/doc.pdf');
-  });
-
-  it('quita los espacios de los lados', () => {
-    expect(urlDeEvidencia('  https://ejemplo.mx  ')).toBe('https://ejemplo.mx');
-  });
-
-  it('rechaza lo que no es una URL', () => {
-    expect(urlDeEvidencia('mi repo')).toBe(null);
-    expect(urlDeEvidencia('')).toBe(null);
-    expect(urlDeEvidencia('   ')).toBe(null);
-    expect(urlDeEvidencia(null)).toBe(null);
-    expect(urlDeEvidencia(42)).toBe(null);
-  });
-
-  it('rechaza los esquemas que ejecutan algo', () => {
-    // El profesor las abre desde su panel: un `javascript:` ahí no es una
-    // evidencia, es un agujero.
-    expect(urlDeEvidencia('javascript:alert(1)')).toBe(null);
-    expect(urlDeEvidencia('data:text/html,<script>alert(1)</script>')).toBe(null);
-    expect(urlDeEvidencia('file:///etc/passwd')).toBe(null);
-  });
-
-  it('rechaza una URL absurdamente larga', () => {
-    expect(urlDeEvidencia(`https://ejemplo.mx/${'a'.repeat(2100)}`)).toBe(null);
   });
 });
