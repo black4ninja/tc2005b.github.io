@@ -836,51 +836,6 @@
 .tiraDia::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* Actuar sobre varios bloques a la vez. */
-.barraLote {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
-  flex-wrap: wrap;
-  padding: 10px 14px;
-  border: 1px solid var(--sidebar-active-color);
-  border-radius: var(--border-radius);
-  background: var(--bg-card);
-}
-
-.loteCuenta { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
-
-.loteAcciones {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-}
-
-.loteBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.loteBtn:hover:not(:disabled) { color: var(--text-primary); border-color: var(--text-muted); }
-.loteBtn:disabled { opacity: 0.45; cursor: default; }
-
-.loteBtnPeligro {
-  border-color: var(--estado-error-border);
-  background: var(--estado-error-bg);
-  color: var(--estado-error-color);
-}
-
 .diaCabecera {
   display: flex;
   align-items: center;
@@ -1014,11 +969,12 @@
    enseguida y a partir de ahí selecciona lo que pilla. */
 .cuerpoEnArrastre { user-select: none; -webkit-user-select: none; cursor: grabbing; }
 
-/* Los huecos libres se abren uno a uno mientras se arrastra. BAJOS y callados:
-   son cuarenta y ocho, y si cada uno grita «soltar aquí» el día deja de
-   reconocerse y no se sabe en cuál se está. Fuera del arrastre siguen
-   resumidos, que es lo que hace falta para leerlo. */
-.filaSoltable td {
+/* Cada hueco libre es su propia fila, para poder actuar sobre él. BAJAS y
+   calladas: son cuarenta y ocho, y si cada una grita «libre» el día deja de
+   reconocerse —lo que se busca al mirar la agenda son las citas, y las filas
+   vacías solo tienen que dejarlas verse—. */
+.filaSoltable td,
+.filaCerrada td {
   padding: 1px 12px;
   font-size: 0.72rem;
   font-style: normal;
@@ -1027,6 +983,31 @@
 }
 
 .libreTenue { opacity: 0.5; }
+
+/* Un hueco cerrado: rayado, para que se lea como «aquí no» de un vistazo y no
+   se confunda con uno libre que nadie ha tomado todavía. */
+.filaCerrada td { background: var(--dash-bg-subtle); }
+.filaCerrada td:first-child { text-decoration: line-through; opacity: 0.6; }
+
+.cerradoAviso {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+/* Las acciones de un hueco libre solo salen al pasar por encima: dos iconos
+   fijos en cuarenta y ocho filas tapan la agenda que se está leyendo. Se
+   quedan si el teclado llega a ellas, que si no, no hay forma de alcanzarlas. */
+.accionHover { opacity: 0; }
+.filaVacia:hover .accionHover,
+.accionHover:focus-visible { opacity: 1; }
+
+@media (hover: none) {
+  /* Sin puntero no hay «pasar por encima»: se ven siempre. */
+  .accionHover { opacity: 1; }
+}
 
 /* El único que habla es el de debajo del puntero, y dice a quién recibe. */
 .filaDestino td {

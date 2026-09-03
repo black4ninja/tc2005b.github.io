@@ -11,26 +11,43 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 - **La agenda se reorganiza arrastrando, sobre la propia tabla.** Cambiar a un
   alumno de hora era un diálogo con dos desplegables —día y hora— y había que
   saber de memoria qué hueco estaba libre. Ahora se arrastra su fila a la hora
-  nueva sobre la misma tabla que se está leyendo. Mientras se arrastra, los
-  huecos libres se abren uno a uno para poder apuntar a la hora exacta; el resto
-  del tiempo siguen resumidos, y mientras se arrastra son líneas finas que solo
-  dicen «libre»: el único que habla es el de debajo del puntero, que dice a quién
-  va a recibir. La tarjeta que sigue al cursor lleva la hora de destino escrita,
+  nueva sobre la misma tabla que se está leyendo. Los huecos libres son líneas
+  finas que solo dicen «libre»: el único que habla es el de debajo del puntero,
+  que dice a quién va a recibir. La tarjeta que sigue al cursor lleva la hora de
+  destino escrita,
   así que se sabe dónde va a caer sin apartar la vista. Soltar a alguien sobre el
   chip de otro día lo manda allí, a su primer hueco libre. Al acercar el puntero
   al borde, la lista se desplaza sola: despacio si apenas se asoma y más rápido
   cuanto más se le pega, para poder pararse en la fila que se quiere. La fila dice que está viajando mientras el
   servidor responde, y al terminar se confirma a dónde fue —el destino puede
   quedar fuera de lo que se ve—.
+- **Cada hueco de la agenda se puede cerrar por separado.** Cerrar reservas era
+  todo o nada: o el día entero admitía gente o no admitía a nadie. Pero lo que
+  el profesor tapa son ratos sueltos —la comida, el rato en que tiene otra
+  clase—, así que ahora cada hueco libre lleva su candado. Un hueco cerrado
+  desaparece de la lista del alumno y no acepta que le suelten a nadie
+  arrastrando; el profesor lo sigue viendo, tachado, para poder reabrirlo. No se
+  puede cerrar uno que ya tenga una entrevista apuntada: primero se cancela.
 - **Buscador en el selector de la proyección.** Era un desplegable nativo que con
   cuarenta alumnos había que recorrer a ojo. Ahora se escribe, la lista se reduce
   y se navega con las flechas.
 
+### Removed
+- **El modo «Seleccionar» de la agenda.** Era un botón que encendía casillas en
+  los chips de arriba para cerrar, reabrir o borrar varios horarios de una vez,
+  y no se entendía qué prometía: ni qué se marcaba, ni dónde. Cada día conserva
+  sus botones de cerrar y borrar, y lo que se pedía de verdad —cerrar un rato
+  suelto— ahora se hace en el propio hueco.
+
 ### Changed
-- **«Bloques» pasa a llamarse «horarios» en pantalla.** El aviso de la selección
-  múltiple decía «Marca los bloques que quieras cambiar» sin decir dónde ni para
-  qué; ahora dice «Marca arriba los horarios que quieras cerrar, reabrir o
-  borrar».
+- **La agenda enseña un hueco por fila, sin agrupar los vacíos.** Los libres
+  seguidos se resumían en «sin entrevistas hasta las 09:10 · 2 libres». Se lee
+  bien, pero sobre un resumen no se puede actuar: cerrar las 09:00 y dejar
+  abiertas las 09:05 no tiene dónde pulsarse. Las filas vacías son bajas y
+  calladas, y sus acciones salen al pasar por encima.
+- **«Bloques» pasa a llamarse «horarios» en pantalla.** Dentro se llamaban
+  bloques y fuera también, pero para quien lo usa un bloque no es nada: lo que
+  abre son horarios.
 - **Los días de entrevistas se abren en lote, picándolos en un calendario.**
   Montar un mes de entrevistas era abrir el modal treinta veces: una fecha y una
   franja por vez. Ahora se abre un calendario, se pican los días que se quieran

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  esDiaHabil, sumarHorasHabiles, puedeAgendar, puedeCancelar, huecosDelDia, numerarIntentos,
-  planificarBloques,
+  esDiaHabil, sumarHorasHabiles, puedeAgendar, puedeCancelar, huecosDelDia, huecoAbierto,
+  numerarIntentos, planificarBloques,
 } from '../src/services/agenda-entrevistas.service.js';
 
 /**
@@ -97,6 +97,28 @@ describe('huecosDelDia', () => {
   it('un rango vacío o al revés no da huecos', () => {
     expect(huecosDelDia(qro('2026-08-27T09:00:00'), qro('2026-08-27T09:00:00'), 300)).toEqual([]);
     expect(huecosDelDia(qro('2026-08-27T10:00:00'), qro('2026-08-27T09:00:00'), 300)).toEqual([]);
+  });
+});
+
+describe('huecoAbierto', () => {
+  const nueve = qro('2026-08-27T09:00:00');
+  const nueveCinco = qro('2026-08-27T09:05:00');
+
+  it('un hueco de un día abierto y sin cerrar admite reservas', () => {
+    expect(huecoAbierto(false, [], nueve)).toBe(true);
+  });
+
+  it('el hueco cerrado a mano no las admite', () => {
+    expect(huecoAbierto(false, [nueve.toISOString()], nueve)).toBe(false);
+  });
+
+  it('cerrar un hueco no toca a los demás', () => {
+    expect(huecoAbierto(false, [nueve.toISOString()], nueveCinco)).toBe(true);
+  });
+
+  it('con el día cerrado no admite ninguno, esté o no en la lista', () => {
+    expect(huecoAbierto(true, [], nueve)).toBe(false);
+    expect(huecoAbierto(true, [nueve.toISOString()], nueve)).toBe(false);
   });
 });
 

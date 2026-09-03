@@ -106,6 +106,18 @@ export function huecosDelDia(inicio: Date, fin: Date, duracionSegundos: number):
 }
 
 /**
+ * Si un hueco admite reservas del alumno.
+ *
+ * Manda el hueco: cerrar uno suelto es lo que el profesor usa de verdad —tapar
+ * la hora de la comida, el rato en que tiene clase—, y cerrar el día entero es
+ * el caso raro. Cerrado el día, lo están todos sus huecos; abierto, solo los que
+ * no se hayan cerrado a mano.
+ */
+export function huecoAbierto(diaCerrado: boolean, cerrados: string[], inicio: Date): boolean {
+  return !diaCerrado && !cerrados.includes(inicio.toISOString());
+}
+
+/**
  * En qué intento va cada cita de un alumno en una competencia: la que APARTÓ
  * primero es el 1.º y así.
  *

@@ -95,35 +95,6 @@ export function estadoHueco(
   return 'libre';
 }
 
-/**
- * Los huecos VACÍOS seguidos se resumen en uno: «10:20 – 10:45 · libre». Un día
- * de cuatro horas son 48 filas y el profesor solo necesita saber dónde tiene un
- * respiro y a qué hora vuelve a empezar.
- */
-export function agruparVacios<T extends { inicio: string; cita: unknown | null }>(
-  huecos: T[],
-  duracionSegundos: number,
-): ({ tipo: 'cita'; hueco: T } | { tipo: 'vacio'; desde: string; hasta: string; cuantos: number })[] {
-  const filas: ({ tipo: 'cita'; hueco: T } | { tipo: 'vacio'; desde: string; hasta: string; cuantos: number })[] = [];
-  let racha: T[] = [];
-  const cerrar = () => {
-    if (racha.length === 0) return;
-    const ultimo = new Date(racha[racha.length - 1].inicio).getTime() + duracionSegundos * 1000;
-    filas.push({
-      tipo: 'vacio',
-      desde: racha[0].inicio,
-      hasta: new Date(ultimo).toISOString(),
-      cuantos: racha.length,
-    });
-    racha = [];
-  };
-  for (const h of huecos) {
-    if (h.cita) { cerrar(); filas.push({ tipo: 'cita', hueco: h }); } else racha.push(h);
-  }
-  cerrar();
-  return filas;
-}
-
 /* ── Abrir días en lote ───────────────────────────────────────────────── */
 
 /** Un horario pedido: en qué fechas y de qué hora a qué hora. */

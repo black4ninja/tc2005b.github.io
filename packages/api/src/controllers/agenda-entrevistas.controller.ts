@@ -11,7 +11,7 @@ import { CitaEntrevista } from '../models/CitaEntrevista.js';
 import { coleccionesDeGrupo } from '../services/grupo-colecciones.service.js';
 import { getVinculoConGrupoActivo } from '../services/grupo-alumno.service.js';
 import {
-  huecosDelDia, numerarIntentos, planificarBloques, puedeAgendar, puedeCancelar,
+  huecoAbierto, huecosDelDia, numerarIntentos, planificarBloques, puedeAgendar, puedeCancelar,
   sumarHorasHabiles,
   type FilaPlan, type Rango,
 } from '../services/agenda-entrevistas.service.js';
@@ -182,12 +182,16 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
       reglas: REGLAS,
       dias: dias.map((dia) => {
         const suyas = citas.filter((c) => c.getDia()?.id === dia.id);
+        const cerrados = dia.getHuecosCerrados();
         return {
           ...dia.toSafeJSON(),
           huecos: huecosDelDia(dia.getInicio(), dia.getFin(), dia.getDuracionSegundos())
             .map((inicio) => {
               const cita = suyas.find((c) => c.getInicio()?.getTime() === inicio.getTime());
-              if (!cita) return { inicio: inicio.toISOString(), cita: null };
+              // El profesor SÍ ve los cerrados: son suyos y los tiene que poder
+              // reabrir. Al alumno se le quitan de la lista.
+              const cerrado = cerrados.includes(inicio.toISOString());
+              if (!cita) return { inicio: inicio.toISOString(), cita: null, cerrado };
               const intento = intentos.get(cita.id!) ?? 1;
               const asignacion = asignaciones.get(
                 `${cita.getAlumno()?.id}::${cita.getCompetencia()?.id ?? SIN_COMPETENCIA}::${intento}`,
@@ -195,6 +199,7 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
               const pregunta = asignacion?.getPregunta();
               return {
                 inicio: inicio.toISOString(),
+                cerrado,
                 cita: {
                   ...cita.toSafeJSON(),
                   intento,
@@ -369,61 +374,64 @@ function filaJSON(fila: FilaPlan) {
 }
 
 /**
- * PUT /admin/grupos/:grupoId/agenda-entrevistas/dias/lote — `{ diaIds, cerrado }`
+ * PUT /admin/grupos/:grupoId/agenda-entrevistas/dias/:diaId/huecos
+ * `{ inicio, cerrado }`
  *
- * Cerrar las reservas de una semana entera de una vez. Es el mismo gesto que el
- * de un día, repetido, y por eso no tiene reglas propias.
+ * Cerrar o reabrir UN hueco. Es lo que el profesor hace de verdad: cerrar el día
+ * entero es todo o nada, y lo que quiere tapar son ratos sueltos —la comida, la
+ * clase que le pisa las once, el respiro que se guarda—.
+ *
+ * Un hueco ocupado no se cierra: eso no es taparlo, es dejar a alguien con una
+ * cita que ya no existe. Primero se cancela la cita, que es una decisión que se
+ * toma mirándola.
  */
-export async function actualizarDiasEnLote(req: Request, res: Response): Promise<void> {
-  const { grupoId } = req.params;
-  const { diaIds, cerrado } = req.body ?? {};
-  if (!Array.isArray(diaIds) || diaIds.length === 0 || typeof cerrado !== 'boolean') {
-    res.status(400).json({ status: 'error', message: 'Faltan los días o qué hacer con ellos' });
+export async function cerrarHueco(req: Request, res: Response): Promise<void> {
+  const { grupoId, diaId } = req.params;
+  const { inicio, cerrado } = req.body ?? {};
+  if (!inicio || typeof cerrado !== 'boolean') {
+    res.status(400).json({ status: 'error', message: 'Falta el hueco o qué hacer con él' });
     return;
   }
-  try {
-    const dias = (await diasDelGrupo(grupoId)).filter((d) => diaIds.includes(d.id!));
-    for (const dia of dias) dia.setCerrado(cerrado);
-    if (dias.length > 0) await Parse.Object.saveAll(dias, { useMasterKey: true });
-    res.json({ status: 'ok', cambiados: dias.length });
-  } catch {
-    res.status(500).json({ status: 'error', message: 'Error al guardar los días' });
-  }
-}
-
-/**
- * DELETE /admin/grupos/:grupoId/agenda-entrevistas/dias/lote — `{ diaIds }`
- *
- * Borra los que se puedan y DEJA los que tengan gente apuntada, diciendo
- * cuántos. Fallar entero por uno solo obligaría a ir descartándolos a mano hasta
- * dar con el que estorba, que es justo el trabajo que esto viene a quitar.
- */
-export async function borrarDiasEnLote(req: Request, res: Response): Promise<void> {
-  const { grupoId } = req.params;
-  const { diaIds } = req.body ?? {};
-  if (!Array.isArray(diaIds) || diaIds.length === 0) {
-    res.status(400).json({ status: 'error', message: 'No hay días que borrar' });
+  const momento = new Date(inicio);
+  if (Number.isNaN(momento.getTime())) {
+    res.status(400).json({ status: 'error', message: 'Hora no válida' });
     return;
   }
+
   try {
-    const [dias, citas] = await Promise.all([
-      diasDelGrupo(grupoId),
-      citasDelGrupo(grupoId),
-    ]);
-    const conCitas = new Set(citas.map((c) => c.getDia()?.id).filter(Boolean) as string[]);
-    const pedidos = dias.filter((d) => diaIds.includes(d.id!));
-    const borrables = pedidos.filter((d) => !conCitas.has(d.id!));
+    const q = new Parse.Query<DiaEntrevistas>('DiaEntrevistas');
+    q.equalTo('exists' as any, true as any);
+    const dia = await q.get(diaId, { useMasterKey: true }).catch(() => null);
+    if (!dia || dia.getGrupo()?.id !== grupoId) {
+      res.status(404).json({ status: 'error', message: 'Ese día de entrevistas no existe' });
+      return;
+    }
 
-    for (const dia of borrables) dia.softDelete();
-    if (borrables.length > 0) await Parse.Object.saveAll(borrables, { useMasterKey: true });
+    const esHueco = huecosDelDia(dia.getInicio(), dia.getFin(), dia.getDuracionSegundos())
+      .some((h) => h.getTime() === momento.getTime());
+    if (!esHueco) {
+      res.status(400).json({ status: 'error', message: 'Esa hora no es uno de los huecos del día' });
+      return;
+    }
 
-    res.json({
-      status: 'ok',
-      borrados: borrables.length,
-      conservados: pedidos.length - borrables.length,
-    });
+    if (cerrado) {
+      const citas = await citasDelGrupo(grupoId);
+      if (citas.some((c) => c.getInicio()?.getTime() === momento.getTime())) {
+        res.status(409).json({
+          status: 'error',
+          message: 'Ese hueco tiene una entrevista apuntada. Cancélala antes de cerrarlo.',
+        });
+        return;
+      }
+    }
+
+    const iso = momento.toISOString();
+    const cerrados = dia.getHuecosCerrados();
+    dia.setHuecosCerrados(cerrado ? [...cerrados, iso] : cerrados.filter((h) => h !== iso));
+    await dia.save(null, { useMasterKey: true });
+    res.json({ status: 'ok', dia: dia.toSafeJSON() });
   } catch {
-    res.status(500).json({ status: 'error', message: 'Error al borrar los días' });
+    res.status(500).json({ status: 'error', message: 'Error al guardar el hueco' });
   }
 }
 
@@ -499,6 +507,20 @@ export async function borrarDia(req: Request, res: Response): Promise<void> {
  * horas hábiles, al profesor no —está apuntando a alguien que tiene delante—.
  * El tope de intentos se aplica a los dos: esa no es una regla de cortesía.
  */
+/**
+ * Quita un hueco de la lista de cerrados, si estaba. Se llama al meterle una
+ * cita: un hueco ocupado y a la vez cerrado no significa nada, y dejarlo así
+ * haría que al cancelar la cita el hueco reapareciera cerrado sin que nadie lo
+ * hubiera cerrado.
+ */
+async function reabrirHueco(dia: DiaEntrevistas, inicio: Date): Promise<void> {
+  const iso = inicio.toISOString();
+  const cerrados = dia.getHuecosCerrados();
+  if (!cerrados.includes(iso)) return;
+  dia.setHuecosCerrados(cerrados.filter((h) => h !== iso));
+  await dia.save(null, { useMasterKey: true });
+}
+
 async function altaDeCita(
   res: Response,
   grupoId: string,
@@ -521,6 +543,10 @@ async function altaDeCita(
   }
   if (comoAlumno && dia.getCerrado()) {
     res.status(409).json({ status: 'error', message: 'Ese día ya no admite reservas' });
+    return;
+  }
+  if (comoAlumno && !huecoAbierto(false, dia.getHuecosCerrados(), inicio)) {
+    res.status(409).json({ status: 'error', message: 'Esa hora ya no está disponible' });
     return;
   }
 
@@ -555,6 +581,11 @@ async function altaDeCita(
     });
     return;
   }
+
+  // El profesor sí puede apuntar a alguien en un hueco que había cerrado —lo
+  // cierra para que nadie lo tome, no para no poder usarlo él—. Pero entonces
+  // deja de estar cerrado: si no, el hueco quedaría marcado con una cita dentro.
+  await reabrirHueco(dia, inicio);
 
   const cita = new CitaEntrevista().initDefaults();
   cita.setGrupo(Grupo.createWithoutData(grupoId) as Grupo);
@@ -644,6 +675,7 @@ export async function moverCitaProfesor(req: Request, res: Response): Promise<vo
       return;
     }
 
+    await reabrirHueco(dia, inicio);
     cita.setDia(dia);
     cita.setInicio(inicio);
     await cita.save(null, { useMasterKey: true });
@@ -734,7 +766,13 @@ export async function getAgendaAlumno(req: Request, res: Response): Promise<void
       dias: dias.filter((d) => !d.getCerrado() || citas.some((c) => c.getDia()?.id === d.id))
         .map((dia) => ({
           ...dia.toSafeJSON(),
+          // Un hueco cerrado no se le enseña al alumno ni siquiera tachado: lo
+          // que se cierra es un rato en que el profesor no está, y una fila que
+          // solo sirve para no poder pulsarla es ruido. Los que ya tienen cita
+          // se quedan: el profesor no puede cerrar uno ocupado.
           huecos: huecosDelDia(dia.getInicio(), dia.getFin(), dia.getDuracionSegundos())
+            .filter((inicio) => huecoAbierto(false, dia.getHuecosCerrados(), inicio)
+              || citas.some((c) => c.getInicio()?.getTime() === inicio.getTime()))
             .map((inicio) => {
               const cita = citas.find((c) => c.getInicio()?.getTime() === inicio.getTime());
               return {

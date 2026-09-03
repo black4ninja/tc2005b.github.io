@@ -6,8 +6,7 @@ import {
   getAgenda,
   crearDia,
   crearDiasEnLote,
-  actualizarDiasEnLote,
-  borrarDiasEnLote,
+  cerrarHueco,
   actualizarDia,
   borrarDia,
   crearCitaProfesor,
@@ -35,8 +34,7 @@ router.post('/admin/grupos/:grupoId/agenda-entrevistas/dias', crearDia);
 // El lote va ANTES que las rutas con `:diaId`: si no, «lote» se leería como el
 // id de un día y el alta en bloque acabaría en el manejador de uno solo.
 router.post('/admin/grupos/:grupoId/agenda-entrevistas/dias/lote', crearDiasEnLote);
-router.put('/admin/grupos/:grupoId/agenda-entrevistas/dias/lote', actualizarDiasEnLote);
-router.delete('/admin/grupos/:grupoId/agenda-entrevistas/dias/lote', borrarDiasEnLote);
+router.put('/admin/grupos/:grupoId/agenda-entrevistas/dias/:diaId/huecos', cerrarHueco);
 router.put('/admin/grupos/:grupoId/agenda-entrevistas/dias/:diaId', actualizarDia);
 router.delete('/admin/grupos/:grupoId/agenda-entrevistas/dias/:diaId', borrarDia);
 router.post('/admin/grupos/:grupoId/agenda-entrevistas/citas', crearCitaProfesor);

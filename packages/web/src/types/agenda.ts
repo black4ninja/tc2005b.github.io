@@ -67,6 +67,8 @@ export interface CitaProfesor {
 export interface HuecoProfesor {
   inicio: string;
   cita: CitaProfesor | null;
+  /** Cerrado a mano: el alumno no lo ve, el profesor sí para poder reabrirlo. */
+  cerrado: boolean;
 }
 
 export interface DiaProfesor {
