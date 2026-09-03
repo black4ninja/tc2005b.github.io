@@ -426,8 +426,8 @@ export async function cerrarHueco(req: Request, res: Response): Promise<void> {
     }
 
     const iso = momento.toISOString();
-    const cerrados = dia.getHuecosCerrados();
-    dia.setHuecosCerrados(cerrado ? [...cerrados, iso] : cerrados.filter((h) => h !== iso));
+    if (cerrado) dia.cerrarHueco(iso);
+    else dia.abrirHueco(iso);
     await dia.save(null, { useMasterKey: true });
     res.json({ status: 'ok', dia: dia.toSafeJSON() });
   } catch {
@@ -515,9 +515,8 @@ export async function borrarDia(req: Request, res: Response): Promise<void> {
  */
 async function reabrirHueco(dia: DiaEntrevistas, inicio: Date): Promise<void> {
   const iso = inicio.toISOString();
-  const cerrados = dia.getHuecosCerrados();
-  if (!cerrados.includes(iso)) return;
-  dia.setHuecosCerrados(cerrados.filter((h) => h !== iso));
+  if (!dia.getHuecosCerrados().includes(iso)) return;
+  dia.abrirHueco(iso);
   await dia.save(null, { useMasterKey: true });
 }
 

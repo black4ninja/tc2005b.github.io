@@ -28,6 +28,9 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   desaparece de la lista del alumno y no acepta que le suelten a nadie
   arrastrando; el profesor lo sigue viendo, tachado, para poder reabrirlo. No se
   puede cerrar uno que ya tenga una entrevista apuntada: primero se cancela.
+  Se pueden picar varios candados seguidos sin esperar: cada fila se apaga y
+  enseña su girador hasta que el cambio está guardado, así que se ve cuáles
+  están por procesarse, y ninguno se pierde por el camino.
 - **Buscador en el selector de la proyección.** Era un desplegable nativo que con
   cuarenta alumnos había que recorrer a ojo. Ahora se escribe, la lista se reduce
   y se navega con las flechas.

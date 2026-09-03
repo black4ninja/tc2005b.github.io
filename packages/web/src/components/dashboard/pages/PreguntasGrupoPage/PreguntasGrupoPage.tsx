@@ -160,8 +160,14 @@ export default function PreguntasGrupoPage() {
   const [diaActivo, setDiaActivo] = useState<string | null>(null);
   const [creandoDia, setCreandoDia] = useState(false);
   const [guardandoDias, setGuardandoDias] = useState(false);
-  /** El hueco cuyo cierre está en vuelo, para apagar solo esa fila. */
-  const [cerrandoHueco, setCerrandoHueco] = useState<string | null>(null);
+  /**
+   * Los huecos cuyo cierre está en vuelo. Es un conjunto y no uno solo porque
+   * cerrar un rato son varios candados seguidos, y hay que poder picarlos de
+   * golpe: cada fila dice por su cuenta que ya recibieron su petición.
+   */
+  const [huecosEnVuelo, setHuecosEnVuelo] = useState<Set<string>>(new Set());
+  /** Cuántas peticiones de hueco quedan vivas, para recargar UNA vez al final. */
+  const enVuelo = useRef(0);
 
   /** La pestaña proyectada, para volver a ella en vez de abrir otra. */
   const ventanaRef = useRef<Window | null>(null);
@@ -275,18 +281,26 @@ export default function PreguntasGrupoPage() {
    * caso raro. Sin confirmación: se deshace pulsando otra vez en el mismo sitio.
    */
   async function cerrarHueco(diaId: string, inicio: string, cerrado: boolean) {
-    setCerrandoHueco(inicio);
+    if (huecosEnVuelo.has(inicio)) return;
+    setHuecosEnVuelo((s) => new Set(s).add(inicio));
+    enVuelo.current += 1;
     try {
       const res = await fetch(
         `${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/dias/${diaId}/huecos`,
         { method: 'PUT', headers, body: JSON.stringify({ inicio, cerrado }) },
       );
       if (!res.ok) throw new Error((await res.json().catch(() => null))?.message ?? 'No se pudo guardar el hueco');
-      await cargarAgenda();
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'No se pudo guardar el hueco'));
     } finally {
-      setCerrandoHueco(null);
+      enVuelo.current -= 1;
+      // Una sola recarga para toda la ráfaga, y las filas siguen marcadas hasta
+      // que llega: soltarlas antes las devolvería un instante a como estaban,
+      // que es justo el parpadeo que hace dudar de si el clic entró.
+      if (enVuelo.current === 0) {
+        await cargarAgenda();
+        setHuecosEnVuelo(new Set());
+      }
     }
   }
 
@@ -1525,7 +1539,7 @@ export default function PreguntasGrupoPage() {
                   {filaDelDia.map((f) => {
                     if (!f.cita) {
                       const encima = zona === f.inicio && !f.cerrado;
-                      const enVuelo = cerrandoHueco === f.inicio;
+                      const yendo = huecosEnVuelo.has(f.inicio);
                       return (
                         <tr
                           key={`libre-${f.inicio}`}
@@ -1536,9 +1550,16 @@ export default function PreguntasGrupoPage() {
                             styles.filaVacia,
                             f.cerrado ? styles.filaCerrada : styles.filaSoltable,
                             encima ? styles.filaDestino : '',
+                            yendo ? styles.filaEnVuelo : '',
                           ].filter(Boolean).join(' ')}
                         >
-                          <td className={styles.colCorta}>{hora(f.inicio)}</td>
+                          <td className={styles.colCorta}>
+                            {hora(f.inicio)}
+                            {/* El cierre va al servidor y vuelve. Sin decirlo,
+                                picar tres candados seguidos no da señal de que
+                                los tres entraron y se vuelven a picar. */}
+                            {yendo && <span className={styles.girandoFila} aria-label="Guardando" />}
+                          </td>
                           {/* Mientras se arrastra, solo el hueco de DEBAJO DEL
                               PUNTERO dice algo, y dice a quién va a recibir:
                               cuarenta y ocho filas repitiendo «soltar aquí» son
@@ -1565,6 +1586,7 @@ export default function PreguntasGrupoPage() {
                             {!arrastrando && !f.cerrado && (
                               <button
                                 className={`${styles.iconBtn} ${styles.accionHover}`}
+                                disabled={yendo}
                                 onClick={() => setAsignandoEn(f.inicio)}
                                 title="Apuntar a alguien en este hueco"
                               >
@@ -1574,7 +1596,7 @@ export default function PreguntasGrupoPage() {
                             {!arrastrando && (
                               <button
                                 className={`${styles.iconBtn} ${f.cerrado ? '' : styles.accionHover}`}
-                                disabled={enVuelo}
+                                disabled={yendo}
                                 onClick={() => void cerrarHueco(dia.id, f.inicio, !f.cerrado)}
                                 title={f.cerrado
                                   ? 'Volver a ofrecer este hueco'

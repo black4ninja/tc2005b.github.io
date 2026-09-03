@@ -989,6 +989,11 @@
 .filaCerrada td { background: var(--dash-bg-subtle); }
 .filaCerrada td:first-child { text-decoration: line-through; opacity: 0.6; }
 
+/* Mientras su cierre va y vuelve, la fila espera: apagada y con el girador al
+   lado de la hora. Con varios candados picados de golpe, se ve de un vistazo
+   cuáles están por procesarse. */
+.filaEnVuelo td { opacity: 0.55; }
+
 .cerradoAviso {
   display: inline-flex;
   align-items: center;
