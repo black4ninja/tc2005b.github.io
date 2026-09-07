@@ -117,6 +117,15 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   suelto— ahora se hace en el propio hueco.
 
 ### Changed
+- **Cada competencia tiene su color en el mapa de intentos.** Los chips de
+  «Por alumno» se pintaban todos del mismo verde en cuanto llevaban algo, así que
+  con dos competencias los dos salían iguales y había que leerse el nombre
+  —recortado a media palabra— para saber cuál era cuál. Ahora el matiz dice DE
+  QUÉ competencia es —azul la primera, naranja la segunda, y así hasta seis— y la
+  intensidad dice CUÁNTO lleva: pálido con un intento puesto, saturado con los
+  dos, más el borde entero y la seminegrita para que la diferencia no dependa
+  solo del color. Los seis matices son tokens, uno por tema, y todos cumplen
+  WCAG AA sobre el fondo de su propio chip.
 - **Asignar la pregunta desde la propia cita.** El aviso «Sin pregunta para su
   2.º intento» decía lo que faltaba y ahí se acababa: para ponerla había que
   irse a la pestaña de preguntas, elegir la competencia, poner el intento,
