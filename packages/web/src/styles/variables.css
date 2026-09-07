@@ -94,6 +94,40 @@
   --estado-info-color: #1d4ed8;
   --estado-info-border: #bfdbfe;
 
+  /* Paleta de COMPETENCIAS. Un matiz por competencia, repartido por su posición
+     en el catálogo de la materia, para que en el mapa de intentos se distinga de
+     un vistazo cuál es cuál sin leerse el nombre recortado de cada chip.
+
+     Son matices y no estados: aquí el color no dice «bien» o «mal» —el verde de
+     `--estado-exito` lo decía, y con dos competencias los dos chips salían del
+     mismo verde—, dice DE QUÉ competencia es. Lo lleno se saca del mismo matiz
+     con `color-mix`: pálido con un intento puesto, saturado con los dos.
+
+     Seis porque es lo que cubre las materias de hoy —siete competencias la más
+     grande— dando la vuelta una sola vez, y porque más matices distinguibles
+     entre sí no hay. */
+  --tinte-competencia-1: #2563eb;
+  --tinte-competencia-2: #ea580c;
+  --tinte-competencia-3: #7c3aed;
+  --tinte-competencia-4: #0f766e;
+  --tinte-competencia-5: #be185d;
+  --tinte-competencia-6: #a16207;
+
+  /* El TEXTO del chip va aparte del matiz, y bastante más oscuro. Escrito con el
+     mismo tono que su fondo no se lee: el fondo es ese matiz rebajado sobre
+     blanco, así que letra y fondo acaban a un paso el uno del otro —el naranja
+     se quedaba en 1.9 de contraste—. Estos tonos dan 4.5 o más sobre el fondo de
+     su propio chip, que es el mínimo de WCAG AA.
+
+     En oscuro no hace falta la distinción: allí el fondo es el matiz rebajado
+     sobre un fondo oscuro, y el matiz claro contrasta contra él de sobra. */
+  --tinte-competencia-1-texto: #1e3a8a;
+  --tinte-competencia-2-texto: #7c2d12;
+  --tinte-competencia-3-texto: #4c1d95;
+  --tinte-competencia-4-texto: #134e4a;
+  --tinte-competencia-5-texto: #831843;
+  --tinte-competencia-6-texto: #713f12;
+
   /* Actividad señalada al llegar desde el Hub. Ámbar y no el azul del panel:
      el azul ES el color de los enlaces y del tipo «lab», así que se confundía
      con el contenido en vez de destacar sobre él. */
@@ -173,6 +207,25 @@
   --estado-info-bg: #1e3a8a40;
   --estado-info-color: #93c5fd;
   --estado-info-border: #1e3a8a;
+
+  /* Los mismos seis matices, subidos de luminosidad: los de la paleta clara
+     están pensados para contrastar contra blanco y sobre el fondo oscuro se
+     apagan hasta no leerse. */
+  --tinte-competencia-1: #7ea2ff;
+  --tinte-competencia-2: #ffab70;
+  --tinte-competencia-3: #c4a6ff;
+  --tinte-competencia-4: #5eead4;
+  --tinte-competencia-5: #f9a8d4;
+  --tinte-competencia-6: #fcd34d;
+
+  /* Aquí el texto SÍ es el matiz: sobre el fondo oscuro ya contrasta de sobra
+     —de 7 para arriba— y separarlo solo lo apagaría. */
+  --tinte-competencia-1-texto: var(--tinte-competencia-1);
+  --tinte-competencia-2-texto: var(--tinte-competencia-2);
+  --tinte-competencia-3-texto: var(--tinte-competencia-3);
+  --tinte-competencia-4-texto: var(--tinte-competencia-4);
+  --tinte-competencia-5-texto: var(--tinte-competencia-5);
+  --tinte-competencia-6-texto: var(--tinte-competencia-6);
 
   /* Los acentos se aclaran: los tonos de la paleta clara están pensados para
      contrastar contra blanco y sobre un fondo oscuro pierden legibilidad. */

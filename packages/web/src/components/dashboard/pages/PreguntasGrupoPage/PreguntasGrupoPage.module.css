@@ -482,6 +482,36 @@
   color: var(--estado-exito-color);
 }
 
+/* Los chips del MAPA de intentos se tiñen por competencia, no por estado.
+   `--tinte` lo pone la fila desde la paleta `--tinte-competencia-N`, según la
+   posición de la competencia en el catálogo de la materia.
+
+   El verde de `--estado-exito` decía «bien», que aquí no significa nada: con dos
+   competencias los dos chips salían del mismo verde y había que leer el nombre
+   recortado para saber cuál era cuál. El matiz dice DE QUÉ es, y la intensidad,
+   CUÁNTO lleva.
+
+   Se mezcla con `color-mix` en vez de escribir seis fondos y seis bordes a mano:
+   el matiz se define una vez por tema y el resto sale de él, así que cambiar la
+   paleta es tocar seis líneas y no treinta y seis. */
+.huecoParcial {
+  border-style: solid;
+  background: color-mix(in srgb, var(--tinte) 12%, transparent);
+  border-color: color-mix(in srgb, var(--tinte) 40%, transparent);
+  color: var(--tinte-texto);
+}
+
+/* Los DOS intentos puestos. Mismo matiz, subido: es la diferencia que se ve de
+   lejos entre «le falta uno» y «está listo», que es lo que se recorre la columna
+   buscando. El borde entero y la seminegrita acompañan al fondo para que la
+   distinción no dependa solo del color. */
+.huecoParcial.huecoCompleto {
+  background: color-mix(in srgb, var(--tinte) 26%, transparent);
+  border-color: var(--tinte);
+  color: var(--tinte-texto);
+  font-weight: 600;
+}
+
 /* El mismo chip, del lado de la pregunta: ahí es la acción principal de la
    tarjeta y no una casilla más de una fila, así que respira un poco más. */
 .huecoAccion {
@@ -576,11 +606,8 @@
   opacity: 0.8;
 }
 
-/* Los dos intentos puestos: se distingue de «uno sí, otro no». */
-.huecoCompleto {
-  background: var(--estado-exito-bg);
-  border-color: var(--estado-exito-color);
-}
+/* Ver `.huecoParcial` y `.huecoCompleto` arriba: los dos intentos puestos se
+   pintan con el matiz de SU competencia, no con el verde de «bien». */
 
 .historialIntento {
   font-size: 0.72rem;

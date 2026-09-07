@@ -1,4 +1,5 @@
 import { Fragment, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import type { CSSProperties } from 'react';
 import { useArrastre } from '../../../../hooks/useArrastre';
 import { useParams, Link } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
@@ -34,6 +35,19 @@ const SIN_COMPETENCIA = 'sin-competencia';
 const ZONA_DIA = 'dia:';
 /** Espejo de `MAX_INTENTOS` del API: hasta dos entrevistas por competencia. */
 const MAX_INTENTOS = 2;
+
+/**
+ * Cuántos matices tiene la paleta de competencias (`--tinte-competencia-N` en
+ * `variables.css`). La competencia se lleva el suyo por su POSICIÓN en el
+ * catálogo de la materia, para que el mapa de intentos se lea sin descifrar el
+ * nombre recortado de cada chip.
+ *
+ * Por posición y no por id: así el mismo catálogo da siempre los mismos colores
+ * —el profesor se aprende que el primero es azul— sin guardar nada, y una
+ * materia con más de seis competencias repite matiz en vez de quedarse sin
+ * color, que es lo de menos cuando ya hay siete chips en la fila.
+ */
+const TINTES_COMPETENCIA = 6;
 /**
  * Cada cuánto se relee lo que hay proyectado. Mucho más espaciado que en la
  * pantalla proyectada porque aquí el panel es quien MANDA: lo suyo lo pinta al
@@ -2160,7 +2174,7 @@ export default function PreguntasGrupoPage() {
                       // un vistazo a quién le falta qué, no para trabajar.
                       <td>
                         <div className={styles.chipsHuecos}>
-                          {competencias.map((c) => {
+                          {competencias.map((c, i) => {
                             const llenos = llenosEn(alumno, c.id);
                             const libre = primerHuecoLibre(alumno, c.id);
                             const completa = llenos === MAX_INTENTOS;
@@ -2170,7 +2184,14 @@ export default function PreguntasGrupoPage() {
                             return (
                               <button
                                 key={c.id}
-                                className={`${styles.hueco} ${llenos > 0 ? styles.huecoLleno : ''} ${completa ? styles.huecoCompleto : ''} ${guardando ? styles.pendiente : ''}`}
+                                // El matiz de SU competencia. Va en una propiedad
+                                // y no en una clase por competencia porque
+                                // cuántas hay lo decide la materia, no el CSS.
+                                style={{
+                                  '--tinte': `var(--tinte-competencia-${(i % TINTES_COMPETENCIA) + 1})`,
+                                  '--tinte-texto': `var(--tinte-competencia-${(i % TINTES_COMPETENCIA) + 1}-texto)`,
+                                } as CSSProperties}
+                                className={`${styles.hueco} ${llenos > 0 ? styles.huecoParcial : ''} ${completa ? styles.huecoCompleto : ''} ${guardando ? styles.pendiente : ''}`}
                                 // Un clic aquí llena el PRIMER intento libre; para
                                 // trabajar uno concreto se entra por su modo.
                                 onClick={() => setEligiendoPara({
