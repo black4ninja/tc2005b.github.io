@@ -4,7 +4,11 @@ import {
   moduloEsOptIn,
   moduloHabilitado,
 } from '../src/models/modulos-contenido.js';
-import { normalizarEtiquetas, normalizarDuracion } from '../src/services/preguntas.service.js';
+import {
+  normalizarEtiquetas,
+  normalizarDuracion,
+  normalizarEnunciado,
+} from '../src/services/preguntas.service.js';
 
 describe('el módulo Preguntas en el catálogo de contenido', () => {
   it('está en el catálogo y es opt-in', () => {
@@ -82,5 +86,30 @@ describe('normalizarDuracion', () => {
   it('rechaza decimales y basura', () => {
     expect(normalizarDuracion(90.5, undefined)).toHaveProperty('error');
     expect(normalizarDuracion('dos minutos', undefined)).toHaveProperty('error');
+  });
+});
+
+describe('normalizarEnunciado', () => {
+  it('iguala lo que solo cambia en acentos, mayúsculas y espacios', () => {
+    // Es el caso real del cuaderno: la misma pregunta tecleada de nuevo para
+    // cada alumno, con el espaciado que salga.
+    expect(normalizarEnunciado('¿Cómo   defines el ÉXITO de un proyecto?'))
+      .toBe(normalizarEnunciado('Como defines el exito de un proyecto'));
+  });
+
+  it('ignora la puntuación de los bordes', () => {
+    expect(normalizarEnunciado('  Vende el producto.  ')).toBe('vende el producto');
+  });
+
+  it('NO iguala dos preguntas que solo se PARECEN', () => {
+    // Distinto final = distinta pregunta. Fusionarlas sería decidir por el
+    // profesor, y el importador prefiere que entren dos a perder una.
+    expect(normalizarEnunciado('Somos inversionistas, ¿cómo medirías el éxito?'))
+      .not.toBe(normalizarEnunciado('Somos inversionistas, ¿cuál sería la forma de trabajo?'));
+  });
+
+  it('con texto vacío devuelve vacío y no revienta', () => {
+    expect(normalizarEnunciado('')).toBe('');
+    expect(normalizarEnunciado('   ¿?  ')).toBe('');
   });
 });

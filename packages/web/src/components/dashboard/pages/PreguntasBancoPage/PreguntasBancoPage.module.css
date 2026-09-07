@@ -156,6 +156,14 @@
   cursor: pointer;
 }
 
+/* El de importar lleva icono, así que necesita alinearlo con su texto; los
+   demás `.enlaceBtn` son texto suelto y no les cambia nada. */
+.enlaceBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* Cabecera derecha: el tiempo de la materia y el interruptor de archivadas. */
 .headerLado {
   display: flex;

@@ -5,6 +5,7 @@ import { requireGrupoAccess } from '../middlewares/grupo-scope.middleware.js';
 import {
   listPreguntas,
   createPregunta,
+  createPreguntasEnLote,
   updatePregunta,
   deletePregunta,
 } from '../controllers/preguntas.controller.js';
@@ -43,6 +44,9 @@ router.use('/admin/grupos/:grupoId/preguntas', identifyUser, requireGrupoAccess)
 // Banco de una colección
 router.get('/admin/colecciones/:id/preguntas', listPreguntas);
 router.post('/admin/colecciones/:id/preguntas', createPregunta);
+// El importador del cuaderno de entrevistas. Va aparte del alta de una porque
+// lo que aporta es el de-duplicado contra el banco entero, ver el controlador.
+router.post('/admin/colecciones/:id/preguntas/lote', createPreguntasEnLote);
 router.put('/admin/preguntas/:id', updatePregunta);
 router.delete('/admin/preguntas/:id', deletePregunta);
 
