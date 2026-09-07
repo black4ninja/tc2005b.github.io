@@ -900,6 +900,46 @@
   background: var(--bg-page);
 }
 
+/* La celda de pregunta de una cita es un BOTÓN: pulsarla abre el banco y lo
+   que se elija cae en el intento de esa cita.
+
+   Sin fondo propio, al revés que `.celdaPregunta` del roster: en la fila del
+   día la celda de al lado ya lleva la píldora de competencia y el enunciado
+   ocupa el resto del ancho, así que un recuadro más solo hacía ruido. El borde
+   aparece al pasar por encima, que es cuando hay que decir que esto se toca. */
+.celdaPreguntaCita {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.celdaPreguntaCita:hover {
+  border-color: var(--sidebar-active-color);
+}
+
+.celdaPreguntaCita:focus-visible {
+  outline: 2px solid var(--sidebar-active-color);
+  outline-offset: 1px;
+}
+
+/* El enunciado se lleva el ancho sobrante y se corta con puntos suspensivos;
+   sin `min-width: 0` un hijo de flex no encoge por debajo de su texto y sería
+   la fila entera la que se estiraría. */
+.celdaPreguntaCita .preguntaTitulo {
+  flex: 1;
+  min-width: 0;
+}
+
 /* Una cita sin pregunta para su intento se ve ANTES del día, no al pulsar
    «Proyectar» con el alumno delante. */
 .sinPreguntaAviso {
