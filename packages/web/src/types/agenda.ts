@@ -83,7 +83,14 @@ export interface CitaProfesor {
   alumno: { id: string; name: string; matricula: string } | null;
   competencia: { id: string; nombre: string } | null;
   intento: number;
-  /** La asignación que le toca a ese intento; null = no tiene pregunta puesta. */
+  /**
+   * La asignación que le tocaba a ese intento cuando se sirvió la agenda, con su
+   * pregunta. `null` = no tenía ninguna puesta.
+   *
+   * La tabla del profesor NO los lee: resuelve el hueco —competencia × intento—
+   * contra el roster, que se actualiza al asignar sin recargar el día. Estos dos
+   * son la foto del momento de la carga y se quedan atrás en cuanto se toca algo.
+   */
   asignacionId: string | null;
   pregunta: { id: string; texto: string } | null;
   evidencias: Evidencia[];

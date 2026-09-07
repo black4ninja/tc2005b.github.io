@@ -117,6 +117,23 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   suelto— ahora se hace en el propio hueco.
 
 ### Changed
+- **Asignar la pregunta desde la propia cita.** El aviso «Sin pregunta para su
+  2.º intento» decía lo que faltaba y ahí se acababa: para ponerla había que
+  irse a la pestaña de preguntas, elegir la competencia, poner el intento,
+  buscar al alumno y volver, con el siguiente ya sentándose. Ahora ese aviso es
+  el botón: abre el banco —el mismo de siempre, con su buscador y sus filtros—
+  y lo que se elija cae en el intento de esa cita, sin preguntar cuál, porque lo
+  fijó el alumno al apuntarse. Una vez puesta, el enunciado se pulsa igual para
+  cambiarla. La fila se pinta en el acto y el servidor solo confirma: la tabla
+  no parpadea ni se recarga el día.
+- **Cambiar una pregunta ya asignada, de un clic.** Con los dos intentos llenos,
+  entrar a un hueco concreto apagaba el banco entero y obligaba a quitar la
+  pregunta antes de poder poner otra —dos pasos para lo que el propio botón
+  llamaba «Cambiar la pregunta»—. Cuando el intento está señalado, elegir otra
+  la sustituye directamente, que es lo que el servidor ya hacía. Desde el mapa
+  de competencias no cambia nada: ahí el hueco lo elige el programa, y sustituir
+  sin que nadie lo haya señalado sería cambiarle al alumno una pregunta a
+  espaldas de quien la puso.
 - **La tira de días de la agenda, en fichas de calendario.** Cada fecha era una
   línea de texto —«jueves 3 de sep 2/48»—: legible de una en una, pero con un
   semestre abierto la tira eran quince líneas iguales y encontrar «el 3»

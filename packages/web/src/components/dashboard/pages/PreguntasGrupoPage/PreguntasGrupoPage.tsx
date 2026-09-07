@@ -727,8 +727,15 @@ export default function PreguntasGrupoPage() {
   const filaDelDia = useMemo(() => (dia?.huecos ?? []).map((h) => {
     const cita = h.cita;
     const alumno = cita ? alumnos.find((a) => a.id === cita.alumno?.id) ?? null : null;
-    const asignacion = cita?.asignacionId
-      ? alumno?.asignaciones.find((x) => x.id === cita.asignacionId) ?? null
+    // Por HUECO —competencia × intento— y no por el `asignacionId` que trae la
+    // cita: ese id lo resolvió el servidor al servir la agenda, así que ponerle
+    // una pregunta desde aquí dejaría la fila en «sin pregunta» hasta recargar.
+    // El hueco es el mismo dato con el que el servidor la eligió, y se busca en
+    // el roster, que sí se actualiza en el acto.
+    const asignacion = alumno && cita?.competencia
+      ? alumno.asignaciones.find(
+        (x) => x.hueco === `${cita.competencia!.id}::${cita.intento}`,
+      ) ?? null
       : null;
     return { inicio: h.inicio, cita, alumno, asignacion, cerrado: h.cerrado };
   }), [dia, alumnos]);
@@ -893,7 +900,10 @@ export default function PreguntasGrupoPage() {
   const paraProyectar = useMemo(
     () => (vista === 'agenda'
       ? filaDelDia
-        .filter((f) => f.alumno && f.asignacion)
+        // Una recién asignada todavía lleva un id de mentira: proyectarla
+        // pediría al servidor una asignación que aún no existe. Entra en cuanto
+        // confirma, que es cuestión de un instante.
+        .filter((f) => f.alumno && f.asignacion && !f.asignacion.pendiente)
         // En la agenda la pista es la HORA: es lo que el profesor está leyendo
         // en la tabla, y lo que separa las dos citas de quien viene dos veces.
         .map((f) => ({ alumno: f.alumno!, asignacion: f.asignacion!, pista: hora(f.inicio) }))
@@ -1937,19 +1947,63 @@ export default function PreguntasGrupoPage() {
                           <span className={styles.historialIntento}> {cita!.intento}.º intento</span>
                         </td>
                         <td>
-                          {cita!.pregunta ? (
-                            resumenPregunta(cita!.pregunta.texto, 80)
+                          {/* La celda ES el botón de asignar: el aviso se pulsa
+                              para poner la pregunta que falta, y una vez puesta
+                              se pulsa el enunciado para cambiarla. Antes había
+                              que irse a la pestaña de preguntas, buscar al
+                              alumno y volver, con el siguiente ya sentándose.
+
+                              El intento no se pregunta: es el de ESTA cita, el
+                              que el alumno eligió al apuntarse. */}
+                          {alumno && cita!.competencia ? (
+                            <button
+                              className={`${styles.celdaPreguntaCita} ${asignacion?.pendiente ? styles.pendiente : ''}`}
+                              onClick={() => setEligiendoPara({
+                                alumnoId: alumno.id,
+                                competenciaId: cita!.competencia!.id,
+                                intentoFijo: cita!.intento,
+                              })}
+                              title={asignacion?.pregunta
+                                ? `Cambiar la pregunta de su ${cita!.intento}.º intento`
+                                : `Elegir la pregunta de su ${cita!.intento}.º intento`}
+                            >
+                              {asignacion?.pregunta ? (
+                                <>
+                                  <span className={styles.preguntaTitulo}>
+                                    {resumenPregunta(asignacion.pregunta.texto, 80)}
+                                  </span>
+                                  {asignacion.pregunta.archivada && (
+                                    <span
+                                      className={styles.archivadaTag}
+                                      title="Esta pregunta ya no está en el banco"
+                                    >
+                                      archivada
+                                    </span>
+                                  )}
+                                  {asignacion.pendiente && (
+                                    <span className={styles.guardando} title="Guardando…">
+                                      <Icon name="sync" size="sm" />
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className={styles.sinPreguntaAviso}>
+                                  <Icon name="warning" size="sm" />
+                                  Sin pregunta para su {cita!.intento}.º intento
+                                </span>
+                              )}
+                            </button>
                           ) : (
-                            <span className={styles.sinPreguntaAviso}>
-                              <Icon name="warning" size="sm" />
-                              Sin pregunta para su {cita!.intento}.º intento
-                            </span>
+                            /* Sin competencia, o con un alumno que ya no está en
+                               el roster, no hay hueco al que asignar nada: se
+                               dice y no se ofrece un botón que no haría nada. */
+                            <span className={styles.sinPregunta}>—</span>
                           )}
                         </td>
                         <td className={styles.colAcciones}>
                           <button
                             className={`${styles.iconBtn} ${enPantalla ? styles.iconBtnOn : ''}`}
-                            disabled={!asignacion}
+                            disabled={!asignacion || !!asignacion.pendiente}
                             onClick={() => asignacion && proyectarDesdeFila(asignacion.id)}
                             title="Poner esta pregunta en la pantalla y bajar al mando"
                           >
@@ -2336,6 +2390,17 @@ export default function PreguntasGrupoPage() {
         // Lo que ya tiene en ESTA competencia, sea del intento que sea.
         const suyas = alumno.asignaciones.filter((a) => a.hueco?.startsWith(`${competenciaId}::`));
         const destino = eligiendoPara.intentoFijo ?? primerHuecoLibre(alumno, competenciaId);
+        // Con el intento FIJO —una cita de la agenda, o el modo de trabajo de
+        // una competencia— el destino no es «el primer hueco libre» sino ese, y
+        // si ya tiene pregunta lo que se elija la SUSTITUYE. El tope de intentos
+        // no aplica entonces, porque no se añade ninguna: por eso «cambiar la
+        // pregunta» se hace de un clic y no obliga a quitarla antes.
+        //
+        // Desde el mapa de competencias (intento libre) sigue sin aplicar: ahí
+        // el hueco lo elige el programa, y sustituir sin avisar sería cambiarle
+        // al alumno una pregunta que nadie señaló.
+        const sustituye = eligiendoPara.intentoFijo !== null
+          && !!asignacionDe(alumno, competenciaId, eligiendoPara.intentoFijo);
         const nombreCompetencia = competencias.find((c) => c.id === competenciaId)?.nombre ?? '';
         return (
           <SelectorPregunta
@@ -2343,13 +2408,15 @@ export default function PreguntasGrupoPage() {
             competencias={competencias}
             competenciaInicial={competenciaId}
             titulo={`Preguntas de ${alumno.name}`}
-            subtitulo={suyas.length >= MAX_INTENTOS
-              ? `${nombreCompetencia} · ya tiene sus ${MAX_INTENTOS} intentos. Quita una para poner otra.`
-              : `${nombreCompetencia} · lleva ${suyas.length} de ${MAX_INTENTOS}. Lo que elijas entra en el ${destino}.º intento.`}
+            subtitulo={sustituye
+              ? `${nombreCompetencia} · lo que elijas sustituye la pregunta de su ${destino}.º intento.`
+              : suyas.length >= MAX_INTENTOS
+                ? `${nombreCompetencia} · ya tiene sus ${MAX_INTENTOS} intentos. Quita una para poner otra.`
+                : `${nombreCompetencia} · lleva ${suyas.length} de ${MAX_INTENTOS}. Lo que elijas entra en el ${destino}.º intento.`}
             asignadas={new Map(suyas
               .filter((a) => a.pregunta?.id)
               .map((a) => [a.pregunta!.id, a.intento]))}
-            permiteAgregar={suyas.length < MAX_INTENTOS}
+            permiteAgregar={sustituye || suyas.length < MAX_INTENTOS}
             guardando={guardando > 0}
             onAlternar={(p) => {
               // Pulsar una que ya tiene la QUITA; pulsar otra la mete en el
