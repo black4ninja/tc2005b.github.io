@@ -9,6 +9,8 @@ import Modal from '../../atoms/Modal/Modal';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Icon from '../../atoms/Icon/Icon';
 import PreguntaProyector from '../../organisms/PreguntaProyector/PreguntaProyector';
+import ImportarPreguntasModal from '../../organisms/ImportarPreguntasModal/ImportarPreguntasModal';
+import type { PreguntaAImportar } from '../../organisms/ImportarPreguntasModal/ImportarPreguntasModal';
 import { formatearDuracion, resumenPregunta } from '../../../../utils/preguntas';
 import type { Pregunta } from '../../../../types/preguntas';
 import styles from './PreguntasBancoPage.module.css';
@@ -66,6 +68,7 @@ export default function PreguntasBancoPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [importando, setImportando] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editando, setEditando] = useState<Pregunta | null>(null);
   const [borrador, setBorrador] = useState<Borrador>(VACIO);
@@ -213,6 +216,29 @@ export default function PreguntasBancoPage() {
     setVerOtrasMaterias(!!p.competencia && p.competencia.coleccionId !== coleccionId);
     setModalError('');
     setModalOpen(true);
+  }
+
+  /**
+   * Sube el lote del importador.
+   *
+   * Va por el endpoint de lote y no en un bucle de altas de una porque el
+   * de-duplicado necesita ver el banco entero: alta a alta, cada una cambiaría
+   * el banco contra el que se comparó la siguiente y no se podría prometer que
+   * nada entra dos veces.
+   */
+  async function importarLote(preguntasNuevas: PreguntaAImportar[]) {
+    const res = await fetch(`${API_BASE}/admin/colecciones/${coleccionId}/preguntas/lote`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ preguntas: preguntasNuevas }),
+    });
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { message?: string };
+      throw new Error(err.message || 'No se pudieron importar las preguntas');
+    }
+    const data = await res.json() as { creadas?: number; saltadas?: number };
+    await fetchPreguntas();
+    return { creadas: data.creadas ?? 0, saltadas: data.saltadas ?? 0 };
   }
 
   async function handleGuardar() {
@@ -386,6 +412,13 @@ export default function PreguntasBancoPage() {
             />
             <span>Ver archivadas</span>
           </label>
+          {/* Junto a «Nueva pregunta» no: ese es el alta de una, el camino
+              normal. Esto es traerse un cuaderno entero, que se hace una vez
+              por semestre. */}
+          <button className={styles.enlaceBtn} onClick={() => setImportando(true)}>
+            <Icon name="upload_file" size="sm" />
+            <span>Importar de un archivo</span>
+          </button>
         </div>
       </div>
 
@@ -426,6 +459,22 @@ export default function PreguntasBancoPage() {
             ? 'No hay preguntas de esta competencia.'
             : 'Esta materia todavía no tiene preguntas.'}
           searchPlaceholder="Buscar en la pregunta o la competencia..."
+        />
+      )}
+
+      {importando && (
+        <ImportarPreguntasModal
+          // Las del catálogo de ESTA materia: son las que el archivo puede
+          // nombrar. Con el nombre tal cual está en la BD, con su clave
+          // delante, que es de donde sale el emparejado.
+          competencias={competencias
+            .filter((c) => c.coleccionId === coleccionId && !c.esCalculada)
+            .map((c) => ({ id: c.id, nombre: c.competencia }))}
+          // Sin archivar ni sin archivar: para NO duplicar cuenta todo lo que
+          // el banco tiene, y una pregunta archivada sigue estando.
+          preguntasExistentes={preguntas.map((p) => p.texto)}
+          onImportar={importarLote}
+          onCerrar={() => setImportando(false)}
         />
       )}
 

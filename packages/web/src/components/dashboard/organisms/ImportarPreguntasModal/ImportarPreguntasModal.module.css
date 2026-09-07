@@ -1,0 +1,209 @@
+.caja {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.error {
+  padding: 8px 12px;
+  border-radius: var(--border-radius);
+  background: var(--estado-error-bg, #fee);
+  color: var(--estado-error-color, #b00);
+  font-size: 0.88rem;
+}
+
+/* ── Elegir el archivo ─────────────────────────────────────────────────── */
+
+.zona {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 36px 20px;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--dash-bg-subtle);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.zona:hover,
+.zonaActiva {
+  border-color: var(--sidebar-active-color);
+  color: var(--text-primary);
+}
+
+.zona:focus-visible {
+  outline: 2px solid var(--sidebar-active-color);
+  outline-offset: 2px;
+}
+
+.zonaTexto { margin: 0; font-size: 0.92rem; }
+
+.oculto { display: none; }
+
+.ayuda {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+/* ── Resumen de lo leído ───────────────────────────────────────────────── */
+
+.resumen {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.archivo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.pastilla {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--dash-bg-subtle);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+/* Lo NUEVO es el dato por el que se abre esta pantalla: se lee sin buscarlo. */
+.pastilla.nueva {
+  background: var(--estado-ok-bg, #e7f6ec);
+  color: var(--estado-ok-color, #1b6b34);
+  font-weight: 600;
+}
+
+.pastilla.aviso {
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+}
+
+.enlaceBtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--sidebar-active-color);
+  font-size: 0.82rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ── La tabla de previsualización ──────────────────────────────────────── */
+
+/* Alto acotado y con desplazamiento propio: un cuaderno de un semestre son
+   doscientas filas, y sin esto el pie con el botón de importar se va fuera de
+   la pantalla y no hay forma de llegar a él. */
+.tablaCaja {
+  max-height: 52vh;
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.tabla thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 8px 10px;
+  background: var(--dash-bg-subtle);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.tabla td {
+  padding: 8px 10px;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-primary);
+  vertical-align: top;
+}
+
+/* Lo no marcado se apaga en vez de esconderse: hay que poder ver qué se está
+   dejando fuera, que es justo lo que se viene a revisar. */
+.filaApagada td { opacity: 0.5; }
+
+.colCheck { width: 34px; }
+.colComp { width: 220px; }
+.colEstado { width: 120px; }
+
+.texto { display: block; line-height: 1.45; }
+
+.notas {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.notas summary { cursor: pointer; }
+
+.notas p {
+  margin: 4px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--border-color);
+  line-height: 1.45;
+}
+
+.selector {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--input-bg, transparent);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+}
+
+.conflicto {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 4px;
+  color: var(--estado-aviso-color);
+  font-size: 0.74rem;
+}
+
+.estado {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.estado.nueva { color: var(--estado-ok-color, #1b6b34); font-weight: 600; }
+
+.linea { color: var(--text-muted); font-size: 0.72rem; }
+
+/* ── Pie ───────────────────────────────────────────────────────────────── */
+
+.pie {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+
+.seleccion {
+  margin-right: auto;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}

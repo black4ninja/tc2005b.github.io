@@ -9,6 +9,32 @@ import { DURACION_MIN, DURACION_MAX } from '../constants/preguntas.js';
  * medida de un alumno se valida igual que la de la pregunta).
  */
 
+/**
+ * La forma en que se comparan dos enunciados para decidir si son el mismo: sin
+ * acentos, sin mayúsculas, sin puntuación y con los espacios colapsados.
+ *
+ * Es lo que impide que el banco acumule la misma pregunta escrita tres veces con
+ * distinto espaciado, que es exactamente lo que trae el cuaderno de entrevistas:
+ * la misma pregunta se le hace a varios alumnos, y cada vez se teclea de nuevo.
+ *
+ * Deliberadamente NO mide parecido. Dos versiones de una pregunta con distinto
+ * final son dos preguntas; fusionarlas sería decidir por el profesor.
+ *
+ * El cliente usa esta misma normalización para previsualizar. Aquí se repite
+ * porque la comprobación del cliente puede estar caducada —entre que se abre la
+ * previsualización y se guarda, otro pudo dar de alta algo— y el banco no puede
+ * depender de eso.
+ */
+export function normalizarEnunciado(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /** Tope de etiquetas por pregunta: más que esto no es clasificar, es escribir. */
 const MAX_ETIQUETAS = 12;
 const MAX_LARGO_ETIQUETA = 40;

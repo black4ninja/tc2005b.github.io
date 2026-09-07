@@ -8,6 +8,26 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **El banco de preguntas se llena desde el cuaderno de entrevistas.** Meter un
+  semestre de preguntas era abrir el formulario de «Nueva pregunta» una vez por
+  cada una, y el atajo que había —un script de línea de comandos— tenía dos
+  competencias incrustadas en el código y reventaba con cualquier otra. Ahora se
+  suelta el `.txt` y la pantalla lo lee: descarta las líneas de fecha, **tira el
+  nombre del alumno** —la pregunta se reutiliza con otras generaciones—, saca la
+  competencia del encabezado aunque venga con erratas o sin la clave, y une los
+  párrafos de una pregunta larga.
+- **Nada entra dos veces.** El de-duplicado compara los enunciados sin acentos,
+  sin mayúsculas y sin puntuación, en tres frentes: contra el banco, contra lo
+  que se repite dentro del propio archivo —la misma pregunta se le hace a varios
+  alumnos— y contra lo que acaba de entrar en el mismo lote. Se comprueba otra
+  vez en el servidor, porque entre abrir la previsualización y guardar el banco
+  pudo cambiar. Reimportar el mismo cuaderno no crea ni una fila.
+- **Y nada se guarda sin verlo antes.** Sale la tabla de todo lo entendido, cada
+  fila con su estado —nueva, repetida, ya en el banco—, la competencia en un
+  desplegable por si hay que corregirla, y aviso donde la clave del archivo
+  contradecía al nombre. Solo se marca lo nuevo; lo demás hay que pedirlo. Los
+  párrafos que parecen notas sobre la RESPUESTA y no preguntas se apartan a un
+  desplegable en vez de colarse como enunciados.
 - **Al agendar, el alumno lee POR QUÉ no puede.** Una competencia bloqueada
   decía «sin oportunidades» o «ya tienes una el dom 27 de sep»: ciertos los dos,
   y ninguno explica la regla, así que el botón apagado se leía como una avería.

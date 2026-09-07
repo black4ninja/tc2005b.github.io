@@ -7,7 +7,7 @@ import { Pregunta } from '../models/Pregunta.js';
 import { PreguntaAsignacion } from '../models/PreguntaAsignacion.js';
 import type { AppUser } from '../models/AppUser.js';
 import { getColeccionActiva } from './cms-documentos.controller.js';
-import { normalizarEtiquetas } from '../services/preguntas.service.js';
+import { normalizarEtiquetas, normalizarEnunciado } from '../services/preguntas.service.js';
 
 /**
  * CRUD del banco del módulo "Preguntas" (entrevistas personales).
@@ -126,6 +126,113 @@ export async function createPregunta(req: Request, res: Response): Promise<void>
     res.status(201).json({ status: 'ok', pregunta: pregunta.toSafeJSON() });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al crear la pregunta' });
+  }
+}
+
+/** Tope de un lote. Un cuaderno de un semestre entero no pasa de dos centenares. */
+const MAX_LOTE = 500;
+
+/**
+ * POST /admin/colecciones/:id/preguntas/lote
+ *
+ * Alta de varias preguntas de una vez, para el importador del cuaderno de
+ * entrevistas.
+ *
+ * Lo que lo diferencia de llamar N veces a `createPregunta` no es la comodidad,
+ * es el DE-DUPLICADO: aquí se conoce el banco entero y lo que entra en el mismo
+ * lote, así que se puede garantizar que ningún enunciado quede dos veces. Hecho
+ * pregunta a pregunta desde el cliente eso no se puede prometer, porque cada
+ * alta cambia el banco contra el que se comparó la siguiente.
+ *
+ * Se comprueba aquí y no solo en la previsualización porque lo que el cliente
+ * vio puede haber caducado: entre abrir el importador y pulsar guardar, otra
+ * persona pudo dar de alta la misma pregunta.
+ *
+ * Nunca falla entera por una repetida: las que ya están se SALTAN y se dicen.
+ * Reejecutar el mismo archivo es una operación válida que no cambia nada.
+ */
+export async function createPreguntasEnLote(req: Request, res: Response): Promise<void> {
+  const { id } = req.params;
+  const { preguntas } = req.body ?? {};
+
+  if (!Array.isArray(preguntas) || preguntas.length === 0) {
+    res.status(400).json({ status: 'error', message: 'No hay preguntas que importar' });
+    return;
+  }
+  if (preguntas.length > MAX_LOTE) {
+    res.status(400).json({
+      status: 'error',
+      message: `Son ${preguntas.length} preguntas y el máximo por lote es ${MAX_LOTE}`,
+    });
+    return;
+  }
+
+  try {
+    const coleccion = await getColeccionActiva(id);
+    if (!coleccion) {
+      res.status(404).json({ status: 'error', message: 'Colección no encontrada' });
+      return;
+    }
+
+    // El banco tal como está AHORA. Una sola consulta: el banco de una materia
+    // son decenas o centenares, no hace falta ir pregunta a pregunta.
+    const q = new Parse.Query<Pregunta>('Pregunta');
+    q.equalTo('coleccion' as any, Coleccion.createWithoutData(id) as any);
+    q.equalTo('exists' as any, true as any);
+    q.limit(2000);
+    const existentes = await q.find({ useMasterKey: true });
+    const yaEstan = new Set(existentes.map((p) => normalizarEnunciado(p.getTexto() ?? '')));
+
+    const autor = req.appUser as AppUser | undefined;
+    const creadas: Record<string, unknown>[] = [];
+    let saltadas = 0;
+
+    for (const entrada of preguntas) {
+      const texto = typeof entrada?.texto === 'string' ? entrada.texto.trim() : '';
+      if (!texto) { saltadas += 1; continue; }
+
+      const clave = normalizarEnunciado(texto);
+      // Cubre las dos cosas a la vez: lo que el banco ya tenía y lo que acaba de
+      // entrar en este mismo lote, porque la clave se añade al crear.
+      if (!clave || yaEstan.has(clave)) { saltadas += 1; continue; }
+
+      const competencia = await resolverCompetencia(entrada?.competenciaId);
+      if (competencia === 'invalido') {
+        res.status(400).json({
+          status: 'error',
+          message: `La competencia de «${texto.slice(0, 40)}…» no existe`,
+        });
+        return;
+      }
+      const etiq = normalizarEtiquetas(entrada?.etiquetas);
+      if (!Array.isArray(etiq)) {
+        res.status(400).json({ status: 'error', message: etiq.error });
+        return;
+      }
+
+      const pregunta = new Pregunta().initDefaults();
+      pregunta.setColeccion(coleccion);
+      pregunta.setCompetencia(competencia);
+      pregunta.setTexto(texto);
+      pregunta.setTextoHtml(await renderMarkdown(texto));
+      pregunta.setEtiquetas(etiq);
+      pregunta.setNotas(typeof entrada?.notas === 'string' ? entrada.notas : '');
+      pregunta.setArchivada(false);
+      if (autor) pregunta.setAutor(autor);
+      await pregunta.save(null, { useMasterKey: true });
+
+      yaEstan.add(clave);
+      creadas.push(pregunta.toSafeJSON());
+    }
+
+    res.status(201).json({
+      status: 'ok',
+      creadas: creadas.length,
+      saltadas,
+      preguntas: creadas,
+    });
+  } catch {
+    res.status(500).json({ status: 'error', message: 'Error al importar las preguntas' });
   }
 }
 
