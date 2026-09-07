@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Fragment, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useArrastre } from '../../../../hooks/useArrastre';
 import { useParams, Link } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
@@ -22,8 +22,8 @@ import type {
 } from '../../../../types/preguntas';
 import { confirmar } from '../../../../utils/dialogos';
 import {
-  claveFecha, diaMasProximo, fechaConDia, fechaLarga, fechaYHora, hora,
-  intentoTerminado, rangoHoras,
+  claveFecha, diaDelMes, diaMasProximo, diaSemanaCorto, esHoy, fechaConDia, fechaLarga,
+  fechaYHora, hora, intentoTerminado, mesCorto, rangoHoras,
 } from '../../../../utils/agenda';
 import type { Agenda, CitaProfesor, DiaProfesor, Evidencia } from '../../../../types/agenda';
 import styles from './PreguntasGrupoPage.module.css';
@@ -768,6 +768,11 @@ export default function PreguntasGrupoPage() {
    * chip era ilegible: la fecha pasa a encabezar la fila y los chips solo llevan
    * su hora. Cada fila se desplaza por dentro, así que un día con ocho bloques
    * no empuja a los botones de la derecha.
+   *
+   * Cada fecha llega ya partida en sus piezas —número, día de la semana, mes—
+   * porque el chip las pinta en renglones distintos, y `mesRotulo` dice cuáles
+   * abren mes: la tira los separa para no perder el contexto al desplazarse,
+   * que es lo único que el número suelto no cuenta.
    */
   const porFecha = useMemo(() => {
     const mapa = new Map<string, DiaProfesor[]>();
@@ -775,13 +780,23 @@ export default function PreguntasGrupoPage() {
       const clave = claveFecha(d.inicio);
       mapa.set(clave, [...(mapa.get(clave) ?? []), d]);
     }
+    let mesPrevio = '';
     return [...mapa]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([clave, dias]) => {
         const bloques = [...dias].sort((a, b) => a.inicio.localeCompare(b.inicio));
+        const inicio = bloques[0].inicio;
+        const mes = mesCorto(inicio);
+        const mesRotulo = mes === mesPrevio ? null : mes;
+        mesPrevio = mes;
         return {
           clave,
-          etiqueta: fechaConDia(bloques[0].inicio),
+          inicio,
+          etiqueta: fechaConDia(inicio),
+          numero: diaDelMes(inicio),
+          diaSemana: diaSemanaCorto(inicio),
+          mesRotulo,
+          hoy: esHoy(inicio),
           bloques,
           citas: bloques.reduce((t, d) => t + d.huecos.filter((h) => h.cita).length, 0),
           huecos: bloques.reduce((t, d) => t + d.huecos.length, 0),
@@ -1602,44 +1617,85 @@ export default function PreguntasGrupoPage() {
                 <span className={styles.hint}>Todavía no has abierto ningún día.</span>
               )}
 
-              {/* Primero el DÍA, en una tira horizontal. Con un bloque por día
-                  —lo normal— una fila por fecha eran ocho líneas para nada.
-                  Aquí caben todas en una, y el nombre del día va entero porque
-                  lo que se busca es «el martes», no «el 8». */}
+              {/* Primero el DÍA, en una tira horizontal de fichas de calendario:
+                  número grande arriba, día de la semana debajo y la ocupación
+                  al pie. Antes era una línea de texto —«jueves 3 de sep 2/48»—
+                  y con un semestre abierto todas se leían iguales; con la fecha
+                  desmontada en renglones se localiza «el 3» de un vistazo y la
+                  barra dice de lejos cuánto queda por llenar, que es lo que se
+                  mira al abrir esta pestaña.
+
+                  El mes NO va en la ficha: se rotula una vez por grupo. En la
+                  ficha se repetiría en cada una de las quince del mes sin
+                  distinguir ninguna, y al desplazarse es justo el dato que se
+                  pierde. */}
               {porFecha.length > 0 && (
                 <div className={styles.tiraDia} ref={tiraDias}>
                   {porFecha.map((f) => {
                     const activa = fechaActiva?.clave === f.clave;
+                    const lleno = f.huecos > 0 ? Math.round((f.citas / f.huecos) * 100) : 0;
                     return (
-                      <button
-                        key={f.clave}
-                        data-activo={activa || undefined}
-                        // Soltar a alguien encima lo manda a ese día. Solo con
-                        // UN horario: con varios no hay respuesta a «a cuál».
-                        data-zona={arrastrando && f.bloques.length === 1
-                          ? `${ZONA_DIA}${f.bloques[0].id}`
-                          : undefined}
-                        className={[
-                          styles.chip,
-                          styles.chipDia,
-                          activa ? styles.chipActivo : '',
-                          arrastrando && f.bloques.length === 1 ? styles.chipSoltable : '',
-                          zona === `${ZONA_DIA}${f.bloques[0].id}` ? styles.chipDestino : '',
-                        ].filter(Boolean).join(' ')}
-                        onClick={() => {
-                          elegidoAMano.current = true;
-                          setDiaActivo(f.bloques[0].id);
-                        }}
-                        title={f.bloques.length === 1
-                          ? rangoHoras(f.bloques[0].inicio, f.bloques[0].fin)
-                          : `${f.bloques.length} bloques`}
-                      >
-                        {f.etiqueta}
-                        <span className={styles.chipContador}>{f.citas}/{f.huecos}</span>
-                        {f.bloques.length > 1 && (
-                          <span className={styles.chipContador}>· {f.bloques.length} horarios</span>
+                      <Fragment key={f.clave}>
+                        {f.mesRotulo && (
+                          <span className={styles.rotuloMes} aria-hidden="true">{f.mesRotulo}</span>
                         )}
-                      </button>
+                        <button
+                          data-activo={activa || undefined}
+                          // Soltar a alguien encima lo manda a ese día. Solo con
+                          // UN horario: con varios no hay respuesta a «a cuál».
+                          data-zona={arrastrando && f.bloques.length === 1
+                            ? `${ZONA_DIA}${f.bloques[0].id}`
+                            : undefined}
+                          className={[
+                            styles.chipDia,
+                            activa ? styles.chipDiaActivo : '',
+                            f.hoy ? styles.chipDiaHoy : '',
+                            arrastrando && f.bloques.length === 1 ? styles.chipSoltable : '',
+                            zona === `${ZONA_DIA}${f.bloques[0].id}` ? styles.chipDestino : '',
+                          ].filter(Boolean).join(' ')}
+                          onClick={() => {
+                            elegidoAMano.current = true;
+                            setDiaActivo(f.bloques[0].id);
+                          }}
+                          // El rótulo accesible lleva la fecha ENTERA: en la
+                          // ficha está repartida en tres trozos y leída seguida
+                          // sonaría «3 jue 2/48».
+                          aria-label={`${f.etiqueta}${f.hoy ? ' (hoy)' : ''}: ${f.citas} de ${f.huecos} lugares agendados`}
+                          title={[
+                            f.etiqueta,
+                            f.bloques.length === 1
+                              ? rangoHoras(f.bloques[0].inicio, f.bloques[0].fin)
+                              : `${f.bloques.length} bloques`,
+                            `${f.citas} de ${f.huecos} lugares agendados`,
+                          ].join(' · ')}
+                        >
+                          <span className={styles.chipDiaNumero}>{f.numero}</span>
+                          <span className={styles.chipDiaSemana}>{f.diaSemana}</span>
+                          {/* Va con la fecha y ANTES de la ocupación, aunque sea
+                              el dato menos importante de los tres: es el único
+                              renglón que no todas las fichas llevan, y detrás
+                              empujaba la barra hacia abajo solo en las suyas,
+                              que es lo que descuadraba la tira. */}
+                          {f.bloques.length > 1 && (
+                            <span className={styles.chipDiaHorarios}>
+                              {f.bloques.length} horarios
+                            </span>
+                          )}
+                          {/* Agendados sobre lugares. La cifra manda —es la que
+                              se apunta— y la barra solo la acompaña: de lejos
+                              distingue el día que va lleno del que está vacío
+                              sin tener que leer dos números. */}
+                          <span className={styles.chipDiaOcupacion}>
+                            <span className={styles.chipDiaCuenta}>{f.citas}/{f.huecos}</span>
+                            <span className={styles.chipDiaBarra} aria-hidden="true">
+                              <span
+                                className={styles.chipDiaBarraLlena}
+                                style={{ width: `${lleno}%` }}
+                              />
+                            </span>
+                          </span>
+                        </button>
+                      </Fragment>
                     );
                   })}
                 </div>
