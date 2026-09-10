@@ -148,6 +148,38 @@ export default function MallaEvaluacionPage() {
   const [competenciasAlumno, setCompetenciasAlumno] = useState<CompetenciaAlumnoData[]>([]);
   const [loadingCompetencias, setLoadingCompetencias] = useState(false);
 
+  /**
+   * Qué pestañas tienen algo que enseñar.
+   *
+   * Hay materias que se evalúan SOLO por competencias —las entrevistas— y ahí la
+   * pestaña de actividades es una invitación a buscar algo que no existe: se
+   * entra, se lee «no hay actividades» y queda la duda de si falta configurar
+   * algo. Se esconde la que esté vacía, pero solo si la otra tiene contenido:
+   * con las dos vacías se dejan las dos, porque entonces lo que falta es la
+   * materia entera y esconderlo todo no lo explicaría mejor.
+   *
+   * Mientras carga no se decide nada: las listas empiezan vacías y la barra
+   * parpadearía al llegar los datos.
+   */
+  const hayActividades = actividades.length > 0 || actividadesAlumno.length > 0;
+  const hayCompetencias = competenciasAlumno.length > 0;
+  const cargando = loading || loadingCompetencias;
+  const soloCompetencias = !cargando && !hayActividades && hayCompetencias;
+  const soloActividades = !cargando && hayActividades && !hayCompetencias;
+
+
+  /**
+   * La pestaña abierta se mueve sola a la que tiene contenido.
+   *
+   * `activeTab` arranca en «actividades» porque es lo normal; en una materia
+   * que solo evalúa por competencias eso dejaría la pantalla en un panel vacío
+   * y con su pestaña ya escondida, sin forma de salir.
+   */
+  useEffect(() => {
+    if (soloCompetencias) setActiveTab('competencias');
+    else if (soloActividades) setActiveTab('actividades');
+  }, [soloCompetencias, soloActividades]);
+
   // Indicaciones
   const [indicaciones, setIndicaciones] = useState<IndicacionData[]>([]);
   const [indicacionesOpen, setIndicacionesOpen] = useState(false);
@@ -1409,21 +1441,28 @@ export default function MallaEvaluacionPage() {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${activeTab === 'actividades' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('actividades')}
-        >
-          Actividades
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'competencias' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('competencias')}
-        >
-          Competencias
-        </button>
-      </div>
+      {/* Con una sola pestaña con contenido no se pinta la barra: una pestaña
+          suelta no es una elección, es un rótulo que ocupa sitio. */}
+      {!soloCompetencias && !soloActividades && (
+        <div className={styles.tabs}>
+          {!soloCompetencias && (
+            <button
+              className={`${styles.tab} ${activeTab === 'actividades' ? styles.tabActive : ''}`}
+              onClick={() => setActiveTab('actividades')}
+            >
+              Actividades
+            </button>
+          )}
+          {!soloActividades && (
+            <button
+              className={`${styles.tab} ${activeTab === 'competencias' ? styles.tabActive : ''}`}
+              onClick={() => setActiveTab('competencias')}
+            >
+              Competencias
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Tab panel */}
       <div className={styles.tabPanel}>

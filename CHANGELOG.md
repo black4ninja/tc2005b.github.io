@@ -7,6 +7,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **La malla no enseña la pestaña de Actividades cuando no hay ninguna.** Hay
+  materias que se evalúan solo por competencias —las de entrevistas—, y ahí esa
+  pestaña era una invitación a buscar algo que no existe: se entraba, se leía «no
+  hay actividades de evaluación» y quedaba la duda de si faltaba configurar algo.
+  Ahora se esconde la que esté vacía y se abre directamente la que tiene
+  contenido; con una sola, la barra de pestañas desaparece, porque una pestaña
+  suelta no es una elección. Vale en los dos sentidos: una materia sin
+  competencias tampoco enseña esa pestaña. Con las dos vacías se dejan las dos, que
+  entonces lo que falta es la materia entera.
+- **Encender «Incipiente B −30 pts» en una materia dice ahora qué falta después.**
+  La casilla de la materia solo abre la puerta: el nivel se marca competencia por
+  competencia, y sin saberlo la casilla parecía no hacer nada —el nivel no salía
+  al evaluar y no había dónde averiguar por qué—. Ahora, al encenderla, aparece
+  el aviso de que hay un segundo paso y dónde darlo.
+
 ### Fixed
 - **La cuenta de horas hábiles ya no tarda milisegundos por llamada.** Avanza
   minuto a minuto y preguntaba en cada paso si ese minuto cae en día hábil: unos

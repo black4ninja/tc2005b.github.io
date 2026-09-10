@@ -89,3 +89,17 @@
   font-size: 13px;
   color: var(--text-secondary);
 }
+
+/* El aviso de que encender la casilla de la materia no es el último paso.
+   Se separa del texto de ayuda con un filete y el tinte de aviso porque es
+   una instrucción, no una explicación: si no se sigue, el nivel no aparece. */
+.avisoSiguientePaso {
+  display: block;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--estado-aviso-color);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  background: var(--estado-aviso-bg);
+  color: var(--estado-aviso-color);
+  line-height: 1.5;
+}
