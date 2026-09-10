@@ -296,3 +296,60 @@ describe('planificarBloques', () => {
     expect(plan.every((p) => p.estado === 'nuevo')).toBe(true);
   });
 });
+
+describe('la caché de días hábiles no miente', () => {
+  // `esDiaHabil` guarda lo ya calculado por minuto para no llamar a
+  // `Intl.format` una vez por cada minuto que avanza la cuenta —eran más de dos
+  // mil por llamada—. Una caché mal indexada devolvería respuestas de otro
+  // instante o de otra zona, y eso NO se vería: el resultado seguiría siendo un
+  // booleano creíble. De ahí estas pruebas.
+
+  it('preguntar dos veces por el mismo instante da lo mismo', () => {
+    const sabado = new Date('2026-09-05T18:00:00Z');
+    expect(esDiaHabil(sabado)).toBe(esDiaHabil(sabado));
+    expect(esDiaHabil(sabado)).toBe(false);
+  });
+
+  it('no confunde dos zonas para el mismo instante', () => {
+    // Viernes 23:00 en Querétaro es ya sábado por la tarde en Tokio. Con una
+    // caché indexada solo por el instante, la segunda pregunta heredaría la
+    // respuesta de la primera.
+    const momento = new Date('2026-09-05T05:00:00Z');
+    expect(esDiaHabil(momento, 'America/Mexico_City')).toBe(true);
+    expect(esDiaHabil(momento, 'Asia/Tokyo')).toBe(false);
+    // Y al revés, por si el orden importara.
+    expect(esDiaHabil(momento, 'Asia/Tokyo')).toBe(false);
+    expect(esDiaHabil(momento, 'America/Mexico_City')).toBe(true);
+  });
+
+  it('distingue minutos vecinos que caen en días distintos', () => {
+    // Medianoche del domingo al lunes en Querétaro: un minuto separa el fin de
+    // semana del día hábil, y es justo el grano de la caché.
+    const domingoTarde = new Date('2026-09-07T05:59:00Z');
+    const lunesRecien = new Date('2026-09-07T06:01:00Z');
+    expect(esDiaHabil(domingoTarde)).toBe(false);
+    expect(esDiaHabil(lunesRecien)).toBe(true);
+  });
+
+  it('la semana entera sale como debe, y repetirla no la cambia', () => {
+    const esperado = ['Sat', 'Sun'];
+    for (let vuelta = 0; vuelta < 2; vuelta += 1) {
+      for (let dia = 0; dia < 7; dia += 1) {
+        // Lunes 7 de septiembre de 2026, 12:00 de Querétaro, + N días.
+        const momento = new Date(Date.UTC(2026, 8, 7 + dia, 18, 0));
+        const nombre = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'America/Mexico_City', weekday: 'short',
+        }).format(momento);
+        expect(esDiaHabil(momento), `${nombre} (vuelta ${vuelta + 1})`)
+          .toBe(!esperado.includes(nombre));
+      }
+    }
+  });
+
+  it('el umbral sigue saliendo igual pedido dos veces', () => {
+    // La primera llamada llena la caché; la segunda la usa entera. Si la caché
+    // desalineara algo, aquí saldrían dos umbrales distintos.
+    const desde = new Date('2026-09-04T22:00:00Z');
+    expect(sumarHorasHabiles(desde).getTime()).toBe(sumarHorasHabiles(desde).getTime());
+  });
+});

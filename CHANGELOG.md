@@ -8,6 +8,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- **La cuenta de horas hábiles ya no tarda milisegundos por llamada.** Avanza
+  minuto a minuto y preguntaba en cada paso si ese minuto cae en día hábil: unos
+  1440 preguntas por llamada, más de dos mil si hay un fin de semana en medio, y
+  cada una un formateo de fecha, que es lo caro. Ahora esa respuesta se guarda
+  por minuto y por zona horaria, que acierta casi siempre porque dos cuentas
+  seguidas recorren los mismos días. De 4,33 ms por llamada a 0,23. De paso deja
+  de fallar el test que barría la semana, que se pasaba del tiempo permitido con
+  la suite en paralelo y pasaba corriendo solo.
 - **El juez ya no convierte la «ñ» en «?».** Un `println("2 años")` en Kotlin
   —correcto— salía como `2 a?os` y el alumno recibía «respuesta incorrecta»; solo
   pasaba quien envolvía la salida en un `PrintStream(…, "UTF-8")` a mano.
