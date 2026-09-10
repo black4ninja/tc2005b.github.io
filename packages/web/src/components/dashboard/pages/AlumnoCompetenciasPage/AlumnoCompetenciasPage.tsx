@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { CSSProperties } from 'react';
 import { useParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import { esPenalizacion } from '@tc2005b/evaluacion';
@@ -100,6 +101,11 @@ export default function AlumnoCompetenciasPage() {
         const activeP2 = getActiveLevel(comp.valorPeriodo2);
         // Use latest period for rubric highlight
         const activeLevel = activeP2 ?? activeP1;
+        // La columna de la sanción solo en las competencias que la admiten: en
+        // las demás sería una amenaza que no existe.
+        const niveles = RUBRIC_LEVELS.filter(
+          (n) => n.key !== 'penalizacion' || comp.admitePenalizacion,
+        );
 
         return (
           <details key={comp.id} className={styles.card}>
@@ -134,12 +140,15 @@ export default function AlumnoCompetenciasPage() {
               <div className={styles.infoSection}>
                 <span className={styles.infoLabel}>Rúbrica de niveles</span>
                 <div className={styles.rubricWrap}>
-                  <div className={styles.rubricGrid}>
-                    {/* La columna de la sanción solo en las competencias que la
-                        admiten: en las demás sería una amenaza que no existe. */}
-                    {RUBRIC_LEVELS.filter(
-                      (n) => n.key !== 'penalizacion' || comp.admitePenalizacion,
-                    ).map(({ key, label, percent }) => {
+                  {/* Cuántas columnas son se lo dice la fila, no el CSS: son
+                      cinco o seis según la competencia admita la sanción, y con
+                      el número escrito a mano la sexta se caía a una segunda
+                      fila y «Destacado» quedaba solo debajo, altísimo. */}
+                  <div
+                    className={styles.rubricGrid}
+                    style={{ '--columnas': niveles.length } as CSSProperties}
+                  >
+                    {niveles.map(({ key, label, percent }) => {
                       const isActive = activeLevel === key;
                       return (
                         <div

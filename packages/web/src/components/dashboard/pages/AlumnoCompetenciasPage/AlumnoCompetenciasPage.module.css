@@ -153,14 +153,22 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* Tantas columnas como niveles haya: cinco, o seis cuando la competencia
+   admite la sanción. Estaba escrito a mano en cinco, así que con la sexta el
+   grid rompía a una segunda fila y «Destacado» se quedaba solo debajo, tan alto
+   como todo su texto.
+
+   El ancho mínimo es por columna y no del conjunto: así el grid mide lo que
+   necesita —cinco o seis veces 140px— y si no cabe se desplaza dentro de
+   `.rubricWrap`, que ya tiene `overflow-x: auto`, en vez de partirse. */
 .rubricGrid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(160px, 1fr));
+  grid-template-columns: repeat(var(--columnas, 5), minmax(140px, 1fr));
   gap: 0;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   overflow: hidden;
-  min-width: 600px;
+  min-width: calc(var(--columnas, 5) * 140px);
 }
 
 .rubricCol {
