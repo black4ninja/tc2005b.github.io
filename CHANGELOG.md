@@ -8,6 +8,15 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- **Las indicaciones de la malla son de cada materia, no de todo el mundo.** Un
+  alumno de TC2007B leía las trece reglas de evaluación de TC2005B —cuántos
+  intentos tiene, cuánto dura su entrevista— porque el endpoint ignoraba el grupo
+  y devolvía todas las de la base. Ahora cada indicación cuelga de una materia,
+  se escribe dentro de ella en el panel de competencias, y el alumno solo recibe
+  las de las materias de su grupo. Sin ninguna, el bloque no aparece. Las que ya
+  estaban escritas se adoptan con `scripts/asignar-indicaciones-malla.ts`.
+
+### Fixed
 - **La cuenta de horas hábiles ya no tarda milisegundos por llamada.** Avanza
   minuto a minuto y preguntaba en cada paso si ese minuto cae en día hábil: unos
   1440 preguntas por llamada, más de dos mil si hay un fin de semana en medio, y

@@ -87,7 +87,12 @@ export default function CompetenciasPage() {
   const fetchIndicaciones = useCallback(async () => {
     try {
       setLoadingInd(true);
-      const res = await fetch(`${API_BASE}/admin/indicaciones-malla`, {
+      // Acotadas a la materia que se está viendo: son SUS reglas de
+      // evaluación, y sin filtro la lista mezclaba las de todas.
+      const url = filtroColeccion
+        ? `${API_BASE}/admin/indicaciones-malla?coleccion=${encodeURIComponent(filtroColeccion)}`
+        : `${API_BASE}/admin/indicaciones-malla`;
+      const res = await fetch(url, {
         headers: { 'x-session-token': sessionToken ?? '' },
       });
       if (!res.ok) throw new Error('Error al cargar indicaciones');
@@ -98,7 +103,7 @@ export default function CompetenciasPage() {
     } finally {
       setLoadingInd(false);
     }
-  }, [sessionToken]);
+  }, [sessionToken, filtroColeccion]);
 
   // Siempre se piden TODAS: el filtro por colección se aplica en cliente porque
   // el formulario necesita la lista completa para el picker de dependencias (que
@@ -156,11 +161,14 @@ export default function CompetenciasPage() {
     setSaving(true);
     setError('');
     try {
+      // La materia es la que se está viendo. Sin ella el servidor rechaza:
+      // una indicación sin materia no se la enseñaría a ningún alumno.
+      const cuerpo = { ...data, coleccionId: filtroColeccion || undefined };
       const url = editIndicacion
         ? `${API_BASE}/admin/indicaciones-malla/${editIndicacion.id}`
         : `${API_BASE}/admin/indicaciones-malla`;
       const method = editIndicacion ? 'PUT' : 'POST';
-      const res = await fetch(url, { method, headers, body: JSON.stringify(data) });
+      const res = await fetch(url, { method, headers, body: JSON.stringify(cuerpo) });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.message || 'Error al guardar');
@@ -354,10 +362,12 @@ export default function CompetenciasPage() {
 
       {error && <div className={styles.error}>{error}</div>}
 
-      {/* Las Indicaciones de Malla NO tienen colección: son globales. Mostrarlas
-          bajo el título de una colección haría creer que son suyas, así que solo
-          aparecen en la vista sin filtrar. */}
-      {!coleccionActiva && (
+      {/* Las indicaciones son de la MATERIA: son sus reglas de evaluación
+          —cuántos intentos, cuánto dura una entrevista, qué pasa si no llevas
+          evidencia— y el alumno solo ve las de las materias de su grupo. Por eso
+          se escriben dentro de una, y en la vista sin filtrar no se ofrecen:
+          ahí no habría a cuál asignarlas. */}
+      {coleccionActiva && (
         <details className={styles.panel}>
           <summary className={styles.panelSummary}>
             <span className="material-icons">chevron_right</span>

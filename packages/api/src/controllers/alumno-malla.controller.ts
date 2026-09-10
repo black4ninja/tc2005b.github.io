@@ -10,7 +10,9 @@ import { Grupo } from '../models/Grupo.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { validarPerfil } from '../models/campos-perfil.js';
 import { getVinculoConGrupoActivo, olvidarGruposDeAlumno } from '../services/grupo-alumno.service.js';
-import { moduloActivoEnGrupo, modulosActivosEnGrupo } from '../services/grupo-colecciones.service.js';
+import {
+  coleccionesDeGrupo, moduloActivoEnGrupo, modulosActivosEnGrupo,
+} from '../services/grupo-colecciones.service.js';
 import { getColeccionesPermitidas } from '../services/contenidos.service.js';
 import { coleccionesConEjerciciosPublicados } from '../services/ejercicios-alumno.service.js';
 import { coleccionesConDiagramasPublicados } from '../services/diagramas-alumno.service.js';
@@ -584,10 +586,37 @@ export async function changeMyPassword(req: Request, res: Response): Promise<voi
 /*  GET /alumno/grupos/:grupoId/indicaciones-malla                     */
 /* ------------------------------------------------------------------ */
 
-export async function getIndicacionesMalla(_req: Request, res: Response): Promise<void> {
+/**
+ * Las indicaciones de las materias de ESE grupo.
+ *
+ * Antes devolvía todas las de la base sin mirar el grupo, así que un alumno de
+ * TC2007B leía las trece reglas de TC2005B —cuántos intentos tiene, cuánto dura
+ * su entrevista— que no son las suyas. Las reglas de evaluación son del curso,
+ * no del sistema.
+ *
+ * Se filtra por las materias ASIGNADAS al grupo, sin mirar si el módulo de
+ * competencias del CMS está encendido para él. Son dos cosas distintas: ese
+ * módulo decide si se ve el catálogo de competencias dentro de Contenidos,
+ * mientras que estas reglas son del curso y aplican por llevar la materia. Con
+ * el filtro del módulo, los grupos del semestre en marcha se quedaban sin
+ * ninguna, porque lo tienen apagado.
+ *
+ * Sin materias, o con materias que no tienen indicaciones escritas, devuelve una
+ * lista vacía y la pantalla no enseña el bloque.
+ */
+export async function getIndicacionesMalla(req: Request, res: Response): Promise<void> {
+  const { grupoId } = req.params;
   try {
+    const colecciones = await coleccionesDeGrupo(grupoId);
+    if (colecciones.length === 0) {
+      res.json({ status: 'ok', indicaciones: [] });
+      return;
+    }
+
     const query = new Parse.Query<IndicacionMalla>('IndicacionMalla');
     query.equalTo('exists' as any, true as any);
+    query.containedIn('coleccion' as any, colecciones as any);
+    query.include('coleccion' as any);
     query.descending('createdAt');
     const indicaciones = await query.find({ useMasterKey: true });
 
