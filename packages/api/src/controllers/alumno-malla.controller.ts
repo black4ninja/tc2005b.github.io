@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import bcrypt from 'bcryptjs';
 import { ActividadEvaluacionAlumno } from '../models/ActividadEvaluacionAlumno.js';
-import { CompetenciaAlumno } from '../models/CompetenciaAlumno.js';
+import { CompetenciaAlumno, ordenarComoElCatalogo } from '../models/CompetenciaAlumno.js';
 import { IndicacionMalla } from '../models/IndicacionMalla.js';
 import { PlanEvaluacion } from '../models/PlanEvaluacion.js';
 import { AppUser } from '../models/AppUser.js';
@@ -14,6 +14,7 @@ import { moduloActivoEnGrupo, modulosActivosEnGrupo } from '../services/grupo-co
 import { getColeccionesPermitidas } from '../services/contenidos.service.js';
 import { coleccionesConEjerciciosPublicados } from '../services/ejercicios-alumno.service.js';
 import { coleccionesConDiagramasPublicados } from '../services/diagramas-alumno.service.js';
+import { evidenciasDeAlumno } from '../services/evidencias.service.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { registrarLog } from '../models/AuditLog.js';
 
@@ -272,13 +273,32 @@ export async function getMyCompetencias(req: Request, res: Response): Promise<vo
     query.equalTo('grupo' as any, grupoPointer as any);
     query.equalTo('alumno' as any, alumnoPointer as any);
     query.include('competencia' as any);
-    query.ascending('orden');
     query.limit(1000);
-    const competencias = await query.find({ useMasterKey: true });
+    // El orden lo pone el catálogo de la materia, no el campo `orden` de estas
+    // filas, que nadie escribe. Ver `ordenarComoElCatalogo`.
+    const competencias = ordenarComoElCatalogo(await query.find({ useMasterKey: true }));
+
+    // Lo que entregó, repartido por competencia. Se lee del servicio de
+    // evidencias y no con una consulta propia: es la misma tabla que enseña la
+    // agenda, y dos consultas para lo mismo acaban con dos criterios distintos
+    // sobre qué cuenta como entregado.
+    const porCompetencia = new Map<string, Record<string, unknown>[]>();
+    for (const e of await evidenciasDeAlumno(grupoPointer.id!, alumnoId)) {
+      const id = e.getCompetencia()?.id;
+      if (!id) continue;
+      const ya = porCompetencia.get(id);
+      if (ya) ya.push(e.toSafeJSON());
+      else porCompetencia.set(id, [e.toSafeJSON()]);
+    }
 
     res.json({
       status: 'ok',
-      competencias: competencias.map((c) => c.toSafeJSON()),
+      competencias: competencias.map((c) => ({
+        ...c.toSafeJSON(),
+        // Aparte de `evidencias`, que son las URLs sueltas que la malla ya
+        // guardaba: estas son las de las entrevistas, con su hora.
+        entregas: porCompetencia.get(c.getCompetencia()?.id ?? '') ?? [],
+      })),
       alumno: {
         id: alumno.id,
         name: alumno.get('name') ?? '',

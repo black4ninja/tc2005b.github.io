@@ -109,6 +109,16 @@ export class EvidenciaCompetencia extends BaseModel {
         ? { id: competencia.id, nombre: competencia.get('competencia') ?? '' }
         : null,
       origen: this.getOrigen(),
+      /**
+       * La hora de su cita, para poder decir si llegó tarde donde no se está
+       * mirando esa cita —la malla enseña las evidencias por competencia, y una
+       * competencia tiene hasta dos entrevistas con horas distintas—.
+       *
+       * Nula si la cita no viene desplegada (quien la necesite tiene que pedir
+       * `include('cita')`) o si la evidencia quedó suelta al cancelarse: sin
+       * cita no hay hora contra la que juzgarla, y eso NO es llegar tarde.
+       */
+      citaInicio: (this.getCita() as Parse.Object | undefined)?.get('inicio') ?? null,
       url: this.getUrl(),
       titulo: this.getTitulo(),
       createdAt: this.createdAt,

@@ -20,6 +20,13 @@ export interface Evidencia {
   citaId: string | null;
   competencia: { id: string; nombre: string } | null;
   origen: 'entrevista' | 'malla';
+  /**
+   * Hora de SU cita, cuando la trae el servidor. Hace falta donde se enseñan
+   * evidencias de varias entrevistas juntas —la malla las agrupa por
+   * competencia, y una competencia tiene hasta dos citas con horas distintas—,
+   * porque ahí no hay una sola hora contra la que juzgarlas todas.
+   */
+  citaInicio?: string | null;
   url: string;
   titulo: string;
   createdAt: string;
@@ -64,6 +71,12 @@ export interface AgendaAlumno {
   serverNow: string;
   /** El «Manual de competencias» del grupo. Vacío = no tiene. */
   manualUrl: string;
+  /**
+   * ¿El grupo enseña Competencias? Sale del mismo sitio que el ítem del menú,
+   * para que el atajo de esta pantalla no ofrezca una puerta que el sidebar no
+   * tiene.
+   */
+  hayCompetencias?: boolean;
   /** Lo más pronto que ya cumple las 24 horas hábiles. Lo calcula el servidor. */
   agendableDesde: string;
   reglas: ReglasAgenda;

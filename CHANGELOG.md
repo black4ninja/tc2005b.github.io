@@ -8,6 +8,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **El alumno ve en su competencia lo que entregó, con la hora y si llegó tarde.**
+  El profesor ya lo veía en la agenda; el alumno solo en la pantalla de agendar,
+  lejos de su retroalimentación. Ahora la misma lista y el mismo criterio salen
+  dentro de cada competencia, donde lee por qué le pusieron ese nivel. Cada
+  evidencia se juzga contra la hora de SU cita, no contra una sola: una
+  competencia tiene hasta dos entrevistas y con una hora común se marcaban tarde
+  entregas que llegaron a tiempo a la suya.
+- **La rúbrica marca las DOS evaluaciones, no solo la última.** La primera va en
+  un tono más claro y la segunda en el fuerte, cada una con su número, y debajo
+  se dice en palabras qué pasó: de qué nivel a qué nivel, o que se mantuvo. Que
+  no se moviera era invisible —es la ausencia de un segundo color— y es justo lo
+  que hay que poder afirmar sin interpretar.
+- **Atajo a Competencias desde «Agendar entrevistas».** Ahí se decide qué
+  competencia se agenda, y eso se decide mirando en qué nivel se está. Solo
+  aparece si el grupo enseña esa pantalla: sale del mismo interruptor que la pone
+  en el menú, así que el atajo no puede ofrecer una puerta que el menú no tiene.
 - **La entrevista evalúa la malla sin salir de las notas.** El primer intento de
   una competencia es su primer periodo y el segundo es el segundo: eran la misma
   cosa apuntada dos veces, primero en la nota de la entrevista y después a mano
@@ -18,11 +34,28 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   le falta cualquiera de las dos, el modal se queda exactamente como estaba.
 
 ### Fixed
+- **La malla salía barajada respecto del catálogo de la materia.** Las dos
+  pantallas —la del alumno y la del profesor— ordenaban por `CompetenciaAlumno.orden`,
+  un campo que NADIE escribe, así que las competencias salían en el orden en que
+  Parse quisiera devolverlas y no en el de la tabla de Contenidos. Ahora manda
+  `Competencia.orden`, que es el que se edita ahí y el que el export XLSX ya
+  usaba: los tres sitios coinciden por fin.
+- **La rúbrica marcaba el nivel del alumno en blanco sobre azul claro.** En tema
+  oscuro el azul del relleno se sube de luminosidad para que se vea sobre el
+  fondo, y el blanco encima se quedaba en 2,5:1 —la mitad del 4,5:1 que pide la
+  WCAG— justo en la celda más importante de la pantalla. El texto que va sobre
+  ese relleno pasa a ser un token por tema (`--color-lab-contraste`): sube a 7,36
+  en oscuro sin tocar el claro.
 - **Desde el panel rápido de competencias no se podía poner la sanción.** Su
   lista de niveles era una copia a mano que se quedó sin «Incipiente B −30 pts»,
   así que la sanción solo se podía asignar desde la malla completa aunque la
   materia la admitiera. Los niveles pasan a estar escritos en un solo sitio
   (`utils/nivelesCompetencia.ts`), del que ahora tiran las tres pantallas.
+- **Rótulos de la pantalla de competencias del alumno.** Las fichas de la
+  evaluación decían «P1»/«P2» y ponían la etiqueta antes que el valor, que es lo
+  contrario de lo que se compara; ahora son fichas como las de la agenda, con el
+  número de la evaluación arriba en pequeño y su valor abajo en grande. Y las
+  retroalimentaciones pierden la palabra «Periodo»: «Retroalimentación 1» y «2».
 - **Un grupo sin actividades de evaluación ya no se queda atascado.** Decía «Crear
   Mallas (26 pendientes)» y al pulsarlo devolvía un error rojo: «No hay
   actividades de evaluación en el grupo». Pero hay materias que se evalúan solo

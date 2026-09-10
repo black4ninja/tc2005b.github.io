@@ -1,6 +1,11 @@
 :root {
   /* Activity type colors */
   --color-lab: #2563eb;
+  /* Qué texto va ENCIMA de un relleno `--color-lab`.
+     Blanco no vale siempre: en tema oscuro el azul se sube de luminosidad
+     para que se vea sobre el fondo, y entonces el blanco encima se queda en
+     2,5:1 —por debajo del 4,5:1 de la WCAG—. El par se define por tema. */
+  --color-lab-contraste: #ffffff;
   /* Hover de enlace. Va en variable porque en oscuro tiene que ACLARARSE, no
      oscurecerse: el valor de claro (#1d4ed8) sobre una tarjeta oscura da ~1,6:1
      y el texto desaparece justo al pasar el ratón. */
@@ -248,6 +253,8 @@
 
   /* Colores de tipo de actividad: mismos matices, subidos de luminosidad. */
   --color-lab: #60a5fa;
+  /* Aquí el azul es claro: encima va tinta, no blanco. */
+  --color-lab-contraste: #0b1220;
   --color-lab-hover: #bfdbfe;
   --color-lectura: #a78bfa;
   --color-ejercicio: #34d399;

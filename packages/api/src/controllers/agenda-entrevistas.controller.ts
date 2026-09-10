@@ -9,7 +9,7 @@ import { PreguntaAsignacion } from '../models/PreguntaAsignacion.js';
 import { DiaEntrevistas } from '../models/DiaEntrevistas.js';
 import { CitaEntrevista } from '../models/CitaEntrevista.js';
 import { EvidenciaCompetencia } from '../models/EvidenciaCompetencia.js';
-import { coleccionesDeGrupo } from '../services/grupo-colecciones.service.js';
+import { coleccionesDeGrupo, modulosActivosEnGrupo } from '../services/grupo-colecciones.service.js';
 import { getVinculoConGrupoActivo } from '../services/grupo-alumno.service.js';
 import {
   huecoAbierto, huecosDelDia, numerarIntentos, planificarBloques, puedeAgendar, puedeCancelar,
@@ -878,12 +878,17 @@ export async function getAgendaAlumno(req: Request, res: Response): Promise<void
   if (!alumnoId) return;
   const { grupoId } = req.params;
   try {
-    const [dias, citas, competencias, evidencias, grupo] = await Promise.all([
+    const [dias, citas, competencias, evidencias, grupo, modulos] = await Promise.all([
       diasDelGrupo(grupoId),
       citasDelGrupo(grupoId),
       competenciasDelBanco(grupoId),
       evidenciasDelGrupo(grupoId),
       new Parse.Query<Grupo>('Grupo').get(grupoId, { useMasterKey: true }).catch(() => null),
+      // Para poder ofrecer el atajo a Competencias desde aquí sin adivinar si
+      // esa pantalla existe en este grupo. Va en esta respuesta y no en otra
+      // petición porque es un booleano, y sale del mismo helper que el menú:
+      // así el atajo y el ítem del sidebar no pueden discrepar.
+      modulosActivosEnGrupo(grupoId, ['competencias']),
     ]);
     const intentos = intentosDeTodas(citas);
     const mias = citas.filter((c) => c.getAlumno()?.id === alumnoId);
@@ -896,6 +901,8 @@ export async function getAgendaAlumno(req: Request, res: Response): Promise<void
       serverNow: ahora.toISOString(),
       // Lo que hay que leerse antes de venir. Vacío = este grupo no lo tiene.
       manualUrl: grupo?.getPreguntasManualUrl() ?? '',
+      /** ¿Este grupo enseña Competencias? Decide si se ofrece el atajo. */
+      hayCompetencias: modulos.competencias === true,
       // Ya calculado aquí: si cada navegador lo dedujera por su cuenta, dos
       // alumnos con el reloj distinto verían huecos distintos.
       agendableDesde: sumarHorasHabiles(ahora).toISOString(),
