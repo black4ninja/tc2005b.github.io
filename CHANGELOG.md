@@ -7,6 +7,21 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **El juez ya no convierte la «ñ» en «?».** Un `println("2 años")` en Kotlin
+  —correcto— salía como `2 a?os` y el alumno recibía «respuesta incorrecta»; solo
+  pasaba quien envolvía la salida en un `PrintStream(…, "UTF-8")` a mano.
+  `System.out` no usa `file.encoding` sino `stdout.encoding`, que al escribir a
+  una tubería se deriva del locale, y el sandbox arranca sin `LANG` porque limpia
+  el entorno: el locale era POSIX y su juego de caracteres, ASCII. Ahora la JVM
+  recibe el encoding por propiedad y el sandbox arranca con un locale UTF-8, así
+  que no depende de cómo esté montado el servidor. Afectaba a los dos ejercicios
+  cuya salida lleva ñ y solo en Kotlin; Swift nunca miró el locale.
+- **Y acepta la «ñ» escrita de las dos maneras.** Un punto de código o una `n`
+  con tilde combinante se ven idénticas en pantalla, y macOS produce la segunda
+  al copiar y pegar. La comparación las unifica antes de decidir; para una salida
+  ASCII no cambia nada.
+
 ### Added
 - **Cada evidencia dice cuándo se subió, y si llegó a tiempo.** Se pide
   entregarlas con 24 horas de antelación, pero en pantalla no había forma de
