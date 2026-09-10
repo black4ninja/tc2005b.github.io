@@ -42,10 +42,58 @@ function formateador(zona: string): Intl.DateTimeFormat {
   return f;
 }
 
+/**
+ * Respuestas ya calculadas de `esDiaHabil`, por minuto.
+ *
+ * Reutilizar el `Intl.DateTimeFormat` quitó el coste de CONSTRUIRLO, pero no el
+ * de `format()`, que sigue siendo lo caro y se llamaba una vez por cada minuto
+ * que avanza la cuenta: unos 1440 por llamada, más de dos mil si hay un fin de
+ * semana en medio.
+ *
+ * La clave es el minuto absoluto porque el día de la semana no cambia dentro de
+ * un minuto —los días empiezan en frontera de minuto en cualquier zona— y porque
+ * los tramos que recorren dos cuentas seguidas se solapan casi enteros: pedir el
+ * umbral de las 10:00 y el de las 10:15 recorre casi los mismos días.
+ */
+const DIA_HABIL = new Map<string, Map<number, boolean>>();
+
+/**
+ * Tope de la caché. Un semestre de minutos son ~260 000 entradas, así que esto
+ * no se llena en uso normal; está para que un proceso de vida larga que barra
+ * fechas raras no la haga crecer sin fin. Al llegar al tope se vacía entera en
+ * vez de ir echando la más vieja: llevar el orden de uso costaría más que
+ * recalcular, y lo que se pierde son unos milisegundos.
+ */
+const MAX_DIA_HABIL = 200_000;
+
+/**
+ * Lo mismo que `esDiaHabil` pero sobre el instante en crudo.
+ *
+ * Existe para el bucle de `sumarHorasHabiles`, que da miles de pasos: envolver
+ * cada uno en un `Date` solo para desenvolverlo aquí era basura que recoger por
+ * millones. Un mapa por zona, y dentro el minuto como número: sin claves de
+ * texto que construir en cada vuelta.
+ */
+function esDiaHabilEn(t: number, zona: string): boolean {
+  let porMinuto = DIA_HABIL.get(zona);
+  if (!porMinuto) {
+    porMinuto = new Map<number, boolean>();
+    DIA_HABIL.set(zona, porMinuto);
+  }
+  const minuto = Math.floor(t / PASO_MS);
+  const cacheado = porMinuto.get(minuto);
+  if (cacheado !== undefined) return cacheado;
+
+  const dia = formateador(zona).format(new Date(t));
+  const habil = dia !== 'Sat' && dia !== 'Sun';
+  if (porMinuto.size >= MAX_DIA_HABIL) porMinuto.clear();
+  porMinuto.set(minuto, habil);
+  return habil;
+}
+
 /** ¿Ese instante cae en día hábil (lunes a viernes) en la zona del curso? */
 export function esDiaHabil(momento: Date, zona = ZONA_CURSO): boolean {
-  const dia = formateador(zona).format(momento);
-  return dia !== 'Sat' && dia !== 'Sun';
+  return esDiaHabilEn(momento.getTime(), zona);
 }
 
 /**
@@ -70,7 +118,7 @@ export function sumarHorasHabiles(desde: Date, horas = HORAS_HABILES_ANTELACION,
     // Cuenta el tramo por donde EMPIEZA, no por donde acaba: el salto de las
     // 23:59 del domingo a las 00:00 del lunes no es tiempo hábil, y midiéndolo
     // por el final se colaba un minuto que dejaba el límite corto.
-    if (esDiaHabil(new Date(t), zona)) restantes -= 1;
+    if (esDiaHabilEn(t, zona)) restantes -= 1;
     t += PASO_MS;
   }
   return new Date(t);
