@@ -234,10 +234,15 @@
 
 /* Qué evaluación cayó aquí. El color dice «esta es la tuya»; el número dice
    CUÁL de las dos, que es lo que no se puede deducir de un tono. */
+/* Alto fijo y presente en todas las columnas, tengan marca o no: es lo que
+   mantiene las cabeceras a la misma altura y, con ellas, alineado el renglón
+   donde empiezan las descripciones. */
 .rubricMarcas {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 4px;
+  height: 16px;
   margin-bottom: 4px;
 }
 

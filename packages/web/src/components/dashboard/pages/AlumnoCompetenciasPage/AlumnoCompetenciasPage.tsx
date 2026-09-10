@@ -186,12 +186,14 @@ export default function AlumnoCompetenciasPage() {
                           className={`${styles.rubricCol} ${clase}`}
                         >
                           <div className={`${styles.rubricHeader} ${claseCabecera}`}>
-                            {(esP1 || esP2) && (
-                              <span className={styles.rubricMarcas}>
-                                {esP1 && <span className={styles.marcaPrevia}>1</span>}
-                                {esP2 && <span className={styles.marcaActual}>2</span>}
-                              </span>
-                            )}
+                            {/* El renglón de las marcas va SIEMPRE, aunque esté
+                                vacío: pintarlo solo en las columnas marcadas
+                                las hacía más altas que las demás y las
+                                cabeceras quedaban a distinto nivel. */}
+                            <span className={styles.rubricMarcas}>
+                              {esP1 && <span className={styles.marcaPrevia}>1</span>}
+                              {esP2 && <span className={styles.marcaActual}>2</span>}
+                            </span>
                             {label}
                             <span className={styles.rubricPercent}>{percent}</span>
                           </div>
