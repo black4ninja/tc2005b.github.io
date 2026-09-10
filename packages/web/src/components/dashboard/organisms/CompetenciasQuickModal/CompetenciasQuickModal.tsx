@@ -3,32 +3,10 @@ import { useNavigate } from 'react-router';
 import Modal from '../../atoms/Modal/Modal';
 import DashButton from '../../atoms/DashButton/DashButton';
 import TruncatedText from '../../atoms/TruncatedText/TruncatedText';
+import { etiquetaNivel, opcionesEvaluacion } from '../../../../utils/nivelesCompetencia';
 import styles from './CompetenciasQuickModal.module.css';
 
 const API_BASE = '/api';
-
-const EVALUACION_OPTIONS = [
-  { value: '', label: 'Sin evaluar' },
-  { value: '0', label: 'Incipiente B (0%)' },
-  { value: '15', label: 'Incipiente A (15%)' },
-  { value: '70', label: 'Básico (70%)' },
-  { value: '85', label: 'Sólido (85%)' },
-  { value: '100', label: 'Destacado (100%)' },
-];
-
-const NUMBER_TO_LABEL: Record<number, string> = {
-  0: 'Incipiente B (0%)',
-  15: 'Incipiente A (15%)',
-  70: 'Básico (70%)',
-  85: 'Sólido (85%)',
-  100: 'Destacado (100%)',
-};
-
-function evalLabel(val: string | number | null | undefined): string {
-  if (val === null || val === undefined || val === '') return '';
-  if (typeof val === 'number') return NUMBER_TO_LABEL[val] ?? '';
-  return String(val);
-}
 
 interface CompetenciaAlumno {
   id: string;
@@ -40,6 +18,8 @@ interface CompetenciaAlumno {
   retroPeriodo1: string;
   retroPeriodo2: string;
   esCalculada?: boolean;
+  /** ¿Admite «Incipiente B −30 pts»? Decide si la opción se ofrece. */
+  admitePenalizacion?: boolean;
   evidencias?: string[];
   orden?: number;
 }
@@ -321,7 +301,7 @@ export default function CompetenciasQuickModal({
                       <td>
                         {c.esCalculada ? (
                           <span className={styles.evalChip} title="Calculada: MIN de dependencias">
-                            {evalLabel(c.valorPeriodo1) || '—'}
+                            {etiquetaNivel(c.valorPeriodo1) || '—'}
                           </span>
                         ) : (
                           <select
@@ -330,7 +310,7 @@ export default function CompetenciasQuickModal({
                             disabled={isSaving}
                             onChange={(e) => handleEvalChange(c.id, 'valorPeriodo1', e.target.value)}
                           >
-                            {EVALUACION_OPTIONS.map((opt) => (
+                            {opcionesEvaluacion(c.admitePenalizacion).map((opt) => (
                               <option key={opt.label} value={opt.value}>{opt.label}</option>
                             ))}
                           </select>
@@ -340,7 +320,7 @@ export default function CompetenciasQuickModal({
                       <td>
                         {c.esCalculada ? (
                           <span className={styles.evalChip} title="Calculada: MIN de dependencias">
-                            {evalLabel(c.valorPeriodo2) || '—'}
+                            {etiquetaNivel(c.valorPeriodo2) || '—'}
                           </span>
                         ) : (
                           <select
@@ -349,7 +329,7 @@ export default function CompetenciasQuickModal({
                             disabled={isSaving}
                             onChange={(e) => handleEvalChange(c.id, 'valorPeriodo2', e.target.value)}
                           >
-                            {EVALUACION_OPTIONS.map((opt) => (
+                            {opcionesEvaluacion(c.admitePenalizacion).map((opt) => (
                               <option key={opt.label} value={opt.value}>{opt.label}</option>
                             ))}
                           </select>

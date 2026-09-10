@@ -1,0 +1,121 @@
+/* La evaluación de la malla, dentro del bloque del intento.
+   Va enmarcada y con fondo propio para que no se confunda con la nota privada
+   que tiene justo debajo: lo de aquí lo lee el alumno y cuenta para su nota. */
+.caja {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--color-lab);
+  border-radius: 8px;
+  background: var(--bg-page);
+}
+
+/* Con la sanción puesta el bloque entero cambia de color: −30 no puede pasar
+   desapercibido entre dos campos de texto. */
+.cajaSancion {
+  border-left-color: var(--entrega-incumplida-color);
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.selector {
+  flex: 1;
+  min-width: 170px;
+  max-width: 260px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.selector:disabled { opacity: 0.6; }
+
+/* Una competencia calculada no se pone a mano: sale de las suyas. Se enseña
+   su valor para no dejar el hueco mudo, pero sin selector. */
+.calculada {
+  padding: 5px 8px;
+  border: 1px dashed var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.guardando {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.campoRetro {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.etiquetaRetro {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* Lo que separa la retro de la nota, dicho donde se escribe y no en el pie. */
+.aclaracion {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.retro {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-family: inherit;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.retro::placeholder { color: var(--text-secondary); }
+.retro:disabled { opacity: 0.6; }
+
+.avisoSancion,
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--entrega-incumplida-color);
+}
