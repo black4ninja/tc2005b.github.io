@@ -10,9 +10,7 @@ import { Grupo } from '../models/Grupo.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { validarPerfil } from '../models/campos-perfil.js';
 import { getVinculoConGrupoActivo, olvidarGruposDeAlumno } from '../services/grupo-alumno.service.js';
-import {
-  coleccionesDeGrupo, moduloActivoEnGrupo, modulosActivosEnGrupo,
-} from '../services/grupo-colecciones.service.js';
+import { moduloActivoEnGrupo, modulosActivosEnGrupo } from '../services/grupo-colecciones.service.js';
 import { getColeccionesPermitidas } from '../services/contenidos.service.js';
 import { coleccionesConEjerciciosPublicados } from '../services/ejercicios-alumno.service.js';
 import { coleccionesConDiagramasPublicados } from '../services/diagramas-alumno.service.js';
@@ -587,35 +585,53 @@ export async function changeMyPassword(req: Request, res: Response): Promise<voi
 /* ------------------------------------------------------------------ */
 
 /**
- * Las indicaciones de las materias de ESE grupo.
+ * Las indicaciones de las materias que ese grupo EVALÚA.
  *
  * Antes devolvía todas las de la base sin mirar el grupo, así que un alumno de
  * TC2007B leía las trece reglas de TC2005B —cuántos intentos tiene, cuánto dura
  * su entrevista— que no son las suyas. Las reglas de evaluación son del curso,
  * no del sistema.
  *
- * Se filtra por las materias ASIGNADAS al grupo, sin mirar si el módulo de
- * competencias del CMS está encendido para él. Son dos cosas distintas: ese
- * módulo decide si se ve el catálogo de competencias dentro de Contenidos,
- * mientras que estas reglas son del curso y aplican por llevar la materia. Con
- * el filtro del módulo, los grupos del semestre en marcha se quedaban sin
- * ninguna, porque lo tienen apagado.
+ * El criterio son las materias de las COMPETENCIAS que se le evalúan al grupo, y
+ * no las materias asignadas: un grupo de TC2007B puede llevar también TC2005B
+ * por su documentación —el wiki, los laboratorios— sin que se le evalúe ni una
+ * competencia de ella, y filtrando por lo asignado se le colaban sus reglas. Lo
+ * que decide es de qué se le va a evaluar, que es de lo que hablan estas
+ * indicaciones.
  *
- * Sin materias, o con materias que no tienen indicaciones escritas, devuelve una
- * lista vacía y la pantalla no enseña el bloque.
+ * Sin competencias en la malla, la lista viene vacía y la pantalla no enseña el
+ * bloque, que es lo correcto: unas reglas para «leer antes de evaluar» sin nada
+ * que evaluar no dicen nada.
  */
 export async function getIndicacionesMalla(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
   try {
-    const colecciones = await coleccionesDeGrupo(grupoId);
-    if (colecciones.length === 0) {
+    // De qué materias son las competencias que este grupo evalúa. Se mira el
+    // GRUPO y no el alumno concreto: las reglas son las mismas para toda la
+    // clase, y así no cambian según lo que a uno le hayan cargado ya.
+    const qComp = new Parse.Query('CompetenciaAlumno');
+    qComp.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+    qComp.equalTo('exists' as any, true as any);
+    qComp.include('competencia.coleccion' as any);
+    qComp.limit(1000);
+    const competenciasDelGrupo = await qComp.find({ useMasterKey: true });
+
+    const colecciones = new Map<string, Parse.Object>();
+    for (const ca of competenciasDelGrupo) {
+      const col = (ca.get('competencia') as Parse.Object | undefined)?.get('coleccion') as
+        | Parse.Object
+        | undefined;
+      if (col && col.get('exists') !== false) colecciones.set(col.id!, col);
+    }
+
+    if (colecciones.size === 0) {
       res.json({ status: 'ok', indicaciones: [] });
       return;
     }
 
     const query = new Parse.Query<IndicacionMalla>('IndicacionMalla');
     query.equalTo('exists' as any, true as any);
-    query.containedIn('coleccion' as any, colecciones as any);
+    query.containedIn('coleccion' as any, [...colecciones.values()] as any);
     query.include('coleccion' as any);
     query.descending('createdAt');
     const indicaciones = await query.find({ useMasterKey: true });
