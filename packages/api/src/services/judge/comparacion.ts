@@ -8,9 +8,18 @@ import type { ResultadoCorrida, Veredicto } from './tipos.js';
  * Normaliza para comparar como lo hacen los jueces estilo UVA: unifica saltos de
  * línea, quita espacios/tabs al final de cada línea y colapsa saltos finales.
  * No toca espacios internos (el ejercicio decide su formato exacto).
+ *
+ * Y unifica la forma Unicode a NFC. «ñ» se puede escribir de dos maneras que en
+ * pantalla son idénticas: un solo punto de código (U+00F1) o una `n` seguida de
+ * una tilde combinante (U+006E U+0303). macOS produce la segunda en algunos
+ * caminos de copiar y pegar, así que un alumno podía mandar una salida que se
+ * VE igual que la esperada y que `===` rechazaba, sin nada visible que explicara
+ * por qué. Componer las dos a NFC antes de comparar quita esa clase entera de
+ * falsos fallos, y para una salida ASCII —la mayoría— no cambia nada.
  */
 export function normalizarSalida(s: string): string {
   return s
+    .normalize('NFC')
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
     .split('\n')

@@ -36,6 +36,45 @@ export interface ConfigLenguaje {
 const PATH_BASE = '/usr/bin:/bin';
 
 /**
+ * Fuerza UTF-8 en la salida de la JVM, pase lo que pase con el entorno.
+ *
+ * Hace falta porque `System.out` NO usa `file.encoding`: usa `stdout.encoding`,
+ * que cuando la salida va a una TUBERÍA —siempre, aquí— se deriva del locale del
+ * sistema. Y el sandbox arranca con `--clearenv`, así que dentro no hay `LANG`
+ * ni `LC_ALL` y el locale es POSIX, cuyo juego de caracteres es ASCII. La JVM no
+ * falla: SUSTITUYE lo que no cabe por `?`, así que `println("2 años")` sale como
+ * `2 a?os` y el alumno recibe «respuesta incorrecta» con el código bien escrito.
+ *
+ * No lo arregló JDK 18 (JEP 400): aquello puso `file.encoding` en UTF-8, que es
+ * otra propiedad. Comprobado contra el JDK 21 del servidor.
+ *
+ * Se ponen las cuatro variantes a propósito. `stdout`/`stderr.encoding` son las
+ * que mandan desde JDK 19; `sun.stdout.encoding` es como se llamaban antes, y
+ * `file.encoding` cubre lo que lea o escriba el alumno en ficheros. Una
+ * propiedad que la JVM no conoce se ignora sin ruido, así que sobran sin coste.
+ */
+const UTF8_JVM = [
+  '-Dfile.encoding=UTF-8',
+  '-Dstdout.encoding=UTF-8',
+  '-Dstderr.encoding=UTF-8',
+  '-Dsun.stdout.encoding=UTF-8',
+  '-Dsun.stderr.encoding=UTF-8',
+];
+
+/**
+ * El locale de dentro del sandbox.
+ *
+ * Cinturón sobre los tirantes de `UTF8_JVM`: aquellas flags arreglan la JVM, y
+ * esto arregla a todo lo demás —Swift hoy, y lo que se añada mañana— sin tener
+ * que acordarse. `C.UTF-8` existe en Debian y Ubuntu sin instalar locales; si
+ * faltara, glibc cae a `C` y queda como estaba.
+ */
+export const LOCALE_SANDBOX: Record<string, string> = {
+  LANG: 'C.UTF-8',
+  LC_ALL: 'C.UTF-8',
+};
+
+/**
  * Debian/Ubuntu no dejan la config de la JVM dentro del JDK: `$JAVA_HOME/conf/*`
  * son symlinks a `/etc/java-NN-openjdk`. Montar solo JAVA_HOME deja el symlink
  * colgando dentro del sandbox y la JVM ni arranca ("Error loading java.security
@@ -63,6 +102,7 @@ function lenguajeKotlin(): ConfigLenguaje {
     binds: [home, javaHome, ...(javaHome ? bindsConfJvm(javaHome) : [])].filter(Boolean) as string[],
     env: {
       PATH: [...binDirs, PATH_BASE].join(':'),
+      ...LOCALE_SANDBOX,
       ...(javaHome ? { JAVA_HOME: javaHome } : {}),
     },
     compilar: [kotlinc, 'Main.kt', '-include-runtime', '-d', 'main.jar'],
@@ -70,6 +110,7 @@ function lenguajeKotlin(): ConfigLenguaje {
       java,
       `-Xmx${ctx.memoriaMb}m`,
       '-XX:-UsePerfData', // no escribir hsperfdata en el sandbox
+      ...UTF8_JVM,
       '-jar',
       'main.jar',
     ],
@@ -89,6 +130,7 @@ function lenguajeSwift(): ConfigLenguaje {
     binds: home ? [home] : [],
     env: {
       PATH: [usrBin, PATH_BASE].filter(Boolean).join(':'),
+      ...LOCALE_SANDBOX,
       ...(libSwift ? { LD_LIBRARY_PATH: libSwift } : {}),
     },
     compilar: [swiftc, 'main.swift', '-o', 'main'],

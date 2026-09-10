@@ -75,3 +75,43 @@ describe('veredictoDeCorrida', () => {
     expect(v.veredicto).toBe('error_ejecucion');
   });
 });
+
+describe('la ñ y demás no-ASCII', () => {
+  // «años» de las dos maneras que existen. En pantalla son idénticas.
+  const COMPUESTA = 'a\u00f1os';       // ñ en un solo punto de código (NFC)
+  const DESCOMPUESTA = 'an\u0303os';   // n + tilde combinante (NFD)
+
+  it('las dos formas de escribir «ñ» comparan igual', () => {
+    // Un alumno en macOS podía mandar la descompuesta sin saberlo y ver
+    // «respuesta incorrecta» contra una salida que se VE idéntica.
+    expect(COMPUESTA).not.toBe(DESCOMPUESTA);
+    expect(normalizarSalida(DESCOMPUESTA)).toBe(normalizarSalida(COMPUESTA));
+  });
+
+  it('el veredicto acepta la descompuesta contra la compuesta', () => {
+    const v = veredictoDeCorrida(corrida({ salida: `2 ${DESCOMPUESTA}\n` }), `2 ${COMPUESTA}`, false);
+    expect(v.paso).toBe(true);
+    expect(v.veredicto).toBe('aceptado');
+  });
+
+  it('la salida obtenida se guarda tal cual, sin normalizar', () => {
+    // Lo que se le enseña al alumno es lo que su programa escribió de verdad;
+    // normalizar solo sirve para COMPARAR.
+    const v = veredictoDeCorrida(corrida({ salida: `2 ${DESCOMPUESTA}\n` }), `2 ${COMPUESTA}`, false);
+    expect(v.salidaObtenida).toBe(`2 ${DESCOMPUESTA}\n`);
+  });
+
+  it('NO acepta la ñ sustituida por «?»', () => {
+    // Es el síntoma de una JVM escribiendo en ASCII. Eso se arregla en el
+    // sandbox (ver UTF8_JVM en lenguajes.ts), no aflojando la comparación:
+    // «a?os» y «años» son salidas distintas y deben seguir siéndolo.
+    const v = veredictoDeCorrida(corrida({ salida: '2 a?os\n' }), `2 ${COMPUESTA}`, false);
+    expect(v.paso).toBe(false);
+    expect(v.veredicto).toBe('respuesta_incorrecta');
+  });
+
+  it('no toca los acentos ni las mayúsculas', () => {
+    expect(normalizarSalida('Año')).not.toBe(normalizarSalida('ano'));
+    expect(normalizarSalida('AÑO')).not.toBe(normalizarSalida('año'));
+  });
+});
