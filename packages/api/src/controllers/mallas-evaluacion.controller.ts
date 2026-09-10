@@ -22,10 +22,11 @@ export async function crearMallasEvaluacion(req: Request, res: Response): Promis
     actQuery.limit(1000);
     const actividades = await actQuery.find({ useMasterKey: true });
 
-    if (actividades.length === 0) {
-      res.status(404).json({ status: 'error', message: 'No hay actividades de evaluación en el grupo' });
-      return;
-    }
+    // Sin actividades NO es un error. Hay materias que se evalúan solo por
+    // competencias —las de entrevistas— y ahí esta parte no aplica: la malla del
+    // alumno existe igual, con sus competencias y su retroalimentación. Antes
+    // esto devolvía 404 y no dejaba pasar de aquí.
+    const sinActividades = actividades.length === 0;
 
     // Fetch alumnos activos del grupo vía GrupoAlumno
     const alumnos = await getAlumnosDeGrupo(grupoId);
@@ -68,7 +69,7 @@ export async function crearMallasEvaluacion(req: Request, res: Response): Promis
       await Parse.Object.saveAll(toSave, { useMasterKey: true });
     }
 
-    res.status(201).json({ status: 'ok', created, skipped });
+    res.status(201).json({ status: 'ok', created, skipped, sinActividades });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'Error al crear mallas de evaluación' });
   }
@@ -79,6 +80,14 @@ export async function getMallasStatus(req: Request, res: Response): Promise<void
 
   try {
     const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
+
+    // Si el grupo no tiene actividades, no hay malla de actividades que crear:
+    // decir «26 pendientes» prometía un trabajo que no existe, y el botón que lo
+    // ofrecía terminaba en un error.
+    const actQuery = new Parse.Query<ActividadEvaluacionGrupo>('ActividadEvaluacionGrupo');
+    actQuery.equalTo('exists' as any, true as any);
+    actQuery.equalTo('grupo' as any, grupoPointer as any);
+    const hayActividades = (await actQuery.count({ useMasterKey: true })) > 0;
 
     // Fetch alumnos activos del grupo vía GrupoAlumno
     const alumnos = await getAlumnosDeGrupo(grupoId);
@@ -105,7 +114,10 @@ export async function getMallasStatus(req: Request, res: Response): Promise<void
       status: 'ok',
       totalAlumnos: alumnos.length,
       alumnosConMalla,
-      alumnosSinMalla,
+      // Sin actividades no queda nada pendiente: la malla de estos alumnos son
+      // sus competencias, y esas van por su propio camino.
+      alumnosSinMalla: hayActividades ? alumnosSinMalla : 0,
+      hayActividades,
     });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'Error al obtener estado de mallas' });

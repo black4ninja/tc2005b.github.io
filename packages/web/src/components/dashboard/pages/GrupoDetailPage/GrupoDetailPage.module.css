@@ -257,6 +257,21 @@
   font-size: 14px;
 }
 
+/* Informativo, NO rojo: que un grupo no use actividades de evaluación es una
+   forma legítima de dar el curso, no un fallo que haya que arreglar. Antes se
+   decía con el mismo aviso rojo que los errores de verdad. */
+.avisoSinActividades {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 /* ── Pestañas del modal de alta de alumno (buscar existente / crear nuevo) ── */
 .altaTabs {
   display: flex;
