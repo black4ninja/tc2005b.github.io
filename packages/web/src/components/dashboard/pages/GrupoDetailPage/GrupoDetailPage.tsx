@@ -62,6 +62,8 @@ interface MallaStatus {
   totalAlumnos: number;
   alumnosConMalla: number;
   alumnosSinMalla: number;
+  /** false = el grupo no usa actividades de evaluación; su malla son las competencias. */
+  hayActividades?: boolean;
 }
 
 interface CompetenciaStatus {
@@ -353,7 +355,9 @@ export default function GrupoDetailPage() {
       const result = await res.json();
       if (!res.ok) throw new Error(result.message || 'Error al crear mallas');
 
-      setToast(`Mallas creadas: ${result.created} alumnos, ${result.skipped} ya tenían`);
+      setToast(result.sinActividades
+        ? 'El grupo no tiene actividades de evaluación: la malla de estos alumnos son sus competencias'
+        : `Mallas creadas: ${result.created} alumnos, ${result.skipped} ya tenían`);
       setTimeout(() => setToast(''), 3000);
       await fetchMallaStatus();
       await fetchCompetenciaStatus();
@@ -793,6 +797,20 @@ export default function GrupoDetailPage() {
       </div>
 
       {error && <div className={styles.error}>{error}</div>}
+
+      {/* Que no haya actividades no es un problema: hay materias que se evalúan
+          solo por competencias. Se dice para que la ausencia del botón «Crear
+          Mallas» no se lea como que falta algo por hacer. */}
+      {mallaStatus?.hayActividades === false && (
+        <div className={styles.avisoSinActividades}>
+          <span className="material-icons" style={{ fontSize: 18 }}>info</span>
+          <span>
+            Este grupo no tiene <strong>actividades de evaluación</strong>: la malla de sus
+            alumnos son las <strong>competencias</strong> y su retroalimentación. Al alumno no se
+            le enseña la pestaña de actividades.
+          </span>
+        </div>
+      )}
 
       <div className={styles.toolbar}>
         <DashButton variant="outline" onClick={handleDownloadTemplate}>
