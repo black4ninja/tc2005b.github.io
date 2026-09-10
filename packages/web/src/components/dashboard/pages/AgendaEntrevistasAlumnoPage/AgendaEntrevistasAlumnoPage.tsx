@@ -338,6 +338,10 @@ export default function AgendaEntrevistasAlumnoPage() {
                 <ListaEvidencias
                   evidencias={cita.evidencias}
                   enVuelo={subiendo}
+                  // Con la hora de la cita, cada evidencia dice si llegó dentro
+                  // del plazo. El alumno lo ve antes que el profesor, que es
+                  // cuando todavía puede hacer algo al respecto.
+                  citaInicio={cita.inicio}
                   onQuitar={quitarEvidencia}
                 />
                 <div className={styles.evidenciaAlta}>

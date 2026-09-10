@@ -274,3 +274,77 @@ export function nombreMes(anio: number, mes: number): string {
   return new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' })
     .format(new Date(anio, mes, 1));
 }
+
+/* ── Evidencias a tiempo ───────────────────────────────────────────────── */
+
+/**
+ * Con cuánta antelación hay que tener subida la evidencia.
+ *
+ * Horas NATURALES, no hábiles como las de agendar (`horasHabilesAntelacion`).
+ * Son dos reglas distintas aunque coincida el número: agendar con 24 horas
+ * hábiles protege al profesor de que le llenen la agenda de un día para otro,
+ * y esto le da tiempo de LEER lo que entregó el alumno antes de sentarse con
+ * él. Eso segundo se mide en tiempo de reloj —el domingo por la tarde cuenta—,
+ * y contarlo en horas hábiles señalaría como tarde a media clase por entregar
+ * el viernes para el lunes.
+ */
+export const HORAS_ANTELACION_EVIDENCIA = 24;
+
+/** `mié 2 sep, 18:42` — cuándo se subió algo. */
+export function fechaYHoraCorta(iso: string): string {
+  return `${new Intl.DateTimeFormat('es-MX', {
+    timeZone: ZONA, weekday: 'short', day: 'numeric', month: 'short',
+  }).format(new Date(iso))}, ${hora(iso)}`;
+}
+
+/**
+ * Cuántas horas antes de la cita se subió. Negativo = después de empezar.
+ *
+ * Se devuelve el número y no un simple sí/no porque lo que el profesor quiere
+ * saber con el alumno delante no es «llegó tarde», que ya lo ve, sino POR
+ * CUÁNTO: dos horas tarde y dos semanas tarde no se hablan igual.
+ */
+export function horasDeAntelacion(subidaIso: string, citaIso: string): number {
+  return (new Date(citaIso).getTime() - new Date(subidaIso).getTime()) / 3_600_000;
+}
+
+/** ¿Esa evidencia llegó con la antelación pedida? */
+export function evidenciaATiempo(subidaIso: string, citaIso: string): boolean {
+  return horasDeAntelacion(subidaIso, citaIso) >= HORAS_ANTELACION_EVIDENCIA;
+}
+
+/** El instante a partir del cual ya es tarde para subir nada de esa cita. */
+export function limiteDeEntrega(citaIso: string): Date {
+  return new Date(new Date(citaIso).getTime() - HORAS_ANTELACION_EVIDENCIA * 3_600_000);
+}
+
+export type ProblemaEvidencias =
+  /** Subió algo, pero dentro de las horas de antelación. */
+  | 'tarde'
+  /** Pasó el límite y no hay nada subido. */
+  | 'sin-entregar';
+
+/**
+ * ¿Hay que señalar esta cita? Y si sí, por qué.
+ *
+ * `null` = todo en orden, que incluye el caso de no haber entregado nada
+ * TODAVÍA: mientras no venza el plazo eso es normal, no un problema, y pintarlo
+ * de rojo desde que se reserva la cita dejaría la tabla en rojo permanente y
+ * enseñaría al profesor a no mirarla.
+ *
+ * `ahora` se pasa de fuera —el reloj del servidor, no el del navegador— porque
+ * decide si el plazo venció, y un portátil con la hora mal señalaría a quien no
+ * debe.
+ */
+export function problemaDeEvidencias(
+  evidencias: { createdAt: string }[],
+  citaIso: string,
+  ahora: Date,
+): ProblemaEvidencias | null {
+  if (evidencias.length === 0) {
+    return ahora.getTime() > limiteDeEntrega(citaIso).getTime() ? 'sin-entregar' : null;
+  }
+  // Basta con que UNA llegue tarde: la entrega es el conjunto, y colar a última
+  // hora la pieza que faltaba es justamente lo que la regla quiere ver.
+  return evidencias.some((e) => !evidenciaATiempo(e.createdAt, citaIso)) ? 'tarde' : null;
+}

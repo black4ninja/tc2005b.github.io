@@ -279,7 +279,33 @@
   outline: none;
 }
 
-.colCorta { width: 90px; white-space: nowrap; }
+/* La columna de la hora también carga el aviso de entrega, que va debajo en su
+   propio renglón: al lado, el «sin entregar» empujaba la hora y descuadraba la
+   tabla en cuanto un alumno fallaba. */
+.colCorta { width: 118px; white-space: nowrap; }
+
+/* La hora de una cita con la entrega incumplida.
+   Rojo y en negrita, con icono delante: es lo que el profesor tiene que ver de
+   un vistazo al abrir el día, sin leer nada más. El icono va además del color
+   porque el rojo solo no lo distingue todo el mundo, y distingue los dos casos
+   —reloj si entregó tarde, aspa si no entregó—. */
+.horaConProblema {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--entrega-incumplida-color);
+}
+
+.avisoEntrega {
+  display: block;
+  margin-top: 2px;
+  color: var(--entrega-incumplida-color);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: lowercase;
+}
+
 /* Reparto de la tabla de la agenda con un día lleno. El nombre pide sitio
    —«María Fernanda Nolasco Treviño» son cuatro palabras— y el enunciado se lee
    mejor en dos líneas anchas que en cinco estrechas. */

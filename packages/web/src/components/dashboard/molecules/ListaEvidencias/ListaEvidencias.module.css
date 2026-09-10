@@ -46,6 +46,33 @@
   font-weight: 500;
 }
 
+/* Cuándo se subió. Tabular para que las horas caigan alineadas al recorrer una
+   lista, y sin encogerse: es un dato corto y fijo, el que se estira es el
+   enlace. */
+.subida {
+  flex: none;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* La que llegó dentro del plazo. Con icono además del color, que el rojo solo
+   no lo ve todo el mundo. */
+.tarde {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 3px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .quitar {
   display: inline-flex;
   flex: none;

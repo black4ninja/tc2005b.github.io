@@ -25,6 +25,7 @@ import { confirmar } from '../../../../utils/dialogos';
 import {
   claveFecha, diaDelMes, diaMasProximo, diaSemanaCorto, esHoy, fechaConDia, fechaLarga,
   fechaYHora, hora, intentoTerminado, mesCorto, rangoHoras,
+  HORAS_ANTELACION_EVIDENCIA, problemaDeEvidencias,
 } from '../../../../utils/agenda';
 import type { Agenda, CitaProfesor, DiaProfesor, Evidencia } from '../../../../types/agenda';
 import styles from './PreguntasGrupoPage.module.css';
@@ -1935,6 +1936,13 @@ export default function PreguntasGrupoPage() {
                     const enPantalla = !!asignacion && asignacion.id === proyeccion?.asignacionId;
                     // Al soltar, `arrastrando` ya se vació: manda `moviendo`.
                     const viajando = moviendo?.citaId === cita!.id;
+                    // La entrega se pide con antelación, así que la hora de la
+                    // cita es también el plazo: si no se cumplió, se dice AQUÍ.
+                    // Con el reloj del servidor, que es el que decide si el
+                    // plazo venció.
+                    const problema = problemaDeEvidencias(
+                      cita!.evidencias, inicio, new Date(ahora + desfaseRef.current),
+                    );
                     return (
                       <tr
                         key={inicio}
@@ -1947,7 +1955,33 @@ export default function PreguntasGrupoPage() {
                         title="Arrástralo para cambiarlo de hora"
                       >
                         <td className={styles.colCorta}>
-                          <strong>{hora(inicio)}</strong>
+                          {/* La hora en rojo es el aviso de que hay algo que
+                              mirar con este alumno ANTES de sentarse con él.
+                              Va aquí y no en una columna aparte porque la hora
+                              es lo que se recorre al leer el día, y una columna
+                              más de avisos se mira solo cuando ya se sabe que
+                              hay que mirarla. */}
+                          <strong
+                            className={problema ? styles.horaConProblema : ''}
+                            title={problema === 'sin-entregar'
+                              ? `Ya pasó el plazo —se pide con ${HORAS_ANTELACION_EVIDENCIA} h de antelación— y no ha subido ninguna evidencia`
+                              : problema === 'tarde'
+                                ? `Subió evidencias con menos de ${HORAS_ANTELACION_EVIDENCIA} h de antelación`
+                                : undefined}
+                          >
+                            {problema && (
+                              <Icon
+                                name={problema === 'sin-entregar' ? 'error' : 'schedule'}
+                                size="sm"
+                              />
+                            )}
+                            {hora(inicio)}
+                          </strong>
+                          {problema && (
+                            <span className={styles.avisoEntrega}>
+                              {problema === 'sin-entregar' ? 'sin entregar' : 'entregó tarde'}
+                            </span>
+                          )}
                           {viajando && <span className={styles.girandoFila} aria-label="Moviendo" />}
                         </td>
                         <td className={styles.colAlumno}>
@@ -2588,7 +2622,10 @@ export default function PreguntasGrupoPage() {
                         haría del modal una lista interminable. Se enseñan
                         siempre: son del alumno, no hay nada que adelantarle. */}
                     {(suHueco?.evidencias.length ?? 0) > 0 && (
-                      <ListaEvidencias evidencias={suHueco!.evidencias} />
+                      <ListaEvidencias
+                        evidencias={suHueco!.evidencias}
+                        citaInicio={suHueco!.inicio}
+                      />
                     )}
                     {notasVisibles && (
                       <NotaInline
@@ -2631,6 +2668,7 @@ export default function PreguntasGrupoPage() {
           </p>
           <ListaEvidencias
             evidencias={evidenciasDe.evidencias}
+            citaInicio={evidenciasDe.inicio}
             vacio="No ha subido ninguna evidencia para esta entrevista."
           />
         </Modal>
