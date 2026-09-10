@@ -8,6 +8,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Cada evidencia dice cuándo se subió, y si llegó a tiempo.** Se pide
+  entregarlas con 24 horas de antelación, pero en pantalla no había forma de
+  saber cuándo había subido nada el alumno: la fecha estaba en la base y no
+  llegaba a la vista. Ahora la lista de evidencias —la misma que ven el alumno y
+  el profesor— lleva el día y la hora de subida, y marca «tarde» la que entró
+  dentro de esas 24 horas, diciendo por cuánto al pasar el ratón. El alumno lo ve
+  antes que nadie, que es cuando todavía puede hacer algo.
+- **La agenda del profesor señala en rojo a quien no cumplió.** La hora de la
+  cita se pinta en rojo, con icono y un rótulo debajo, cuando hay un problema con
+  la entrega: `entregó tarde` si alguna evidencia llegó dentro del plazo, `sin
+  entregar` si venció el plazo y no hay ninguna. Basta con que UNA llegue tarde
+  —colar a última hora la pieza que faltaba es justo lo que la regla busca—. No
+  entregar TODAVÍA, con el plazo por delante, no es un problema y no se pinta:
+  marcarlo desde que se reserva la cita dejaría la tabla en rojo permanente y
+  enseñaría a no mirarla. El rojo tiene su propio tono en cada tema y contrasta
+  6.5 y 7.0 sobre su fondo, por encima de WCAG AA.
 - **El banco de preguntas se llena desde el cuaderno de entrevistas.** Meter un
   semestre de preguntas era abrir el formulario de «Nueva pregunta» una vez por
   cada una, y el atajo que había —un script de línea de comandos— tenía dos

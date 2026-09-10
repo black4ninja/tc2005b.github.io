@@ -121,6 +121,12 @@
 
      En oscuro no hace falta la distinción: allí el fondo es el matiz rebajado
      sobre un fondo oscuro, y el matiz claro contrasta contra él de sobra. */
+  /* La entrega que no cumplió el plazo de las evidencias. Rojo propio y no
+     `--estado-error-color`: aquel es el rojo de «algo falló en el sistema», y
+     esto no es un fallo sino un aviso sobre una PERSONA, que el profesor tiene
+     que poder cazar recorriendo la columna de horas sin leer nada más. */
+  --entrega-incumplida-color: #b91c1c;
+
   --tinte-competencia-1-texto: #1e3a8a;
   --tinte-competencia-2-texto: #7c2d12;
   --tinte-competencia-3-texto: #4c1d95;
@@ -220,6 +226,11 @@
 
   /* Aquí el texto SÍ es el matiz: sobre el fondo oscuro ya contrasta de sobra
      —de 7 para arriba— y separarlo solo lo apagaría. */
+  /* Más claro y más saturado que el rojo del tema claro: sobre el fondo oscuro
+     del panel un rojo oscuro se apaga hasta confundirse con el texto normal, y
+     lo que se busca aquí es justo lo contrario. */
+  --entrega-incumplida-color: #ff8080;
+
   --tinte-competencia-1-texto: var(--tinte-competencia-1);
   --tinte-competencia-2-texto: var(--tinte-competencia-2);
   --tinte-competencia-3-texto: var(--tinte-competencia-3);
