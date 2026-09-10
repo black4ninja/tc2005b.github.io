@@ -9,7 +9,10 @@ import TruncatedText from '../../atoms/TruncatedText/TruncatedText';
 import type { ActionItem } from '../../organisms/AdminTable/AdminTable';
 import type { ActividadTipo } from '@/types/calendario';
 import { exportMallaAlumnoXlsx } from '../../../../utils/mallaExport';
-import { calcCalificacion, esPenalizacion, PENALIZACION_VALOR, type PeriodoConfig } from '@tc2005b/evaluacion';
+import { calcCalificacion, esPenalizacion, type PeriodoConfig } from '@tc2005b/evaluacion';
+import {
+  etiquetaNivel, opcionesEvaluacion, PENALIZACION_LABEL,
+} from '../../../../utils/nivelesCompetencia';
 import { pedirTexto } from '../../../../utils/dialogos';
 import styles from './MallaEvaluacionPage.module.css';
 import { TIPO_CHIP } from '@/data/tiposActividad';
@@ -90,49 +93,6 @@ type TabKey = 'actividades' | 'competencias';
 const API_BASE = '/api';
 
 
-const PENALIZACION_LABEL = 'Incipiente B −30 pts';
-
-/** No es un nivel, es la ausencia de nota: por eso encabeza la lista. */
-const OPCION_SIN_EVALUAR = { value: '', label: 'Sin evaluar' };
-
-/** La sanción, solo para las competencias que la admiten. */
-const OPCION_PENALIZACION = { value: String(PENALIZACION_VALOR), label: PENALIZACION_LABEL };
-
-/** Los niveles de siempre, de menos a más. */
-const NIVELES = [
-  { value: '0', label: 'Incipiente B (0%)' },
-  { value: '15', label: 'Incipiente A (15%)' },
-  { value: '70', label: 'Básico (70%)' },
-  { value: '85', label: 'Sólido (85%)' },
-  { value: '100', label: 'Destacado (100%)' },
-];
-
-const EVALUACION_OPTIONS = [OPCION_SIN_EVALUAR, ...NIVELES];
-
-/**
- * Con la sanción, y va PRIMERA de los niveles: −30 es el valor más bajo de
- * todos y la lista está ordenada de menos a más, así que ponerla al final la
- * dejaba después del 100 %, que se lee como si fuera lo más alto.
- *
- * Es además donde ya estaba en los otros dos sitios donde se enumeran los
- * niveles —la rúbrica que ve el alumno y la leyenda del XLSX—, así que esto
- * era el único que se salía.
- */
-const EVALUACION_OPTIONS_CON_SANCION = [OPCION_SIN_EVALUAR, OPCION_PENALIZACION, ...NIVELES];
-
-const NUMBER_TO_LABEL: Record<number, string> = {
-  [PENALIZACION_VALOR]: PENALIZACION_LABEL,
-  0: 'Incipiente B (0%)',
-  15: 'Incipiente A (15%)',
-  70: 'Básico (70%)',
-  85: 'Sólido (85%)',
-  100: 'Destacado (100%)',
-};
-
-function evalLabel(val: string | number): string {
-  if (typeof val === 'number') return NUMBER_TO_LABEL[val] ?? '';
-  return val || '';
-}
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
@@ -437,7 +397,7 @@ export default function MallaEvaluacionPage() {
     if (esPenalizacion(value)) {
       const comp = competenciasAlumno.find((c) => c.id === compId);
       const escrito = await pedirTexto({
-        titulo: 'Incipiente B −30 pts',
+        titulo: PENALIZACION_LABEL,
         html:
           'Resta <b>30 puntos</b> a la nota del periodo, se acumula con otras y no se puede ' +
           'deshacer sin dejar rastro. Escribe el motivo: es lo que sostiene la sanción.',
@@ -1061,7 +1021,7 @@ export default function MallaEvaluacionPage() {
         const row = info.row.original;
         if (row.esCalculada) {
           const val = info.getValue();
-          const label = evalLabel(val);
+          const label = etiquetaNivel(val);
           return label
             ? <span className={styles.evalChip} title="Calculada: MIN de dependencias">{label}</span>
             : <span className={styles.zeroValue}>Sin evaluar</span>;
@@ -1072,10 +1032,7 @@ export default function MallaEvaluacionPage() {
             value={String(info.getValue() ?? '')}
             onChange={(e) => handleEvalChange(row.id, 'valorPeriodo1', e.target.value)}
           >
-            {(row.admitePenalizacion
-              ? EVALUACION_OPTIONS_CON_SANCION
-              : EVALUACION_OPTIONS
-            ).map((opt) => (
+            {opcionesEvaluacion(row.admitePenalizacion).map((opt) => (
               <option key={opt.label} value={opt.value}>
                 {opt.label}
               </option>
@@ -1101,7 +1058,7 @@ export default function MallaEvaluacionPage() {
         const row = info.row.original;
         if (row.esCalculada) {
           const val = info.getValue();
-          const label = evalLabel(val);
+          const label = etiquetaNivel(val);
           return label
             ? <span className={styles.evalChip} title="Calculada: MIN de dependencias">{label}</span>
             : <span className={styles.zeroValue}>Sin evaluar</span>;
@@ -1112,10 +1069,7 @@ export default function MallaEvaluacionPage() {
             value={String(info.getValue() ?? '')}
             onChange={(e) => handleEvalChange(row.id, 'valorPeriodo2', e.target.value)}
           >
-            {(row.admitePenalizacion
-              ? EVALUACION_OPTIONS_CON_SANCION
-              : EVALUACION_OPTIONS
-            ).map((opt) => (
+            {opcionesEvaluacion(row.admitePenalizacion).map((opt) => (
               <option key={opt.label} value={opt.value}>
                 {opt.label}
               </option>
@@ -1193,7 +1147,7 @@ export default function MallaEvaluacionPage() {
       header: 'Eval. 1',
       cell: (info) => {
         const val = info.getValue();
-        const label = evalLabel(val);
+        const label = etiquetaNivel(val);
         return label ? <span className={styles.evalChip}>{label}</span> : <span className={styles.zeroValue}>Sin evaluar</span>;
       },
     }),
@@ -1212,7 +1166,7 @@ export default function MallaEvaluacionPage() {
       header: 'Eval. 2',
       cell: (info) => {
         const val = info.getValue();
-        const label = evalLabel(val);
+        const label = etiquetaNivel(val);
         return label ? <span className={styles.evalChip}>{label}</span> : <span className={styles.zeroValue}>Sin evaluar</span>;
       },
     }),
@@ -1448,7 +1402,7 @@ export default function MallaEvaluacionPage() {
                   <div className={styles.penalizacionAviso}>
                     − {ps.puntosPenalizados} pts por {ps.penalizaciones}{' '}
                     {ps.penalizaciones === 1 ? 'competencia' : 'competencias'} en{' '}
-                    <strong>Incipiente B −30 pts</strong> ({ps.periodoScoreBruto.toFixed(1)} →{' '}
+                    <strong>{PENALIZACION_LABEL}</strong> ({ps.periodoScoreBruto.toFixed(1)} →{' '}
                     {ps.periodoScore.toFixed(1)})
                   </div>
                 )}

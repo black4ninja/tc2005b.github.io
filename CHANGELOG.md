@@ -7,7 +7,22 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **La entrevista evalúa la malla sin salir de las notas.** El primer intento de
+  una competencia es su primer periodo y el segundo es el segundo: eran la misma
+  cosa apuntada dos veces, primero en la nota de la entrevista y después a mano
+  en la malla. Ahora cada intento del modal de notas trae el selector de nivel de
+  ese periodo y su retroalimentación, que NO es la nota: la nota es privada y no
+  cuenta, la retro la lee el alumno y es la que sostiene el nivel. La conexión
+  solo aparece cuando el grupo lleva las dos cosas —preguntas y competencias—; si
+  le falta cualquiera de las dos, el modal se queda exactamente como estaba.
+
 ### Fixed
+- **Desde el panel rápido de competencias no se podía poner la sanción.** Su
+  lista de niveles era una copia a mano que se quedó sin «Incipiente B −30 pts»,
+  así que la sanción solo se podía asignar desde la malla completa aunque la
+  materia la admitiera. Los niveles pasan a estar escritos en un solo sitio
+  (`utils/nivelesCompetencia.ts`), del que ahora tiran las tres pantallas.
 - **Un grupo sin actividades de evaluación ya no se queda atascado.** Decía «Crear
   Mallas (26 pendientes)» y al pulsarlo devolvía un error rojo: «No hay
   actividades de evaluación en el grupo». Pero hay materias que se evalúan solo

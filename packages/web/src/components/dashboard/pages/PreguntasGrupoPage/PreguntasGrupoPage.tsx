@@ -12,6 +12,9 @@ import AsignarCitaModal from '../../organisms/AsignarCitaModal/AsignarCitaModal'
 import SaltoProyeccion from '../../organisms/SaltoProyeccion/SaltoProyeccion';
 import ListaEvidencias from '../../molecules/ListaEvidencias/ListaEvidencias';
 import TagIntento from '../../atoms/TagIntento/TagIntento';
+import EvaluacionIntento, {
+  type CambioEvaluacion, type CompetenciaDeMalla,
+} from '../../molecules/EvaluacionIntento/EvaluacionIntento';
 import AbrirDiasModal, { type FilaPlan } from '../../organisms/AbrirDiasModal/AbrirDiasModal';
 import {
   aplicarAsignaciones, ajustarUso, faseProyeccion, formatearDuracion, quitarAsignaciones,
@@ -156,6 +159,16 @@ export default function PreguntasGrupoPage() {
   // hay columna de nota donde escribirlas —serían cuatro por fila—, y son justo
   // lo que se relee antes de la segunda entrevista.
   const [notasDe, setNotasDe] = useState<string | null>(null);
+  /**
+   * La malla del alumno que está abierto en las notas, para poder evaluar el
+   * intento sin salir de ahí. Se pide al abrir el modal y no con el resto de la
+   * pantalla: es de UN alumno, y la mayoría de las veces el modal ni se abre.
+   *
+   * Vacía significa «este grupo no evalúa competencias» —el módulo apagado, o
+   * la malla sin crear— y entonces la conexión sencillamente no aparece: las
+   * dos mitades son opcionales y ninguna presupone a la otra.
+   */
+  const [mallaAlumno, setMallaAlumno] = useState<CompetenciaDeMalla[]>([]);
   const [historialDe, setHistorialDe] = useState<AlumnoConPregunta | null>(null);
   const [historial, setHistorial] = useState<PreguntaAsignacion[]>([]);
   /**
@@ -1181,6 +1194,66 @@ export default function PreguntasGrupoPage() {
       await fetchTodo();
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'Error al guardar el tiempo'));
+    }
+  }
+
+  /**
+   * La malla del alumno. Silenciosa a propósito: si el grupo no evalúa
+   * competencias esto devuelve una lista vacía —o falla, si nunca se le creó
+   * malla— y lo que toca entonces es no enseñar la conexión, no gritar un
+   * error en un modal que se abrió para leer notas.
+   */
+  const cargarMalla = useCallback(async (alumnoId: string) => {
+    if (!grupoId) return;
+    try {
+      const res = await fetch(
+        `${API_BASE}/admin/grupos/${grupoId}/alumnos/${alumnoId}/competencias`,
+        { headers: { 'x-session-token': sessionToken ?? '' } },
+      );
+      if (!res.ok) { setMallaAlumno([]); return; }
+      const data = await res.json() as { competencias?: CompetenciaDeMalla[] };
+      setMallaAlumno(data.competencias ?? []);
+    } catch {
+      setMallaAlumno([]);
+    }
+  }, [grupoId, sessionToken]);
+
+  useEffect(() => {
+    if (!notasDe) { setMallaAlumno([]); return; }
+    void cargarMalla(notasDe);
+  }, [notasDe, cargarMalla]);
+
+  /**
+   * Guarda un nivel o una retro de la malla. Devuelve el mensaje del servidor
+   * cuando se niega —la sanción sin retro, o una competencia calculada—, que es
+   * lo que el componente enseña debajo del campo.
+   *
+   * Recarga la malla entera después de tocar el nivel y no solo la fila: una
+   * competencia calculada cambia de valor sin que nadie la haya tocado.
+   */
+  async function guardarEvaluacion(
+    compAlumnoId: string, periodo: 1 | 2, cambios: CambioEvaluacion,
+  ): Promise<string | null> {
+    if (!notasDe) return null;
+    const cuerpo: Record<string, string> = {};
+    if (cambios.valor !== undefined) cuerpo[`valorPeriodo${periodo}`] = cambios.valor;
+    if (cambios.retro !== undefined) cuerpo[`retroPeriodo${periodo}`] = cambios.retro;
+    try {
+      const res = await fetch(
+        `${API_BASE}/admin/grupos/${grupoId}/alumnos/${notasDe}/competencias/${compAlumnoId}`,
+        { method: 'PUT', headers, body: JSON.stringify(cuerpo) },
+      );
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        // Se relee para deshacer lo que el selector ya pintó: el servidor dijo
+        // que no, y dejar el nivel puesto en pantalla sería mentir.
+        await cargarMalla(notasDe);
+        return err.message || 'No se pudo guardar la evaluación';
+      }
+      await cargarMalla(notasDe);
+      return null;
+    } catch {
+      return 'No se pudo guardar la evaluación';
     }
   }
 
@@ -2551,6 +2624,10 @@ export default function PreguntasGrupoPage() {
           .from({ length: MAX_INTENTOS }, (_, i) => i + 1)
           .map((intento) => ({ competencia: c, intento, asignacion: asignacionDe(alumno, c.id, intento) }))
           .filter((h) => h.asignacion));
+        // Por id del catálogo: la competencia del banco de preguntas y la de la
+        // malla son la misma, y así el empate no depende de cómo esté escrito
+        // el nombre. Sin fila no hay conexión para ese hueco, sin más.
+        const enMalla = new Map(mallaAlumno.map((c) => [c.competenciaId, c]));
         return (
           <Modal isOpen onClose={() => setNotasDe(null)} title={`Notas — ${alumno.name}`} wide>
             <div className={styles.notasBarra}>
@@ -2627,6 +2704,21 @@ export default function PreguntasGrupoPage() {
                         citaInicio={suHueco!.inicio}
                       />
                     )}
+                    {/* La evaluación de la malla, si este grupo la lleva. Va
+                        ANTES de la nota: es lo que cuenta para la calificación,
+                        y la nota de abajo es el apunte privado. */}
+                    {(() => {
+                      const enLaMalla = enMalla.get(competencia.id);
+                      if (!enLaMalla) return null;
+                      const periodo = intento as 1 | 2;
+                      return (
+                        <EvaluacionIntento
+                          competencia={enLaMalla}
+                          periodo={periodo}
+                          onGuardar={(cambios) => guardarEvaluacion(enLaMalla.id, periodo, cambios)}
+                        />
+                      );
+                    })()}
                     {notasVisibles && (
                       <NotaInline
                         key={asignacion!.id}
@@ -2647,6 +2739,8 @@ export default function PreguntasGrupoPage() {
               {notasVisibles
                 ? 'Se guardan al salir del campo. Solo las ves tú: no se proyectan ni afectan a la calificación.'
                 : 'Notas ocultas. Los enlaces son lo que entregó el alumno.'}
+              {enMalla.size > 0
+                && ' La evaluación y la retroalimentación sí son de la malla: el alumno las ve y cuentan para su nota.'}
               {!pendientesVisibles
                 && ' Un intento cuenta como hecho cuando tuvo cita y ya pasó su hora.'}
             </p>
