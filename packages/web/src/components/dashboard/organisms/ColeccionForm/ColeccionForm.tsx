@@ -174,6 +174,17 @@ export default function ColeccionForm({ coleccion, categorias = [], errorExterno
               competencias que lo admitían dejan de ofrecerlo; las sanciones ya puestas a un alumno
               se respetan.
             </small>
+            {/* Encender esto no lo enciende en ninguna competencia: solo abre la
+                puerta para poder marcarlas. Sin decirlo, la casilla parece que
+                no hizo nada —el nivel no sale en la malla— y no hay dónde
+                averiguar por qué. */}
+            {permitePenalizacion && (
+              <small className={styles.avisoSiguientePaso}>
+                Con esto no basta: hay que marcar <strong>competencia por competencia</strong> cuál
+                la admite, en <strong>Competencias → editar → «Esta competencia admite Incipiente
+                B −30 pts»</strong>. Mientras ninguna esté marcada, el nivel no aparece al evaluar.
+              </small>
+            )}
           </span>
         </label>
       )}

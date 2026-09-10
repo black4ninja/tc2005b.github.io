@@ -90,8 +90,16 @@ type TabKey = 'actividades' | 'competencias';
 const API_BASE = '/api';
 
 
-const EVALUACION_OPTIONS = [
-  { value: '', label: 'Sin evaluar' },
+const PENALIZACION_LABEL = 'Incipiente B −30 pts';
+
+/** No es un nivel, es la ausencia de nota: por eso encabeza la lista. */
+const OPCION_SIN_EVALUAR = { value: '', label: 'Sin evaluar' };
+
+/** La sanción, solo para las competencias que la admiten. */
+const OPCION_PENALIZACION = { value: String(PENALIZACION_VALOR), label: PENALIZACION_LABEL };
+
+/** Los niveles de siempre, de menos a más. */
+const NIVELES = [
   { value: '0', label: 'Incipiente B (0%)' },
   { value: '15', label: 'Incipiente A (15%)' },
   { value: '70', label: 'Básico (70%)' },
@@ -99,10 +107,18 @@ const EVALUACION_OPTIONS = [
   { value: '100', label: 'Destacado (100%)' },
 ];
 
-const PENALIZACION_LABEL = 'Incipiente B −30 pts';
+const EVALUACION_OPTIONS = [OPCION_SIN_EVALUAR, ...NIVELES];
 
-/** La sanción, solo para las competencias que la admiten. */
-const OPCION_PENALIZACION = { value: String(PENALIZACION_VALOR), label: PENALIZACION_LABEL };
+/**
+ * Con la sanción, y va PRIMERA de los niveles: −30 es el valor más bajo de
+ * todos y la lista está ordenada de menos a más, así que ponerla al final la
+ * dejaba después del 100 %, que se lee como si fuera lo más alto.
+ *
+ * Es además donde ya estaba en los otros dos sitios donde se enumeran los
+ * niveles —la rúbrica que ve el alumno y la leyenda del XLSX—, así que esto
+ * era el único que se salía.
+ */
+const EVALUACION_OPTIONS_CON_SANCION = [OPCION_SIN_EVALUAR, OPCION_PENALIZACION, ...NIVELES];
 
 const NUMBER_TO_LABEL: Record<number, string> = {
   [PENALIZACION_VALOR]: PENALIZACION_LABEL,
@@ -147,6 +163,48 @@ export default function MallaEvaluacionPage() {
   // Competencias
   const [competenciasAlumno, setCompetenciasAlumno] = useState<CompetenciaAlumnoData[]>([]);
   const [loadingCompetencias, setLoadingCompetencias] = useState(false);
+
+  /**
+   * Qué pestañas tienen algo que enseñar.
+   *
+   * Hay materias que se evalúan SOLO por competencias —las entrevistas— y ahí la
+   * pestaña de actividades es una invitación a buscar algo que no existe: se
+   * entra, se lee «no hay actividades» y queda la duda de si falta configurar
+   * algo. Se esconde la que esté vacía, pero solo si la otra tiene contenido:
+   * con las dos vacías se dejan las dos, porque entonces lo que falta es la
+   * materia entera y esconderlo todo no lo explicaría mejor.
+   *
+   * Mientras carga no se decide nada: las listas empiezan vacías y la barra
+   * parpadearía al llegar los datos.
+   */
+  const hayActividades = actividades.length > 0 || actividadesAlumno.length > 0;
+  const hayCompetencias = competenciasAlumno.length > 0;
+  const cargando = loading || loadingCompetencias;
+  const soloCompetencias = !cargando && !hayActividades && hayCompetencias;
+  const soloActividades = !cargando && hayActividades && !hayCompetencias;
+
+  /**
+   * La columna de fecha ideal solo aparece si alguien la tiene puesta.
+   *
+   * Es opcional por competencia y hay materias donde no se usa en ninguna: una
+   * columna entera de guiones ocupa el ancho que necesitan las de evaluación y
+   * no dice nada. En cuanto UNA la tenga, vuelve para todas —si no, la fila con
+   * fecha no tendría dónde enseñarla—.
+   */
+  const hayFechaIdeal = competenciasAlumno.some((c) => !!c.fechaIdealEvaluacion);
+
+
+  /**
+   * La pestaña abierta se mueve sola a la que tiene contenido.
+   *
+   * `activeTab` arranca en «actividades» porque es lo normal; en una materia
+   * que solo evalúa por competencias eso dejaría la pantalla en un panel vacío
+   * y con su pestaña ya escondida, sin forma de salir.
+   */
+  useEffect(() => {
+    if (soloCompetencias) setActiveTab('competencias');
+    else if (soloActividades) setActiveTab('actividades');
+  }, [soloCompetencias, soloActividades]);
 
   // Indicaciones
   const [indicaciones, setIndicaciones] = useState<IndicacionData[]>([]);
@@ -990,15 +1048,15 @@ export default function MallaEvaluacionPage() {
       },
     }),
     compColumnHelper.accessor('nivel', { header: 'Nivel' }),
-    compColumnHelper.accessor('fechaIdealEvaluacion', {
+    ...(hayFechaIdeal ? [compColumnHelper.accessor('fechaIdealEvaluacion', {
       header: 'Fecha Ideal',
       cell: (info) => {
         const val = info.getValue();
         return val || <span className={styles.zeroValue}>—</span>;
       },
-    }),
+    })] : []),
     compColumnHelper.accessor('valorPeriodo1', {
-      header: 'Eval. P1',
+      header: 'Eval. 1',
       cell: (info) => {
         const row = info.row.original;
         if (row.esCalculada) {
@@ -1015,7 +1073,7 @@ export default function MallaEvaluacionPage() {
             onChange={(e) => handleEvalChange(row.id, 'valorPeriodo1', e.target.value)}
           >
             {(row.admitePenalizacion
-              ? [...EVALUACION_OPTIONS, OPCION_PENALIZACION]
+              ? EVALUACION_OPTIONS_CON_SANCION
               : EVALUACION_OPTIONS
             ).map((opt) => (
               <option key={opt.label} value={opt.value}>
@@ -1027,7 +1085,7 @@ export default function MallaEvaluacionPage() {
       },
     }),
     compColumnHelper.accessor('retroPeriodo1', {
-      header: 'Retro P1',
+      header: 'Retro 1',
       cell: (info) => (
         <TruncatedText
           text={info.getValue()}
@@ -1038,7 +1096,7 @@ export default function MallaEvaluacionPage() {
       ),
     }),
     compColumnHelper.accessor('valorPeriodo2', {
-      header: 'Eval. P2',
+      header: 'Eval. 2',
       cell: (info) => {
         const row = info.row.original;
         if (row.esCalculada) {
@@ -1055,7 +1113,7 @@ export default function MallaEvaluacionPage() {
             onChange={(e) => handleEvalChange(row.id, 'valorPeriodo2', e.target.value)}
           >
             {(row.admitePenalizacion
-              ? [...EVALUACION_OPTIONS, OPCION_PENALIZACION]
+              ? EVALUACION_OPTIONS_CON_SANCION
               : EVALUACION_OPTIONS
             ).map((opt) => (
               <option key={opt.label} value={opt.value}>
@@ -1067,7 +1125,7 @@ export default function MallaEvaluacionPage() {
       },
     }),
     compColumnHelper.accessor('retroPeriodo2', {
-      header: 'Retro P2',
+      header: 'Retro 2',
       cell: (info) => (
         <TruncatedText
           text={info.getValue()}
@@ -1124,15 +1182,15 @@ export default function MallaEvaluacionPage() {
       },
     }),
     compColumnHelper.accessor('nivel', { header: 'Nivel' }),
-    compColumnHelper.accessor('fechaIdealEvaluacion', {
+    ...(hayFechaIdeal ? [compColumnHelper.accessor('fechaIdealEvaluacion', {
       header: 'Fecha Ideal',
       cell: (info) => {
         const val = info.getValue();
         return val || <span className={styles.zeroValue}>—</span>;
       },
-    }),
+    })] : []),
     compColumnHelper.accessor('valorPeriodo1', {
-      header: 'Eval. P1',
+      header: 'Eval. 1',
       cell: (info) => {
         const val = info.getValue();
         const label = evalLabel(val);
@@ -1140,7 +1198,7 @@ export default function MallaEvaluacionPage() {
       },
     }),
     compColumnHelper.accessor('retroPeriodo1', {
-      header: 'Retro P1',
+      header: 'Retro 1',
       cell: (info) => (
         <TruncatedText
           text={info.getValue()}
@@ -1151,7 +1209,7 @@ export default function MallaEvaluacionPage() {
       ),
     }),
     compColumnHelper.accessor('valorPeriodo2', {
-      header: 'Eval. P2',
+      header: 'Eval. 2',
       cell: (info) => {
         const val = info.getValue();
         const label = evalLabel(val);
@@ -1159,7 +1217,7 @@ export default function MallaEvaluacionPage() {
       },
     }),
     compColumnHelper.accessor('retroPeriodo2', {
-      header: 'Retro P2',
+      header: 'Retro 2',
       cell: (info) => (
         <TruncatedText
           text={info.getValue()}
@@ -1409,21 +1467,28 @@ export default function MallaEvaluacionPage() {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${activeTab === 'actividades' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('actividades')}
-        >
-          Actividades
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'competencias' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('competencias')}
-        >
-          Competencias
-        </button>
-      </div>
+      {/* Con una sola pestaña con contenido no se pinta la barra: una pestaña
+          suelta no es una elección, es un rótulo que ocupa sitio. */}
+      {!soloCompetencias && !soloActividades && (
+        <div className={styles.tabs}>
+          {!soloCompetencias && (
+            <button
+              className={`${styles.tab} ${activeTab === 'actividades' ? styles.tabActive : ''}`}
+              onClick={() => setActiveTab('actividades')}
+            >
+              Actividades
+            </button>
+          )}
+          {!soloActividades && (
+            <button
+              className={`${styles.tab} ${activeTab === 'competencias' ? styles.tabActive : ''}`}
+              onClick={() => setActiveTab('competencias')}
+            >
+              Competencias
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Tab panel */}
       <div className={styles.tabPanel}>
