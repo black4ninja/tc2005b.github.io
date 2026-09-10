@@ -7,7 +7,23 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **El bloque de indicaciones de la malla se leía en tema oscuro.** Sus colores
+  estaban escritos a mano y pensados para el tema claro, así que el texto caía
+  casi negro sobre el fondo ámbar del bloque sin leer: 1.78 de contraste, contra
+  el 4.5 que pide WCAG AA. Ahora va por tokens y sube a 13.65 en oscuro y 17.22
+  en claro. Con él, otros cuatro colores fijos de la misma pantalla que fallaban
+  igual —el desglose de la nota se quedaba en 1.92 y la nota de cada periodo en
+  1.41—.
+
 ### Changed
+- **La malla afina su tabla de competencias.** El nivel «Incipiente B −30 pts»
+  pasa al principio de los niveles, que es su sitio por valor y donde ya lo
+  ponían la rúbrica del alumno y el XLSX; el selector era el único que lo dejaba
+  detrás del 100 %. La columna de fecha ideal se esconde cuando ninguna
+  competencia la tiene puesta, que era una columna entera de guiones robándole
+  ancho a las de evaluación. Y las cabeceras pierden la «P»: `Eval. 1`,
+  `Retro 1`, que la columna ya dice qué es.
 - **La malla no enseña la pestaña de Actividades cuando no hay ninguna.** Hay
   materias que se evalúan solo por competencias —las de entrevistas—, y ahí esa
   pestaña era una invitación a buscar algo que no existe: se entraba, se leía «no

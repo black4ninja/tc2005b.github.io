@@ -90,8 +90,16 @@ type TabKey = 'actividades' | 'competencias';
 const API_BASE = '/api';
 
 
-const EVALUACION_OPTIONS = [
-  { value: '', label: 'Sin evaluar' },
+const PENALIZACION_LABEL = 'Incipiente B −30 pts';
+
+/** No es un nivel, es la ausencia de nota: por eso encabeza la lista. */
+const OPCION_SIN_EVALUAR = { value: '', label: 'Sin evaluar' };
+
+/** La sanción, solo para las competencias que la admiten. */
+const OPCION_PENALIZACION = { value: String(PENALIZACION_VALOR), label: PENALIZACION_LABEL };
+
+/** Los niveles de siempre, de menos a más. */
+const NIVELES = [
   { value: '0', label: 'Incipiente B (0%)' },
   { value: '15', label: 'Incipiente A (15%)' },
   { value: '70', label: 'Básico (70%)' },
@@ -99,10 +107,18 @@ const EVALUACION_OPTIONS = [
   { value: '100', label: 'Destacado (100%)' },
 ];
 
-const PENALIZACION_LABEL = 'Incipiente B −30 pts';
+const EVALUACION_OPTIONS = [OPCION_SIN_EVALUAR, ...NIVELES];
 
-/** La sanción, solo para las competencias que la admiten. */
-const OPCION_PENALIZACION = { value: String(PENALIZACION_VALOR), label: PENALIZACION_LABEL };
+/**
+ * Con la sanción, y va PRIMERA de los niveles: −30 es el valor más bajo de
+ * todos y la lista está ordenada de menos a más, así que ponerla al final la
+ * dejaba después del 100 %, que se lee como si fuera lo más alto.
+ *
+ * Es además donde ya estaba en los otros dos sitios donde se enumeran los
+ * niveles —la rúbrica que ve el alumno y la leyenda del XLSX—, así que esto
+ * era el único que se salía.
+ */
+const EVALUACION_OPTIONS_CON_SANCION = [OPCION_SIN_EVALUAR, OPCION_PENALIZACION, ...NIVELES];
 
 const NUMBER_TO_LABEL: Record<number, string> = {
   [PENALIZACION_VALOR]: PENALIZACION_LABEL,
@@ -166,6 +182,16 @@ export default function MallaEvaluacionPage() {
   const cargando = loading || loadingCompetencias;
   const soloCompetencias = !cargando && !hayActividades && hayCompetencias;
   const soloActividades = !cargando && hayActividades && !hayCompetencias;
+
+  /**
+   * La columna de fecha ideal solo aparece si alguien la tiene puesta.
+   *
+   * Es opcional por competencia y hay materias donde no se usa en ninguna: una
+   * columna entera de guiones ocupa el ancho que necesitan las de evaluación y
+   * no dice nada. En cuanto UNA la tenga, vuelve para todas —si no, la fila con
+   * fecha no tendría dónde enseñarla—.
+   */
+  const hayFechaIdeal = competenciasAlumno.some((c) => !!c.fechaIdealEvaluacion);
 
 
   /**
@@ -1022,15 +1048,15 @@ export default function MallaEvaluacionPage() {
       },
     }),
     compColumnHelper.accessor('nivel', { header: 'Nivel' }),
-    compColumnHelper.accessor('fechaIdealEvaluacion', {
+    ...(hayFechaIdeal ? [compColumnHelper.accessor('fechaIdealEvaluacion', {
       header: 'Fecha Ideal',
       cell: (info) => {
         const val = info.getValue();
         return val || <span className={styles.zeroValue}>—</span>;
       },
-    }),
+    })] : []),
     compColumnHelper.accessor('valorPeriodo1', {
-      header: 'Eval. P1',
+      header: 'Eval. 1',
       cell: (info) => {
         const row = info.row.original;
         if (row.esCalculada) {
@@ -1047,7 +1073,7 @@ export default function MallaEvaluacionPage() {
             onChange={(e) => handleEvalChange(row.id, 'valorPeriodo1', e.target.value)}
           >
             {(row.admitePenalizacion
-              ? [...EVALUACION_OPTIONS, OPCION_PENALIZACION]
+              ? EVALUACION_OPTIONS_CON_SANCION
               : EVALUACION_OPTIONS
             ).map((opt) => (
               <option key={opt.label} value={opt.value}>
@@ -1059,7 +1085,7 @@ export default function MallaEvaluacionPage() {
       },
     }),
     compColumnHelper.accessor('retroPeriodo1', {
-      header: 'Retro P1',
+      header: 'Retro 1',
       cell: (info) => (
         <TruncatedText
           text={info.getValue()}
@@ -1070,7 +1096,7 @@ export default function MallaEvaluacionPage() {
       ),
     }),
     compColumnHelper.accessor('valorPeriodo2', {
-      header: 'Eval. P2',
+      header: 'Eval. 2',
       cell: (info) => {
         const row = info.row.original;
         if (row.esCalculada) {
@@ -1087,7 +1113,7 @@ export default function MallaEvaluacionPage() {
             onChange={(e) => handleEvalChange(row.id, 'valorPeriodo2', e.target.value)}
           >
             {(row.admitePenalizacion
-              ? [...EVALUACION_OPTIONS, OPCION_PENALIZACION]
+              ? EVALUACION_OPTIONS_CON_SANCION
               : EVALUACION_OPTIONS
             ).map((opt) => (
               <option key={opt.label} value={opt.value}>
@@ -1099,7 +1125,7 @@ export default function MallaEvaluacionPage() {
       },
     }),
     compColumnHelper.accessor('retroPeriodo2', {
-      header: 'Retro P2',
+      header: 'Retro 2',
       cell: (info) => (
         <TruncatedText
           text={info.getValue()}
@@ -1156,15 +1182,15 @@ export default function MallaEvaluacionPage() {
       },
     }),
     compColumnHelper.accessor('nivel', { header: 'Nivel' }),
-    compColumnHelper.accessor('fechaIdealEvaluacion', {
+    ...(hayFechaIdeal ? [compColumnHelper.accessor('fechaIdealEvaluacion', {
       header: 'Fecha Ideal',
       cell: (info) => {
         const val = info.getValue();
         return val || <span className={styles.zeroValue}>—</span>;
       },
-    }),
+    })] : []),
     compColumnHelper.accessor('valorPeriodo1', {
-      header: 'Eval. P1',
+      header: 'Eval. 1',
       cell: (info) => {
         const val = info.getValue();
         const label = evalLabel(val);
@@ -1172,7 +1198,7 @@ export default function MallaEvaluacionPage() {
       },
     }),
     compColumnHelper.accessor('retroPeriodo1', {
-      header: 'Retro P1',
+      header: 'Retro 1',
       cell: (info) => (
         <TruncatedText
           text={info.getValue()}
@@ -1183,7 +1209,7 @@ export default function MallaEvaluacionPage() {
       ),
     }),
     compColumnHelper.accessor('valorPeriodo2', {
-      header: 'Eval. P2',
+      header: 'Eval. 2',
       cell: (info) => {
         const val = info.getValue();
         const label = evalLabel(val);
@@ -1191,7 +1217,7 @@ export default function MallaEvaluacionPage() {
       },
     }),
     compColumnHelper.accessor('retroPeriodo2', {
-      header: 'Retro P2',
+      header: 'Retro 2',
       cell: (info) => (
         <TruncatedText
           text={info.getValue()}

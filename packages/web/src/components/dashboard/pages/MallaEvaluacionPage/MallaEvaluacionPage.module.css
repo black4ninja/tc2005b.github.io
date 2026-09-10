@@ -158,7 +158,7 @@
 .finalWeightOk {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #16a34a;
+  color: var(--estado-exito-color);
 }
 
 .finalWeightError {
@@ -362,7 +362,7 @@
 .currentGradeValue {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #15803d;
+  color: var(--estado-exito-color);
 }
 
 .currentGradeBreakdown {
@@ -411,7 +411,10 @@
   display: flex;
   gap: 12px;
   font-size: 0.75rem;
-  color: #4b5563;
+  /* `--text-secondary` y no `--text-muted`: el atenuado se queda en 2.6 de
+     contraste en claro y 3.6 en oscuro, por debajo del 4.5 de WCAG AA, y esto
+     es el desglose de la nota, que hay que poder leer. */
+  color: var(--text-secondary);
 }
 
 .currentGradeBar {
@@ -423,14 +426,14 @@
 
 .currentGradeBarFill {
   height: 100%;
-  background: #22c55e;
+  background: var(--estado-exito-color);
   border-radius: 3px;
   transition: width 0.3s ease;
 }
 
 .currentGradePeriodoScore {
   font-size: 0.8125rem;
-  color: #374151;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -442,9 +445,13 @@
 .faltanteTipo { font-weight: 600; margin-right: 4px; }
 
 /* Indicaciones callout — colapsable */
+/* Los colores van por TOKEN y no en hexadecimal.
+   Estaban escritos a mano y pensados para el tema claro —azul marino sobre
+   celeste—, así que en oscuro el texto caía casi negro sobre el fondo ámbar del
+   bloque sin leer y no había forma de leerlo. Los tokens cambian con el tema. */
 .indicacionesBlock {
   background: var(--estado-info-bg);
-  border: 1px solid #bae6fd;
+  border: 1px solid var(--estado-info-border);
   border-radius: 10px;
   padding: 4px 20px;
   margin-bottom: 16px;
@@ -452,7 +459,7 @@
 }
 
 .indicacionesUnread {
-  border-color: var(--color-asueto);
+  border-color: var(--estado-aviso-color);
   background: var(--estado-aviso-bg);
   animation: pulseIndicaciones 2s ease-in-out 3;
 }
@@ -471,19 +478,26 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #0369a1;
+  color: var(--estado-info-color);
   font-size: 0.9375rem;
+  font-weight: 600;
   text-align: left;
 }
 
 .indicacionesToggle:hover {
-  color: #0c4a6e;
+  text-decoration: underline;
+}
+
+/* Sin leer el bloque es ámbar: el título va a juego, que si no queda un
+   encabezado azul dentro de una caja naranja. */
+.indicacionesUnread .indicacionesToggle {
+  color: var(--estado-aviso-color);
 }
 
 .indicacionesBadge {
   margin-left: auto;
-  background: #f59e0b;
-  color: #fff;
+  background: var(--estado-aviso-color);
+  color: var(--dash-surface);
   font-size: 0.75rem;
   font-weight: 600;
   padding: 2px 8px;
@@ -499,9 +513,12 @@
   gap: 6px;
 }
 
+/* El texto de las indicaciones es TEXTO, no un adorno del aviso: va con el
+   tinte normal de lectura y no con el del estado. Eran catorce párrafos que el
+   alumno tiene que leerse enteros antes de evaluarse. */
 .indicacionItem {
   font-size: 0.9375rem;
-  color: #0c4a6e;
+  color: var(--text-primary);
   line-height: 1.6;
 }
 
@@ -670,6 +687,9 @@
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
+  /* Fondo propio y opaco a propósito: el aviso flota sobre cualquier cosa y
+     no debe teñirse del tema que haya debajo. Blanco sobre este gris da 12.6
+     de contraste en los dos temas. */
   background: #323232;
   color: #fff;
   padding: 10px 20px;
