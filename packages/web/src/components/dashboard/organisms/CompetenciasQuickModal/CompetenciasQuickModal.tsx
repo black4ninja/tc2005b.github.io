@@ -273,10 +273,10 @@ export default function CompetenciasQuickModal({
                   <th>Competencia</th>
                   <th>Nivel</th>
                   <th>Fecha Ideal</th>
-                  <th>Eval. P1</th>
-                  <th>Retro P1</th>
-                  <th>Eval. P2</th>
-                  <th>Retro P2</th>
+                  <th>Eval. 1</th>
+                  <th>Retro 1</th>
+                  <th>Eval. 2</th>
+                  <th>Retro 2</th>
                   <th>Evidencias</th>
                 </tr>
               </thead>
@@ -366,7 +366,7 @@ export default function CompetenciasQuickModal({
         )}
 
         <p className={styles.helpText}>
-          Haz clic en una celda de <strong>Retro P1</strong> o <strong>Retro P2</strong> para editar la retroalimentación.
+          Haz clic en una celda de <strong>Retro 1</strong> o <strong>Retro 2</strong> para editar la retroalimentación.
         </p>
       </div>
     </Modal>
