@@ -8,6 +8,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- **Un grupo sin actividades de evaluación ya no se queda atascado.** Decía «Crear
+  Mallas (26 pendientes)» y al pulsarlo devolvía un error rojo: «No hay
+  actividades de evaluación en el grupo». Pero hay materias que se evalúan solo
+  por competencias, y ahí esa parte no aplica: no hay nada que crear y no es un
+  fallo. Ahora el contador no promete un trabajo que no existe, el botón no
+  aparece, y el grupo explica —en azul, no en rojo— que su malla son las
+  competencias y su retroalimentación.
 - **La rúbrica de niveles se rompía en dos líneas.** El número de columnas estaba
   escrito a mano en cinco, así que en las competencias que admiten la sanción de
   −30 la sexta columna se caía a una segunda fila y «Destacado» quedaba solo
