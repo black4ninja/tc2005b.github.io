@@ -13,7 +13,9 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   intentos tiene, cuánto dura su entrevista— porque el endpoint ignoraba el grupo
   y devolvía todas las de la base. Ahora cada indicación cuelga de una materia,
   se escribe dentro de ella en el panel de competencias, y el alumno solo recibe
-  las de las materias de su grupo. Sin ninguna, el bloque no aparece. Las que ya
+  las de las materias cuyas COMPETENCIAS se le evalúan: un grupo puede llevar una
+  materia por su documentación sin evaluarse ni una competencia de ella, y sus
+  reglas no vienen a cuento. Sin ninguna, el bloque no aparece. Las que ya
   estaban escritas se adoptan con `scripts/asignar-indicaciones-malla.ts`.
 - **El bloque de indicaciones de la malla se leía en tema oscuro.** Sus colores
   estaban escritos a mano y pensados para el tema claro, así que el texto caía
