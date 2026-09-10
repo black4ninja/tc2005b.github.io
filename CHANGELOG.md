@@ -8,6 +8,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- **La rúbrica de niveles se rompía en dos líneas.** El número de columnas estaba
+  escrito a mano en cinco, así que en las competencias que admiten la sanción de
+  −30 la sexta columna se caía a una segunda fila y «Destacado» quedaba solo
+  debajo, tan alto como todo su texto. Ahora la fila le dice al grid cuántas
+  columnas son —cinco o seis— y si no caben se desplaza dentro de su contenedor
+  en vez de partirse: siempre en una sola línea.
 - **Las indicaciones de la malla son de cada materia, no de todo el mundo.** Un
   alumno de TC2007B leía las trece reglas de evaluación de TC2005B —cuántos
   intentos tiene, cuánto dura su entrevista— porque el endpoint ignoraba el grupo
