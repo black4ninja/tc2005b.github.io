@@ -8,6 +8,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- **Las indicaciones de la malla son de cada materia, no de todo el mundo.** Un
+  alumno de TC2007B leía las trece reglas de evaluación de TC2005B —cuántos
+  intentos tiene, cuánto dura su entrevista— porque el endpoint ignoraba el grupo
+  y devolvía todas las de la base. Ahora cada indicación cuelga de una materia,
+  se escribe dentro de ella en el panel de competencias, y el alumno solo recibe
+  las de las materias de su grupo. Sin ninguna, el bloque no aparece. Las que ya
+  estaban escritas se adoptan con `scripts/asignar-indicaciones-malla.ts`.
 - **El bloque de indicaciones de la malla se leía en tema oscuro.** Sus colores
   estaban escritos a mano y pensados para el tema claro, así que el texto caía
   casi negro sobre el fondo ámbar del bloque sin leer: 1.78 de contraste, contra
