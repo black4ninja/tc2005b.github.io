@@ -44,6 +44,33 @@ export async function evidenciasDeCita(citaId: string): Promise<EvidenciaCompete
 }
 
 /**
+ * Las de UN alumno en un grupo, con su cita desplegada.
+ *
+ * Es la consulta que pide la malla: ahí las evidencias se enseñan agrupadas por
+ * competencia y hay que poder decir si llegaron tarde, y para eso hace falta la
+ * HORA DE LA CITA, no solo la de subida. Sin el `include('cita')` el puntero
+ * llega sin datos y la comparación no se puede hacer.
+ *
+ * Trae también las sueltas —las que se quedaron sin cita al cancelar—: el
+ * alumno las entregó igual y siguen siendo suyas, solo que de esas no hay hora
+ * contra la que juzgarlas.
+ */
+export async function evidenciasDeAlumno(
+  grupoId: string,
+  alumnoId: string,
+): Promise<EvidenciaCompetencia[]> {
+  const q = new Parse.Query<EvidenciaCompetencia>('EvidenciaCompetencia');
+  q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  q.equalTo('alumno' as any, { __type: 'Pointer', className: 'AppUser', objectId: alumnoId } as any);
+  q.equalTo('exists' as any, true as any);
+  q.include('competencia');
+  q.include('cita');
+  q.ascending('createdAt');
+  q.limit(500);
+  return q.find({ useMasterKey: true });
+}
+
+/**
  * Con qué llave se agrupan para enseñarlas: la CITA si la tienen, y si no, la
  * competencia a secas —son las que quedaron sueltas al cancelar—.
  */

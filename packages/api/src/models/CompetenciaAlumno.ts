@@ -118,4 +118,39 @@ export class CompetenciaAlumno extends BaseModel {
   }
 }
 
+/**
+ * Ordena la malla como la tabla de competencias de la materia.
+ *
+ * `CompetenciaAlumno` tiene su propio campo `orden`, pero NADIE lo escribe:
+ * `crearCompetenciasAlumno` no lo pone, así que ordenar por él dejaba las filas
+ * en el orden en que Parse quisiera devolverlas —el de creación, en la
+ * práctica— y la malla salía barajada respecto del catálogo que el profesor ve
+ * en Contenidos. El orden bueno vive en `Competencia.orden`, que es el que se
+ * edita ahí y el que ya usa `competenciasDeGrupo`.
+ *
+ * Hace falta en memoria porque Parse no sabe ordenar por el campo de un
+ * puntero; por eso el `include('competencia')` no es opcional en quien llame.
+ *
+ * Empata por nombre para que el resultado sea estable: sin desempate, dos
+ * competencias con el mismo `orden` —o las dos sin él— bailan entre recargas.
+ */
+export function ordenarComoElCatalogo<T extends CompetenciaAlumno>(filas: T[]): T[] {
+  const clave = (f: T) => {
+    const comp = f.getCompetencia();
+    const orden = comp?.get('orden');
+    return {
+      // Sin `orden` van al final, no al principio: un 0 implícito las colaría
+      // por delante de la primera de verdad.
+      orden: typeof orden === 'number' ? orden : Number.POSITIVE_INFINITY,
+      nombre: (comp?.get('competencia') ?? '') as string,
+    };
+  };
+  return [...filas].sort((a, b) => {
+    const x = clave(a);
+    const y = clave(b);
+    if (x.orden !== y.orden) return x.orden - y.orden;
+    return x.nombre.localeCompare(y.nombre, 'es');
+  });
+}
+
 Parse.Object.registerSubclass('CompetenciaAlumno', CompetenciaAlumno);

@@ -101,20 +101,35 @@
   flex-shrink: 0;
 }
 
+/* Con la forma de las fichas de día de la agenda del profesor: en columna, el
+   número de la evaluación arriba en pequeño y su valor abajo en grande. Como
+   renglón —«P1: 85»— lo primero que se leía era la etiqueta, que es lo que
+   menos importa, y a 12 px el valor no se distinguía de ella. */
 .periodoChip {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 2px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
+  justify-content: center;
+  gap: 1px;
+  min-width: 3.9rem;
+  padding: 5px 10px;
+  border-radius: 10px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
   background: var(--bg-page);
-  color: var(--text-secondary);
   border: 1px solid var(--border-color);
 }
 
-.periodoChip strong {
+.periodoNum {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.periodoValor {
+  font-size: 15px;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
@@ -186,6 +201,15 @@
   background: var(--color-lab-light);
 }
 
+/* La PRIMERA evaluación, cuando la segunda cayó en otro nivel: de dónde vino.
+   En un tono más flojo que la actual porque no es la nota que cuenta hoy; con
+   las dos igual de fuertes no se sabría cuál es cuál. Va por transparencia
+   sobre el fondo de la tarjeta para que el mismo valor sirva en los dos temas:
+   un color fijo aclarado para el claro se vuelve un borrón en el oscuro. */
+.rubricColPrevia {
+  background: color-mix(in srgb, var(--color-lab) 12%, transparent);
+}
+
 .rubricHeader {
   padding: 10px 12px;
   font-size: 13px;
@@ -195,10 +219,76 @@
   color: var(--text-primary);
 }
 
+/* El texto sale del par del tema, no de un blanco fijo: en oscuro el azul del
+   relleno es claro y el blanco encima se quedaba en 2,5:1. */
 .rubricHeaderActive {
   background: var(--color-lab);
-  color: #fff;
+  color: var(--color-lab-contraste);
   border-bottom-color: var(--color-lab);
+}
+
+.rubricHeaderPrevia {
+  background: color-mix(in srgb, var(--color-lab) 26%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--color-lab) 45%, transparent);
+}
+
+/* Qué evaluación cayó aquí. El color dice «esta es la tuya»; el número dice
+   CUÁL de las dos, que es lo que no se puede deducir de un tono. */
+.rubricMarcas {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.marcaPrevia,
+.marcaActual {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Las dos son medallas con borde y no rellenas. Rellenarlas del azul de la
+   columna las dejaba por debajo del 4,5:1 que pide la WCAG —el texto encima
+   quedaba sobre un azul ya tintado por el fondo de su cabecera—, y el relleno
+   no aportaba nada: lo que distingue una marca de la otra es sobre qué columna
+   está, no de qué color es la píldora. */
+.marcaPrevia {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid color-mix(in srgb, var(--color-lab) 50%, transparent);
+}
+
+/* Esta va sobre la cabecera azul llena, así que hereda su blanco: es el mismo
+   par de colores que el nombre del nivel de al lado. Invertirla —blanco de
+   fondo, azul de letra— se caía a 2,5:1 en tema oscuro, donde el azul es claro. */
+.marcaActual {
+  background: transparent;
+  color: var(--color-lab-contraste);
+  border: 1px solid color-mix(in srgb, var(--color-lab-contraste) 70%, transparent);
+}
+
+/* El resumen del movimiento, debajo de la rúbrica. */
+.cambioNivel {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+/* Cuándo se piden las evidencias, junto a las evidencias. Sin esto, el rótulo
+   rojo de «tarde» acusa sin decir tarde respecto de qué. */
+.evidenciasPie {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 
 .rubricPercent {

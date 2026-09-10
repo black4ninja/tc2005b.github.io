@@ -58,7 +58,13 @@ export default function ListaEvidencias({
   }
   return (
     <ul className={styles.lista}>
-      {evidencias.map((e) => (
+      {evidencias.map((e) => {
+        // La hora de SU cita gana a la del contexto: donde se enseñan varias
+        // entrevistas juntas —la malla, por competencia— no hay una sola hora
+        // contra la que medirlas, y con la del contexto se marcarían tarde unas
+        // que llegaron a tiempo a la suya.
+        const suCita = e.citaInicio ?? citaInicio;
+        return (
         <li key={e.id} className={`${styles.fila} ${enVuelo === e.id ? styles.filaEnVuelo : ''}`}>
           <Icon name="attachment" size="sm" />
           <a
@@ -79,10 +85,10 @@ export default function ListaEvidencias({
           <span className={styles.subida} title={`Subida el ${fechaYHoraCorta(e.createdAt)}`}>
             {fechaYHoraCorta(e.createdAt)}
           </span>
-          {citaInicio && !evidenciaATiempo(e.createdAt, citaInicio) && (
+          {suCita && !evidenciaATiempo(e.createdAt, suCita) && (
             <span
               className={styles.tarde}
-              title={`Se pide con ${HORAS_ANTELACION_EVIDENCIA} horas de antelación y esta llegó con ${resumenAntelacion(e.createdAt, citaInicio)}`}
+              title={`Se pide con ${HORAS_ANTELACION_EVIDENCIA} horas de antelación y esta llegó con ${resumenAntelacion(e.createdAt, suCita)}`}
             >
               <Icon name="schedule" size="sm" />
               tarde
@@ -101,7 +107,8 @@ export default function ListaEvidencias({
             </button>
           )}
         </li>
-      ))}
+        );
+      })}
     </ul>
   );
 }

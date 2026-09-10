@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useParams } from 'react-router';
+import { useParams, Link } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
@@ -288,18 +288,30 @@ export default function AgendaEntrevistasAlumnoPage() {
       {/* Debajo de las reglas: es lo que hay que leerse ANTES de agendar, y ahí
           es donde se está mirando qué hace falta para venir. Sin manual puesto
           no se enseña nada: un enlace vacío es peor que ninguno. */}
-      {agenda.manualUrl && (
-        <a
-          className={styles.manual}
-          href={agenda.manualUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Icon name="menu_book" size="sm" />
-          Manual de competencias
-          <Icon name="open_in_new" size="sm" />
-        </a>
-      )}
+      <div className={styles.atajos}>
+        {agenda.manualUrl && (
+          <a
+            className={styles.manual}
+            href={agenda.manualUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Icon name="menu_book" size="sm" />
+            Manual de competencias
+            <Icon name="open_in_new" size="sm" />
+          </a>
+        )}
+        {/* El atajo a la rúbrica: aquí se decide qué competencia se agenda, y
+            eso se decide mirando en qué nivel se está. Solo si el grupo enseña
+            esa pantalla —el mismo interruptor que la pone en el menú—: ofrecer
+            una puerta que el sidebar no tiene lleva a una pantalla vacía. */}
+        {agenda.hayCompetencias && grupoId && (
+          <Link className={styles.atajoSecundario} to={`/alumno/grupos/${grupoId}/competencias`}>
+            <Icon name="emoji_events" size="sm" />
+            Ver mis competencias
+          </Link>
+        )}
+      </div>
 
       {error && <div className={styles.error} onClick={() => setError('')}>{error}</div>}
       {aviso && <div className={styles.aviso} onClick={() => setAviso('')}>{aviso}</div>}

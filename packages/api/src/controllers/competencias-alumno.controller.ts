@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import Parse from 'parse/node';
-import { CompetenciaAlumno } from '../models/CompetenciaAlumno.js';
+import { CompetenciaAlumno, ordenarComoElCatalogo } from '../models/CompetenciaAlumno.js';
 import { Competencia } from '../models/Competencia.js';
 import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
@@ -156,9 +156,9 @@ export async function getCompetenciasAlumno(req: Request, res: Response): Promis
     query.equalTo('alumno' as any, alumnoPointer as any);
     query.include('competencia' as any);
     query.include('competencia.dependencias' as any);
-    query.ascending('orden');
     query.limit(1000);
-    const competencias = await query.find({ useMasterKey: true });
+    // Igual que en la pantalla del alumno: manda `Competencia.orden`.
+    const competencias = ordenarComoElCatalogo(await query.find({ useMasterKey: true }));
 
     res.json({
       status: 'ok',

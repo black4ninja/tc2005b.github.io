@@ -292,12 +292,21 @@
 
 /* El manual: enlace y no botón, porque lleva fuera. Con su icono de «se abre en
    otra pestaña», que si no parece que se pierde lo que se estaba agendando. */
+/* Los dos atajos en una fila: se leen antes de agendar y son la misma clase de
+   cosa —adónde ir a mirar—, así que uno debajo del otro parecían pasos. */
+.atajos {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+}
+
 .manual {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   align-self: flex-start;
-  margin-bottom: var(--space-md);
   padding: 8px 14px;
   border: 1px solid var(--sidebar-active-color);
   border-radius: var(--border-radius);
@@ -309,3 +318,21 @@
 }
 
 .manual:hover { text-decoration: underline; }
+
+/* El de competencias, más discreto que el manual: el manual es lo que hay que
+   haber leído para venir; esto es una consulta, no un requisito. */
+.atajoSecundario {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.atajoSecundario:hover { border-color: var(--sidebar-active-color); }
