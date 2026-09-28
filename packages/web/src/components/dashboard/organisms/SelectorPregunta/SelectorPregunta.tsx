@@ -29,6 +29,11 @@ interface SelectorPreguntaProps {
    */
   permiteAgregar?: boolean;
   /**
+   * De las asignadas, las que ya no se pueden quitar: la entrevista de su
+   * intento ya pasó, así que ya se le hizo esa pregunta al alumno.
+   */
+  congeladas?: Set<string>;
+  /**
    * Hay un guardado en vuelo: la lista no admite clics hasta que vuelva. Dos
    * altas solapadas calculan su hueco con un estado que el servidor todavía no
    * ha visto, y lo que queda guardado no es lo que se ve.
@@ -60,7 +65,8 @@ interface SelectorPreguntaProps {
  */
 export default function SelectorPregunta({
   preguntas, titulo, subtitulo, competencias = [], competenciaInicial = null,
-  asignadas = new Map(), permiteAgregar = true, guardando = false, onAlternar, onCerrar,
+  asignadas = new Map(), permiteAgregar = true, congeladas = new Set(), guardando = false, onAlternar,
+  onCerrar,
 }: SelectorPreguntaProps) {
   const [texto, setTexto] = useState('');
   const [competencia, setCompetencia] = useState<string | null>(competenciaInicial);
@@ -100,7 +106,8 @@ export default function SelectorPregunta({
       e.preventDefault();
       const elegida = filtradas[indice];
       if (guardando) return;
-      if (elegida && (asignadas.has(elegida.id) || permiteAgregar)) onAlternar(elegida);
+      if (!elegida || congeladas.has(elegida.id)) return;
+      if (asignadas.has(elegida.id) || permiteAgregar) onAlternar(elegida);
     }
   }
 
@@ -157,7 +164,8 @@ export default function SelectorPregunta({
             {filtradas.map((p, i) => {
               const intento = asignadas.get(p.id);
               const elegida = intento !== undefined;
-              const apagada = guardando || (!elegida && !permiteAgregar);
+              const congelada = elegida && congeladas.has(p.id);
+              const apagada = guardando || congelada || (!elegida && !permiteAgregar);
               return (
                 <li key={p.id}>
                   <button
@@ -168,11 +176,13 @@ export default function SelectorPregunta({
                     onClick={() => onAlternar(p)}
                     title={guardando
                       ? 'Guardando el cambio anterior…'
-                      : elegida
-                        ? 'Pulsa para quitársela'
-                        : apagada
-                          ? 'Ya tiene todos sus intentos: quita una para poner esta'
-                          : 'Pulsa para asignársela'}
+                      : congelada
+                        ? 'La entrevista de ese intento ya pasó: no se puede quitar'
+                        : elegida
+                          ? 'Pulsa para quitársela'
+                          : apagada
+                            ? 'Ya tiene todos sus intentos: quita una para poner esta'
+                            : 'Pulsa para asignársela'}
                   >
                     <span className={styles.opcionMeta}>
                       {/* La marca de elegida va primero: es lo que contesta a
@@ -180,7 +190,7 @@ export default function SelectorPregunta({
                       {/* Con dos intentos por competencia, «asignada» a secas
                           no dice cuál de las dos es: el número —y su color— es
                           lo que se viene a mirar. */}
-                      {elegida && <TagIntento intento={intento} icono="check_circle" />}
+                      {elegida && <TagIntento intento={intento} icono={congelada ? 'lock' : 'check_circle'} />}
                       {p.competencia && (
                         <span className={styles.competencia}>{p.competencia.competencia}</span>
                       )}

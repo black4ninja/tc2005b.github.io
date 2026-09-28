@@ -228,6 +228,87 @@ export function numerarIntentos<T extends { creada: Date; id?: string }>(citas: 
   return new Map(orden.map((c, i) => [c.id ?? String(i), i + 1]));
 }
 
+/** Lo mínimo de una cita para numerarla: quién, de qué y cuándo la apartó. */
+export interface CitaParaNumerar {
+  id: string;
+  alumnoId: string;
+  competenciaId: string;
+  creada: Date;
+}
+
+/**
+ * `numerarIntentos` aplicado a todas las citas de un grupo: el intento de cada
+ * cita, por alumno y competencia. Es el MISMO número con el que la agenda elige
+ * la pregunta, así que quien quiera saber qué hueco ocupa una cita tiene que
+ * sacarlo de aquí y no recontarlo por su cuenta.
+ */
+export function intentosPorCita(citas: CitaParaNumerar[]): Map<string, number> {
+  const porAlumnoYCompetencia = new Map<string, CitaParaNumerar[]>();
+  for (const c of citas) {
+    const clave = `${c.alumnoId}::${c.competenciaId}`;
+    porAlumnoYCompetencia.set(clave, [...(porAlumnoYCompetencia.get(clave) ?? []), c]);
+  }
+  const numeros = new Map<string, number>();
+  for (const grupo of porAlumnoYCompetencia.values()) {
+    for (const [id, intento] of numerarIntentos(grupo)) numeros.set(id, intento);
+  }
+  return numeros;
+}
+
+/**
+ * Si la entrevista de esa cita ya se hizo: su hueco TERMINÓ.
+ *
+ * Es la misma frontera que usa el panel para dejar de tapar la pregunta
+ * (`intentoTerminado` en el cliente): mientras el hueco corre la entrevista
+ * está en marcha y todavía se puede corregir; cerrado, es historia.
+ */
+export function entrevistaTerminada(inicio: Date, duracionSegundos: number, ahora: Date): boolean {
+  const fin = inicio.getTime() + Math.max(0, duracionSegundos) * 1000;
+  return Number.isFinite(fin) && ahora.getTime() >= fin;
+}
+
+/**
+ * Los huecos `alumnoId::competenciaId::intento` cuya entrevista ya pasó.
+ *
+ * Con esto se CONGELA la pregunta de ese intento: ya se le hizo al alumno, y
+ * cambiarla —o quitarla, que destapa la anterior— reescribiría lo que se le
+ * preguntó. Se numera con TODAS las citas vivas y no solo con las pasadas: el
+ * intento de una cita depende de las demás.
+ */
+export function huecosConEntrevistaPasada(
+  citas: (CitaParaNumerar & { inicio: Date; duracionSegundos: number })[],
+  ahora: Date,
+): Set<string> {
+  const intentos = intentosPorCita(citas);
+  const cerrados = new Set<string>();
+  for (const c of citas) {
+    if (!entrevistaTerminada(c.inicio, c.duracionSegundos, ahora)) continue;
+    cerrados.add(`${c.alumnoId}::${c.competenciaId}::${intentos.get(c.id) ?? 1}`);
+  }
+  return cerrados;
+}
+
+/**
+ * Si cancelar esa cita le cambiaría el intento a una entrevista que YA pasó.
+ *
+ * Al cancelar, las citas que se apartaron después bajan un número, y con él
+ * cambian de pregunta. Si una de ellas ya se hizo, se le estaría reescribiendo
+ * la pregunta que se le planteó. `citas` son las vivas del mismo alumno y
+ * competencia, incluida la que se quiere cancelar.
+ */
+export function cancelarRenumeraUnaPasada(
+  citaId: string,
+  citas: (CitaParaNumerar & { inicio: Date; duracionSegundos: number })[],
+  ahora: Date,
+): boolean {
+  const intentos = intentosPorCita(citas);
+  const suyo = intentos.get(citaId);
+  if (suyo === undefined) return false;
+  return citas.some((c) => c.id !== citaId
+    && (intentos.get(c.id) ?? 0) > suyo
+    && entrevistaTerminada(c.inicio, c.duracionSegundos, ahora));
+}
+
 /* ------------------------------------------------------------------ */
 /*  Abrir días en lote                                                 */
 /* ------------------------------------------------------------------ */

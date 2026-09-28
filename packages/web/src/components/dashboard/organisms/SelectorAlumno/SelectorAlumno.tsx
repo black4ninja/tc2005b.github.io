@@ -15,6 +15,11 @@ interface SelectorAlumnoProps {
   sinHuecos?: Set<string>;
   /** Cuántos intentos lleva cada alumno en la competencia de la pregunta. */
   llenosPorAlumno?: Map<string, number>;
+  /**
+   * De los que ya la tienen, a quiénes ya no se les puede quitar: la entrevista
+   * de ese intento ya pasó y la pregunta ya se les hizo.
+   */
+  congelados?: Set<string>;
   maxIntentos?: number;
   /**
    * Hay un guardado en vuelo: la lista no admite clics hasta que vuelva. Dos
@@ -45,7 +50,7 @@ interface SelectorAlumnoProps {
  */
 export default function SelectorAlumno({
   alumnos, titulo, subtitulo, seleccionados = new Set(), sinHuecos = new Set(),
-  llenosPorAlumno, maxIntentos = 2, guardando = false, onAlternar, onCerrar,
+  llenosPorAlumno, maxIntentos = 2, congelados = new Set(), guardando = false, onAlternar, onCerrar,
 }: SelectorAlumnoProps) {
   const [texto, setTexto] = useState('');
   const [soloLibres, setSoloLibres] = useState(false);
@@ -84,7 +89,8 @@ export default function SelectorAlumno({
       e.preventDefault();
       if (guardando) return;
       const elegido = filtrados[indice];
-      if (elegido && (seleccionados.has(elegido.id) || !sinHuecos.has(elegido.id))) {
+      if (elegido && !congelados.has(elegido.id)
+        && (seleccionados.has(elegido.id) || !sinHuecos.has(elegido.id))) {
         onAlternar(elegido);
       }
     }
@@ -122,7 +128,8 @@ export default function SelectorAlumno({
             {filtrados.map((a, i) => {
               const elegido = seleccionados.has(a.id);
               const lleno = sinHuecos.has(a.id);
-              const apagada = guardando || (!elegido && lleno);
+              const congelado = elegido && congelados.has(a.id);
+              const apagada = guardando || congelado || (!elegido && lleno);
               const llevados = llenosPorAlumno?.get(a.id);
               return (
                 <li key={a.id}>
@@ -134,16 +141,18 @@ export default function SelectorAlumno({
                     onClick={() => onAlternar(a)}
                     title={guardando
                       ? 'Guardando el cambio anterior…'
-                      : elegido
-                        ? 'Pulsa para quitársela'
-                        : lleno
-                          ? 'Ya tiene todos sus intentos en esta competencia'
-                          : 'Pulsa para asignársela'}
+                      : congelado
+                        ? 'Su entrevista con esta pregunta ya pasó: no se le puede quitar'
+                        : elegido
+                          ? 'Pulsa para quitársela'
+                          : lleno
+                            ? 'Ya tiene todos sus intentos en esta competencia'
+                            : 'Pulsa para asignársela'}
                   >
                     {/* La marca va primero: es lo que contesta a «¿entró o no?»
                         sin tener que cerrar y volver a mirar. */}
                     <span className={`${styles.marca} ${elegido ? styles.marcaOn : ''}`}>
-                      <Icon name={elegido ? 'check_circle' : 'add_circle'} size="sm" />
+                      <Icon name={congelado ? 'lock' : elegido ? 'check_circle' : 'add_circle'} size="sm" />
                     </span>
                     <span className={styles.nombre}>{a.name}</span>
                     <span className={styles.matricula}>{a.matricula}</span>

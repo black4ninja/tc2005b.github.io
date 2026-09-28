@@ -32,6 +32,7 @@ import {
 } from '../../../../utils/agenda';
 import type { Agenda, CitaProfesor, DiaProfesor, Evidencia } from '../../../../types/agenda';
 import styles from './PreguntasGrupoPage.module.css';
+import '../../../../styles/contenido-render.css';
 
 const API_BASE = '/api';
 const SIN_COMPETENCIA = 'sin-competencia';
@@ -212,6 +213,13 @@ export default function PreguntasGrupoPage() {
    * el enunciado cabe entero, que es lo que hace falta para leer la pregunta.
    */
   const [notasVisibles, setNotasVisibles] = useState(true);
+  /**
+   * El enunciado en el mando. Abierto por defecto —es lo que el profesor
+   * necesita leer mientras el alumno contesta—, pero plegable: a veces el
+   * portátil también se ve desde la clase y no conviene adelantar la pregunta
+   * antes de pulsar «Iniciar».
+   */
+  const [preguntaEnMando, setPreguntaEnMando] = useState(true);
   /** El manual de competencias del grupo, mientras se edita. */
   const [editandoManual, setEditandoManual] = useState(false);
   const [manualBorrador, setManualBorrador] = useState('');
@@ -532,7 +540,12 @@ export default function PreguntasGrupoPage() {
       const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/citas/${citaId}`, {
         method: 'DELETE', headers,
       });
-      if (!res.ok) throw new Error('No se pudo cancelar la cita');
+      if (!res.ok) {
+        // El servidor dice POR QUÉ: una entrevista que ya pasó, o una que
+        // renumeraría a otra ya hecha, no se cancela.
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message || 'No se pudo cancelar la cita');
+      }
       await cargarAgenda();
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'No se pudo cancelar la cita'));
@@ -796,6 +809,28 @@ export default function PreguntasGrupoPage() {
     return mapa;
   }, [agenda]);
 
+  /** La hora del SERVIDOR: es la que decide si una entrevista ya pasó. */
+  const relojServidor = new Date(ahora + desfaseRef.current);
+
+  /**
+   * Si la pregunta de esa asignación está CONGELADA: la entrevista de su
+   * intento ya pasó, así que ya se le hizo al alumno y cambiarla —o quitarla,
+   * que destapa la anterior— reescribiría lo que se le preguntó. Espeja la
+   * regla del servidor, que es quien decide; aquí solo apaga los botones.
+   * La nota y el «ya preguntada» siguen abiertos: son apuntes, no la pregunta.
+   */
+  function congelada(a: PreguntaAsignacion | null | undefined): boolean {
+    if (!a || a.pendiente || !a.hueco) return false;
+    return intentoTerminado(porHueco.get(`${a.alumnoId}::${a.hueco}`), relojServidor);
+  }
+
+  /** Si el hueco de la agenda que empieza en `inicio` ya terminó. */
+  function huecoPasado(inicio: string, duracionSegundos: number): boolean {
+    return intentoTerminado({ inicio, duracionSegundos }, relojServidor);
+  }
+
+  const TITULO_CONGELADA = 'La entrevista de este intento ya pasó: su pregunta ya no se puede cambiar';
+
   /**
    * Los bloques agrupados por FECHA.
    *
@@ -863,12 +898,18 @@ export default function PreguntasGrupoPage() {
       if (asignandoCita) return;
       if (destino.startsWith(ZONA_DIA)) {
         const otro = (agenda?.dias ?? []).find((d) => d.id === destino.slice(ZONA_DIA.length));
-        const libre = otro?.huecos.find((h) => !h.cita);
+        // El primer hueco libre que no haya pasado: a uno pasado se le daría
+        // por hecha una entrevista que no tuvo.
+        const libre = otro?.huecos.find((h) => !h.cita && !huecoPasado(h.inicio, otro.duracionSegundos));
         if (!otro || !libre) return;
         void moverCita(cita.id, otro.id, libre.inicio);
         return;
       }
       if (!dia || destino === cita.inicio) return;
+      if (huecoPasado(destino, dia.duracionSegundos)) {
+        setAviso('Ese hueco ya pasó: mueve la cita a una hora que todavía no haya terminado.');
+        return;
+      }
       void moverCita(cita.id, dia.id, destino);
     },
     contenedor: cuerpoAgenda,
@@ -1484,6 +1525,33 @@ export default function PreguntasGrupoPage() {
               </button>
             </div>
 
+            {/* La pregunta ENTERA, la misma que pinta la pantalla proyectada: sale
+                del mismo `textoHtml` de la proyección y no del banco, así que es
+                exactamente lo que el alumno está leyendo. Sin ella el profesor
+                tenía que mirar la otra pantalla —o recordarla— para seguir la
+                respuesta. */}
+            {proyeccion.textoHtml && (
+              <div className={styles.mandoPregunta}>
+                <button
+                  type="button"
+                  className={styles.mandoPreguntaToggle}
+                  onClick={() => setPreguntaEnMando((v) => !v)}
+                  aria-expanded={preguntaEnMando}
+                  title={preguntaEnMando ? 'Plegar la pregunta' : 'Ver la pregunta completa'}
+                >
+                  <Icon name="quiz" size="sm" />
+                  {enPantalla.visible ? 'Pregunta en pantalla' : 'Pregunta que se proyectará'}
+                  <Icon name={preguntaEnMando ? 'expand_less' : 'expand_more'} size="sm" />
+                </button>
+                {preguntaEnMando && (
+                  <div
+                    className={`${styles.mandoPreguntaTexto} contenido-render`}
+                    dangerouslySetInnerHTML={{ __html: proyeccion.textoHtml }}
+                  />
+                )}
+              </div>
+            )}
+
             {/* La nota se escribe MIENTRAS se pregunta, no después: es el momento
                 en que uno se acuerda de lo que quería anotar. Va en su propia
                 línea porque es un campo, no un botón más de la fila. */}
@@ -2016,16 +2084,23 @@ export default function PreguntasGrupoPage() {
                     const problema = problemaDeEvidencias(
                       cita!.evidencias, inicio, new Date(ahora + desfaseRef.current),
                     );
+                    // Una entrevista que ya se hizo no se mueve ni se cancela:
+                    // el intento sale del orden de las citas, y tocarla le
+                    // cambiaría la pregunta a esta o a su otra cita.
+                    const pasada = huecoPasado(inicio, dia.duracionSegundos);
+                    const preguntaCongelada = pasada && !!asignacion && !asignacion.pendiente;
                     return (
                       <tr
                         key={inicio}
-                        onPointerDown={asignandoCita ? undefined : iniciar(cita!)}
+                        onPointerDown={asignandoCita || pasada ? undefined : iniciar(cita!)}
                         className={[
                           styles.filaCita,
                           enPantalla ? styles.filaProyectada : '',
                           arrastrando?.id === cita!.id || viajando ? styles.filaAtenuada : '',
                         ].filter(Boolean).join(' ')}
-                        title="Arrástralo para cambiarlo de hora"
+                        title={pasada
+                          ? 'Esta entrevista ya pasó: no se puede cambiar de hora'
+                          : 'Arrástralo para cambiarlo de hora'}
                       >
                         <td className={styles.colCorta}>
                           {/* La hora en rojo es el aviso de que hay algo que
@@ -2079,14 +2154,17 @@ export default function PreguntasGrupoPage() {
                           {alumno && cita!.competencia ? (
                             <button
                               className={`${styles.celdaPreguntaCita} ${asignacion?.pendiente ? styles.pendiente : ''}`}
+                              disabled={preguntaCongelada}
                               onClick={() => setEligiendoPara({
                                 alumnoId: alumno.id,
                                 competenciaId: cita!.competencia!.id,
                                 intentoFijo: cita!.intento,
                               })}
-                              title={asignacion?.pregunta
-                                ? `Cambiar la pregunta de su ${cita!.intento}.º intento`
-                                : `Elegir la pregunta de su ${cita!.intento}.º intento`}
+                              title={preguntaCongelada
+                                ? TITULO_CONGELADA
+                                : asignacion?.pregunta
+                                  ? `Cambiar la pregunta de su ${cita!.intento}.º intento`
+                                  : `Elegir la pregunta de su ${cita!.intento}.º intento`}
                             >
                               {asignacion?.pregunta ? (
                                 <>
@@ -2153,8 +2231,11 @@ export default function PreguntasGrupoPage() {
                           </button>
                           <button
                             className={styles.iconBtn}
+                            disabled={pasada}
                             onClick={() => cancelarCita(cita!.id)}
-                            title="Cancelar esta cita (no llegó, se cambió de día…)"
+                            title={pasada
+                              ? 'Esta entrevista ya pasó: no se puede cancelar'
+                              : 'Cancelar esta cita (no llegó, se cambió de día…)'}
                           >
                             <Icon name="close" size="sm" />
                           </button>
@@ -2248,6 +2329,7 @@ export default function PreguntasGrupoPage() {
                       <td>
                         <button
                           className={`${styles.celdaPregunta} ${unica ? '' : styles.celdaVacia} ${unica?.pendiente ? styles.pendiente : ''}`}
+                          disabled={congelada(unica)}
                           onClick={() => setEligiendoPara({
                             alumnoId: alumno.id,
                             competenciaId: competenciaActiva,
@@ -2255,7 +2337,9 @@ export default function PreguntasGrupoPage() {
                             // profesor arriba: lo que se elija va ahí.
                             intentoFijo: intentoActivo,
                           })}
-                          title={unica ? 'Cambiar la pregunta' : 'Elegir pregunta'}
+                          title={congelada(unica)
+                            ? TITULO_CONGELADA
+                            : unica ? 'Cambiar la pregunta' : 'Elegir pregunta'}
                         >
                           {unica?.pregunta ? (
                             <>
@@ -2370,9 +2454,11 @@ export default function PreguntasGrupoPage() {
                           </button>
                           <button
                             className={styles.iconBtn}
-                            disabled={!unica || unica.pendiente}
+                            disabled={!unica || unica.pendiente || congelada(unica)}
                             onClick={() => unica && quitar(unica)}
-                            title="Quitar la asignación y devolver la pregunta al banco"
+                            title={congelada(unica)
+                              ? TITULO_CONGELADA
+                              : 'Quitar la asignación y devolver la pregunta al banco'}
                           >
                             <Icon name="close" size="sm" />
                           </button>
@@ -2529,6 +2615,9 @@ export default function PreguntasGrupoPage() {
         // al alumno una pregunta que nadie señaló.
         const sustituye = eligiendoPara.intentoFijo !== null
           && !!asignacionDe(alumno, competenciaId, eligiendoPara.intentoFijo);
+        // El hueco de destino ya tuvo su entrevista: su pregunta no se sustituye.
+        const destinoCongelado = eligiendoPara.intentoFijo !== null
+          && congelada(asignacionDe(alumno, competenciaId, eligiendoPara.intentoFijo));
         const nombreCompetencia = competencias.find((c) => c.id === competenciaId)?.nombre ?? '';
         return (
           <SelectorPregunta
@@ -2536,7 +2625,9 @@ export default function PreguntasGrupoPage() {
             competencias={competencias}
             competenciaInicial={competenciaId}
             titulo={`Preguntas de ${alumno.name}`}
-            subtitulo={sustituye
+            subtitulo={destinoCongelado
+              ? `${nombreCompetencia} · la entrevista de su ${destino}.º intento ya pasó: su pregunta ya no se cambia.`
+              : sustituye
               ? `${nombreCompetencia} · lo que elijas sustituye la pregunta de su ${destino}.º intento.`
               : suyas.length >= MAX_INTENTOS
                 ? `${nombreCompetencia} · ya tiene sus ${MAX_INTENTOS} intentos. Quita una para poner otra.`
@@ -2544,7 +2635,10 @@ export default function PreguntasGrupoPage() {
             asignadas={new Map(suyas
               .filter((a) => a.pregunta?.id)
               .map((a) => [a.pregunta!.id, a.intento]))}
-            permiteAgregar={sustituye || suyas.length < MAX_INTENTOS}
+            permiteAgregar={!destinoCongelado && (sustituye || suyas.length < MAX_INTENTOS)}
+            congeladas={new Set(suyas
+              .filter((a) => a.pregunta?.id && congelada(a))
+              .map((a) => a.pregunta!.id))}
             guardando={guardando > 0}
             onAlternar={(p) => {
               // Pulsar una que ya tiene la QUITA; pulsar otra la mete en el
@@ -2552,7 +2646,7 @@ export default function PreguntasGrupoPage() {
               const yaLaTiene = suyas.find((a) => a.pregunta?.id === p.id);
               // Una que todavía se está guardando no tiene id real: quitarla
               // daría un 404. Se ignora el clic hasta que confirme.
-              if (yaLaTiene?.pendiente) return;
+              if (yaLaTiene?.pendiente || congelada(yaLaTiene) || (!yaLaTiene && destinoCongelado)) return;
               if (yaLaTiene) quitar(yaLaTiene);
               else asignar([{ alumnoId: alumno.id, preguntaId: p.id, intento: destino }]);
             }}
@@ -2582,12 +2676,17 @@ export default function PreguntasGrupoPage() {
             )}
             llenosPorAlumno={new Map(alumnos.map((a) => [a.id, llenosEn(a, competenciaId)]))}
             maxIntentos={MAX_INTENTOS}
+            congelados={new Set(
+              alumnos
+                .filter((a) => congelada(a.asignaciones.find((x) => x.pregunta?.id === eligiendoAlumno.id)))
+                .map((a) => a.id),
+            )}
             guardando={guardando > 0}
             onAlternar={(alumno) => {
               // Pulsar a quien ya la tiene se la QUITA; a quien no, se la pone en
               // su primer intento libre de esa competencia.
               const ya = alumno.asignaciones.find((x) => x.pregunta?.id === eligiendoAlumno.id);
-              if (ya?.pendiente) return;
+              if (ya?.pendiente || congelada(ya)) return;
               if (ya) quitar(ya);
               else {
                 asignar([{
