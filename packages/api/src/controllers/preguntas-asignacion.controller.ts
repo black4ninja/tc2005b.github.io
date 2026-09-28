@@ -5,6 +5,9 @@ import { AppUser } from '../models/AppUser.js';
 import { Coleccion } from '../models/Coleccion.js';
 import { Pregunta } from '../models/Pregunta.js';
 import { PreguntaAsignacion } from '../models/PreguntaAsignacion.js';
+import type { CitaEntrevista } from '../models/CitaEntrevista.js';
+import type { DiaEntrevistas } from '../models/DiaEntrevistas.js';
+import { huecosConEntrevistaPasada } from '../services/agenda-entrevistas.service.js';
 import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
 import { coleccionesDeGrupo } from '../services/grupo-colecciones.service.js';
 import { normalizarDuracion } from '../services/preguntas.service.js';
@@ -117,6 +120,38 @@ async function asignacionesDelGrupo(grupoId: string): Promise<PreguntaAsignacion
   q.limit(10000);
   return q.find({ useMasterKey: true });
 }
+
+/**
+ * Los huecos `alumnoId::competenciaId::intento` cuya entrevista ya se hizo.
+ *
+ * La pregunta de esos huecos queda CONGELADA: ni se sustituye ni se quita, que
+ * destaparía la anterior. Ya se le hizo al alumno, y el historial tiene que
+ * decir lo que se le preguntó de verdad. La nota y el «ya preguntada» siguen
+ * abiertos: son apuntes del profesor sobre esa entrevista, no la pregunta.
+ */
+async function huecosCongelados(grupoId: string): Promise<Set<string>> {
+  const q = new Parse.Query<CitaEntrevista>('CitaEntrevista');
+  q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  q.equalTo('exists' as any, true as any);
+  // La duración del hueco es la del DÍA, congelada al abrirlo.
+  q.include('dia' as any);
+  q.limit(2000);
+  const citas = await q.find({ useMasterKey: true });
+  return huecosConEntrevistaPasada(
+    citas.map((c) => ({
+      id: c.id!,
+      alumnoId: c.getAlumno()?.id ?? '',
+      competenciaId: c.getCompetencia()?.id ?? SIN_COMPETENCIA,
+      creada: c.createdAt ?? new Date(0),
+      inicio: c.getInicio(),
+      duracionSegundos: (c.getDia() as DiaEntrevistas | undefined)?.getDuracionSegundos() ?? 0,
+    })),
+    new Date(),
+  );
+}
+
+const MENSAJE_CONGELADA =
+  'La entrevista de ese intento ya pasó: su pregunta no se puede cambiar ni quitar';
 
 /**
  * GET /admin/grupos/:grupoId/preguntas
@@ -367,6 +402,19 @@ export async function crearAsignaciones(req: Request, res: Response): Promise<vo
       if (!vigentePorHueco.has(clave)) vigentePorHueco.set(clave, a);
     }
 
+    // Un hueco con entrevista pasada Y pregunta puesta no admite otra: sería
+    // reescribir lo que se le preguntó. Si la entrevista pasó sin pregunta, sí
+    // se deja ponerla —es apuntar la que se hizo—, y a partir de ahí se congela.
+    const congelados = await huecosCongelados(grupoId);
+    const bloqueada = normalizadas.find((n) => {
+      const hueco = `${n.alumnoId}::${huecoPara(porId.get(n.preguntaId), n.intento)}`;
+      return congelados.has(hueco) && vigentePorHueco.has(hueco);
+    });
+    if (bloqueada) {
+      res.status(409).json({ status: 'error', message: MENSAJE_CONGELADA });
+      return;
+    }
+
     const aRetirar: PreguntaAsignacion[] = [];
     const autor = req.appUser as AppUser | undefined;
     const nuevas = normalizadas.map((n) => {
@@ -447,6 +495,11 @@ export async function borrarAsignacion(req: Request, res: Response): Promise<voi
     const asignacion = await q.get(id, { useMasterKey: true }).catch(() => null);
     if (!asignacion || asignacion.getGrupo()?.id !== grupoId) {
       res.status(404).json({ status: 'error', message: 'Asignación no encontrada' });
+      return;
+    }
+    const congelados = await huecosCongelados(grupoId);
+    if (congelados.has(`${asignacion.getAlumno()?.id}::${asignacion.getHueco()}`)) {
+      res.status(409).json({ status: 'error', message: MENSAJE_CONGELADA });
       return;
     }
     asignacion.softDelete();

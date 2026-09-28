@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   esDiaHabil, sumarHorasHabiles, puedeAgendar, puedeCancelar, huecosDelDia, huecoAbierto,
-  numerarIntentos, planificarBloques, puedeSerOtroIntento,
+  numerarIntentos, planificarBloques, puedeSerOtroIntento, entrevistaTerminada,
+  huecosConEntrevistaPasada, intentosPorCita, cancelarRenumeraUnaPasada,
 } from '../src/services/agenda-entrevistas.service.js';
 
 /**
@@ -351,5 +352,91 @@ describe('la caché de días hábiles no miente', () => {
     // desalineara algo, aquí saldrían dos umbrales distintos.
     const desde = new Date('2026-09-04T22:00:00Z');
     expect(sumarHorasHabiles(desde).getTime()).toBe(sumarHorasHabiles(desde).getTime());
+  });
+});
+
+describe('entrevistaTerminada', () => {
+  const inicio = qro('2026-09-02T10:00:00');
+
+  it('antes de empezar y mientras corre el hueco, no', () => {
+    expect(entrevistaTerminada(inicio, 600, qro('2026-09-02T09:59:00'))).toBe(false);
+    expect(entrevistaTerminada(inicio, 600, qro('2026-09-02T10:05:00'))).toBe(false);
+  });
+
+  it('en cuanto se cierra el hueco, sí', () => {
+    expect(entrevistaTerminada(inicio, 600, qro('2026-09-02T10:10:00'))).toBe(true);
+    expect(entrevistaTerminada(inicio, 600, qro('2026-09-03T08:00:00'))).toBe(true);
+  });
+});
+
+describe('intentosPorCita', () => {
+  it('numera por alumno y competencia, en orden de reserva', () => {
+    const n = intentosPorCita([
+      { id: 'b', alumnoId: 'ana', competenciaId: 'c1', creada: new Date(2000) },
+      { id: 'a', alumnoId: 'ana', competenciaId: 'c1', creada: new Date(1000) },
+      { id: 'x', alumnoId: 'ana', competenciaId: 'c2', creada: new Date(3000) },
+      { id: 'y', alumnoId: 'beto', competenciaId: 'c1', creada: new Date(500) },
+    ]);
+    expect(n.get('a')).toBe(1);
+    expect(n.get('b')).toBe(2);
+    expect(n.get('x')).toBe(1);
+    expect(n.get('y')).toBe(1);
+  });
+});
+
+describe('huecosConEntrevistaPasada', () => {
+  const ahora = qro('2026-09-03T12:00:00');
+
+  it('congela solo los intentos cuya entrevista ya terminó', () => {
+    const cerrados = huecosConEntrevistaPasada([
+      // 1.er intento: ayer. 2.º intento: mañana.
+      { id: 'a', alumnoId: 'ana', competenciaId: 'c1', creada: new Date(1000),
+        inicio: qro('2026-09-02T10:00:00'), duracionSegundos: 600 },
+      { id: 'b', alumnoId: 'ana', competenciaId: 'c1', creada: new Date(2000),
+        inicio: qro('2026-09-04T10:00:00'), duracionSegundos: 600 },
+    ], ahora);
+    expect([...cerrados]).toEqual(['ana::c1::1']);
+  });
+
+  it('el intento sale del orden de reserva, no de la hora', () => {
+    // Apartó primero la de mañana: esa es su 1.ª, y la de ayer su 2.ª.
+    const cerrados = huecosConEntrevistaPasada([
+      { id: 'a', alumnoId: 'ana', competenciaId: 'c1', creada: new Date(1000),
+        inicio: qro('2026-09-04T10:00:00'), duracionSegundos: 600 },
+      { id: 'b', alumnoId: 'ana', competenciaId: 'c1', creada: new Date(2000),
+        inicio: qro('2026-09-02T10:00:00'), duracionSegundos: 600 },
+    ], ahora);
+    expect([...cerrados]).toEqual(['ana::c1::2']);
+  });
+
+  it('una entrevista en curso todavía no se congela', () => {
+    const cerrados = huecosConEntrevistaPasada([
+      { id: 'a', alumnoId: 'ana', competenciaId: 'c1', creada: new Date(1000),
+        inicio: qro('2026-09-03T11:55:00'), duracionSegundos: 600 },
+    ], ahora);
+    expect(cerrados.size).toBe(0);
+  });
+});
+
+describe('cancelarRenumeraUnaPasada', () => {
+  const ahora = qro('2026-09-03T12:00:00');
+  // La 1.ª (apartada antes) es mañana; la 2.ª la movieron a ayer y ya pasó.
+  const citas = [
+    { id: 'a', alumnoId: 'ana', competenciaId: 'c1', creada: new Date(1000),
+      inicio: qro('2026-09-04T10:00:00'), duracionSegundos: 600 },
+    { id: 'b', alumnoId: 'ana', competenciaId: 'c1', creada: new Date(2000),
+      inicio: qro('2026-09-02T10:00:00'), duracionSegundos: 600 },
+  ];
+
+  it('cancelar la 1.ª bajaría a 1.º intento una entrevista ya hecha: no', () => {
+    expect(cancelarRenumeraUnaPasada('a', citas, ahora)).toBe(true);
+  });
+
+  it('cancelar la última no renumera a nadie', () => {
+    expect(cancelarRenumeraUnaPasada('b', citas, ahora)).toBe(false);
+  });
+
+  it('si las posteriores no han pasado, se puede', () => {
+    expect(cancelarRenumeraUnaPasada('a', citas, qro('2026-09-01T12:00:00'))).toBe(false);
   });
 });

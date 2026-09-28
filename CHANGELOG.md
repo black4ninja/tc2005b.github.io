@@ -8,6 +8,24 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **El mando de la proyección enseña la pregunta entera.** Mientras el alumno
+  contesta, el profesor tenía el nombre, el reloj y la nota, pero no el
+  enunciado: para seguir la respuesta había que mirar la otra pantalla o
+  acordarse. Ahora sale debajo de los controles, con el mismo formato que en el
+  visor y sacado de la misma proyección, así que es exactamente lo que el alumno
+  está leyendo. Se puede plegar, por si el portátil también se ve desde la clase.
+- **La pregunta de una entrevista que ya pasó queda congelada.** En cuanto termina
+  el hueco de la cita, la pregunta de ese intento ya no se puede sustituir ni
+  quitar —quitarla destapaba la anterior—, en ninguno de los sitios donde se
+  asignaba: la celda del roster, la de la agenda, el selector de preguntas y el
+  de alumnos. Tampoco se puede cancelar ni mover esa cita, ni llevar otra a un
+  hueco que ya pasó, ni cancelar una cita futura que se apartó antes que una ya
+  hecha: el intento sale del orden de reserva, así que tocarlas le cambiaba la
+  pregunta a la entrevista hecha. La nota y el
+  «ya preguntada» siguen abiertos, y si la entrevista pasó sin pregunta se puede
+  apuntar la que se hizo; a partir de ahí también se congela. El servidor lo
+  impone (409) y la pantalla solo apaga los botones. El banco no cambia: el
+  enunciado se sigue pudiendo corregir.
 - **El alumno ve en su competencia lo que entregó, con la hora y si llegó tarde.**
   El profesor ya lo veía en la agenda; el alumno solo en la pantalla de agendar,
   lejos de su retroalimentación. Ahora la misma lista y el mismo criterio salen

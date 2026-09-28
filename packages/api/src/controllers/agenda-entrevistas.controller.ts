@@ -12,8 +12,8 @@ import { EvidenciaCompetencia } from '../models/EvidenciaCompetencia.js';
 import { coleccionesDeGrupo, modulosActivosEnGrupo } from '../services/grupo-colecciones.service.js';
 import { getVinculoConGrupoActivo } from '../services/grupo-alumno.service.js';
 import {
-  huecoAbierto, huecosDelDia, numerarIntentos, planificarBloques, puedeAgendar, puedeCancelar,
-  puedeSerOtroIntento, sumarHorasHabiles,
+  cancelarRenumeraUnaPasada, entrevistaTerminada, huecoAbierto, huecosDelDia, intentosPorCita, planificarBloques, puedeAgendar,
+  puedeCancelar, puedeSerOtroIntento, sumarHorasHabiles,
   type FilaPlan, type Rango,
 } from '../services/agenda-entrevistas.service.js';
 import {
@@ -133,22 +133,63 @@ function citasDe(citas: CitaEntrevista[], alumnoId: string, competenciaId: strin
 
 /** El intento que le toca a cada cita, por competencia y alumno. */
 function intentosDeTodas(citas: CitaEntrevista[]): Map<string, number> {
-  const porAlumnoYCompetencia = new Map<string, CitaEntrevista[]>();
-  for (const c of citas) {
-    const clave = `${c.getAlumno()?.id}::${c.getCompetencia()?.id ?? SIN_COMPETENCIA}`;
-    porAlumnoYCompetencia.set(clave, [...(porAlumnoYCompetencia.get(clave) ?? []), c]);
-  }
-  const numeros = new Map<string, number>();
-  for (const grupo of porAlumnoYCompetencia.values()) {
-    // Por cuándo se apartó la cita, no por su hora: mover a alguien de hueco no
-    // puede renumerarle los intentos ni cambiarle la pregunta.
-    const n = numerarIntentos(grupo.map((c) => ({
+  // Por cuándo se apartó la cita, no por su hora: mover a alguien de hueco no
+  // puede renumerarle los intentos ni cambiarle la pregunta.
+  return intentosPorCita(citas.map((c) => ({
+    id: c.id!,
+    alumnoId: c.getAlumno()?.id ?? '',
+    competenciaId: c.getCompetencia()?.id ?? SIN_COMPETENCIA,
+    creada: c.createdAt ?? new Date(0),
+  })));
+}
+
+/**
+ * Una cita cuya entrevista ya se hizo no se toca: ni se cancela ni se mueve.
+ * Y al cancelar, tampoco la que renumeraría a una ya hecha.
+ *
+ * No es por la cita en sí, sino por la PREGUNTA: el intento sale del orden de
+ * reserva, así que quitar una cita baja un número a las que se apartaron
+ * después y les cambia la pregunta; y mover una pasada a un hueco futuro la
+ * «deshace», y su pregunta vuelve a poder cambiarse. Responde el 409 y
+ * devuelve true si la cortó.
+ */
+async function rechazarSiCongela(
+  cita: CitaEntrevista, res: Response, gesto: 'mover' | 'cancelar',
+): Promise<boolean> {
+  const q = new Parse.Query<CitaEntrevista>('CitaEntrevista');
+  q.equalTo('grupo' as any, cita.getGrupo() as any);
+  q.equalTo('alumno' as any, cita.getAlumno() as any);
+  q.equalTo('exists' as any, true as any);
+  q.include('dia' as any);
+  q.limit(100);
+  const competenciaId = cita.getCompetencia()?.id ?? SIN_COMPETENCIA;
+  const suyas = (await q.find({ useMasterKey: true }))
+    .filter((c) => (c.getCompetencia()?.id ?? SIN_COMPETENCIA) === competenciaId)
+    .map((c) => ({
       id: c.id!,
+      alumnoId: c.getAlumno()?.id ?? '',
+      competenciaId,
       creada: c.createdAt ?? new Date(0),
-    })));
-    for (const [id, intento] of n) numeros.set(id, intento);
+      inicio: c.getInicio(),
+      duracionSegundos: (c.getDia() as DiaEntrevistas | undefined)?.getDuracionSegundos() ?? 0,
+    }));
+  const ahora = new Date();
+  const esta = suyas.find((c) => c.id === cita.id);
+  if (esta && entrevistaTerminada(esta.inicio, esta.duracionSegundos, ahora)) {
+    res.status(409).json({
+      status: 'error',
+      message: 'Esa entrevista ya pasó: no se puede mover ni cancelar, porque cambiaría la pregunta que se le hizo al alumno',
+    });
+    return true;
   }
-  return numeros;
+  if (gesto === 'cancelar' && cancelarRenumeraUnaPasada(cita.id!, suyas, ahora)) {
+    res.status(409).json({
+      status: 'error',
+      message: 'No se puede cancelar: cambiaría el intento —y la pregunta— de una entrevista suya que ya pasó',
+    });
+    return true;
+  }
+  return false;
 }
 
 const REGLAS = {
@@ -686,6 +727,7 @@ export async function moverCitaProfesor(req: Request, res: Response): Promise<vo
       res.status(404).json({ status: 'error', message: 'Esa cita no es de este grupo' });
       return;
     }
+    if (await rechazarSiCongela(cita, res, 'mover')) return;
 
     const qDia = new Parse.Query<DiaEntrevistas>('DiaEntrevistas');
     qDia.equalTo('exists' as any, true as any);
@@ -699,6 +741,12 @@ export async function moverCitaProfesor(req: Request, res: Response): Promise<vo
       .some((h) => h.getTime() === inicio.getTime());
     if (!esHueco) {
       res.status(400).json({ status: 'error', message: 'Esa hora no es uno de los huecos del día' });
+      return;
+    }
+    // Llevarla a un hueco que ya terminó la daría por hecha con una pregunta
+    // que nadie le hizo, y a partir de ahí quedaría congelada.
+    if (entrevistaTerminada(inicio, dia.getDuracionSegundos(), new Date())) {
+      res.status(409).json({ status: 'error', message: 'Ese hueco ya pasó' });
       return;
     }
 
@@ -835,6 +883,7 @@ export async function borrarCitaProfesor(req: Request, res: Response): Promise<v
       res.status(403).json({ status: 'error', message: 'Esa cita no es de este grupo' });
       return;
     }
+    if (await rechazarSiCongela(cita, res, 'cancelar')) return;
     // Sin margen: el profesor cancela también la de dentro de dos minutos, que
     // es justo cuando hace falta —el alumno no llegó—.
     cita.cancelar();
@@ -990,6 +1039,7 @@ export async function borrarCitaAlumno(req: Request, res: Response): Promise<voi
       });
       return;
     }
+    if (await rechazarSiCongela(cita, res, 'cancelar')) return;
     cita.cancelar();
     await cita.save(null, { useMasterKey: true });
     // Igual que cuando cancela el profesor: lo entregado se queda suelto en su
