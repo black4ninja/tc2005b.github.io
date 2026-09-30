@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   esDiaHabil, sumarHorasHabiles, puedeAgendar, puedeCancelar, huecosDelDia, huecoAbierto,
   numerarIntentos, planificarBloques, puedeSerOtroIntento, entrevistaTerminada,
-  huecosConEntrevistaPasada, intentosPorCita, cancelarRenumeraUnaPasada,
+  huecosConEntrevistaPasada, intentosPorCita, cancelarRenumeraUnaPasada, periodoEvaluado,
 } from '../src/services/agenda-entrevistas.service.js';
 
 /**
@@ -438,5 +438,29 @@ describe('cancelarRenumeraUnaPasada', () => {
 
   it('si las posteriores no han pasado, se puede', () => {
     expect(cancelarRenumeraUnaPasada('a', citas, qro('2026-09-01T12:00:00'))).toBe(false);
+  });
+});
+
+describe('periodoEvaluado', () => {
+  it('el 0 con el que nace la malla, sin retro, no está evaluado', () => {
+    expect(periodoEvaluado(0, '')).toBe(false);
+  });
+
+  it('un Incipiente B (0) con retro sí', () => {
+    expect(periodoEvaluado(0, 'Le faltó justificar el diseño')).toBe(true);
+  });
+
+  it('un nivel distinto de 0 cuenta aunque falte la retro', () => {
+    expect(periodoEvaluado(70, '')).toBe(true);
+    expect(periodoEvaluado(-30, '')).toBe(true); // la sanción
+  });
+
+  it('una retro de solo espacios no es retro', () => {
+    expect(periodoEvaluado(0, '   \n')).toBe(false);
+  });
+
+  it('sin campo —el «sin evaluar» del modelo— no está evaluado', () => {
+    expect(periodoEvaluado(undefined, '')).toBe(false);
+    expect(periodoEvaluado('', undefined)).toBe(false);
   });
 });
