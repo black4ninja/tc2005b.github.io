@@ -2175,6 +2175,7 @@ export default function PreguntasGrupoPage() {
                             {evaluada && (
                               <span
                                 className={styles.evaluadaMarca}
+                                role="img"
                                 title={`Ya evaluado: su ${cita!.intento}.º intento`}
                                 aria-label="Ya evaluado"
                               >
