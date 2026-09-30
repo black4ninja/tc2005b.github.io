@@ -80,6 +80,29 @@ function codigoCompetencia(nombre: string | null | undefined): string {
 
 type Vista = 'alumnos' | 'preguntas' | 'agenda';
 
+/**
+ * La asignación de ESE intento de la cita, buscada en el roster por hueco
+ * —competencia × intento— y no por el `asignacionId` que trae la cita: ese id
+ * lo resolvió el servidor al servir la agenda y se queda atrás en cuanto se
+ * reasigna algo. El roster sí se actualiza en el acto.
+ */
+function asignacionDeCita(cita: CitaProfesor, alumno: AlumnoConPregunta | null) {
+  return alumno && cita.competencia
+    ? alumno.asignaciones.find((x) => x.hueco === `${cita.competencia!.id}::${cita.intento}`) ?? null
+    : null;
+}
+
+/**
+ * Evaluado = ESE intento tiene pregunta y su periodo de la malla ya tiene retro
+ * (o un nivel que no sea el 0 con el que nace). Sin malla, la única huella que
+ * queda es la nota.
+ */
+function citaEvaluada(
+  cita: CitaProfesor, asignacion: ReturnType<typeof asignacionDeCita>,
+): boolean {
+  return !!asignacion?.pregunta && (cita.evaluadaEnMalla ?? !!asignacion.nota?.trim());
+}
+
 /** Cómo se llama cada fase en el mando. En la pantalla proyectada no se escribe. */
 const ETIQUETA_FASE: Record<FaseProyeccion, string> = {
   'sin-pregunta': 'Sin pregunta',
@@ -127,7 +150,7 @@ export default function PreguntasGrupoPage() {
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
 
-  const [vista, setVista] = useState<Vista>('alumnos');
+  const [vista, setVista] = useState<Vista>('agenda');
   const [competenciaActiva, setCompetenciaActiva] = useState<string | null>(null);
   const [intentoActivo, setIntentoActivo] = useState(1);
   const [soloSinAsignar, setSoloSinAsignar] = useState(false);
@@ -768,16 +791,7 @@ export default function PreguntasGrupoPage() {
   const filaDelDia = useMemo(() => (dia?.huecos ?? []).map((h) => {
     const cita = h.cita;
     const alumno = cita ? alumnos.find((a) => a.id === cita.alumno?.id) ?? null : null;
-    // Por HUECO —competencia × intento— y no por el `asignacionId` que trae la
-    // cita: ese id lo resolvió el servidor al servir la agenda, así que ponerle
-    // una pregunta desde aquí dejaría la fila en «sin pregunta» hasta recargar.
-    // El hueco es el mismo dato con el que el servidor la eligió, y se busca en
-    // el roster, que sí se actualiza en el acto.
-    const asignacion = alumno && cita?.competencia
-      ? alumno.asignaciones.find(
-        (x) => x.hueco === `${cita.competencia!.id}::${cita.intento}`,
-      ) ?? null
-      : null;
+    const asignacion = cita ? asignacionDeCita(cita, alumno) : null;
     return { inicio: h.inicio, cita, alumno, asignacion, cerrado: h.cerrado };
   }), [dia, alumnos]);
 
@@ -869,10 +883,16 @@ export default function PreguntasGrupoPage() {
           hoy: esHoy(inicio),
           bloques,
           citas: bloques.reduce((t, d) => t + d.huecos.filter((h) => h.cita).length, 0),
+          // Con el mismo criterio que la palomita de cada fila.
+          evaluadas: bloques.reduce((t, d) => t + d.huecos.filter((h) => {
+            if (!h.cita) return false;
+            const alumno = alumnos.find((a) => a.id === h.cita!.alumno?.id) ?? null;
+            return citaEvaluada(h.cita, asignacionDeCita(h.cita, alumno));
+          }).length, 0),
           huecos: bloques.reduce((t, d) => t + d.huecos.length, 0),
         };
       });
-  }, [agenda]);
+  }, [agenda, alumnos]);
 
   /** El día que se está mirando, con todos sus bloques. */
   const fechaActiva = useMemo(
@@ -1292,6 +1312,9 @@ export default function PreguntasGrupoPage() {
         return err.message || 'No se pudo guardar la evaluación';
       }
       await cargarMalla(notasDe);
+      // La agenda marca los intentos ya evaluados: el nivel y la retro son
+      // lo que la decide, así que tiene que verse en su fila al cerrar el modal.
+      void cargarAgenda();
       return null;
     } catch {
       return 'No se pudo guardar la evaluación';
@@ -1705,6 +1728,14 @@ export default function PreguntasGrupoPage() {
       {aviso && <div className={styles.aviso} onClick={() => setAviso('')}>{aviso}</div>}
 
       <div className={styles.tabs}>
+        {/* El día de las entrevistas manda sobre las otras dos: el orden no lo
+            decide el profesor al repartir, lo escriben los alumnos al apuntarse. */}
+        <button
+          className={`${styles.tab} ${vista === 'agenda' ? styles.tabActiva : ''}`}
+          onClick={() => setVista('agenda')}
+        >
+          <Icon name="event_available" size="sm" /> Agenda
+        </button>
         <button
           className={`${styles.tab} ${vista === 'alumnos' ? styles.tabActiva : ''}`}
           onClick={() => setVista('alumnos')}
@@ -1718,14 +1749,6 @@ export default function PreguntasGrupoPage() {
           onClick={() => setVista('preguntas')}
         >
           <Icon name="quiz" size="sm" /> Por pregunta
-        </button>
-        {/* El día de las entrevistas manda sobre las otras dos: el orden no lo
-            decide el profesor al repartir, lo escriben los alumnos al apuntarse. */}
-        <button
-          className={`${styles.tab} ${vista === 'agenda' ? styles.tabActiva : ''}`}
-          onClick={() => setVista('agenda')}
-        >
-          <Icon name="event_available" size="sm" /> Agenda
         </button>
       </div>
 
@@ -1826,13 +1849,14 @@ export default function PreguntasGrupoPage() {
                           // El rótulo accesible lleva la fecha ENTERA: en la
                           // ficha está repartida en tres trozos y leída seguida
                           // sonaría «3 jue 2/48».
-                          aria-label={`${f.etiqueta}${f.hoy ? ' (hoy)' : ''}: ${f.citas} de ${f.huecos} lugares agendados`}
+                          aria-label={`${f.etiqueta}${f.hoy ? ' (hoy)' : ''}: ${f.citas} de ${f.huecos} lugares agendados, ${f.evaluadas} calificadas`}
                           title={[
                             f.etiqueta,
                             f.bloques.length === 1
                               ? rangoHoras(f.bloques[0].inicio, f.bloques[0].fin)
                               : `${f.bloques.length} bloques`,
                             `${f.citas} de ${f.huecos} lugares agendados`,
+                            `${f.evaluadas} calificada${f.evaluadas === 1 ? '' : 's'}, ${f.citas - f.evaluadas} por calificar`,
                           ].join(' · ')}
                         >
                           <span className={styles.chipDiaNumero}>{f.numero}</span>
@@ -1859,6 +1883,16 @@ export default function PreguntasGrupoPage() {
                                 style={{ width: `${lleno}%` }}
                               />
                             </span>
+                          </span>
+                          {/* Las ya calificadas, en su propio renglón y con la
+                              palabra: pegadas a la cifra de agendados no se
+                              sabía cuál era cuál. Se reserva el renglón aunque
+                              sea 0 para que todas las fichas midan lo mismo. */}
+                          <span
+                            className={styles.chipDiaEvaluadas}
+                            style={f.evaluadas > 0 ? undefined : { visibility: 'hidden' }}
+                          >
+                            ✓ {f.evaluadas} calif.
                           </span>
                         </button>
                       </Fragment>
@@ -2089,6 +2123,7 @@ export default function PreguntasGrupoPage() {
                     // cambiaría la pregunta a esta o a su otra cita.
                     const pasada = huecoPasado(inicio, dia.duracionSegundos);
                     const preguntaCongelada = pasada && !!asignacion && !asignacion.pendiente;
+                    const evaluada = citaEvaluada(cita!, asignacion);
                     return (
                       <tr
                         key={inicio}
@@ -2133,7 +2168,21 @@ export default function PreguntasGrupoPage() {
                           {viajando && <span className={styles.girandoFila} aria-label="Moviendo" />}
                         </td>
                         <td className={styles.colAlumno}>
-                          <span className={styles.alumnoNombre}>{cita!.alumno?.name}</span>
+                          {/* Con un bloque de veinte citas, el profesor tiene que
+                              saber por dónde va calificando sin abrir las notas
+                              de cada uno. Una palomita junto al nombre basta. */}
+                          <span className={styles.alumnoNombre}>
+                            {evaluada && (
+                              <span
+                                className={styles.evaluadaMarca}
+                                title={`Ya evaluado: su ${cita!.intento}.º intento`}
+                                aria-label="Ya evaluado"
+                              >
+                                <Icon name="check_circle" size="sm" />
+                              </span>
+                            )}
+                            {cita!.alumno?.name}
+                          </span>
                           <span className={styles.alumnoMatricula}>{cita!.alumno?.matricula}</span>
                         </td>
                         <td className={styles.colCompetencia}>

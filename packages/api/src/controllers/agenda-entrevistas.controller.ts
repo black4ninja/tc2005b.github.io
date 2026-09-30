@@ -9,6 +9,7 @@ import { PreguntaAsignacion } from '../models/PreguntaAsignacion.js';
 import { DiaEntrevistas } from '../models/DiaEntrevistas.js';
 import { CitaEntrevista } from '../models/CitaEntrevista.js';
 import { EvidenciaCompetencia } from '../models/EvidenciaCompetencia.js';
+import { CompetenciaAlumno } from '../models/CompetenciaAlumno.js';
 import { coleccionesDeGrupo, modulosActivosEnGrupo } from '../services/grupo-colecciones.service.js';
 import { getVinculoConGrupoActivo } from '../services/grupo-alumno.service.js';
 import {
@@ -124,6 +125,32 @@ async function asignacionesPorHueco(grupoId: string): Promise<Map<string, Pregun
   return vigentes;
 }
 
+/**
+ * Si cada intento ya se evaluó en la malla, por `alumnoId::competenciaId::intento`
+ * (el intento N es el periodo N, igual que en el modal de notas). Una llave
+ * ausente = esa competencia no se evalúa en la malla de este grupo.
+ *
+ * Manda la RETRO, no el nivel: la malla nace con 0 en todos los periodos y 0 es
+ * también «Incipiente B», así que un 0 solo no distingue «sin evaluar» de
+ * «evaluado bajo». Al evaluar de verdad siempre se escribe la retro. Un nivel
+ * distinto de 0 también cuenta, por si se puso sin retro.
+ */
+async function evaluacionesDeMalla(grupoId: string): Promise<Map<string, boolean>> {
+  const q = new Parse.Query<CompetenciaAlumno>('CompetenciaAlumno');
+  q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  q.equalTo('exists' as any, true as any);
+  q.limit(10000);
+  const evaluado = (valor: number | undefined, retro: string) =>
+    retro.trim() !== '' || (valor !== undefined && Number(valor) !== 0);
+  const mapa = new Map<string, boolean>();
+  for (const ca of await q.find({ useMasterKey: true })) {
+    const base = `${ca.getAlumno()?.id}::${ca.getCompetencia()?.id}`;
+    mapa.set(`${base}::1`, evaluado(ca.getValorPeriodo1(), ca.getRetroPeriodo1()));
+    mapa.set(`${base}::2`, evaluado(ca.getValorPeriodo2(), ca.getRetroPeriodo2()));
+  }
+  return mapa;
+}
+
 /** Cuántas citas vivas lleva un alumno en una competencia. */
 function citasDe(citas: CitaEntrevista[], alumnoId: string, competenciaId: string): CitaEntrevista[] {
   return citas.filter(
@@ -212,13 +239,14 @@ const REGLAS = {
 export async function getAgenda(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
   try {
-    const [duracionSegundos, dias, citas, competencias, asignaciones, evidencias] = await Promise.all([
+    const [duracionSegundos, dias, citas, competencias, asignaciones, evidencias, evaluaciones] = await Promise.all([
       duracionDelGrupo(grupoId),
       diasDelGrupo(grupoId),
       citasDelGrupo(grupoId),
       competenciasDelBanco(grupoId),
       asignacionesPorHueco(grupoId),
       evidenciasDelGrupo(grupoId),
+      evaluacionesDeMalla(grupoId),
     ]);
     const intentos = intentosDeTodas(citas);
     // Por cita: es lo que la fila necesita para poner la marca y abrir la lista
@@ -260,6 +288,11 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
                   // antes del día, no al pulsar «Proyectar».
                   asignacionId: asignacion?.id ?? null,
                   pregunta: pregunta ? { id: pregunta.id, texto: pregunta.get('texto') ?? '' } : null,
+                  // Solo la malla: la pregunta la decide la tabla con el roster,
+                  // que se actualiza sin recargar la agenda.
+                  evaluadaEnMalla: evaluaciones.get(
+                    `${cita.getAlumno()?.id}::${cita.getCompetencia()?.id}::${intento}`,
+                  ) ?? null,
                 },
               };
             }),

@@ -106,6 +106,11 @@ export interface CitaProfesor {
    */
   asignacionId: string | null;
   pregunta: { id: string; texto: string } | null;
+  /**
+   * Si este intento ya se evaluó en la malla (periodo = intento): tiene retro o
+   * un nivel distinto de 0. `null` = esa competencia no va en la malla del grupo.
+   */
+  evaluadaEnMalla: boolean | null;
   evidencias: Evidencia[];
 }
 

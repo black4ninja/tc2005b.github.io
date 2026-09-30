@@ -8,6 +8,17 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **La agenda de Preguntas dice por dónde va el profesor calificando.** Con un
+  bloque de veinte citas no se sabía a quién ya se había evaluado sin abrir sus
+  notas una por una. Ahora cada fila lleva una palomita verde junto al nombre
+  cuando ESE intento tiene pregunta y su periodo de la malla ya tiene retro (o un
+  nivel distinto de 0), y la ficha de cada día suma «✓ N calif.» debajo de su
+  ocupación. No basta con el nivel: la malla nace con 0 en todos y 0 también es
+  «Incipiente B». Sin malla, la señal es la nota de la entrevista.
+
+### Changed
+- **Preguntas abre en la Agenda.** Las pestañas pasan a ser Agenda · Por alumno ·
+  Por pregunta: el día de entrevistas es lo que más se consulta.
 - **El mando de la proyección enseña la pregunta entera.** Mientras el alumno
   contesta, el profesor tenía el nombre, el reloj y la nota, pero no el
   enunciado: para seguir la respuesta había que mirar la otra pantalla o

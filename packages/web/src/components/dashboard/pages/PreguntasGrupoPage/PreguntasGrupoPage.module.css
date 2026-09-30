@@ -198,6 +198,14 @@
 
 .alumnoNombre { display: block; font-size: 0.92rem; }
 
+/* Sutil a propósito: se lee al recorrer la columna, no compite con el nombre. */
+.evaluadaMarca {
+  display: inline-flex;
+  vertical-align: -0.15em;
+  margin-right: 0.3em;
+  color: var(--dash-success);
+}
+
 .alumnoMatricula {
   display: block;
   font-size: 0.75rem;
@@ -995,6 +1003,19 @@
      en 2,7:1 en tema claro y la barra desaparecía justo donde hay que verla. */
   background: var(--sidebar-active-color);
   transition: width 0.2s;
+}
+
+/* Las ya calificadas, debajo de la barra y en el verde de la palomita de cada
+   fila: es la misma cuenta. Pequeño, como el renglón de horarios. */
+.chipDiaEvaluadas {
+  margin-top: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--dash-success);
 }
 
 /* Varios bloques en la misma fecha. La segunda tira los despliega; aquí solo
