@@ -52,7 +52,21 @@ const DURACION_POR_DEFECTO = 180;
  * competencias son de una colección.
  */
 export default function PreguntasBancoPage() {
-  const { id: coleccionId } = useParams<{ id: string }>();
+  /*
+   * Se monta en dos sitios. Desde Contenidos (`/admin/contenidos/:id/preguntas`)
+   * es el banco de una colección, solo para administradores. Desde un grupo
+   * (`/admin/grupos/:id/preguntas/banco/:coleccionId`) es el mismo banco para el
+   * profesor de ese grupo, por rutas que comprueban que la materia es suya.
+   */
+  const params = useParams<{ id: string; coleccionId?: string }>();
+  const grupoId = params.coleccionId ? params.id : null;
+  const coleccionId = params.coleccionId ?? params.id;
+  const urlBanco = grupoId
+    ? `${API_BASE}/admin/grupos/${grupoId}/banco/${coleccionId}/preguntas`
+    : `${API_BASE}/admin/colecciones/${coleccionId}/preguntas`;
+  const urlPregunta = (id: string) => (grupoId
+    ? `${API_BASE}/admin/grupos/${grupoId}/banco/preguntas/${id}`
+    : `${API_BASE}/admin/preguntas/${id}`);
   const { sessionToken } = useAuth();
   const [preguntas, setPreguntas] = useState<Pregunta[]>([]);
   const [competencias, setCompetencias] = useState<CompetenciaOption[]>([]);
@@ -87,18 +101,26 @@ export default function PreguntasBancoPage() {
     try {
       setLoading(true);
       const res = await fetch(
-        `${API_BASE}/admin/colecciones/${coleccionId}/preguntas?archivadas=${verArchivadas}`,
+        `${urlBanco}?archivadas=${verArchivadas}`,
         { headers: { 'x-session-token': sessionToken ?? '' } },
       );
       if (!res.ok) throw new Error('Error al cargar el banco de preguntas');
-      const data = (await res.json()) as { preguntas?: Pregunta[] };
+      const data = (await res.json()) as {
+        preguntas?: Pregunta[];
+        coleccion?: { clave: string | null; nombre: string };
+      };
       setPreguntas(data.preguntas ?? []);
+      // Desde el grupo el nombre viene aquí: la lista de colecciones es de admin.
+      if (data.coleccion) {
+        const c = data.coleccion;
+        setNombreColeccion(c.clave ? `${c.clave} — ${c.nombre}` : c.nombre);
+      }
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'Error al cargar el banco de preguntas'));
     } finally {
       setLoading(false);
     }
-  }, [coleccionId, sessionToken, verArchivadas]);
+  }, [urlBanco, sessionToken, verArchivadas]);
 
   /**
    * TODAS las competencias, no solo las de esta colección: se puede enlazar una
@@ -120,6 +142,7 @@ export default function PreguntasBancoPage() {
   }, [sessionToken]);
 
   const fetchNombre = useCallback(async () => {
+    if (grupoId) return;
     try {
       const res = await fetch(`${API_BASE}/admin/colecciones`, { headers: { 'x-session-token': sessionToken ?? '' } });
       if (!res.ok) return;
@@ -134,7 +157,7 @@ export default function PreguntasBancoPage() {
     } catch {
       // el nombre es cosmético; ignorar
     }
-  }, [coleccionId, sessionToken]);
+  }, [coleccionId, grupoId, sessionToken]);
 
   async function guardarDuracion() {
     const crudo = duracionBorrador.trim();
@@ -227,7 +250,7 @@ export default function PreguntasBancoPage() {
    * nada entra dos veces.
    */
   async function importarLote(preguntasNuevas: PreguntaAImportar[]) {
-    const res = await fetch(`${API_BASE}/admin/colecciones/${coleccionId}/preguntas/lote`, {
+    const res = await fetch(`${urlBanco}/lote`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ preguntas: preguntasNuevas }),
@@ -251,9 +274,7 @@ export default function PreguntasBancoPage() {
         notas: borrador.notas,
       };
       const res = await fetch(
-        editando
-          ? `${API_BASE}/admin/preguntas/${editando.id}`
-          : `${API_BASE}/admin/colecciones/${coleccionId}/preguntas`,
+        editando ? urlPregunta(editando.id) : urlBanco,
         { method: editando ? 'PUT' : 'POST', headers, body: JSON.stringify(cuerpo) },
       );
       if (!res.ok) {
@@ -271,13 +292,25 @@ export default function PreguntasBancoPage() {
 
   async function handleArchivar(p: Pregunta) {
     try {
-      const res = await fetch(`${API_BASE}/admin/preguntas/${p.id}`, {
+      const res = await fetch(urlPregunta(p.id), {
         method: 'PUT', headers, body: JSON.stringify({ archivada: !p.archivada }),
       });
       if (!res.ok) throw new Error('Error al archivar');
       await fetchPreguntas();
     } catch (err: unknown) {
       setError(mensajeDeError(err, 'Error al archivar'));
+    }
+  }
+
+  async function handleAsesoria(p: Pregunta) {
+    try {
+      const res = await fetch(urlPregunta(p.id), {
+        method: 'PUT', headers, body: JSON.stringify({ paraAsesoria: !p.paraAsesoria }),
+      });
+      if (!res.ok) throw new Error('Error al marcar la pregunta');
+      await fetchPreguntas();
+    } catch (err: unknown) {
+      setError(mensajeDeError(err, 'Error al marcar la pregunta'));
     }
   }
 
@@ -289,7 +322,7 @@ export default function PreguntasBancoPage() {
       peligro: true,
     }))) return;
     try {
-      const res = await fetch(`${API_BASE}/admin/preguntas/${p.id}`, { method: 'DELETE', headers });
+      const res = await fetch(urlPregunta(p.id), { method: 'DELETE', headers });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { message?: string };
         // 409 = está en uso. Es información, no un fallo: se dice y se recuerda
@@ -330,8 +363,13 @@ export default function PreguntasBancoPage() {
     columnHelper.accessor('archivada', {
       header: 'Estado',
       cell: (info) => (
-        <span className={`${styles.badge} ${info.getValue() ? styles.badgeDraft : styles.badgeActive}`}>
-          {info.getValue() ? 'Archivada' : 'En uso'}
+        <span className={styles.estados}>
+          <span className={`${styles.badge} ${info.getValue() ? styles.badgeDraft : styles.badgeActive}`}>
+            {info.getValue() ? 'Archivada' : 'En uso'}
+          </span>
+          {info.row.original.paraAsesoria && (
+            <span className={`${styles.badge} ${styles.badgeAsesoria}`}>Asesoría</span>
+          )}
         </span>
       ),
     }),
@@ -340,6 +378,11 @@ export default function PreguntasBancoPage() {
   const getActions = (p: Pregunta): ActionItem[] => [
     { label: 'Editar', icon: 'edit', onClick: () => abrirEdicion(p) },
     { label: 'Vista previa', icon: 'slideshow', onClick: () => setProyectando(p) },
+    {
+      label: p.paraAsesoria ? 'Quitar de asesoría' : 'Marcar para asesoría',
+      icon: p.paraAsesoria ? 'bookmark_remove' : 'bookmark_add',
+      onClick: () => handleAsesoria(p),
+    },
     {
       label: p.archivada ? 'Devolver al banco' : 'Archivar',
       icon: p.archivada ? 'unarchive' : 'archive',
@@ -352,9 +395,12 @@ export default function PreguntasBancoPage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <Link to={`/admin/contenidos/${coleccionId}`} className={styles.volver}>
+          <Link
+            to={grupoId ? `/admin/grupos/${grupoId}/preguntas` : `/admin/contenidos/${coleccionId}`}
+            className={styles.volver}
+          >
             <Icon name="arrow_back" size="sm" />
-            <span>Colección</span>
+            <span>{grupoId ? 'Preguntas del grupo' : 'Colección'}</span>
           </Link>
           <h1 className={styles.pageTitle}>Preguntas{nombreColeccion ? ` — ${nombreColeccion}` : ''}</h1>
           <p className={styles.subtitulo}>
@@ -365,6 +411,9 @@ export default function PreguntasBancoPage() {
         <div className={styles.headerLado}>
           {/* El tiempo es del módulo en esta materia, no de cada pregunta: por
               eso se configura una vez aquí arriba y no en cada formulario. */}
+          {/* Desde el grupo no: el tiempo de la materia vale para todos sus
+              grupos, y el grupo ya tiene el suyo en su propia pantalla. */}
+          {!grupoId && (
           <div className={styles.duracion}>
             <Icon name="timer" size="sm" />
             {editandoDuracion ? (
@@ -404,6 +453,7 @@ export default function PreguntasBancoPage() {
               </>
             )}
           </div>
+          )}
           <label className={styles.toggleArchivadas}>
             <input
               type="checkbox"
@@ -511,7 +561,9 @@ export default function PreguntasBancoPage() {
             <small>
               Es la categoría de la pregunta: por ella se agrupa y se filtra al asignar.
               Puede quedarse sin ninguna (abrir la entrevista, romper el hielo).{' '}
-              {!verOtrasMaterias && ajenas.length > 0 && (
+              {/* Desde el grupo solo las de su materia: el servidor no deja
+                  enlazar las de otra. */}
+              {!grupoId && !verOtrasMaterias && ajenas.length > 0 && (
                 <button type="button" className={styles.enlaceBtn} onClick={() => setVerOtrasMaterias(true)}>
                   Ver competencias de otras materias
                 </button>

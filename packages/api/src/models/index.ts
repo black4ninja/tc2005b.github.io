@@ -71,3 +71,4 @@ export { EpicaScrum } from './EpicaScrum.js';
 export { TarjetaRetro } from './TarjetaRetro.js';
 export { SprintEquipo } from './SprintEquipo.js';
 export type { CorteBurndown } from './SprintEquipo.js';
+export { VisorAsesoria } from './VisorAsesoria.js';

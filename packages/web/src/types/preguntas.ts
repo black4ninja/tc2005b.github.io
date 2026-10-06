@@ -34,6 +34,8 @@ export interface Pregunta {
   /** Qué buscar en la respuesta. Nunca se proyecta. */
   notas: string;
   archivada: boolean;
+  /** Apartada para las asesorías. Solo una marca: sigue en el banco y en el reparto. */
+  paraAsesoria?: boolean;
 }
 
 /**

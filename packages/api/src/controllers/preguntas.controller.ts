@@ -20,7 +20,7 @@ import { normalizarEtiquetas, normalizarEnunciado } from '../services/preguntas.
  * (`preguntas-asignacion.controller`), donde basta con ser staff del grupo.
  */
 
-async function buscarPregunta(id: string): Promise<Pregunta | null> {
+export async function buscarPregunta(id: string): Promise<Pregunta | null> {
   try {
     const q = new Parse.Query<Pregunta>('Pregunta');
     q.equalTo('exists' as any, true as any);
@@ -51,6 +51,20 @@ async function resolverCompetencia(
   return competencia ?? 'invalido';
 }
 
+/** Las preguntas vivas de una colección, de la más antigua a la más nueva. */
+export async function consultarBanco(coleccionId: string, incluirArchivadas: boolean): Promise<Pregunta[]> {
+  const q = new Parse.Query<Pregunta>('Pregunta');
+  q.equalTo('coleccion' as any, Coleccion.createWithoutData(coleccionId) as any);
+  q.equalTo('exists' as any, true as any);
+  if (!incluirArchivadas) q.notEqualTo('archivada' as any, true as any);
+  q.include('competencia' as any);
+  // Sin título por el que ordenar, manda la antigüedad: el banco crece por el
+  // final y así lo último escrito no se pierde en medio de la tabla.
+  q.ascending('createdAt');
+  q.limit(1000);
+  return q.find({ useMasterKey: true });
+}
+
 /**
  * GET /admin/colecciones/:id/preguntas
  *
@@ -66,17 +80,7 @@ export async function listPreguntas(req: Request, res: Response): Promise<void> 
       res.status(404).json({ status: 'error', message: 'Colección no encontrada' });
       return;
     }
-    const incluirArchivadas = req.query.archivadas === 'true';
-    const q = new Parse.Query<Pregunta>('Pregunta');
-    q.equalTo('coleccion' as any, Coleccion.createWithoutData(id) as any);
-    q.equalTo('exists' as any, true as any);
-    if (!incluirArchivadas) q.notEqualTo('archivada' as any, true as any);
-    q.include('competencia' as any);
-    // Sin título por el que ordenar, manda la antigüedad: el banco crece por el
-    // final y así lo último escrito no se pierde en medio de la tabla.
-    q.ascending('createdAt');
-    q.limit(1000);
-    const preguntas = await q.find({ useMasterKey: true });
+    const preguntas = await consultarBanco(id, req.query.archivadas === 'true');
     // Sin `uso`: el banco ya no lo pinta, y calcularlo costaba una consulta
     // sobre TODAS las asignaciones en cada carga. El roster del grupo, que sí
     // lo enseña, lo sigue calculando por su cuenta.
@@ -243,7 +247,7 @@ export async function updatePregunta(req: Request, res: Response): Promise<void>
     res.status(404).json({ status: 'error', message: 'Pregunta no encontrada' });
     return;
   }
-  const { texto, etiquetas, notas, archivada, competenciaId } = req.body ?? {};
+  const { texto, etiquetas, notas, archivada, paraAsesoria, competenciaId } = req.body ?? {};
 
   if (texto !== undefined) {
     if (typeof texto !== 'string' || !texto.trim()) {
@@ -271,6 +275,7 @@ export async function updatePregunta(req: Request, res: Response): Promise<void>
   }
   if (notas !== undefined) pregunta.setNotas(typeof notas === 'string' ? notas : '');
   if (archivada !== undefined) pregunta.setArchivada(archivada === true);
+  if (paraAsesoria !== undefined) pregunta.setParaAsesoria(paraAsesoria === true);
 
   try {
     await pregunta.save(null, { useMasterKey: true });

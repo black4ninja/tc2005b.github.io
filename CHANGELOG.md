@@ -8,6 +8,21 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Asesorías: preguntas para practicar, con visor público y QR.** Una cuarta
+  pestaña en Preguntas reúne las preguntas marcadas para asesoría. Cada una
+  enciende su propio visor —sin reloj ni alumno, solo la competencia y el
+  enunciado— que se abre SIN SESIÓN por un enlace o escaneando el QR que sale en
+  la misma tarjeta. Con varios alumnos a la vez, cada uno practica con la suya.
+  Apagar un visor, o todos con un botón, cierra el enlace al momento y las
+  pantallas abiertas lo dicen. Nunca se envían las notas de la pregunta.
+- **Marca «Asesoría» en las preguntas**, desde «Por pregunta» y desde el banco.
+- **El profesor administra el banco de su materia desde el grupo.** «Administrar
+  banco» en «Por pregunta» abre el banco de preguntas sin pasar por Contenidos,
+  que es solo de administrador. Solo ve y toca las materias de su grupo.
+
+### Changed
+- **«Por pregunta» ya no muestra el mando de la proyección.** Ahí se reparte el
+  catálogo; se proyecta desde «Por alumno» y la Agenda.
 - **La agenda de Preguntas dice por dónde va el profesor calificando.** Con un
   bloque de veinte citas no se sabía a quién ya se había evaluado sin abrir sus
   notas una por una. Ahora cada fila lleva una palomita verde junto al nombre
