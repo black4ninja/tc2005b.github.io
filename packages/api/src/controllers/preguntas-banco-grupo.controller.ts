@@ -102,7 +102,22 @@ export function createBancoGrupo(req: Request, res: Response): Promise<void> {
 }
 
 /** POST /admin/grupos/:grupoId/banco/:coleccionId/preguntas/lote */
-export function createLoteBancoGrupo(req: Request, res: Response): Promise<void> {
+export async function createLoteBancoGrupo(req: Request, res: Response): Promise<void> {
+  // En el lote la competencia va en CADA entrada, no en la raíz del cuerpo: hay
+  // que validarlas una por una o el archivo colaría las de otra materia.
+  const entradas: unknown[] = Array.isArray(req.body?.preguntas) ? req.body.preguntas : [];
+  const ids = [...new Set(entradas
+    .map((e) => (e as { competenciaId?: unknown } | null)?.competenciaId)
+    .filter((id) => id !== undefined && id !== null && id !== ''))];
+  if (ids.length > 0) {
+    const cols = await coleccionesDelGrupo(req.params.grupoId);
+    for (const id of ids) {
+      if (!(await competenciaPermitida(id, cols))) {
+        res.status(400).json({ status: 'error', message: 'El archivo trae una competencia que no es de una materia de este grupo' });
+        return;
+      }
+    }
+  }
   return conColeccion(req, res, createPreguntasEnLote);
 }
 

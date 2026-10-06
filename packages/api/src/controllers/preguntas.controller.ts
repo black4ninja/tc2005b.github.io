@@ -7,6 +7,7 @@ import { Pregunta } from '../models/Pregunta.js';
 import { PreguntaAsignacion } from '../models/PreguntaAsignacion.js';
 import type { AppUser } from '../models/AppUser.js';
 import { getColeccionActiva } from './cms-documentos.controller.js';
+import { apagarVisoresDePregunta } from '../services/visores-asesoria.service.js';
 import { normalizarEtiquetas, normalizarEnunciado } from '../services/preguntas.service.js';
 
 /**
@@ -279,6 +280,8 @@ export async function updatePregunta(req: Request, res: Response): Promise<void>
 
   try {
     await pregunta.save(null, { useMasterKey: true });
+    // Fuera de asesoría, o retirada del banco: su visor se cierra con ella.
+    if (paraAsesoria === false || archivada === true) await apagarVisoresDePregunta(pregunta.id!);
     res.json({ status: 'ok', pregunta: pregunta.toSafeJSON() });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al actualizar la pregunta' });
@@ -312,6 +315,7 @@ export async function deletePregunta(req: Request, res: Response): Promise<void>
     }
     pregunta.softDelete();
     await pregunta.save(null, { useMasterKey: true });
+    await apagarVisoresDePregunta(pregunta.id!);
     res.json({ status: 'ok' });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al eliminar la pregunta' });
