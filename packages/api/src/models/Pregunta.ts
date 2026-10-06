@@ -109,6 +109,17 @@ export class Pregunta extends BaseModel {
     this.set('archivada', archivada);
   }
 
+  /**
+   * Apartada para las asesorías. Es una marca y nada más: no la saca del banco
+   * ni del reparto de entrevistas.
+   */
+  getParaAsesoria(): boolean {
+    return this.get('paraAsesoria') === true;
+  }
+  setParaAsesoria(v: boolean): void {
+    this.set('paraAsesoria', v);
+  }
+
   getAutor(): AppUser | undefined {
     return this.get('autor');
   }
@@ -141,6 +152,7 @@ export class Pregunta extends BaseModel {
       etiquetas: this.getEtiquetas(),
       notas: this.getNotas(),
       archivada: this.getArchivada(),
+      paraAsesoria: this.getParaAsesoria(),
       autorId: this.getAutor()?.id ?? null,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,

@@ -1,0 +1,90 @@
+/* Visor de asesoría. La misma lógica que el proyector oficial —todo sale de los
+   tokens del tema y solo se sube la escala—, pero pensado primero para el
+   TELÉFONO del alumno: casi siempre se abre escaneando el QR. */
+
+.pagina {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-page);
+  color: var(--text-primary);
+}
+
+.barra {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-md) clamp(var(--space-md), 5vw, var(--space-xl));
+  border-bottom: 1px solid var(--border-color);
+}
+
+.etiqueta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.competencia {
+  font-size: clamp(0.95rem, 1.6vw, 1.25rem);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* El enunciado centrado en lo que queda de pantalla. En el teléfono el texto
+   largo desplaza; en el proyector cabe y se queda en medio. */
+.escena {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(var(--space-lg), 5vw, 5rem) clamp(var(--space-md), 6vw, 6rem);
+}
+
+.texto {
+  width: 100%;
+  max-width: 60ch;
+  /* Mínimo de teléfono, máximo de proyector. */
+  font-size: clamp(1.15rem, 2.8vw, 2.4rem);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.texto :global(p) { margin: 0 0 0.7em; }
+.texto :global(p:last-child) { margin-bottom: 0; }
+.texto :global(li) { margin-bottom: 0.3em; }
+.texto :global(code) { font-size: 0.85em; }
+.texto :global(img) { max-width: 100%; height: auto; }
+
+.aviso {
+  margin: auto;
+  padding: var(--space-xl);
+  font-size: 1.1rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.cerrado {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.cerrado .aviso { margin: 0; padding: 0; color: var(--text-primary); }
+
+.cerradoIcono {
+  font-size: 2.5rem;
+  color: var(--text-muted);
+}
+
+.avisoChico {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}

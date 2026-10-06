@@ -26,6 +26,7 @@ import EntrevistasPage from './components/dashboard/pages/EntrevistasPage/Entrev
 import PreguntasBancoPage from './components/dashboard/pages/PreguntasBancoPage/PreguntasBancoPage';
 import PreguntasGrupoPage from './components/dashboard/pages/PreguntasGrupoPage/PreguntasGrupoPage';
 import ProyeccionPage from './components/dashboard/pages/ProyeccionPage/ProyeccionPage';
+import AsesoriaVisorPage from './components/dashboard/pages/AsesoriaVisorPage/AsesoriaVisorPage';
 import AgendaEntrevistasAlumnoPage from './components/dashboard/pages/AgendaEntrevistasAlumnoPage/AgendaEntrevistasAlumnoPage';
 import ScrumGrupoPage from './components/dashboard/pages/ScrumGrupoPage/ScrumGrupoPage';
 import DinamicaScrumPage from './components/dashboard/pages/DinamicaScrumPage/DinamicaScrumPage';
@@ -131,6 +132,10 @@ export default function App() {
         element={<ProyeccionScrumPage />}
       />
 
+      {/* El visor de asesoría: PÚBLICO, sin sesión ni layout. Lo abre el alumno
+          escaneando el QR; el token del enlace es la única llave. */}
+      <Route path="asesoria/:token" element={<AsesoriaVisorPage />} />
+
       {/* Auth */}
       <Route path="login" element={<LoginPage />} />
       <Route path="auth/verify" element={<VerifyPage />} />
@@ -230,6 +235,7 @@ export default function App() {
             asignación, del grupo (profesor de ese grupo). */}
         <Route path="admin/contenidos/:id/preguntas" element={<PreguntasBancoPage />} />
         <Route path="admin/grupos/:id/preguntas" element={<PreguntasGrupoPage />} />
+        <Route path="admin/grupos/:id/preguntas/banco/:coleccionId" element={<PreguntasBancoPage />} />
         {/* Módulo "Actividad de Scrum": el listado de dinámicas y el detalle de
             una, con sus equipos y sus tableros. */}
         <Route path="admin/grupos/:id/scrum" element={<ScrumGrupoPage />} />

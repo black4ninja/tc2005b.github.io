@@ -18,6 +18,20 @@ import {
   setConfiguracionGrupo,
 } from '../controllers/preguntas-asignacion.controller.js';
 import {
+  listBancoGrupo,
+  createBancoGrupo,
+  createLoteBancoGrupo,
+  updateBancoGrupo,
+  deleteBancoGrupo,
+} from '../controllers/preguntas-banco-grupo.controller.js';
+import {
+  listVisores,
+  encenderVisor,
+  apagarVisor,
+  apagarTodos,
+  verVisorPublico,
+} from '../controllers/preguntas-asesoria.controller.js';
+import {
   getProyeccion,
   setProyeccion,
   streamProyeccion,
@@ -40,6 +54,8 @@ const router = Router();
 router.use('/admin/preguntas', identifyUser, requireAdmin);
 router.use('/admin/colecciones/:id/preguntas', identifyUser, requireAdmin);
 router.use('/admin/grupos/:grupoId/preguntas', identifyUser, requireGrupoAccess);
+router.use('/admin/grupos/:grupoId/banco', identifyUser, requireGrupoAccess);
+router.use('/admin/grupos/:grupoId/asesorias', identifyUser, requireGrupoAccess);
 
 // Banco de una colección
 router.get('/admin/colecciones/:id/preguntas', listPreguntas);
@@ -64,5 +80,19 @@ router.get('/admin/grupos/:grupoId/preguntas/proyeccion', getProyeccion);
 // La pantalla proyectada escucha por aquí en vez de preguntar cada segundo.
 router.get('/admin/grupos/:grupoId/preguntas/proyeccion/stream', streamProyeccion);
 router.put('/admin/grupos/:grupoId/preguntas/proyeccion', setProyeccion);
+
+// El banco de las materias del grupo, para el profesor sin pasar por Contenidos.
+router.get('/admin/grupos/:grupoId/banco/:coleccionId/preguntas', listBancoGrupo);
+router.post('/admin/grupos/:grupoId/banco/:coleccionId/preguntas', createBancoGrupo);
+router.post('/admin/grupos/:grupoId/banco/:coleccionId/preguntas/lote', createLoteBancoGrupo);
+router.put('/admin/grupos/:grupoId/banco/preguntas/:id', updateBancoGrupo);
+router.delete('/admin/grupos/:grupoId/banco/preguntas/:id', deleteBancoGrupo);
+
+// Visores de asesoría: el profesor los enciende y el alumno los abre sin sesión.
+router.get('/admin/grupos/:grupoId/asesorias/visores', listVisores);
+router.delete('/admin/grupos/:grupoId/asesorias/visores', apagarTodos);
+router.post('/admin/grupos/:grupoId/asesorias/:preguntaId/visor', encenderVisor);
+router.delete('/admin/grupos/:grupoId/asesorias/:preguntaId/visor', apagarVisor);
+router.get('/publico/asesoria/:token', verVisorPublico);
 
 export default router;

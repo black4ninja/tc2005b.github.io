@@ -10,6 +10,7 @@ import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta'
 import SelectorAlumno from '../../organisms/SelectorAlumno/SelectorAlumno';
 import AsignarCitaModal from '../../organisms/AsignarCitaModal/AsignarCitaModal';
 import SaltoProyeccion from '../../organisms/SaltoProyeccion/SaltoProyeccion';
+import PanelAsesorias from '../../organisms/PanelAsesorias/PanelAsesorias';
 import ListaEvidencias from '../../molecules/ListaEvidencias/ListaEvidencias';
 import TagIntento from '../../atoms/TagIntento/TagIntento';
 import EvaluacionIntento, {
@@ -78,7 +79,7 @@ function codigoCompetencia(nombre: string | null | undefined): string {
   return (nombre ?? '').split('.')[0].trim();
 }
 
-type Vista = 'alumnos' | 'preguntas' | 'agenda';
+type Vista = 'alumnos' | 'preguntas' | 'agenda' | 'asesorias';
 
 /**
  * La asignación de ESE intento de la cita, buscada en el roster por hueco
@@ -1321,6 +1322,31 @@ export default function PreguntasGrupoPage() {
     }
   }
 
+  /**
+   * Aparta una pregunta para las asesorías, o la devuelve. Se pinta YA y se
+   * deshace si el servidor dice que no. Va por el banco del grupo: la marca es
+   * de la pregunta y la ve cualquier grupo de la materia.
+   */
+  async function marcarAsesoria(p: Pregunta) {
+    const valor = !p.paraAsesoria;
+    const poner = (v: boolean) => setPreguntas((prev) => prev.map(
+      (x) => (x.id === p.id ? { ...x, paraAsesoria: v } : x),
+    ));
+    poner(valor);
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/banco/preguntas/${p.id}`, {
+        method: 'PUT', headers, body: JSON.stringify({ paraAsesoria: valor }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(err.message || 'No se pudo marcar la pregunta');
+      }
+    } catch (e) {
+      poner(!valor);
+      setError(mensajeDeError(e, 'No se pudo marcar la pregunta'));
+    }
+  }
+
   async function abrirHistorial(alumno: AlumnoConPregunta) {
     setHistorialDe(alumno);
     setHistorial([]);
@@ -1750,6 +1776,14 @@ export default function PreguntasGrupoPage() {
         >
           <Icon name="quiz" size="sm" /> Por pregunta
         </button>
+        {/* Práctica, no entrevista: las preguntas apartadas para asesoría, cada
+            una con su visor sin reloj. */}
+        <button
+          className={`${styles.tab} ${vista === 'asesorias' ? styles.tabActiva : ''}`}
+          onClick={() => setVista('asesorias')}
+        >
+          <Icon name="school" size="sm" /> Asesorías
+        </button>
       </div>
 
       {/* El filtro de competencia no es un filtro: es el MODO de trabajo, y por
@@ -1778,7 +1812,7 @@ export default function PreguntasGrupoPage() {
 
         {/* El intento solo tiene sentido dentro de una competencia: con «todas»
             la tabla enseña los dos a la vez. */}
-        {competenciaActiva && (
+        {competenciaActiva && vista !== 'asesorias' && (
           <span className={styles.intentos}>
             <span className={styles.chipsTitulo}>Intento:</span>
             {Array.from({ length: MAX_INTENTOS }, (_, i) => i + 1).map((n) => (
@@ -1796,7 +1830,7 @@ export default function PreguntasGrupoPage() {
       </div>
       )}
 
-      {vista !== 'agenda' && mando}
+      {vista === 'alumnos' && mando}
 
       {vista === 'agenda' ? (
         <>
@@ -2540,6 +2574,16 @@ export default function PreguntasGrupoPage() {
             </tbody>
           </table>
         </>
+      ) : vista === 'asesorias' ? (
+        <PanelAsesorias
+          grupoId={grupoId!}
+          // Solo el filtro de competencia: el buscador es de «Por pregunta» y
+          // aquí no se ve, así que lo escrito allí no puede esconder nada.
+          preguntas={preguntas.filter((p) => p.paraAsesoria && !p.archivada
+            && (!competenciaActiva || (p.competenciaId ?? SIN_COMPETENCIA) === competenciaActiva))}
+          headers={headers}
+          onError={setError}
+        />
       ) : (
         <>
           <div className={styles.barra}>
@@ -2550,9 +2594,26 @@ export default function PreguntasGrupoPage() {
               onChange={(e) => setBusquedaPregunta(e.target.value)}
               placeholder="Buscar en las preguntas..."
             />
-            <span className={styles.contador}>
-              {preguntasDeVista.filter((p) => !asignadosPorPregunta.has(p.id)).length} sin
-              {' '}repartir de {preguntasDeVista.length}
+            <span className={styles.barraLado}>
+              <span className={styles.contador}>
+                {preguntasDeVista.filter((p) => !asignadosPorPregunta.has(p.id)).length} sin
+                {' '}repartir de {preguntasDeVista.length}
+              </span>
+              {/* El banco de SUS materias, sin pasar por Contenidos: esa
+                  pantalla es de administrador y además enseña todas. */}
+              {(duracion?.materias ?? []).map((m) => (
+                <Link
+                  key={m.id}
+                  to={`/admin/grupos/${grupoId}/preguntas/banco/${m.id}`}
+                  className={styles.enlaceBanco}
+                  title={`Agregar, editar o archivar las preguntas de ${m.nombre ?? m.clave ?? 'la materia'}`}
+                >
+                  <Icon name="edit_note" size="sm" />
+                  {(duracion?.materias.length ?? 0) > 1
+                    ? `Banco ${m.clave ?? m.nombre}`
+                    : 'Administrar banco'}
+                </Link>
+              ))}
             </span>
           </div>
 
@@ -2582,6 +2643,17 @@ export default function PreguntasGrupoPage() {
                   {/* El enunciado entero: es el motivo de esta vista. */}
                   <p className={styles.tarjetaTexto}>{p.texto}</p>
                   <div className={styles.tarjetaAcciones}>
+                    <button
+                      className={`${styles.asesoriaBtn} ${p.paraAsesoria ? styles.asesoriaBtnOn : ''}`}
+                      onClick={() => void marcarAsesoria(p)}
+                      aria-pressed={!!p.paraAsesoria}
+                      title={p.paraAsesoria
+                        ? 'Quitarla de las preguntas para asesoría'
+                        : 'Apartarla para las asesorías'}
+                    >
+                      <Icon name={p.paraAsesoria ? 'bookmark' : 'bookmark_border'} size="sm" />
+                      Asesoría
+                    </button>
                     {/* El MISMO chip que en la vista por alumno, aquí del lado de
                         la pregunta: dice a cuántos les ha tocado y se pulsa para
                         repartirla. No hay tope —una pregunta se repite cuantas

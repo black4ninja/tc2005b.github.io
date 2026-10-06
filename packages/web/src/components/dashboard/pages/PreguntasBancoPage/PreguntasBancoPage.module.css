@@ -243,3 +243,15 @@
   font-variant-numeric: tabular-nums;
   opacity: 0.7;
 }
+
+/* Estado y marca de asesoría, uno al lado del otro. */
+.estados {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.badgeAsesoria {
+  background: color-mix(in srgb, var(--sidebar-active-color) 18%, transparent);
+  color: var(--sidebar-active-color);
+}

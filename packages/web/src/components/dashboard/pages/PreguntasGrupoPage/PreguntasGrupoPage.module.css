@@ -607,6 +607,47 @@
   margin-top: var(--space-sm);
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* Apartar la pregunta para asesoría. Discreto cuando no lo está: es una marca
+   que se pone de vez en cuando, no la acción de cada tarjeta. */
+.asesoriaBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.asesoriaBtn:hover { color: var(--text-primary); }
+
+.asesoriaBtnOn {
+  border-color: var(--sidebar-active-color);
+  color: var(--sidebar-active-color);
+}
+
+/* El contador y el acceso al banco, juntos a la derecha de la barra. */
+.barraLado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.enlaceBanco {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--sidebar-active-color);
+  white-space: nowrap;
 }
 
 .libreTag {
