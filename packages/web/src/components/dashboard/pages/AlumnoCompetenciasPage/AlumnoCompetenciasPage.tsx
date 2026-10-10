@@ -134,7 +134,6 @@ export default function AlumnoCompetenciasPage() {
         // En la rúbrica, el tono fuerte es el de la nota que cuenta: el 2.º si
         // lo hay, y si no el 1.º. Fuera de intentos, el 2.º como siempre.
         const fuerte = cuenta === 1 ? activeP1 : activeP2;
-        const tenue = cuenta === 1 ? null : activeP1;
         // Las DOS evaluaciones se marcan, no solo la última: lo que el alumno
         // viene a ver es si se movió y hacia dónde, y con una sola resaltada la
         // primera desaparecía y no había de qué comparar.
@@ -220,7 +219,7 @@ export default function AlumnoCompetenciasPage() {
                       // La que cuenta manda en el color; la otra se marca en un
                       // tono más claro, de dónde viene.
                       const esFuerte = fuerte === key;
-                      const esTenue = !esFuerte && (tenue === key || esP1 || esP2);
+                      const esTenue = !esFuerte && (esP1 || esP2);
                       const clase = esFuerte ? styles.rubricColActive
                         : esTenue ? styles.rubricColPrevia : '';
                       const claseCabecera = esFuerte ? styles.rubricHeaderActive
