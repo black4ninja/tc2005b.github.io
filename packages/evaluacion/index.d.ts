@@ -107,3 +107,18 @@ export declare function calcCalificacion<A extends ActividadCalc>(
 ): { periodos: PeriodoScore<A>[]; calificacionActual: number };
 
 export declare function round1(n: number): number;
+
+/** ¿Este periodo de la malla ya se evaluó? Retro escrita, o nivel distinto de 0. */
+export declare function periodoEvaluado(valor: unknown, retro: unknown): boolean;
+
+/**
+ * Qué intento cuenta para la calificación en los grupos por intentos: el 2.º si
+ * se evaluó (aunque sea más bajo, y anulando la sanción del 1.º), si no el 1.º,
+ * y `null` si ninguno.
+ */
+export declare function intentoQueCuenta(comp: {
+  valorPeriodo1?: string | number | null;
+  valorPeriodo2?: string | number | null;
+  retroPeriodo1?: string | null;
+  retroPeriodo2?: string | null;
+}): 1 | 2 | null;

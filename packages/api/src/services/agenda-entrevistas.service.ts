@@ -367,14 +367,6 @@ export function planificarBloques(candidatos: Rango[], existentes: Rango[]): Fil
   });
 }
 
-/**
- * Si un periodo de la malla ya se evaluó. Manda la RETRO, no el nivel: la malla
- * nace con 0 en todos los periodos y 0 es también «Incipiente B», así que un 0
- * solo no distingue «sin evaluar» de «evaluado bajo». Al evaluar de verdad
- * siempre se escribe la retro. Un nivel distinto de 0 también cuenta, por si se
- * puso sin retro.
- */
-export function periodoEvaluado(valor: number | string | undefined | null, retro: string | undefined | null): boolean {
-  if ((retro ?? '').trim() !== '') return true;
-  return valor !== undefined && valor !== null && valor !== '' && Number(valor) !== 0;
-}
+// Vive en el paquete de evaluación: la agenda y la pantalla del alumno tienen
+// que decidir «evaluado» con el MISMO criterio.
+export { periodoEvaluado } from '@tc2005b/evaluacion';

@@ -261,3 +261,35 @@ export function calcCalificacion(periodos, actividades, competencias) {
 export function round1(n) {
   return Math.round(n * 10) / 10;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Intentos de entrevista                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * ¿Este periodo de la malla ya se evaluó?
+ *
+ * Manda la RETRO, no el nivel: la malla nace con 0 en todos los periodos y 0 es
+ * también «Incipiente B», así que un 0 solo no distingue «sin evaluar» de
+ * «evaluado bajo». Al evaluar de verdad siempre se escribe la retro. Un nivel
+ * distinto de 0 —la sanción incluida— también cuenta, por si se puso sin retro.
+ */
+export function periodoEvaluado(valor, retro) {
+  if (typeof retro === 'string' && retro.trim() !== '') return true;
+  return valor !== undefined && valor !== null && valor !== '' && Number(valor) !== 0;
+}
+
+/**
+ * Qué intento de entrevista cuenta para la calificación de una competencia,
+ * en los grupos que evalúan por intentos (el intento N es el periodo N).
+ *
+ * Cuenta el 2.º si se evaluó, AUNQUE sea más bajo que el 1.º: lo reemplaza, no
+ * se queda con el mejor. Y lo reemplaza entero, también la sanción del 1.º: con
+ * un 2.º evaluado, la «−30 pts» del primero deja de pesar. Sin 2.º cuenta el
+ * 1.º; sin ninguno, nada (`null`).
+ */
+export function intentoQueCuenta(comp) {
+  if (periodoEvaluado(comp.valorPeriodo2, comp.retroPeriodo2)) return 2;
+  if (periodoEvaluado(comp.valorPeriodo1, comp.retroPeriodo1)) return 1;
+  return null;
+}

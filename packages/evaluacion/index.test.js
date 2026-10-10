@@ -19,6 +19,8 @@ import {
   esPenalizacion,
   contarPenalizaciones,
   PENALIZACION_VALOR,
+  periodoEvaluado,
+  intentoQueCuenta,
 } from './index.js';
 
 /** Plan como los tres de producción: P1 normal, P2 acumulativo. */
@@ -520,5 +522,40 @@ describe('penalización Incipiente B −30', () => {
     const p = calcPeriodoScore(plan, 0, [], comps);
     expect(p.compScore).toBe(80); // (100*80 + 0*20) / 100
     expect(p.periodoScore).toBe(50); // 80 − 30
+  });
+});
+
+describe('periodoEvaluado', () => {
+  it('el 0 con el que nace la malla, sin retro, no está evaluado', () => {
+    expect(periodoEvaluado(0, '')).toBe(false);
+  });
+  it('un Incipiente B (0) con retro sí', () => {
+    expect(periodoEvaluado(0, 'Le faltó justificar el diseño')).toBe(true);
+  });
+  it('un nivel distinto de 0 cuenta aunque falte la retro, la sanción incluida', () => {
+    expect(periodoEvaluado(70, '')).toBe(true);
+    expect(periodoEvaluado(PENALIZACION_VALOR, '')).toBe(true);
+  });
+  it('sin campo, o con una retro de espacios, no está evaluado', () => {
+    expect(periodoEvaluado('', undefined)).toBe(false);
+    expect(periodoEvaluado(undefined, '   ')).toBe(false);
+  });
+});
+
+describe('intentoQueCuenta', () => {
+  it('cuenta el 2.º aunque saque menos que en el 1.º', () => {
+    expect(intentoQueCuenta({ valorPeriodo1: 85, retroPeriodo1: 'x', valorPeriodo2: 15, retroPeriodo2: 'y' })).toBe(2);
+  });
+  it('el 2.º anula la sanción del 1.º', () => {
+    expect(intentoQueCuenta({ valorPeriodo1: PENALIZACION_VALOR, retroPeriodo1: 'x', valorPeriodo2: 85, retroPeriodo2: 'y' })).toBe(2);
+  });
+  it('sin 2.º evaluado cuenta el 1.º, aunque el 2.º tenga el 0 de la malla', () => {
+    expect(intentoQueCuenta({ valorPeriodo1: 15, retroPeriodo1: 'x', valorPeriodo2: 0, retroPeriodo2: '' })).toBe(1);
+  });
+  it('un Incipiente B en el 2.º, con retro, sí lo reemplaza', () => {
+    expect(intentoQueCuenta({ valorPeriodo1: 70, retroPeriodo1: 'x', valorPeriodo2: 0, retroPeriodo2: 'y' })).toBe(2);
+  });
+  it('sin ninguno evaluado, ninguno cuenta', () => {
+    expect(intentoQueCuenta({ valorPeriodo1: 0, retroPeriodo1: '', valorPeriodo2: 0, retroPeriodo2: '' })).toBe(null);
   });
 });
