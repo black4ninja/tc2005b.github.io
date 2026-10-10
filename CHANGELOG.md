@@ -7,6 +7,17 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **El alumno ve qué intento cuenta para su calificación.** En los grupos que
+  evalúan por entrevistas (módulo Preguntas), el 1 y el 2 de cada competencia
+  son intentos, y cuenta el 2.º aunque saque menos —anulando la sanción del
+  1.º—; sin 2.º, cuenta el 1.º. La pantalla lo dice arriba en una línea, resalta
+  el chip del intento que cuenta («2 · cuenta») y apaga el otro. Un intento sin
+  evaluar se ve «—» y no el 0 con el que nace la malla, que se leía como «saqué
+  0» y marcaba Incipiente B en la rúbrica. La regla vive en
+  `@tc2005b/evaluacion` (`intentoQueCuenta`), con el mismo criterio de
+  «evaluado» que la agenda del profesor.
+
 ### Added
 - **Asesorías: preguntas para practicar, con visor público y QR.** Una cuarta
   pestaña en Preguntas reúne las preguntas marcadas para asesoría. Cada una

@@ -291,8 +291,14 @@ export async function getMyCompetencias(req: Request, res: Response): Promise<vo
       else porCompetencia.set(id, [e.toSafeJSON()]);
     }
 
+    // Con Preguntas encendido, el 1 y el 2 de la malla son INTENTOS de entrevista
+    // (el 2.º reemplaza al 1.º); sin él son periodos del curso y cuentan los dos.
+    // La pantalla necesita saberlo para decir cuál cuenta.
+    const porIntentos = await moduloActivoEnGrupo(grupoPointer.id!, 'preguntas');
+
     res.json({
       status: 'ok',
+      porIntentos,
       competencias: competencias.map((c) => ({
         ...c.toSafeJSON(),
         // Aparte de `evidencias`, que son las URLs sueltas que la malla ya

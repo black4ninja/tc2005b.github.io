@@ -120,6 +120,46 @@
   border: 1px solid var(--border-color);
 }
 
+/* El intento que cuenta para la calificación: el borde y la palabra lo dicen,
+   el número no cambia de tamaño para no descolocar la fila. */
+.periodoChipCuenta {
+  border-color: var(--color-lab);
+  box-shadow: 0 0 0 1px var(--color-lab);
+}
+
+/* El que NO cuenta: presente, para ver de dónde viene, pero en segundo plano. */
+.periodoChipApagado {
+  opacity: 0.55;
+}
+
+.cuentaEtiqueta {
+  color: var(--color-lab);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* La regla de los intentos, una sola vez bajo el título. */
+.reglaIntentos {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--color-lab) 35%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-lab) 8%, transparent);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.reglaIntentos :global(.material-icons),
+.reglaIntentos > :first-child {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--color-lab);
+}
+
 .periodoNum {
   font-size: 10px;
   font-weight: 600;

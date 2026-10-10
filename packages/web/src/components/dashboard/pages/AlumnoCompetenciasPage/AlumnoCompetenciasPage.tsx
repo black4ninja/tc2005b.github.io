@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { CSSProperties } from 'react';
 import { useParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
-import { esPenalizacion } from '@tc2005b/evaluacion';
+import { esPenalizacion, intentoQueCuenta, periodoEvaluado } from '@tc2005b/evaluacion';
 import Icon from '../../atoms/Icon/Icon';
 import ListaEvidencias from '../../molecules/ListaEvidencias/ListaEvidencias';
 import type { Evidencia } from '../../../../types/agenda';
@@ -75,6 +75,9 @@ export default function AlumnoCompetenciasPage() {
   const { id: grupoId } = useParams<{ id: string }>();
   const { sessionToken } = useAuth();
   const [competencias, setCompetencias] = useState<CompetenciaData[]>([]);
+  // El 1 y el 2 son INTENTOS de entrevista (el 2.º reemplaza al 1.º) y no
+  // periodos del curso: lo dice el servidor según el grupo tenga Preguntas.
+  const [porIntentos, setPorIntentos] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -89,6 +92,7 @@ export default function AlumnoCompetenciasPage() {
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status === 404 ? 'no-disponible' : 'Error')))
       .then((json) => {
         setCompetencias(json.competencias ?? []);
+        setPorIntentos(json.porIntentos === true);
       })
       .catch((motivo) =>
         setError(
@@ -107,10 +111,30 @@ export default function AlumnoCompetenciasPage() {
   return (
     <div className={styles.page}>
       <h2 className={styles.pageTitle}>Competencias</h2>
+      {/* La regla, dicha una vez y arriba: con dos números por fila no hay
+          forma de deducir cuál de los dos va a la calificación. */}
+      {porIntentos && (
+        <p className={styles.reglaIntentos}>
+          <Icon name="info" size="sm" />
+          <span>
+            Para tu calificación cuenta tu <strong>2.º intento</strong>, aunque saque menos que el
+            primero. Si no lo presentas, cuenta el <strong>1.º</strong>.
+          </span>
+        </p>
+      )}
 
       {competencias.map((comp) => {
-        const activeP1 = getActiveLevel(comp.valorPeriodo1);
-        const activeP2 = getActiveLevel(comp.valorPeriodo2);
+        // Por intentos, un intento sin evaluar es «—» y no el 0 con el que nace la
+        // malla: ese 0 también es Incipiente B, y el alumno leería «saqué 0».
+        const evaluado1 = !porIntentos || periodoEvaluado(comp.valorPeriodo1, comp.retroPeriodo1);
+        const evaluado2 = !porIntentos || periodoEvaluado(comp.valorPeriodo2, comp.retroPeriodo2);
+        const cuenta = porIntentos ? intentoQueCuenta(comp) : null;
+        const activeP1 = evaluado1 ? getActiveLevel(comp.valorPeriodo1) : null;
+        const activeP2 = evaluado2 ? getActiveLevel(comp.valorPeriodo2) : null;
+        // En la rúbrica, el tono fuerte es el de la nota que cuenta: el 2.º si
+        // lo hay, y si no el 1.º. Fuera de intentos, el 2.º como siempre.
+        const fuerte = cuenta === 1 ? activeP1 : activeP2;
+        const tenue = cuenta === 1 ? null : activeP1;
         // Las DOS evaluaciones se marcan, no solo la última: lo que el alumno
         // viene a ver es si se movió y hacia dónde, y con una sola resaltada la
         // primera desaparecía y no había de qué comparar.
@@ -133,15 +157,34 @@ export default function AlumnoCompetenciasPage() {
               {/* Fichas y no un renglón de texto: es el dato que se compara de
                   un vistazo entre competencias, y con la etiqueta delante del
                   valor —«P1: 85»— lo que se leía primero era la etiqueta. */}
+              {/* Por intentos, el chip que cuenta se resalta con la palabra y el
+                  otro se apaga sin desaparecer: el alumno sigue viendo de dónde
+                  viene, pero no tiene que deducir cuál vale. */}
               <div className={styles.periodos}>
-                <span className={styles.periodoChip} title="Primera evaluación">
-                  <span className={styles.periodoNum}>1</span>
-                  <strong className={styles.periodoValor}>{formatValor(comp.valorPeriodo1)}</strong>
-                </span>
-                <span className={styles.periodoChip} title="Segunda evaluación">
-                  <span className={styles.periodoNum}>2</span>
-                  <strong className={styles.periodoValor}>{formatValor(comp.valorPeriodo2)}</strong>
-                </span>
+                {([1, 2] as const).map((n) => {
+                  const valor = n === 1 ? comp.valorPeriodo1 : comp.valorPeriodo2;
+                  const evaluado = n === 1 ? evaluado1 : evaluado2;
+                  const esLaQueCuenta = cuenta === n;
+                  const apagado = cuenta !== null && !esLaQueCuenta;
+                  return (
+                    <span
+                      key={n}
+                      className={[
+                        styles.periodoChip,
+                        esLaQueCuenta ? styles.periodoChipCuenta : '',
+                        apagado ? styles.periodoChipApagado : '',
+                      ].filter(Boolean).join(' ')}
+                      title={porIntentos
+                        ? `${n}.º intento${esLaQueCuenta ? ': es el que cuenta para tu calificación' : evaluado ? '' : ': todavía sin evaluar'}`
+                        : n === 1 ? 'Primera evaluación' : 'Segunda evaluación'}
+                    >
+                      <span className={styles.periodoNum}>
+                        {n}{esLaQueCuenta && <span className={styles.cuentaEtiqueta}> · cuenta</span>}
+                      </span>
+                      <strong className={styles.periodoValor}>{evaluado ? formatValor(valor) : '—'}</strong>
+                    </span>
+                  );
+                })}
               </div>
             </summary>
 
@@ -174,12 +217,17 @@ export default function AlumnoCompetenciasPage() {
                     {niveles.map(({ key, label, percent }) => {
                       const esP1 = activeP1 === key;
                       const esP2 = activeP2 === key;
-                      // La segunda manda en el color: es la nota que cuenta hoy.
-                      // La primera se marca en un tono más claro, de dónde viene.
-                      const clase = esP2 ? styles.rubricColActive
-                        : esP1 ? styles.rubricColPrevia : '';
-                      const claseCabecera = esP2 ? styles.rubricHeaderActive
-                        : esP1 ? styles.rubricHeaderPrevia : '';
+                      // La que cuenta manda en el color; la otra se marca en un
+                      // tono más claro, de dónde viene.
+                      const esFuerte = fuerte === key;
+                      const esTenue = !esFuerte && (tenue === key || esP1 || esP2);
+                      const clase = esFuerte ? styles.rubricColActive
+                        : esTenue ? styles.rubricColPrevia : '';
+                      const claseCabecera = esFuerte ? styles.rubricHeaderActive
+                        : esTenue ? styles.rubricHeaderPrevia : '';
+                      // La marca va con el estilo de SU cabecera: sobre la
+                      // fuerte, el par de contraste; sobre la tenue, la clara.
+                      const marca = esFuerte ? styles.marcaActual : styles.marcaPrevia;
                       return (
                         <div
                           key={key}
@@ -191,8 +239,8 @@ export default function AlumnoCompetenciasPage() {
                                 las hacía más altas que las demás y las
                                 cabeceras quedaban a distinto nivel. */}
                             <span className={styles.rubricMarcas}>
-                              {esP1 && <span className={styles.marcaPrevia}>1</span>}
-                              {esP2 && <span className={styles.marcaActual}>2</span>}
+                              {esP1 && <span className={marca}>1</span>}
+                              {esP2 && <span className={marca}>2</span>}
                             </span>
                             {label}
                             <span className={styles.rubricPercent}>{percent}</span>
@@ -218,6 +266,7 @@ export default function AlumnoCompetenciasPage() {
                         : activeP1
                           ? `${nombreDeNivel(activeP1)} en la primera evaluación. La segunda todavía no está.`
                           : `${nombreDeNivel(activeP2)} en la segunda evaluación.`}
+                    {cuenta && ` Para tu calificación cuenta el ${cuenta}.º intento.`}
                   </p>
                 )}
               </div>
