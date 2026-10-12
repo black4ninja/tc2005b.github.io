@@ -355,6 +355,9 @@ export default function AgendaEntrevistasAlumnoPage() {
                   // cuando todavía puede hacer algo al respecto.
                   citaInicio={cita.inicio}
                   onQuitar={quitarEvidencia}
+                  // Ya empezada, lo entregado se queda: el servidor tampoco deja
+                  // quitarlo, porque se perdería si llegó a tiempo.
+                  sePuedeQuitar={() => new Date(cita.inicio).getTime() > Date.now()}
                 />
                 <div className={styles.evidenciaAlta}>
                   <input

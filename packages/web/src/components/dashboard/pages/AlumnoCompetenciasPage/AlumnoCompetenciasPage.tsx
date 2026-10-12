@@ -153,6 +153,11 @@ export default function AlumnoCompetenciasPage() {
       setErroresEvidencia((e) => ({ ...e, [comp.id]: 'Pon un enlace que empiece por http:// o https://' }));
       return;
     }
+    // Mismo aviso por los dos caminos: por la agenda lo dice el servidor.
+    if (!comp.conEntrevista && (comp.evidencias ?? []).includes(url)) {
+      setErroresEvidencia((e) => ({ ...e, [comp.id]: 'Ese enlace ya está puesto' }));
+      return;
+    }
     setEnVuelo(comp.id);
     try {
       const res = comp.conEntrevista

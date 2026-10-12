@@ -859,8 +859,14 @@ export async function crearEvidenciaAlumno(req: Request, res: Response): Promise
         res.status(409).json({ status: 'error', message: 'Esa competencia no se evalúa por entrevista' });
         return;
       }
-      const suyas = (await citasDelGrupo(grupoId))
-        .filter((c) => c.getAlumno()?.id === alumnoId && c.getCompetencia()?.id === competenciaId);
+      // Solo las de este alumno en esta competencia, no las del grupo entero.
+      const cq = new Parse.Query<CitaEntrevista>('CitaEntrevista');
+      cq.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+      cq.equalTo('alumno' as any, AppUser.createWithoutData(alumnoId) as any);
+      cq.equalTo('competencia' as any, Competencia.createWithoutData(competenciaId) as any);
+      cq.equalTo('exists' as any, true as any);
+      cq.limit(50);
+      const suyas = await cq.find({ useMasterKey: true });
       const destino = citaParaEvidencia(
         suyas.map((c) => ({ id: c.id!, inicio: c.getInicio() })),
         new Date(),
@@ -915,9 +921,21 @@ export async function borrarEvidenciaAlumno(req: Request, res: Response): Promis
   try {
     const q = new Parse.Query<EvidenciaCompetencia>('EvidenciaCompetencia');
     q.equalTo('exists' as any, true as any);
+    q.include('cita' as any);
     const evidencia = await q.get(evidenciaId, { useMasterKey: true }).catch(() => null);
     if (!evidencia || evidencia.getGrupo()?.id !== grupoId || evidencia.getAlumno()?.id !== alumnoId) {
       res.status(403).json({ status: 'error', message: 'Esa evidencia no es tuya' });
+      return;
+    }
+    // Lo entregado para una entrevista que ya empezó se queda: quitarlo borraría
+    // también la constancia de si llegó a tiempo. Lo impone el servidor, no
+    // solo la pantalla.
+    const inicioCita = (evidencia.getCita() as Parse.Object | undefined)?.get('inicio') as Date | undefined;
+    if (inicioCita && inicioCita.getTime() <= Date.now()) {
+      res.status(409).json({
+        status: 'error',
+        message: 'Esa evidencia es de una entrevista que ya pasó: no se puede quitar',
+      });
       return;
     }
     evidencia.softDelete();
