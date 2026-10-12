@@ -72,6 +72,28 @@
   min-width: 150px;
 }
 
+/* Atajo a «Agregar evidencia» al lado del nombre: discreto, sin borde, para
+   que la fila se siga leyendo como antes. */
+.atajoEvidencia {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  padding: 3px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.atajoEvidencia:hover,
+.atajoEvidencia:focus-visible {
+  color: var(--color-lab);
+  background: color-mix(in srgb, var(--color-lab) 12%, transparent);
+}
+
 .compNivel {
   font-size: 13px;
   color: var(--text-secondary);
@@ -413,4 +435,79 @@
 
 .evidenciaLink:hover {
   text-decoration: underline;
+}
+
+/* Las de la malla, con su botón de quitar al final de la fila. */
+.evidenciasList li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quitarEvidencia {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  padding: 2px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.quitarEvidencia:hover:not(:disabled) { color: var(--dash-danger); }
+.quitarEvidencia:disabled { opacity: 0.5; cursor: default; }
+
+/* Agregar evidencia: el campo ocupa lo que haya y el botón va pegado a él.
+   En el teléfono bajan uno debajo del otro. */
+.agregarEvidencia {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.agregarInput {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.agregarInput:focus {
+  outline: none;
+  border-color: var(--color-lab);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-lab) 25%, transparent);
+}
+
+.agregarBoton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-lab);
+  color: var(--color-lab-contraste);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.agregarBoton:disabled { opacity: 0.5; cursor: default; }
+
+.agregarError {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--dash-danger);
+}
+
+@media (max-width: 560px) {
+  .agregarEvidencia { flex-direction: column; }
 }

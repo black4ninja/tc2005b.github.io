@@ -370,3 +370,19 @@ export function planificarBloques(candidatos: Rango[], existentes: Rango[]): Fil
 // Vive en el paquete de evaluación: la agenda y la pantalla del alumno tienen
 // que decidir «evaluado» con el MISMO criterio.
 export { periodoEvaluado } from '@tc2005b/evaluacion';
+
+/**
+ * A qué cita va una evidencia que el alumno entrega desde su competencia, sin
+ * elegir entrevista: a la PRÓXIMA que tenga de esa competencia. Las que ya
+ * pasaron no —esa entrevista ya se hizo— y sin ninguna por delante, a ninguna:
+ * se queda suelta y se engancha sola a la siguiente que agende.
+ */
+export function citaParaEvidencia(
+  citas: { id: string; inicio: Date }[],
+  ahora: Date,
+): string | null {
+  const proximas = citas
+    .filter((c) => c.inicio.getTime() > ahora.getTime())
+    .sort((a, b) => a.inicio.getTime() - b.inicio.getTime());
+  return proximas[0]?.id ?? null;
+}

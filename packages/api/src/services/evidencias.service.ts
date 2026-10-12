@@ -71,6 +71,26 @@ export async function evidenciasDeAlumno(
 }
 
 /**
+ * Las SUELTAS de un alumno en una competencia: las que no cuelgan de ninguna
+ * cita. Son las que se cuentan para el tope y el enlace repetido cuando se
+ * entrega sin entrevista por delante.
+ */
+export async function evidenciasSueltas(
+  grupoId: string,
+  alumnoId: string,
+  competenciaId: string,
+): Promise<EvidenciaCompetencia[]> {
+  const q = new Parse.Query<EvidenciaCompetencia>('EvidenciaCompetencia');
+  q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  q.equalTo('alumno' as any, { __type: 'Pointer', className: 'AppUser', objectId: alumnoId } as any);
+  q.equalTo('competencia' as any, { __type: 'Pointer', className: 'Competencia', objectId: competenciaId } as any);
+  q.doesNotExist('cita' as any);
+  q.equalTo('exists' as any, true as any);
+  q.limit(MAX_EVIDENCIAS + 1);
+  return q.find({ useMasterKey: true });
+}
+
+/**
  * Con qué llave se agrupan para enseñarlas: la CITA si la tienen, y si no, la
  * competencia a secas —son las que quedaron sueltas al cancelar—.
  */

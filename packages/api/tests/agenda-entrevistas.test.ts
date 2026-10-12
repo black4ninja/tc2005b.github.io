@@ -3,6 +3,7 @@ import {
   esDiaHabil, sumarHorasHabiles, puedeAgendar, puedeCancelar, huecosDelDia, huecoAbierto,
   numerarIntentos, planificarBloques, puedeSerOtroIntento, entrevistaTerminada,
   huecosConEntrevistaPasada, intentosPorCita, cancelarRenumeraUnaPasada, periodoEvaluado,
+  citaParaEvidencia,
 } from '../src/services/agenda-entrevistas.service.js';
 
 /**
@@ -462,5 +463,30 @@ describe('periodoEvaluado', () => {
   it('sin campo —el «sin evaluar» del modelo— no está evaluado', () => {
     expect(periodoEvaluado(undefined, '')).toBe(false);
     expect(periodoEvaluado('', undefined)).toBe(false);
+  });
+});
+
+describe('citaParaEvidencia', () => {
+  const ahora = qro('2026-10-10T12:00:00');
+
+  it('va a la PRÓXIMA entrevista, no a la última', () => {
+    const citas = [
+      { id: 'tarde', inicio: qro('2026-10-20T10:00:00') },
+      { id: 'pronto', inicio: qro('2026-10-13T10:00:00') },
+    ];
+    expect(citaParaEvidencia(citas, ahora)).toBe('pronto');
+  });
+
+  it('no va a una que ya pasó: esa entrevista ya se hizo', () => {
+    const citas = [
+      { id: 'pasada', inicio: qro('2026-10-01T10:00:00') },
+      { id: 'futura', inicio: qro('2026-10-15T10:00:00') },
+    ];
+    expect(citaParaEvidencia(citas, ahora)).toBe('futura');
+  });
+
+  it('sin ninguna por delante se queda suelta', () => {
+    expect(citaParaEvidencia([{ id: 'pasada', inicio: qro('2026-10-01T10:00:00') }], ahora)).toBe(null);
+    expect(citaParaEvidencia([], ahora)).toBe(null);
   });
 });
