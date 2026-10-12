@@ -7,6 +7,23 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **El alumno agrega evidencias desde Competencias.** Cada competencia tiene al
+  final «Agregar evidencia», y un atajo junto a su nombre que abre la tarjeta y
+  lleva al campo. Las que se evalúan por entrevista se guardan como las de la
+  agenda: pegadas a la PRÓXIMA entrevista de esa competencia, así que la regla
+  de las 24 h de antelación y la etiqueta «tarde» las juzgan igual; sin cita por
+  delante se quedan sueltas y se juntan solas a la que agende. Las demás van a
+  la malla, donde las ve el profesor. Debajo del campo se dice cuál de los dos
+  pasará, y si ya va tarde. Se pueden quitar, salvo lo entregado para una
+  entrevista que ya pasó.
+
+### Security
+- **Las evidencias de la malla tienen que ser enlaces http(s).** El servidor
+  aceptaba cualquier texto, y un `javascript:` se habría ejecutado al abrirlo el
+  profesor. Se validan las nuevas —las ya guardadas no, para no bloquear a
+  nadie— y hay un tope de 30 por competencia.
+
 ### Changed
 - **El alumno ve qué intento cuenta para su calificación.** En los grupos que
   evalúan por entrevistas (módulo Preguntas), el 1 y el 2 de cada competencia

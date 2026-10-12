@@ -24,6 +24,11 @@ interface Props {
   citaInicio?: string | null;
   /** Sin esto la lista es de solo lectura, que es como la ve el profesor. */
   onQuitar?: (evidenciaId: string) => void;
+  /**
+   * Cuáles se pueden quitar, si no son todas. Lo entregado para una entrevista
+   * que ya pasó se queda: quitarlo borraría también si llegó a tiempo.
+   */
+  sePuedeQuitar?: (e: Evidencia) => boolean;
 }
 
 /**
@@ -52,6 +57,7 @@ function resumenAntelacion(subidaIso: string, citaIso: string): string {
 
 export default function ListaEvidencias({
   evidencias, enVuelo = null, conCompetencia = false, vacio, citaInicio = null, onQuitar,
+  sePuedeQuitar,
 }: Props) {
   if (evidencias.length === 0) {
     return vacio ? <p className={styles.vacio}>{vacio}</p> : null;
@@ -94,7 +100,7 @@ export default function ListaEvidencias({
               tarde
             </span>
           )}
-          {onQuitar && (
+          {onQuitar && (!sePuedeQuitar || sePuedeQuitar(e)) && (
             <button
               type="button"
               className={styles.quitar}

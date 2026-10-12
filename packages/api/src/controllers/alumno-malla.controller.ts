@@ -15,8 +15,14 @@ import { getColeccionesPermitidas } from '../services/contenidos.service.js';
 import { coleccionesConEjerciciosPublicados } from '../services/ejercicios-alumno.service.js';
 import { coleccionesConDiagramasPublicados } from '../services/diagramas-alumno.service.js';
 import { evidenciasDeAlumno } from '../services/evidencias.service.js';
+import { competenciasDelBanco } from './agenda-entrevistas.controller.js';
+import { citaParaEvidencia } from '../services/agenda-entrevistas.service.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { registrarLog } from '../models/AuditLog.js';
+import { sanitizarUrlHref } from '../utils/url.js';
+
+/** Tope de evidencias de la malla por competencia: sin él, pegar enlaces no tiene fondo. */
+const MAX_EVIDENCIAS_MALLA = 30;
 
 /**
  * Corta con 404 si el grupo no comparte ese módulo con sus alumnos. 404 y no 403
@@ -296,6 +302,28 @@ export async function getMyCompetencias(req: Request, res: Response): Promise<vo
     // La pantalla necesita saberlo para decir cuál cuenta.
     const porIntentos = await moduloActivoEnGrupo(grupoPointer.id!, 'preguntas');
 
+    // Para el formulario de evidencias: las competencias que se evalúan por
+    // entrevista guardan sus evidencias como las de la agenda —con hora, y
+    // pegadas a la próxima cita para juzgar la antelación—; las demás, en la
+    // malla. Y de las primeras, cuándo es esa próxima cita, para poder avisar.
+    const deEntrevista = new Set(
+      porIntentos ? (await competenciasDelBanco(grupoPointer.id!)).map((c) => c.id) : [],
+    );
+    const citasQ = new Parse.Query('CitaEntrevista');
+    citasQ.equalTo('exists' as any, true as any);
+    citasQ.equalTo('grupo' as any, grupoPointer as any);
+    citasQ.equalTo('alumno' as any, alumnoPointer as any);
+    citasQ.limit(200);
+    const misCitas = deEntrevista.size > 0 ? await citasQ.find({ useMasterKey: true }) : [];
+    const ahora = new Date();
+    function proximaEntrevista(competenciaId: string): string | null {
+      const suyas = misCitas
+        .filter((c) => c.get('competencia')?.id === competenciaId)
+        .map((c) => ({ id: c.id!, inicio: c.get('inicio') as Date }));
+      const id = citaParaEvidencia(suyas, ahora);
+      return id ? (suyas.find((c) => c.id === id)!.inicio.toISOString()) : null;
+    }
+
     res.json({
       status: 'ok',
       porIntentos,
@@ -304,6 +332,10 @@ export async function getMyCompetencias(req: Request, res: Response): Promise<vo
         // Aparte de `evidencias`, que son las URLs sueltas que la malla ya
         // guardaba: estas son las de las entrevistas, con su hora.
         entregas: porCompetencia.get(c.getCompetencia()?.id ?? '') ?? [],
+        conEntrevista: deEntrevista.has(c.getCompetencia()?.id ?? ''),
+        proximaEntrevista: deEntrevista.has(c.getCompetencia()?.id ?? '')
+          ? proximaEntrevista(c.getCompetencia()!.id!)
+          : null,
       })),
       alumno: {
         id: alumno.id,
@@ -348,6 +380,19 @@ export async function updateMyCompetenciaEvidencias(req: Request, res: Response)
       const valid = evidencias.every((e: unknown) => typeof e === 'string');
       if (!valid) {
         res.status(400).json({ status: 'error', message: 'Todas las evidencias deben ser URLs válidas' });
+        return;
+      }
+      // Las NUEVAS tienen que ser http(s): el profesor las abre como enlace, y
+      // un `javascript:` ahí se ejecutaría en su sesión. Las que ya estaban se
+      // dejan pasar tal cual para no bloquear a quien guardó algo antes.
+      const yaEstaban = new Set(registro.getEvidencias());
+      const nuevas = (evidencias as string[]).filter((e) => !yaEstaban.has(e));
+      if (nuevas.some((e) => !sanitizarUrlHref(e) || e.length > 2000)) {
+        res.status(400).json({ status: 'error', message: 'Pon un enlace que empiece por http:// o https://' });
+        return;
+      }
+      if (evidencias.length > MAX_EVIDENCIAS_MALLA) {
+        res.status(400).json({ status: 'error', message: `Como mucho ${MAX_EVIDENCIAS_MALLA} evidencias por competencia` });
         return;
       }
       registro.setEvidencias(evidencias);

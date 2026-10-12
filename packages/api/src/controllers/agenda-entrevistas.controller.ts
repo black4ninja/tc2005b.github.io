@@ -13,12 +13,12 @@ import { CompetenciaAlumno } from '../models/CompetenciaAlumno.js';
 import { coleccionesDeGrupo, modulosActivosEnGrupo } from '../services/grupo-colecciones.service.js';
 import { getVinculoConGrupoActivo } from '../services/grupo-alumno.service.js';
 import {
-  cancelarRenumeraUnaPasada, entrevistaTerminada, huecoAbierto, huecosDelDia, intentosPorCita, periodoEvaluado,
+  cancelarRenumeraUnaPasada, citaParaEvidencia, entrevistaTerminada, huecoAbierto, huecosDelDia, intentosPorCita, periodoEvaluado,
   planificarBloques, puedeAgendar, puedeCancelar, puedeSerOtroIntento, sumarHorasHabiles,
   type FilaPlan, type Rango,
 } from '../services/agenda-entrevistas.service.js';
 import {
-  MAX_EVIDENCIAS, agruparEvidencias, engancharSueltas, evidenciasDeCita, evidenciasDelGrupo,
+  MAX_EVIDENCIAS, agruparEvidencias, engancharSueltas, evidenciasDeCita, evidenciasDelGrupo, evidenciasSueltas,
   llaveDeEvidencia, soltarEvidenciasDeCita,
 } from '../services/evidencias.service.js';
 import { sanitizarUrlHref } from '../utils/url.js';
@@ -64,7 +64,7 @@ async function duracionDelGrupo(grupoId: string): Promise<number> {
  * en el banco del grupo. Una competencia sin preguntas no es una entrevista que
  * se pueda dar, solo una opción que dejaría al profesor sin nada que proyectar.
  */
-async function competenciasDelBanco(grupoId: string): Promise<{ id: string; nombre: string }[]> {
+export async function competenciasDelBanco(grupoId: string): Promise<{ id: string; nombre: string }[]> {
   const colecciones = await coleccionesDeGrupo(grupoId, 'preguntas');
   if (colecciones.length === 0) return [];
   const q = new Parse.Query<Pregunta>('Pregunta');
@@ -824,27 +824,56 @@ export async function crearEvidenciaAlumno(req: Request, res: Response): Promise
     });
     return;
   }
-  if (!citaId) {
-    res.status(400).json({ status: 'error', message: 'Falta la entrevista' });
-    return;
-  }
 
   try {
-    const q = new Parse.Query<CitaEntrevista>('CitaEntrevista');
-    q.equalTo('exists' as any, true as any);
-    const cita = await q.get(citaId, { useMasterKey: true }).catch(() => null);
-    if (!cita || cita.getGrupo()?.id !== grupoId || cita.getAlumno()?.id !== alumnoId) {
-      res.status(403).json({ status: 'error', message: 'Esa entrevista no es tuya' });
-      return;
-    }
-    const competenciaId = cita.getCompetencia()?.id;
-    if (!competenciaId) {
-      res.status(409).json({ status: 'error', message: 'Esa entrevista no tiene competencia' });
-      return;
+    // Dos formas de entregar. Desde la agenda se elige la entrevista (`citaId`).
+    // Desde la pantalla de Competencias se elige la COMPETENCIA, y la evidencia
+    // va a la próxima entrevista de esa competencia —para que la regla de las
+    // horas de antelación la juzgue igual que si se hubiera subido desde la
+    // agenda— o, sin ninguna por delante, se queda suelta hasta que agende.
+    let cita: CitaEntrevista | null = null;
+    let competenciaId: string | undefined;
+    if (citaId) {
+      const q = new Parse.Query<CitaEntrevista>('CitaEntrevista');
+      q.equalTo('exists' as any, true as any);
+      cita = await q.get(citaId, { useMasterKey: true }).catch(() => null);
+      if (!cita || cita.getGrupo()?.id !== grupoId || cita.getAlumno()?.id !== alumnoId) {
+        res.status(403).json({ status: 'error', message: 'Esa entrevista no es tuya' });
+        return;
+      }
+      competenciaId = cita.getCompetencia()?.id;
+      if (!competenciaId) {
+        res.status(409).json({ status: 'error', message: 'Esa entrevista no tiene competencia' });
+        return;
+      }
+    } else {
+      competenciaId = typeof req.body?.competenciaId === 'string' ? req.body.competenciaId : undefined;
+      if (!competenciaId) {
+        res.status(400).json({ status: 'error', message: 'Falta la entrevista o la competencia' });
+        return;
+      }
+      // Solo las competencias que se evalúan por entrevista: las demás guardan
+      // sus evidencias en la malla, que es donde el profesor las mira.
+      const deEntrevista = await competenciasDelBanco(grupoId);
+      if (!deEntrevista.some((c) => c.id === competenciaId)) {
+        res.status(409).json({ status: 'error', message: 'Esa competencia no se evalúa por entrevista' });
+        return;
+      }
+      const suyas = (await citasDelGrupo(grupoId))
+        .filter((c) => c.getAlumno()?.id === alumnoId && c.getCompetencia()?.id === competenciaId);
+      const destino = citaParaEvidencia(
+        suyas.map((c) => ({ id: c.id!, inicio: c.getInicio() })),
+        new Date(),
+      );
+      cita = destino ? suyas.find((c) => c.id === destino) ?? null : null;
     }
 
-    const suyas = await evidenciasDeCita(citaId);
-    if (suyas.length >= MAX_EVIDENCIAS) {
+    // Tope y enlace repetido contra el MISMO sitio donde va a quedar: su cita,
+    // o las sueltas de esa competencia.
+    const vecinas = cita
+      ? await evidenciasDeCita(cita.id!)
+      : await evidenciasSueltas(grupoId, alumnoId, competenciaId);
+    if (vecinas.length >= MAX_EVIDENCIAS) {
       res.status(409).json({
         status: 'error',
         message: `Como mucho ${MAX_EVIDENCIAS} evidencias por entrevista`,
@@ -852,7 +881,7 @@ export async function crearEvidenciaAlumno(req: Request, res: Response): Promise
       return;
     }
     // Repetir el mismo enlace no añade nada y ensucia la lista del profesor.
-    if (suyas.some((e) => e.getUrl() === url)) {
+    if (vecinas.some((e) => e.getUrl() === url)) {
       res.status(409).json({ status: 'error', message: 'Ese enlace ya está puesto' });
       return;
     }
@@ -862,7 +891,7 @@ export async function crearEvidenciaAlumno(req: Request, res: Response): Promise
     evidencia.setAlumno(AppUser.createWithoutData(alumnoId) as AppUser);
     evidencia.setCompetencia(Competencia.createWithoutData(competenciaId));
     evidencia.setCita(cita);
-    evidencia.setOrigen('entrevista');
+    evidencia.setOrigen(citaId ? 'entrevista' : 'malla');
     evidencia.setUrl(url);
     evidencia.setTitulo(String(titulo ?? '').trim().slice(0, 120));
     await evidencia.save(null, { useMasterKey: true });
