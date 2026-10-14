@@ -410,26 +410,34 @@ export default function VisorContenidoPage() {
         >
           <span className="material-icons">{arbolOculto ? 'menu' : 'menu_open'}</span>
         </button>
-        {/* El título salía repetido: el selector ya dice en qué wiki estás. Con
-            una sola asignada el selector se queda, deshabilitado, porque es
-            donde se lee el nombre (mismo criterio que el de grupo del alumno).
-            Si la colección abierta NO está en la lista —o esta aún no ha
-            llegado— se pinta su nombre como texto: un `select` cuyo `value` no
-            casa con ninguna opción enseñaría la primera, que es otra wiki. */}
-        {enLista ? (
-          <select
-            className={styles.switcher}
-            value={slug}
-            onChange={(e) => navigate(`/contenidos/${e.target.value}/`)}
-            disabled={misColecciones.length === 1}
-            title={misColecciones.length === 1 ? 'Tienes una sola wiki asignada' : 'Cambiar de wiki'}
-          >
-            {misColecciones.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.clave ? `${c.clave} — ${c.nombre}` : c.nombre}
-              </option>
-            ))}
-          </select>
+        {/* Con VARIAS wikis, pestañas a la vista y no un `select`: el
+            desplegable pasaba desapercibido y los alumnos no sabían que podían
+            cambiar a la wiki de su otro grupo. Con una sola —o si la abierta no
+            está en la lista, o la lista aún no llega— basta el nombre como
+            texto: no hay nada que elegir, y un control cuyo valor no casa con
+            ninguna opción enseñaría otra wiki. */}
+        {enLista && misColecciones.length > 1 ? (
+          <nav className={styles.wikis} aria-label="Tus wikis">
+            <span className={styles.wikisEtiqueta}>
+              <span className="material-icons" aria-hidden="true">menu_book</span>
+              Tus wikis
+            </span>
+            {misColecciones.map((c) => {
+              const activa = c.slug === slug;
+              return (
+                <button
+                  key={c.slug}
+                  type="button"
+                  className={`${styles.wikiTab} ${activa ? styles.wikiTabActiva : ''}`}
+                  onClick={() => !activa && navigate(`/contenidos/${c.slug}/`)}
+                  aria-current={activa ? 'page' : undefined}
+                  title={activa ? `Estás en ${c.nombre}` : `Cambiar a ${c.nombre}`}
+                >
+                  {c.clave || c.nombre}
+                </button>
+              );
+            })}
+          </nav>
         ) : (
           <span className={styles.brand} title={coleccion?.nombre}>
             {coleccion ? `${coleccion.clave ? `${coleccion.clave} — ` : ''}${coleccion.nombre}` : '…'}
