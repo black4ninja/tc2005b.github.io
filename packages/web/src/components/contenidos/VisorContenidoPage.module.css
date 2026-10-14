@@ -268,16 +268,62 @@
   padding: 0 10px;
 }
 
-.switcher {
-  padding: 5px 10px;
+/* Pestañas de wiki: cada una a la vista, la abierta resaltada. Si no caben
+   (móvil, muchas wikis) se desplazan en horizontal en vez de empujar el
+   buscador fuera de la barra. */
+.wikis {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.wikis::-webkit-scrollbar {
+  display: none;
+}
+.wikisEtiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-right: 2px;
+}
+.wikisEtiqueta :global(.material-icons) {
+  font-size: 16px;
+}
+.wikiTab {
+  flex-shrink: 0;
+  padding: 6px 14px;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 999px;
   background: var(--bg-page);
   color: var(--text-primary);
-  font-size: 12.5px;
-  font-family: inherit;
-  max-width: 260px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.wikiTab:hover {
+  border-color: var(--sidebar-active-color);
+  color: var(--sidebar-active-color);
+}
+.wikiTab:focus-visible {
+  outline: 2px solid var(--sidebar-active-color);
+  outline-offset: 2px;
+}
+.wikiTabActiva,
+.wikiTabActiva:hover {
+  background: var(--sidebar-active-color);
+  border-color: var(--sidebar-active-color);
+  color: var(--bg-page);
+  cursor: default;
 }
 
 .reintentar {

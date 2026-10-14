@@ -83,6 +83,11 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   // de este componente y el panel no se enteraba de los cambios.
   const { grupoActivoId: selectedGrupoId, cambiarGrupo } = useGrupoActivo();
   const [docsHref, setDocsHref] = useState<string | null>(null);
+  // Todas las wikis del alumno, las del grupo abierto primero. Con más de una,
+  // «Wiki» deja de ser un enlace directo a la primera y se despliega en una
+  // entrada por wiki: el enlace solo abría la primera, y no se daban cuenta de
+  // que podían cambiar a la otra desde el visor.
+  const [wikisAlumno, setWikisAlumno] = useState<EnlaceColeccion[]>([]);
   const [ejerciciosHref, setEjerciciosHref] = useState<string | null>(null);
   const [diagramasHref, setDiagramasHref] = useState<string | null>(null);
   const [tallerHref, setTallerHref] = useState<string | null>(null);
@@ -118,6 +123,14 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
           setModulosGrupo(menu.modulos ?? {});
           updateUser({ perfilCompleto: menu.perfilCompleto ?? false });
           setDocsHref(menu.coleccionSlug ? `/contenidos/${menu.coleccionSlug}/` : null);
+          setWikisAlumno(
+            ((menu.wikis ?? []) as { slug: string; clave: string | null; nombre: string }[]).map((w) => ({
+              key: `${w.slug}-wiki`,
+              label: w.clave || w.nombre,
+              href: `/contenidos/${w.slug}/`,
+              externo: true,
+            })),
+          );
           setEjerciciosHref(menu.ejerciciosSlug ? rutaEjerciciosAlumno(menu.ejerciciosSlug) : null);
           setDiagramasHref(menu.diagramasSlug ? rutaDiagramasAlumno(menu.diagramasSlug) : null);
           // El taller no cuelga de una colección, pero solo se ofrece si el
@@ -431,7 +444,22 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             </div>
           ) : (
             <>
-              {items.map(item => (
+              {items.map(item =>
+                // Varias wikis: desplegable con una entrada por wiki, como en el
+                // menú del profesor. Con el perfil incompleto se queda el ítem
+                // deshabilitado de siempre, que es el que explica por qué. Y con
+                // el menú contraído, también: ahí el desplegable es un icono que
+                // no se puede pulsar, y el enlace al menos abre la wiki del grupo.
+                item.path === docsHref && wikisAlumno.length > 1 && !item.disabled && !collapsed ? (
+                  <SeccionColecciones
+                    key={item.path}
+                    titulo="Wiki"
+                    icono="menu_book"
+                    items={wikisAlumno}
+                    collapsed={collapsed}
+                    defaultOpen
+                  />
+                ) : (
                 <NavItem
                   key={item.path}
                   icon={item.icon}
@@ -443,7 +471,8 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
                   collapsed={collapsed}
                   onClick={onCloseMobile}
                 />
-              ))}
+                ),
+              )}
               {enlacesDiagramas.length > 0 && (
                 <SeccionColecciones
                   titulo="Diagramas"

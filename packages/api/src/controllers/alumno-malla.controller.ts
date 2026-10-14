@@ -10,7 +10,7 @@ import { Grupo } from '../models/Grupo.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { validarPerfil } from '../models/campos-perfil.js';
 import { getVinculoConGrupoActivo, olvidarGruposDeAlumno } from '../services/grupo-alumno.service.js';
-import { moduloActivoEnGrupo, modulosActivosEnGrupo } from '../services/grupo-colecciones.service.js';
+import { coleccionesDeGrupo, moduloActivoEnGrupo, modulosActivosEnGrupo } from '../services/grupo-colecciones.service.js';
 import { getColeccionesPermitidas } from '../services/contenidos.service.js';
 import { coleccionesConEjerciciosPublicados } from '../services/ejercicios-alumno.service.js';
 import { coleccionesConDiagramasPublicados } from '../services/diagramas-alumno.service.js';
@@ -20,6 +20,7 @@ import { citaParaEvidencia } from '../services/agenda-entrevistas.service.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { registrarLog } from '../models/AuditLog.js';
 import { sanitizarUrlHref } from '../utils/url.js';
+import { ordenarWikisPorGrupo } from '../utils/orden-wikis.js';
 
 /** Tope de evidencias de la malla por competencia: sin él, pegar enlaces no tiene fondo. */
 const MAX_EVIDENCIAS_MALLA = 30;
@@ -441,9 +442,10 @@ export async function getMyMenu(req: Request, res: Response): Promise<void> {
 
     // Los dos módulos salen de UNA lectura del grupo: preguntarlos por separado
     // traía el mismo grupo con sus colecciones dos veces.
-    const [modulos, colecciones, ejercicios, diagramas] = await Promise.all([
+    const [modulos, permitidas, wikisDelGrupo, ejercicios, diagramas] = await Promise.all([
       modulosActivosEnGrupo(grupoPointer.id, ['competencias', 'actividades', 'preguntas', 'scrum']),
       getColeccionesPermitidas(user),
+      coleccionesDeGrupo(grupoPointer.id, 'documentacion'),
       coleccionesConEjerciciosPublicados(user),
       coleccionesConDiagramasPublicados(user),
     ]);
@@ -454,6 +456,9 @@ export async function getMyMenu(req: Request, res: Response): Promise<void> {
     const preguntas = modulos.preguntas === true;
     // Este SÍ le añade una pantalla al alumno: el tablero kanban de su equipo.
     const scrum = modulos.scrum === true;
+    // Las wikis del grupo abierto, primero: el enlace directo del menú lleva a
+    // la primera, y antes podía ser la de OTRO grupo del alumno.
+    const colecciones = ordenarWikisPorGrupo(permitidas, wikisDelGrupo.map((c) => c.id!));
 
     res.json({
       status: 'ok',
@@ -462,8 +467,9 @@ export async function getMyMenu(req: Request, res: Response): Promise<void> {
         // estampa. Se nombra aparte para que el consumidor no tenga que saberlo.
         modulos: { competencias, actividades, malla: actividades, preguntas, scrum },
         perfilCompleto: link.getPerfilCompleto(),
-        // Solo el slug de la primera: es lo único que el menú usa para enlazar.
         coleccionSlug: colecciones[0]?.slug ?? null,
+        // Todas, para que con más de una el menú las ofrezca por separado.
+        wikis: colecciones.map(({ slug, clave, nombre }) => ({ slug, clave, nombre })),
         ejerciciosSlug: ejercicios[0]?.slug ?? null,
         diagramasSlug: diagramas[0]?.slug ?? null,
       },
