@@ -53,6 +53,11 @@ export default function VisorContenidoPage() {
   const [coleccion, setColeccion] = useState<{ slug: string; nombre: string; clave: string | null } | null>(null);
   const [misColecciones, setMisColecciones] = useState<{ slug: string; nombre: string; clave: string | null }[]>([]);
   const [arbol, setArbol] = useState<NodoVisor[]>([]);
+  // De qué wiki es el árbol cargado. Al cambiar de wiki hay un render en el que
+  // `slug` ya es el nuevo pero `arbol` y `cargando` siguen siendo los de la
+  // anterior: sin esto, el salto a la primera página usaba la de la otra wiki
+  // y daba 404.
+  const [arbolSlug, setArbolSlug] = useState<string | null>(null);
   const [pagina, setPagina] = useState<PaginaVisor | null>(null);
   const [noEncontrado, setNoEncontrado] = useState(false);
   // Un 500/red caída NO es un 404: el usuario tiene derecho a reintentar.
@@ -203,6 +208,7 @@ export default function VisorContenidoPage() {
         if (cancelado) return;
         setColeccion(json.coleccion);
         setArbol(json.arbol ?? []);
+        setArbolSlug(slug);
         // Categorías del primer nivel abiertas por defecto.
         setExpandidos(new Set((json.arbol ?? []).filter((n: NodoVisor) => n.tipo === 'categoria').map((n: NodoVisor) => n.id)));
       })
@@ -281,10 +287,10 @@ export default function VisorContenidoPage() {
 
   /* ── Sin path: ir a la primera página del árbol ── */
   useEffect(() => {
-    if (cargando || noEncontrado || path) return;
+    if (cargando || noEncontrado || path || arbolSlug !== slug) return;
     const primera = primeraPagina(arbol);
     if (primera) navigate(`/contenidos/${slug}/${primera}`, { replace: true });
-  }, [cargando, noEncontrado, path, arbol, slug, navigate]);
+  }, [cargando, noEncontrado, path, arbol, arbolSlug, slug, navigate]);
 
   /* ── Página actual ── */
   useEffect(() => {
