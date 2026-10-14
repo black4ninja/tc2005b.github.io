@@ -447,8 +447,10 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
               {items.map(item =>
                 // Varias wikis: desplegable con una entrada por wiki, como en el
                 // menú del profesor. Con el perfil incompleto se queda el ítem
-                // deshabilitado de siempre, que es el que explica por qué.
-                item.path === docsHref && wikisAlumno.length > 1 && !item.disabled ? (
+                // deshabilitado de siempre, que es el que explica por qué. Y con
+                // el menú contraído, también: ahí el desplegable es un icono que
+                // no se puede pulsar, y el enlace al menos abre la wiki del grupo.
+                item.path === docsHref && wikisAlumno.length > 1 && !item.disabled && !collapsed ? (
                   <SeccionColecciones
                     key={item.path}
                     titulo="Wiki"
