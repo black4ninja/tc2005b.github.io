@@ -23,6 +23,25 @@ const TIPO: Record<EventoBitacora['tipo'], { texto: string; icono: string; clase
   movimiento: { texto: 'Movida', icono: 'swap_vert', clase: styles.tipoMovimiento },
 };
 
+/** Minúsculas y sin acentos: «nunez» encuentra a «Núñez». */
+function normalizar(texto: string): string {
+  return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+/** Todo lo que se ve en la fila, en un solo texto para buscar. */
+function textoDeEvento(e: EventoBitacora): string {
+  return normalizar([
+    fechaYHora(e.en),
+    TIPO[e.tipo].texto,
+    e.desde ? hora(e.desde) : '',
+    hora(e.hueco),
+    e.alumno?.nombre ?? '',
+    e.alumno?.matricula ?? '',
+    e.competencia ?? '',
+    !e.por ? 'no registrado' : e.por.esElAlumno ? 'el alumno' : e.por.nombre,
+  ].join(' '));
+}
+
 /** «SICT0203. Desarrollo de escenarios» → «SICT0203»: la tabla no da para más. */
 function codigo(competencia: string | null): string {
   if (!competencia) return '—';
@@ -47,6 +66,7 @@ export default function BitacoraDiaModal({ grupoId, dia, hueco: huecoInicial, on
   const [eventos, setEventos] = useState<EventoBitacora[] | null>(null);
   const [error, setError] = useState('');
   const [hueco, setHueco] = useState<string | null>(huecoInicial);
+  const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
     let cancelado = false;
@@ -64,10 +84,23 @@ export default function BitacoraDiaModal({ grupoId, dia, hueco: huecoInicial, on
   }, [grupoId, dia.id, sessionToken]);
 
   // Un movimiento toca DOS huecos: sale en la bitácora de los dos.
-  const visibles = useMemo(
+  const delHueco = useMemo(
     () => (eventos ?? []).filter((e) => !hueco || e.hueco === hueco || e.desde === hueco),
     [eventos, hueco],
   );
+  // Lo más reciente arriba: lo que se viene a buscar casi siempre es lo último
+  // que pasó. Cada palabra de la búsqueda tiene que aparecer en la fila, en
+  // cualquier columna: «fuentes cancel» deja solo las cancelaciones de Fuentes.
+  const visibles = useMemo(() => {
+    const palabras = normalizar(busqueda).split(/\s+/).filter(Boolean);
+    return delHueco
+      .filter((e) => {
+        if (palabras.length === 0) return true;
+        const texto = textoDeEvento(e);
+        return palabras.every((p) => texto.includes(p));
+      })
+      .reverse();
+  }, [delHueco, busqueda]);
   const cuenta = (tipo: EventoBitacora['tipo']) => visibles.filter((e) => e.tipo === tipo).length;
 
   return (
@@ -81,16 +114,30 @@ export default function BitacoraDiaModal({ grupoId, dia, hueco: huecoInicial, on
         <div className={styles.resumen}>
           {eventos && (
             <span>
+              {busqueda.trim() && `${visibles.length} de ${delHueco.length} · `}
               {cuenta('reserva')} reserva{cuenta('reserva') === 1 ? '' : 's'}
               {' · '}{cuenta('cancelacion')} cancelaci{cuenta('cancelacion') === 1 ? 'ón' : 'ones'}
               {' · '}{cuenta('movimiento')} cambio{cuenta('movimiento') === 1 ? '' : 's'} de hora
             </span>
           )}
-          {hueco && (
-            <button type="button" className={styles.verTodo} onClick={() => setHueco(null)}>
-              <Icon name="list" size="sm" /> Ver todo el día
-            </button>
-          )}
+          <span className={styles.herramientas}>
+            <span className={styles.buscador}>
+              <Icon name="search" size="sm" />
+              <input
+                type="search"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Filtrar por alumno, matrícula, hora…"
+                aria-label="Filtrar la bitácora"
+                autoFocus
+              />
+            </span>
+            {hueco && (
+              <button type="button" className={styles.verTodo} onClick={() => setHueco(null)}>
+                <Icon name="list" size="sm" /> Ver todo el día
+              </button>
+            )}
+          </span>
         </div>
 
         {error ? (
@@ -99,7 +146,9 @@ export default function BitacoraDiaModal({ grupoId, dia, hueco: huecoInicial, on
           <p className={styles.vacio}>Cargando…</p>
         ) : visibles.length === 0 ? (
           <p className={styles.vacio}>
-            {hueco ? 'Nadie ha reservado nunca este hueco.' : 'Todavía nadie ha reservado en este día.'}
+            {busqueda.trim()
+              ? `Nada coincide con «${busqueda.trim()}».`
+              : hueco ? 'Nadie ha reservado nunca este hueco.' : 'Todavía nadie ha reservado en este día.'}
           </p>
         ) : (
           <div className={styles.tablaCaja}>

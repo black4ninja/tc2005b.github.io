@@ -14,6 +14,37 @@
   color: var(--text-secondary);
 }
 
+.herramientas {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.buscador {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-page);
+  color: var(--text-muted);
+}
+.buscador:focus-within {
+  border-color: var(--sidebar-active-color);
+}
+.buscador input {
+  width: 240px;
+  max-width: 50vw;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
 .verTodo {
   display: inline-flex;
   align-items: center;
