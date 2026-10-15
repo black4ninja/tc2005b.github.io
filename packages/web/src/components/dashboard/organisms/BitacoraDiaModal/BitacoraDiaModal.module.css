@@ -1,0 +1,165 @@
+.caja {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.resumen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.herramientas {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.buscador {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-page);
+  color: var(--text-muted);
+}
+.buscador:focus-within {
+  border-color: var(--sidebar-active-color);
+}
+.buscador input {
+  width: 240px;
+  max-width: 50vw;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.verTodo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.verTodo:hover {
+  border-color: var(--sidebar-active-color);
+  color: var(--sidebar-active-color);
+}
+
+.tablaCaja {
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.tabla th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border-color);
+}
+.tabla td {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+.tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.cuando {
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+.hueco {
+  white-space: nowrap;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.alumno {
+  display: block;
+}
+.matricula {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.tipo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tipoReserva {
+  background: var(--estado-exito-bg);
+  color: var(--estado-exito-color);
+}
+.tipoCancelacion {
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+}
+.tipoMovimiento {
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+}
+
+.otro {
+  font-weight: 600;
+}
+.sinDato {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.vacio,
+.error {
+  margin: 0;
+  padding: var(--space-lg);
+  text-align: center;
+  color: var(--text-secondary);
+}
+.error {
+  color: var(--estado-error-color);
+}
+
+.nota {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}

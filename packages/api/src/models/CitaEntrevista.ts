@@ -4,6 +4,14 @@ import type { AppUser } from './AppUser.js';
 import type { Grupo } from './Grupo.js';
 import type { DiaEntrevistas } from './DiaEntrevistas.js';
 
+/** Un cambio de hora de la cita: de qué hueco a cuál, cuándo y quién (id de AppUser). */
+export interface MovimientoCita {
+  de: string;
+  a: string;
+  en: string;
+  porId: string | null;
+}
+
 /**
  * La reserva de un alumno en un hueco: una entrevista de UNA competencia.
  *
@@ -16,7 +24,9 @@ import type { DiaEntrevistas } from './DiaEntrevistas.js';
  * que es lo que espera cualquiera. Guardado se quedaría en un segundo intento
  * que nunca tuvo.
  *
- * Cancelar es el soft-delete de siempre; `canceladaEn` deja el rastro de cuándo.
+ * Cancelar es el soft-delete de siempre; `canceladaEn` deja el rastro de cuándo
+ * y `canceladaPor`, de quién. Con `creadaPor` y `movimientos` forman la bitácora
+ * del día que ve el profesor.
  */
 export class CitaEntrevista extends BaseModel {
   constructor(attributes?: Parse.Attributes) {
@@ -71,9 +81,28 @@ export class CitaEntrevista extends BaseModel {
     return this.get('canceladaEn') ?? null;
   }
 
-  cancelar(): void {
+  /** Quién la canceló. Solo desde que existe la bitácora: las anteriores no lo guardaban. */
+  getCanceladaPor(): AppUser | undefined {
+    return this.get('canceladaPor');
+  }
+
+  cancelar(por?: AppUser): void {
     this.set('canceladaEn', new Date());
+    if (por) this.set('canceladaPor', por);
     this.softDelete();
+  }
+
+  /**
+   * Cambios de hora hechos por el profesor (arrastrar en la agenda). Mover
+   * reescribe `inicio`, así que sin esto la bitácora no sabría de qué hueco
+   * salió la cita.
+   */
+  getMovimientos(): MovimientoCita[] {
+    return (this.get('movimientos') as MovimientoCita[] | undefined) ?? [];
+  }
+
+  registrarMovimiento(de: Date, a: Date, por?: AppUser): void {
+    this.add('movimientos', { de: de.toISOString(), a: a.toISOString(), en: new Date().toISOString(), porId: por?.id ?? null });
   }
 
   toSafeJSON(): Record<string, unknown> {
