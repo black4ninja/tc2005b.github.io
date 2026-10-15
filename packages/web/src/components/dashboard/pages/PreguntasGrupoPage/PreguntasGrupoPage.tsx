@@ -8,6 +8,7 @@ import DashButton from '../../atoms/DashButton/DashButton';
 import Modal from '../../atoms/Modal/Modal';
 import SelectorPregunta from '../../organisms/SelectorPregunta/SelectorPregunta';
 import SelectorAlumno from '../../organisms/SelectorAlumno/SelectorAlumno';
+import BitacoraDiaModal from '../../organisms/BitacoraDiaModal/BitacoraDiaModal';
 import AsignarCitaModal from '../../organisms/AsignarCitaModal/AsignarCitaModal';
 import SaltoProyeccion from '../../organisms/SaltoProyeccion/SaltoProyeccion';
 import PanelAsesorias from '../../organisms/PanelAsesorias/PanelAsesorias';
@@ -139,6 +140,8 @@ const ETIQUETA_FASE: Record<FaseProyeccion, string> = {
 export default function PreguntasGrupoPage() {
   const { id: grupoId } = useParams<{ id: string }>();
   const { sessionToken } = useAuth();
+  // Bitácora del día abierta: `hueco` null = todo el día; con hueco, solo ese.
+  const [bitacora, setBitacora] = useState<{ hueco: string | null } | null>(null);
 
   const [habilitado, setHabilitado] = useState(true);
   const [alumnos, setAlumnos] = useState<AlumnoConPregunta[]>([]);
@@ -2008,6 +2011,13 @@ export default function PreguntasGrupoPage() {
                 <span className={styles.diaAcciones}>
                   <button
                     className={styles.botonDia}
+                    onClick={() => setBitacora({ hueco: null })}
+                    title="Quién reservó, canceló o movió cada hueco de este día, y cuándo"
+                  >
+                    <Icon name="history" size="sm" /> Bitácora
+                  </button>
+                  <button
+                    className={styles.botonDia}
                     onClick={() => cerrarOReabrir(dia)}
                     title={dia.cerrado
                       ? 'Volver a admitir reservas'
@@ -2115,6 +2125,15 @@ export default function PreguntasGrupoPage() {
                                 una tapan la agenda que se está leyendo. El
                                 candado de un hueco cerrado sí se queda: es lo
                                 que explica por qué esa fila está apagada. */}
+                            {!arrastrando && !recibiendo && (
+                              <button
+                                className={`${styles.iconBtn} ${styles.accionHover}`}
+                                onClick={() => setBitacora({ hueco: f.inicio })}
+                                title="Quién ha reservado o soltado este hueco"
+                              >
+                                <Icon name="history" size="sm" />
+                              </button>
+                            )}
                             {!arrastrando && !recibiendo && !f.cerrado && (
                               <button
                                 className={`${styles.iconBtn} ${styles.accionHover}`}
@@ -2312,6 +2331,13 @@ export default function PreguntasGrupoPage() {
                             title="Notas de todos sus intentos"
                           >
                             <Icon name="edit_note" size="sm" />
+                          </button>
+                          <button
+                            className={styles.iconBtn}
+                            onClick={() => setBitacora({ hueco: inicio })}
+                            title="Bitácora de este hueco: quién lo reservó, soltó o movió, y cuándo"
+                          >
+                            <Icon name="history" size="sm" />
                           </button>
                           <button
                             className={styles.iconBtn}
@@ -2987,6 +3013,16 @@ export default function PreguntasGrupoPage() {
             vacio="No ha subido ninguna evidencia para esta entrevista."
           />
         </Modal>
+      )}
+
+      {bitacora && dia && grupoId && (
+        <BitacoraDiaModal
+          key={`${dia.id}-${bitacora.hueco ?? 'dia'}`}
+          grupoId={grupoId}
+          dia={dia}
+          hueco={bitacora.hueco}
+          onClose={() => setBitacora(null)}
+        />
       )}
 
       <Modal

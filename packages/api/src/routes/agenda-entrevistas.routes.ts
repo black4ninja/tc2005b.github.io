@@ -12,6 +12,7 @@ import {
   crearCitaProfesor,
   moverCitaProfesor,
   borrarCitaProfesor,
+  getBitacoraDia,
   getAgendaAlumno,
   crearCitaAlumno,
   borrarCitaAlumno,
@@ -39,6 +40,7 @@ router.post('/admin/grupos/:grupoId/agenda-entrevistas/dias/lote', crearDiasEnLo
 router.put('/admin/grupos/:grupoId/agenda-entrevistas/dias/:diaId/huecos', cerrarHueco);
 router.put('/admin/grupos/:grupoId/agenda-entrevistas/dias/:diaId', actualizarDia);
 router.delete('/admin/grupos/:grupoId/agenda-entrevistas/dias/:diaId', borrarDia);
+router.get('/admin/grupos/:grupoId/agenda-entrevistas/dias/:diaId/bitacora', getBitacoraDia);
 router.post('/admin/grupos/:grupoId/agenda-entrevistas/citas', crearCitaProfesor);
 router.put('/admin/grupos/:grupoId/agenda-entrevistas/citas/:citaId', moverCitaProfesor);
 router.delete('/admin/grupos/:grupoId/agenda-entrevistas/citas/:citaId', borrarCitaProfesor);

@@ -22,6 +22,7 @@ import {
   llaveDeEvidencia, soltarEvidenciasDeCita,
 } from '../services/evidencias.service.js';
 import { sanitizarUrlHref } from '../utils/url.js';
+import { bitacoraDelDia, type CitaParaBitacora } from '../services/bitacora-citas.js';
 import {
   DURACION_POR_DEFECTO, MAX_BLOQUES_POR_LOTE, MAX_INTENTOS, HORAS_HABILES_ANTELACION,
   MARGEN_CANCELACION_MINUTOS, ZONA_CURSO,
@@ -580,6 +581,77 @@ export async function borrarDia(req: Request, res: Response): Promise<void> {
 }
 
 /**
+ * GET /admin/grupos/:grupoId/agenda-entrevistas/dias/:diaId/bitacora — quién
+ * reservó, canceló o movió cada hueco del día y cuándo. Ver `bitacoraDelDia`.
+ */
+export async function getBitacoraDia(req: Request, res: Response): Promise<void> {
+  const { grupoId, diaId } = req.params;
+  try {
+    const qDia = new Parse.Query<DiaEntrevistas>('DiaEntrevistas');
+    qDia.equalTo('exists' as any, true as any);
+    const dia = await qDia.get(diaId, { useMasterKey: true }).catch(() => null);
+    if (!dia || dia.getGrupo()?.id !== grupoId) {
+      res.status(404).json({ status: 'error', message: 'Ese día de entrevistas no existe' });
+      return;
+    }
+
+    // Vivas Y canceladas: las canceladas son justo lo que se viene a buscar.
+    // Del grupo entero y no solo de este día, porque una cita movida a otro
+    // día también liberó un hueco de este.
+    const q = new Parse.Query<CitaEntrevista>('CitaEntrevista');
+    q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+    q.include(['alumno', 'competencia'] as any);
+    q.limit(5000);
+    const citas = await q.find({ useMasterKey: true });
+
+    const filas: CitaParaBitacora[] = citas.map((c) => {
+      const alumno = c.getAlumno();
+      return {
+        id: c.id!,
+        inicio: c.getInicio().toISOString(),
+        creadaEn: c.createdAt!.toISOString(),
+        creadaPorId: c.getCreadaPor()?.id ?? null,
+        canceladaEn: c.getCanceladaEn()?.toISOString() ?? null,
+        canceladaPorId: c.getCanceladaPor()?.id ?? null,
+        movimientos: c.getMovimientos(),
+        alumno: alumno
+          ? { id: alumno.id!, nombre: alumno.get('name') ?? '', matricula: alumno.get('matricula') ?? '' }
+          : null,
+        competencia: (c.getCompetencia()?.get('competencia') as string | undefined) ?? null,
+      };
+    });
+
+    // Los nombres de quien actuó, en UNA consulta: casi siempre son los propios
+    // alumnos (ya incluidos), pero el profesor también reserva, mueve y cancela.
+    const nombres = new Map<string, string>();
+    for (const c of citas) {
+      const a = c.getAlumno();
+      if (a?.id) nombres.set(a.id, a.get('name') ?? '');
+    }
+    const faltan = new Set<string>();
+    for (const f of filas) {
+      for (const id of [f.creadaPorId, f.canceladaPorId, ...f.movimientos.map((m) => m.porId)]) {
+        if (id && !nombres.has(id)) faltan.add(id);
+      }
+    }
+    if (faltan.size > 0) {
+      const qu = new Parse.Query<AppUser>('AppUser');
+      qu.containedIn('objectId' as any, [...faltan] as any);
+      qu.select('name' as any, 'email' as any);
+      qu.limit(faltan.size);
+      for (const u of await qu.find({ useMasterKey: true })) {
+        nombres.set(u.id!, u.get('name') || u.get('email') || '');
+      }
+    }
+
+    const eventos = bitacoraDelDia(filas, dia.getInicio(), dia.getFin(), nombres);
+    res.json({ status: 'ok', eventos });
+  } catch {
+    res.status(500).json({ status: 'error', message: 'Error al leer la bitácora del día' });
+  }
+}
+
+/**
  * Quita un hueco de la lista de cerrados, si estaba. Se llama al meterle una
  * cita: un hueco ocupado y a la vez cerrado no significa nada, y dejarlo así
  * haría que al cancelar la cita el hueco reapareciera cerrado sin que nadie lo
@@ -789,6 +861,10 @@ export async function moverCitaProfesor(req: Request, res: Response): Promise<vo
     }
 
     await reabrirHueco(dia, inicio);
+    const desde = cita.getInicio();
+    if (desde && desde.getTime() !== inicio.getTime()) {
+      cita.registrarMovimiento(desde, inicio, req.appUser);
+    }
     cita.setDia(dia);
     cita.setInicio(inicio);
     await cita.save(null, { useMasterKey: true });
@@ -960,7 +1036,7 @@ export async function borrarCitaProfesor(req: Request, res: Response): Promise<v
     if (await rechazarSiCongela(cita, res, 'cancelar')) return;
     // Sin margen: el profesor cancela también la de dentro de dos minutos, que
     // es justo cuando hace falta —el alumno no llegó—.
-    cita.cancelar();
+    cita.cancelar(req.appUser);
     await cita.save(null, { useMasterKey: true });
     // Lo que ya había entregado NO se va con la cita: se queda suelto en su
     // competencia y vuelve solo si reserva otra vez.
@@ -1114,7 +1190,7 @@ export async function borrarCitaAlumno(req: Request, res: Response): Promise<voi
       return;
     }
     if (await rechazarSiCongela(cita, res, 'cancelar')) return;
-    cita.cancelar();
+    cita.cancelar(req.appUser);
     await cita.save(null, { useMasterKey: true });
     // Igual que cuando cancela el profesor: lo entregado se queda suelto en su
     // competencia, no se va con la cita.
