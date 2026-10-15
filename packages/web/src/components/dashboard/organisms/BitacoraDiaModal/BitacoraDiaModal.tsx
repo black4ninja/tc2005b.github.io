@@ -201,8 +201,8 @@ export default function BitacoraDiaModal({ grupoId, dia, hueco: huecoInicial, on
           </div>
         )}
         <p className={styles.nota}>
-          Las horas son de Querétaro. Quién cancela o mueve una cita se guarda desde el 15 de octubre de 2026;
-          en las anteriores sale «no registrado».
+          Las horas son de Querétaro. Quién cancela o mueve una cita se guarda desde que existe esta
+          bitácora; en las cancelaciones anteriores sale «no registrado».
         </p>
       </div>
     </Modal>
