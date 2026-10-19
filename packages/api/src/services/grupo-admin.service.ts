@@ -27,7 +27,11 @@ export async function getGruposDeStaff(userId: string): Promise<Grupo[]> {
   query.include('categoria' as any);
   query.descending('createdAt');
   query.limit(1000);
-  return query.find({ useMasterKey: true });
+  const grupos = await query.find({ useMasterKey: true });
+  // Los activos primero (y dentro, el más reciente): al iniciar sesión el
+  // profesor entra a `grupos[0]`, y el más nuevo suele ser el del semestre que
+  // aún no empieza. `sort` es estable, así que se conserva el orden por fecha.
+  return grupos.sort((a, b) => Number(b.get('active') === true) - Number(a.get('active') === true));
 }
 
 /** True si el usuario figura en `admins` del grupo indicado (activo o no, pero no borrado). */
