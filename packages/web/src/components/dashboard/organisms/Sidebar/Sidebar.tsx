@@ -481,8 +481,21 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
                   collapsed={collapsed}
                 />
               )}
-              {/* Las secciones de colección (Páginas/Actividades) llevan a
-                  pantallas GLOBALES admin-only; el profesor no las ve. */}
+              {/* El profesor ve solo la Wiki de su grupo: es el mismo visor
+                  que el de sus alumnos. Páginas/Competencias/Actividades llevan
+                  a pantallas GLOBALES admin-only y para él no existen. */}
+              {isGrupoDetail && esProfesor &&
+                secciones
+                  .filter((s) => s.key === 'contenido' && s.items.length > 0)
+                  .map((s) => (
+                    <SeccionColecciones
+                      key={s.key}
+                      titulo={s.titulo}
+                      icono={s.icono}
+                      items={s.items}
+                      collapsed={collapsed}
+                    />
+                  ))}
               {isGrupoDetail && !esProfesor &&
                 (colecciones.length === 0 ? (
                   // Sin materia asignada no hay nada que separar en cuatro: una
