@@ -9,10 +9,16 @@ import { Grupo } from '../models/Grupo.js';
  * los guards (un admin ve todo; un profesor, solo estos grupos).
  */
 
-/** Grupos ACTIVOS donde el usuario figura en `admins`. */
+/**
+ * Grupos donde el usuario figura en `admins`, activos E INACTIVOS (no los
+ * borrados). El profesor prepara su grupo antes de abrirlo a los alumnos —y lo
+ * repasa después de cerrarlo—: «inactivo» solo le quita el acceso al ALUMNO
+ * (`grupoDaAccesoAlumno`), no a quien lo imparte.
+ */
 export async function getGruposDeStaff(userId: string): Promise<Grupo[]> {
   const userPointer = Parse.Object.extend('AppUser').createWithoutData(userId);
-  const query = BaseModel.queryActive<Grupo>('Grupo');
+  const query = new Parse.Query<Grupo>('Grupo');
+  query.equalTo('exists' as any, true as any);
   query.equalTo('admins' as any, userPointer as any);
   query.include('colecciones' as any);
   query.include('admins' as any);
@@ -24,10 +30,11 @@ export async function getGruposDeStaff(userId: string): Promise<Grupo[]> {
   return query.find({ useMasterKey: true });
 }
 
-/** True si el usuario figura en `admins` del grupo indicado (grupo activo). */
+/** True si el usuario figura en `admins` del grupo indicado (activo o no, pero no borrado). */
 export async function isStaffDeGrupo(userId: string, grupoId: string): Promise<boolean> {
   const userPointer = Parse.Object.extend('AppUser').createWithoutData(userId);
-  const query = BaseModel.queryActive<Grupo>('Grupo');
+  const query = new Parse.Query<Grupo>('Grupo');
+  query.equalTo('exists' as any, true as any);
   query.equalTo('objectId' as any, grupoId as any);
   query.equalTo('admins' as any, userPointer as any);
   const count = await query.count({ useMasterKey: true });

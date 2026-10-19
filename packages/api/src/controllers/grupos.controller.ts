@@ -63,19 +63,21 @@ export async function listGrupos(req: Request, res: Response): Promise<void> {
     // El profesor solo ve SUS grupos (donde figura en Grupo.admins); el admin,
     // todos. Es lo que hace que su vista de grupo funcione sin exponerle el resto.
     if (req.appUser?.isProfesor()) {
-      // `getGruposDeStaff` devuelve SIEMPRE los activos, así que aquí el filtro
-      // no se puede atender. Se rechaza en vez de ignorarlo: la ruta es de staff
-      // (`requireStaff`, no `requireAdmin`), y respondiendo los grupos vigentes
-      // a un `?estado=eliminados` la pantalla le diría al profesor que sus
-      // grupos están borrados.
-      if (estado !== undefined && estado !== 'activos') {
+      // `getGruposDeStaff` trae sus grupos activos e inactivos, nunca los
+      // borrados: un `?estado=eliminados` se rechaza en vez de ignorarse, o la
+      // pantalla le diría al profesor que sus grupos vigentes están borrados.
+      if (estado === 'eliminados') {
         res.status(403).json({
           status: 'error',
-          message: 'Un profesor solo puede consultar sus grupos activos',
+          message: 'Un profesor no puede consultar grupos eliminados',
         });
         return;
       }
-      const grupos = await getGruposDeStaff(req.appUser.id);
+      const grupos = (await getGruposDeStaff(req.appUser.id)).filter((g) =>
+        estado === 'activos' ? g.get('active') === true
+          : estado === 'inactivos' ? g.get('active') !== true
+          : true,
+      );
       res.json({ status: 'ok', grupos: grupos.map((g) => g.toSafeJSON()) });
       return;
     }

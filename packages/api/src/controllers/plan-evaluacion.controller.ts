@@ -242,9 +242,8 @@ export async function copiarPlanEvaluacion(req: Request, res: Response): Promise
     // comprueba aquí, o un profesor podría leer el plan de un grupo ajeno
     // pasando su id en el cuerpo.
     //
-    // `isStaffDeGrupo` solo mira grupos vivos, así que el profesor no puede
-    // copiar de uno cerrado aunque fuera suyo. Es la limitación conocida: para
-    // eso está el admin, que sí puede.
+    // `isStaffDeGrupo` acepta sus grupos activos e inactivos, no los borrados:
+    // de uno borrado solo puede copiar el admin.
     const usuario = req.appUser;
     if (usuario && usuario.getUserType() !== 'admin') {
       if (!(await isStaffDeGrupo(usuario.id, desdeGrupoId))) {

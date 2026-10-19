@@ -22,6 +22,7 @@ const ROL_LABEL: Record<string, string> = { admin: 'Administrador', profesor: 'P
 interface GrupoConAdmins {
   id: string;
   name: string;
+  active?: boolean;
   admins?: { id: string }[];
 }
 
@@ -245,6 +246,9 @@ export default function AdministradoresPage() {
                 disabled={saving}
               />
               <span className={styles.checkboxLabel} title={g.name}>{g.name}</span>
+              {/* Se puede asignar igual: el profesor prepara el grupo antes de
+                  abrirlo. Se marca para que no se confunda con uno en curso. */}
+              {g.active === false && <span className={styles.inactivo}>inactivo</span>}
             </label>
           ))}
         </div>

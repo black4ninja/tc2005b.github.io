@@ -200,7 +200,10 @@ export async function setGruposDeAdmin(req: Request, res: Response): Promise<voi
 
     // Grupos válidos entre los deseados (ignora ids muertos en silencio: la
     // meta es "que el admin quede en estos grupos", no auditar el payload).
-    const grupoQuery = BaseModel.queryActive('Grupo');
+    // Inactivos incluidos: antes solo miraba los activos, y asignar un profesor
+    // a un grupo que aún no se abre se ignoraba sin decir nada.
+    const grupoQuery = new Parse.Query('Grupo');
+    grupoQuery.equalTo('exists', true);
     grupoQuery.include('admins');
     grupoQuery.limit(1000);
     const grupos = await grupoQuery.find({ useMasterKey: true });

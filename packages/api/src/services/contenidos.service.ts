@@ -4,6 +4,7 @@ import { Coleccion } from '../models/Coleccion.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { moduloHabilitado, type ModuloContenido } from '../models/modulos-contenido.js';
 import { TtlValue, TtlMap } from '../utils/ttl-cache.js';
+import { getGruposDeStaff } from './grupo-admin.service.js';
 
 /**
  * Permisos de lectura del CMS "Contenidos" (design §2) — patrón calcado de
@@ -78,6 +79,29 @@ export async function getColeccionesPermitidas(user: AppUser): Promise<Coleccion
       .sort((a, b) => a.nombre.localeCompare(b.nombre));
   }
 
+  const permitidas = new Map<string, ColeccionInfo>();
+  const agregar = (c: Parse.Object) => {
+    const slug = c.get('slug');
+    if (slug && !permitidas.has(slug)) {
+      permitidas.set(slug, { id: c.id, slug, nombre: c.get('nombre') ?? slug, clave: c.get('clave') ?? null });
+    }
+  };
+
+  // Profesor: las wikis de SUS grupos (`Grupo.admins`), también de los
+  // inactivos —prepara el grupo antes de abrirlo a los alumnos—. Misma regla de
+  // visibilidad que el alumno: publicada y con Documentación encendida; ve la
+  // wiki tal como la verán ellos. Antes caía por el camino del alumno, buscaba
+  // sus `GrupoAlumno` y se quedaba sin ninguna.
+  if (user.get('userType') === 'profesor') {
+    for (const grupo of await getGruposDeStaff(user.id)) {
+      const apagados = grupo.get('modulosDeshabilitados') as Record<string, string[]> | undefined;
+      for (const c of (grupo.get('colecciones') ?? []) as Parse.Object[]) {
+        if (coleccionVisiblePorModulo(c, apagados, 'documentacion')) agregar(c);
+      }
+    }
+    return [...permitidas.values()].sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }
+
   // Alumno: unión de Grupo.colecciones de sus grupos ACTIVOS, solo publicadas.
   const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(user.id);
   const q = new Parse.Query<GrupoAlumno>('GrupoAlumno');
@@ -88,7 +112,6 @@ export async function getColeccionesPermitidas(user: AppUser): Promise<Coleccion
   q.limit(1000);
   const links = await q.find({ useMasterKey: true });
 
-  const permitidas = new Map<string, ColeccionInfo>();
   for (const link of links) {
     const grupo = link.get('grupo');
     // Un grupo archivado (active=false) deja de dar acceso: fin de semestre.
