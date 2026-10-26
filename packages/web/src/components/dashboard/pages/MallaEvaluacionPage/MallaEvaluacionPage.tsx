@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useParams, useLocation } from 'react-router';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
@@ -83,6 +83,57 @@ interface AlumnoInfo {
   email: string;
 }
 
+/** Lo mínimo de un compañero de grupo para el paso de un alumno al siguiente. */
+interface AlumnoNav {
+  id: string;
+  name: string;
+}
+
+type CampoValor = 'valorPeriodo1' | 'valorPeriodo2';
+
+const CAMPOS_VALOR: CampoValor[] = ['valorPeriodo1', 'valorPeriodo2'];
+
+/**
+ * Recalcula en el cliente las competencias calculadas: el MIN de sus
+ * dependencias, con la misma regla que `recalcularCalculadas` del API.
+ *
+ * Antes cada cambio de nivel volvía a pedir la malla entera solo para ver este
+ * número; la tabla se desmontaba mientras llegaba y el scroll saltaba, que al
+ * evaluar varias competencias seguidas era lo más incómodo de la pantalla.
+ *
+ * - Una dependencia sin evaluar (o que el alumno no tiene) deja la calculada
+ *   sin evaluar.
+ * - La sanción no se hereda: para el mínimo vale 0, como el Incipiente B que es.
+ */
+function recalcularCalculadas(lista: CompetenciaAlumnoData[]): CompetenciaAlumnoData[] {
+  const porCompetencia = new Map(lista.map((c) => [c.competenciaId, c]));
+  return lista.map((c) => {
+    if (!c.esCalculada || !c.dependencias?.length) return c;
+    const recalculada = { ...c };
+    for (const campo of CAMPOS_VALOR) {
+      let minimo = Infinity;
+      let completa = true;
+      for (const dep of c.dependencias) {
+        const raw = porCompetencia.get(dep.id)?.[campo];
+        if (raw === undefined || raw === null || raw === '') {
+          completa = false;
+          break;
+        }
+        minimo = Math.min(minimo, esPenalizacion(raw) ? 0 : Number(raw));
+      }
+      recalculada[campo] = completa ? String(minimo) : '';
+    }
+    return recalculada;
+  });
+}
+
+/** ¿La tecla iba a un campo de texto? Ahí Alt+flecha mueve el cursor por palabras. */
+function esCampoDeTexto(el: EventTarget | null): boolean {
+  if (!(el instanceof HTMLElement)) return false;
+  if (el.isContentEditable || el.tagName === 'TEXTAREA') return true;
+  return el.tagName === 'INPUT' && !['checkbox', 'radio', 'button'].includes((el as HTMLInputElement).type);
+}
+
 interface IndicacionData {
   id: string;
   descripcion: string;
@@ -102,6 +153,7 @@ export default function MallaEvaluacionPage() {
   const { id: grupoId, alumnoId } = useParams<{ id: string; alumnoId: string }>();
   const { sessionToken } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Detect if we're in alumno context
   const isAlumno = location.pathname.startsWith('/alumno/');
@@ -114,6 +166,34 @@ export default function MallaEvaluacionPage() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [activeTab, setActiveTab] = useState<TabKey>('actividades');
+
+  /*
+   * Un solo temporizador para el aviso: con varios guardados seguidos, el
+   * `setTimeout` del primero borraba el aviso del último antes de tiempo.
+   */
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const avisar = useCallback((mensaje: string) => {
+    setToast(mensaje);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(''), 3000);
+  }, []);
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
+
+  /*
+   * El alumno cuya malla se está pintando. Al pasar rápido de uno a otro, la
+   * respuesta del anterior puede llegar DESPUÉS que la del nuevo; sin esta
+   * comprobación se pintarían sus notas bajo el nombre equivocado.
+   */
+  const alumnoActual = useRef(alumnoId);
+  alumnoActual.current = alumnoId;
+
+  // Compañeros del grupo, para pasar al siguiente sin volver a la lista
+  const [companeros, setCompaneros] = useState<AlumnoNav[]>([]);
+
+  // Guardados de evaluación aún en vuelo: el aviso dice «guardado» al vaciarse
+  const [guardando, setGuardando] = useState(0);
+  // Cola por competencia: dos cambios rápidos a la misma llegan en orden al API
+  const colaGuardado = useRef(new Map<string, Promise<unknown>>());
 
   // Audit log modal state
   const [logModalActId, setLogModalActId] = useState<string | null>(null);
@@ -247,6 +327,7 @@ export default function MallaEvaluacionPage() {
         if (!planRes.ok) throw new Error('Error al cargar plan de evaluación');
 
         const [mallaJson, planJson] = await Promise.all([mallaRes.json(), planRes.json()]);
+        if (alumnoActual.current !== alumnoId) return;
 
         setActividadesAlumno(mallaJson.actividades ?? []);
         setAlumnoInfo(mallaJson.alumno ?? null);
@@ -278,9 +359,9 @@ export default function MallaEvaluacionPage() {
         }
       }
     } catch (err: any) {
-      setError(err.message);
+      if (alumnoActual.current === alumnoId) setError(err.message);
     } finally {
-      setLoading(false);
+      if (alumnoActual.current === alumnoId) setLoading(false);
     }
   }, [grupoId, alumnoId, sessionToken, isAlumno]);
 
@@ -300,13 +381,80 @@ export default function MallaEvaluacionPage() {
       const res = await fetch(url, { headers: authHeaders });
       if (!res.ok) throw new Error('Error al cargar competencias');
       const json = await res.json();
+      if (alumnoActual.current !== alumnoId) return;
       setCompetenciasAlumno(json.competencias ?? []);
     } catch (err: any) {
-      setError(err.message);
+      if (alumnoActual.current === alumnoId) setError(err.message);
     } finally {
-      setLoadingCompetencias(false);
+      if (alumnoActual.current === alumnoId) setLoadingCompetencias(false);
     }
   }, [grupoId, alumnoId, sessionToken, isAlumno, hasAlumnoData]);
+
+  /* ---------- Paso rápido entre alumnos (admin only) ---------- */
+
+  /*
+   * Al cambiar de alumno se vacía lo del anterior antes de que llegue lo
+   * nuevo: durante ese instante la tabla diría un nombre y enseñaría las notas
+   * de otro, y evaluando deprisa es fácil calificar a quien no es.
+   */
+  const alumnoPintado = useRef(alumnoId);
+  useEffect(() => {
+    if (alumnoPintado.current === alumnoId) return;
+    alumnoPintado.current = alumnoId;
+    setAlumnoInfo(null);
+    setActividadesAlumno([]);
+    setCompetenciasAlumno([]);
+    setEvidenciaInputs({});
+    setError('');
+  }, [alumnoId]);
+
+  useEffect(() => {
+    if (isAlumno || !alumnoId || !grupoId) return;
+    let vigente = true;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/alumnos`, { headers: authHeaders });
+        if (!res.ok) return;
+        const data = await res.json();
+        // Solo los activos: a los dados de baja no hay nada que evaluarles.
+        const lista: AlumnoNav[] = (data.alumnos ?? [])
+          .filter((a: any) => a.active !== false || a.id === alumnoId)
+          .map((a: any) => ({ id: a.id, name: a.name ?? '' }))
+          .sort((a: AlumnoNav, b: AlumnoNav) => a.name.localeCompare(b.name, 'es'));
+        if (vigente) setCompaneros(lista);
+      } catch {
+        // sin la lista solo se pierde la navegación; la malla sigue sirviendo
+      }
+    })();
+    return () => { vigente = false; };
+    // La lista es del grupo: no hace falta volver a pedirla al cambiar de alumno.
+  }, [grupoId, sessionToken, isAlumno]);
+
+  const posicion = companeros.findIndex((a) => a.id === alumnoId);
+  const anterior = posicion > 0 ? companeros[posicion - 1] : null;
+  const siguiente = posicion >= 0 && posicion < companeros.length - 1 ? companeros[posicion + 1] : null;
+
+  const irAAlumno = useCallback((destino: AlumnoNav | null) => {
+    if (!destino) return;
+    navigate(`/admin/grupos/${grupoId}/alumnos/${destino.id}/malla`);
+  }, [navigate, grupoId]);
+
+  const hayModalAbierto = showObsModal || showCompModal || !!logModalActId;
+
+  // Alt + ← / → (Option en Mac) pasa al alumno anterior / siguiente.
+  useEffect(() => {
+    if (isAlumno || !alumnoId) return;
+    function onKey(e: KeyboardEvent) {
+      if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (hayModalAbierto || esCampoDeTexto(e.target)) return;
+      // Sin esto, Alt+← en Windows es «atrás» del navegador.
+      e.preventDefault();
+      irAAlumno(e.key === 'ArrowLeft' ? anterior : siguiente);
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isAlumno, alumnoId, anterior, siguiente, irAAlumno, hayModalAbierto]);
 
   useEffect(() => {
     if (hasAlumnoData) {
@@ -370,16 +518,16 @@ export default function MallaEvaluacionPage() {
         },
       );
       if (!res.ok) throw new Error('Error al guardar competencia');
+      // La retro no mueve ninguna calculada: basta con pintarla aquí.
+      const editada = compItem.id;
+      setCompetenciasAlumno((prev) =>
+        prev.map((c) => (c.id === editada ? { ...c, ...compForm } : c)),
+      );
       closeCompModal();
-      const scrollY = window.scrollY;
-      await fetchCompetencias();
-      requestAnimationFrame(() => window.scrollTo(0, scrollY));
-      setToast('Competencia actualizada');
-      setTimeout(() => setToast(''), 3000);
+      avisar('Retroalimentación guardada');
     } catch (err: any) {
       setError(err.message);
-      setToast('Error al guardar competencia');
-      setTimeout(() => setToast(''), 3000);
+      avisar('Error al guardar competencia');
     } finally {
       setSavingComp(false);
     }
@@ -409,33 +557,60 @@ export default function MallaEvaluacionPage() {
       retro = escrito;
     }
 
-    // Optimistic update
+    /*
+     * Se pinta ya —con las calculadas recalculadas aquí mismo— y se guarda por
+     * detrás. Sin volver a pedir la malla: así la tabla no se desmonta, el
+     * scroll no salta y se pueden poner varias notas seguidas sin esperar.
+     */
+    const anteriorValor = competenciasAlumno.find((c) => c.id === compId)?.[field] ?? '';
+    const nombre = competenciasAlumno.find((c) => c.id === compId)?.competencia ?? '';
+    const deAlumno = alumnoId;
     setCompetenciasAlumno((prev) =>
-      prev.map((c) => (c.id === compId ? { ...c, [field]: value } : c)),
+      recalcularCalculadas(prev.map((c) => (
+        c.id === compId
+          ? { ...c, [field]: value, ...(retro === undefined ? {} : { [campoRetro]: retro }) }
+          : c
+      ))),
     );
-    try {
+
+    const body = retro === undefined ? { [field]: value } : { [field]: value, [campoRetro]: retro };
+    const previo = colaGuardado.current.get(compId) ?? Promise.resolve();
+    const guardado = previo.then(async () => {
       const res = await fetch(
-        `${API_BASE}/admin/grupos/${grupoId}/alumnos/${alumnoId}/competencias/${compId}`,
+        `${API_BASE}/admin/grupos/${grupoId}/alumnos/${deAlumno}/competencias/${compId}`,
         {
           method: 'PUT',
           headers: { ...authHeaders, 'Content-Type': 'application/json' },
-          body: JSON.stringify(retro === undefined ? { [field]: value } : { [field]: value, [campoRetro]: retro }),
+          body: JSON.stringify(body),
         },
       );
-      if (!res.ok) throw new Error('Error al guardar evaluación');
-      // Re-fetch to get recalculated computed competencias
-      const scrollY = window.scrollY;
-      await fetchCompetencias();
-      requestAnimationFrame(() => window.scrollTo(0, scrollY));
-      setToast('Evaluación actualizada');
-      setTimeout(() => setToast(''), 3000);
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.message || 'Error al guardar evaluación');
+      }
+    });
+    // La cola no se corta por un fallo: el siguiente cambio debe intentarse igual.
+    colaGuardado.current.set(compId, guardado.catch(() => undefined));
+
+    setGuardando((n) => n + 1);
+    try {
+      await guardado;
+      if (alumnoActual.current === deAlumno) avisar(`Guardado: ${nombre}`);
     } catch (err: any) {
-      setError(err.message);
-      const scrollY = window.scrollY;
-      await fetchCompetencias();
-      requestAnimationFrame(() => window.scrollTo(0, scrollY));
-      setToast('Error al guardar evaluación');
-      setTimeout(() => setToast(''), 3000);
+      // Ya se cambió de alumno: no hay nada que deshacer en pantalla.
+      if (alumnoActual.current !== deAlumno) {
+        avisar(`No se guardó una evaluación del alumno anterior: ${err.message}`);
+      } else {
+        setError(err.message);
+        setCompetenciasAlumno((prev) =>
+          recalcularCalculadas(prev.map((c) => (
+            c.id === compId && c[field] === value ? { ...c, [field]: anteriorValor } : c
+          ))),
+        );
+        avisar(`No se guardó: ${nombre}`);
+      }
+    } finally {
+      setGuardando((n) => n - 1);
     }
   }
 
@@ -693,8 +868,7 @@ export default function MallaEvaluacionPage() {
         competencias: competenciasAlumno,
         periodos,
       });
-      setToast('Malla exportada a XLSX');
-      setTimeout(() => setToast(''), 3000);
+      avisar('Malla exportada a XLSX');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -1271,7 +1445,15 @@ export default function MallaEvaluacionPage() {
 
   /* ---------- Render ---------- */
 
-  if (loading) {
+  /*
+   * Al pasar de un alumno a otro no se cambia la página por el «Cargando…»:
+   * la barra de navegación se quedaría sin sitio y Alt+→ dejaría de responder
+   * justo mientras carga.
+   */
+  const navegando = !isAlumno && !!alumnoId && companeros.length > 1;
+  const teclaAlt = /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌥' : 'Alt';
+
+  if (loading && !navegando) {
     return (
       <div className={styles.page}>
         <h1 className={styles.pageTitle}>Malla de Evaluación</h1>
@@ -1291,6 +1473,39 @@ export default function MallaEvaluacionPage() {
           </DashButton>
         )}
       </div>
+      {navegando && (
+        <nav className={styles.alumnoNav} aria-label="Cambiar de alumno">
+          <button
+            type="button"
+            className={styles.alumnoNavBtn}
+            onClick={() => irAAlumno(anterior)}
+            disabled={!anterior}
+            title={`Alumno anterior (${teclaAlt} + ←)`}
+          >
+            <span className="material-icons" style={{ fontSize: 20 }}>chevron_left</span>
+            <span className={styles.alumnoNavNombre}>{anterior?.name ?? 'Anterior'}</span>
+          </button>
+          <div className={styles.alumnoNavCentro}>
+            <span className={styles.alumnoNavPos}>
+              {posicion >= 0 ? `${posicion + 1} de ${companeros.length}` : `${companeros.length} alumnos`}
+            </span>
+            <span className={styles.alumnoNavAtajo}>
+              <kbd>{teclaAlt}</kbd> + <kbd>←</kbd> <kbd>→</kbd>
+              {guardando > 0 && <span className={styles.alumnoNavGuardando}> · Guardando…</span>}
+            </span>
+          </div>
+          <button
+            type="button"
+            className={`${styles.alumnoNavBtn} ${styles.alumnoNavBtnSiguiente}`}
+            onClick={() => irAAlumno(siguiente)}
+            disabled={!siguiente}
+            title={`Alumno siguiente (${teclaAlt} + →)`}
+          >
+            <span className={styles.alumnoNavNombre}>{siguiente?.name ?? 'Siguiente'}</span>
+            <span className="material-icons" style={{ fontSize: 20 }}>chevron_right</span>
+          </button>
+        </nav>
+      )}
       {hasAlumnoData && alumnoInfo && (
         <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
           Alumno: <strong>{alumnoInfo.name}</strong> ({alumnoInfo.email})
@@ -1448,6 +1663,9 @@ export default function MallaEvaluacionPage() {
       <div className={styles.tabPanel}>
         {/* Actividades tab — admin viewing alumno */}
         {activeTab === 'actividades' && !isAlumno && alumnoId && (
+          loading ? (
+            <p>Cargando actividades...</p>
+          ) : (
           <AdminTable
             title={`Actividades del Alumno${alumnoInfo ? ` — ${alumnoInfo.name}` : ''}`}
             columns={adminAlumnoColumns}
@@ -1458,6 +1676,7 @@ export default function MallaEvaluacionPage() {
             actions={getAlumnoActions}
             initialSorting={[{ id: 'semanaPlaneada', desc: false }]}
           />
+          )
         )}
         {/* Actividades tab — alumno viewing own */}
         {activeTab === 'actividades' && isAlumno && (

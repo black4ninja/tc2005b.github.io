@@ -8,6 +8,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Evaluación rápida en la malla del alumno.** Arriba de la malla hay una barra
+  para pasar al alumno anterior o al siguiente del grupo (en orden alfabético,
+  sin los dados de baja), también con `Alt`/`⌥` + `←` `→`. Se queda pegada bajo
+  la cabecera y conserva la pestaña abierta. Al cambiar un nivel ya no se
+  recarga la malla: el valor se pinta al momento, las competencias calculadas
+  se recalculan en el cliente y el guardado va por detrás con un aviso; si
+  falla, el valor vuelve al anterior. El scroll ya no salta.
 - **El alumno agrega evidencias desde Competencias.** Cada competencia tiene al
   final «Agregar evidencia», y un atajo junto a su nombre que abre la tarjeta y
   lleva al campo. Las que se evalúan por entrevista se guardan como las de la

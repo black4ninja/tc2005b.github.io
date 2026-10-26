@@ -11,6 +11,93 @@
   margin: 0;
 }
 
+/* Paso de un alumno al siguiente. Pegada bajo la cabecera: la malla es
+   larga y lo normal es llegar al final y querer saltar al siguiente sin
+   volver a subir. */
+.alumnoNav {
+  position: sticky;
+  top: calc(var(--dashboard-header-height) + 8px);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--dash-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.alumnoNavBtn {
+  flex: 1 1 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.alumnoNavBtn:hover:not(:disabled) {
+  background: var(--dash-bg-subtle);
+}
+
+.alumnoNavBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.alumnoNavBtnSiguiente {
+  justify-content: flex-end;
+}
+
+.alumnoNavNombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alumnoNavCentro {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.alumnoNavPos {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.alumnoNavAtajo {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.alumnoNavAtajo kbd {
+  padding: 0 4px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.6875rem;
+}
+
+.alumnoNavGuardando {
+  color: var(--dash-primary);
+}
+
+@media (max-width: 600px) {
+  .alumnoNavAtajo { display: none; }
+}
+
 .error {
   padding: 12px 16px;
   border-radius: 8px;
