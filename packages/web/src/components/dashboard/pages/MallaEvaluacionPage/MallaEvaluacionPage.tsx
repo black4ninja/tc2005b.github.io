@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
@@ -395,10 +395,11 @@ export default function MallaEvaluacionPage() {
   /*
    * Al cambiar de alumno se vacía lo del anterior antes de que llegue lo
    * nuevo: durante ese instante la tabla diría un nombre y enseñaría las notas
-   * de otro, y evaluando deprisa es fácil calificar a quien no es.
+   * de otro, y evaluando deprisa es fácil calificar a quien no es. Es de
+   * layout para que ocurra antes del pintado: con `useEffect` se veía un frame.
    */
   const alumnoPintado = useRef(alumnoId);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (alumnoPintado.current === alumnoId) return;
     alumnoPintado.current = alumnoId;
     setAlumnoInfo(null);
@@ -562,8 +563,10 @@ export default function MallaEvaluacionPage() {
      * detrás. Sin volver a pedir la malla: así la tabla no se desmonta, el
      * scroll no salta y se pueden poner varias notas seguidas sin esperar.
      */
-    const anteriorValor = competenciasAlumno.find((c) => c.id === compId)?.[field] ?? '';
-    const nombre = competenciasAlumno.find((c) => c.id === compId)?.competencia ?? '';
+    const original = competenciasAlumno.find((c) => c.id === compId);
+    const anteriorValor = original?.[field] ?? '';
+    const anteriorRetro = original?.[campoRetro] ?? '';
+    const nombre = original?.competencia ?? '';
     const deAlumno = alumnoId;
     setCompetenciasAlumno((prev) =>
       recalcularCalculadas(prev.map((c) => (
@@ -604,7 +607,10 @@ export default function MallaEvaluacionPage() {
         setError(err.message);
         setCompetenciasAlumno((prev) =>
           recalcularCalculadas(prev.map((c) => (
-            c.id === compId && c[field] === value ? { ...c, [field]: anteriorValor } : c
+            // La retro de una sanción se pintó con el nivel: vuelve con él.
+            c.id === compId && c[field] === value
+              ? { ...c, [field]: anteriorValor, ...(retro === undefined ? {} : { [campoRetro]: anteriorRetro }) }
+              : c
           ))),
         );
         avisar(`No se guardó: ${nombre}`);
