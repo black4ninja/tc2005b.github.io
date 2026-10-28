@@ -8,6 +8,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Puntos de competencias por alumno.** La lista del grupo tiene la columna
+  «Pts. Competencias» (lo obtenido sobre el máximo del catálogo) y el modal de
+  competencias, una columna «Puntos» por competencia con el intento que cuenta y
+  el total al pie. Cada competencia aporta sus puntos por el porcentaje del
+  nivel del intento válido (el 2.º si se evaluó; si no, el 1.º); la sanción
+  «Incipiente B −30 pts» resta 30 directos. El cálculo vive en
+  `@tc2005b/evaluacion` (`puntosCompetencia`, `sumarPuntosCompetencias`).
 - **Evaluación rápida en la malla del alumno.** Arriba de la malla hay una barra
   para pasar al alumno anterior o al siguiente del grupo (en orden alfabético,
   sin los dados de baja), también con `Alt`/`⌥` + `←` `→`. Se queda pegada bajo

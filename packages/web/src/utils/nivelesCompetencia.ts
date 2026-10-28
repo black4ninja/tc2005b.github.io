@@ -63,6 +63,15 @@ const NUMBER_TO_LABEL: Record<number, string> = {
 };
 
 /**
+ * Puntos de competencias para mostrar: hasta dos decimales y sin ceros de
+ * relleno. Los niveles dan fracciones (15 % de 15 = 2.25) y redondear a uno
+ * haría que la suma de la tabla no cuadrara con el total.
+ */
+export function formatearPuntos(n: number): string {
+  return n.toLocaleString('es-MX', { maximumFractionDigits: 2 });
+}
+
+/**
  * Cómo se lee un valor guardado. Acepta número (lo que hay en la base) y cadena
  * (lo que sale del `<select>` y lo que guardaron las versiones viejas, que
  * escribían la etiqueta entera).
