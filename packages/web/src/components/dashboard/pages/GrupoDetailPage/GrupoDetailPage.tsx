@@ -669,10 +669,13 @@ export default function GrupoDetailPage() {
    */
   const hayPuntosCompetencias = [...puntosMap.values()].some((p) => p.maximo > 0);
   const puntosColumn = hayPuntosCompetencias
-    ? [columnHelper.accessor((row) => puntosMap.get(row.id)?.obtenidos ?? null, {
+    ? [columnHelper.accessor((row) => puntosMap.get(row.id)?.obtenidos, {
         id: 'puntos_competencias',
         header: 'Pts. Competencias',
+        // `undefined` y no `null` para el alumno sin malla: `sortUndefined`
+        // solo reconoce `undefined`, y así esos van al final en los dos sentidos.
         sortUndefined: 'last',
+        sortingFn: 'basic',
         cell: ({ row }) => {
           const p = puntosMap.get(row.original.id);
           if (!p) return <span className={styles.emptyField}>—</span>;
