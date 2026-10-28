@@ -293,3 +293,46 @@ export function intentoQueCuenta(comp) {
   if (periodoEvaluado(comp.valorPeriodo1, comp.retroPeriodo1)) return 1;
   return null;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Puntos de competencias                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Puntos que aporta una competencia con el intento que cuenta.
+ *
+ * Es el valor de la competencia en el catálogo (`Competencia.puntos`) por el
+ * porcentaje del nivel: un Sólido (85 %) en una de 20 puntos da 17. La sanción
+ * NO es un porcentaje: resta `PENALIZACION_PUNTOS` directos, tenga los puntos
+ * que tenga la competencia, que es como la entiende el profesor («−30 pts»).
+ *
+ * El intento es el de `intentoQueCuenta`: el 2.º si se evaluó, si no el 1.º.
+ * Sin ninguno evaluado aporta 0 —que no es lo mismo que «0 % evaluado», y por
+ * eso se devuelve `intento: null`, para poder pintarlo distinto—.
+ */
+export function puntosCompetencia(comp) {
+  const puntos = parsePuntosCompetencia(comp.puntos);
+  const intento = intentoQueCuenta(comp);
+  if (intento === null) return { intento, puntos, obtenidos: 0 };
+  const valor = intento === 2 ? comp.valorPeriodo2 : comp.valorPeriodo1;
+  if (esPenalizacion(valor)) return { intento, puntos, obtenidos: -PENALIZACION_PUNTOS };
+  return { intento, puntos, obtenidos: (puntos * parseValorCompetencia(valor)) / 100 };
+}
+
+/**
+ * Suma de los puntos de competencias de un alumno, y el máximo posible (la suma
+ * de los puntos del catálogo). Sin redondear, como el resto del paquete; la
+ * suma puede quedar negativa si las sanciones pesan más que lo ganado, y se
+ * deja así a propósito: esconderlo en un 0 haría que dos alumnos muy distintos
+ * se vieran igual.
+ */
+export function sumarPuntosCompetencias(competencias) {
+  let obtenidos = 0;
+  let maximo = 0;
+  for (const comp of competencias) {
+    const r = puntosCompetencia(comp);
+    obtenidos += r.obtenidos;
+    maximo += r.puntos;
+  }
+  return { obtenidos, maximo };
+}

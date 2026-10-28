@@ -321,3 +321,13 @@
   letter-spacing: 0.04em;
   opacity: 0.65;
 }
+
+/* Puntos de competencias del alumno. */
+.puntosCell {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.puntosNegativos {
+  color: var(--estado-error-color);
+}

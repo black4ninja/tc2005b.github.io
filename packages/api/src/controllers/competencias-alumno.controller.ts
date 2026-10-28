@@ -7,7 +7,7 @@ import { Grupo } from '../models/Grupo.js';
 import { getAlumnosDeGrupo, findGrupoAlumnoLink } from '../services/grupo-alumno.service.js';
 import { scopeGrupo } from '../services/grupo-admin.service.js';
 import { competenciasDeGrupo } from '../services/grupo-colecciones.service.js';
-import { esPenalizacion, PENALIZACION_VALOR } from '@tc2005b/evaluacion';
+import { esPenalizacion, PENALIZACION_VALOR, sumarPuntosCompetencias } from '@tc2005b/evaluacion';
 import { registrarLog } from '../models/AuditLog.js';
 
 export async function crearCompetenciasAlumno(req: Request, res: Response): Promise<void> {
@@ -127,6 +127,48 @@ export async function getCompetenciasStatus(req: Request, res: Response): Promis
     });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'Error al obtener estado de competencias' });
+  }
+}
+
+/**
+ * GET /admin/grupos/:grupoId/competencias-alumno/puntos — cuántos puntos de
+ * competencias lleva cada alumno del grupo, para la columna de la lista.
+ *
+ * Una sola consulta para todo el grupo en vez de una por alumno: la lista
+ * tiene 30–40 filas y pedir la malla de cada uno la haría tardar segundos.
+ * El cálculo es el del paquete (`sumarPuntosCompetencias`), el mismo que pinta
+ * el modal de competencias, así que la lista y el modal no pueden diferir.
+ */
+export async function getPuntosCompetenciasGrupo(req: Request, res: Response): Promise<void> {
+  const { grupoId } = req.params;
+
+  try {
+    const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
+    const query = new Parse.Query<CompetenciaAlumno>('CompetenciaAlumno');
+    query.equalTo('exists' as any, true as any);
+    query.equalTo('grupo' as any, grupoPointer as any);
+    // Los puntos viven en el catálogo: sin el include todo pesaría 0.
+    query.include('competencia' as any);
+    query.limit(10000);
+    const registros = await query.find({ useMasterKey: true });
+
+    const porAlumno = new Map<string, Array<Record<string, unknown>>>();
+    for (const r of registros) {
+      const alumnoId = r.getAlumno()?.id;
+      if (!alumnoId) continue;
+      if (!porAlumno.has(alumnoId)) porAlumno.set(alumnoId, []);
+      porAlumno.get(alumnoId)!.push(r.toSafeJSON());
+    }
+
+    res.json({
+      status: 'ok',
+      alumnos: [...porAlumno].map(([alumnoId, comps]) => ({
+        alumnoId,
+        ...sumarPuntosCompetencias(comps),
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Error al calcular los puntos de competencias' });
   }
 }
 

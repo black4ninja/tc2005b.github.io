@@ -122,3 +122,28 @@ export declare function intentoQueCuenta(comp: {
   retroPeriodo1?: string | null;
   retroPeriodo2?: string | null;
 }): 1 | 2 | null;
+
+interface CompetenciaConIntentos {
+  puntos?: number | string | null;
+  valorPeriodo1?: string | number | null;
+  valorPeriodo2?: string | number | null;
+  retroPeriodo1?: string | null;
+  retroPeriodo2?: string | null;
+}
+
+/**
+ * Puntos que aporta una competencia con el intento que cuenta: `puntos × %` del
+ * nivel, o `−PENALIZACION_PUNTOS` directos si es la sanción. `intento: null` =
+ * ningún intento evaluado (aporta 0).
+ */
+export declare function puntosCompetencia(comp: CompetenciaConIntentos): {
+  intento: 1 | 2 | null;
+  puntos: number;
+  obtenidos: number;
+};
+
+/** Suma de lo obtenido y máximo posible (suma de los puntos del catálogo). */
+export declare function sumarPuntosCompetencias(competencias: CompetenciaConIntentos[]): {
+  obtenidos: number;
+  maximo: number;
+};

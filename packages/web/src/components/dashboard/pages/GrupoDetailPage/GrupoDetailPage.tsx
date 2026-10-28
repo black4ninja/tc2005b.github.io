@@ -9,6 +9,7 @@ import AlumnoForm from '../../organisms/AlumnoForm/AlumnoForm';
 import AlumnoPicker, { type AlumnoEncontrado } from '../../organisms/AlumnoPicker/AlumnoPicker';
 import CSVImportModal from '../../organisms/CSVImportModal/CSVImportModal';
 import CompetenciasQuickModal from '../../organisms/CompetenciasQuickModal/CompetenciasQuickModal';
+import { formatearPuntos } from '../../../../utils/nivelesCompetencia';
 import ProfileInfoCell from '../../atoms/ProfileInfoCell/ProfileInfoCell';
 import NombreGrupo, { type CategoriaRef } from '../../atoms/NombreGrupo/NombreGrupo';
 import DashButton from '../../atoms/DashButton/DashButton';
@@ -72,6 +73,12 @@ interface CompetenciaStatus {
   alumnosSinCompetencias: number;
 }
 
+/** Puntos de competencias de un alumno con el intento que cuenta en cada una. */
+interface PuntosCompetencias {
+  obtenidos: number;
+  maximo: number;
+}
+
 interface AlumnoEquipoInfo {
   equipoId: string;
   nombre: string;
@@ -116,6 +123,7 @@ export default function GrupoDetailPage() {
   const [periodos, setPeriodos] = useState<PeriodoInfo[]>([]);
   const [calificacionesMap, setCalificacionesMap] = useState<Map<string, CalificacionAlumno>>(new Map());
   const [equiposMap, setEquiposMap] = useState<Map<string, AlumnoEquipoInfo>>(new Map());
+  const [puntosMap, setPuntosMap] = useState<Map<string, PuntosCompetencias>>(new Map());
 
   // Filtro por equipo — NO persistente (sólo durante esta visita).
   // '' = todos, '__none__' = sin equipo, otro valor = equipoId.
@@ -187,6 +195,22 @@ export default function GrupoDetailPage() {
         }
         setCalificacionesMap(map);
       }
+    } catch {
+      // non-critical
+    }
+  }, [id, sessionToken]);
+
+  const fetchPuntosCompetencias = useCallback(async () => {
+    if (!id) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/grupos/${id}/competencias-alumno/puntos`, {
+        headers: { 'x-session-token': sessionToken ?? '' },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const map = new Map<string, PuntosCompetencias>();
+      for (const p of (data.alumnos ?? [])) map.set(p.alumnoId, { obtenidos: p.obtenidos, maximo: p.maximo });
+      setPuntosMap(map);
     } catch {
       // non-critical
     }
@@ -274,6 +298,10 @@ export default function GrupoDetailPage() {
   useEffect(() => {
     fetchCalificaciones();
   }, [fetchCalificaciones]);
+
+  useEffect(() => {
+    fetchPuntosCompetencias();
+  }, [fetchPuntosCompetencias]);
 
   async function handleCrearCompetencias() {
     if (!(await confirmar({ titulo: '¿Crear competencias para los alumnos pendientes?', confirmar: 'Crear' }))) return;
@@ -634,6 +662,35 @@ export default function GrupoDetailPage() {
       })]
     : [];
 
+  /*
+   * Puntos de competencias: la suma de `puntos × %` del intento que cuenta en
+   * cada una (la sanción resta 30 directos). Solo si el catálogo del grupo les
+   * puso puntos: sin ellos todas las filas dirían «0 / 0».
+   */
+  const hayPuntosCompetencias = [...puntosMap.values()].some((p) => p.maximo > 0);
+  const puntosColumn = hayPuntosCompetencias
+    ? [columnHelper.accessor((row) => puntosMap.get(row.id)?.obtenidos, {
+        id: 'puntos_competencias',
+        header: 'Pts. Competencias',
+        // `undefined` y no `null` para el alumno sin malla: `sortUndefined`
+        // solo reconoce `undefined`, y así esos van al final en los dos sentidos.
+        sortUndefined: 'last',
+        sortingFn: 'basic',
+        cell: ({ row }) => {
+          const p = puntosMap.get(row.original.id);
+          if (!p) return <span className={styles.emptyField}>—</span>;
+          return (
+            <span className={styles.puntosCell}>
+              <strong className={p.obtenidos < 0 ? styles.puntosNegativos : undefined}>
+                {formatearPuntos(p.obtenidos)}
+              </strong>
+              <span className={styles.emptyField}> / {formatearPuntos(p.maximo)}</span>
+            </span>
+          );
+        },
+      })]
+    : [];
+
   // Un grupo que no pide repositorio tendría esa columna vacía en todas las
   // filas; se quita en vez de enseñar una columna de guiones.
   const pideRepositorio = !(grupo?.camposPerfilDeshabilitados ?? []).includes('repositorioIndividual');
@@ -747,6 +804,7 @@ export default function GrupoDetailPage() {
       header: 'Perfil',
       cell: ({ row }) => <ProfileInfoCell alumno={row.original} />,
     }),
+    ...puntosColumn,
     ...gradeColumns,
     ...finalGradeColumn,
     columnHelper.accessor('active', {
@@ -1040,7 +1098,11 @@ export default function GrupoDetailPage() {
 
       <CompetenciasQuickModal
         open={!!compModalAlumno}
-        onClose={() => setCompModalAlumno(null)}
+        onClose={() => {
+          setCompModalAlumno(null);
+          // Lo evaluado en el modal mueve la columna de puntos de la lista.
+          fetchPuntosCompetencias();
+        }}
         grupoId={id ?? ''}
         alumnoId={compModalAlumno?.id ?? ''}
         alumnoNombre={compModalAlumno?.name ?? ''}

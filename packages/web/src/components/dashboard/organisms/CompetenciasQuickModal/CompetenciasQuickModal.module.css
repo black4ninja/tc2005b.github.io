@@ -270,3 +270,40 @@
   color: var(--text-secondary);
   text-align: right;
 }
+
+/* Puntos: lo obtenido con el intento que cuenta sobre lo que vale. */
+.puntosCell {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.puntosNegativos {
+  color: var(--estado-error-color);
+  font-weight: 600;
+}
+
+.intentoChip {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 0.6875rem;
+  color: var(--text-secondary);
+}
+
+/* El total se queda a la vista aunque la tabla tenga scroll. */
+.table tfoot td {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-card);
+  border-top: 2px solid var(--border-color);
+  border-bottom: none;
+  font-size: 0.9375rem;
+}
+
+.totalLabel {
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-secondary);
+}

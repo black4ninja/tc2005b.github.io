@@ -4,6 +4,7 @@ import { requireGrupoAccess } from '../middlewares/grupo-scope.middleware.js';
 import {
   crearCompetenciasAlumno,
   getCompetenciasStatus,
+  getPuntosCompetenciasGrupo,
   getCompetenciasAlumno,
   updateCompetenciaAlumno,
   propagarCompetencias,
@@ -15,6 +16,7 @@ router.use('/admin/grupos/:grupoId/competencias-alumno', identifyUser, requireGr
 
 // Fixed paths BEFORE parameterized paths
 router.get('/admin/grupos/:grupoId/competencias-alumno/status', getCompetenciasStatus);
+router.get('/admin/grupos/:grupoId/competencias-alumno/puntos', getPuntosCompetenciasGrupo);
 router.post('/admin/grupos/:grupoId/competencias-alumno/propagar', propagarCompetencias);
 router.post('/admin/grupos/:grupoId/competencias-alumno', crearCompetenciasAlumno);
 

@@ -9,6 +9,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseValorCompetencia,
+  puntosCompetencia,
+  sumarPuntosCompetencias,
   campoValorPeriodo,
   idsActividadesDelPeriodo,
   calcActividadesScore,
@@ -557,5 +559,50 @@ describe('intentoQueCuenta', () => {
   });
   it('sin ninguno evaluado, ninguno cuenta', () => {
     expect(intentoQueCuenta({ valorPeriodo1: 0, retroPeriodo1: '', valorPeriodo2: 0, retroPeriodo2: '' })).toBe(null);
+  });
+});
+
+describe('puntosCompetencia', () => {
+  it('es puntos × porcentaje del nivel del intento que cuenta', () => {
+    expect(puntosCompetencia({ puntos: 20, valorPeriodo1: 85, retroPeriodo1: 'x' })).toEqual({ intento: 1, puntos: 20, obtenidos: 17 });
+    expect(puntosCompetencia({ puntos: 15, valorPeriodo1: 15, retroPeriodo1: 'x' }).obtenidos).toBeCloseTo(2.25);
+  });
+  it('usa el 2.º intento aunque saque menos que el 1.º', () => {
+    const r = puntosCompetencia({ puntos: 10, valorPeriodo1: 100, retroPeriodo1: 'x', valorPeriodo2: 70, retroPeriodo2: 'y' });
+    expect(r).toEqual({ intento: 2, puntos: 10, obtenidos: 7 });
+  });
+  it('sin 2.º evaluado usa el 1.º, aunque el 2.º tenga el 0 de la malla', () => {
+    expect(puntosCompetencia({ puntos: 12, valorPeriodo1: 70, retroPeriodo1: 'x', valorPeriodo2: 0 }).obtenidos).toBeCloseTo(8.4);
+  });
+  it('la sanción resta 30 directos, no un porcentaje de los puntos', () => {
+    expect(puntosCompetencia({ puntos: 12, valorPeriodo1: PENALIZACION_VALOR, retroPeriodo1: 'x' }).obtenidos).toBe(-30);
+    expect(puntosCompetencia({ puntos: 0, valorPeriodo1: String(PENALIZACION_VALOR), retroPeriodo1: 'x' }).obtenidos).toBe(-30);
+  });
+  it('un 2.º intento evaluado anula la sanción del 1.º', () => {
+    expect(puntosCompetencia({ puntos: 20, valorPeriodo1: PENALIZACION_VALOR, retroPeriodo1: 'x', valorPeriodo2: 100, retroPeriodo2: 'y' }).obtenidos).toBe(20);
+  });
+  it('sin ningún intento evaluado aporta 0 y lo dice con intento null', () => {
+    expect(puntosCompetencia({ puntos: 20, valorPeriodo1: 0, valorPeriodo2: 0 })).toEqual({ intento: null, puntos: 20, obtenidos: 0 });
+  });
+  it('acepta los valores como cadena, que es como salen del select', () => {
+    expect(puntosCompetencia({ puntos: '20', valorPeriodo1: '85', retroPeriodo1: 'x' }).obtenidos).toBe(17);
+  });
+});
+
+describe('sumarPuntosCompetencias', () => {
+  it('suma lo obtenido y el máximo del catálogo', () => {
+    const r = sumarPuntosCompetencias([
+      { puntos: 20, valorPeriodo1: 85, retroPeriodo1: 'x' },
+      { puntos: 10, valorPeriodo1: 0, valorPeriodo2: 0 },
+      { puntos: 15, valorPeriodo1: 15, retroPeriodo1: 'x', valorPeriodo2: 100, retroPeriodo2: 'y' },
+    ]);
+    expect(r).toEqual({ obtenidos: 32, maximo: 45 });
+  });
+  it('puede quedar negativa: la sanción no se esconde en un 0', () => {
+    const r = sumarPuntosCompetencias([
+      { puntos: 10, valorPeriodo1: 15, retroPeriodo1: 'x' },
+      { puntos: 10, valorPeriodo1: PENALIZACION_VALOR, retroPeriodo1: 'x' },
+    ]);
+    expect(r).toEqual({ obtenidos: -28.5, maximo: 20 });
   });
 });

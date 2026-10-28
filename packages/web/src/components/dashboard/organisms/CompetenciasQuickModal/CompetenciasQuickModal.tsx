@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router';
 import Modal from '../../atoms/Modal/Modal';
 import DashButton from '../../atoms/DashButton/DashButton';
 import TruncatedText from '../../atoms/TruncatedText/TruncatedText';
-import { etiquetaNivel, opcionesEvaluacion } from '../../../../utils/nivelesCompetencia';
+import { puntosCompetencia, sumarPuntosCompetencias } from '@tc2005b/evaluacion';
+import { etiquetaNivel, formatearPuntos, opcionesEvaluacion } from '../../../../utils/nivelesCompetencia';
 import styles from './CompetenciasQuickModal.module.css';
 
 const API_BASE = '/api';
@@ -22,6 +23,8 @@ interface CompetenciaAlumno {
   admitePenalizacion?: boolean;
   evidencias?: string[];
   orden?: number;
+  /** Lo que vale en el catálogo; el nivel del intento que cuenta da la fracción. */
+  puntos?: number;
 }
 
 interface CompetenciasQuickModalProps {
@@ -172,6 +175,31 @@ export default function CompetenciasQuickModal({
     }
   }
 
+  // Se recalcula con lo que hay en pantalla: tras cada cambio el total ya cuadra.
+  const totalPuntos = sumarPuntosCompetencias(competencias);
+
+  function renderPuntosCell(c: CompetenciaAlumno) {
+    const { intento, puntos, obtenidos } = puntosCompetencia(c);
+    if (intento === null) {
+      return (
+        <td className={styles.puntosCell} title="Ningún intento evaluado">
+          <span className={styles.zero}>— / {formatearPuntos(puntos)}</span>
+        </td>
+      );
+    }
+    return (
+      <td className={styles.puntosCell}>
+        <span className={obtenidos < 0 ? styles.puntosNegativos : undefined}>
+          {formatearPuntos(obtenidos)}
+        </span>
+        <span className={styles.zero}> / {formatearPuntos(puntos)}</span>
+        <span className={styles.intentoChip} title={`Cuenta el ${intento}.º intento`}>
+          Int. {intento}
+        </span>
+      </td>
+    );
+  }
+
   function goToFullMalla() {
     onClose();
     navigate(`/admin/grupos/${grupoId}/alumnos/${alumnoId}/malla`);
@@ -277,6 +305,7 @@ export default function CompetenciasQuickModal({
                   <th>Retro 1</th>
                   <th>Eval. 2</th>
                   <th>Retro 2</th>
+                  <th title="Puntos de la competencia por el nivel del intento que cuenta; la sanción resta 30">Puntos</th>
                   <th>Evidencias</th>
                 </tr>
               </thead>
@@ -336,6 +365,7 @@ export default function CompetenciasQuickModal({
                         )}
                       </td>
                       {renderRetroCell(c, 'retroPeriodo2')}
+                      {renderPuntosCell(c)}
                       <td>
                         {evidencias.length === 0 ? (
                           <span className={styles.zero}>—</span>
@@ -361,6 +391,18 @@ export default function CompetenciasQuickModal({
                   );
                 })}
               </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={7} className={styles.totalLabel}>Total de competencias</td>
+                  <td className={styles.puntosCell}>
+                    <strong className={totalPuntos.obtenidos < 0 ? styles.puntosNegativos : undefined}>
+                      {formatearPuntos(totalPuntos.obtenidos)}
+                    </strong>
+                    <span className={styles.zero}> / {formatearPuntos(totalPuntos.maximo)}</span>
+                  </td>
+                  <td />
+                </tr>
+              </tfoot>
             </table>
           </div>
         )}
