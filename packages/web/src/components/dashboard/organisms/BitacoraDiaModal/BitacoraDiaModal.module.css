@@ -134,6 +134,12 @@
   background: var(--estado-error-bg);
   color: var(--estado-error-color);
 }
+.fueraDeTiempo {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: var(--dash-warning);
+}
 .tipoMovimiento {
   background: var(--estado-info-bg);
   color: var(--estado-info-color);

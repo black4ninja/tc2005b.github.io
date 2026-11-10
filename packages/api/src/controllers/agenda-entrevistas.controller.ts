@@ -172,12 +172,19 @@ function intentosDeTodas(citas: CitaEntrevista[]): Map<string, number> {
  * No es por la cita en sí, sino por la PREGUNTA: el intento sale del orden de
  * reserva, así que quitar una cita baja un número a las que se apartaron
  * después y les cambia la pregunta; y mover una pasada a un hueco futuro la
- * «deshace», y su pregunta vuelve a poder cambiarse. Responde el 409 y
- * devuelve true si la cortó.
+ * «deshace», y su pregunta vuelve a poder cambiarse.
+ *
+ * La excepción es `cancelar-fuera-de-tiempo`: el profesor SÍ puede cancelar una
+ * entrevista que ya pasó, y es justo para devolverle al alumno el intento que
+ * gastó (se cayó la conexión, hubo un error, se le dio por perdida sin
+ * serlo). Lo que sigue sin poder es cancelar la que renumeraría a OTRA ya
+ * hecha: esa sí le reescribiría una pregunta que ya se le hizo.
+ *
+ * Responde el 409 y devuelve `null` si la cortó; si no, dice si ya había pasado.
  */
-async function rechazarSiCongela(
-  cita: CitaEntrevista, res: Response, gesto: 'mover' | 'cancelar',
-): Promise<boolean> {
+async function revisarCongelada(
+  cita: CitaEntrevista, res: Response, gesto: 'mover' | 'cancelar' | 'cancelar-fuera-de-tiempo',
+): Promise<{ pasada: boolean } | null> {
   const q = new Parse.Query<CitaEntrevista>('CitaEntrevista');
   q.equalTo('grupo' as any, cita.getGrupo() as any);
   q.equalTo('alumno' as any, cita.getAlumno() as any);
@@ -197,21 +204,22 @@ async function rechazarSiCongela(
     }));
   const ahora = new Date();
   const esta = suyas.find((c) => c.id === cita.id);
-  if (esta && entrevistaTerminada(esta.inicio, esta.duracionSegundos, ahora)) {
+  const pasada = !!esta && entrevistaTerminada(esta.inicio, esta.duracionSegundos, ahora);
+  if (pasada && gesto !== 'cancelar-fuera-de-tiempo') {
     res.status(409).json({
       status: 'error',
       message: 'Esa entrevista ya pasó: no se puede mover ni cancelar, porque cambiaría la pregunta que se le hizo al alumno',
     });
-    return true;
+    return null;
   }
-  if (gesto === 'cancelar' && cancelarRenumeraUnaPasada(cita.id!, suyas, ahora)) {
+  if (gesto !== 'mover' && cancelarRenumeraUnaPasada(cita.id!, suyas, ahora)) {
     res.status(409).json({
       status: 'error',
       message: 'No se puede cancelar: cambiaría el intento —y la pregunta— de una entrevista suya que ya pasó',
     });
-    return true;
+    return null;
   }
-  return false;
+  return { pasada };
 }
 
 const REGLAS = {
@@ -613,6 +621,7 @@ export async function getBitacoraDia(req: Request, res: Response): Promise<void>
         creadaPorId: c.getCreadaPor()?.id ?? null,
         canceladaEn: c.getCanceladaEn()?.toISOString() ?? null,
         canceladaPorId: c.getCanceladaPor()?.id ?? null,
+        canceladaFueraDeTiempo: c.getCanceladaFueraDeTiempo(),
         movimientos: c.getMovimientos(),
         alumno: alumno
           ? { id: alumno.id!, nombre: alumno.get('name') ?? '', matricula: alumno.get('matricula') ?? '' }
@@ -826,7 +835,7 @@ export async function moverCitaProfesor(req: Request, res: Response): Promise<vo
       res.status(404).json({ status: 'error', message: 'Esa cita no es de este grupo' });
       return;
     }
-    if (await rechazarSiCongela(cita, res, 'mover')) return;
+    if (!(await revisarCongelada(cita, res, 'mover'))) return;
 
     const qDia = new Parse.Query<DiaEntrevistas>('DiaEntrevistas');
     qDia.equalTo('exists' as any, true as any);
@@ -1033,15 +1042,18 @@ export async function borrarCitaProfesor(req: Request, res: Response): Promise<v
       res.status(403).json({ status: 'error', message: 'Esa cita no es de este grupo' });
       return;
     }
-    if (await rechazarSiCongela(cita, res, 'cancelar')) return;
     // Sin margen: el profesor cancela también la de dentro de dos minutos, que
-    // es justo cuando hace falta —el alumno no llegó—.
-    cita.cancelar(req.appUser);
+    // es justo cuando hace falta —el alumno no llegó—. Y también la que ya
+    // pasó: es la forma de devolverle el intento. Solo él: al alumno se lo
+    // impide el margen de cancelación.
+    const revision = await revisarCongelada(cita, res, 'cancelar-fuera-de-tiempo');
+    if (!revision) return;
+    cita.cancelar(req.appUser, revision.pasada);
     await cita.save(null, { useMasterKey: true });
     // Lo que ya había entregado NO se va con la cita: se queda suelto en su
     // competencia y vuelve solo si reserva otra vez.
     const sueltas = await soltarEvidenciasDeCita(cita.id!);
-    res.json({ status: 'ok', evidenciasSueltas: sueltas });
+    res.json({ status: 'ok', evidenciasSueltas: sueltas, fueraDeTiempo: revision.pasada });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al cancelar la cita' });
   }
@@ -1189,7 +1201,7 @@ export async function borrarCitaAlumno(req: Request, res: Response): Promise<voi
       });
       return;
     }
-    if (await rechazarSiCongela(cita, res, 'cancelar')) return;
+    if (!(await revisarCongelada(cita, res, 'cancelar'))) return;
     cita.cancelar(req.appUser);
     await cita.save(null, { useMasterKey: true });
     // Igual que cuando cancela el profesor: lo entregado se queda suelto en su

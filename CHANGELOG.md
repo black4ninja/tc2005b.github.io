@@ -8,6 +8,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Cancelar una entrevista que ya pasó (solo el profesor).** En la agenda de
+  Preguntas, el ✕ de una entrevista pasada ya no está bloqueado: con
+  confirmación, la cancela y le devuelve al alumno el intento que gastó, para
+  que pueda volver a agendarlo. El diálogo avisa si ese intento ya estaba
+  evaluado en la malla o tenía pregunta asignada, porque eso no se deshace solo.
+  Queda en la bitácora como cancelación «fuera de tiempo». Sigue sin poder
+  cancelarse la que cambiaría el intento de otra entrevista suya ya hecha, y el
+  alumno sigue sin poder cancelar fuera de su margen.
 - **Puntos de competencias por alumno.** La lista del grupo tiene la columna
   «Pts. Competencias» (lo obtenido sobre el máximo del catálogo) y el modal de
   competencias, una columna «Puntos» por competencia con el intento que cuenta y

@@ -86,9 +86,19 @@ export class CitaEntrevista extends BaseModel {
     return this.get('canceladaPor');
   }
 
-  cancelar(por?: AppUser): void {
+  /**
+   * Si se canceló cuando su entrevista ya había pasado. Solo lo hace el
+   * profesor, para devolverle al alumno el intento: la bitácora lo distingue
+   * de una cancelación normal.
+   */
+  getCanceladaFueraDeTiempo(): boolean {
+    return this.get('canceladaFueraDeTiempo') === true;
+  }
+
+  cancelar(por?: AppUser, fueraDeTiempo = false): void {
     this.set('canceladaEn', new Date());
     if (por) this.set('canceladaPor', por);
+    if (fueraDeTiempo) this.set('canceladaFueraDeTiempo', true);
     this.softDelete();
   }
 

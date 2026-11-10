@@ -562,9 +562,38 @@ export default function PreguntasGrupoPage() {
     }
   }
 
-  async function cancelarCita(citaId: string) {
+  /**
+   * Cancelar una cita. Si su entrevista YA pasó es la acción especial del
+   * profesor: se le devuelve al alumno el intento que gastó. Esa sí se pregunta,
+   * y diciendo lo que NO se deshace solo —la nota de la malla y la pregunta que
+   * ya vio—, porque eso lo tiene que revisar el profesor a mano.
+   */
+  async function cancelarCita(
+    cita: CitaProfesor, pasada: boolean, asignacion: ReturnType<typeof asignacionDeCita>,
+  ) {
+    if (pasada) {
+      const quien = cita.alumno?.name || 'El alumno';
+      const deQue = cita.competencia?.nombre ? ` de ${cita.competencia.nombre}` : '';
+      const avisos = [
+        cita.evaluadaEnMalla
+          ? 'Ese intento ya está evaluado en la malla: la calificación no se borra, revísala tú.'
+          : '',
+        asignacion?.pregunta
+          ? 'La pregunta que ya vio sigue asignada a ese intento: cámbiala antes de su nueva entrevista.'
+          : '',
+      ].filter(Boolean).join(' ');
+      if (!(await confirmar({
+        titulo: '¿Cancelar una entrevista que ya pasó?',
+        texto: `${quien} recupera su ${cita.intento}.º intento${deQue} y podrá volver a agendarlo.`
+          + ' Queda en la bitácora como cancelación fuera de tiempo.'
+          + (avisos ? ` ${avisos}` : ''),
+        confirmar: 'Cancelar y devolver el intento',
+        cancelar: 'No cancelar',
+        peligro: true,
+      }))) return;
+    }
     try {
-      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/citas/${citaId}`, {
+      const res = await fetch(`${API_BASE}/admin/grupos/${grupoId}/agenda-entrevistas/citas/${cita.id}`, {
         method: 'DELETE', headers,
       });
       if (!res.ok) {
@@ -2171,9 +2200,10 @@ export default function PreguntasGrupoPage() {
                     const problema = problemaDeEvidencias(
                       cita!.evidencias, inicio, new Date(ahora + desfaseRef.current),
                     );
-                    // Una entrevista que ya se hizo no se mueve ni se cancela:
-                    // el intento sale del orden de las citas, y tocarla le
-                    // cambiaría la pregunta a esta o a su otra cita.
+                    // Una entrevista que ya se hizo no se mueve: el intento
+                    // sale del orden de las citas, y tocarla le cambiaría la
+                    // pregunta a esta o a su otra cita. Cancelarla sí se
+                    // puede, como acción especial que devuelve el intento.
                     const pasada = huecoPasado(inicio, dia.duracionSegundos);
                     const preguntaCongelada = pasada && !!asignacion && !asignacion.pendiente;
                     const evaluada = citaEvaluada(cita!, asignacion);
@@ -2340,11 +2370,10 @@ export default function PreguntasGrupoPage() {
                             <Icon name="history" size="sm" />
                           </button>
                           <button
-                            className={styles.iconBtn}
-                            disabled={pasada}
-                            onClick={() => cancelarCita(cita!.id)}
+                            className={`${styles.iconBtn} ${pasada ? styles.iconBtnFueraDeTiempo : ''}`}
+                            onClick={() => cancelarCita(cita!, pasada, asignacion)}
                             title={pasada
-                              ? 'Esta entrevista ya pasó: no se puede cancelar'
+                              ? 'Cancelar fuera de tiempo: la entrevista ya pasó y se le devuelve el intento'
                               : 'Cancelar esta cita (no llegó, se cambió de día…)'}
                           >
                             <Icon name="close" size="sm" />

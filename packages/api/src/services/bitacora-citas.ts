@@ -29,6 +29,8 @@ export interface EventoBitacora {
   competencia: string | null;
   /** Quién lo hizo. `null` = no consta (cancelaciones de antes de la bitácora). */
   por: PersonaBitacora | null;
+  /** Solo en cancelaciones: la entrevista ya había pasado y se le devolvió el intento. */
+  fueraDeTiempo: boolean;
 }
 
 /** Lo que la bitácora necesita de una cita, ya sin Parse. */
@@ -39,6 +41,8 @@ export interface CitaParaBitacora {
   creadaPorId: string | null;
   canceladaEn: string | null;
   canceladaPorId: string | null;
+  /** Ausente = no (todas las de antes de que existiera). */
+  canceladaFueraDeTiempo?: boolean;
   movimientos: { de: string; a: string; en: string; porId: string | null }[];
   alumno: { id: string; nombre: string; matricula: string } | null;
   competencia: string | null;
@@ -65,7 +69,7 @@ export function bitacoraDelDia(
 
   const eventos: EventoBitacora[] = [];
   for (const c of citas) {
-    const base = { citaId: c.id, alumno: c.alumno, competencia: c.competencia };
+    const base = { citaId: c.id, alumno: c.alumno, competencia: c.competencia, fueraDeTiempo: false };
     const movs = [...c.movimientos].sort((a, b) => a.en.localeCompare(b.en));
     // Mover reescribe `inicio`: el hueco que se reservó es el de origen del
     // PRIMER movimiento.
@@ -79,7 +83,10 @@ export function bitacoraDelDia(
       }
     }
     if (c.canceladaEn && enRango(c.inicio)) {
-      eventos.push({ ...base, tipo: 'cancelacion', en: c.canceladaEn, hueco: c.inicio, desde: null, por: persona(c.canceladaPorId, c) });
+      eventos.push({
+        ...base, tipo: 'cancelacion', en: c.canceladaEn, hueco: c.inicio, desde: null,
+        por: persona(c.canceladaPorId, c), fueraDeTiempo: c.canceladaFueraDeTiempo === true,
+      });
     }
   }
   return eventos.sort((a, b) => a.en.localeCompare(b.en));
