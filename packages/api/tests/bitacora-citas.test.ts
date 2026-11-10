@@ -34,6 +34,15 @@ describe('bitacoraDelDia', () => {
     expect(ev[1].por).toEqual({ id: 'prof', nombre: 'Profesor', esElAlumno: false });
   });
 
+  it('marca la cancelación fuera de tiempo, y solo esa', () => {
+    const normal = bitacoraDelDia([cita({ canceladaEn: '2026-10-14T00:00:00.000Z', canceladaPorId: 'prof' })], desde, hasta, nombres);
+    expect(normal.map((e) => e.fueraDeTiempo)).toEqual([false, false]);
+    const tarde = bitacoraDelDia([cita({
+      canceladaEn: '2026-10-15T18:00:00.000Z', canceladaPorId: 'prof', canceladaFueraDeTiempo: true,
+    })], desde, hasta, nombres);
+    expect(tarde.map((e) => [e.tipo, e.fueraDeTiempo])).toEqual([['reserva', false], ['cancelacion', true]]);
+  });
+
   it('la reserva se apunta al hueco original aunque luego la movieran', () => {
     const ev = bitacoraDelDia([cita({
       inicio: '2026-10-15T16:00:00.000Z',

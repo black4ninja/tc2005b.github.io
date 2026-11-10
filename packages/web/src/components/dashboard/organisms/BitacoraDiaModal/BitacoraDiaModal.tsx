@@ -15,6 +15,8 @@ interface EventoBitacora {
   alumno: { id: string; nombre: string; matricula: string } | null;
   competencia: string | null;
   por: { id: string; nombre: string; esElAlumno: boolean } | null;
+  /** Cancelada cuando la entrevista ya había pasado: se le devolvió el intento. */
+  fueraDeTiempo?: boolean;
 }
 
 const TIPO: Record<EventoBitacora['tipo'], { texto: string; icono: string; clase: string }> = {
@@ -33,6 +35,7 @@ function textoDeEvento(e: EventoBitacora): string {
   return normalizar([
     fechaYHora(e.en),
     TIPO[e.tipo].texto,
+    e.fueraDeTiempo ? 'fuera de tiempo' : '',
     e.desde ? hora(e.desde) : '',
     hora(e.hueco),
     e.alumno?.nombre ?? '',
@@ -173,6 +176,14 @@ export default function BitacoraDiaModal({ grupoId, dia, hueco: huecoInicial, on
                         <span className={`${styles.tipo} ${t.clase}`}>
                           <Icon name={t.icono} size="sm" /> {t.texto}
                         </span>
+                        {e.fueraDeTiempo && (
+                          <span
+                            className={styles.fueraDeTiempo}
+                            title="La entrevista ya había pasado: se le devolvió el intento al alumno"
+                          >
+                            fuera de tiempo
+                          </span>
+                        )}
                       </td>
                       <td className={styles.hueco}>
                         {e.desde ? `${hora(e.desde)} → ${hora(e.hueco)}` : hora(e.hueco)}

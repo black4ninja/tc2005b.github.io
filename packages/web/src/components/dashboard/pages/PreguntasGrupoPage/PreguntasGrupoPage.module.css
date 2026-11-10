@@ -281,6 +281,9 @@
 
 .iconBtnOn { color: var(--dash-success); }
 
+/* Cancelar una entrevista que ya pasó: se puede, pero no es el gesto de siempre. */
+.iconBtnFueraDeTiempo { color: var(--dash-warning); }
+
 .nota {
   width: 100%;
   min-width: 160px;
