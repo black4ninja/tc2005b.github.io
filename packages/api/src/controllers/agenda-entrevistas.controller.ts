@@ -1051,7 +1051,9 @@ export async function borrarCitaProfesor(req: Request, res: Response): Promise<v
     cita.cancelar(req.appUser, revision.pasada);
     await cita.save(null, { useMasterKey: true });
     // Lo que ya había entregado NO se va con la cita: se queda suelto en su
-    // competencia y vuelve solo si reserva otra vez.
+    // competencia y vuelve solo si reserva otra vez. También con una entrevista
+    // pasada, a propósito: queda anulada, así que lo entregado vuelve a ser
+    // para la próxima —y, suelto, el alumno ya puede quitarlo—.
     const sueltas = await soltarEvidenciasDeCita(cita.id!);
     res.json({ status: 'ok', evidenciasSueltas: sueltas, fueraDeTiempo: revision.pasada });
   } catch {
