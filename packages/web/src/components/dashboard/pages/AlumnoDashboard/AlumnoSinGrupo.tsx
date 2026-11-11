@@ -86,7 +86,11 @@ export default function AlumnoSinGrupo() {
 
       <div className={styles.profileBanner}>
         <span className="material-icons">info</span>
-        No estás inscrito en ningún grupo activo. Tienes acceso a las wikis que te abrieron.
+        {/* Sin wikis es el alumno dado de baja de todos sus grupos: a ese hay
+            que decirle a quién acudir, no que tiene algo que no tiene. */}
+        {wikis !== null && wikis.length === 0
+          ? 'No estás inscrito en ningún grupo activo. Si crees que es un error, contacta a tu profesor.'
+          : 'No estás inscrito en ningún grupo activo. Tienes acceso a las wikis que te abrieron.'}
       </div>
 
       <div className={styles.profileCard}>
@@ -98,7 +102,13 @@ export default function AlumnoSinGrupo() {
         ) : (
           wikis.map((w) => (
             <div key={w.slug} className={styles.profileField}>
-              <a href={`/contenidos/${w.slug}/`} className={styles.profileLink}>
+              {/* En pestaña nueva, igual que el ítem «Wiki» del menú. */}
+              <a
+                href={`/contenidos/${w.slug}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.profileLink}
+              >
                 {w.clave ? `${w.clave} — ${w.nombre}` : w.nombre}
               </a>
             </div>
