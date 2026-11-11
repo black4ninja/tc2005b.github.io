@@ -149,6 +149,35 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
     };
   }, [role, selectedGrupoId, sessionToken, updateUser]);
 
+  // Alumno SIN grupo activo: entra solo por las wikis que se le abrieron por
+  // permiso individual. No hay menú de grupo que pedir —el efecto de arriba ni
+  // arranca—, así que sin esto se quedaba en el esqueleto para siempre.
+  const sinGrupo = role === 'alumno' && (user?.grupos?.length ?? 0) === 0;
+  useEffect(() => {
+    if (!sinGrupo || !sessionToken) return;
+    let cancelado = false;
+    fetch('/api/alumno/wikis', { headers: { 'x-session-token': sessionToken } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (cancelado) return;
+        const wikis = (json?.wikis ?? []) as { slug: string; clave: string | null; nombre: string }[];
+        setDocsHref(wikis[0] ? `/contenidos/${wikis[0].slug}/` : null);
+        setWikisAlumno(wikis.map((w) => ({
+          key: `${w.slug}-wiki`,
+          label: w.clave || w.nombre,
+          href: `/contenidos/${w.slug}/`,
+          externo: true,
+        })));
+        setMenuCargado(true);
+      })
+      .catch(() => {
+        if (!cancelado) setMenuCargado(true);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [sinGrupo, sessionToken]);
+
   useEffect(() => {
     if (!grupoId || !sessionToken) return;
     fetch('/api/admin/grupos', { headers: { 'x-session-token': sessionToken } })
@@ -309,7 +338,9 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
     : getSidebarItems(
         role,
         role === 'alumno' ? selectedGrupoId : undefined,
-        user?.perfilCompleto,
+        // El perfil es POR GRUPO: sin grupo no hay perfil que rellenar, y la
+        // wiki no se le puede bloquear por eso.
+        sinGrupo ? true : user?.perfilCompleto,
         docsHref,
         agendaAlumnoHref,
         ejerciciosHref,

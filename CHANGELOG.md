@@ -8,6 +8,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Alumnos sin grupo activo pueden entrar.** El login (contraseña y enlace
+  mágico) y las sesiones ya no rechazan al alumno que no tiene ningún grupo
+  activo: es el caso del alumno al que solo se le abre una wiki por permiso
+  individual. Sin grupo ve un panel propio con sus wikis y un formulario para
+  establecer su contraseña, y en el menú solo «Dashboard» y «Wiki». Todo lo que
+  cuelga de un grupo sigue exigiendo la inscripción. Endpoints nuevos:
+  `GET /alumno/wikis` y `PUT /alumno/cambiar-password`.
 - **Cancelar una entrevista que ya pasó (solo el profesor).** En la agenda de
   Preguntas, el ✕ de una entrevista pasada ya no está bloqueado: con
   confirmación, la cancela y le devuelve al alumno el intento que gastó, para

@@ -12,6 +12,7 @@ import {
 import { calcCalificacion, type PeriodoConfig } from '@tc2005b/evaluacion';
 import { useAuth } from '../../../../context/AuthContext';
 import { useGrupoActivo } from '../../../../context/GrupoActivoContext';
+import AlumnoSinGrupo from './AlumnoSinGrupo';
 import styles from './AlumnoDashboard.module.css';
 
 /* ------------------------------------------------------------------ */
@@ -145,7 +146,18 @@ function validatePerfil(draft: PerfilData, apagados: string[]): Record<string, s
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Sin grupo activo no hay calendario, malla ni perfil que enseñar: solo las
+ * wikis abiertas por permiso individual y la contraseña. Va en un componente
+ * aparte para no tener que vigilar el «sin grupo» en cada efecto de este.
+ */
 export default function AlumnoDashboard() {
+  const { user } = useAuth();
+  if (user && (user.grupos?.length ?? 0) === 0) return <AlumnoSinGrupo />;
+  return <AlumnoDashboardDeGrupo />;
+}
+
+function AlumnoDashboardDeGrupo() {
   const { user, sessionToken, updateUser } = useAuth();
   // El grupo ACTIVO, no el primero de la lista: con varios grupos, el panel
   // enseñaba el perfil y las calificaciones del primero aunque el menú tuviera

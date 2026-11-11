@@ -624,8 +624,23 @@ export async function changeMyPassword(req: Request, res: Response): Promise<voi
   try {
     const grupoPointer = await validateAlumnoInGrupo(req, res);
     if (!grupoPointer) return;
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: 'Error al cambiar contraseña' });
+    return;
+  }
+  await changeMyPasswordSinGrupo(req, res);
+}
 
-    const { newPassword, confirmPassword } = req.body;
+/**
+ * PUT /alumno/cambiar-password — la misma operación, sin pasar por un grupo.
+ *
+ * La contraseña es de la CUENTA, no del vínculo con un grupo. Hace falta para el
+ * alumno que entra sin grupo activo (solo con wikis por permiso individual): si
+ * no, se quedaría para siempre con la contraseña que le asignamos.
+ */
+export async function changeMyPasswordSinGrupo(req: Request, res: Response): Promise<void> {
+  try {
+    const { newPassword, confirmPassword } = req.body ?? {};
 
     if (!newPassword || typeof newPassword !== 'string') {
       res.status(400).json({ status: 'error', message: 'La contraseña es requerida' });
@@ -654,6 +669,26 @@ export async function changeMyPassword(req: Request, res: Response): Promise<voi
     res.json({ status: 'ok', message: 'Contraseña actualizada exitosamente' });
   } catch (error) {
     res.status(500).json({ status: 'error', message: 'Error al cambiar contraseña' });
+  }
+}
+
+/**
+ * GET /alumno/wikis — las wikis que el alumno puede leer, sin pasar por un grupo.
+ *
+ * Es el menú del alumno SIN grupo activo: el que entra solo porque se le abrió
+ * una wiki por permiso individual. Sale del mismo `getColeccionesPermitidas`
+ * que el visor, así que el menú no puede ofrecer una wiki que luego no abra.
+ */
+export async function getMisWikis(req: Request, res: Response): Promise<void> {
+  try {
+    const user = (req as any).appUser as AppUser;
+    const wikis = await getColeccionesPermitidas(user);
+    res.json({
+      status: 'ok',
+      wikis: wikis.map(({ slug, clave, nombre }) => ({ slug, clave, nombre })),
+    });
+  } catch {
+    res.status(500).json({ status: 'error', message: 'Error al obtener tus wikis' });
   }
 }
 

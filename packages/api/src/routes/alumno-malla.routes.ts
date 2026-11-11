@@ -13,11 +13,18 @@ import {
   setMyGrupoActivo,
   updateMyPerfil,
   changeMyPassword,
+  changeMyPasswordSinGrupo,
+  getMisWikis,
 } from '../controllers/alumno-malla.controller.js';
 
 const router = Router();
 
 router.use('/alumno/grupos/:grupoId', identifyUser, requireAlumno);
+
+// Sin grupo: lo que es de la cuenta y no de una clase. Lo usa el alumno que
+// entra sin grupo activo, solo con wikis por permiso individual.
+router.get('/alumno/wikis', identifyUser, requireAlumno, getMisWikis);
+router.put('/alumno/cambiar-password', identifyUser, requireAlumno, changeMyPasswordSinGrupo);
 
 // Malla
 router.get('/alumno/grupos/:grupoId/malla', getMyMalla);
