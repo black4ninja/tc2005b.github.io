@@ -70,16 +70,6 @@ export function grupoDaAccesoAlumno(grupo: Parse.Object | undefined): boolean {
 }
 
 /**
- * True si el alumno tiene al menos un grupo que le dé acceso: vínculo activo Y
- * grupo sin bloquear. Usado por el login — a quien solo le quedan grupos
- * bloqueados se le trata como al que no tiene ninguno.
- */
-export async function hasAnyActiveGrupoForAlumno(alumnoId: string): Promise<boolean> {
-  const grupos = await getGruposDeAlumno(alumnoId);
-  return grupos.length > 0;
-}
-
-/**
  * ¿Este alumno tiene acceso a ESTE grupo?
  *
  * Se responde con la lista de grupos que ya se acaba de leer para validar la

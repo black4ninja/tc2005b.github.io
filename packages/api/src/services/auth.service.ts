@@ -3,16 +3,14 @@ import { config } from '../config/index.js';
 import { AppUser, MagicToken, AppSession } from '../models/index.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { emailService } from './email.service.js';
-import { hasAnyActiveGrupoForAlumno } from './grupo-alumno.service.js';
 
-/**
- * Para alumnos: verifica que tengan al menos un GrupoAlumno activo.
- * Admins no se ven afectados (no tienen GrupoAlumno).
+/*
+ * Un alumno SIN grupo activo también entra. Antes se le cerraba la puerta en
+ * las tres entradas (contraseña, enlace mágico y cada sesión viva), pero hay
+ * alumnos a los que solo se les abre una wiki por permiso individual
+ * (`AccesoWikiAlumno`), sin grupo. Lo que cuelga de un grupo lo sigue cuidando
+ * cada endpoint (`getVinculoConGrupoActivo`): sin grupo no ve ninguno.
  */
-async function alumnoHasAccess(user: AppUser): Promise<boolean> {
-  if (!user.isAlumno()) return true;
-  return hasAnyActiveGrupoForAlumno(user.id);
-}
 
 function normalizeEmail(input: string): string {
   let email = input.toLowerCase().trim();
@@ -90,9 +88,6 @@ class AuthService {
     if (!user || !user.isActive()) {
       throw new Error('Usuario no encontrado o inactivo');
     }
-    if (!(await alumnoHasAccess(user))) {
-      throw new Error('Has sido dado de baja de todos tus grupos. Contacta a tu profesor.');
-    }
 
     magicToken.markUsed();
     await magicToken.save(null, { useMasterKey: true });
@@ -138,12 +133,6 @@ class AuthService {
     if (!user || !user.isActive()) {
       return null;
     }
-    // Si el alumno fue dado de baja de todos sus grupos, invalidar la sesión.
-    if (!(await alumnoHasAccess(user))) {
-      session.softDelete();
-      await session.save(null, { useMasterKey: true });
-      return null;
-    }
 
     // La sesión se refrescaba en CADA petición, así que toda llamada al API
     // llevaba dentro una escritura a la base —unos 80 ms contra Atlas—, y una
@@ -180,9 +169,6 @@ class AuthService {
     const valid = await bcrypt.compare(password, hash);
     if (!valid) {
       throw new Error('Credenciales inválidas');
-    }
-    if (!(await alumnoHasAccess(user))) {
-      throw new Error('Has sido dado de baja de todos tus grupos. Contacta a tu profesor.');
     }
 
     user.setLastLogin(new Date());
