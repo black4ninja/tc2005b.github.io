@@ -7,6 +7,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **El profesor ya puede editar el calendario de su grupo.** La pantalla le
+  mostraba los controles de edición, pero las rutas de `/admin/calendario/*`
+  eran solo de admin y cada cambio respondía 403. Ahora el profesor crea, edita,
+  reordena y borra semanas y actividades, sube archivos y copia calendarios,
+  pero solo en los grupos donde figura como administrador; una petición que toque
+  además un grupo ajeno se rechaza entera.
+
 ### Added
 - **Alumnos sin grupo activo pueden entrar.** El login (contraseña y enlace
   mágico) y las sesiones ya no rechazan al alumno que no tiene ningún grupo
