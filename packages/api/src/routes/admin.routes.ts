@@ -4,6 +4,17 @@ import multer from 'multer';
 import { identifyUser } from '../middlewares/auth.middleware.js';
 import { requireAdmin } from '../middlewares/abac.middleware.js';
 import { requireStaff } from '../middlewares/grupo-scope.middleware.js';
+import {
+  requireCalendarioDeGrupo,
+  type ResolverGrupos,
+  grupoDelBody,
+  grupoDestinoDelBody,
+  grupoDeSemanaParam,
+  grupoDeSemanaBody,
+  grupoDeActividadParam,
+  gruposDeReorderActividades,
+  gruposDeReorderSemanas,
+} from '../middlewares/calendario-scope.middleware.js';
 import { reorderActividades } from '../controllers/calendario-reorder.controller.js';
 import { createActividad } from '../controllers/calendario-create.controller.js';
 import { updateActividad, deleteActividad } from '../controllers/calendario-update.controller.js';
@@ -53,18 +64,22 @@ router.get('/admin/dashboard', ...soloAdmin, (_req, res) => {
   res.json({ status: 'ok', message: 'Admin dashboard' });
 });
 
-router.put('/admin/calendario/reorder', ...soloAdmin, reorderActividades);
-router.post('/admin/calendario/actividad', ...soloAdmin, createActividad);
-router.put('/admin/calendario/actividad/:actividadId', ...soloAdmin, updateActividad);
-router.delete('/admin/calendario/actividad/:actividadId', ...soloAdmin, deleteActividad);
-router.post('/admin/calendario/actividad/:actividadId/archivo', ...soloAdmin, subidaArchivo, uploadArchivoActividad);
-router.delete('/admin/calendario/actividad/:actividadId/archivo', ...soloAdmin, deleteArchivoActividad);
-router.post('/admin/calendario/semana', ...soloAdmin, createSemana);
-router.put('/admin/calendario/semana/reorder', ...soloAdmin, reorderSemanas);
+// El calendario lo edita también el profesor, pero solo el de SUS grupos: cada
+// ruta dice cómo se llega de su petición al grupo (ver calendario-scope).
+const calendario = (resolver: ResolverGrupos) => [identifyUser, requireCalendarioDeGrupo(resolver)];
+
+router.put('/admin/calendario/reorder', ...calendario(gruposDeReorderActividades), reorderActividades);
+router.post('/admin/calendario/actividad', ...calendario(grupoDeSemanaBody), createActividad);
+router.put('/admin/calendario/actividad/:actividadId', ...calendario(grupoDeActividadParam), updateActividad);
+router.delete('/admin/calendario/actividad/:actividadId', ...calendario(grupoDeActividadParam), deleteActividad);
+router.post('/admin/calendario/actividad/:actividadId/archivo', ...calendario(grupoDeActividadParam), subidaArchivo, uploadArchivoActividad);
+router.delete('/admin/calendario/actividad/:actividadId/archivo', ...calendario(grupoDeActividadParam), deleteArchivoActividad);
+router.post('/admin/calendario/semana', ...calendario(grupoDelBody), createSemana);
+router.put('/admin/calendario/semana/reorder', ...calendario(gruposDeReorderSemanas), reorderSemanas);
 // Debe ir DESPUÉS de /semana/reorder: si no, 'reorder' entraría como :semanaId.
-router.put('/admin/calendario/semana/:semanaId', ...soloAdmin, updateSemana);
-router.delete('/admin/calendario/semana/:semanaId', ...soloAdmin, deleteSemana);
-router.post('/admin/calendario/copy', ...soloAdmin, copyCalendario);
+router.put('/admin/calendario/semana/:semanaId', ...calendario(grupoDeSemanaParam), updateSemana);
+router.delete('/admin/calendario/semana/:semanaId', ...calendario(grupoDeSemanaParam), deleteSemana);
+router.post('/admin/calendario/copy', ...calendario(grupoDestinoDelBody), copyCalendario);
 router.get('/admin/administradores', ...soloAdmin, listAdmins);
 router.post('/admin/administradores', ...soloAdmin, createAdmin);
 router.put('/admin/administradores/:id', ...soloAdmin, updateAdmin);
