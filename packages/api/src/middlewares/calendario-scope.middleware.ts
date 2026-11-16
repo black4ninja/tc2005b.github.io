@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import Parse from 'parse/node';
 import { evaluarAccesoGrupo } from './grupo-scope.middleware.js';
-import { getGruposDeStaff } from '../services/grupo-admin.service.js';
 
 /**
  * Candado de las rutas que EDITAN el calendario (`/admin/calendario/*`).
@@ -53,14 +52,31 @@ export function requireCalendarioDeGrupo(resolver: ResolverGrupos) {
       return;
     }
     try {
-      const [tocados, propios] = await Promise.all([resolver(req), getGruposDeStaff(user.id!)]);
-      const ids = new Set(propios.map((g) => g.id!));
-      if (decidirAccesoCalendario(rol, [...new Set(tocados)], ids)) next();
+      const tocados = [...new Set(await resolver(req))];
+      const propios = await gruposDelStaffEntre(user.id!, tocados);
+      if (decidirAccesoCalendario(rol, tocados, propios)) next();
       else res.status(403).json({ status: 'error', message: 'No tienes acceso a este grupo' });
     } catch {
       res.status(500).json({ status: 'error', message: 'Error al verificar acceso al grupo' });
     }
   };
+}
+
+/**
+ * De los grupos tocados, cuáles tienen al usuario en `admins` (activos o no,
+ * pero no borrados: igual que `isStaffDeGrupo`). Una sola consulta acotada a
+ * esos ids, porque corre en cada guardado del calendario.
+ */
+async function gruposDelStaffEntre(userId: string, grupoIds: string[]): Promise<Set<string>> {
+  if (grupoIds.length === 0) return new Set();
+  const q = new Parse.Query('Grupo');
+  q.equalTo('exists', true);
+  q.containedIn('objectId', grupoIds);
+  q.equalTo('admins', Parse.Object.extend('AppUser').createWithoutData(userId));
+  q.select('objectId');
+  q.limit(grupoIds.length);
+  const grupos = await q.find({ useMasterKey: true });
+  return new Set(grupos.map((g) => g.id!));
 }
 
 // ── Resolvers ────────────────────────────────────────────────────────────────
@@ -75,7 +91,10 @@ async function gruposDeSemanas(ids: unknown[]): Promise<string[]> {
   q.limit(validos.length);
   const semanas = await q.find({ useMasterKey: true });
   if (semanas.length !== new Set(validos).size) return [];
-  return semanas.map((s) => s.get('grupo')?.id).filter(texto);
+  // Una semana sin grupo no es de nadie: rechazar todo, no descartarla y
+  // dejar que el resto de la lista decida.
+  const grupos = semanas.map((s) => s.get('grupo')?.id);
+  return grupos.every(texto) ? grupos : [];
 }
 
 async function gruposDeActividades(ids: unknown[]): Promise<string[]> {
