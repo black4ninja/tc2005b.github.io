@@ -5,17 +5,12 @@ import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Modal from '../../atoms/Modal/Modal';
 import HappinessMisEntradas from '../../organisms/HappinessMisEntradas/HappinessMisEntradas';
-import { ESTADOS_HAPPINESS, fechaLargaDia, nombreRol } from '../../../../utils/happiness';
+import { ESTADOS_HAPPINESS, fechaLargaDia, horaCurso, nombreRol } from '../../../../utils/happiness';
 import { exportarHappinessGrupo } from '../../../../utils/happinessExport';
 import type { EntradaHappiness, TableroHappiness } from '../../../../types/happiness';
 import styles from './HappinessGrupoPage.module.css';
 
 type Pestana = 'tablero' | 'mias';
-
-function horaDe(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-}
 
 /**
  * Happiness Door del grupo, para el profesor y el admin.
@@ -215,7 +210,7 @@ function Tablero({ base }: { base: string }) {
               })()}
               {abierta.autor && <span className={styles.rol}>{nombreRol(abierta.autor.rol)}</span>}
               <span className={styles.detalleFecha}>
-                {fechaLargaDia(abierta.dia)} · {horaDe(abierta.createdAt)}
+                {fechaLargaDia(abierta.dia)} · {horaCurso(abierta.createdAt)}
                 {abierta.updatedAt !== abierta.createdAt && ' · editada'}
               </span>
             </div>

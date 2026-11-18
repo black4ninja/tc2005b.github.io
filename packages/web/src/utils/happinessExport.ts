@@ -13,7 +13,7 @@
 import type * as ExcelJS from 'exceljs';
 import { APP_NAME } from '../config/app';
 import { downloadBlob, sanitizeFileName } from './mallaExport';
-import { ESTADOS_HAPPINESS, fechaLargaDia } from './happiness';
+import { ESTADOS_HAPPINESS, fechaLargaDia, horaCurso } from './happiness';
 import type { EntradaHappiness, EstadoHappiness } from '../types/happiness';
 
 export interface EntradaExport extends EntradaHappiness {
@@ -75,13 +75,6 @@ const etiquetaEstado = (e: EstadoHappiness) => ESTADOS_HAPPINESS.find((s) => s.k
 
 function solido(argb: string): ExcelJS.Fill {
   return { type: 'pattern', pattern: 'solid', fgColor: { argb } };
-}
-
-function hora(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime())
-    ? ''
-    : d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' });
 }
 
 function titulo(ws: ExcelJS.Worksheet, texto: string, subtitulo: string, columnas: number) {
@@ -160,7 +153,7 @@ function hojaEntradas(wb: ExcelJS.Workbook, grupo: string, entradas: EntradaExpo
       const row = ws.getRow(fila++);
       row.values = [
         e.dia,
-        hora(e.createdAt),
+        horaCurso(e.createdAt),
         etiquetaEstado(e.estado),
         e.autor?.name ?? 'Usuario eliminado',
         e.autorEmail ?? '',

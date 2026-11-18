@@ -180,13 +180,13 @@ export async function tableroDelDia(req: Request, res: Response): Promise<void> 
     q.ascending('createdAt');
     q.limit(1000);
 
+    // Solo los días distintos: traer las filas para deduplicarlas aquí leía el
+    // histórico entero en cada vuelta del tablero.
     const qDias = BaseModel.queryActive<HappinessEntrada>('HappinessEntrada');
     qDias.equalTo('grupo' as any, ctx.grupo as any);
-    qDias.select('dia' as any);
-    qDias.limit(10000);
 
-    const [entradas, todas] = await Promise.all([q.find(MK), qDias.find(MK)]);
-    const dias = [...new Set(todas.map((e) => e.getDia()).filter(Boolean))].sort();
+    const [entradas, distintos] = await Promise.all([q.find(MK), qDias.distinct('dia' as any)]);
+    const dias = (distintos as unknown[]).filter((d): d is string => typeof d === 'string' && d !== '').sort();
     res.json({ status: 'ok', hoy, dia, dias, entradas: entradas.map((e) => e.toSafeJSON()) });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al cargar el tablero' });

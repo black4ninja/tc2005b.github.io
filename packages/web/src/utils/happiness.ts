@@ -12,6 +12,21 @@ export const ESTADOS_HAPPINESS: { key: EstadoHappiness; label: string; icono: st
 
 export const TEXTO_HAPPINESS_MAX = 5000;
 
+/**
+ * Zona del curso. El servidor fija el `dia` de cada entrada en esta zona, así
+ * que las horas se enseñan en ella también: si no, una entrada de las 18:30 del
+ * miércoles podía salir «jueves 00:30» para quien la lee desde otra zona.
+ */
+export const ZONA_CURSO = 'America/Mexico_City';
+
+/** Hora de un instante, en la zona del curso. */
+export function horaCurso(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? ''
+    : d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', timeZone: ZONA_CURSO });
+}
+
 const ROLES: Record<string, string> = { alumno: 'Alumno', profesor: 'Profesor', admin: 'Administrador' };
 
 export function nombreRol(rol: string): string {
