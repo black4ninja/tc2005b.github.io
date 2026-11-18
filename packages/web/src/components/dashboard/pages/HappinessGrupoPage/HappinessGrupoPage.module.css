@@ -1,0 +1,281 @@
+.page {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.subtitulo {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  max-width: 80ch;
+}
+
+.error {
+  padding: 10px 14px;
+  border: 1px solid var(--estado-error-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+}
+
+/* ── Pestañas ───────────────────────────────────────────────────────── */
+
+.pestanas {
+  display: flex;
+  gap: var(--space-xs);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.pestana {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pestanaActiva {
+  color: var(--dash-primary);
+  border-bottom-color: var(--dash-primary);
+}
+
+/* ── Navegación por día ─────────────────────────────────────────────── */
+
+.tablero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.navDia {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.flecha {
+  display: inline-flex;
+  padding: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.flecha:disabled { opacity: 0.35; cursor: default; }
+
+.diaActual {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.diaNombre {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.diaInput {
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+/* ── Columnas y post-its ────────────────────────────────────────────── */
+
+.columnas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+  align-items: start;
+  transition: opacity 0.15s;
+}
+
+@media (max-width: 900px) {
+  .columnas { grid-template-columns: 1fr; }
+}
+
+.cargando { opacity: 0.5; }
+
+.columna {
+  padding: var(--space-md);
+  border: 1px solid var(--border-color);
+  border-top: 4px solid;
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  min-height: 160px;
+}
+
+.columna.positivo { border-top-color: var(--happiness-positivo-borde); }
+.columna.neutral { border-top-color: var(--happiness-neutral-borde); }
+.columna.negativo { border-top-color: var(--happiness-negativo-borde); }
+
+.columnaTitulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 var(--space-md);
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.columnaCuenta {
+  margin-left: auto;
+  min-width: 1.6em;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--border-color);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.columnaVacia {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.postits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-sm);
+}
+
+/* Un post-it de verdad: cuadrado, de color, con una sombra que lo despega y
+   un giro mínimo que se endereza al pasar por encima. */
+.postit {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 2px;
+  box-shadow: var(--shadow-md);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transform: rotate(-1deg);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.postits li:nth-child(even) .postit { transform: rotate(1deg); }
+
+.postit:hover,
+.postit:focus-visible,
+.postits li:nth-child(even) .postit:hover {
+  transform: rotate(0) scale(1.03);
+  box-shadow: var(--shadow-lg);
+}
+
+.postit.positivo { background: var(--happiness-positivo-bg); color: var(--happiness-positivo-texto); }
+.postit.neutral { background: var(--happiness-neutral-bg); color: var(--happiness-neutral-texto); }
+.postit.negativo { background: var(--happiness-negativo-bg); color: var(--happiness-negativo-texto); }
+
+.postitTexto {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.postitAutor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.rol {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* ── Modal de detalle ───────────────────────────────────────────────── */
+
+.detalle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.detalleMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.detalleEstado {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.detalleEstado.positivo { background: var(--happiness-positivo-bg); color: var(--happiness-positivo-texto); }
+.detalleEstado.neutral { background: var(--happiness-neutral-bg); color: var(--happiness-neutral-texto); }
+.detalleEstado.negativo { background: var(--happiness-negativo-bg); color: var(--happiness-negativo-texto); }
+
+.detalleFecha {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.detalleTexto {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+  color: var(--text-primary);
+}

@@ -29,6 +29,8 @@ import ProyeccionPage from './components/dashboard/pages/ProyeccionPage/Proyecci
 import AsesoriaVisorPage from './components/dashboard/pages/AsesoriaVisorPage/AsesoriaVisorPage';
 import AgendaEntrevistasAlumnoPage from './components/dashboard/pages/AgendaEntrevistasAlumnoPage/AgendaEntrevistasAlumnoPage';
 import ScrumGrupoPage from './components/dashboard/pages/ScrumGrupoPage/ScrumGrupoPage';
+import HappinessGrupoPage from './components/dashboard/pages/HappinessGrupoPage/HappinessGrupoPage';
+import HappinessAlumnoPage from './components/dashboard/pages/HappinessAlumnoPage/HappinessAlumnoPage';
 import DinamicaScrumPage from './components/dashboard/pages/DinamicaScrumPage/DinamicaScrumPage';
 import ScrumTableroPage from './components/dashboard/pages/ScrumTableroPage/ScrumTableroPage';
 import MisScrumPage from './components/dashboard/pages/MisScrumPage/MisScrumPage';
@@ -240,6 +242,8 @@ export default function App() {
             una, con sus equipos y sus tableros. */}
         <Route path="admin/grupos/:id/scrum" element={<ScrumGrupoPage />} />
         <Route path="admin/grupos/:id/scrum/:dinamicaId" element={<DinamicaScrumPage />} />
+        {/* Módulo "Happiness Door": tablero del día y las entradas propias. */}
+        <Route path="admin/grupos/:id/happiness" element={<HappinessGrupoPage />} />
         <Route path="admin/competencias" element={<CompetenciasPage />} />
         <Route path="admin/actividades" element={<ActividadesPage />} />
         <Route path="admin/paginas" element={<PaginasPage />} />
@@ -332,6 +336,7 @@ export default function App() {
             de tablero son la MISMA pantalla —no sabe sobre cuál está, solo
             cambia a qué URL le pregunta—: la dinámica vigente de la clase, una
             anterior a la que se vuelve a consultar, o una partida propia. */}
+        <Route path="alumno/grupos/:grupoId/happiness" element={<HappinessAlumnoPage />} />
         <Route path="alumno/grupos/:grupoId/scrum" element={<MisScrumPage />} />
         <Route path="alumno/grupos/:grupoId/scrum/tablero" element={<ScrumTableroPage />} />
         <Route

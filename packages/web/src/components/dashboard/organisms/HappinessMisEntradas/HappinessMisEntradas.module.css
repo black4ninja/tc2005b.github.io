@@ -1,0 +1,182 @@
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  max-width: 760px;
+}
+
+.error {
+  padding: 10px 14px;
+  border: 1px solid var(--estado-error-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+  cursor: pointer;
+}
+
+/* ── Formulario ─────────────────────────────────────────────────────── */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.formTitulo,
+.historialTitulo {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.historialTitulo { margin-bottom: var(--space-sm); }
+
+.estados {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+/* Los tres botones llevan ya el color de su ánimo, pálido; el elegido se
+   rellena y gana el borde, para que se vea cuál está marcado sin leer. */
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.estado:hover { opacity: 1; }
+
+.elegido {
+  opacity: 1;
+  box-shadow: var(--shadow-md);
+}
+
+.estado.positivo { background: var(--happiness-positivo-bg); color: var(--happiness-positivo-texto); }
+.estado.neutral { background: var(--happiness-neutral-bg); color: var(--happiness-neutral-texto); }
+.estado.negativo { background: var(--happiness-negativo-bg); color: var(--happiness-negativo-texto); }
+.estado.positivo.elegido { border-color: var(--happiness-positivo-borde); }
+.estado.neutral.elegido { border-color: var(--happiness-neutral-borde); }
+.estado.negativo.elegido { border-color: var(--happiness-negativo-borde); }
+
+.texto {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+
+.contador {
+  margin-right: auto;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ── Historial ──────────────────────────────────────────────────────── */
+
+.vacio { color: var(--text-secondary); margin: 0; }
+
+.dia { margin-bottom: var(--space-md); }
+
+.diaTitulo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 0 0 var(--space-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.hoy {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--estado-info-bg);
+  color: var(--estado-info-color);
+  font-size: 0.75rem;
+  text-transform: none;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.entrada {
+  padding: var(--space-sm) var(--space-md);
+  border-left: 4px solid;
+  border-radius: var(--border-radius);
+}
+
+.entrada.positivo { background: var(--happiness-positivo-bg); border-left-color: var(--happiness-positivo-borde); color: var(--happiness-positivo-texto); }
+.entrada.neutral { background: var(--happiness-neutral-bg); border-left-color: var(--happiness-neutral-borde); color: var(--happiness-neutral-texto); }
+.entrada.negativo { background: var(--happiness-negativo-bg); border-left-color: var(--happiness-negativo-borde); color: var(--happiness-negativo-texto); }
+
+.enEdicion { box-shadow: 0 0 0 2px var(--dash-primary); }
+
+.entradaCabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.entradaEstado {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.entradaAcciones { display: inline-flex; gap: 2px; }
+
+.iconBtn {
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.iconBtn:hover { opacity: 1; background: var(--bg-card); }
+
+.entradaTexto {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}

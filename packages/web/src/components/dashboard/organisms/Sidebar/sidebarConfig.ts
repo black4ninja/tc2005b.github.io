@@ -20,7 +20,7 @@ export function getSidebarItems(
    * módulo apagado, y el enlace llevaba a una pantalla vacía.
    * Por defecto en true: quien no pase el dato (el admin) no pierde ítems.
    */
-  modulosGrupo: { malla?: boolean; competencias?: boolean; preguntas?: boolean; scrum?: boolean } = {},
+  modulosGrupo: { malla?: boolean; competencias?: boolean; preguntas?: boolean; scrum?: boolean; happiness?: boolean } = {},
 ): SidebarItem[] {
   if (role === 'admin') {
     return [
@@ -116,6 +116,14 @@ export function getSidebarItems(
       disabled: !perfilCompleto,
     });
   }
+  if (modulosGrupo.happiness && selectedGrupoId) {
+    items.push({
+      label: 'Happiness Door',
+      icon: 'sentiment_satisfied',
+      path: `/alumno/grupos/${selectedGrupoId}/happiness`,
+      disabled: !perfilCompleto,
+    });
+  }
   return items;
 }
 
@@ -135,6 +143,8 @@ export function getGrupoDetailItems(
   preguntasHref: string | null = null,
   /** Ruta de Actividad de Scrum; null si ninguna materia lo tiene encendido. */
   scrumHref: string | null = null,
+  /** Ruta del Happiness Door; null si ninguna materia lo tiene encendido. */
+  happinessHref: string | null = null,
 ): SidebarItem[] {
   const items: SidebarItem[] = [
     { label: 'Calendario', icon: 'calendar_month', path: `/admin/grupos/${grupoId}/calendario` },
@@ -158,6 +168,9 @@ export function getGrupoDetailItems(
   // seguidos invitaba a confundirlos.
   if (scrumHref) {
     items.push({ label: 'Actividad de Scrum', icon: 'view_kanban', path: scrumHref });
+  }
+  if (happinessHref) {
+    items.push({ label: 'Happiness Door', icon: 'sentiment_satisfied', path: happinessHref });
   }
   // Probar los ejercicios del grupo como los ve el alumno. Aparece cuando el
   // grupo tiene el módulo 'ejercicios' encendido en alguna colección — tanto

@@ -443,7 +443,7 @@ export async function getMyMenu(req: Request, res: Response): Promise<void> {
     // Los dos módulos salen de UNA lectura del grupo: preguntarlos por separado
     // traía el mismo grupo con sus colecciones dos veces.
     const [modulos, permitidas, wikisDelGrupo, ejercicios, diagramas] = await Promise.all([
-      modulosActivosEnGrupo(grupoPointer.id, ['competencias', 'actividades', 'preguntas', 'scrum']),
+      modulosActivosEnGrupo(grupoPointer.id, ['competencias', 'actividades', 'preguntas', 'scrum', 'happiness']),
       getColeccionesPermitidas(user),
       coleccionesDeGrupo(grupoPointer.id, 'documentacion'),
       coleccionesConEjerciciosPublicados(user),
@@ -456,6 +456,8 @@ export async function getMyMenu(req: Request, res: Response): Promise<void> {
     const preguntas = modulos.preguntas === true;
     // Este SÍ le añade una pantalla al alumno: el tablero kanban de su equipo.
     const scrum = modulos.scrum === true;
+    // Happiness Door: el alumno escribe y relee SUS entradas; el tablero, no.
+    const happiness = modulos.happiness === true;
     // Las wikis del grupo abierto, primero: el enlace directo del menú lleva a
     // la primera, y antes podía ser la de OTRO grupo del alumno.
     const colecciones = ordenarWikisPorGrupo(permitidas, wikisDelGrupo.map((c) => c.id!));
@@ -465,7 +467,7 @@ export async function getMyMenu(req: Request, res: Response): Promise<void> {
       menu: {
         // `malla` sale del mismo interruptor que las actividades: es de donde se
         // estampa. Se nombra aparte para que el consumidor no tenga que saberlo.
-        modulos: { competencias, actividades, malla: actividades, preguntas, scrum },
+        modulos: { competencias, actividades, malla: actividades, preguntas, scrum, happiness },
         perfilCompleto: link.getPerfilCompleto(),
         coleccionSlug: colecciones[0]?.slug ?? null,
         // Todas, para que con más de una el menú las ofrezca por separado.

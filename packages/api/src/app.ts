@@ -40,6 +40,7 @@ import auditLogRoutes from './routes/audit-log.routes.js';
 import preguntasRoutes from './routes/preguntas.routes.js';
 import agendaEntrevistasRoutes from './routes/agenda-entrevistas.routes.js';
 import scrumRoutes from './routes/scrum.routes.js';
+import happinessDoorRoutes from './routes/happiness-door.routes.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 
 const app = express();
@@ -91,6 +92,7 @@ app.use('/api', auditLogRoutes);
 app.use('/api', preguntasRoutes);
 app.use('/api', agendaEntrevistasRoutes);
 app.use('/api', scrumRoutes);
+app.use('/api', happinessDoorRoutes);
 
 export function finalize() {
   app.use(errorHandler);

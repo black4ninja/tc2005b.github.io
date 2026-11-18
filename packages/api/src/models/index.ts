@@ -72,3 +72,5 @@ export { TarjetaRetro } from './TarjetaRetro.js';
 export { SprintEquipo } from './SprintEquipo.js';
 export type { CorteBurndown } from './SprintEquipo.js';
 export { VisorAsesoria } from './VisorAsesoria.js';
+// Módulo "Happiness Door": cómo le fue a cada miembro del grupo cada día.
+export { HappinessEntrada } from './HappinessEntrada.js';
