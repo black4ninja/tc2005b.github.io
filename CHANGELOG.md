@@ -21,6 +21,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   completa, agrupada por día.
 
 ### Fixed
+- **El menú del alumno ya no muestra Ejercicios ni Diagramas de otro grupo.**
+  Esas dos secciones se calculaban con las colecciones de TODOS los grupos del
+  alumno, así que en un grupo que las tiene apagadas seguían saliendo (con
+  candado antes de completar el perfil, y abiertas después) si otro de sus
+  grupos sí las usaba. Ahora el menú de cada grupo solo enseña las colecciones
+  que tienen el módulo encendido en ESE grupo.
 - **El profesor ya puede editar el calendario de su grupo.** La pantalla le
   mostraba los controles de edición, pero las rutas de `/admin/calendario/*`
   eran solo de admin y cada cambio respondía 403. Ahora el profesor crea, edita,

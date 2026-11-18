@@ -10,7 +10,7 @@ import { Grupo } from '../models/Grupo.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { validarPerfil } from '../models/campos-perfil.js';
 import { getVinculoConGrupoActivo, olvidarGruposDeAlumno } from '../services/grupo-alumno.service.js';
-import { coleccionesDeGrupo, moduloActivoEnGrupo, modulosActivosEnGrupo } from '../services/grupo-colecciones.service.js';
+import { coleccionesDeGrupo, moduloActivoEnGrupo, coleccionesDeGrupoPorModulo } from '../services/grupo-colecciones.service.js';
 import { getColeccionesPermitidas } from '../services/contenidos.service.js';
 import { coleccionesConEjerciciosPublicados } from '../services/ejercicios-alumno.service.js';
 import { coleccionesConDiagramasPublicados } from '../services/diagramas-alumno.service.js';
@@ -442,13 +442,24 @@ export async function getMyMenu(req: Request, res: Response): Promise<void> {
 
     // Los dos módulos salen de UNA lectura del grupo: preguntarlos por separado
     // traía el mismo grupo con sus colecciones dos veces.
-    const [modulos, permitidas, wikisDelGrupo, ejercicios, diagramas] = await Promise.all([
-      modulosActivosEnGrupo(grupoPointer.id, ['competencias', 'actividades', 'preguntas', 'scrum', 'happiness']),
+    const [porModulo, permitidas, wikisDelGrupo, ejerciciosDelAlumno, diagramasDelAlumno] = await Promise.all([
+      coleccionesDeGrupoPorModulo(grupoPointer.id, [
+        'competencias', 'actividades', 'preguntas', 'scrum', 'happiness', 'ejercicios', 'diagramas',
+      ]),
       getColeccionesPermitidas(user),
       coleccionesDeGrupo(grupoPointer.id, 'documentacion'),
       coleccionesConEjerciciosPublicados(user),
       coleccionesConDiagramasPublicados(user),
     ]);
+    const modulos = Object.fromEntries(Object.entries(porModulo).map(([m, ids]) => [m, ids.length > 0]));
+    // Ejercicios y Diagramas se resuelven contra TODOS los grupos del alumno: el
+    // menú de este grupo se queda con las colecciones que lo tienen encendido
+    // AQUÍ. Sin el filtro, un alumno con otro grupo que sí los usa los veía
+    // también en un grupo que los tiene apagados.
+    const delGrupo = <T extends { id: string }>(lista: T[], modulo: string) =>
+      lista.filter((c) => porModulo[modulo].includes(c.id));
+    const ejercicios = delGrupo(ejerciciosDelAlumno, 'ejercicios');
+    const diagramas = delGrupo(diagramasDelAlumno, 'diagramas');
     const competencias = modulos.competencias === true;
     const actividades = modulos.actividades === true;
     // El alumno no ve nada del módulo "Preguntas" salvo UNA cosa: la agenda,
