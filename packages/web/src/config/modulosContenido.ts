@@ -36,6 +36,9 @@ export const MODULOS_CONTENIDO: ModuloContenido[] = [
   // Actividad de Scrum. Al revés que Preguntas, encenderlo SÍ le añade una
   // pantalla al alumno: el tablero de su equipo.
   { key: 'scrum', label: 'Actividad de Scrum', icon: 'view_kanban', optIn: true },
+  // Happiness Door (Management 3.0). Le da al alumno su pantalla para escribir
+  // cómo le fue; el tablero con las de todos es solo del profesor.
+  { key: 'happiness', label: 'Happiness Door', icon: 'sentiment_satisfied', optIn: true },
 ];
 
 const OPT_IN = new Set(MODULOS_CONTENIDO.filter((m) => m.optIn).map((m) => m.key));

@@ -99,7 +99,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const [agendaGrupoHref, setAgendaGrupoHref] = useState<string | null>(null);
   // Secciones que el grupo del alumno comparte. `undefined` hasta que responde
   // el servidor: se asume que sí, para no parpadear quitando ítems.
-  const [modulosGrupo, setModulosGrupo] = useState<{ malla?: boolean; competencias?: boolean; preguntas?: boolean; scrum?: boolean }>({});
+  const [modulosGrupo, setModulosGrupo] = useState<{ malla?: boolean; competencias?: boolean; preguntas?: boolean; scrum?: boolean; happiness?: boolean }>({});
   // Hasta que el menú del alumno esté resuelto se pinta un esqueleto: es
   // preferible a enseñar ítems que van a cambiar en cuanto llegue la respuesta.
   const [menuCargado, setMenuCargado] = useState(false);
@@ -307,6 +307,13 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
     return alguna ? `/admin/grupos/${grupoId}/scrum` : null;
   }, [colecciones, modulosDeshabilitados, grupoId]);
 
+  // "Happiness Door": como Scrum, es del grupo y no de una materia.
+  const happinessGrupoHref = useMemo(() => {
+    if (!grupoId) return null;
+    const alguna = colecciones.some((c) => moduloHabilitado(modulosDeshabilitados, c.id, 'happiness'));
+    return alguna ? `/admin/grupos/${grupoId}/happiness` : null;
+  }, [colecciones, modulosDeshabilitados, grupoId]);
+
   // El taller del admin cuelga del grupo abierto, igual que el resto del módulo,
   // y se ofrece bajo la misma condición que Diagramas.
   const tallerGrupoHref = grupoId && diagramasGrupoHref ? rutaTallerAdmin(grupoId) : null;
@@ -334,6 +341,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         ejerciciosGrupoHref,
         preguntasGrupoHref,
         scrumGrupoHref,
+        happinessGrupoHref,
       )
     : getSidebarItems(
         role,

@@ -7,6 +7,19 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Módulo «Happiness Door» (Management 3.0).** Nuevo módulo opcional por
+  grupo (se enciende en Asignaciones, como Scrum o Preguntas). Cualquier miembro
+  del grupo —alumno, profesor o admin— escribe cómo le fue ese día: positivo,
+  neutral o negativo, más un texto libre. Puede escribir varias entradas al día
+  y editar o borrar las suyas cuando quiera; el día lo fija el servidor en la
+  zona del curso. El alumno solo ve las suyas. El profesor y el admin tienen
+  además un tablero por día con tres columnas de post-its; al abrir uno se ve
+  la entrada completa con su autor, su rol y la hora. Desde esa pantalla
+  exportan a Excel todo el histórico del grupo: una hoja con el resumen por día
+  (positivas, neutrales, negativas y % de positivas) y otra con cada entrada
+  completa, agrupada por día.
+
 ### Fixed
 - **El profesor ya puede editar el calendario de su grupo.** La pantalla le
   mostraba los controles de edición, pero las rutas de `/admin/calendario/*`

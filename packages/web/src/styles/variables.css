@@ -99,6 +99,19 @@
   --estado-info-color: #1d4ed8;
   --estado-info-border: #bfdbfe;
 
+  /* Happiness Door: un color por ánimo, para los post-its del tablero y los
+     botones del formulario. Propios y no `--estado-*`: «negativo» no es que
+     algo haya fallado, es cómo le fue a una persona. */
+  --happiness-positivo-bg: #dcfce7;
+  --happiness-positivo-borde: #22c55e;
+  --happiness-positivo-texto: #14532d;
+  --happiness-neutral-bg: #fef9c3;
+  --happiness-neutral-borde: #eab308;
+  --happiness-neutral-texto: #713f12;
+  --happiness-negativo-bg: #ffe4e6;
+  --happiness-negativo-borde: #f43f5e;
+  --happiness-negativo-texto: #881337;
+
   /* Paleta de COMPETENCIAS. Un matiz por competencia, repartido por su posición
      en el catálogo de la materia, para que en el mapa de intentos se distinga de
      un vistazo cuál es cuál sin leerse el nombre recortado de cada chip.
@@ -218,6 +231,16 @@
   --estado-info-bg: #1e3a8a40;
   --estado-info-color: #93c5fd;
   --estado-info-border: #1e3a8a;
+
+  --happiness-positivo-bg: #14532d66;
+  --happiness-positivo-borde: #22c55e;
+  --happiness-positivo-texto: #bbf7d0;
+  --happiness-neutral-bg: #713f1266;
+  --happiness-neutral-borde: #eab308;
+  --happiness-neutral-texto: #fef08a;
+  --happiness-negativo-bg: #88133766;
+  --happiness-negativo-borde: #f43f5e;
+  --happiness-negativo-texto: #fecdd3;
 
   /* Los mismos seis matices, subidos de luminosidad: los de la paleta clara
      están pensados para contrastar contra blanco y sobre el fondo oscuro se
