@@ -129,6 +129,21 @@ export async function modulosActivosEnGrupo(
   grupoId: string,
   modulos: readonly ModuloContenido[],
 ): Promise<Record<string, boolean>> {
+  const porModulo = await coleccionesDeGrupoPorModulo(grupoId, modulos);
+  return Object.fromEntries(modulos.map((m) => [m, porModulo[m].length > 0]));
+}
+
+/**
+ * Ids de las colecciones del grupo con cada módulo encendido, con UNA lectura.
+ *
+ * Hace falta cuando no basta el sí/no: Ejercicios y Diagramas se resuelven por
+ * colección contra TODOS los grupos del alumno, y el menú de un grupo tiene que
+ * quedarse solo con las colecciones de ESE grupo.
+ */
+export async function coleccionesDeGrupoPorModulo(
+  grupoId: string,
+  modulos: readonly ModuloContenido[],
+): Promise<Record<string, string[]>> {
   const query = new Parse.Query('Grupo');
   query.equalTo('exists' as any, true as any);
   query.include('colecciones' as any);
@@ -136,13 +151,13 @@ export async function modulosActivosEnGrupo(
   try {
     grupo = await query.get(grupoId, { useMasterKey: true });
   } catch {
-    return Object.fromEntries(modulos.map((m) => [m, false]));
+    return Object.fromEntries(modulos.map((m) => [m, []]));
   }
   const cols = ((grupo.get('colecciones') ?? []) as Parse.Object[])
     .filter((c) => c && c.get('exists') !== false);
   const apagados = grupo.get('modulosDeshabilitados') as Record<string, string[]> | undefined;
 
   return Object.fromEntries(
-    modulos.map((m) => [m, cols.some((c) => moduloHabilitado(apagados, c.id!, m))]),
+    modulos.map((m) => [m, cols.filter((c) => moduloHabilitado(apagados, c.id!, m)).map((c) => c.id!)]),
   );
 }
