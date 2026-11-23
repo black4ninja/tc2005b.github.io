@@ -368,6 +368,25 @@ export function motivoIncoherenciaCsv(matricula: string | undefined, correo: str
   return `La matrícula ${matricula!.trim()} no concuerda con el correo ${correo.trim()}; revisa la fila`;
 }
 
+/**
+ * Posición de cada columna en el encabezado del CSV de alumnos, o `null` si
+ * falta una obligatoria.
+ *
+ * `alumno` y `correo` son obligatorias; `matricula` no: los alumnos de fuera del
+ * Tec no la tienen, y sin ella la fila se importa con matrícula vacía, igual que
+ * cuando la columna existe pero la celda viene en blanco. `-1` = no está.
+ */
+export function columnasCsvAlumnos(
+  headers: readonly string[],
+): { nameIdx: number; matriculaIdx: number; emailIdx: number } | null {
+  const limpio = headers.map((h) => h.trim().toLowerCase());
+  const nameIdx = limpio.findIndex((h) => h === 'alumno' || h === 'nombre');
+  const matriculaIdx = limpio.findIndex((h) => h === 'matricula' || h === 'matrícula');
+  const emailIdx = limpio.findIndex((h) => h === 'correo' || h === 'email');
+  if (nameIdx === -1 || emailIdx === -1) return null;
+  return { nameIdx, matriculaIdx, emailIdx };
+}
+
 export async function importAlumnosCSV(req: Request, res: Response): Promise<void> {
   const { grupoId } = req.params;
   const { csv } = req.body;
@@ -385,18 +404,15 @@ export async function importAlumnosCSV(req: Request, res: Response): Promise<voi
     }
 
     const headerLine = lines[0].toLowerCase().trim();
-    const headers = parseCsvLine(headerLine);
-    const nameIdx = headers.findIndex((h) => h === 'alumno' || h === 'nombre');
-    const matriculaIdx = headers.findIndex((h) => h === 'matricula' || h === 'matrícula');
-    const emailIdx = headers.findIndex((h) => h === 'correo' || h === 'email');
-
-    if (nameIdx === -1 || matriculaIdx === -1 || emailIdx === -1) {
+    const columnas = columnasCsvAlumnos(parseCsvLine(headerLine));
+    if (!columnas) {
       res.status(400).json({
         status: 'error',
-        message: 'El CSV debe tener columnas: alumno, matricula, correo',
+        message: 'El CSV debe tener columnas: alumno y correo (matricula es opcional)',
       });
       return;
     }
+    const { nameIdx, matriculaIdx, emailIdx } = columnas;
 
     const grupoPointer = Parse.Object.extend('Grupo').createWithoutData(grupoId) as Grupo;
     const imported: number[] = [];
@@ -407,7 +423,7 @@ export async function importAlumnosCSV(req: Request, res: Response): Promise<voi
     for (let i = 1; i < lines.length; i++) {
       const cols = parseCsvLine(lines[i]);
       const alumnoName = cols[nameIdx]?.trim();
-      const matricula = cols[matriculaIdx]?.trim();
+      const matricula = matriculaIdx === -1 ? undefined : cols[matriculaIdx]?.trim();
       const email = cols[emailIdx]?.trim().toLowerCase();
 
       if (!alumnoName || !email) {
