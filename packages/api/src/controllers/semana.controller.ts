@@ -30,7 +30,7 @@ export async function createSemana(req: Request, res: Response): Promise<void> {
   if (tipo === 'normal') {
     dias = diasActivos === undefined ? [...DIAS_POR_DEFECTO] : normalizarDias(diasActivos);
     if (dias.length === 0) {
-      res.status(400).json({ status: 'error', message: 'diasActivos debe incluir al menos un día válido (lunes a viernes)' });
+      res.status(400).json({ status: 'error', message: 'diasActivos debe incluir al menos un día válido (lunes a sábado)' });
       return;
     }
   }
@@ -118,7 +118,7 @@ export async function updateSemana(req: Request, res: Response): Promise<void> {
     if (esNormal && diasActivos !== undefined) {
       const dias = normalizarDias(diasActivos);
       if (dias.length === 0) {
-        res.status(400).json({ status: 'error', message: 'diasActivos debe incluir al menos un día válido (lunes a viernes)' });
+        res.status(400).json({ status: 'error', message: 'diasActivos debe incluir al menos un día válido (lunes a sábado)' });
         return;
       }
 

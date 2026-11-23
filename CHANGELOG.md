@@ -8,6 +8,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **El calendario admite sesiones en sábado.** Al editar una semana ya se puede
+  marcar el sábado como día con clase, igual que de lunes a viernes; aparece
+  como una columna más de la semana y en el Hub con su fecha. Las semanas que
+  no lo marcan no cambian.
 - **Módulo «Happiness Door» (Management 3.0).** Nuevo módulo opcional por
   grupo (se enciende en Asignaciones, como Scrum o Preguntas). Cualquier miembro
   del grupo —alumno, profesor o admin— escribe cómo le fue ese día: positivo,

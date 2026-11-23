@@ -1,5 +1,5 @@
 /** Días con clase posibles dentro de una semana, en orden. */
-export const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'] as const;
+export const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'] as const;
 
 export type DiaSemana = (typeof DIAS_SEMANA)[number];
 
@@ -9,7 +9,7 @@ export function esDiaValido(valor: unknown): valor is DiaSemana {
   return typeof valor === 'string' && (DIAS_SEMANA as readonly string[]).includes(valor);
 }
 
-/** Ordena de lunes a viernes y elimina duplicados e inválidos. */
+/** Ordena de lunes a sábado y elimina duplicados e inválidos. */
 export function normalizarDias(dias: unknown): DiaSemana[] {
   if (!Array.isArray(dias)) return [];
   const set = new Set(dias.filter(esDiaValido));

@@ -20,8 +20,8 @@ function semana(extra: Partial<SemanaNormal> = {}): SemanaNormal {
 }
 
 describe('ordenarDias', () => {
-  it('ordena de lunes a viernes y quita duplicados e inválidos', () => {
-    expect(ordenarDias(['viernes', 'lunes', 'viernes', 'sabado'])).toEqual(['lunes', 'viernes']);
+  it('ordena de lunes a sábado y quita duplicados e inválidos', () => {
+    expect(ordenarDias(['sabado', 'viernes', 'lunes', 'viernes', 'domingo'])).toEqual(['lunes', 'viernes', 'sabado']);
   });
 });
 
@@ -49,7 +49,7 @@ describe('diasDeSemana', () => {
   });
 
   it('ignora días inválidos guardados en diasActivos', () => {
-    const s = semana({ diasActivos: ['sabado', 'viernes'] });
+    const s = semana({ diasActivos: ['domingo', 'viernes'] });
     expect(diasDeSemana(s)).toEqual(['viernes']);
   });
 });
@@ -58,6 +58,7 @@ describe('fechaFinDeDias', () => {
   it('toma la fecha del último día con clase', () => {
     expect(fechaFinDeDias('2026-08-10', ['lunes', 'miercoles', 'viernes'])).toBe('2026-08-14');
     expect(fechaFinDeDias('2026-08-10', ['martes'])).toBe('2026-08-11');
+    expect(fechaFinDeDias('2026-08-10', ['lunes', 'sabado'])).toBe('2026-08-15');
   });
 });
 

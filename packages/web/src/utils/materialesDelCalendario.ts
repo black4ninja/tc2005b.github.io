@@ -2,7 +2,7 @@ import type { Actividad, ActividadTipo, Calendario, Dia } from '../types/calenda
 import { ORDEN_TIPOS, nombreTipo } from '../data/tiposActividad';
 
 /** Días de clase, en el orden en que ocurren. El calendario no guarda fecha por día. */
-const DIAS: (keyof SemanaDias)[] = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
+const DIAS: (keyof SemanaDias)[] = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
 
 interface SemanaDias {
   lunes?: Dia;
@@ -10,6 +10,7 @@ interface SemanaDias {
   miercoles?: Dia;
   jueves?: Dia;
   viernes?: Dia;
+  sabado?: Dia;
 }
 
 /** Una fila del Hub: la actividad más de dónde sale en el calendario. */
@@ -20,7 +21,7 @@ export interface Material {
   descripcion?: string;
   /** Número de semana tal y como lo muestra el calendario. */
   semana: number | string;
-  /** Clave del día: lunes…viernes. */
+  /** Clave del día: lunes…sábado. */
   dia: string;
   /**
    * Fecha exacta en que ocurre, en `YYYY-MM-DD`, o `''` si la semana no trae
@@ -119,7 +120,7 @@ export function materialesDelCalendario(calendario: Calendario | null | undefine
 
 /** Posición de cada día dentro de la semana (1 = lunes, como `getUTCDay`). */
 const INDICE_DIA: Record<string, number> = {
-  lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5,
+  lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6,
 };
 
 /**
