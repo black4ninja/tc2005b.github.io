@@ -8,6 +8,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Alumnos sin matrícula.** Al dar de alta un alumno desde el panel, la
+  matrícula pasa a ser opcional: basta con nombre y correo. Sirve para grupos con
+  personas de fuera del Tec (por ejemplo, el personal de una empresa), que
+  entran con el correo que se les registró. El login ya aceptaba cualquier
+  correo; lo que lo impedía era el formulario de alta.
 - **El calendario admite sesiones en sábado.** Al editar una semana ya se puede
   marcar el sábado como día con clase, igual que de lunes a viernes; aparece
   como una columna más de la semana y en el Hub con su fecha. Las semanas que
