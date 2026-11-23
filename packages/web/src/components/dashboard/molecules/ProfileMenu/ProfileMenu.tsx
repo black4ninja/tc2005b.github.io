@@ -7,7 +7,8 @@ import styles from './ProfileMenu.module.css';
 
 interface ProfileMenuProps {
   name: string;
-  role: string;
+  /** Rol bajo el nombre. Sin él solo se ve el nombre. */
+  role?: string;
   avatar?: string;
 }
 
@@ -27,7 +28,7 @@ export default function ProfileMenu({ name, role, avatar }: ProfileMenuProps) {
           <Avatar src={avatar} name={name} size="sm" />
           <div className={styles.info}>
             <span className={styles.name}>{name}</span>
-            <span className={styles.role}>{role}</span>
+            {role && <span className={styles.role}>{role}</span>}
           </div>
         </div>
       }
