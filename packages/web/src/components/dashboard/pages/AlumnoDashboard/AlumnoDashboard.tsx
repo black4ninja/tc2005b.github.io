@@ -379,8 +379,8 @@ function AlumnoDashboardDeGrupo() {
   // Lo que el grupo no pide no se pinta: ver `camposApagados`.
   const profileFields = ([
     { key: 'experiencia' as const, label: 'Experiencia (disciplinar y extracurricular)' },
-    { key: 'expectativas' as const, label: 'Expectativas de la UF' },
-    { key: 'compromiso' as const, label: 'Compromiso con la UF' },
+    { key: 'expectativas' as const, label: 'Expectativas' },
+    { key: 'compromiso' as const, label: 'Compromiso' },
     { key: 'repositorioIndividual' as const, label: 'Repositorio individual' },
     {
       key: 'situacionesEspeciales' as const,
