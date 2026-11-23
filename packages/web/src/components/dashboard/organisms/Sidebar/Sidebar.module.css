@@ -37,6 +37,29 @@
   font-weight: 700;
   white-space: nowrap;
 }
+/* Nombre del grupo en lugar del logo. La caja mide lo mismo que la línea del
+   logo (34px: «Grupos» a 20px) para que la cabecera no cambie de alto. */
+.logoGrupo {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 34px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+/* No cabe en una línea: más chico y en dos, en la misma altura. */
+.logoGrupoCompacto {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 14px;
+  line-height: 17px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .backHeader {
   padding: 16px;
   border-bottom: 1px solid var(--sidebar-border);

@@ -32,6 +32,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   completa, agrupada por día.
 
 ### Changed
+- **Alumno con un solo grupo: el nombre del grupo va arriba.** En el sidebar
+  desaparece el selector de grupo (no hay nada que elegir) y el nombre del
+  grupo ocupa el lugar del logo «Grupos», sin icono. Si no cabe en una línea,
+  se parte en dos con letra más chica, sin cambiar el alto de la cabecera.
 - **La barra superior ya no dice «Alumno».** Junto al correo, el rol solo
   aparece en las sesiones de administrador o profesor; el alumno ve solo su
   correo.

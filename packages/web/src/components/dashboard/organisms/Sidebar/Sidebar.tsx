@@ -7,6 +7,7 @@ import GrupoSelect from '../../atoms/GrupoSelect/GrupoSelect';
 import ArbolContenidos from './ArbolContenidos';
 import ArbolDiagramas from './ArbolDiagramas';
 import ArbolEjercicios from './ArbolEjercicios';
+import NombreGrupoLogo from './NombreGrupoLogo';
 import { getSidebarItems, getGrupoDetailItems } from './sidebarConfig';
 import styles from './Sidebar.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
@@ -82,6 +83,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   // El grupo activo del alumno es COMPARTIDO (contexto): antes era estado local
   // de este componente y el panel no se enteraba de los cambios.
   const { grupoActivoId: selectedGrupoId, cambiarGrupo } = useGrupoActivo();
+  const grupoUnico = role === 'alumno' && user?.grupos?.length === 1 ? user.grupos[0] : null;
   const [docsHref, setDocsHref] = useState<string | null>(null);
   // Todas las wikis del alumno, las del grupo abierto primero. Con más de una,
   // «Wiki» deja de ser un enlace directo a la primera y se despliega en una
@@ -427,24 +429,29 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         ) : (
           <div className={styles.logo}>
             <Link to={role === 'admin' ? '/admin' : '/alumno'} className={styles.logoLink}>
-              <Icon name="school" size="lg" />
-              {!collapsed && <span className={styles.logoText}>{APP_NAME}</span>}
+              {/* Alumno con un solo grupo: el nombre del grupo ocupa el lugar del
+                  logo, sin icono. Colapsado no cabe, y vuelve el icono. */}
+              {grupoUnico && !collapsed ? (
+                <NombreGrupoLogo key={grupoUnico.name} nombre={grupoUnico.name} />
+              ) : (
+                <>
+                  <Icon name="school" size="lg" />
+                  {!collapsed && <span className={styles.logoText}>{APP_NAME}</span>}
+                </>
+              )}
             </Link>
           </div>
         )}
-        {/* Con UN solo grupo el selector no sirve para elegir, pero sigue
-            apareciendo —deshabilitado— porque es donde el alumno lee en qué
-            grupo está. Antes, con un grupo, no había ni rastro del nombre. */}
-        {role === 'alumno' && user?.grupos && user.grupos.length > 0 && !collapsed && (
+        {/* Con UN solo grupo no hay nada que elegir: el selector se quita y el
+            nombre del grupo pasa arriba, al lugar del logo (`grupoUnico`). */}
+        {role === 'alumno' && user?.grupos && user.grupos.length > 1 && !collapsed && (
           <div className={styles.grupoSelector}>
             <label className={styles.grupoSelectorLabel}>Grupo</label>
             <GrupoSelect
               grupos={user.grupos}
               valor={selectedGrupoId}
               onCambiar={cambiarGrupo}
-              disabled={user.grupos.length === 1}
               etiqueta="Grupo"
-              title={user.grupos.length === 1 ? 'Estás inscrito en un solo grupo' : undefined}
             />
           </div>
         )}
