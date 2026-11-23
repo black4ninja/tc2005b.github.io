@@ -209,11 +209,15 @@ describe('fechaDelDia', () => {
     expect(fechaDelDia('2026-01-01', 'jueves')).toBe('2026-01-01');
   });
 
+  it('calcula el sábado', () => {
+    expect(fechaDelDia('2026-11-23', 'sabado')).toBe('2026-11-28');
+  });
+
   it('devuelve vacío cuando no hay con qué calcular', () => {
     expect(fechaDelDia(undefined, 'lunes')).toBe('');
     expect(fechaDelDia('', 'lunes')).toBe('');
     expect(fechaDelDia('no es fecha', 'lunes')).toBe('');
-    expect(fechaDelDia('2026-08-10', 'sabado')).toBe('');
+    expect(fechaDelDia('2026-08-10', 'domingo')).toBe('');
   });
 });
 

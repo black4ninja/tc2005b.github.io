@@ -1,6 +1,6 @@
 import type { Dia, SemanaNormal } from '@/types/calendario';
 
-export const DIA_KEYS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'] as const;
+export const DIA_KEYS = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'] as const;
 
 export type DiaKey = (typeof DIA_KEYS)[number];
 
@@ -10,6 +10,7 @@ export const DIA_NOMBRES: Record<DiaKey, string> = {
   miercoles: 'Miércoles',
   jueves: 'Jueves',
   viernes: 'Viernes',
+  sabado: 'Sábado',
 };
 
 export const DIA_CORTOS: Record<DiaKey, string> = {
@@ -18,6 +19,7 @@ export const DIA_CORTOS: Record<DiaKey, string> = {
   miercoles: 'Mi',
   jueves: 'Ju',
   viernes: 'Vi',
+  sabado: 'Sá',
 };
 
 /** Desplazamiento en días respecto al lunes de la semana. */
@@ -27,6 +29,7 @@ export const DIA_OFFSETS: Record<DiaKey, number> = {
   miercoles: 2,
   jueves: 3,
   viernes: 4,
+  sabado: 5,
 };
 
 export const DIAS_POR_DEFECTO: DiaKey[] = ['lunes', 'martes', 'miercoles', 'jueves'];
@@ -35,7 +38,7 @@ export function esDiaKey(valor: string): valor is DiaKey {
   return (DIA_KEYS as readonly string[]).includes(valor);
 }
 
-/** Ordena de lunes a viernes y elimina duplicados. */
+/** Ordena de lunes a sábado y elimina duplicados. */
 export function ordenarDias(dias: readonly string[]): DiaKey[] {
   const set = new Set(dias.filter(esDiaKey));
   return DIA_KEYS.filter((d) => set.has(d));

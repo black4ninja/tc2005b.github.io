@@ -24,6 +24,7 @@ const DIA_LABEL: Record<string, string> = {
   miercoles: 'miércoles',
   jueves: 'jueves',
   viernes: 'viernes',
+  sabado: 'sábado',
 };
 
 /**

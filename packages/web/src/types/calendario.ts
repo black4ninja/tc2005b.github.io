@@ -44,6 +44,7 @@ export interface SemanaNormal {
     miercoles?: Dia;
     jueves?: Dia;
     viernes?: Dia;
+    sabado?: Dia;
   };
 }
 
