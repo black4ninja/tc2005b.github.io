@@ -8,7 +8,7 @@
  * al de esa matrícula duplicado.
  */
 import { describe, it, expect } from 'vitest';
-import { motivoIncoherenciaCsv } from '../src/controllers/alumnos.controller.js';
+import { columnasCsvAlumnos, motivoIncoherenciaCsv } from '../src/controllers/alumnos.controller.js';
 
 describe('motivoIncoherenciaCsv', () => {
   it('deja pasar la fila normal del Tec', () => {
@@ -47,5 +47,24 @@ describe('motivoIncoherenciaCsv', () => {
   it('un correo sin arroba se compara entero contra la matrícula', () => {
     expect(motivoIncoherenciaCsv('A01278654', 'a01278654')).toBeNull();
     expect(motivoIncoherenciaCsv('A01278654', 'otracosa')).not.toBeNull();
+  });
+});
+
+describe('columnasCsvAlumnos', () => {
+  it('encuentra las tres columnas de la plantilla', () => {
+    expect(columnasCsvAlumnos(['alumno', 'matricula', 'correo'])).toEqual({ nameIdx: 0, matriculaIdx: 1, emailIdx: 2 });
+  });
+
+  it('acepta un CSV sin columna de matrícula (alumnos de fuera del Tec)', () => {
+    expect(columnasCsvAlumnos(['nombre', 'email'])).toEqual({ nameIdx: 0, matriculaIdx: -1, emailIdx: 1 });
+  });
+
+  it('no distingue mayúsculas ni espacios alrededor', () => {
+    expect(columnasCsvAlumnos([' Alumno ', 'Matrícula', 'CORREO'])).toEqual({ nameIdx: 0, matriculaIdx: 1, emailIdx: 2 });
+  });
+
+  it('rechaza el CSV sin nombre o sin correo', () => {
+    expect(columnasCsvAlumnos(['matricula', 'correo'])).toBeNull();
+    expect(columnasCsvAlumnos(['alumno', 'matricula'])).toBeNull();
   });
 });
