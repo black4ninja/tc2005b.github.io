@@ -26,7 +26,6 @@ export default function AlumnoForm({ alumno, onSave, onCancel, loading }: Alumno
   function handleSubmit() {
     if (!name.trim()) { setError('El nombre es requerido'); return; }
     if (!email.trim()) { setError('El correo es requerido'); return; }
-    if (!matricula.trim()) { setError('La matrícula es requerida'); return; }
     setError('');
     onSave({ name: name.trim(), email: email.trim(), matricula: matricula.trim() });
   }
@@ -53,13 +52,12 @@ export default function AlumnoForm({ alumno, onSave, onCancel, loading }: Alumno
         error={error && name.trim() && !email.trim() ? error : undefined}
       />
       <TextInput
-        label="Matrícula"
+        label="Matrícula (opcional)"
         placeholder="A00000000"
         icon="badge"
         value={matricula}
         onChange={(v) => { setMatricula(v); setError(''); }}
         disabled={loading}
-        error={error && name.trim() && email.trim() && !matricula.trim() ? error : undefined}
       />
       <div className={styles.actions}>
         <DashButton variant="outline" onClick={onCancel} disabled={loading}>

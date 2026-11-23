@@ -164,8 +164,15 @@ export async function createAlumno(req: Request, res: Response): Promise<void> {
   // `typeof` además de vacío: un payload con un número donde va el nombre hacía
   // reventar el `.trim()` de más abajo y salía como 500 en vez de 400.
   const textoNoVacio = (v: unknown) => typeof v === 'string' && v.trim() !== '';
-  if (!textoNoVacio(name) || !textoNoVacio(email) || !textoNoVacio(matricula)) {
-    res.status(400).json({ status: 'error', message: 'Nombre, correo y matrícula son requeridos' });
+  // La matrícula es opcional: hay grupos con alumnos de fuera del Tec (una
+  // empresa, por ejemplo) que solo tienen correo. El correo es lo que identifica
+  // al usuario en el login, así que ese sí es obligatorio.
+  if (!textoNoVacio(name) || !textoNoVacio(email)) {
+    res.status(400).json({ status: 'error', message: 'Nombre y correo son requeridos' });
+    return;
+  }
+  if (matricula !== undefined && typeof matricula !== 'string') {
+    res.status(400).json({ status: 'error', message: 'La matrícula debe ser texto' });
     return;
   }
 
@@ -209,7 +216,7 @@ export async function createAlumno(req: Request, res: Response): Promise<void> {
     //
     // Solo se comprueba si viene con contenido: los alumnos importados por CSV
     // sin matrícula la tienen en '', y buscar por '' los casaría a todos.
-    const matriculaLimpia = matricula.trim();
+    const matriculaLimpia = (matricula ?? '').trim();
     if (matriculaLimpia) {
       const porMatricula = BaseModel.queryActive<AppUser>('AppUser');
       porMatricula.equalTo('matricula' as any, matriculaLimpia as any);
@@ -232,7 +239,7 @@ export async function createAlumno(req: Request, res: Response): Promise<void> {
     const alumno = new AppUser().initDefaults();
     alumno.setName(name.trim());
     alumno.setEmail(normalizedEmail);
-    alumno.setMatricula(matricula.trim());
+    alumno.setMatricula(matriculaLimpia);
     alumno.setUserType('alumno');
     alumno.setPasswordHash(hash);
     // La contraseña la genera el sistema: hasta que el alumno elija la suya, el
