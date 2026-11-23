@@ -397,7 +397,7 @@ function AlumnoDashboardDeGrupo() {
       {!perfilCompleto && (
         <div className={styles.profileBanner}>
           <span className="material-icons">info</span>
-          Completa tu perfil y establece tu contraseña para acceder a la malla de evaluación
+          Completa tu perfil y establece tu contraseña para acceder a las opciones bloqueadas del sidebar
         </div>
       )}
 

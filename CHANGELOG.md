@@ -32,6 +32,9 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   completa, agrupada por día.
 
 ### Changed
+- **El aviso del perfil ya no habla de la malla.** Dice que completar el perfil
+  y la contraseña desbloquea las opciones bloqueadas del sidebar, que es lo que
+  pasa en cualquier grupo, use o no la malla de evaluación.
 - **Perfil del alumno sin «UF».** Los campos se llaman ahora «Expectativas» y
   «Compromiso», sin la abreviatura de Unidad de Formación, que no aplica a
   grupos de fuera del Tec.
