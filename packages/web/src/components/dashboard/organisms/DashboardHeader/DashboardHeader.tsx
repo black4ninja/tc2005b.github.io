@@ -54,8 +54,10 @@ function ProgresoModulo() {
 export default function DashboardHeader({ role, collapsed, onToggleSidebar }: DashboardHeaderProps) {
   const { user } = useAuth();
   const profileName = user?.email || '';
+  // Al alumno no se le pone etiqueta: es el caso común y no le dice nada. El rol
+  // solo se muestra cuando es de staff, para saber con qué sesión se está.
   const profileRole =
-    role === 'admin' ? 'Administrador' : role === 'profesor' ? 'Profesor' : 'Alumno';
+    role === 'admin' ? 'Administrador' : role === 'profesor' ? 'Profesor' : undefined;
 
   return (
     <header

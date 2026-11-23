@@ -31,6 +31,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   (positivas, neutrales, negativas y % de positivas) y otra con cada entrada
   completa, agrupada por día.
 
+### Changed
+- **La barra superior ya no dice «Alumno».** Junto al correo, el rol solo
+  aparece en las sesiones de administrador o profesor; el alumno ve solo su
+  correo.
+
 ### Fixed
 - **El menú del alumno ya no muestra Ejercicios ni Diagramas de otro grupo.**
   Esas dos secciones se calculaban con las colecciones de TODOS los grupos del
