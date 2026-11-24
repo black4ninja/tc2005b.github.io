@@ -36,7 +36,8 @@ function horaLegible(h: number): string {
  * colores y qué grupos se ven, que son preferencias de la persona.
  */
 export default function MiAgendaPage() {
-  const { sessionToken } = useAuth();
+  const { sessionToken, user } = useAuth();
+  const esAdmin = user?.userType === 'admin';
   const navigate = useNavigate();
   const hoy = hoyEnCurso();
   const [lunes, setLunes] = useState(() => lunesDe(hoy));
@@ -167,13 +168,18 @@ export default function MiAgendaPage() {
           <Icon name="schedule" size="sm" />
           <span>
             Estos grupos dan clase esta semana, pero sin horario sus sesiones no salen aquí:{' '}
+            {/* El horario se edita en el formulario del grupo, que vive en la
+                lista de Grupos del admin; el profesor no tiene esa pantalla. */}
             {sinHorario.map((g, i) => (
               <span key={g.id}>
                 {i > 0 && ', '}
-                <Link to={`/admin/grupos/${g.id}`}>{g.name}</Link>
+                {esAdmin ? <Link to="/admin/grupos">{g.name}</Link> : <strong>{g.name}</strong>}
               </span>
             ))}
-            . Se define al editar el grupo.
+            .{' '}
+            {esAdmin
+              ? 'Se define en Grupos, al editar el grupo («Horario de clase»).'
+              : 'Pídele al administrador que defina su horario de clase.'}
           </span>
         </div>
       )}
