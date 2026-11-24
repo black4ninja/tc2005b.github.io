@@ -100,6 +100,14 @@ interface Opciones {
   nombreGrupo: Map<string, string>;
   /** Base de la web, para el enlace de cada evento (`URL`). */
   base: string;
+  /** Nombre con el que aparece el calendario en Google u Outlook. */
+  nombreCalendario?: string;
+  /**
+   * Distingue los UID de un feed de los de otro. El de un grupo lleva el suyo:
+   * si la persona se suscribe al global Y al del grupo, Google trata un mismo
+   * UID en dos calendarios como el mismo evento y lo deja solo en uno.
+   */
+  ambitoUid?: string;
   ahora?: Date;
 }
 
@@ -134,14 +142,16 @@ function resumen(ev: EventoAgenda, grupo: string): string {
 }
 
 /** El calendario completo, listo para servir como `text/calendar`. */
-export function generarIcs({ eventos, nombreGrupo, base, ahora = new Date() }: Opciones): string {
+export function generarIcs({
+  eventos, nombreGrupo, base, nombreCalendario = 'Mi agenda (plataforma)', ambitoUid, ahora = new Date(),
+}: Opciones): string {
   const lineas = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//TC2005B//Mi agenda//ES',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    'X-WR-CALNAME:Mi agenda (plataforma)',
+    `X-WR-CALNAME:${escaparTexto(nombreCalendario)}`,
     `X-WR-TIMEZONE:${ZONA_CURSO}`,
     // Sugerencia de refresco: Google la ignora (refresca cada 8–24 h); Outlook y Apple la usan.
     'REFRESH-INTERVAL;VALUE=DURATION:PT1H',
@@ -157,7 +167,7 @@ export function generarIcs({ eventos, nombreGrupo, base, ahora = new Date() }: O
       'BEGIN:VEVENT',
       // El id del evento es estable entre refrescos: así el calendario lo
       // actualiza en vez de duplicarlo.
-      `UID:${ev.id}@agenda.tc2005b`,
+      `UID:${ev.id}${ambitoUid ? `.${ambitoUid}` : ''}@agenda.tc2005b`,
       `DTSTAMP:${estampa}`,
       `DTSTART:${sello(relojAUtc(ev.fecha, ev.inicio))}`,
       `DTEND:${sello(relojAUtc(ev.fecha, ev.fin))}`,

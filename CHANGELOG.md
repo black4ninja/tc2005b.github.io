@@ -15,7 +15,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   bloques de entrevistas que tiene visibles, del mes pasado a seis meses
   adelante. De las entrevistas da la ocupación y, de cada cita, la hora y la
   competencia: nunca el nombre del alumno. El enlace se puede regenerar (el
-  anterior deja de servir) o desactivar.
+  anterior deja de servir) o desactivar. Además del enlace general, cada grupo
+  tiene el suyo, para tenerlo como calendario aparte (con su nombre, para
+  encenderlo o darle color por separado) con sus sesiones y sus entrevistas;
+  usa el mismo token, así que regenerar o desactivar los corta todos.
 - **«Mi agenda» para administradores y profesores.** Un calendario tipo
   Google Calendar con las sesiones y los días de entrevistas de TODOS sus
   grupos a la vez, para ver los traslapes entre grupos. Se ve por día, semana,

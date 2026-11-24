@@ -79,6 +79,69 @@
   color: var(--text-primary);
 }
 
+.porGrupo h3 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.porGrupo p {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.porGrupo ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.filaGrupo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.nombreGrupo {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.accionesGrupo {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+
+.mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.mini:hover {
+  background: var(--dash-bg-subtle);
+}
+
 .pasos {
   font-size: 0.88rem;
   color: var(--text-secondary);
@@ -149,5 +212,16 @@
   .secundario {
     min-height: 44px;
     flex: 1;
+  }
+
+  .filaGrupo {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mini {
+    min-height: 44px;
+    flex: 1;
+    justify-content: center;
   }
 }

@@ -195,7 +195,7 @@ export default function MiAgendaPage() {
         onCerrar={() => setDetalle(null)}
       />
 
-      <SuscripcionCalendario abierto={suscripcion} onCerrar={() => setSuscripcion(false)} />
+      <SuscripcionCalendario abierto={suscripcion} onCerrar={() => setSuscripcion(false)} grupos={grupos} />
 
       <header className={styles.header}>
         <div className={styles.navegacion}>

@@ -84,3 +84,16 @@ describe('generarIcs', () => {
     expect(desplegado).not.toContain('Nombre Secreto');
   });
 });
+
+describe('generarIcs de un grupo', () => {
+  const ev: EventoAgenda = { id: 's-x-lunes', tipo: 'sesion', grupoId: 'g1', fecha: '2026-11-23', inicio: '17:30', fin: '19:30', titulo: 'Tema' };
+  it('lleva el nombre del grupo como calendario y UID propios, distintos de los del global', () => {
+    const base = { eventos: [ev], nombreGrupo: new Map([['g1', 'Maquisoft, grupo 1']]), base: 'https://x', ahora: new Date(0) };
+    const global = generarIcs(base).replace(/\r\n /g, '');
+    const grupo = generarIcs({ ...base, nombreCalendario: 'Maquisoft, grupo 1', ambitoUid: 'g1' }).replace(/\r\n /g, '');
+    expect(global).toContain('X-WR-CALNAME:Mi agenda (plataforma)');
+    expect(global).toContain('UID:s-x-lunes@agenda.tc2005b');
+    expect(grupo).toContain('X-WR-CALNAME:Maquisoft\\, grupo 1');
+    expect(grupo).toContain('UID:s-x-lunes.g1@agenda.tc2005b');
+  });
+});
