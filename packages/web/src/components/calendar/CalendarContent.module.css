@@ -156,3 +156,9 @@
     padding: var(--space-sm);
   }
 }
+
+@media (max-width: 640px) {
+  .copyModal {
+    padding: 0;
+  }
+}

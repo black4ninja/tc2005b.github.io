@@ -77,6 +77,7 @@
 
 .enlaceInput {
   flex: 1;
+  min-width: 0;
   padding: 8px 12px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -347,4 +348,32 @@
 .archivoError {
   font-size: 0.75rem;
   color: var(--color-evaluacion);
+}
+
+/* Celular: el modal ya trae su margen (sin doble relleno), el enlace ocupa su
+   renglón y los selectores bajan debajo, con el tamaño de un dedo. */
+@media (max-width: 640px) {
+  .form {
+    padding: 0;
+  }
+
+  .enlaceInputRow {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .enlaceInput {
+    flex-basis: 100%;
+    min-height: 44px;
+  }
+
+  .pickerBtn {
+    flex: 1;
+    height: 44px;
+  }
+
+  .actions > * {
+    flex: 1;
+    min-height: 44px;
+  }
 }

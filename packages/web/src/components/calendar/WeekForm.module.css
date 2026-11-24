@@ -113,3 +113,15 @@
   padding-top: var(--space-sm);
   border-top: 1px solid var(--border-color);
 }
+
+/* Celular: el modal ya trae su margen; sin el del formulario no hay doble relleno. */
+@media (max-width: 640px) {
+  .form {
+    padding: 0;
+  }
+
+  .actions > * {
+    flex: 1;
+    min-height: 44px;
+  }
+}
