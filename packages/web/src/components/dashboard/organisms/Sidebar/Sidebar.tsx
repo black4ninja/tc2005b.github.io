@@ -16,6 +16,7 @@ import { useGrupoActivo } from '../../../../context/GrupoActivoContext';
 import { useColeccionArbol } from '../../../../context/ColeccionArbolContext';
 import { useDiagramasNav } from '../../../../context/DiagramasNavContext';
 import { useEjerciciosNav } from '../../../../context/EjerciciosNavContext';
+import { useAgendaSidebar } from '../../../../context/AgendaSidebarContext';
 import { APP_NAME } from '../../../../config/app';
 import { moduloHabilitado } from '../../../../config/modulosContenido';
 import { rutaEjerciciosAdmin, rutaEjerciciosAlumno } from '../../../../config/rutasEjercicios';
@@ -78,6 +79,16 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   // pantalla y la menos útil mientras se resuelve.
   const ejerciciosNav = useEjerciciosNav();
   const isEjercicios = ejerciciosNav.activo;
+
+  // En «Mi agenda» el sidebar se vuelve la lista de calendarios (la pinta la
+  // página en `registrarSlot`). Plegado no caben: ahí sigue el menú de iconos.
+  const isAgenda = !!useMatch('/admin/agenda');
+  const agenda = useAgendaSidebar();
+  const verCalendarios = isAgenda && !collapsed && !agenda.verMenu;
+  const { setVerMenu } = agenda;
+  useEffect(() => {
+    if (!isAgenda) setVerMenu(false);
+  }, [isAgenda, setVerMenu]);
 
   const [grupoName, setGrupoName] = useState('');
   // El grupo activo del alumno es COMPARTIDO (contexto): antes era estado local
@@ -363,7 +374,12 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
       <aside
         className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''} ${mobileOpen ? styles.mobileOpen : ''}`}
       >
-        {isDiagramas ? (
+        {isAgenda && (
+          // Siempre montado mientras se está en la agenda, aunque se vea el
+          // menú: si se desmontara, el portal de la página perdería su sitio.
+          <div ref={agenda.registrarSlot} className={styles.slotAgenda} hidden={!verCalendarios} />
+        )}
+        {verCalendarios ? null : isDiagramas ? (
           <div className={styles.backHeader}>
             <Link
               to={isGrupoDetail ? `/admin/grupos/${grupoId}` : '/alumno'}
@@ -444,7 +460,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         )}
         {/* Con UN solo grupo no hay nada que elegir: el selector se quita y el
             nombre del grupo pasa arriba, al lugar del logo (`grupoUnico`). */}
-        {role === 'alumno' && user?.grupos && user.grupos.length > 1 && !collapsed && (
+        {!verCalendarios && role === 'alumno' && user?.grupos && user.grupos.length > 1 && !collapsed && (
           <div className={styles.grupoSelector}>
             <label className={styles.grupoSelectorLabel}>Grupo</label>
             <GrupoSelect
@@ -455,7 +471,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             />
           </div>
         )}
-        {esProfesor && user?.grupos && user.grupos.length > 1 && !collapsed && (
+        {!verCalendarios && esProfesor && user?.grupos && user.grupos.length > 1 && !collapsed && (
           // Profesor con varios grupos: cambiar de grupo = navegar a su detalle.
           <div className={styles.grupoSelector}>
             <label className={styles.grupoSelectorLabel}>Grupo</label>
@@ -467,9 +483,16 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             />
           </div>
         )}
+        {!verCalendarios && (
         <nav
           className={`${styles.nav} ${(isColeccionDetail || isDiagramas || isEjercicios) && !collapsed ? styles.navArbol : ''}`}
         >
+          {isAgenda && !collapsed && (
+            <button type="button" className={styles.volverCalendarios} onClick={() => setVerMenu(false)}>
+              <Icon name="calendar_month" size="sm" />
+              <span>Volver a mis calendarios</span>
+            </button>
+          )}
           {isDiagramas ? (
             // Colapsado (70px) el árbol es ilegible: se oculta y queda el botón
             // de salida, igual que en el árbol de Contenidos.
@@ -565,6 +588,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
             </>
           )}
         </nav>
+        )}
         <div className={styles.footer}>
           {!collapsed && (
             <Link to="/" className={styles.backLink}>

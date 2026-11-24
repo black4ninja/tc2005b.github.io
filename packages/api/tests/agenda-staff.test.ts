@@ -10,6 +10,7 @@ import {
   sesionesDelGrupo,
   eventoDeEntrevistas,
   relojEnZona,
+  huecosDeEntrevistas,
 } from '../src/services/agenda-staff.js';
 
 describe('normalizarHora', () => {
@@ -91,5 +92,37 @@ describe('normalizarPreferenciasAgenda', () => {
     expect(normalizarPreferenciasAgenda({ abc: { sesiones: '#fff;background:url(x)' } })).toBe('invalido');
     expect(normalizarPreferenciasAgenda({ 'a b': {} })).toBe('invalido');
     expect(normalizarPreferenciasAgenda([])).toBe('invalido');
+  });
+  it('guarda la visibilidad por tipo, y la rechaza si no es booleana', () => {
+    expect(normalizarPreferenciasAgenda({ abc: { verSesiones: true, verEntrevistas: false } }))
+      .toEqual({ abc: { verSesiones: true, verEntrevistas: false } });
+    expect(normalizarPreferenciasAgenda({ abc: { verSesiones: 'si' } })).toBe('invalido');
+  });
+});
+
+describe('huecosDeEntrevistas', () => {
+  // 17:00–17:30 en CDMX (UTC−6), huecos de 5 minutos.
+  const inicio = new Date('2026-11-23T23:00:00Z');
+  const fin = new Date('2026-11-23T23:30:00Z');
+
+  it('cuenta los huecos y pasa las citas a hora de reloj, en orden', () => {
+    const h = huecosDeEntrevistas(inicio, fin, 300, [
+      { inicio: new Date('2026-11-23T23:10:00Z'), alumno: 'B', competencia: 'C2' },
+      { inicio: new Date('2026-11-23T23:00:00Z'), alumno: 'A', competencia: 'C1' },
+    ], []);
+    expect(h.total).toBe(6);
+    expect(h.duracionMin).toBe(5);
+    expect(h.citas).toEqual([
+      { inicio: '17:00', fin: '17:05', alumno: 'A', competencia: 'C1' },
+      { inicio: '17:10', fin: '17:15', alumno: 'B', competencia: 'C2' },
+    ]);
+  });
+
+  it('deja fuera las citas y los huecos cerrados que no caen en el bloque', () => {
+    const h = huecosDeEntrevistas(inicio, fin, 300, [
+      { inicio: new Date('2026-11-23T23:30:00Z'), alumno: 'Tarde', competencia: '' },
+    ], ['2026-11-23T23:20:00.000Z', '2026-11-23T22:55:00.000Z', 'basura']);
+    expect(h.citas).toEqual([]);
+    expect(h.cerrados).toEqual(['17:20']);
   });
 });

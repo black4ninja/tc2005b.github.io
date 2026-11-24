@@ -6,6 +6,7 @@ import { getGruposDeStaff } from '../services/grupo-admin.service.js';
 import { DIAS_SEMANA } from '../constants/dias.js';
 import {
   eventoDeEntrevistas,
+  huecosDeEntrevistas,
   normalizarPreferenciasAgenda,
   sesionesDelGrupo,
   sumarDiasFecha,
@@ -21,8 +22,15 @@ const TODO_EL_DIA = Object.fromEntries(
   DIAS_SEMANA.map((d) => [d, { inicio: '00:00', fin: '23:59' }]),
 ) as HorarioClase;
 
-/** Más de dos meses de golpe no lo pide la vista y solo engorda la consulta. */
-const MAX_DIAS_RANGO = 62;
+/** La vista más larga es la del año. */
+const MAX_DIAS_RANGO = 366;
+
+/**
+ * Hasta qué rango se mandan las citas de cada bloque de entrevistas: la vista
+ * del mes (seis semanas) las cuenta; la del año solo pinta puntos y no las
+ * necesita, y serían cientos.
+ */
+const MAX_DIAS_CON_CITAS = 42;
 
 /**
  * Grupos que entran en la agenda: el profesor, los suyos; el admin, todos los
@@ -45,8 +53,9 @@ async function gruposDeLaAgenda(user: AppUser): Promise<Grupo[]> {
 
 /**
  * GET /admin/agenda?desde=AAAA-MM-DD&hasta=AAAA-MM-DD — sesiones y días de
- * entrevistas de los grupos del staff en ese rango, más sus preferencias de
- * color. Solo lectura: la agenda no edita nada de los grupos.
+ * entrevistas de los grupos del staff en ese rango (hasta un año), con las
+ * citas de cada bloque si el rango es corto, más sus preferencias de color.
+ * Solo lectura: la agenda no edita nada de los grupos.
  */
 export async function getAgenda(req: Request, res: Response): Promise<void> {
   const user = req.appUser as AppUser;
@@ -120,11 +129,46 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
       qDias.greaterThanOrEqualTo('fin', new Date(`${sumarDiasFecha(desde, -1)}T00:00:00Z`));
       qDias.lessThanOrEqualTo('inicio', new Date(`${sumarDiasFecha(hasta, 2)}T00:00:00Z`));
       qDias.limit(2000);
-      for (const d of await qDias.find({ useMasterKey: true })) {
-        const ev = eventoDeEntrevistas(
+      const diasEnRango = (await qDias.find({ useMasterKey: true })).map((d) => ({
+        d,
+        ev: eventoDeEntrevistas(
           d.id!, d.get('grupo')?.id ?? '', d.get('inicio'), d.get('fin'), d.get('nota') ?? '', d.get('cerrado') === true,
-        );
-        if (ev.fecha >= desde && ev.fecha <= hasta) eventos.push(ev);
+        ),
+      })).filter(({ ev }) => ev.fecha >= desde && ev.fecha <= hasta);
+
+      // Quién ocupa cada hueco: así se ve qué parte del bloque ya está
+      // comprometida y cuál sigue libre.
+      const conCitas = sumarDiasFecha(desde, MAX_DIAS_CON_CITAS) > hasta;
+      const citasPorDia = new Map<string, { inicio: Date; alumno: string; competencia: string }[]>();
+      if (conCitas && diasEnRango.length > 0) {
+        const qCitas = new Parse.Query('CitaEntrevista');
+        qCitas.containedIn('dia', diasEnRango.map(({ d }) => d));
+        qCitas.equalTo('exists', true);
+        qCitas.include('alumno');
+        qCitas.include('competencia');
+        qCitas.select('dia', 'inicio', 'alumno.name', 'competencia.competencia');
+        qCitas.limit(5000);
+        for (const c of await qCitas.find({ useMasterKey: true })) {
+          const diaId = c.get('dia')?.id ?? '';
+          const lista = citasPorDia.get(diaId) ?? [];
+          lista.push({
+            inicio: c.get('inicio'),
+            alumno: c.get('alumno')?.get('name') ?? '',
+            competencia: c.get('competencia')?.get('competencia') ?? '',
+          });
+          citasPorDia.set(diaId, lista);
+        }
+      }
+
+      for (const { d, ev } of diasEnRango) {
+        if (conCitas) {
+          ev.huecos = huecosDeEntrevistas(
+            d.get('inicio'), d.get('fin'), d.get('duracionSegundos') ?? 300,
+            citasPorDia.get(d.id!) ?? [],
+            Array.isArray(d.get('huecosCerrados')) ? d.get('huecosCerrados') : [],
+          );
+        }
+        eventos.push(ev);
       }
     }
 

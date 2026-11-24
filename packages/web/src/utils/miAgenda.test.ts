@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  acomodarDia, aclarar, coloresDe, grupoVisible, lunesDe, rangoHoras, sumarDias, textoSobre, traslapes,
+  acomodarDia, aclarar, coloresDe, diasDeMes, grupoVisible, lunesDe, moverVista, rangoDeVista, rangoHoras, sumarDias,
+  sumarMeses, textoSobre, traslapes,
   type EventoAgenda,
 } from './miAgenda';
 
@@ -70,12 +71,39 @@ describe('colores y visibilidad', () => {
   });
   it('sin preferencia se ven solo los grupos propios', () => {
     const g = { id: 'x', name: 'X', esMio: false, conHorario: true };
-    expect(grupoVisible(g, undefined)).toBe(false);
-    expect(grupoVisible(g, { oculto: false })).toBe(true);
-    expect(grupoVisible({ ...g, esMio: true }, { oculto: true })).toBe(false);
+    expect(grupoVisible(g, undefined, 'sesion')).toBe(false);
+    expect(grupoVisible(g, { oculto: false }, 'sesion')).toBe(true);
+    expect(grupoVisible({ ...g, esMio: true }, { oculto: true }, 'entrevista')).toBe(false);
+  });
+  it('grupoVisible decide por tipo, y lo del tipo pesa más que el interruptor antiguo', () => {
+    const g = { id: 'x', name: 'X', esMio: false, conHorario: true };
+    const pref = { oculto: true, verEntrevistas: true };
+    expect(grupoVisible(g, pref, 'sesion')).toBe(false);
+    expect(grupoVisible(g, pref, 'entrevista')).toBe(true);
   });
   it('rangoHoras se amplía si algo se sale de 7 a 21', () => {
     expect(rangoHoras([ev('a', 'd', '06:30', '08:00'), ev('b', 'd', '20:00', '22:15')])).toEqual({ desde: 6, hasta: 23 });
     expect(rangoHoras([])).toEqual({ desde: 7, hasta: 21 });
+  });
+});
+
+describe('vistas', () => {
+  it('el mes son seis semanas desde el lunes de la semana del día 1', () => {
+    const dias = diasDeMes('2026-11-24');
+    expect(dias).toHaveLength(42);
+    expect(dias[0]).toBe('2026-10-26');
+    expect(dias[41]).toBe('2026-12-06');
+  });
+  it('rangoDeVista pide justo lo que se pinta', () => {
+    expect(rangoDeVista('dia', '2026-11-24')).toEqual({ desde: '2026-11-24', hasta: '2026-11-24' });
+    expect(rangoDeVista('semana', '2026-11-24')).toEqual({ desde: '2026-11-23', hasta: '2026-11-29' });
+    expect(rangoDeVista('anio', '2026-11-24')).toEqual({ desde: '2026-01-01', hasta: '2026-12-31' });
+  });
+  it('moverVista avanza por la unidad de la vista y cruza años', () => {
+    expect(moverVista('dia', '2026-12-31', 1)).toBe('2027-01-01');
+    expect(moverVista('semana', '2026-11-24', -1)).toBe('2026-11-17');
+    expect(moverVista('mes', '2026-01-31', -1)).toBe('2025-12-01');
+    expect(moverVista('anio', '2026-11-24', 1)).toBe('2027-01-01');
+    expect(sumarMeses('2026-12-15', 1)).toBe('2027-01-01');
   });
 });

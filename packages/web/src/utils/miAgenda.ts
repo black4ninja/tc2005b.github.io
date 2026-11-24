@@ -15,7 +15,26 @@ export interface EventoAgenda {
   fin: string;
   titulo: string;
   cerrado?: boolean;
+  /** Solo entrevistas, en rangos de hasta seis semanas. */
+  huecos?: HuecosEntrevistas;
 }
+
+export interface CitaEnBloque {
+  inicio: string;
+  fin: string;
+  alumno: string;
+  competencia: string;
+}
+
+/** El bloque de entrevistas por dentro: qué huecos ya están comprometidos. */
+export interface HuecosEntrevistas {
+  duracionMin: number;
+  total: number;
+  citas: CitaEnBloque[];
+  cerrados: string[];
+}
+
+export type TipoEvento = EventoAgenda['tipo'];
 
 export interface GrupoAgenda {
   id: string;
@@ -29,6 +48,9 @@ export interface GrupoAgenda {
 export interface PreferenciaGrupo {
   sesiones?: string;
   entrevistas?: string;
+  verSesiones?: boolean;
+  verEntrevistas?: boolean;
+  /** Interruptor único de la primera versión: vale para los dos tipos. */
   oculto?: boolean;
 }
 
@@ -96,13 +118,85 @@ export function coloresDe(indice: number, pref: PreferenciaGrupo | undefined): {
 }
 
 /**
- * ¿Se ve el grupo? Lo que haya elegido la persona; sin elección, se ven los
- * suyos (`esMio`). Al admin le llegan TODOS los grupos activos y no tiene por
- * qué cargar con los que no administra.
+ * ¿Se ven las sesiones (o las entrevistas) del grupo? Lo que haya elegido la
+ * persona para ese tipo; si no, lo del interruptor antiguo; y sin elección
+ * ninguna, se ven los suyos (`esMio`). Al admin le llegan TODOS los grupos
+ * activos y no tiene por qué cargar con los que no administra.
  */
-export function grupoVisible(grupo: GrupoAgenda, pref: PreferenciaGrupo | undefined): boolean {
+export function grupoVisible(grupo: GrupoAgenda, pref: PreferenciaGrupo | undefined, tipo: TipoEvento): boolean {
+  const propia = tipo === 'sesion' ? pref?.verSesiones : pref?.verEntrevistas;
+  if (propia !== undefined) return propia;
   if (pref?.oculto !== undefined) return !pref.oculto;
   return grupo.esMio;
+}
+
+// ── Vistas ────────────────────────────────────────────────────────────────
+
+export type Vista = 'dia' | 'semana' | 'mes' | 'anio';
+
+export const VISTAS: { clave: Vista; nombre: string; atajo: string }[] = [
+  { clave: 'dia', nombre: 'Día', atajo: 'D' },
+  { clave: 'semana', nombre: 'Semana', atajo: 'S' },
+  { clave: 'mes', nombre: 'Mes', atajo: 'M' },
+  { clave: 'anio', nombre: 'Año', atajo: 'A' },
+];
+
+export function esVista(v: unknown): v is Vista {
+  return VISTAS.some((x) => x.clave === v);
+}
+
+/** Primer día del mes de esa fecha. */
+export function inicioDeMes(fecha: string): string {
+  return `${fecha.slice(0, 7)}-01`;
+}
+
+/** Fecha más N meses, anclada al día 1 (no hay «31 de febrero» que resolver). */
+export function sumarMeses(fecha: string, meses: number): string {
+  const [a, m] = fecha.split('-').map(Number);
+  const total = a * 12 + (m - 1) + meses;
+  return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, '0')}-01`;
+}
+
+/**
+ * Las seis semanas que pinta un mes, de lunes a domingo: empieza en el lunes de
+ * la semana del día 1, como Google Calendar, para que la rejilla no cambie de
+ * alto de un mes a otro.
+ */
+export function diasDeMes(fecha: string): string[] {
+  const inicio = lunesDe(inicioDeMes(fecha));
+  return Array.from({ length: 42 }, (_, i) => sumarDias(inicio, i));
+}
+
+/** Los días que hay que pedir al servidor para pintar la vista. */
+export function rangoDeVista(vista: Vista, fecha: string): { desde: string; hasta: string } {
+  switch (vista) {
+    case 'dia':
+      return { desde: fecha, hasta: fecha };
+    case 'semana': {
+      const l = lunesDe(fecha);
+      return { desde: l, hasta: sumarDias(l, 6) };
+    }
+    case 'mes': {
+      const dias = diasDeMes(fecha);
+      return { desde: dias[0], hasta: dias[41] };
+    }
+    case 'anio':
+      return { desde: `${fecha.slice(0, 4)}-01-01`, hasta: `${fecha.slice(0, 4)}-12-31` };
+  }
+}
+
+/** La fecha de la vista anterior (−1) o siguiente (+1). */
+export function moverVista(vista: Vista, fecha: string, sentido: 1 | -1): string {
+  switch (vista) {
+    case 'dia':
+      return sumarDias(fecha, sentido);
+    case 'semana':
+      return sumarDias(fecha, 7 * sentido);
+    case 'mes':
+      return sumarMeses(fecha, sentido);
+    case 'anio':
+      return `${Number(fecha.slice(0, 4)) + sentido}-01-01`;
+  }
 }
 
 function seTraslapan(a: EventoAgenda, b: EventoAgenda): boolean {

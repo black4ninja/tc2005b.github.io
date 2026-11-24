@@ -90,6 +90,29 @@ export interface EventoAgenda {
   titulo: string;
   /** Solo entrevistas: el día ya no admite reservas. */
   cerrado?: boolean;
+  /** Solo entrevistas, y solo en rangos cortos: cómo va ocupado el bloque. */
+  huecos?: HuecosEntrevistas;
+}
+
+/** Una cita dentro del bloque de entrevistas, ya en hora de reloj. */
+export interface CitaEnBloque {
+  inicio: string;
+  fin: string;
+  alumno: string;
+  competencia: string;
+}
+
+/**
+ * El bloque de entrevistas por dentro. El bloque entero se aparta en la
+ * agenda, pero los alumnos no siempre llenan todos los huecos: esto dice cuáles
+ * ya están comprometidos y por quién, y cuáles cerró el profesor.
+ */
+export interface HuecosEntrevistas {
+  duracionMin: number;
+  total: number;
+  citas: CitaEnBloque[];
+  /** Inicio (HH:MM) de cada hueco suelto cerrado por el profesor. */
+  cerrados: string[];
 }
 
 export interface SemanaParaAgenda {
@@ -173,11 +196,58 @@ export function eventoDeEntrevistas(
   };
 }
 
+/**
+ * Los huecos de un día de entrevistas: el bloque se parte en tramos de
+ * `duracionSegundos` desde su inicio, igual que en la agenda del grupo. Las
+ * citas que caen fuera del bloque (el profesor lo acortó después) se dejan
+ * fuera: aquí solo se pinta el bloque.
+ */
+export function huecosDeEntrevistas(
+  inicio: Date,
+  fin: Date,
+  duracionSegundos: number,
+  citas: { inicio: Date; alumno: string; competencia: string }[],
+  huecosCerrados: string[],
+  zona = ZONA_CURSO,
+): HuecosEntrevistas {
+  const paso = Math.max(60, duracionSegundos) * 1000;
+  const total = Math.max(0, Math.floor((fin.getTime() - inicio.getTime()) / paso));
+  const reloj = (t: number) => relojEnZona(new Date(t), zona).hora;
+  const dentro = (t: number) => t >= inicio.getTime() && t < fin.getTime();
+  return {
+    duracionMin: Math.round(paso / 60000),
+    total,
+    citas: citas
+      .filter((c) => dentro(c.inicio.getTime()))
+      .sort((a, b) => a.inicio.getTime() - b.inicio.getTime())
+      .map((c) => ({
+        inicio: reloj(c.inicio.getTime()),
+        fin: reloj(c.inicio.getTime() + paso),
+        alumno: c.alumno,
+        competencia: c.competencia,
+      })),
+    cerrados: huecosCerrados
+      .map((iso) => new Date(iso).getTime())
+      .filter((t) => Number.isFinite(t) && dentro(t))
+      .sort((a, b) => a - b)
+      .map(reloj),
+  };
+}
+
 const COLOR = /^#[0-9a-f]{6}$/i;
 
+/**
+ * Lo que la persona eligió de un grupo: el color de cada tipo y si lo ve.
+ * La visibilidad es por TIPO (`verSesiones`, `verEntrevistas`), como los
+ * calendarios de Apple: se puede ver las sesiones de un grupo y no sus
+ * entrevistas. `oculto` es el interruptor único de la primera versión; se
+ * sigue aceptando y vale para los dos tipos mientras no haya uno propio.
+ */
 export interface PreferenciaGrupoAgenda {
   sesiones?: string;
   entrevistas?: string;
+  verSesiones?: boolean;
+  verEntrevistas?: boolean;
   oculto?: boolean;
 }
 
@@ -196,7 +266,7 @@ export function normalizarPreferenciasAgenda(
   for (const [grupoId, pref] of entradas) {
     if (!/^[A-Za-z0-9]{1,32}$/.test(grupoId)) return 'invalido';
     if (typeof pref !== 'object' || pref === null || Array.isArray(pref)) return 'invalido';
-    const { sesiones, entrevistas, oculto } = pref as Record<string, unknown>;
+    const { sesiones, entrevistas, oculto, verSesiones, verEntrevistas } = pref as Record<string, unknown>;
     const p: PreferenciaGrupoAgenda = {};
     if (sesiones !== undefined) {
       if (typeof sesiones !== 'string' || !COLOR.test(sesiones)) return 'invalido';
@@ -209,6 +279,11 @@ export function normalizarPreferenciasAgenda(
     if (oculto !== undefined) {
       if (typeof oculto !== 'boolean') return 'invalido';
       if (oculto) p.oculto = true;
+    }
+    for (const [clave, valor] of [['verSesiones', verSesiones], ['verEntrevistas', verEntrevistas]] as const) {
+      if (valor === undefined) continue;
+      if (typeof valor !== 'boolean') return 'invalido';
+      p[clave] = valor;
     }
     limpio[grupoId] = p;
   }

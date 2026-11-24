@@ -8,15 +8,20 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- **«Mi agenda» para administradores y profesores.** Una vista semanal tipo
+- **«Mi agenda» para administradores y profesores.** Un calendario tipo
   Google Calendar con las sesiones y los días de entrevistas de TODOS sus
-  grupos a la vez, para ver los traslapes entre grupos. Los eventos que se
-  pisan se marcan en rojo y se listan arriba. Cada persona elige el color de
-  las sesiones y de las entrevistas de cada grupo y qué grupos ve (el admin ve
-  por defecto los que administra). Tocar un evento abre el calendario o las
-  entrevistas de su grupo. En celular se ve un día a la vez. Se abre desde el
-  botón «Mi agenda» de la barra superior, en cualquier pantalla, y desde el
-  menú del admin.
+  grupos a la vez, para ver los traslapes entre grupos. Se ve por día, semana,
+  mes o año (atajos D, S, M, A; T vuelve a hoy). Los eventos que se pisan se
+  marcan en rojo y se listan arriba. Cada bloque de entrevistas muestra qué
+  huecos ya tomaron los alumnos: en la semana como una tira de ocupación y
+  «N/M ocupados»; en el día, cada hueco con la hora, el alumno y la
+  competencia, y los libres rayados. Los calendarios se eligen en el sidebar,
+  como en Apple Calendar: «Sesiones» y «Entrevistas», cada uno con un
+  calendario por grupo con su color, que se puede apagar y recolorear (el
+  admin ve por defecto los que administra). Desde ahí mismo se vuelve al menú
+  del rol. Tocar un evento abre el calendario o las entrevistas de su grupo.
+  Se abre desde el botón «Mi agenda» de la barra superior, en cualquier
+  pantalla, y desde el menú del admin.
 - **Horario de clase del grupo.** Al editar un grupo se indica la hora de la
   sesión de cada día (lunes a sábado). Es lo que pone las sesiones en «Mi
   agenda»: el calendario dice qué días hay clase, el horario a qué hora.

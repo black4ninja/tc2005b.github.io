@@ -1,0 +1,87 @@
+.anio {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--space-lg, 24px) var(--space-md);
+  padding: var(--space-md);
+}
+
+.titulo {
+  margin: 0 0 6px 4px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.inicial {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  padding-bottom: 2px;
+}
+
+.dia {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  min-height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.dia:hover {
+  background: var(--dash-bg-subtle);
+}
+
+.conEventos {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.hoy,
+.hoy:hover {
+  background: var(--dash-primary);
+  color: var(--dash-primary-contraste);
+}
+
+.choque {
+  box-shadow: inset 0 0 0 2px #dc2626;
+}
+
+.puntos {
+  display: flex;
+  gap: 2px;
+  height: 4px;
+}
+
+.puntos i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+}
+
+@media (max-width: 768px) {
+  .anio {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    padding: var(--space-sm);
+  }
+
+  .dia {
+    min-height: 36px;
+  }
+}

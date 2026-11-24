@@ -1,60 +1,95 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { createPortal } from 'react-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
+import { useAgendaSidebar } from '../../../../context/AgendaSidebarContext';
 import Icon from '../../atoms/Icon/Icon';
 import {
-  acomodarDia, aMinutos, coloresDe, grupoVisible, hoyEnCurso, lunesDe, rangoHoras, sumarDias, textoSobre, traslapes,
-  type EventoAgenda, type GrupoAgenda, type PreferenciaGrupo,
+  coloresDe, esVista, grupoVisible, hoyEnCurso, lunesDe, moverVista, rangoDeVista, sumarDias, traslapes, VISTAS,
+  type EventoAgenda, type GrupoAgenda, type PreferenciaGrupo, type Vista,
 } from '../../../../utils/miAgenda';
+import PanelCalendarios from './PanelCalendarios';
+import VistaHoras from './VistaHoras';
+import VistaMes from './VistaMes';
+import VistaAnio from './VistaAnio';
 import styles from './MiAgendaPage.module.css';
 
 const API_BASE = '/api';
-const ALTO_HORA = 48;
-const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 
-/** «23 al 29 de noviembre de 2026» (o con mes en las dos puntas si cambia). */
-function etiquetaSemana(lunes: string): string {
-  const fmt = (f: string, opts: Intl.DateTimeFormatOptions) =>
-    new Date(`${f}T12:00:00Z`).toLocaleDateString('es-MX', { timeZone: 'UTC', ...opts });
-  const domingo = sumarDias(lunes, 6);
-  const mismoMes = lunes.slice(0, 7) === domingo.slice(0, 7);
-  const ini = mismoMes ? fmt(lunes, { day: 'numeric' }) : fmt(lunes, { day: 'numeric', month: 'long' });
-  return `${ini} al ${fmt(domingo, { day: 'numeric', month: 'long', year: 'numeric' })}`;
+const fmt = (f: string, opts: Intl.DateTimeFormatOptions) =>
+  new Date(`${f}T12:00:00Z`).toLocaleDateString('es-MX', { timeZone: 'UTC', ...opts });
+
+const mayuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+/** «Martes, 24 de noviembre de 2026», «23 al 29 de noviembre de 2026», «Noviembre de 2026», «2026». */
+function etiquetaPeriodo(vista: Vista, fecha: string): string {
+  switch (vista) {
+    case 'dia':
+      return mayuscula(fmt(fecha, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
+    case 'semana': {
+      const lunes = lunesDe(fecha);
+      const domingo = sumarDias(lunes, 6);
+      const mismoMes = lunes.slice(0, 7) === domingo.slice(0, 7);
+      const ini = mismoMes ? fmt(lunes, { day: 'numeric' }) : fmt(lunes, { day: 'numeric', month: 'long' });
+      return `${ini} al ${fmt(domingo, { day: 'numeric', month: 'long', year: 'numeric' })}`;
+    }
+    case 'mes':
+      return mayuscula(fmt(fecha, { month: 'long', year: 'numeric' }));
+    case 'anio':
+      return fecha.slice(0, 4);
+  }
 }
 
-function horaLegible(h: number): string {
-  return `${String(h).padStart(2, '0')}:00`;
-}
+const EN_PERIODO: Record<Vista, string> = { dia: 'este día', semana: 'esta semana', mes: 'este mes', anio: 'este año' };
 
 /**
  * «Mi agenda»: las sesiones y los días de entrevistas de todos los grupos del
- * profesor o admin, en una semana tipo Google Calendar, para ver de un vistazo
- * lo que se traslapa entre grupos.
+ * profesor o admin, por día, semana, mes o año, como Google Calendar, para ver
+ * de un vistazo lo que se traslapa entre grupos y cuánto de cada bloque de
+ * entrevistas ya tomaron los alumnos.
  *
  * Solo consulta: tocar un evento lleva al calendario o a las entrevistas de su
  * grupo, que es donde se edita. Lo único que se guarda desde aquí son los
- * colores y qué grupos se ven, que son preferencias de la persona.
+ * colores y qué calendarios se ven, que son preferencias de la persona. Esos
+ * calendarios se pintan en el sidebar (`AgendaSidebarContext`).
  */
 export default function MiAgendaPage() {
   const { sessionToken, user } = useAuth();
   const esAdmin = user?.userType === 'admin';
   const navigate = useNavigate();
   const hoy = hoyEnCurso();
-  const [lunes, setLunes] = useState(() => lunesDe(hoy));
-  const [diaMovil, setDiaMovil] = useState(() => hoy);
+  const sidebar = useAgendaSidebar();
+
+  // Vista y fecha en la URL: el botón de volver del navegador funciona y el
+  // enlace a un mes concreto se puede compartir.
+  const [params, setParams] = useSearchParams();
+  const vista: Vista = esVista(params.get('vista')) ? (params.get('vista') as Vista) : 'semana';
+  const fecha = FECHA.test(params.get('fecha') ?? '') ? params.get('fecha')! : hoy;
+  const ir = useCallback((v: Vista, f: string) => {
+    setParams((p) => {
+      const n = new URLSearchParams(p);
+      n.set('vista', v);
+      n.set('fecha', f);
+      return n;
+    });
+  }, [setParams]);
+
+  const [diaMovil, setDiaMovil] = useState(() => fecha);
   const [grupos, setGrupos] = useState<GrupoAgenda[]>([]);
   const [eventos, setEventos] = useState<EventoAgenda[]>([]);
   const [prefs, setPrefs] = useState<Record<string, PreferenciaGrupo>>({});
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
-  const [verGrupos, setVerGrupos] = useState(false);
   const guardado = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { desde, hasta } = rangoDeVista(vista, fecha);
 
   useEffect(() => {
     let cancelado = false;
     setCargando(true);
     setError('');
-    fetch(`${API_BASE}/admin/agenda?desde=${lunes}&hasta=${sumarDias(lunes, 6)}`, {
+    fetch(`${API_BASE}/admin/agenda?desde=${desde}&hasta=${hasta}`, {
       headers: { 'x-session-token': sessionToken ?? '' },
     })
       .then((r) => r.json().then((b) => ({ ok: r.ok, b })))
@@ -68,14 +103,30 @@ export default function MiAgendaPage() {
       .catch((e) => { if (!cancelado) setError(e.message); })
       .finally(() => { if (!cancelado) setCargando(false); });
     return () => { cancelado = true; };
-  }, [lunes, sessionToken]);
+  }, [desde, hasta, sessionToken]);
 
-  // Al cambiar de semana, el día del celular se queda dentro de ella.
+  // En la semana del celular se ve un día: se queda dentro del periodo.
   useEffect(() => {
-    setDiaMovil((d) => (d >= lunes && d <= sumarDias(lunes, 6) ? d : (hoy >= lunes && hoy <= sumarDias(lunes, 6) ? hoy : lunes)));
-  }, [lunes, hoy]);
+    setDiaMovil((d) => (d >= desde && d <= hasta ? d : hoy >= desde && hoy <= hasta ? hoy : desde));
+  }, [desde, hasta, hoy]);
 
-  const guardarPrefs = useCallback((nuevas: Record<string, PreferenciaGrupo>) => {
+  // Atajos como en Google Calendar: D, S, M, A cambian la vista; T vuelve a hoy.
+  useEffect(() => {
+    const alPulsar = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA'].includes(t.tagName))) return;
+      const tecla = e.key.toUpperCase();
+      const v = VISTAS.find((x) => x.atajo === tecla);
+      if (v) ir(v.clave, fecha);
+      else if (tecla === 'T') ir(vista, hoy);
+    };
+    window.addEventListener('keydown', alPulsar);
+    return () => window.removeEventListener('keydown', alPulsar);
+  }, [ir, fecha, vista, hoy]);
+
+  const guardarPrefs = useCallback((cambios: Record<string, PreferenciaGrupo>) => {
+    const nuevas = { ...prefs, ...cambios };
     setPrefs(nuevas);
     // Un color se arrastra por la paleta: se guarda cuando el usuario suelta.
     if (guardado.current) clearTimeout(guardado.current);
@@ -86,61 +137,72 @@ export default function MiAgendaPage() {
         body: JSON.stringify({ preferencias: nuevas }),
       }).catch(() => { /* la vista sigue con lo elegido; se reintenta en el siguiente cambio */ });
     }, 600);
-  }, [sessionToken]);
+  }, [prefs, sessionToken]);
 
   const indice = useMemo(() => new Map(grupos.map((g, i) => [g.id, i])), [grupos]);
   const nombre = useMemo(() => new Map(grupos.map((g) => [g.id, g.name])), [grupos]);
-  const visibles = useMemo(
-    () => new Set(grupos.filter((g) => grupoVisible(g, prefs[g.id])).map((g) => g.id)),
-    [grupos, prefs],
+  const porId = useMemo(() => new Map(grupos.map((g) => [g.id, g])), [grupos]);
+  const mostrados = useMemo(
+    () => eventos.filter((e) => {
+      const g = porId.get(e.grupoId);
+      return !!g && grupoVisible(g, prefs[g.id], e.tipo);
+    }),
+    [eventos, porId, prefs],
   );
-  const mostrados = useMemo(() => eventos.filter((e) => visibles.has(e.grupoId)), [eventos, visibles]);
   const choques = useMemo(() => traslapes(mostrados), [mostrados]);
   const enChoque = useMemo(() => new Set(choques.flatMap((c) => [c.a.id, c.b.id])), [choques]);
-  const { desde, hasta } = useMemo(() => rangoHoras(mostrados), [mostrados]);
-  const sinHorario = grupos.filter((g) => visibles.has(g.id) && g.sinHoraConClase);
+  const sinHorario = grupos.filter((g) => grupoVisible(g, prefs[g.id], 'sesion') && g.sinHoraConClase);
 
-  const dias = Array.from({ length: 7 }, (_, i) => sumarDias(lunes, i));
-
-  const cambiarPref = (grupoId: string, cambio: PreferenciaGrupo) =>
-    guardarPrefs({ ...prefs, [grupoId]: { ...prefs[grupoId], ...cambio } });
+  const color = useCallback((ev: EventoAgenda) => {
+    const c = coloresDe(indice.get(ev.grupoId) ?? 0, prefs[ev.grupoId]);
+    return ev.tipo === 'sesion' ? c.sesiones : c.entrevistas;
+  }, [indice, prefs]);
 
   const abrir = (ev: EventoAgenda) =>
     navigate(`/admin/grupos/${ev.grupoId}/${ev.tipo === 'sesion' ? 'calendario' : 'entrevistas'}`);
+  const abrirDia = (d: string) => ir('dia', d);
 
-  const etiquetaEvento = (ev: EventoAgenda) =>
-    `${nombre.get(ev.grupoId) ?? ''} · ${ev.tipo === 'sesion' ? 'Sesión' : 'Entrevistas'} · ${ev.inicio}–${ev.fin}` +
-    (ev.titulo ? ` · ${ev.titulo}` : '') + (enChoque.has(ev.id) ? ' · se traslapa con otro evento' : '');
+  const dias = vista === 'dia' ? [fecha] : Array.from({ length: 7 }, (_, i) => sumarDias(lunesDe(fecha), i));
+  const conMes = vista === 'mes' || vista === 'anio';
 
   return (
     <div className={styles.page}>
+      {sidebar.slot && createPortal(
+        <PanelCalendarios
+          grupos={grupos}
+          prefs={prefs}
+          indice={indice}
+          onCambiar={guardarPrefs}
+          onVerMenu={() => sidebar.setVerMenu(true)}
+        />,
+        sidebar.slot,
+      )}
+
       <header className={styles.header}>
-        <div>
-          <h1 className={styles.titulo}>Mi agenda</h1>
-          <p className={styles.subtitulo}>
-            Sesiones y entrevistas de todos tus grupos, en hora del centro de México. Toca un evento para abrirlo en su grupo.
-          </p>
-        </div>
         <div className={styles.navegacion}>
-          <button type="button" className={styles.botonIcono} onClick={() => setLunes(sumarDias(lunes, -7))} aria-label="Semana anterior">
-            <Icon name="chevron_left" />
-          </button>
-          <button type="button" className={styles.boton} onClick={() => { setLunes(lunesDe(hoy)); setDiaMovil(hoy); }}>
+          {!sidebar.panelVisible && (
+            <button type="button" className={styles.boton} onClick={sidebar.abrirCalendarios}>
+              <Icon name="calendar_month" size="sm" /> Calendarios
+            </button>
+          )}
+          <button type="button" className={styles.boton} onClick={() => ir(vista, hoy)} title="Hoy (T)">
             Hoy
           </button>
-          <button type="button" className={styles.botonIcono} onClick={() => setLunes(sumarDias(lunes, 7))} aria-label="Semana siguiente">
+          <button type="button" className={styles.botonIcono} onClick={() => ir(vista, moverVista(vista, fecha, -1))} aria-label="Periodo anterior">
+            <Icon name="chevron_left" />
+          </button>
+          <button type="button" className={styles.botonIcono} onClick={() => ir(vista, moverVista(vista, fecha, 1))} aria-label="Periodo siguiente">
             <Icon name="chevron_right" />
           </button>
-          <span className={styles.rango}>{etiquetaSemana(lunes)}</span>
-          <button
-            type="button"
-            className={`${styles.boton} ${styles.botonGrupos}`}
-            onClick={() => setVerGrupos((v) => !v)}
-            aria-expanded={verGrupos}
-          >
-            <Icon name="palette" size="sm" /> Grupos y colores
-          </button>
+          <h1 className={styles.rango}>{etiquetaPeriodo(vista, fecha)}</h1>
         </div>
+        <label className={styles.selectorVista}>
+          <span className={styles.oculto}>Vista</span>
+          <select value={vista} onChange={(e) => ir(e.target.value as Vista, fecha)}>
+            {VISTAS.map((v) => <option key={v.clave} value={v.clave}>{v.nombre} ({v.atajo})</option>)}
+          </select>
+          <Icon name="expand_more" size="sm" />
+        </label>
       </header>
 
       {error && <div className={styles.error}>{error}</div>}
@@ -149,15 +211,18 @@ export default function MiAgendaPage() {
         <div className={styles.avisoChoques} role="status">
           <Icon name="warning" size="sm" />
           <div>
-            <strong>{choques.length === 1 ? '1 traslape esta semana' : `${choques.length} traslapes esta semana`}</strong>
+            <strong>{choques.length === 1 ? `1 traslape ${EN_PERIODO[vista]}` : `${choques.length} traslapes ${EN_PERIODO[vista]}`}</strong>
             <ul>
-              {choques.slice(0, 6).map((c) => (
+              {choques.slice(0, 5).map((c) => (
                 <li key={`${c.a.id}|${c.b.id}`}>
-                  {new Date(`${c.a.fecha}T12:00:00Z`).toLocaleDateString('es-MX', { timeZone: 'UTC', weekday: 'long', day: 'numeric' })}:{' '}
-                  {nombre.get(c.a.grupoId)} ({c.a.tipo === 'sesion' ? 'sesión' : 'entrevistas'} {c.a.inicio}–{c.a.fin}) y{' '}
+                  <button type="button" className={styles.enlaceDia} onClick={() => abrirDia(c.a.fecha)}>
+                    {fmt(c.a.fecha, { weekday: 'long', day: 'numeric', ...(conMes ? { month: 'short' } : {}) })}
+                  </button>
+                  : {nombre.get(c.a.grupoId)} ({c.a.tipo === 'sesion' ? 'sesión' : 'entrevistas'} {c.a.inicio}–{c.a.fin}) y{' '}
                   {nombre.get(c.b.grupoId)} ({c.b.tipo === 'sesion' ? 'sesión' : 'entrevistas'} {c.b.inicio}–{c.b.fin})
                 </li>
               ))}
+              {choques.length > 5 && <li>y {choques.length - 5} más.</li>}
             </ul>
           </div>
         </div>
@@ -167,7 +232,7 @@ export default function MiAgendaPage() {
         <div className={styles.avisoHorario}>
           <Icon name="schedule" size="sm" />
           <span>
-            Estos grupos dan clase esta semana, pero sin horario sus sesiones no salen aquí:{' '}
+            Sin horario de clase, las sesiones de estos grupos no salen aquí:{' '}
             {/* El horario se edita en el formulario del grupo, que vive en la
                 lista de Grupos del admin; el profesor no tiene esa pantalla. */}
             {sinHorario.map((g, i) => (
@@ -184,112 +249,31 @@ export default function MiAgendaPage() {
         </div>
       )}
 
-      <div className={styles.cuerpo}>
-        <aside className={`${styles.panelGrupos} ${verGrupos ? styles.panelAbierto : ''}`} aria-label="Grupos y colores">
-          <h2 className={styles.panelTitulo}>Grupos</h2>
-          {grupos.length === 0 && !cargando && <p className={styles.vacio}>No administras ningún grupo activo.</p>}
-          <ul className={styles.listaGrupos}>
-            {grupos.map((g) => {
-              const c = coloresDe(indice.get(g.id) ?? 0, prefs[g.id]);
-              const visible = visibles.has(g.id);
-              return (
-                <li key={g.id} className={styles.filaGrupo}>
-                  <label className={styles.checkGrupo}>
-                    <input type="checkbox" checked={visible} onChange={(e) => cambiarPref(g.id, { oculto: !e.target.checked })} />
-                    <span className={styles.nombreGrupo} title={g.name}>{g.name}</span>
-                  </label>
-                  <div className={styles.colores}>
-                    <label className={styles.color} title="Color de las sesiones">
-                      <input type="color" value={c.sesiones} onChange={(e) => cambiarPref(g.id, { sesiones: e.target.value })} aria-label={`Color de las sesiones de ${g.name}`} />
-                      <span>Sesiones</span>
-                    </label>
-                    <label className={styles.color} title="Color de las entrevistas">
-                      <input type="color" value={c.entrevistas} onChange={(e) => cambiarPref(g.id, { entrevistas: e.target.value })} aria-label={`Color de las entrevistas de ${g.name}`} />
-                      <span>Entrevistas</span>
-                    </label>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </aside>
-
-        <div className={styles.calendario}>
-          {/* En el celular cabe un día: se elige con estas pestañas. */}
-          <div className={styles.pestanasDia} role="tablist" aria-label="Día">
-            {dias.map((d, i) => (
-              <button
-                key={d}
-                type="button"
-                role="tab"
-                aria-selected={d === diaMovil}
-                className={`${styles.pestanaDia} ${d === diaMovil ? styles.pestanaActiva : ''} ${d === hoy ? styles.pestanaHoy : ''}`}
-                onClick={() => setDiaMovil(d)}
-              >
-                <span>{DIAS[i]}</span>
-                <strong>{Number(d.slice(8))}</strong>
-              </button>
-            ))}
-          </div>
-
-          <div className={styles.rejilla} style={{ '--horas': hasta - desde, '--alto-hora': `${ALTO_HORA}px` } as React.CSSProperties}>
-            <div className={styles.cabeceraVacia} />
-            {dias.map((d, i) => (
-              <div key={d} className={`${styles.cabeceraDia} ${d === hoy ? styles.esHoy : ''} ${d === diaMovil ? styles.diaMovil : ''}`}>
-                <span>{DIAS[i]}</span>
-                <strong>{Number(d.slice(8))}</strong>
-              </div>
-            ))}
-
-            <div className={styles.columnaHoras}>
-              {Array.from({ length: hasta - desde }, (_, i) => (
-                <div key={i} className={styles.hora}>{horaLegible(desde + i)}</div>
-              ))}
-            </div>
-
-            {dias.map((d) => (
-              <div key={d} className={`${styles.columnaDia} ${d === hoy ? styles.esHoy : ''} ${d === diaMovil ? styles.diaMovil : ''}`}>
-                {Array.from({ length: hasta - desde }, (_, i) => <div key={i} className={styles.lineaHora} />)}
-                {acomodarDia(mostrados.filter((e) => e.fecha === d)).map(({ evento: ev, columna, columnas }) => {
-                  const c = coloresDe(indice.get(ev.grupoId) ?? 0, prefs[ev.grupoId]);
-                  const fondo = ev.tipo === 'sesion' ? c.sesiones : c.entrevistas;
-                  const top = ((aMinutos(ev.inicio) - desde * 60) / 60) * ALTO_HORA;
-                  const alto = Math.max(((aMinutos(ev.fin) - aMinutos(ev.inicio)) / 60) * ALTO_HORA, 20);
-                  return (
-                    <button
-                      key={ev.id}
-                      type="button"
-                      className={`${styles.evento} ${enChoque.has(ev.id) ? styles.choque : ''} ${ev.cerrado ? styles.cerrado : ''}`}
-                      style={{
-                        top, height: alto,
-                        left: `calc(${(columna / columnas) * 100}% + 2px)`,
-                        width: `calc(${100 / columnas}% - 4px)`,
-                        background: fondo,
-                        color: textoSobre(fondo),
-                      }}
-                      onClick={() => abrir(ev)}
-                      title={etiquetaEvento(ev)}
-                      aria-label={etiquetaEvento(ev)}
-                    >
-                      <span className={styles.eventoGrupo}>
-                        {enChoque.has(ev.id) && <Icon name="warning" size="sm" />}
-                        {nombre.get(ev.grupoId)}
-                      </span>
-                      <span className={styles.eventoHora}>
-                        {ev.tipo === 'sesion' ? 'Sesión' : 'Entrevistas'} · {ev.inicio}–{ev.fin}
-                      </span>
-                      {ev.titulo && alto >= 60 && <span className={styles.eventoTitulo}>{ev.titulo}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-          {cargando && <p className={styles.cargando}>Cargando…</p>}
-          {!cargando && mostrados.length === 0 && !error && (
-            <p className={styles.vacio}>No hay sesiones ni entrevistas de tus grupos visibles esta semana.</p>
-          )}
-        </div>
+      <div className={styles.calendario} aria-busy={cargando}>
+        {(vista === 'dia' || vista === 'semana') && (
+          <VistaHoras
+            dias={dias}
+            eventos={mostrados}
+            hoy={hoy}
+            diaMovil={diaMovil}
+            onDiaMovil={setDiaMovil}
+            detallado={vista === 'dia'}
+            enChoque={enChoque}
+            nombre={nombre}
+            color={color}
+            onAbrir={abrir}
+          />
+        )}
+        {vista === 'mes' && (
+          <VistaMes fecha={fecha} eventos={mostrados} hoy={hoy} enChoque={enChoque} nombre={nombre} color={color} onAbrir={abrir} onDia={abrirDia} />
+        )}
+        {vista === 'anio' && (
+          <VistaAnio anio={fecha.slice(0, 4)} eventos={mostrados} hoy={hoy} enChoque={enChoque} nombre={nombre} color={color} onDia={abrirDia} />
+        )}
+        {cargando && <p className={styles.cargando}>Cargando…</p>}
+        {!cargando && mostrados.length === 0 && !error && (
+          <p className={styles.vacio}>No hay sesiones ni entrevistas de tus calendarios visibles {EN_PERIODO[vista]}.</p>
+        )}
       </div>
     </div>
   );
