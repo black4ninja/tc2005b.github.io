@@ -32,6 +32,11 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   completa, agrupada por día.
 
 ### Changed
+- **El sitio público ya no trae enlaces fijos de TC2005B.** Se quitan el botón
+  «Agendar Entrevistas» de la barra y el pie de página («Enlaces importantes»
+  y la leyenda del Tec), que salían igual en el calendario público de
+  cualquier grupo, incluidos los de fuera del Tec. La agenda de entrevistas
+  sigue en el menú de cada grupo que la tenga.
 - **Ajustes de diseño para celular.**
   - Márgenes: las páginas del panel dejan de sumar 24px propios a los 16px del
     layout en celular (quedaban a 40px del borde); todas a 16px.
