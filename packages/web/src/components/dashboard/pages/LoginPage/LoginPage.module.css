@@ -35,7 +35,7 @@
   height: 56px;
   border-radius: 14px;
   background: var(--dash-primary);
-  color: #fff;
+  color: var(--dash-primary-contraste);
   margin-bottom: 4px;
 }
 

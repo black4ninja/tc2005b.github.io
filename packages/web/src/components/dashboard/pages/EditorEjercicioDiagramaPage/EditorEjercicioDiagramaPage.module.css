@@ -1,5 +1,5 @@
 .page {
-  padding: 24px;
+  padding: var(--pagina-padding);
   /* Más ancho que el editor de ejercicios de programación: aquí el código y su
      vista previa van lado a lado, y con 900px ninguno de los dos se lee. */
   max-width: 1240px;

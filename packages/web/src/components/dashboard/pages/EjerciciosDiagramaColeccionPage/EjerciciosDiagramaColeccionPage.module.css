@@ -1,5 +1,5 @@
 .page {
-  padding: 24px;
+  padding: var(--pagina-padding);
 }
 
 .header {

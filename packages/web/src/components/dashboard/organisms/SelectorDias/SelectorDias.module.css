@@ -124,7 +124,7 @@
 .diaElegido {
   background: var(--dash-primary);
   border-color: var(--dash-primary);
-  color: #fff;
+  color: var(--dash-primary-contraste);
   font-weight: 600;
 }
 
@@ -159,7 +159,7 @@
   border: none;
   border-radius: 8px;
   background: var(--dash-primary);
-  color: #fff;
+  color: var(--dash-primary-contraste);
   font-family: inherit;
   font-size: 0.78rem;
   font-weight: 500;

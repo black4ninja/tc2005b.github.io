@@ -40,7 +40,11 @@ export function nombreRol(rol: string): string {
 export function fechaLargaDia(dia: string): string {
   const d = new Date(`${dia}T12:00:00Z`);
   if (Number.isNaN(d.getTime())) return dia;
-  return d.toLocaleDateString('es-MX', {
+  const texto = d.toLocaleDateString('es-MX', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
   });
+  // Solo la inicial en mayúscula, como se escribe en español. Antes lo hacía un
+  // `text-transform: capitalize` en el CSS, que subía TODAS las palabras:
+  // «Martes, 24 De Noviembre De 2026».
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
 }

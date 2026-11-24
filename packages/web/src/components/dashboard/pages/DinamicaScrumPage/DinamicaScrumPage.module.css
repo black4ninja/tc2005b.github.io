@@ -1,6 +1,6 @@
 .page {
   position: relative;
-  padding: 24px;
+  padding: var(--pagina-padding);
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -67,7 +67,7 @@
   white-space: nowrap;
 }
 
-.primario { border: none; background: var(--dash-primary); color: #fff; }
+.primario { border: none; background: var(--dash-primary); color: var(--dash-primary-contraste); }
 .primario:hover:not(:disabled) { opacity: 0.9; }
 .primario:disabled { opacity: 0.5; cursor: default; }
 

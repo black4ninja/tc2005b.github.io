@@ -1,6 +1,6 @@
 .page {
   position: relative;
-  padding: 24px;
+  padding: var(--pagina-padding);
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
@@ -223,7 +223,7 @@
   border: none;
   border-radius: 8px;
   background: var(--dash-primary);
-  color: #fff;
+  color: var(--dash-primary-contraste);
   font-family: inherit;
   font-size: 14px;
   font-weight: 500;

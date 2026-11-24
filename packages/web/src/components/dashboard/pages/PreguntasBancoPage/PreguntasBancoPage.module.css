@@ -1,4 +1,4 @@
-.page { padding: 24px; }
+.page { padding: var(--pagina-padding); }
 
 .header {
   display: flex;

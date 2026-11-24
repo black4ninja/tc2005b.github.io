@@ -178,32 +178,37 @@
   transition: background 0.15s;
 }
 .btnEdit {
-  background: #5d87ff;
-  color: #fff;
+  background: var(--dash-primary);
+  color: var(--dash-primary-contraste);
 }
 .btnEdit:hover {
-  background: #4a6fcc;
+  opacity: 0.9;
 }
 .btnSave {
-  background: #13deb9;
-  color: #fff;
+  /* Antes verde agua fijo con letra blanca: 1,7:1, ilegible. Va con el azul
+     principal y su par de contraste, como el resto de botones primarios. */
+  background: var(--dash-primary);
+  color: var(--dash-primary-contraste);
 }
 .btnSave:hover {
-  background: #0fb89e;
+  opacity: 0.9;
 }
 .btnSave:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 .btnCancel {
-  background: #e0e0e0;
+  /* Contorno en vez de gris fijo: en tema oscuro el #e0e0e0 quedaba con el
+     texto claro del tema encima y no se leía. */
+  background: transparent;
+  border: 1px solid var(--border-color) !important;
   color: var(--text-primary);
 }
 .btnCancel:hover {
-  background: #ccc;
+  background: var(--bg-page);
 }
 .profileLink {
-  color: #5d87ff;
+  color: var(--dash-primary);
   text-decoration: none;
   word-break: break-all;
 }
@@ -260,4 +265,10 @@
   font-size: 13px;
   line-height: 1.45;
   color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .profileActions button {
+    min-height: 44px;
+  }
 }

@@ -108,7 +108,7 @@
   cursor: pointer;
 }
 .chip:hover { background: var(--dash-bg-subtle); }
-.chipActivo { background: var(--dash-primary); border-color: var(--dash-primary); color: #fff; }
+.chipActivo { background: var(--dash-primary); border-color: var(--dash-primary); color: var(--dash-primary-contraste); }
 /* `.chip:hover` tiene MÁS especificidad que `.chipActivo` (clase + pseudoclase
    frente a clase), así que sin esta regla el chip seleccionado se quedaba con
    el fondo casi blanco del hover y el texto blanco encima: ilegible justo

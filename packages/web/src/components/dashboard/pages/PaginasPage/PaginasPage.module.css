@@ -144,7 +144,7 @@
   border: none;
   border-radius: 6px;
   background: var(--dash-primary);
-  color: white;
+  color: var(--dash-primary-contraste);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;

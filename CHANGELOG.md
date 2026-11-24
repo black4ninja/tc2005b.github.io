@@ -37,6 +37,19 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   y la leyenda del Tec), que salían igual en el calendario público de
   cualquier grupo, incluidos los de fuera del Tec. La agenda de entrevistas
   sigue en el menú de cada grupo que la tenga.
+- **Ajustes de diseño para celular.**
+  - Márgenes: las páginas del panel dejan de sumar 24px propios a los 16px del
+    layout en celular (quedaban a 40px del borde); todas a 16px.
+  - Hub: el nombre del material baja a su propia línea en vez de quedar en
+    una columna de una palabra por renglón.
+  - Áreas táctiles de 44px en celular: botón del menú, botones del panel,
+    editar y borrar de Happiness Door, ojo de la contraseña y acciones del Hub.
+  - Texto mínimo de 12px en el Hub y en duraciones y totales del calendario.
+  - «— Semana actual» ya no se parte en dos renglones.
+  - Fechas largas con solo la inicial en mayúscula («Martes, 24 de noviembre»,
+    no «Martes, 24 De Noviembre»).
+  - El aviso de perfil incompleto ya no enumera Malla, Competencias o
+    Entrevistas: habla de las opciones con candado del menú.
 - **El aviso del perfil ya no habla de la malla.** Dice que completar el perfil
   y la contraseña desbloquea las opciones bloqueadas del sidebar, que es lo que
   pasa en cualquier grupo, use o no la malla de evaluación.
@@ -52,6 +65,16 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   correo.
 
 ### Fixed
+- **En el celular el menú lateral ya se abre completo.** Antes heredaba el modo
+  compacto de pantalla mediana y mostraba solo iconos, sin nombres, sin el
+  nombre del grupo y sin los candados.
+- **Los botones de semana del calendario ya no se enciman.** La fila los
+  aplastaba a 40px en vez de dejarlos desplazarse; «Cierre de año» no cabía.
+- **Contraste de los botones principales.** El azul principal del panel pasa a
+  `#4169e1` (4,8:1 con letra blanca) y en tema oscuro el texto sobre él es
+  oscuro (7,6:1); el «Guardar» del perfil deja el verde agua (1,7:1).
+- **El login ya no habla de correo institucional** ni sugiere un correo del Tec:
+  hay grupos con personas de fuera.
 - **El menú del alumno ya no muestra Ejercicios ni Diagramas de otro grupo.**
   Esas dos secciones se calculaban con las colecciones de TODOS los grupos del
   alumno, así que en un grupo que las tiene apagadas seguían saliendo (con
