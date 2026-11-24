@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { identifyUser } from '../middlewares/auth.middleware.js';
 import { requireStaff } from '../middlewares/grupo-scope.middleware.js';
 import { getAgenda, setPreferenciasAgenda } from '../controllers/agenda-staff.controller.js';
-import { borrarEnlaceIcs, crearEnlaceIcs, getEnlaceIcs, getFeedIcs } from '../controllers/agenda-ics.controller.js';
+import { borrarEnlaceIcs, crearEnlaceIcs, getEnlaceIcs, getFeedIcs, getFeedIcsGrupo } from '../controllers/agenda-ics.controller.js';
 
 /**
  * «Mi agenda» del staff: todos sus grupos a la vez, por eso NO cuelga de
@@ -20,5 +20,6 @@ router.get('/me/agenda/ics', identifyUser, requireStaff, getEnlaceIcs);
 router.post('/me/agenda/ics', identifyUser, requireStaff, crearEnlaceIcs);
 router.delete('/me/agenda/ics', identifyUser, requireStaff, borrarEnlaceIcs);
 router.get('/agenda/ics/:archivo', getFeedIcs);
+router.get('/agenda/ics/:token/:archivo', getFeedIcsGrupo);
 
 export default router;
