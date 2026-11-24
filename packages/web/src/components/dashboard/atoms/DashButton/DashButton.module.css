@@ -27,3 +27,10 @@
   padding: 8px;
 }
 .text:hover { background: var(--sidebar-active-bg); }
+
+/* En celular, área táctil mínima de 44px (guía de Apple y Google). */
+@media (max-width: 768px) {
+  .btn {
+    min-height: 44px;
+  }
+}

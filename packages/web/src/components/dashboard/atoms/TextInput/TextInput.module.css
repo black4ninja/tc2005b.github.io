@@ -69,3 +69,14 @@
   font-size: 12px;
   color: var(--dash-danger);
 }
+
+/* El ojo de la contraseña medía 18px. Crece a 44px, pero hacia el relleno del
+   campo (márgenes negativos hasta dejar su caja en el alto de la línea) para que el campo no
+   quede más alto que los demás. */
+@media (max-width: 768px) {
+  .endIconBtn {
+    min-width: 44px;
+    min-height: 44px;
+    margin: -13px -12px -13px 0;
+  }
+}

@@ -1,4 +1,8 @@
 :root {
+  /* Margen propio de las páginas del panel, ENCIMA del que ya pone el layout.
+     En celular el layout ya deja 16px a los lados: sumarle 24 más dejaba el
+     contenido a 40px del borde y se comía una quinta parte de la pantalla. */
+  --pagina-padding: 24px;
   /* Activity type colors */
   --color-lab: #2563eb;
   /* Qué texto va ENCIMA de un relleno `--color-lab`.
@@ -338,4 +342,10 @@
   --scrum-could-color: #67e8f9;
   --scrum-wont-bg: #47556933;
   --scrum-wont-color: #cbd5e1;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --pagina-padding: 8px 0;
+  }
 }

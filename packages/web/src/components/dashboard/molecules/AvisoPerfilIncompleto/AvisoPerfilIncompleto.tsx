@@ -40,8 +40,10 @@ export default function AvisoPerfilIncompleto({ grupoId }: { grupoId?: string })
       <div className={styles.texto}>
         <strong className={styles.titulo}>Te falta un paso en este grupo</strong>
         <p className={styles.detalle}>
-          Malla, Competencias, Wiki, Ejercicios y Agendar entrevistas están bloqueados hasta que
-          completes tu perfil. Se rellena una sola vez por grupo, desde tu panel.
+          {/* Sin nombrar secciones: cada grupo enciende las suyas, y la lista fija
+              anunciaba Malla o Entrevistas a grupos que no las tienen. */}
+          Las opciones con candado del menú se desbloquean cuando completes tu perfil. Se
+          rellena una sola vez por grupo, desde tu panel.
         </p>
       </div>
       <Link to="/alumno" className={styles.accion}>
