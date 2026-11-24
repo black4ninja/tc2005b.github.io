@@ -89,3 +89,13 @@
     display: none;
   }
 }
+
+/* El botón del menú es la única puerta al sidebar en celular: 44px de área. */
+@media (max-width: 768px) {
+  .menuBtn {
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+}

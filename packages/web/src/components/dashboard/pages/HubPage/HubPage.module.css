@@ -1,5 +1,5 @@
 .page {
-  padding: 24px;
+  padding: var(--pagina-padding);
 }
 
 .titulo {
@@ -121,7 +121,7 @@
 }
 
 .semanaRotulo {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -137,7 +137,7 @@
 }
 
 .semanaFecha {
-  font-size: 11px;
+  font-size: 12px;
   opacity: 0.65;
   white-space: nowrap;
 }
@@ -146,7 +146,7 @@
   flex: none;
   padding: 2px 10px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
   margin-top: 2px;
@@ -236,11 +236,23 @@
   .fila {
     flex-wrap: wrap;
   }
+  /* El nombre baja a su propia línea, a todo lo ancho: al lado de la semana y
+     la etiqueta quedaba en una columna de una palabra por renglón. */
+  .datos {
+    flex-basis: 100%;
+  }
   .acciones {
     align-items: flex-start;
     max-width: 100%;
     flex-direction: row;
     flex-wrap: wrap;
     width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .accion {
+    min-height: 44px;
+    padding: 4px 14px;
   }
 }

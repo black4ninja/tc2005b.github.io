@@ -261,3 +261,9 @@
   line-height: 1.45;
   color: var(--text-secondary);
 }
+
+@media (max-width: 768px) {
+  .profileActions button {
+    min-height: 44px;
+  }
+}

@@ -111,7 +111,6 @@
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-secondary);
-  text-transform: capitalize;
 }
 
 .hoy {
@@ -179,4 +178,14 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   line-height: 1.5;
+}
+
+/* Editar y borrar medían 26px: demasiado juntos y chicos para el dedo. */
+@media (max-width: 768px) {
+  .iconBtn {
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
 }

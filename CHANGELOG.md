@@ -32,6 +32,19 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   completa, agrupada por día.
 
 ### Changed
+- **Ajustes de diseño para celular.**
+  - Márgenes: las páginas del panel dejan de sumar 24px propios a los 16px del
+    layout en celular (quedaban a 40px del borde); todas a 16px.
+  - Hub: el nombre del material baja a su propia línea en vez de quedar en
+    una columna de una palabra por renglón.
+  - Áreas táctiles de 44px en celular: botón del menú, botones del panel,
+    editar y borrar de Happiness Door, ojo de la contraseña y acciones del Hub.
+  - Texto mínimo de 12px en el Hub y en duraciones y totales del calendario.
+  - «— Semana actual» ya no se parte en dos renglones.
+  - Fechas largas con solo la inicial en mayúscula («Martes, 24 de noviembre»,
+    no «Martes, 24 De Noviembre»).
+  - El aviso de perfil incompleto ya no enumera Malla, Competencias o
+    Entrevistas: habla de las opciones con candado del menú.
 - **El aviso del perfil ya no habla de la malla.** Dice que completar el perfil
   y la contraseña desbloquea las opciones bloqueadas del sidebar, que es lo que
   pasa en cualquier grupo, use o no la malla de evaluación.

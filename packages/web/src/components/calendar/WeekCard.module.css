@@ -39,6 +39,10 @@
 }
 
 .currentLabel {
+  /* Un solo bloque: si no cabe junto al número de semana, baja entero a la
+     línea siguiente en vez de partirse en «— Semana / actual». */
+  display: inline-block;
+  white-space: nowrap;
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--color-evaluacion);
@@ -142,7 +146,7 @@
   gap: 3px;
   padding: 2px 8px;
   border-radius: 10px;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 500;
   background: var(--chip-bg);
   color: var(--chip-color, var(--text-secondary));
