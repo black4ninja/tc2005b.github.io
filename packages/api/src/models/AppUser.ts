@@ -127,6 +127,20 @@ export class AppUser extends BaseModel {
     this.set('preferenciasAgenda', preferencias);
   }
 
+  /**
+   * Token de la URL privada del feed `.ics` de «Mi agenda» (suscripción desde
+   * Google u Outlook). Quien tiene la URL ve la agenda, así que funciona como
+   * una contraseña: no sale en `toSafeJSON` y regenerarlo invalida la anterior.
+   */
+  getAgendaIcsToken(): string | null {
+    return this.get('agendaIcsToken') ?? null;
+  }
+
+  setAgendaIcsToken(token: string | null): void {
+    if (token) this.set('agendaIcsToken', token);
+    else this.unset('agendaIcsToken');
+  }
+
   getLastLogin(): Date | undefined {
     return this.get('lastLogin');
   }

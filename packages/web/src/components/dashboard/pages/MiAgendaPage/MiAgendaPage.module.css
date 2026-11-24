@@ -435,6 +435,10 @@
     min-height: 44px;
   }
 
+  .textoSuscribir {
+    display: none;
+  }
+
   .scrollHoras {
     max-height: calc(100vh - 260px);
   }

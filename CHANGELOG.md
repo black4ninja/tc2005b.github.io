@@ -8,6 +8,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **«Mi agenda» en Google Calendar u Outlook, sin conectar cuentas.** Desde
+  «Mi agenda» → «Google / Outlook», cada profesor o admin crea un enlace
+  privado (`.ics`) y se suscribe con él; su calendario lo vuelve a leer solo
+  (Google cada 8–24 h, Outlook cada pocas horas). Incluye las sesiones y los
+  bloques de entrevistas que tiene visibles, del mes pasado a seis meses
+  adelante. De las entrevistas da la ocupación y, de cada cita, la hora y la
+  competencia: nunca el nombre del alumno. El enlace se puede regenerar (el
+  anterior deja de servir) o desactivar.
 - **«Mi agenda» para administradores y profesores.** Un calendario tipo
   Google Calendar con las sesiones y los días de entrevistas de TODOS sus
   grupos a la vez, para ver los traslapes entre grupos. Se ve por día, semana,

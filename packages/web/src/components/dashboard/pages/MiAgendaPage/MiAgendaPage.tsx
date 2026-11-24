@@ -13,6 +13,7 @@ import VistaHoras from './VistaHoras';
 import VistaMes from './VistaMes';
 import VistaAnio from './VistaAnio';
 import DetalleEvento from './DetalleEvento';
+import SuscripcionCalendario from './SuscripcionCalendario';
 import styles from './MiAgendaPage.module.css';
 
 const API_BASE = '/api';
@@ -85,6 +86,7 @@ export default function MiAgendaPage() {
   const guardado = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Evento abierto en el modal de detalle.
   const [detalle, setDetalle] = useState<EventoAgenda | null>(null);
+  const [suscripcion, setSuscripcion] = useState(false);
 
   const { desde, hasta } = rangoDeVista(vista, fecha);
 
@@ -116,7 +118,7 @@ export default function MiAgendaPage() {
   // Atajos como en Google Calendar: D, S, M, A cambian la vista; T vuelve a hoy.
   useEffect(() => {
     const alPulsar = (e: KeyboardEvent) => {
-      if (detalle || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (detalle || suscripcion || e.metaKey || e.ctrlKey || e.altKey) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA'].includes(t.tagName))) return;
       const tecla = e.key.toUpperCase();
@@ -126,7 +128,7 @@ export default function MiAgendaPage() {
     };
     window.addEventListener('keydown', alPulsar);
     return () => window.removeEventListener('keydown', alPulsar);
-  }, [ir, fecha, vista, hoy, detalle]);
+  }, [ir, fecha, vista, hoy, detalle, suscripcion]);
 
   const guardarPrefs = useCallback((cambios: Record<string, PreferenciaGrupo>) => {
     const nuevas = { ...prefs, ...cambios };
@@ -193,6 +195,8 @@ export default function MiAgendaPage() {
         onCerrar={() => setDetalle(null)}
       />
 
+      <SuscripcionCalendario abierto={suscripcion} onCerrar={() => setSuscripcion(false)} />
+
       <header className={styles.header}>
         <div className={styles.navegacion}>
           {!sidebar.panelVisible && (
@@ -211,6 +215,16 @@ export default function MiAgendaPage() {
           </button>
           <h1 className={styles.rango}>{etiquetaPeriodo(vista, fecha)}</h1>
         </div>
+        <div className={styles.navegacion}>
+        <button
+          type="button"
+          className={styles.boton}
+          onClick={() => setSuscripcion(true)}
+          title="Ver esta agenda en Google Calendar u Outlook"
+          aria-label="Ver esta agenda en Google Calendar u Outlook"
+        >
+          <Icon name="ios_share" size="sm" /> <span className={styles.textoSuscribir}>Google / Outlook</span>
+        </button>
         <label className={styles.selectorVista}>
           <span className={styles.oculto}>Vista</span>
           <select value={vista} onChange={(e) => ir(e.target.value as Vista, fecha)}>
@@ -218,6 +232,7 @@ export default function MiAgendaPage() {
           </select>
           <Icon name="expand_more" size="sm" />
         </label>
+        </div>
       </header>
 
       {error && <div className={styles.error}>{error}</div>}
