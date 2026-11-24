@@ -9,6 +9,7 @@ import { invalidateColeccionesPermitidas } from '../services/contenidos.service.
 import { invalidateAccesoModulos } from '../services/acceso-modulos.service.js';
 import { getGruposDeStaff } from '../services/grupo-admin.service.js';
 import { sanitizarUrlHref } from '../utils/url.js';
+import { normalizarHorarioClase } from '../services/agenda-staff.js';
 
 /** Valores admitidos por `GET /admin/grupos?estado=`. */
 export const ESTADOS_LISTADO = ['activos', 'inactivos', 'eliminados', 'todos'] as const;
@@ -184,6 +185,9 @@ export function parseFechaDia(valor: unknown): Date | null | 'invalida' {
  * `null`/ausente = no se toca. Solo se admiten campos DESACTIVABLES: si alguien
  * manda `experiencia`, es que está intentando saltarse el mínimo común.
  */
+const MENSAJE_HORARIO_INVALIDO =
+  'horarioClase debe ser { dia: { inicio: "HH:MM", fin: "HH:MM" } }, de lunes a sábado y con el inicio antes del fin';
+
 function resolverCamposPerfil(valor: unknown): string[] | 'invalido' | null {
   if (valor === undefined) return null;
   if (!Array.isArray(valor)) return 'invalido';
@@ -219,6 +223,12 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  const horario = req.body.horarioClase === undefined ? null : normalizarHorarioClase(req.body.horarioClase);
+  if (horario === 'invalido') {
+    res.status(400).json({ status: 'error', message: MENSAJE_HORARIO_INVALIDO });
+    return;
+  }
+
   try {
     const grupo = new Grupo().initDefaults();
     grupo.setName(name.trim());
@@ -226,6 +236,7 @@ export async function createGrupo(req: Request, res: Response): Promise<void> {
     if (fin) grupo.setFechaFin(fin);
     if (url) grupo.setUrlAgendaEntrevistas(url);
     if (campos) grupo.setCamposPerfilDeshabilitados(campos);
+    if (horario) grupo.setHorarioClase(horario);
 
     // Las colecciones (y sus módulos) NO se asignan aquí: van por la acción
     // "Asignaciones" (PUT /admin/grupos/:id/asignaciones). Un grupo nace vacío.
@@ -312,6 +323,14 @@ export async function updateGrupo(req: Request, res: Response): Promise<void> {
         return;
       }
       grupo.setCamposPerfilDeshabilitados(campos ?? []);
+    }
+    if (req.body.horarioClase !== undefined) {
+      const horario = normalizarHorarioClase(req.body.horarioClase);
+      if (horario === 'invalido') {
+        res.status(400).json({ status: 'error', message: MENSAJE_HORARIO_INVALIDO });
+        return;
+      }
+      grupo.setHorarioClase(horario);
     }
     const categoria = await resolverCategoriaGrupo(req.body.categoriaId);
     if (categoria === 'invalido') {
