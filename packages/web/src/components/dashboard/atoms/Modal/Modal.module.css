@@ -9,20 +9,25 @@
   animation: fadeIn 0.15s ease;
 }
 
+/* `min()` en el ancho mínimo: un `min-width` fijo GANA a `max-width`, y en un
+   celular de 390px el modal de 400 (o 700) se salía de la pantalla. */
 .card {
+  box-sizing: border-box;
   background: var(--sidebar-bg);
   border-radius: 12px;
   padding: 24px;
-  min-width: 400px;
+  min-width: min(400px, 100%);
   max-width: 90vw;
   max-height: 90vh;
+  max-height: 90dvh;
   overflow-y: auto;
+  overscroll-behavior: contain;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   animation: slideUp 0.15s ease;
 }
 
 .cardWide {
-  min-width: 700px;
+  min-width: min(700px, 90vw);
 }
 
 .cardExtraWide {
@@ -38,11 +43,17 @@
   margin-bottom: 20px;
 }
 
+.header {
+  gap: 12px;
+}
+
 .title {
+  min-width: 0;
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .closeBtn {
@@ -57,10 +68,45 @@
   cursor: pointer;
   color: var(--text-secondary);
   transition: background 0.2s;
+  flex: none;
 }
 
 .closeBtn:hover {
   background: var(--bg-page);
+}
+
+/* Celular: hoja que sube desde abajo, a todo el ancho y con el alto de la
+   pantalla visible (dvh: sin quedar tapada por la barra del navegador). */
+@media (max-width: 640px) {
+  .overlay {
+    align-items: flex-end;
+  }
+
+  .card,
+  .cardWide,
+  .cardExtraWide {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    max-height: 92vh;
+    max-height: 92dvh;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    border-radius: 16px 16px 0 0;
+  }
+
+  .header {
+    margin-bottom: 12px;
+  }
+
+  .title {
+    font-size: 17px;
+  }
+
+  .closeBtn {
+    width: 44px;
+    height: 44px;
+    margin: -6px -10px -6px 0;
+  }
 }
 
 @keyframes fadeIn {

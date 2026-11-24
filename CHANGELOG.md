@@ -96,6 +96,12 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   correo.
 
 ### Fixed
+- **Los modales en el celular.** Se salían de la pantalla: el ancho mínimo
+  (400 px, o 700 en los anchos) le ganaba al máximo. Ahora en pantallas chicas
+  se abren como hoja desde abajo, a todo el ancho y sin scroll horizontal, con
+  el botón de cerrar del tamaño de un dedo. En «Agregar/Editar actividad» los
+  selectores del enlace bajan a su propio renglón, y los formularios del
+  calendario ya no suman un margen al del modal.
 - **En el celular el menú lateral ya se abre completo.** Antes heredaba el modo
   compacto de pantalla mediana y mostraba solo iconos, sin nombres, sin el
   nombre del grupo y sin los candados.
