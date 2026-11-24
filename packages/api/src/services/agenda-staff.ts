@@ -96,6 +96,8 @@ export interface EventoAgenda {
   semana?: string;
   /** Solo sesiones, y solo en rangos cortos: las actividades del día, como las serializa el calendario. */
   actividades?: Record<string, unknown>[];
+  /** Solo sesiones: quién la imparte. Ausente o vacío = todos (sin asignar). */
+  imparten?: { id: string; name: string }[];
 }
 
 /** Una cita dentro del bloque de entrevistas, ya en hora de reloj. */
@@ -123,6 +125,8 @@ export interface SemanaParaAgenda {
   id: string;
   /** Se guarda como texto (`Semana.setNumero`). */
   numero?: string | number;
+  /** Ids de quién imparte cada día (`Semana.imparten`). */
+  imparten?: Record<string, string[]>;
   fechaInicio: string;
   diasActivos?: unknown;
 }
@@ -175,6 +179,7 @@ export function sesionesDelGrupo(
         titulo: temas.join(' · '),
         ...(semana.numero !== undefined && semana.numero !== '' ? { semana: String(semana.numero) } : {}),
         ...(detalles.length > 0 ? { actividades: detalles } : {}),
+        ...(semana.imparten?.[dia]?.length ? { imparten: semana.imparten[dia].map((id) => ({ id, name: '' })) } : {}),
       });
     }
   }
@@ -260,6 +265,11 @@ export interface PreferenciaGrupoAgenda {
   entrevistas?: string;
   verSesiones?: boolean;
   verEntrevistas?: boolean;
+  /**
+   * De las sesiones con quién imparte asignado, solo las de la persona. Sin
+   * elegir, sí: la sesión de otro profesor no es parte de su agenda.
+   */
+  soloMias?: boolean;
   oculto?: boolean;
 }
 
@@ -278,7 +288,7 @@ export function normalizarPreferenciasAgenda(
   for (const [grupoId, pref] of entradas) {
     if (!/^[A-Za-z0-9]{1,32}$/.test(grupoId)) return 'invalido';
     if (typeof pref !== 'object' || pref === null || Array.isArray(pref)) return 'invalido';
-    const { sesiones, entrevistas, oculto, verSesiones, verEntrevistas } = pref as Record<string, unknown>;
+    const { sesiones, entrevistas, oculto, verSesiones, verEntrevistas, soloMias } = pref as Record<string, unknown>;
     const p: PreferenciaGrupoAgenda = {};
     if (sesiones !== undefined) {
       if (typeof sesiones !== 'string' || !COLOR.test(sesiones)) return 'invalido';
@@ -292,7 +302,7 @@ export function normalizarPreferenciasAgenda(
       if (typeof oculto !== 'boolean') return 'invalido';
       if (oculto) p.oculto = true;
     }
-    for (const [clave, valor] of [['verSesiones', verSesiones], ['verEntrevistas', verEntrevistas]] as const) {
+    for (const [clave, valor] of [['verSesiones', verSesiones], ['verEntrevistas', verEntrevistas], ['soloMias', soloMias]] as const) {
       if (valor === undefined) continue;
       if (typeof valor !== 'boolean') return 'invalido';
       p[clave] = valor;
@@ -300,4 +310,15 @@ export function normalizarPreferenciasAgenda(
     limpio[grupoId] = p;
   }
   return limpio;
+}
+
+/**
+ * ¿Entra esta sesión en la agenda de la persona? Las que no tienen a nadie
+ * asignado, siempre; las asignadas, si le tocan a ella o si eligió ver también
+ * las de los demás (`soloMias: false`).
+ */
+export function sesionParaMi(ev: EventoAgenda, userId: string, pref: PreferenciaGrupoAgenda | undefined): boolean {
+  if (ev.tipo !== 'sesion' || !ev.imparten || ev.imparten.length === 0) return true;
+  if (pref?.soloMias === false) return true;
+  return ev.imparten.some((p) => p.id === userId);
 }

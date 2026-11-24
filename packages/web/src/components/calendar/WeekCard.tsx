@@ -375,6 +375,7 @@ export default function WeekCard({
             <DayColumn
               dayKey={dayKey}
               day={sem.dias[dayKey]}
+              imparten={sem.imparten?.[dayKey]}
               activeFilters={activeFilters}
               editable={editable}
               fechaInicio={sem.fechaInicio}

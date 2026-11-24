@@ -30,6 +30,12 @@ export interface Dia {
   actividades?: Actividad[];
 }
 
+/** Alguien del staff del grupo (profesor o admin). */
+export interface PersonaStaff {
+  id: string;
+  name: string;
+}
+
 export interface SemanaNormal {
   id?: string;
   numero: number;
@@ -38,6 +44,8 @@ export interface SemanaNormal {
   tipo: 'normal';
   /** Días con clase de esta semana. Ausente en semanas anteriores al campo. */
   diasActivos?: string[];
+  /** Quién imparte cada día. Un día sin entrada lo imparten todos. */
+  imparten?: Partial<Record<string, PersonaStaff[]>>;
   dias: {
     lunes?: Dia;
     martes?: Dia;

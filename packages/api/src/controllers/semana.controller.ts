@@ -3,9 +3,17 @@ import Parse from 'parse/node';
 import { Semana } from '../models/Semana.js';
 import { Actividad } from '../models/Actividad.js';
 import { DIAS_POR_DEFECTO, normalizarDias } from '../constants/dias.js';
+import { normalizarImparten } from '../services/imparten.js';
+
+const MENSAJE_IMPARTEN = 'imparten inválido: por día, una lista de ids del staff del grupo';
+
+/** Ids del staff (Grupo.admins) de un grupo. */
+function staffDe(grupo: Parse.Object): Set<string> {
+  return new Set(((grupo.get('admins') ?? []) as Parse.Object[]).map((a) => a?.id).filter((x): x is string => !!x));
+}
 
 export async function createSemana(req: Request, res: Response): Promise<void> {
-  const { grupoId, tipo, fechaInicio, fechaFin, diasActivos, titulo, mensaje, mensajeImportante } = req.body;
+  const { grupoId, tipo, fechaInicio, fechaFin, diasActivos, titulo, mensaje, mensajeImportante, imparten } = req.body;
 
   if (!grupoId || typeof grupoId !== 'string') {
     res.status(400).json({ status: 'error', message: 'grupoId es requerido' });
@@ -73,6 +81,14 @@ export async function createSemana(req: Request, res: Response): Promise<void> {
     semana.setTipo(tipo);
     semana.setOrden(orden);
     if (tipo === 'normal') semana.setDiasActivos(dias);
+    if (tipo === 'normal' && imparten !== undefined) {
+      const limpio = normalizarImparten(imparten, staffDe(grupo));
+      if (limpio === 'invalido') {
+        res.status(400).json({ status: 'error', message: MENSAJE_IMPARTEN });
+        return;
+      }
+      semana.setImparten(limpio);
+    }
 
     if (titulo) semana.setTitulo(titulo);
     if (mensaje) semana.setMensaje(mensaje);
@@ -89,7 +105,7 @@ export async function createSemana(req: Request, res: Response): Promise<void> {
 
 export async function updateSemana(req: Request, res: Response): Promise<void> {
   const { semanaId } = req.params;
-  const { fechaInicio, fechaFin, diasActivos, titulo, mensaje, mensajeImportante } = req.body;
+  const { fechaInicio, fechaFin, diasActivos, titulo, mensaje, mensajeImportante, imparten } = req.body;
 
   try {
     const semana = await new Parse.Query<Semana>('Semana').get(semanaId, { useMasterKey: true });
@@ -140,6 +156,16 @@ export async function updateSemana(req: Request, res: Response): Promise<void> {
       }
 
       semana.setDiasActivos(dias);
+    }
+
+    if (esNormal && imparten !== undefined) {
+      const grupo = await new Parse.Query('Grupo').get(semana.getGrupo()!.id!, { useMasterKey: true });
+      const limpio = normalizarImparten(imparten, staffDe(grupo));
+      if (limpio === 'invalido') {
+        res.status(400).json({ status: 'error', message: MENSAJE_IMPARTEN });
+        return;
+      }
+      semana.setImparten(limpio);
     }
 
     if (!esNormal) {

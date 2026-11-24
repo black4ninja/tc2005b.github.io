@@ -7,6 +7,8 @@ export interface UpdateSemanaPayload {
   fechaInicio?: string;
   fechaFin?: string;
   diasActivos?: string[];
+  /** Ids del staff por día; un día ausente = todos. */
+  imparten?: Record<string, string[]>;
   titulo?: string;
   mensaje?: string;
   mensajeImportante?: string;

@@ -114,6 +114,58 @@
   border-top: 1px solid var(--border-color);
 }
 
+.ayuda {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.imparten {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.imparteFila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.imparteDia {
+  flex: none;
+  width: 82px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.imparteOpciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.personaChip {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.personaChipActiva {
+  border-color: var(--dash-primary);
+  background: color-mix(in srgb, var(--dash-primary) 14%, var(--bg-card));
+  color: var(--text-primary);
+}
+
 /* Celular: el modal ya trae su margen; sin el del formulario no hay doble relleno. */
 @media (max-width: 640px) {
   .form {
@@ -123,5 +175,13 @@
   .actions > * {
     flex: 1;
     min-height: 44px;
+  }
+
+  .imparteDia {
+    width: 100%;
+  }
+
+  .personaChip {
+    min-height: 40px;
   }
 }

@@ -17,6 +17,15 @@
   font-weight: 600;
 }
 
+.imparte {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -8px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
 .muestra {
   width: 14px;
   height: 14px;
