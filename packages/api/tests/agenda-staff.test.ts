@@ -59,6 +59,15 @@ describe('sesionesDelGrupo', () => {
     expect(ev.map((e) => e.fecha)).toEqual(['2027-02-06']);
   });
 
+  it('lleva el número de semana y el detalle de las actividades, sin los asuetos', () => {
+    const [ev] = sesionesDelGrupo('g', horario, [{ ...semanas[0], numero: '3' }], [
+      { semanaId: 's1', dia: 'lunes', tipo: 'info', titulo: 'RAG', detalle: { id: 'a1', tipo: 'info', titulo: 'RAG' } },
+      { semanaId: 's1', dia: 'lunes', tipo: 'asueto', titulo: 'Puente', detalle: { id: 'a2', tipo: 'asueto' } },
+    ], '2027-02-01', '2027-02-01');
+    expect(ev.semana).toBe('3');
+    expect(ev.actividades).toEqual([{ id: 'a1', tipo: 'info', titulo: 'RAG' }]);
+  });
+
   it('respeta el rango pedido', () => {
     const ev = sesionesDelGrupo('g', horario, semanas, [], '2027-02-02', '2027-02-05');
     expect(ev).toEqual([]);

@@ -16,10 +16,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   huecos ya tomaron los alumnos: en la semana como una tira de ocupación y
   «N/M ocupados»; en el día, cada hueco con la hora, el alumno y la
   competencia, y los libres rayados. Los calendarios se eligen en el sidebar,
-  como en Apple Calendar: «Sesiones» y «Entrevistas», cada uno con un
-  calendario por grupo con su color, que se puede apagar y recolorear (el
+  como en Apple Calendar: por grupo, y dentro de cada uno su «Calendario» y
+  sus «Entrevistas» (solo los que tiene), cada uno con su color, que se puede apagar y recolorear (el
   admin ve por defecto los que administra). Desde ahí mismo se vuelve al menú
-  del rol. Tocar un evento abre el calendario o las entrevistas de su grupo.
+  del rol. Tocar un evento abre su detalle en un modal: de una sesión, sus
+  actividades como en el calendario; de un bloque de entrevistas, hueco por
+  hueco quién viene y qué queda libre. Desde el modal se salta al calendario
+  del grupo (en esa semana) o a su agenda de entrevistas (en ese día).
   Se abre desde el botón «Mi agenda» de la barra superior, en cualquier
   pantalla, y desde el menú del admin.
 - **Horario de clase del grupo.** Al editar un grupo se indica la hora de la

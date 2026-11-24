@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import { useAgendaSidebar } from '../../../../context/AgendaSidebarContext';
 import Icon from '../../atoms/Icon/Icon';
@@ -12,6 +12,7 @@ import PanelCalendarios from './PanelCalendarios';
 import VistaHoras from './VistaHoras';
 import VistaMes from './VistaMes';
 import VistaAnio from './VistaAnio';
+import DetalleEvento from './DetalleEvento';
 import styles from './MiAgendaPage.module.css';
 
 const API_BASE = '/api';
@@ -49,15 +50,15 @@ const EN_PERIODO: Record<Vista, string> = { dia: 'este día', semana: 'esta sema
  * de un vistazo lo que se traslapa entre grupos y cuánto de cada bloque de
  * entrevistas ya tomaron los alumnos.
  *
- * Solo consulta: tocar un evento lleva al calendario o a las entrevistas de su
- * grupo, que es donde se edita. Lo único que se guarda desde aquí son los
+ * Solo consulta: tocar un evento abre su detalle (actividades de la sesión,
+ * quién ocupa cada hueco de entrevista) y desde ahí se salta a su pantalla, que
+ * es donde se edita. Lo único que se guarda desde aquí son los
  * colores y qué calendarios se ven, que son preferencias de la persona. Esos
  * calendarios se pintan en el sidebar (`AgendaSidebarContext`).
  */
 export default function MiAgendaPage() {
   const { sessionToken, user } = useAuth();
   const esAdmin = user?.userType === 'admin';
-  const navigate = useNavigate();
   const hoy = hoyEnCurso();
   const sidebar = useAgendaSidebar();
 
@@ -82,6 +83,8 @@ export default function MiAgendaPage() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const guardado = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Evento abierto en el modal de detalle.
+  const [detalle, setDetalle] = useState<EventoAgenda | null>(null);
 
   const { desde, hasta } = rangoDeVista(vista, fecha);
 
@@ -113,7 +116,7 @@ export default function MiAgendaPage() {
   // Atajos como en Google Calendar: D, S, M, A cambian la vista; T vuelve a hoy.
   useEffect(() => {
     const alPulsar = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (detalle || e.metaKey || e.ctrlKey || e.altKey) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA'].includes(t.tagName))) return;
       const tecla = e.key.toUpperCase();
@@ -123,7 +126,7 @@ export default function MiAgendaPage() {
     };
     window.addEventListener('keydown', alPulsar);
     return () => window.removeEventListener('keydown', alPulsar);
-  }, [ir, fecha, vista, hoy]);
+  }, [ir, fecha, vista, hoy, detalle]);
 
   const guardarPrefs = useCallback((cambios: Record<string, PreferenciaGrupo>) => {
     const nuevas = { ...prefs, ...cambios };
@@ -158,8 +161,11 @@ export default function MiAgendaPage() {
     return ev.tipo === 'sesion' ? c.sesiones : c.entrevistas;
   }, [indice, prefs]);
 
-  const abrir = (ev: EventoAgenda) =>
-    navigate(`/admin/grupos/${ev.grupoId}/${ev.tipo === 'sesion' ? 'calendario' : 'entrevistas'}`);
+  // Tocar un evento abre su detalle aquí mismo; desde el modal se salta a su
+  // pantalla (calendario o entrevistas) si hace falta editarlo.
+  const abrir = (ev: EventoAgenda) => setDetalle(ev);
+  const choquesDe = (ev: EventoAgenda) =>
+    choques.flatMap((c) => (c.a.id === ev.id ? [c.b] : c.b.id === ev.id ? [c.a] : []));
   const abrirDia = (d: string) => ir('dia', d);
 
   const dias = vista === 'dia' ? [fecha] : Array.from({ length: 7 }, (_, i) => sumarDias(lunesDe(fecha), i));
@@ -177,6 +183,15 @@ export default function MiAgendaPage() {
         />,
         sidebar.slot,
       )}
+
+      <DetalleEvento
+        evento={detalle}
+        grupo={detalle ? nombre.get(detalle.grupoId) ?? '' : ''}
+        color={detalle ? color(detalle) : ''}
+        choques={detalle ? choquesDe(detalle) : []}
+        nombre={nombre}
+        onCerrar={() => setDetalle(null)}
+      />
 
       <header className={styles.header}>
         <div className={styles.navegacion}>

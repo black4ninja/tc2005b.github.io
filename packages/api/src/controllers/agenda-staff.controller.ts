@@ -4,6 +4,8 @@ import type { AppUser } from '../models/AppUser.js';
 import type { Grupo } from '../models/Grupo.js';
 import { getGruposDeStaff } from '../services/grupo-admin.service.js';
 import { DIAS_SEMANA } from '../constants/dias.js';
+import type { Actividad } from '../models/Actividad.js';
+import { actividadToJSON } from './calendario.controller.js';
 import {
   eventoDeEntrevistas,
   huecosDeEntrevistas,
@@ -25,11 +27,7 @@ const TODO_EL_DIA = Object.fromEntries(
 /** La vista más larga es la del año. */
 const MAX_DIAS_RANGO = 366;
 
-/**
- * Hasta qué rango se mandan las citas de cada bloque de entrevistas: la vista
- * del mes (seis semanas) las cuenta; la del año solo pinta puntos y no las
- * necesita, y serían cientos.
- */
+/** Hasta qué rango va el detalle de cada evento: la vista del mes (seis semanas). */
 const MAX_DIAS_CON_CITAS = 42;
 
 /**
@@ -70,6 +68,11 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  // Rango corto (hasta la vista del mes): va con el detalle que pinta el modal
+  // de cada evento —actividades de la sesión, citas del bloque de entrevistas—.
+  // En el año solo se pintan puntos y serían cientos de registros de más.
+  const conDetalle = sumarDiasFecha(desde, MAX_DIAS_CON_CITAS) > hasta;
+
   try {
     const grupos = await gruposDeLaAgenda(user);
     const eventos: EventoAgenda[] = [];
@@ -88,7 +91,7 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
       qSem.notEqualTo('tipo', 'especial');
       qSem.greaterThanOrEqualTo('fechaInicio', sumarDiasFecha(desde, -6));
       qSem.lessThanOrEqualTo('fechaInicio', hasta);
-      qSem.select('grupo', 'fechaInicio', 'diasActivos');
+      qSem.select('grupo', 'numero', 'fechaInicio', 'diasActivos');
       qSem.limit(2000);
       const semanas = await qSem.find({ useMasterKey: true });
 
@@ -98,7 +101,7 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
         qAct.containedIn('semana', semanas);
         qAct.equalTo('active', true);
         qAct.notEqualTo('isPrevio', true);
-        qAct.select('semana', 'dia', 'tipo', 'titulo');
+        if (!conDetalle) qAct.select('semana', 'dia', 'tipo', 'titulo');
         qAct.ascending('orden');
         qAct.limit(10000);
         actividades = (await qAct.find({ useMasterKey: true })).map((a) => ({
@@ -106,13 +109,14 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
           dia: a.get('dia') ?? '',
           tipo: a.get('tipo') ?? '',
           titulo: a.get('titulo') ?? '',
+          ...(conDetalle ? { detalle: actividadToJSON(a as Actividad) } : {}),
         }));
       }
 
       for (const g of grupos) {
         const deEste = semanas
           .filter((s) => s.get('grupo')?.id === g.id)
-          .map((s) => ({ id: s.id!, fechaInicio: s.get('fechaInicio') ?? '', diasActivos: s.get('diasActivos') }));
+          .map((s) => ({ id: s.id!, numero: s.get('numero'), fechaInicio: s.get('fechaInicio') ?? '', diasActivos: s.get('diasActivos') }));
         const horario = g.getHorarioClase();
         eventos.push(...sesionesDelGrupo(g.id!, horario, deEste, actividades, desde, hasta));
         if (Object.keys(horario).length === 0 && sesionesDelGrupo(g.id!, TODO_EL_DIA, deEste, actividades, desde, hasta).length > 0) {
@@ -138,9 +142,8 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
 
       // Quién ocupa cada hueco: así se ve qué parte del bloque ya está
       // comprometida y cuál sigue libre.
-      const conCitas = sumarDiasFecha(desde, MAX_DIAS_CON_CITAS) > hasta;
       const citasPorDia = new Map<string, { inicio: Date; alumno: string; competencia: string }[]>();
-      if (conCitas && diasEnRango.length > 0) {
+      if (conDetalle && diasEnRango.length > 0) {
         const qCitas = new Parse.Query('CitaEntrevista');
         qCitas.containedIn('dia', diasEnRango.map(({ d }) => d));
         qCitas.equalTo('exists', true);
@@ -161,7 +164,7 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
       }
 
       for (const { d, ev } of diasEnRango) {
-        if (conCitas) {
+        if (conDetalle) {
           ev.huecos = huecosDeEntrevistas(
             d.get('inicio'), d.get('fin'), d.get('duracionSegundos') ?? 300,
             citasPorDia.get(d.id!) ?? [],
@@ -174,6 +177,36 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
 
     eventos.sort((a, b) => (a.fecha + a.inicio).localeCompare(b.fecha + b.inicio));
 
+    // Qué tiene cada grupo EN GENERAL, no solo en el rango: el panel de
+    // calendarios ofrece «Calendario» y «Entrevistas» solo a quien los tiene,
+    // y no tiene que cambiar al pasar de una semana vacía a otra.
+    const conSesiones = new Set<string>();
+    const conEntrevistas = new Set<string>();
+    if (grupos.length > 0) {
+      const [todasSemanas, todosDias] = await Promise.all([
+        (() => {
+          const q = new Parse.Query('Semana');
+          q.containedIn('grupo', grupos);
+          q.equalTo('exists', true);
+          q.equalTo('active', true);
+          q.notEqualTo('tipo', 'especial');
+          q.select('grupo');
+          q.limit(5000);
+          return q.find({ useMasterKey: true });
+        })(),
+        (() => {
+          const q = new Parse.Query('DiaEntrevistas');
+          q.containedIn('grupo', grupos);
+          q.equalTo('exists', true);
+          q.select('grupo');
+          q.limit(5000);
+          return q.find({ useMasterKey: true });
+        })(),
+      ]);
+      for (const s of todasSemanas) conSesiones.add(s.get('grupo')?.id ?? '');
+      for (const d of todosDias) conEntrevistas.add(d.get('grupo')?.id ?? '');
+    }
+
     res.json({
       status: 'ok',
       grupos: grupos.map((g) => ({
@@ -182,6 +215,8 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
         esMio: ((g.get('admins') ?? []) as Parse.Object[]).some((a) => a?.id === user.id),
         conHorario: Object.keys(g.getHorarioClase()).length > 0,
         sinHoraConClase: conClaseSinHora.has(g.id!),
+        tieneSesiones: conSesiones.has(g.id!),
+        tieneEntrevistas: conEntrevistas.has(g.id!),
       })),
       eventos,
       preferencias: user.getPreferenciasAgenda(),

@@ -6,6 +6,8 @@
  * se compara texto con texto, y así lo que choca en el aula choca en pantalla.
  */
 
+import type { Actividad } from '../types/calendario';
+
 export interface EventoAgenda {
   id: string;
   tipo: 'sesion' | 'entrevista';
@@ -17,6 +19,10 @@ export interface EventoAgenda {
   cerrado?: boolean;
   /** Solo entrevistas, en rangos de hasta seis semanas. */
   huecos?: HuecosEntrevistas;
+  /** Solo sesiones: número de semana del calendario (`?semana=`). */
+  semana?: string;
+  /** Solo sesiones, en rangos de hasta seis semanas: las actividades del día. */
+  actividades?: Actividad[];
 }
 
 export interface CitaEnBloque {
@@ -43,6 +49,10 @@ export interface GrupoAgenda {
   conHorario: boolean;
   /** Da clase en la semana pedida pero no tiene horario: sus sesiones no salen. */
   sinHoraConClase?: boolean;
+  /** Tiene calendario con semanas (sin dato, se asume que sí). */
+  tieneSesiones?: boolean;
+  /** Ha abierto alguna vez días de entrevistas (sin dato, se asume que sí). */
+  tieneEntrevistas?: boolean;
 }
 
 export interface PreferenciaGrupo {

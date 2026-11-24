@@ -92,6 +92,10 @@ export interface EventoAgenda {
   cerrado?: boolean;
   /** Solo entrevistas, y solo en rangos cortos: cómo va ocupado el bloque. */
   huecos?: HuecosEntrevistas;
+  /** Solo sesiones: número de la semana del calendario (`?semana=`), para abrirla ahí. */
+  semana?: string;
+  /** Solo sesiones, y solo en rangos cortos: las actividades del día, como las serializa el calendario. */
+  actividades?: Record<string, unknown>[];
 }
 
 /** Una cita dentro del bloque de entrevistas, ya en hora de reloj. */
@@ -117,6 +121,8 @@ export interface HuecosEntrevistas {
 
 export interface SemanaParaAgenda {
   id: string;
+  /** Se guarda como texto (`Semana.setNumero`). */
+  numero?: string | number;
   fechaInicio: string;
   diasActivos?: unknown;
 }
@@ -126,6 +132,8 @@ export interface ActividadParaAgenda {
   dia: string;
   tipo: string;
   titulo: string;
+  /** La actividad completa para el detalle; sin ella, la sesión va sin actividades. */
+  detalle?: Record<string, unknown>;
 }
 
 /**
@@ -154,7 +162,9 @@ export function sesionesDelGrupo(
       if (fecha < desde || fecha > hasta) continue;
       const delDia = actividades.filter((a) => a.semanaId === semana.id && a.dia === dia);
       if (delDia.length > 0 && delDia.every((a) => a.tipo === 'asueto')) continue;
-      const temas = delDia.filter((a) => a.tipo !== 'asueto').map((a) => a.titulo).filter(Boolean);
+      const conClase = delDia.filter((a) => a.tipo !== 'asueto');
+      const temas = conClase.map((a) => a.titulo).filter(Boolean);
+      const detalles = conClase.map((a) => a.detalle).filter((d): d is Record<string, unknown> => !!d);
       eventos.push({
         id: `s-${semana.id}-${dia}`,
         tipo: 'sesion',
@@ -163,6 +173,8 @@ export function sesionesDelGrupo(
         inicio: franja.inicio,
         fin: franja.fin,
         titulo: temas.join(' · '),
+        ...(semana.numero !== undefined && semana.numero !== '' ? { semana: String(semana.numero) } : {}),
+        ...(detalles.length > 0 ? { actividades: detalles } : {}),
       });
     }
   }

@@ -14,10 +14,23 @@ interface Props {
   onVerMenu: () => void;
 }
 
-const SECCIONES: { tipo: TipoEvento; titulo: string; ver: 'verSesiones' | 'verEntrevistas'; color: 'sesiones' | 'entrevistas' }[] = [
-  { tipo: 'sesion', titulo: 'Sesiones', ver: 'verSesiones', color: 'sesiones' },
-  { tipo: 'entrevista', titulo: 'Entrevistas', ver: 'verEntrevistas', color: 'entrevistas' },
+interface Calendario {
+  tipo: TipoEvento;
+  nombre: string;
+  icono: string;
+  ver: 'verSesiones' | 'verEntrevistas';
+  color: 'sesiones' | 'entrevistas';
+}
+
+const CALENDARIOS: Calendario[] = [
+  { tipo: 'sesion', nombre: 'Calendario', icono: 'calendar_month', ver: 'verSesiones', color: 'sesiones' },
+  { tipo: 'entrevista', nombre: 'Entrevistas', icono: 'record_voice_over', ver: 'verEntrevistas', color: 'entrevistas' },
 ];
+
+/** Los calendarios que tiene un grupo. Sin el dato (respuesta antigua), los dos. */
+function calendariosDe(g: GrupoAgenda): Calendario[] {
+  return CALENDARIOS.filter((c) => (c.tipo === 'sesion' ? g.tieneSesiones : g.tieneEntrevistas) !== false);
+}
 
 /** Casilla cuyo estado puede ser «algunos sí»: el DOM no lo admite como atributo. */
 function CasillaMaestra({ marcada, mixta, onCambiar, etiqueta }: {
@@ -38,10 +51,11 @@ function CasillaMaestra({ marcada, mixta, onCambiar, etiqueta }: {
 }
 
 /**
- * Los calendarios de «Mi agenda», como en Apple Calendar: primero el TIPO
- * (Sesiones, Entrevistas) con una casilla que los enciende o apaga todos, y
- * debajo un calendario por grupo con su cuadro de color. El cuadro es la
- * casilla; el color se cambia con el pincel que aparece al pasar por la fila.
+ * Los calendarios de «Mi agenda», agrupados POR GRUPO, como las cuentas de
+ * Apple Calendar: el grupo con una casilla que enciende o apaga todo lo suyo, y
+ * debajo sus calendarios —«Calendario» (las sesiones) y «Entrevistas»—, solo
+ * los que tiene. Cada uno con su cuadro de color, que es la casilla; el color se
+ * cambia con el pincel que aparece al pasar por la fila.
  */
 export default function PanelCalendarios({ grupos, prefs, indice, onCambiar, onVerMenu }: Props) {
   return (
@@ -58,56 +72,64 @@ export default function PanelCalendarios({ grupos, prefs, indice, onCambiar, onV
 
       {grupos.length === 0 && <p className={styles.vacio}>No tienes grupos activos.</p>}
 
-      {grupos.length > 0 && SECCIONES.map((s) => {
-        const visibles = grupos.filter((g) => grupoVisible(g, prefs[g.id], s.tipo));
-        const todos = visibles.length === grupos.length;
+      {grupos.map((g) => {
+        const propios = calendariosDe(g);
+        const visibles = propios.filter((c) => grupoVisible(g, prefs[g.id], c.tipo));
+        const todos = propios.length > 0 && visibles.length === propios.length;
         const fijarTodos = (ver: boolean) =>
-          onCambiar(Object.fromEntries(grupos.map((g) => [g.id, { ...prefs[g.id], [s.ver]: ver }])));
+          onCambiar({ [g.id]: { ...prefs[g.id], ...Object.fromEntries(propios.map((c) => [c.ver, ver])) } });
         return (
-          <section key={s.tipo} className={styles.seccion}>
-            <label className={styles.seccionTitulo}>
-              <CasillaMaestra
-                marcada={todos}
-                mixta={visibles.length > 0 && !todos}
-                onCambiar={fijarTodos}
-                etiqueta={`Ver todas las ${s.titulo.toLowerCase()}`}
-              />
-              <span>{s.titulo}</span>
+          <section key={g.id} className={styles.seccion}>
+            <label className={`${styles.seccionTitulo} ${propios.length === 0 ? styles.sinCalendarios : ''}`}>
+              {propios.length > 0 && (
+                <CasillaMaestra
+                  marcada={todos}
+                  mixta={visibles.length > 0 && !todos}
+                  onCambiar={fijarTodos}
+                  etiqueta={`Ver todo lo de ${g.name}`}
+                />
+              )}
+              <span className={styles.nombreGrupo} title={g.name}>{g.name}</span>
             </label>
-            <ul className={styles.lista}>
-              {grupos.map((g) => {
-                const color = coloresDe(indice.get(g.id) ?? 0, prefs[g.id])[s.color];
-                const visible = grupoVisible(g, prefs[g.id], s.tipo);
-                const cambiar = (cambio: PreferenciaGrupo) => onCambiar({ [g.id]: { ...prefs[g.id], ...cambio } });
-                return (
-                  <li key={g.id} className={styles.fila}>
-                    <label className={styles.calendario}>
-                      <input
-                        type="checkbox"
-                        className={styles.oculta}
-                        checked={visible}
-                        onChange={(e) => cambiar({ [s.ver]: e.target.checked })}
-                      />
-                      <span
-                        className={styles.cuadro}
-                        style={{ '--c': color, '--c-texto': textoSobre(color) } as React.CSSProperties}
-                        aria-hidden="true"
-                      />
-                      <span className={styles.nombre} title={g.name}>{g.name}</span>
-                    </label>
-                    <label className={styles.pincel} title={`Cambiar el color de las ${s.titulo.toLowerCase()} de ${g.name}`}>
-                      <Icon name="palette" size="sm" />
-                      <input
-                        type="color"
-                        value={color}
-                        onChange={(e) => cambiar({ [s.color]: e.target.value })}
-                        aria-label={`Color de las ${s.titulo.toLowerCase()} de ${g.name}`}
-                      />
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
+            {propios.length === 0 ? (
+              <p className={styles.nota}>Sin calendario ni entrevistas</p>
+            ) : (
+              <ul className={styles.lista}>
+                {propios.map((c) => {
+                  const color = coloresDe(indice.get(g.id) ?? 0, prefs[g.id])[c.color];
+                  const visible = grupoVisible(g, prefs[g.id], c.tipo);
+                  const cambiar = (cambio: PreferenciaGrupo) => onCambiar({ [g.id]: { ...prefs[g.id], ...cambio } });
+                  return (
+                    <li key={c.tipo} className={styles.fila}>
+                      <label className={styles.calendario}>
+                        <input
+                          type="checkbox"
+                          className={styles.oculta}
+                          checked={visible}
+                          onChange={(e) => cambiar({ [c.ver]: e.target.checked })}
+                          aria-label={`${c.nombre} de ${g.name}`}
+                        />
+                        <span
+                          className={styles.cuadro}
+                          style={{ '--c': color, '--c-texto': textoSobre(color) } as React.CSSProperties}
+                          aria-hidden="true"
+                        />
+                        <span className={styles.nombre}>{c.nombre}</span>
+                      </label>
+                      <label className={styles.pincel} title={`Cambiar el color de ${c.nombre.toLowerCase()} de ${g.name}`}>
+                        <Icon name="palette" size="sm" />
+                        <input
+                          type="color"
+                          value={color}
+                          onChange={(e) => cambiar({ [c.color]: e.target.value })}
+                          aria-label={`Color de ${c.nombre.toLowerCase()} de ${g.name}`}
+                        />
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </section>
         );
       })}

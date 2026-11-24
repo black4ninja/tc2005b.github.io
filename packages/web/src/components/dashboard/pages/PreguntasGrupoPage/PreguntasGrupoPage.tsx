@@ -1,7 +1,7 @@
 import { Fragment, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { useArrastre } from '../../../../hooks/useArrastre';
-import { useParams, Link } from 'react-router';
+import { useParams, Link, useSearchParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
@@ -229,7 +229,10 @@ export default function PreguntasGrupoPage() {
   >(null);
   /** Lo último que se movió bien. Se enseña hasta el siguiente gesto. */
   const [movida, setMovida] = useState<string | null>(null);
-  const [diaActivo, setDiaActivo] = useState<string | null>(null);
+  // `?dia=<id>` abre ese día de entrevistas (lo usa «Mi agenda»).
+  const [searchParams] = useSearchParams();
+  const diaPedido = searchParams.get('dia');
+  const [diaActivo, setDiaActivo] = useState<string | null>(diaPedido);
   /** La cita cuyas evidencias se están mirando. */
   const [evidenciasDe, setEvidenciasDe] = useState<CitaProfesor | null>(null);
   /**
@@ -279,7 +282,7 @@ export default function PreguntasGrupoPage() {
    * Sin esto, cualquier recarga de la agenda —cerrar un hueco, mover una cita—
    * le devolvería al día de hoy mientras está mirando el de la semana que viene.
    */
-  const elegidoAMano = useRef(false);
+  const elegidoAMano = useRef(!!diaPedido);
   /** La tira de días, para traer a la vista el que se elige solo. */
   const tiraDias = useRef<HTMLDivElement | null>(null);
   /** El mando, para poder traerlo a la vista al proyectar desde una fila. */
