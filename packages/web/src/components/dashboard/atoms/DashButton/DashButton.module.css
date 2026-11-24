@@ -12,7 +12,7 @@
 }
 .primary {
   background: var(--dash-primary);
-  color: #fff;
+  color: var(--dash-primary-contraste);
 }
 .primary:hover { opacity: 0.9; }
 .outline {

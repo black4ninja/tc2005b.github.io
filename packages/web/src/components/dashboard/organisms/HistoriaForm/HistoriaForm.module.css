@@ -201,7 +201,7 @@
 .guardar {
   border: none;
   background: var(--dash-primary);
-  color: #fff;
+  color: var(--dash-primary-contraste);
 }
 
 .guardar:hover:not(:disabled) { opacity: 0.9; }

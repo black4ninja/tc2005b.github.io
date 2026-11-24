@@ -71,7 +71,12 @@
   --sidebar-border: #e2e8f0;
   --sidebar-active-bg: #e8f0fe;
   --sidebar-active-color: #2563eb;
-  --dash-primary: #5d87ff;
+  /* #5d87ff daba 3,3:1 con letra blanca (botones) y sobre el fondo de página
+     (enlaces): por debajo del 4,5:1 de la WCAG. Este azul pasa de 4,8:1. */
+  --dash-primary: #4169e1;
+  /* Texto que va ENCIMA de un relleno `--dash-primary`. Mismo par por tema que
+     `--color-lab-contraste`: en oscuro el azul se aclara y el blanco ya no se lee. */
+  --dash-primary-contraste: #ffffff;
   --dash-success: #13deb9;
   --dash-warning: #ffae1f;
   --dash-danger: #fa896b;
@@ -269,6 +274,8 @@
   /* Los acentos se aclaran: los tonos de la paleta clara están pensados para
      contrastar contra blanco y sobre un fondo oscuro pierden legibilidad. */
   --dash-primary: #7ea2ff;
+  /* Azul claro: encima va tinta, no blanco (7,6:1 frente a 2,5:1). */
+  --dash-primary-contraste: #0b1220;
   --dash-success: #3ae6c4;
   --dash-warning: #ffc04d;
   --dash-danger: #ff9e85;

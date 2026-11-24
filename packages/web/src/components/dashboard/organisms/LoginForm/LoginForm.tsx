@@ -71,12 +71,12 @@ export default function LoginForm() {
           Iniciar sesión
         </h3>
         <p className={styles.sectionDesc}>
-          Ingresa tu correo institucional y contraseña para acceder.
+          Ingresa el correo con el que te registraron y tu contraseña.
         </p>
         <TextInput
           label="Correo electrónico"
           type="email"
-          placeholder="a00000000@tec.mx"
+          placeholder="tu.correo@ejemplo.com"
           icon="email"
           value={email}
           onChange={setEmail}

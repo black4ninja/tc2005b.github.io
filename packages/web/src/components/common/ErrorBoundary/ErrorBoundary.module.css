@@ -79,7 +79,7 @@
 .btnPri {
   background: var(--dash-primary);
   border-color: var(--dash-primary);
-  color: #fff;
+  color: var(--dash-primary-contraste);
 }
 
 .btnPri:hover { filter: brightness(0.92); }

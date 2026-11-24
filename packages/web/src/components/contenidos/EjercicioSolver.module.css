@@ -128,7 +128,7 @@
   background: var(--bg-card);
   color: var(--text-primary);
 }
-.btnPri { background: var(--dash-primary); border-color: var(--dash-primary); color: #fff; }
+.btnPri { background: var(--dash-primary); border-color: var(--dash-primary); color: var(--dash-primary-contraste); }
 .btnSec:disabled, .btnPri:disabled { opacity: 0.55; cursor: default; }
 
 .errorBox {

@@ -47,6 +47,16 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   correo.
 
 ### Fixed
+- **En el celular el menú lateral ya se abre completo.** Antes heredaba el modo
+  compacto de pantalla mediana y mostraba solo iconos, sin nombres, sin el
+  nombre del grupo y sin los candados.
+- **Los botones de semana del calendario ya no se enciman.** La fila los
+  aplastaba a 40px en vez de dejarlos desplazarse; «Cierre de año» no cabía.
+- **Contraste de los botones principales.** El azul principal del panel pasa a
+  `#4169e1` (4,8:1 con letra blanca) y en tema oscuro el texto sobre él es
+  oscuro (7,6:1); el «Guardar» del perfil deja el verde agua (1,7:1).
+- **El login ya no habla de correo institucional** ni sugiere un correo del Tec:
+  hay grupos con personas de fuera.
 - **El menú del alumno ya no muestra Ejercicios ni Diagramas de otro grupo.**
   Esas dos secciones se calculaban con las colecciones de TODOS los grupos del
   alumno, así que en un grupo que las tiene apagadas seguían saliendo (con

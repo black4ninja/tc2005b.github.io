@@ -15,6 +15,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* Sin esto la fila (que se desplaza en horizontal) aplasta las píldoras
+     hasta los 40px y los textos se enciman en vez de desplazarse. */
+  flex-shrink: 0;
   min-width: 40px;
   padding: 6px 14px;
   border-radius: 20px;

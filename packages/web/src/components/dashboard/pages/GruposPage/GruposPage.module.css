@@ -79,13 +79,13 @@
 .filtroBtnActive {
   background: var(--dash-primary);
   border-color: var(--dash-primary);
-  color: #fff;
+  color: var(--dash-primary-contraste);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .filtroBtnActive:hover {
   background: var(--dash-primary);
-  color: #fff;
+  color: var(--dash-primary-contraste);
   opacity: 0.9;
 }
 
