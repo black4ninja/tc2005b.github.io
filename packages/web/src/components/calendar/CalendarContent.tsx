@@ -72,7 +72,9 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
     setLoading(true);
     setError(null);
 
-    fetch(`${API_BASE}/calendario/${grupoKey}`)
+    // Con sesión, si la hay: quién imparte cada día solo se manda a quien
+    // pertenece al grupo.
+    fetch(`${API_BASE}/calendario/${grupoKey}`, { headers: sessionToken ? { 'x-session-token': sessionToken } : {} })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -92,7 +94,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       });
 
     return () => { cancelled = true; };
-  }, [grupoKey]);
+  }, [grupoKey, sessionToken]);
 
   // Staff del grupo, para elegir quién imparte cada día en el formulario de
   // semana. Solo hace falta al editar el calendario.
@@ -113,14 +115,16 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
 
   const refetchCalendario = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/calendario/${grupoKey}`);
+      const res = await fetch(`${API_BASE}/calendario/${grupoKey}`, {
+        headers: sessionToken ? { 'x-session-token': sessionToken } : {},
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setApiCalendario(data.calendario);
     } catch (err: any) {
       console.warn('Error refetching calendario:', err.message);
     }
-  }, [grupoKey]);
+  }, [grupoKey, sessionToken]);
 
   async function openCopyModal() {
     setCopyError(null);

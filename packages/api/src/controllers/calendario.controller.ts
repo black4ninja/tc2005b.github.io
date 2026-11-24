@@ -70,8 +70,13 @@ export async function getCalendarioByGrupo(req: Request, res: Response): Promise
     // Quién imparte cada día: los ids se guardan en la semana y aquí se les
     // pone nombre. Solo los del staff actual del grupo: si alguien deja de
     // darlo, desaparece de sus sesiones sin migrar nada.
+    //
+    // El calendario es público, pero esto NO: ids y nombres del staff solo
+    // para quien pertenece al grupo (su staff, sus alumnos o un admin).
     const nombreStaff = new Map<string, string>();
-    if (semanas.some((s) => Object.keys(s.getImparten()).length > 0)) {
+    const hayImparten = semanas.some((s) => Object.keys(s.getImparten()).length > 0);
+    const quien = hayImparten ? await usuarioOpcional(req) : undefined;
+    if (hayImparten && quien && (await perteneceAlGrupo(quien, grupo.id!))) {
       const admins = ((grupo.get('admins') ?? []) as Parse.Object[]).filter(Boolean);
       const completos = await Parse.Object.fetchAllIfNeeded(admins, { useMasterKey: true });
       for (const a of completos) {
