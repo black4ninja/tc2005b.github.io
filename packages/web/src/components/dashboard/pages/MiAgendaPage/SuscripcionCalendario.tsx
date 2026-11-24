@@ -135,9 +135,15 @@ export default function SuscripcionCalendario({ abierto, onCerrar, grupos }: Pro
         {error && <p className={styles.error}>{error}</p>}
 
         {!token ? (
-          <button type="button" className={styles.primario} onClick={() => void pedir('POST')} disabled={cargando}>
-            <Icon name="link" size="sm" /> {cargando ? 'Creando…' : 'Crear mi enlace'}
-          </button>
+          <>
+            <p className={styles.intro}>
+              Al crearlo tendrás <strong>un enlace general</strong> y <strong>uno por cada grupo</strong>, para tener
+              cada grupo como calendario aparte.
+            </p>
+            <button type="button" className={styles.primario} onClick={() => void pedir('POST')} disabled={cargando}>
+              <Icon name="link" size="sm" /> {cargando ? 'Creando…' : 'Crear mis enlaces'}
+            </button>
+          </>
         ) : (
           <>
             <div className={styles.campo}>
