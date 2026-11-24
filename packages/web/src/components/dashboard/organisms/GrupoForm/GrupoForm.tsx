@@ -21,7 +21,20 @@ interface GrupoData {
   categoria?: CategoriaRef | null;
   /** Campos del perfil que este grupo NO pide. Vacío = los pide todos. */
   camposPerfilDeshabilitados?: string[];
+  horarioClase?: HorarioClase;
 }
+
+/** Hora de clase por día de la semana (zona del curso). Ver `Grupo.horarioClase`. */
+export type HorarioClase = Partial<Record<string, { inicio: string; fin: string }>>;
+
+const DIAS_HORARIO = [
+  { key: 'lunes', label: 'Lunes' },
+  { key: 'martes', label: 'Martes' },
+  { key: 'miercoles', label: 'Miércoles' },
+  { key: 'jueves', label: 'Jueves' },
+  { key: 'viernes', label: 'Viernes' },
+  { key: 'sabado', label: 'Sábado' },
+] as const;
 
 /**
  * Campos del perfil del alumno que un grupo puede no pedir. Espeja
@@ -50,6 +63,7 @@ interface GrupoSavePayload {
   urlAgendaEntrevistas?: string;
   /** id de la categoría, o `null` para quitársela. */
   categoriaId?: string | null;
+  horarioClase?: HorarioClase;
 }
 
 interface GrupoFormProps {
@@ -94,6 +108,22 @@ export default function GrupoForm({ grupo, admins = [], categorias = [], onSave,
   );
   const [error, setError] = useState('');
   const [errorAgenda, setErrorAgenda] = useState('');
+  // Un día marcado = hay clase ese día a esa hora. Al desmarcar se conserva la
+  // hora escrita por si se vuelve a marcar, pero no viaja al servidor.
+  const [horario, setHorario] = useState(() =>
+    Object.fromEntries(
+      DIAS_HORARIO.map(({ key }) => {
+        const f = grupo?.horarioClase?.[key];
+        return [key, { activo: !!f, inicio: f?.inicio ?? '17:30', fin: f?.fin ?? '19:30' }];
+      }),
+    ) as Record<string, { activo: boolean; inicio: string; fin: string }>,
+  );
+  const [errorHorario, setErrorHorario] = useState('');
+
+  function cambiarHorario(dia: string, cambio: Partial<{ activo: boolean; inicio: string; fin: string }>) {
+    setHorario((prev) => ({ ...prev, [dia]: { ...prev[dia], ...cambio } }));
+    setErrorHorario('');
+  }
 
 
   function togglePedido(key: string) {
@@ -118,9 +148,21 @@ export default function GrupoForm({ grupo, admins = [], categorias = [], onSave,
       setErrorAgenda('La URL debe empezar por http:// o https://');
       return;
     }
+    const horarioClase: HorarioClase = {};
+    for (const { key, label } of DIAS_HORARIO) {
+      const d = horario[key];
+      if (!d.activo) continue;
+      if (!d.inicio || !d.fin || d.inicio >= d.fin) {
+        setErrorHorario(`${label}: la hora de inicio tiene que ser antes que la de fin`);
+        return;
+      }
+      horarioClase[key] = { inicio: d.inicio, fin: d.fin };
+    }
     setError('');
     setErrorAgenda('');
+    setErrorHorario('');
     onSave({
+      horarioClase,
       name: name.trim(),
       // Campo vacío = null = quitar la fecha (antes iba `undefined`, que se caía
       // del JSON: la fecha se quedaba puesta y no había forma de borrarla).
@@ -263,6 +305,49 @@ export default function GrupoForm({ grupo, admins = [], categorias = [], onSave,
             </button>
           )}
         </div>
+      </div>
+      <div className={styles.field}>
+        <label className={styles.label}>Horario de clase</label>
+        <p className={styles.hint}>
+          A qué hora es la sesión cada día. Los días con clase salen del calendario del grupo; esto
+          solo pone la hora para que las sesiones aparezcan en «Mi agenda» y se vean los traslapes.
+        </p>
+        <div className={styles.horario}>
+          {DIAS_HORARIO.map(({ key, label }) => {
+            const d = horario[key];
+            return (
+              <div key={key} className={styles.horarioFila}>
+                <label className={styles.horarioDia}>
+                  <input
+                    type="checkbox"
+                    checked={d.activo}
+                    onChange={(e) => cambiarHorario(key, { activo: e.target.checked })}
+                    disabled={loading}
+                  />
+                  {label}
+                </label>
+                <input
+                  type="time"
+                  className={styles.horarioHora}
+                  value={d.inicio}
+                  onChange={(e) => cambiarHorario(key, { inicio: e.target.value })}
+                  disabled={loading || !d.activo}
+                  aria-label={`${label}: inicio`}
+                />
+                <span className={styles.hint}>a</span>
+                <input
+                  type="time"
+                  className={styles.horarioHora}
+                  value={d.fin}
+                  onChange={(e) => cambiarHorario(key, { fin: e.target.value })}
+                  disabled={loading || !d.activo}
+                  aria-label={`${label}: fin`}
+                />
+              </div>
+            );
+          })}
+        </div>
+        {errorHorario && <span className={styles.errorTexto}>{errorHorario}</span>}
       </div>
       <div className={styles.field}>
         <label className={styles.label}>Perfil que se pide al alumno</label>

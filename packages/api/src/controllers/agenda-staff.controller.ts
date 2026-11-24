@@ -3,16 +3,23 @@ import Parse from 'parse/node';
 import type { AppUser } from '../models/AppUser.js';
 import type { Grupo } from '../models/Grupo.js';
 import { getGruposDeStaff } from '../services/grupo-admin.service.js';
+import { DIAS_SEMANA } from '../constants/dias.js';
 import {
   eventoDeEntrevistas,
   normalizarPreferenciasAgenda,
   sesionesDelGrupo,
   sumarDiasFecha,
   type ActividadParaAgenda,
+  type HorarioClase,
   type EventoAgenda,
 } from '../services/agenda-staff.js';
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Horario de relleno para contar días de clase de un grupo que no tiene hora. */
+const TODO_EL_DIA = Object.fromEntries(
+  DIAS_SEMANA.map((d) => [d, { inicio: '00:00', fin: '23:59' }]),
+) as HorarioClase;
 
 /** Más de dos meses de golpe no lo pide la vista y solo engorda la consulta. */
 const MAX_DIAS_RANGO = 62;
@@ -57,6 +64,10 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
   try {
     const grupos = await gruposDeLaAgenda(user);
     const eventos: EventoAgenda[] = [];
+    // Grupos con días de clase en el rango aunque no tengan hora: son los que
+    // la vista avisa de que les falta el horario. Los que esta semana no dan
+    // clase no tienen nada que avisar.
+    const conClaseSinHora = new Set<string>();
 
     if (grupos.length > 0) {
       // Sesiones. Una semana empieza en lunes: la que arranca hasta 6 días
@@ -93,7 +104,11 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
         const deEste = semanas
           .filter((s) => s.get('grupo')?.id === g.id)
           .map((s) => ({ id: s.id!, fechaInicio: s.get('fechaInicio') ?? '', diasActivos: s.get('diasActivos') }));
-        eventos.push(...sesionesDelGrupo(g.id!, g.getHorarioClase(), deEste, actividades, desde, hasta));
+        const horario = g.getHorarioClase();
+        eventos.push(...sesionesDelGrupo(g.id!, horario, deEste, actividades, desde, hasta));
+        if (Object.keys(horario).length === 0 && sesionesDelGrupo(g.id!, TODO_EL_DIA, deEste, actividades, desde, hasta).length > 0) {
+          conClaseSinHora.add(g.id!);
+        }
       }
 
       // Entrevistas: instantes absolutos. Se pide con un día de holgura por
@@ -122,6 +137,7 @@ export async function getAgenda(req: Request, res: Response): Promise<void> {
         name: g.get('name') ?? '',
         esMio: ((g.get('admins') ?? []) as Parse.Object[]).some((a) => a?.id === user.id),
         conHorario: Object.keys(g.getHorarioClase()).length > 0,
+        sinHoraConClase: conClaseSinHora.has(g.id!),
       })),
       eventos,
       preferencias: user.getPreferenciasAgenda(),

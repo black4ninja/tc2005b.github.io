@@ -8,6 +8,18 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **«Mi agenda» para administradores y profesores.** Una vista semanal tipo
+  Google Calendar con las sesiones y los días de entrevistas de TODOS sus
+  grupos a la vez, para ver los traslapes entre grupos. Los eventos que se
+  pisan se marcan en rojo y se listan arriba. Cada persona elige el color de
+  las sesiones y de las entrevistas de cada grupo y qué grupos ve (el admin ve
+  por defecto los que administra). Tocar un evento abre el calendario o las
+  entrevistas de su grupo. En celular se ve un día a la vez. Se abre desde el
+  botón «Mi agenda» de la barra superior, en cualquier pantalla, y desde el
+  menú del admin.
+- **Horario de clase del grupo.** Al editar un grupo se indica la hora de la
+  sesión de cada día (lunes a sábado). Es lo que pone las sesiones en «Mi
+  agenda»: el calendario dice qué días hay clase, el horario a qué hora.
 - **Alumnos sin matrícula.** Al dar de alta un alumno desde el panel, la
   matrícula pasa a ser opcional: basta con nombre y correo. Sirve para grupos con
   personas de fuera del Tec (por ejemplo, el personal de una empresa), que

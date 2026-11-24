@@ -5,6 +5,7 @@ import { useDiagramasNav } from '../../../../context/DiagramasNavContext';
 import { useEjerciciosNav } from '../../../../context/EjerciciosNavContext';
 import styles from './DashboardHeader.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
+import { Link } from 'react-router';
 
 interface DashboardHeaderProps {
   role: DashboardRole;
@@ -73,6 +74,15 @@ export default function DashboardHeader({ role, collapsed, onToggleSidebar }: Da
         <ProgresoModulo />
       </div>
       <div className={styles.right}>
+        {/* La agenda junta TODOS los grupos, así que no cabe en el sidebar del
+            profesor, que es siempre el de un grupo. Aquí está a la vista en
+            cualquier pantalla, sea cual sea el grupo abierto. */}
+        {profileRole && (
+          <Link to="/admin/agenda" className={styles.agenda} aria-label="Mi agenda" title="Mi agenda">
+            <Icon name="calendar_month" size="sm" />
+            <span className={styles.agendaTexto}>Mi agenda</span>
+          </Link>
+        )}
         <ProfileMenu name={profileName} role={profileRole} />
       </div>
     </header>

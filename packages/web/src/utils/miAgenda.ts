@@ -1,0 +1,182 @@
+/**
+ * «Mi agenda» del staff: utilidades puras de la vista semanal.
+ *
+ * Los eventos llegan del servidor como hora de RELOJ en la zona del curso
+ * (`fecha` + `HH:MM`), no como instantes. Aquí no se convierte ninguna zona:
+ * se compara texto con texto, y así lo que choca en el aula choca en pantalla.
+ */
+
+export interface EventoAgenda {
+  id: string;
+  tipo: 'sesion' | 'entrevista';
+  grupoId: string;
+  fecha: string;
+  inicio: string;
+  fin: string;
+  titulo: string;
+  cerrado?: boolean;
+}
+
+export interface GrupoAgenda {
+  id: string;
+  name: string;
+  esMio: boolean;
+  conHorario: boolean;
+  /** Da clase en la semana pedida pero no tiene horario: sus sesiones no salen. */
+  sinHoraConClase?: boolean;
+}
+
+export interface PreferenciaGrupo {
+  sesiones?: string;
+  entrevistas?: string;
+  oculto?: boolean;
+}
+
+export const ZONA_CURSO = 'America/Mexico_City';
+
+/** `'17:30'` → 1050. */
+export function aMinutos(hora: string): number {
+  const [h, m] = hora.split(':').map(Number);
+  return h * 60 + m;
+}
+
+/** Fecha `AAAA-MM-DD` más N días, sin pasar por ninguna zona horaria. */
+export function sumarDias(fecha: string, dias: number): string {
+  const d = new Date(`${fecha}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+/** El lunes de la semana de esa fecha. */
+export function lunesDe(fecha: string): string {
+  const dow = new Date(`${fecha}T12:00:00Z`).getUTCDay(); // 0 = domingo
+  return sumarDias(fecha, dow === 0 ? -6 : 1 - dow);
+}
+
+/** Hoy en el calendario del curso, no en el del navegador. */
+export function hoyEnCurso(ahora = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZONA_CURSO, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(ahora);
+}
+
+/**
+ * Colores por defecto, uno por grupo en el orden en que llegan. Saturados y
+ * distintos entre sí; el texto encima se elige con `textoSobre`.
+ */
+export const PALETA = ['#2563eb', '#0d9488', '#d97706', '#7c3aed', '#db2777', '#16a34a', '#dc2626', '#0891b2'];
+
+/** Mezcla el color con blanco: las entrevistas usan un tono claro del grupo. */
+export function aclarar(hex: string, cuanto = 0.55): string {
+  const n = parseInt(hex.slice(1), 16);
+  const canal = (v: number) => Math.round(v + (255 - v) * cuanto);
+  const r = canal((n >> 16) & 255), g = canal((n >> 8) & 255), b = canal(n & 255);
+  return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
+}
+
+function luminancia(hex: string): number {
+  const n = parseInt(hex.slice(1), 16);
+  const f = (v: number) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  return 0.2126 * f((n >> 16) & 255) + 0.7152 * f((n >> 8) & 255) + 0.0722 * f(n & 255);
+}
+
+/** Blanco o tinta, lo que más contraste dé sobre ese fondo. */
+export function textoSobre(fondo: string): string {
+  const L = luminancia(fondo);
+  const conBlanco = 1.05 / (L + 0.05);
+  const conTinta = (L + 0.05) / (luminancia('#0b1220') + 0.05);
+  return conBlanco >= conTinta ? '#ffffff' : '#0b1220';
+}
+
+/** Colores efectivos de un grupo: los suyos o los de la paleta. */
+export function coloresDe(indice: number, pref: PreferenciaGrupo | undefined): { sesiones: string; entrevistas: string } {
+  const base = PALETA[indice % PALETA.length];
+  const sesiones = pref?.sesiones ?? base;
+  return { sesiones, entrevistas: pref?.entrevistas ?? aclarar(sesiones) };
+}
+
+/**
+ * ¿Se ve el grupo? Lo que haya elegido la persona; sin elección, se ven los
+ * suyos (`esMio`). Al admin le llegan TODOS los grupos activos y no tiene por
+ * qué cargar con los que no administra.
+ */
+export function grupoVisible(grupo: GrupoAgenda, pref: PreferenciaGrupo | undefined): boolean {
+  if (pref?.oculto !== undefined) return !pref.oculto;
+  return grupo.esMio;
+}
+
+function seTraslapan(a: EventoAgenda, b: EventoAgenda): boolean {
+  return a.fecha === b.fecha && aMinutos(a.inicio) < aMinutos(b.fin) && aMinutos(b.inicio) < aMinutos(a.fin);
+}
+
+export interface Traslape {
+  a: EventoAgenda;
+  b: EventoAgenda;
+}
+
+/**
+ * Todos los pares de eventos que se pisan. Cuenta también los del MISMO grupo
+ * (una sesión y sus entrevistas a la vez): para quien da las dos, es el mismo
+ * problema.
+ */
+export function traslapes(eventos: EventoAgenda[]): Traslape[] {
+  const orden = [...eventos].sort((x, y) => (x.fecha + x.inicio).localeCompare(y.fecha + y.inicio));
+  const pares: Traslape[] = [];
+  for (let i = 0; i < orden.length; i++) {
+    for (let j = i + 1; j < orden.length; j++) {
+      // Van ordenados por inicio: en cuanto uno empieza después de que acaba
+      // el i (o cae otro día), los siguientes tampoco lo pisan.
+      if (!seTraslapan(orden[i], orden[j])) break;
+      pares.push({ a: orden[i], b: orden[j] });
+    }
+  }
+  return pares;
+}
+
+export interface EventoAcomodado {
+  evento: EventoAgenda;
+  columna: number;
+  columnas: number;
+}
+
+/**
+ * Reparte los eventos de UN día en columnas para que los que se pisan queden
+ * lado a lado, como en Google Calendar. Cada grupo de eventos encadenados
+ * (que se tocan entre sí) comparte el mismo número de columnas.
+ */
+export function acomodarDia(eventos: EventoAgenda[]): EventoAcomodado[] {
+  const orden = [...eventos].sort((a, b) => aMinutos(a.inicio) - aMinutos(b.inicio) || aMinutos(b.fin) - aMinutos(a.fin));
+  const resultado: EventoAcomodado[] = [];
+  let racimo: EventoAcomodado[] = [];
+  let finRacimo = -1;
+  let finesColumna: number[] = [];
+
+  const cerrarRacimo = () => {
+    for (const e of racimo) e.columnas = finesColumna.length;
+    resultado.push(...racimo);
+    racimo = [];
+    finesColumna = [];
+  };
+
+  for (const ev of orden) {
+    const ini = aMinutos(ev.inicio);
+    const fin = aMinutos(ev.fin);
+    if (racimo.length > 0 && ini >= finRacimo) cerrarRacimo();
+    let col = finesColumna.findIndex((f) => f <= ini);
+    if (col === -1) { col = finesColumna.length; finesColumna.push(fin); } else finesColumna[col] = fin;
+    racimo.push({ evento: ev, columna: col, columnas: 1 });
+    finRacimo = Math.max(racimo.length === 1 ? fin : finRacimo, fin);
+  }
+  if (racimo.length > 0) cerrarRacimo();
+  return resultado;
+}
+
+/** Rango de horas a pintar: de 7 a 21 como mínimo, ampliado si algo se sale. */
+export function rangoHoras(eventos: EventoAgenda[]): { desde: number; hasta: number } {
+  let desde = 7, hasta = 21;
+  for (const e of eventos) {
+    desde = Math.min(desde, Math.floor(aMinutos(e.inicio) / 60));
+    hasta = Math.max(hasta, Math.ceil(aMinutos(e.fin) / 60));
+  }
+  return { desde, hasta: Math.min(hasta, 24) };
+}

@@ -1,0 +1,461 @@
+.page {
+  padding: var(--pagina-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.titulo {
+  margin: 0;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.subtitulo {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  max-width: 70ch;
+}
+
+.navegacion {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.boton,
+.botonIcono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.botonIcono {
+  min-width: 40px;
+  padding: 0;
+}
+
+.boton:hover,
+.botonIcono:hover {
+  background: var(--dash-bg-subtle);
+}
+
+.rango {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-left: var(--space-xs);
+}
+
+/* En escritorio el panel de grupos siempre está a la vista. */
+.botonGrupos {
+  display: none;
+}
+
+.error {
+  padding: 10px 14px;
+  border: 1px solid var(--estado-error-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+}
+
+.avisoChoques,
+.avisoHorario {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: 10px 14px;
+  border-radius: var(--border-radius);
+  font-size: 0.88rem;
+}
+
+.avisoChoques {
+  border: 1px solid var(--estado-error-border);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+}
+
+.avisoChoques ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.avisoHorario {
+  border: 1px solid var(--border-color);
+  background: var(--dash-bg-subtle);
+  color: var(--text-secondary);
+}
+
+.avisoHorario a {
+  color: var(--dash-primary);
+  font-weight: 600;
+}
+
+.cuerpo {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+}
+
+/* ── Panel de grupos ───────────────────────────────────────────────── */
+
+.panelGrupos {
+  flex: none;
+  width: 250px;
+  padding: var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-card);
+}
+
+.panelTitulo {
+  margin: 0 0 var(--space-sm);
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.listaGrupos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.filaGrupo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.checkGrupo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.checkGrupo input {
+  width: 18px;
+  height: 18px;
+}
+
+.nombreGrupo {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.colores {
+  display: flex;
+  gap: var(--space-sm);
+  padding-left: 26px;
+}
+
+.color {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.color input {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+
+/* ── Calendario ────────────────────────────────────────────────────── */
+
+.calendario {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.pestanasDia {
+  display: none;
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: 56px repeat(7, minmax(0, 1fr));
+  grid-template-rows: auto calc(var(--horas) * var(--alto-hora));
+}
+
+.cabeceraVacia,
+.cabeceraDia {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cabeceraDia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border-left: 1px solid var(--border-color);
+}
+
+.cabeceraDia strong {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.cabeceraDia.esHoy strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--dash-primary);
+  color: var(--dash-primary-contraste);
+}
+
+.columnaHoras {
+  position: relative;
+}
+
+/* Fila fija: en el celular las cabeceras se ocultan y, sin esto, el cuerpo
+   subiría a ocupar su sitio. */
+.columnaHoras,
+.columnaDia {
+  grid-row: 2;
+}
+
+.hora {
+  height: var(--alto-hora);
+  padding-right: 6px;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  transform: translateY(-0.6em);
+}
+
+.hora:first-child {
+  transform: none;
+}
+
+.columnaDia {
+  position: relative;
+  border-left: 1px solid var(--border-color);
+}
+
+.columnaDia.esHoy {
+  background: var(--dash-bg-subtle);
+}
+
+.lineaHora {
+  height: var(--alto-hora);
+  border-bottom: 1px solid var(--border-color);
+  box-sizing: border-box;
+}
+
+.evento {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 3px 6px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.evento:hover,
+.evento:focus-visible {
+  z-index: 2;
+  filter: brightness(0.95);
+  outline: 2px solid var(--text-primary);
+  outline-offset: 1px;
+}
+
+/* Traslape: contorno rojo grueso, además del icono, para no depender solo del
+   color (que además lo elige la persona y puede ser rojo). */
+.choque {
+  outline: 3px solid #dc2626;
+  outline-offset: 1px;
+  z-index: 1;
+}
+
+/* Día de entrevistas cerrado: sigue ocupando la franja, pero rayado. */
+.cerrado {
+  background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0 6px, transparent 6px 12px) !important;
+}
+
+.eventoGrupo {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.eventoGrupo :global(.material-icons) {
+  font-size: 14px;
+}
+
+.eventoHora,
+.eventoTitulo {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.eventoTitulo {
+  opacity: 0.9;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.cargando,
+.vacio {
+  margin: 0;
+  padding: var(--space-md);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+/* ── Celular: un día a la vez y el panel de grupos plegable ─────────── */
+
+@media (max-width: 768px) {
+  .cuerpo {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .botonGrupos {
+    display: inline-flex;
+  }
+
+  .boton,
+  .botonIcono {
+    min-height: 44px;
+  }
+
+  .botonIcono {
+    min-width: 44px;
+  }
+
+  .rango {
+    order: 10;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .panelGrupos {
+    display: none;
+    width: auto;
+  }
+
+  .panelAbierto {
+    display: block;
+  }
+
+  .pestanasDia {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .pestanaDia {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 48px;
+    padding: 4px 0;
+    border: none;
+    border-bottom: 3px solid transparent;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+
+  .pestanaDia strong {
+    font-size: 1rem;
+    color: var(--text-primary);
+  }
+
+  .pestanaHoy strong {
+    color: var(--dash-primary);
+  }
+
+  .pestanaActiva {
+    border-bottom-color: var(--dash-primary);
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .rejilla {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .cabeceraVacia,
+  .cabeceraDia {
+    display: none;
+  }
+
+  .columnaDia:not(.diaMovil) {
+    display: none;
+  }
+
+  .columnaDia.esHoy {
+    background: none;
+  }
+
+  .evento {
+    font-size: 0.8rem;
+  }
+}
