@@ -8,7 +8,7 @@
   align-items: center;
   justify-content: center;
   background: var(--dash-primary);
-  color: #fff;
+  color: var(--dash-primary-contraste);
   font-weight: 600;
 }
 .sm { width: 32px; height: 32px; font-size: 12px; }

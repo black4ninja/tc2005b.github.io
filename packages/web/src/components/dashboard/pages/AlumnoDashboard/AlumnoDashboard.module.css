@@ -185,11 +185,13 @@
   background: #4a6fcc;
 }
 .btnSave {
-  background: #13deb9;
-  color: #fff;
+  /* Antes verde agua fijo con letra blanca: 1,7:1, ilegible. Va con el azul
+     principal y su par de contraste, como el resto de botones primarios. */
+  background: var(--dash-primary);
+  color: var(--dash-primary-contraste);
 }
 .btnSave:hover {
-  background: #0fb89e;
+  opacity: 0.9;
 }
 .btnSave:disabled {
   opacity: 0.6;

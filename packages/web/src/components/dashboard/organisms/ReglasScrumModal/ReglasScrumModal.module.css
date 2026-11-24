@@ -113,7 +113,7 @@
   border: none;
   border-radius: 8px;
   background: var(--dash-primary);
-  color: #fff;
+  color: var(--dash-primary-contraste);
   font-family: inherit;
   font-size: 0.82rem;
   font-weight: 500;
