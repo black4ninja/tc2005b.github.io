@@ -17,6 +17,12 @@ describe('formato', () => {
   it('escapa comas, punto y coma, barras y saltos', () => {
     expect(escaparTexto('a,b;c\\d\ne')).toBe('a\\,b\\;c\\\\d\\ne');
   });
+  it('neutraliza un \\r suelto y otros caracteres de control (no puede abrir propiedades nuevas)', () => {
+    const malo = 'Sala 3\rEND:VEVENT\r\nBEGIN:VEVENT\x00\x1b';
+    const limpio = escaparTexto(malo);
+    expect(limpio).not.toMatch(/[\x00-\x1f\x7f]/);
+    expect(limpio).toBe('Sala 3\\nEND:VEVENT\\nBEGIN:VEVENT');
+  });
   it('pliega a 75 octetos sin partir caracteres', () => {
     const larga = `DESCRIPTION:${'ñ'.repeat(80)}`;
     const partes = plegar(larga).split('\r\n');

@@ -38,9 +38,20 @@ function sello(d: Date): string {
   return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 }
 
-/** Texto de una propiedad: barra, punto y coma, coma y saltos de línea escapados. */
+/**
+ * Texto de una propiedad: barra, punto y coma, coma y CUALQUIER fin de línea
+ * (también un `\r` suelto) escapados, y el resto de caracteres de control
+ * fuera. Títulos y notas los escribe el profesor: sin esto, un salto colado
+ * abriría una propiedad o un evento nuevo dentro del feed.
+ */
 export function escaparTexto(t: string): string {
-  return t.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  return t
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r\n|\r|\n/g, '\\n')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '');
 }
 
 /**
