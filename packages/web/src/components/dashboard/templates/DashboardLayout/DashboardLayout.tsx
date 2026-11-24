@@ -6,6 +6,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import { ColeccionArbolProvider } from '../../../../context/ColeccionArbolContext';
 import { DiagramasNavProvider } from '../../../../context/DiagramasNavContext';
 import { EjerciciosNavProvider } from '../../../../context/EjerciciosNavContext';
+import { AgendaSidebarProvider } from '../../../../context/AgendaSidebarContext';
 import styles from './DashboardLayout.module.css';
 import type { DashboardRole } from '../../../../types/dashboard';
 import ErrorBoundary from '../../../common/ErrorBoundary/ErrorBoundary';
@@ -43,6 +44,8 @@ export default function DashboardLayout({ role }: DashboardLayoutProps) {
       <DiagramasNavProvider>
         {/* Y para Ejercicios, por lo mismo. */}
         <EjerciciosNavProvider>
+          {/* «Mi agenda» pinta sus calendarios dentro del sidebar. */}
+          <AgendaSidebarProvider collapsed={collapsed} mobileOpen={mobileOpen} toggleSidebar={toggle}>
           <div className={styles.layout}>
             <Sidebar role={effectiveRole} collapsed={collapsed} mobileOpen={mobileOpen} onCloseMobile={closeMobile} />
             <DashboardHeader role={effectiveRole} collapsed={collapsed} onToggleSidebar={toggle} />
@@ -57,6 +60,7 @@ export default function DashboardLayout({ role }: DashboardLayoutProps) {
               </ErrorBoundary>
             </main>
           </div>
+          </AgendaSidebarProvider>
         </EjerciciosNavProvider>
       </DiagramasNavProvider>
     </ColeccionArbolProvider>

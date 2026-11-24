@@ -38,6 +38,7 @@ import ProyeccionScrumPage from './components/dashboard/pages/ProyeccionScrumPag
 import EvaluacionEntrevistaPage from './components/dashboard/pages/EvaluacionEntrevistaPage/EvaluacionEntrevistaPage';
 import AlumnoCalendarioPage from './components/dashboard/pages/AlumnoCalendarioPage/AlumnoCalendarioPage';
 import HubPage from './components/dashboard/pages/HubPage/HubPage';
+import MiAgendaPage from './components/dashboard/pages/MiAgendaPage/MiAgendaPage';
 import AlumnoCompetenciasPage from './components/dashboard/pages/AlumnoCompetenciasPage/AlumnoCompetenciasPage';
 import PaginaPage from './components/paginas/PaginaPage';
 import PaginasPage from './components/dashboard/pages/PaginasPage/PaginasPage';
@@ -175,6 +176,8 @@ export default function App() {
       {/* Admin dashboard */}
       <Route element={<DashboardLayout role="admin" />}>
         <Route path="admin" element={<AdminDashboard />} />
+        {/* De todos los grupos a la vez: por eso no cuelga de admin/grupos/:id. */}
+        <Route path="admin/agenda" element={<MiAgendaPage />} />
         <Route path="admin/grupos" element={<GruposPage />} />
         <Route path="admin/alumnos" element={<AlumnosPage />} />
         <Route path="admin/administradores" element={<AdministradoresPage />} />

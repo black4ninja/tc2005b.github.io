@@ -170,3 +170,46 @@
   color: inherit;
   font: inherit;
 }
+
+/* Horario de clase: una fila por día, casilla + inicio + fin. */
+.horario {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.horarioFila {
+  display: grid;
+  grid-template-columns: 120px auto auto auto;
+  align-items: center;
+  gap: 8px;
+  justify-content: start;
+}
+
+.horarioDia {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.horarioHora {
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.horarioHora:disabled {
+  opacity: 0.45;
+}
+
+.errorTexto {
+  font-size: 0.8rem;
+  color: var(--estado-error-color);
+}

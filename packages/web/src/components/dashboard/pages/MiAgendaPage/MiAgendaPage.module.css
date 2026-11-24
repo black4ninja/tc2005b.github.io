@@ -1,0 +1,507 @@
+.page {
+  padding: var(--pagina-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* ── Barra de navegación, como la de Google Calendar ─────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.navegacion {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.boton,
+.botonIcono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.botonIcono {
+  min-width: 40px;
+  padding: 0;
+  border-color: transparent;
+  background: none;
+  border-radius: 50%;
+}
+
+.boton:hover,
+.botonIcono:hover {
+  background: var(--dash-bg-subtle);
+}
+
+.rango {
+  margin: 0 0 0 var(--space-xs);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.selectorVista {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.selectorVista select {
+  appearance: none;
+  min-height: 40px;
+  padding: 0 36px 0 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.selectorVista :global(.material-icons) {
+  position: absolute;
+  right: 12px;
+  pointer-events: none;
+  color: var(--text-secondary);
+}
+
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ── Avisos ──────────────────────────────────────────────────────────── */
+
+.error {
+  padding: 10px 14px;
+  border: 1px solid var(--estado-error-border);
+  border-radius: var(--border-radius);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+}
+
+.avisoChoques,
+.avisoHorario {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: 10px 14px;
+  border-radius: var(--border-radius);
+  font-size: 0.88rem;
+}
+
+.avisoChoques {
+  border: 1px solid var(--estado-error-border);
+  background: var(--estado-error-bg);
+  color: var(--estado-error-color);
+}
+
+.avisoChoques ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.enlaceDia {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.avisoHorario {
+  border: 1px solid var(--border-color);
+  background: var(--dash-bg-subtle);
+  color: var(--text-secondary);
+}
+
+.avisoHorario a {
+  color: var(--dash-primary);
+  font-weight: 600;
+}
+
+/* ── Calendario ──────────────────────────────────────────────────────── */
+
+.calendario {
+  min-width: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.pestanasDia {
+  display: none;
+}
+
+/* La rejilla de horas hace su propio scroll y la cabecera de los días se
+   queda arriba: así se ve el día entero sin perder qué columna es cuál. */
+.scrollHoras {
+  max-height: calc(100vh - 220px);
+  min-height: 360px;
+  overflow-y: auto;
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: 56px repeat(var(--columnas), minmax(0, 1fr));
+  grid-template-rows: auto calc(var(--horas) * var(--alto-hora));
+}
+
+.cabeceraVacia,
+.cabeceraDia {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cabeceraDia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border-left: 1px solid var(--border-color);
+}
+
+.cabeceraDia strong {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.cabeceraDia.esHoy strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--dash-primary);
+  color: var(--dash-primary-contraste);
+}
+
+.columnaHoras {
+  position: relative;
+}
+
+/* Fila fija: en el celular las cabeceras se ocultan y, sin esto, el cuerpo
+   subiría a ocupar su sitio. */
+.columnaHoras,
+.columnaDia {
+  grid-row: 2;
+}
+
+.hora {
+  height: var(--alto-hora);
+  padding-right: 6px;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  transform: translateY(-0.6em);
+}
+
+.hora:first-child {
+  transform: none;
+}
+
+.columnaDia {
+  position: relative;
+  border-left: 1px solid var(--border-color);
+}
+
+.rejilla:not(.rejillaDia) .columnaDia.esHoy {
+  background: var(--dash-bg-subtle);
+}
+
+.lineaHora {
+  height: var(--alto-hora);
+  border-bottom: 1px solid var(--border-color);
+  box-sizing: border-box;
+}
+
+.evento {
+  position: absolute;
+  display: flex;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.evento:hover,
+.evento:focus-visible {
+  z-index: 3;
+  filter: brightness(0.97);
+  outline: 2px solid var(--text-primary);
+  outline-offset: 1px;
+}
+
+.eventoTexto {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+  padding: 3px 6px;
+}
+
+/* Traslape: contorno rojo grueso, además del icono, para no depender solo del
+   color (que además lo elige la persona y puede ser rojo). */
+.choque {
+  outline: 3px solid #dc2626;
+  outline-offset: 1px;
+  z-index: 1;
+}
+
+/* Día de entrevistas cerrado: sigue ocupando la franja, pero rayado. */
+.cerrado {
+  background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0 6px, transparent 6px 12px) !important;
+}
+
+.eventoGrupo {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.eventoGrupo :global(.material-icons) {
+  font-size: 14px;
+}
+
+.eventoHora,
+.eventoTitulo {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.eventoTitulo {
+  opacity: 0.9;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* ── Bloque de entrevistas con sus huecos ────────────────────────────── */
+
+/* El bloque es lo APARTADO: borde del color y relleno claro rayado. Lo
+   comprometido (citas) va macizo en el carril de la izquierda. */
+.bloqueEntrevistas {
+  border: 1px solid var(--c);
+  background:
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--c) 22%, transparent) 0 6px, transparent 6px 12px),
+    color-mix(in srgb, var(--c) 14%, var(--bg-card));
+  color: var(--text-primary);
+  padding-left: 10px;
+}
+
+/* En la semana el carril es una tira estrecha: se ve qué parte está tomada,
+   y el nombre sale al pasar el ratón. */
+.carril {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 7px;
+  background: color-mix(in srgb, var(--c) 18%, transparent);
+}
+
+.huecoOcupado,
+.huecoCerrado {
+  position: absolute;
+  left: 0;
+  right: 0;
+  box-sizing: border-box;
+}
+
+.huecoOcupado {
+  background: var(--c);
+  color: var(--c-texto);
+  border-bottom: 1px solid color-mix(in srgb, var(--c-texto) 25%, transparent);
+}
+
+.huecoCerrado {
+  background: repeating-linear-gradient(135deg, rgba(120, 120, 120, 0.55) 0 3px, transparent 3px 6px);
+}
+
+/* En el día el carril se abre: cada hueco tomado lleva hora y alumno. */
+.bloqueDetallado {
+  padding-left: 0;
+}
+
+.bloqueDetallado .eventoTexto {
+  flex: 0 0 34%;
+  max-width: 220px;
+}
+
+.bloqueDetallado .carril {
+  left: auto;
+  right: 0;
+  width: 66%;
+  min-width: calc(100% - 220px);
+  background: none;
+  border-left: 1px dashed var(--c);
+}
+
+.bloqueDetallado .huecoOcupado {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.75rem;
+}
+
+.huecoCompetencia {
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cargando,
+.vacio {
+  margin: 0;
+  padding: var(--space-md);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+/* ── Celular: un día a la vez ───────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .boton,
+  .botonIcono {
+    min-height: 44px;
+  }
+
+  .botonIcono {
+    min-width: 44px;
+  }
+
+  .rango {
+    order: 10;
+    width: 100%;
+    margin-left: 0;
+    font-size: 1.1rem;
+  }
+
+  .selectorVista select {
+    min-height: 44px;
+  }
+
+  .scrollHoras {
+    max-height: calc(100vh - 260px);
+  }
+
+  .pestanasDia {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .pestanaDia {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 48px;
+    padding: 4px 0;
+    border: none;
+    border-bottom: 3px solid transparent;
+    background: none;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+
+  .pestanaDia strong {
+    font-size: 1rem;
+    color: var(--text-primary);
+  }
+
+  .pestanaHoy strong {
+    color: var(--dash-primary);
+  }
+
+  .pestanaActiva {
+    border-bottom-color: var(--dash-primary);
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .rejilla {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .cabeceraVacia,
+  .cabeceraDia {
+    display: none;
+  }
+
+  .columnaDia:not(.diaMovil) {
+    display: none;
+  }
+
+  .rejilla:not(.rejillaDia) .columnaDia.esHoy {
+    background: none;
+  }
+
+  .evento {
+    font-size: 0.8rem;
+  }
+
+  .bloqueDetallado .eventoTexto {
+    flex-basis: 40%;
+  }
+
+  .bloqueDetallado .carril {
+    width: 60%;
+    min-width: 0;
+  }
+}

@@ -140,6 +140,35 @@
   overflow: hidden;
   min-height: 0;
 }
+/* Calendarios de «Mi agenda»: ocupa el sitio del menú y hace su propio scroll. */
+.slotAgenda {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.slotAgenda[hidden] {
+  display: none;
+}
+.volverCalendarios {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--sidebar-border);
+  border-radius: 8px;
+  background: none;
+  color: var(--dash-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.volverCalendarios:hover {
+  background: var(--bg-page);
+}
 .footer {
   padding: 16px;
   border-top: 1px solid var(--sidebar-border);

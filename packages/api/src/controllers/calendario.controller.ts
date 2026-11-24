@@ -139,7 +139,7 @@ export async function getCalendarioByGrupo(req: Request, res: Response): Promise
   }
 }
 
-function actividadToJSON(act: Actividad): Record<string, any> {
+export function actividadToJSON(act: Actividad): Record<string, any> {
   const obj: Record<string, any> = { id: act.id, tipo: act.getTipo() };
   if (act.getTitulo()) obj.titulo = act.getTitulo();
   if (act.getDescripcion()) obj.descripcion = act.getDescripcion();

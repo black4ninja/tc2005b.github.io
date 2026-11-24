@@ -1,0 +1,160 @@
+.mes {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-auto-rows: auto;
+}
+
+.cabecera {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.dia {
+  min-height: 112px;
+  padding: 4px;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dia:nth-child(7n) {
+  border-right: none;
+}
+
+.fuera {
+  background: var(--dash-bg-subtle);
+}
+
+.fuera .numero {
+  color: var(--text-secondary);
+}
+
+.numero {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.numero:hover {
+  background: var(--dash-bg-subtle);
+}
+
+.hoy,
+.hoy:hover {
+  background: var(--dash-primary);
+  color: var(--dash-primary-contraste);
+}
+
+.eventos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.evento,
+.mas {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 22px;
+  padding: 0 4px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.evento:hover,
+.mas:hover {
+  background: var(--dash-bg-subtle);
+}
+
+.evento :global(.material-icons) {
+  font-size: 14px;
+  color: #dc2626;
+}
+
+.choque {
+  box-shadow: inset 0 0 0 1px #dc2626;
+}
+
+.punto {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.texto {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mas {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.puntos {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .dia {
+    min-height: 64px;
+    padding: 2px;
+  }
+
+  .eventos {
+    display: none;
+  }
+
+  .puntos {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 3px;
+  }
+
+  .puntos span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  .puntos .puntoChoque {
+    box-shadow: 0 0 0 2px #dc2626;
+  }
+
+  .numero {
+    width: 36px;
+    height: 36px;
+  }
+}

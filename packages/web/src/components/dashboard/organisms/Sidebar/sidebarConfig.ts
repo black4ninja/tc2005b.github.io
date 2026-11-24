@@ -25,6 +25,7 @@ export function getSidebarItems(
   if (role === 'admin') {
     return [
       { label: 'Dashboard', icon: 'dashboard', path: '/admin' },
+      { label: 'Mi agenda', icon: 'calendar_month', path: '/admin/agenda' },
       { label: 'Grupos', icon: 'groups', path: '/admin/grupos' },
       // Debajo de Grupos a propósito: es el padrón entero, la vista que se usa
       // cuando lo que hace falta NO cabe en un grupo.

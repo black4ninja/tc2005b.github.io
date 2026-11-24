@@ -1,5 +1,6 @@
 import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
+import type { PreferenciaGrupoAgenda } from '../services/agenda-staff.js';
 
 export class AppUser extends BaseModel {
   constructor(attributes?: Parse.Attributes) {
@@ -110,6 +111,20 @@ export class AppUser extends BaseModel {
 
   setPreferenciaTema(preferencia: string): void {
     this.set('preferenciaTema', preferencia);
+  }
+
+  /**
+   * Colores y visibilidad de cada grupo en «Mi agenda», por id de grupo. Son de
+   * la persona, no del grupo: dos profesores del mismo grupo pueden pintarlo
+   * distinto. Sin entrada = color por defecto y visible.
+   */
+  getPreferenciasAgenda(): Record<string, PreferenciaGrupoAgenda> {
+    const p = this.get('preferenciasAgenda');
+    return p && typeof p === 'object' ? (p as Record<string, PreferenciaGrupoAgenda>) : {};
+  }
+
+  setPreferenciasAgenda(preferencias: Record<string, PreferenciaGrupoAgenda>): void {
+    this.set('preferenciasAgenda', preferencias);
   }
 
   getLastLogin(): Date | undefined {

@@ -2,6 +2,7 @@ import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
 import { COLOR_POR_DEFECTO } from './CategoriaGrupo.js';
 import { categoriaSafeJSON } from '../services/categoria-grupo.service.js';
+import type { HorarioClase } from '../services/agenda-staff.js';
 
 export class Grupo extends BaseModel {
   constructor(attributes?: Parse.Attributes) {
@@ -167,6 +168,20 @@ export class Grupo extends BaseModel {
     this.set('camposPerfilDeshabilitados', campos);
   }
 
+  /**
+   * A qué hora es la clase cada día de la semana, en la zona del curso
+   * (`{ lunes: { inicio: '17:30', fin: '19:30' } }`). El calendario sabe QUÉ
+   * días hay sesión; esto dice a qué hora, para la agenda del staff. Un día sin
+   * entrada no tiene hora y sus sesiones no salen en la agenda.
+   */
+  getHorarioClase(): HorarioClase {
+    const h = this.get('horarioClase');
+    return h && typeof h === 'object' ? (h as HorarioClase) : {};
+  }
+  setHorarioClase(horario: HorarioClase): void {
+    this.set('horarioClase', horario);
+  }
+
   toSafeJSON(): Record<string, unknown> {
     return {
       id: this.id,
@@ -203,6 +218,7 @@ export class Grupo extends BaseModel {
       preguntasManualUrl: this.getPreguntasManualUrl(),
       // Campos del perfil que este grupo NO pide (vacío = los pide todos).
       camposPerfilDeshabilitados: this.getCamposPerfilDeshabilitados(),
+      horarioClase: this.getHorarioClase(),
       active: this.get('active'),
       // El borrado es lógico: con `?estado=eliminados|todos` el listado devuelve
       // grupos borrados y la UI necesita distinguirlos de un simple inactivo.

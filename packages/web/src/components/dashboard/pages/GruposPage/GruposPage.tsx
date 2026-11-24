@@ -5,7 +5,7 @@ import { createColumnHelper, type Row } from '@tanstack/react-table';
 import { useAuth } from '../../../../context/AuthContext';
 import AdminTable from '../../organisms/AdminTable/AdminTable';
 import Modal from '../../atoms/Modal/Modal';
-import GrupoForm, { type AdminRef } from '../../organisms/GrupoForm/GrupoForm';
+import GrupoForm, { type AdminRef, type HorarioClase } from '../../organisms/GrupoForm/GrupoForm';
 import AsignacionesModal, { type Asignacion } from '../../organisms/AsignacionesModal/AsignacionesModal';
 import CategoriasGrupoModal from '../../organisms/CategoriasGrupoModal/CategoriasGrupoModal';
 import NombreGrupo, { type CategoriaRef } from '../../atoms/NombreGrupo/NombreGrupo';
@@ -29,6 +29,7 @@ interface GrupoData {
   urlAgendaEntrevistas?: string | null;
   /** Campos del perfil que este grupo NO pide (vacío = los pide todos). */
   camposPerfilDeshabilitados?: string[];
+  horarioClase?: HorarioClase;
   /** Categoría desplegada (de ella sale el color). null = sin clasificar. */
   categoria?: CategoriaRef | null;
 }
@@ -187,7 +188,7 @@ export default function GruposPage() {
   }
 
   // `fechaInicio`/`fechaFin` en null = quitar la fecha (el servidor las borra).
-  async function handleSave(data: { name: string; fechaInicio?: string | null; fechaFin?: string | null; admins?: string[]; urlAgendaEntrevistas?: string; camposPerfilDeshabilitados?: string[]; categoriaId?: string | null }) {
+  async function handleSave(data: { name: string; fechaInicio?: string | null; fechaFin?: string | null; admins?: string[]; urlAgendaEntrevistas?: string; camposPerfilDeshabilitados?: string[]; categoriaId?: string | null; horarioClase?: HorarioClase }) {
     setSaving(true);
     setError('');
     try {
