@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import Parse from 'parse/node';
 import type { AppUser } from '../models/AppUser.js';
 import { config } from '../config/index.js';
-import { relojEnZona, sumarDiasFecha } from '../services/agenda-staff.js';
+import { relojEnZona, sesionParaMi, sumarDiasFecha } from '../services/agenda-staff.js';
 import { generarIcs, TOKEN_ICS, visibleEnAgenda } from '../services/agenda-ics.js';
 import { construirAgenda } from './agenda-staff.controller.js';
 
@@ -89,6 +89,9 @@ async function servirFeed(res: Response, token: string, grupoId: string | null):
     if (grupoId && !grupo) { NO_ENCONTRADO(res); return; }
 
     const eventos = agenda.eventos.filter((ev) => {
+      // Las sesiones que imparte otro profesor no van, salvo que haya elegido
+      // verlas: vale también para el feed de un grupo.
+      if (!sesionParaMi(ev, user.id!, agenda.preferencias[ev.grupoId])) return false;
       if (grupoId) return ev.grupoId === grupoId;
       const g = porId.get(ev.grupoId);
       return !!g && visibleEnAgenda(g.esMio, agenda.preferencias[ev.grupoId], ev.tipo);

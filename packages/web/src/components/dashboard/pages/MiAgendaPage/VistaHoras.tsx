@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import Icon from '../../atoms/Icon/Icon';
-import { acomodarDia, aMinutos, rangoHoras, textoSobre, type EventoAgenda } from '../../../../utils/miAgenda';
+import { acomodarDia, aMinutos, nombresCortos, rangoHoras, textoSobre, type EventoAgenda } from '../../../../utils/miAgenda';
 import styles from './MiAgendaPage.module.css';
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -161,6 +161,7 @@ function Evento({ ev, top, alto, columna, columnas, fondo, grupo, choca, detalla
   const etiqueta =
     `${grupo} · ${ev.tipo === 'sesion' ? 'Sesión' : 'Entrevistas'} · ${ev.inicio}–${ev.fin}` +
     (ocupacion ? ` · ${ocupacion}` : '') +
+    (ev.imparten?.length ? ` · imparte ${nombresCortos(ev.imparten)}` : '') +
     (ev.titulo ? ` · ${ev.titulo}` : '') +
     (choca ? ' · se traslapa con otro evento' : '');
 

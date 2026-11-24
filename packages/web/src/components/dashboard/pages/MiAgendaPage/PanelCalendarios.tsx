@@ -100,7 +100,8 @@ export default function PanelCalendarios({ grupos, prefs, indice, onCambiar, onV
                   const visible = grupoVisible(g, prefs[g.id], c.tipo);
                   const cambiar = (cambio: PreferenciaGrupo) => onCambiar({ [g.id]: { ...prefs[g.id], ...cambio } });
                   return (
-                    <li key={c.tipo} className={styles.fila}>
+                    <li key={c.tipo} className={styles.filaConSub}>
+                    <div className={styles.fila}>
                       <label className={styles.calendario}>
                         <input
                           type="checkbox"
@@ -125,6 +126,19 @@ export default function PanelCalendarios({ grupos, prefs, indice, onCambiar, onV
                           aria-label={`Color de ${c.nombre.toLowerCase()} de ${g.name}`}
                         />
                       </label>
+                    </div>
+                    {/* Con quién imparte asignado, cada quien ve solo sus sesiones
+                        salvo que pida ver también las de los demás. */}
+                    {c.tipo === 'sesion' && g.conImparten && visible && (
+                      <label className={styles.subOpcion}>
+                        <input
+                          type="checkbox"
+                          checked={prefs[g.id]?.soloMias !== false}
+                          onChange={(e) => cambiar({ soloMias: e.target.checked })}
+                        />
+                        Solo las que imparto
+                      </label>
+                    )}
                     </li>
                   );
                 })}

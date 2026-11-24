@@ -5,7 +5,7 @@ import { useAuth } from '../../../../context/AuthContext';
 import { useAgendaSidebar } from '../../../../context/AgendaSidebarContext';
 import Icon from '../../atoms/Icon/Icon';
 import {
-  coloresDe, esVista, grupoVisible, hoyEnCurso, lunesDe, moverVista, rangoDeVista, sumarDias, traslapes, VISTAS,
+  coloresDe, esVista, grupoVisible, sesionParaMi, hoyEnCurso, lunesDe, moverVista, rangoDeVista, sumarDias, traslapes, VISTAS,
   type EventoAgenda, type GrupoAgenda, type PreferenciaGrupo, type Vista,
 } from '../../../../utils/miAgenda';
 import PanelCalendarios from './PanelCalendarios';
@@ -150,9 +150,9 @@ export default function MiAgendaPage() {
   const mostrados = useMemo(
     () => eventos.filter((e) => {
       const g = porId.get(e.grupoId);
-      return !!g && grupoVisible(g, prefs[g.id], e.tipo);
+      return !!g && grupoVisible(g, prefs[g.id], e.tipo) && sesionParaMi(e, user?.id, prefs[g.id]);
     }),
-    [eventos, porId, prefs],
+    [eventos, porId, prefs, user?.id],
   );
   const choques = useMemo(() => traslapes(mostrados), [mostrados]);
   const enChoque = useMemo(() => new Set(choques.flatMap((c) => [c.a.id, c.b.id])), [choques]);

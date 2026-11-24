@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import Modal from '../../atoms/Modal/Modal';
 import Icon from '../../atoms/Icon/Icon';
 import ActivityItem from '../../../calendar/ActivityItem';
-import { aMinutos, type EventoAgenda } from '../../../../utils/miAgenda';
+import { aMinutos, nombresCortos, type EventoAgenda } from '../../../../utils/miAgenda';
 import styles from './DetalleEvento.module.css';
 
 interface Props {
@@ -44,6 +44,11 @@ export default function DetalleEvento({ evento: ev, grupo, color, choques, nombr
           {fechaLarga(ev.fecha)} · {ev.inicio}–{ev.fin}
           {ev.cerrado && <span className={styles.etiqueta}><Icon name="lock" size="sm" /> Cerrado a reservas</span>}
         </p>
+        {ev.imparten && ev.imparten.length > 0 && (
+          <p className={styles.imparte} title={ev.imparten.map((p) => p.name).join(', ')}>
+            <Icon name="person" size="sm" /> Imparte: {nombresCortos(ev.imparten)}
+          </p>
+        )}
 
         {choques.length > 0 && (
           <div className={styles.choques} role="status">

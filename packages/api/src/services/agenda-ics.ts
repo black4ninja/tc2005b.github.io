@@ -119,7 +119,8 @@ function descripcion(ev: EventoAgenda): string {
       const enlace = a.enlace ? `\n  ${String(a.enlace)}` : '';
       return `• ${titulo}${detalle}${enlace}`;
     });
-    return lineas.length > 0 ? lineas.join('\n') : ev.titulo;
+    const quien = ev.imparten?.length ? `Imparte: ${ev.imparten.map((p) => p.name).filter(Boolean).join(', ')}\n` : '';
+    return quien + (lineas.length > 0 ? lineas.join('\n') : ev.titulo);
   }
   const h = ev.huecos;
   const partes: string[] = [];

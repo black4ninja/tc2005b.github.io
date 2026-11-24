@@ -11,13 +11,21 @@ import {
   diaDelMes,
   type DiaKey,
 } from '@/utils/diasSemana';
+import type { PersonaStaff } from '@/types/calendario';
 import styles from './WeekForm.module.css';
+
+/** «Eduardo López» → «Eduardo»: en los chips cabe el nombre de pila. */
+function nombreCorto(nombre: string): string {
+  return nombre.trim().split(/\s+/)[0] || nombre;
+}
 
 export interface WeekFormData {
   tipo: 'normal' | 'especial';
   fechaInicio: string;
   fechaFin: string;
   diasActivos?: DiaKey[];
+  /** Ids del staff por día; un día ausente lo imparten todos. */
+  imparten?: Partial<Record<DiaKey, string[]>>;
   titulo?: string;
   mensaje?: string;
   mensajeImportante?: string;
@@ -31,6 +39,8 @@ interface WeekFormProps {
   initialData?: WeekFormData;
   /** Días que no se pueden desmarcar porque ya tienen actividades. */
   diasBloqueados?: DiaKey[];
+  /** Staff del grupo: entre quiénes se elige quién imparte cada día. */
+  staff?: PersonaStaff[];
 }
 
 export default function WeekForm({
@@ -40,6 +50,7 @@ export default function WeekForm({
   mode = 'create',
   initialData,
   diasBloqueados = [],
+  staff = [],
 }: WeekFormProps) {
   const defaultStart = initialData?.fechaInicio ?? lunesSiguiente();
   const [tipo, setTipo] = useState<'normal' | 'especial'>(initialData?.tipo ?? 'normal');
@@ -50,6 +61,7 @@ export default function WeekForm({
   const [fechaFinEspecial, setFechaFinEspecial] = useState(
     initialData?.fechaFin ?? fechaFinDeDias(defaultStart, DIAS_POR_DEFECTO),
   );
+  const [imparten, setImparten] = useState<Partial<Record<DiaKey, string[]>>>(initialData?.imparten ?? {});
   const [titulo, setTitulo] = useState(initialData?.titulo ?? '');
   const [mensaje, setMensaje] = useState(initialData?.mensaje ?? '');
   const [mensajeImportante, setMensajeImportante] = useState(initialData?.mensajeImportante ?? '');
@@ -67,6 +79,17 @@ export default function WeekForm({
     );
   };
 
+  /** «Todos» vacía la lista del día; cada persona entra o sale de ella. */
+  const toggleImparte = (dia: DiaKey, id: string | null) => {
+    setImparten((prev) => {
+      const actual = prev[dia] ?? [];
+      const siguiente = id === null ? [] : actual.includes(id) ? actual.filter((x) => x !== id) : [...actual, id];
+      // Marcar a todos uno por uno es lo mismo que «Todos».
+      const lista = siguiente.length === staff.length ? [] : siguiente;
+      return { ...prev, [dia]: lista };
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (tipo === 'normal' && diasActivos.length === 0) return;
@@ -78,6 +101,12 @@ export default function WeekForm({
     };
     if (tipo === 'normal') {
       data.diasActivos = diasActivos;
+      // Solo los días con clase y con alguien elegido; el resto, «todos».
+      if (staff.length > 1) {
+        data.imparten = Object.fromEntries(
+          diasActivos.filter((d) => (imparten[d]?.length ?? 0) > 0).map((d) => [d, imparten[d]!]),
+        );
+      }
     } else {
       data.titulo = titulo.trim();
       data.mensaje = mensaje.trim();
@@ -149,6 +178,48 @@ export default function WeekForm({
           {diasActivos.length === 0 && (
             <span className={styles.hint}>Selecciona al menos un día.</span>
           )}
+        </div>
+      )}
+
+      {/* Con un solo profesor no hay nada que repartir. */}
+      {tipo === 'normal' && staff.length > 1 && diasActivos.length > 0 && (
+        <div className={styles.field}>
+          <label>Quién imparte</label>
+          <span className={styles.ayuda}>
+            Por día. «Todos» si la dan entre todos o no se ha decidido; si no, elige uno o varios.
+          </span>
+          <div className={styles.imparten}>
+            {diasActivos.map((dia) => {
+              const elegidos = imparten[dia] ?? [];
+              return (
+                <div key={dia} className={styles.imparteFila}>
+                  <span className={styles.imparteDia}>{DIA_NOMBRES[dia]}</span>
+                  <div className={styles.imparteOpciones} role="group" aria-label={`Quién imparte el ${DIA_NOMBRES[dia]}`}>
+                    <button
+                      type="button"
+                      className={`${styles.personaChip} ${elegidos.length === 0 ? styles.personaChipActiva : ''}`}
+                      aria-pressed={elegidos.length === 0}
+                      onClick={() => toggleImparte(dia, null)}
+                    >
+                      Todos
+                    </button>
+                    {staff.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className={`${styles.personaChip} ${elegidos.includes(p.id) ? styles.personaChipActiva : ''}`}
+                        aria-pressed={elegidos.includes(p.id)}
+                        title={p.name}
+                        onClick={() => toggleImparte(dia, p.id)}
+                      >
+                        {nombreCorto(p.name)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

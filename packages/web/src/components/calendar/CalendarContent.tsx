@@ -11,7 +11,7 @@ import {
 import type { DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { calendarioGrupo2 } from '@/data/calendario';
-import type { Calendario, SemanaNormal, SemanaEspecial, Semana, Actividad } from '@/types/calendario';
+import type { Calendario, SemanaNormal, SemanaEspecial, Semana, Actividad, PersonaStaff } from '@/types/calendario';
 import { useCalendarFilter } from '@/hooks/useCalendarFilter';
 import { useWeekNavigation } from '@/hooks/useWeekNavigation';
 import { useCalendarReorder } from '@/hooks/useCalendarReorder';
@@ -72,7 +72,9 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
     setLoading(true);
     setError(null);
 
-    fetch(`${API_BASE}/calendario/${grupoKey}`)
+    // Con sesión, si la hay: quién imparte cada día solo se manda a quien
+    // pertenece al grupo.
+    fetch(`${API_BASE}/calendario/${grupoKey}`, { headers: sessionToken ? { 'x-session-token': sessionToken } : {} })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -92,18 +94,37 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       });
 
     return () => { cancelled = true; };
-  }, [grupoKey]);
+  }, [grupoKey, sessionToken]);
+
+  // Staff del grupo, para elegir quién imparte cada día en el formulario de
+  // semana. Solo hace falta al editar el calendario.
+  const [staff, setStaff] = useState<PersonaStaff[]>([]);
+  useEffect(() => {
+    if (!editable || !apiCalendario?.grupoId || !sessionToken) return;
+    let cancelado = false;
+    fetch(`${API_BASE}/admin/grupos`, { headers: { 'x-session-token': sessionToken } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelado || !data) return;
+        const g = (data.grupos ?? []).find((x: { id: string }) => x.id === apiCalendario.grupoId);
+        setStaff(((g?.admins ?? []) as { id: string; name: string | null }[]).map((a) => ({ id: a.id, name: a.name ?? '' })));
+      })
+      .catch(() => { /* sin staff, el formulario no ofrece el selector */ });
+    return () => { cancelado = true; };
+  }, [editable, apiCalendario?.grupoId, sessionToken]);
 
   const refetchCalendario = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/calendario/${grupoKey}`);
+      const res = await fetch(`${API_BASE}/calendario/${grupoKey}`, {
+        headers: sessionToken ? { 'x-session-token': sessionToken } : {},
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setApiCalendario(data.calendario);
     } catch (err: any) {
       console.warn('Error refetching calendario:', err.message);
     }
-  }, [grupoKey]);
+  }, [grupoKey, sessionToken]);
 
   async function openCopyModal() {
     setCopyError(null);
@@ -436,7 +457,8 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       return { ...prev, semanas: [...prev.semanas, newSemana] };
     });
     setShowWeekModal(false);
-  }, [calendario?.grupoId, createSemana]);
+    if (formData.imparten && Object.keys(formData.imparten).length > 0) void refetchCalendario();
+  }, [calendario?.grupoId, createSemana, refetchCalendario]);
 
   const handleEditWeek = useCallback((semanaId: string) => {
     const sem = semanas.find((s) => s.id === semanaId);
@@ -471,6 +493,9 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
         fechaInicio: sem.fechaInicio,
         fechaFin: sem.fechaFin,
         diasActivos: diasDeSemana(sem),
+        imparten: Object.fromEntries(
+          Object.entries(sem.imparten ?? {}).map(([d, ps]) => [d, (ps ?? []).map((p) => p.id)]),
+        ),
       },
       diasBloqueados: conActividades,
     });
@@ -482,6 +507,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       fechaInicio: formData.fechaInicio,
       fechaFin: formData.fechaFin,
       diasActivos: formData.diasActivos,
+      ...(formData.imparten ? { imparten: formData.imparten } : {}),
       titulo: formData.titulo,
       mensaje: formData.mensaje,
       mensajeImportante: formData.mensajeImportante,
@@ -512,7 +538,9 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       return { ...prev, semanas: semanasNext };
     });
     setEditWeekState(null);
-  }, [editWeekState, updateSemana]);
+    // Quién imparte llega con nombre solo desde el calendario completo.
+    if (formData.imparten) void refetchCalendario();
+  }, [editWeekState, updateSemana, refetchCalendario]);
 
   const handleWeekDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
@@ -813,6 +841,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
         <Modal isOpen onClose={() => setShowWeekModal(false)} title="Agregar semana">
           <WeekForm
             onSave={handleSaveWeek}
+            staff={staff}
             onCancel={() => setShowWeekModal(false)}
             loading={isCreatingSemana}
           />
@@ -825,6 +854,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
             mode="edit"
             initialData={editWeekState.initialData}
             diasBloqueados={editWeekState.diasBloqueados}
+            staff={staff}
             onSave={handleUpdateWeek}
             onCancel={() => setEditWeekState(null)}
             loading={isUpdatingSemana}

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   acomodarDia, aclarar, coloresDe, diasDeMes, grupoVisible, lunesDe, moverVista, rangoDeVista, rangoHoras, sumarDias,
-  sumarMeses, textoSobre, traslapes,
+  nombresCortos, sesionParaMi, sumarMeses, textoSobre, traslapes,
   type EventoAgenda,
 } from './miAgenda';
 
@@ -105,5 +105,19 @@ describe('vistas', () => {
     expect(moverVista('mes', '2026-01-31', -1)).toBe('2025-12-01');
     expect(moverVista('anio', '2026-11-24', 1)).toBe('2027-01-01');
     expect(sumarMeses('2026-12-15', 1)).toBe('2027-01-01');
+  });
+});
+
+describe('quién imparte', () => {
+  const ses = (imparten?: { id: string; name: string }[]): EventoAgenda =>
+    ({ id: 's', tipo: 'sesion', grupoId: 'g', fecha: '2026-11-23', inicio: '17:30', fin: '19:30', titulo: '', imparten });
+  it('sesionParaMi: sin asignar siempre; asignada solo a quien le toca, salvo soloMias: false', () => {
+    expect(sesionParaMi(ses(), 'a', undefined)).toBe(true);
+    expect(sesionParaMi(ses([{ id: 'b', name: 'B' }]), 'a', undefined)).toBe(false);
+    expect(sesionParaMi(ses([{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }]), 'a', undefined)).toBe(true);
+    expect(sesionParaMi(ses([{ id: 'b', name: 'B' }]), 'a', { soloMias: false })).toBe(true);
+  });
+  it('nombresCortos deja el nombre de pila', () => {
+    expect(nombresCortos([{ name: 'Eduardo López' }, { name: ' Alejandro  F ' }])).toBe('Eduardo, Alejandro');
   });
 });

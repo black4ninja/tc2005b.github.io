@@ -70,6 +70,16 @@ export class Semana extends BaseModel {
     this.set('diasActivos', diasActivos);
   }
 
+  /** Quién imparte cada día (ver `services/imparten.ts`). Sin entrada = todos. */
+  getImparten(): Record<string, string[]> {
+    const v = this.get('imparten');
+    return v && typeof v === 'object' ? (v as Record<string, string[]>) : {};
+  }
+  setImparten(imparten: Record<string, string[]>): void {
+    if (Object.keys(imparten).length > 0) this.set('imparten', imparten);
+    else this.unset('imparten');
+  }
+
   getNotas(): Record<string, string> | undefined {
     return this.get('notas');
   }
@@ -94,6 +104,7 @@ export class Semana extends BaseModel {
       tipo: this.getTipo(),
       titulo: this.getTitulo(),
       mensaje: this.getMensaje(),
+      imparten: this.getImparten(),
       mensajeImportante: this.getMensajeImportante(),
       diasActivos: this.getDiasActivos(),
       notas: this.getNotas(),

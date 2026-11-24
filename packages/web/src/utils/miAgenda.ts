@@ -23,6 +23,8 @@ export interface EventoAgenda {
   semana?: string;
   /** Solo sesiones, en rangos de hasta seis semanas: las actividades del día. */
   actividades?: Actividad[];
+  /** Solo sesiones: quién la imparte. Sin dato = todos (sin asignar). */
+  imparten?: { id: string; name: string }[];
 }
 
 export interface CitaEnBloque {
@@ -53,6 +55,8 @@ export interface GrupoAgenda {
   tieneSesiones?: boolean;
   /** Ha abierto alguna vez días de entrevistas (sin dato, se asume que sí). */
   tieneEntrevistas?: boolean;
+  /** Alguna sesión del grupo tiene quién imparte asignado. */
+  conImparten?: boolean;
 }
 
 export interface PreferenciaGrupo {
@@ -60,6 +64,8 @@ export interface PreferenciaGrupo {
   entrevistas?: string;
   verSesiones?: boolean;
   verEntrevistas?: boolean;
+  /** De las sesiones asignadas, solo las propias (sin elegir: sí). */
+  soloMias?: boolean;
   /** Interruptor único de la primera versión: vale para los dos tipos. */
   oculto?: boolean;
 }
@@ -138,6 +144,21 @@ export function grupoVisible(grupo: GrupoAgenda, pref: PreferenciaGrupo | undefi
   if (propia !== undefined) return propia;
   if (pref?.oculto !== undefined) return !pref.oculto;
   return grupo.esMio;
+}
+
+/**
+ * ¿Entra esta sesión en mi agenda? Las que nadie tiene asignadas, siempre; las
+ * asignadas, si me tocan o si elegí ver también las de los demás.
+ */
+export function sesionParaMi(ev: EventoAgenda, userId: string | undefined, pref: PreferenciaGrupo | undefined): boolean {
+  if (ev.tipo !== 'sesion' || !ev.imparten || ev.imparten.length === 0) return true;
+  if (pref?.soloMias === false) return true;
+  return !!userId && ev.imparten.some((p) => p.id === userId);
+}
+
+/** «Eduardo López, Alejandro Fernández» → «Eduardo, Alejandro». */
+export function nombresCortos(personas: { name: string }[]): string {
+  return personas.map((p) => p.name.trim().split(/\s+/)[0]).filter(Boolean).join(', ');
 }
 
 // ── Vistas ────────────────────────────────────────────────────────────────
