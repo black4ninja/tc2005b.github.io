@@ -48,21 +48,21 @@ describe('sesionesDelGrupo', () => {
   const semanas = [{ id: 's1', fechaInicio: '2027-02-01', diasActivos: ['lunes', 'martes', 'sabado'] }];
 
   it('genera una sesión por día activo con hora, con la fecha real del día', () => {
-    const ev = sesionesDelGrupo('g', horario, semanas, [{ semanaId: 's1', dia: 'sabado', tipo: 'info', titulo: 'RAG' }], '2027-01-01', '2027-12-31');
+    const ev = sesionesDelGrupo('g', horario, semanas, [{ id: 'x', semanaId: 's1', dia: 'sabado', tipo: 'info', titulo: 'RAG' }], '2027-01-01', '2027-12-31');
     // martes no tiene hora en el horario: no sale
     expect(ev.map((e) => `${e.fecha} ${e.inicio}-${e.fin}`)).toEqual(['2027-02-01 17:30-19:30', '2027-02-06 09:00-13:00']);
     expect(ev[1].titulo).toBe('RAG');
   });
 
   it('un día que solo tiene asueto no es sesión', () => {
-    const ev = sesionesDelGrupo('g', horario, semanas, [{ semanaId: 's1', dia: 'lunes', tipo: 'asueto', titulo: 'Día de la Constitución' }], '2027-01-01', '2027-12-31');
+    const ev = sesionesDelGrupo('g', horario, semanas, [{ id: 'x', semanaId: 's1', dia: 'lunes', tipo: 'asueto', titulo: 'Día de la Constitución' }], '2027-01-01', '2027-12-31');
     expect(ev.map((e) => e.fecha)).toEqual(['2027-02-06']);
   });
 
   it('lleva el número de semana y el detalle de las actividades, sin los asuetos', () => {
     const [ev] = sesionesDelGrupo('g', horario, [{ ...semanas[0], numero: '3' }], [
-      { semanaId: 's1', dia: 'lunes', tipo: 'info', titulo: 'RAG', detalle: { id: 'a1', tipo: 'info', titulo: 'RAG' } },
-      { semanaId: 's1', dia: 'lunes', tipo: 'asueto', titulo: 'Puente', detalle: { id: 'a2', tipo: 'asueto' } },
+      { id: 'x', semanaId: 's1', dia: 'lunes', tipo: 'info', titulo: 'RAG', detalle: { id: 'a1', tipo: 'info', titulo: 'RAG' } },
+      { id: 'x', semanaId: 's1', dia: 'lunes', tipo: 'asueto', titulo: 'Puente', detalle: { id: 'a2', tipo: 'asueto' } },
     ], '2027-02-01', '2027-02-01');
     expect(ev.semana).toBe('3');
     expect(ev.actividades).toEqual([{ id: 'a1', tipo: 'info', titulo: 'RAG' }]);

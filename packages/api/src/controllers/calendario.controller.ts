@@ -67,22 +67,24 @@ export async function getCalendarioByGrupo(req: Request, res: Response): Promise
       actividadesBySemana.get(semanaId)!.push(act);
     }
 
-    // Quién imparte cada día: los ids se guardan en la semana y aquí se les
-    // pone nombre. Solo los del staff actual del grupo: si alguien deja de
-    // darlo, desaparece de sus sesiones sin migrar nada.
+    // Quién da cada actividad: los ids se guardan en la actividad y aquí se
+    // les pone nombre. Solo los del staff actual del grupo: si alguien deja de
+    // darlo, desaparece de sus actividades sin migrar nada.
     //
     // El calendario es público, pero esto NO: ids y nombres del staff solo
-    // para quien pertenece al grupo (su staff, sus alumnos o un admin).
+    // para quien pertenece al grupo (su staff, sus alumnos o un admin). La
+    // hora sí es pública: es la misma que ya se ve en el salón.
     const nombreStaff = new Map<string, string>();
-    const hayImparten = semanas.some((s) => Object.keys(s.getImparten()).length > 0);
-    const quien = hayImparten ? await usuarioOpcional(req) : undefined;
-    if (hayImparten && quien && (await perteneceAlGrupo(quien, grupo.id!))) {
+    const hayResponsables = actividades.some((a) => a.getResponsables().length > 0);
+    const quien = hayResponsables ? await usuarioOpcional(req) : undefined;
+    if (hayResponsables && quien && (await perteneceAlGrupo(quien, grupo.id!))) {
       const admins = ((grupo.get('admins') ?? []) as Parse.Object[]).filter(Boolean);
       const completos = await Parse.Object.fetchAllIfNeeded(admins, { useMasterKey: true });
       for (const a of completos) {
         if (a.get('exists') !== false) nombreStaff.set(a.id!, String(a.get('name') ?? ''));
       }
     }
+    const aJSON = (a: Actividad) => actividadToJSON(a, nombreStaff);
 
     // Assemble response in the Calendario shape
     const semanasJSON = semanas.map((semana) => {
@@ -116,10 +118,10 @@ export async function getCalendarioByGrupo(req: Request, res: Response): Promise
 
         const previo = diaActividades
           .filter((a) => a.getIsPrevio())
-          .map(actividadToJSON);
+          .map(aJSON);
         const acts = diaActividades
           .filter((a) => !a.getIsPrevio())
-          .map(actividadToJSON);
+          .map(aJSON);
 
         const diaObj: any = {};
         if (notas[dia]) diaObj.nota = notas[dia];
@@ -130,11 +132,6 @@ export async function getCalendarioByGrupo(req: Request, res: Response): Promise
       }
 
       const diasActivos = normalizarDias(semana.getDiasActivos());
-      const imparten: Record<string, { id: string; name: string }[]> = {};
-      for (const [dia, ids] of Object.entries(semana.getImparten())) {
-        const lista = (ids ?? []).filter((id) => nombreStaff.has(id)).map((id) => ({ id, name: nombreStaff.get(id)! }));
-        if (lista.length > 0) imparten[dia] = lista;
-      }
 
       return {
         id: semana.id,
@@ -143,7 +140,6 @@ export async function getCalendarioByGrupo(req: Request, res: Response): Promise
         fechaFin: semana.getFechaFin(),
         tipo: 'normal' as const,
         ...(diasActivos.length > 0 ? { diasActivos } : {}),
-        ...(Object.keys(imparten).length > 0 ? { imparten } : {}),
         dias,
       };
     });
@@ -162,7 +158,12 @@ export async function getCalendarioByGrupo(req: Request, res: Response): Promise
   }
 }
 
-export function actividadToJSON(act: Actividad): Record<string, any> {
+/**
+ * Una actividad como la pinta el calendario. `nombreStaff` trae los nombres
+ * del staff que quien pide puede ver: sin él (calendario público) no salen los
+ * responsables.
+ */
+export function actividadToJSON(act: Actividad, nombreStaff?: Map<string, string>): Record<string, any> {
   const obj: Record<string, any> = { id: act.id, tipo: act.getTipo() };
   if (act.getTitulo()) obj.titulo = act.getTitulo();
   if (act.getDescripcion()) obj.descripcion = act.getDescripcion();
@@ -170,6 +171,18 @@ export function actividadToJSON(act: Actividad): Record<string, any> {
   if (act.getExterno()) obj.externo = true;
   if (act.getDuracion()) obj.duracion = act.getDuracion();
   if (act.getFechaEntrega()) obj.fechaEntrega = act.getFechaEntrega();
+  const hi = act.getHoraInicio();
+  const hf = act.getHoraFin();
+  if (hi && hf) {
+    obj.horaInicio = hi;
+    obj.horaFin = hf;
+  }
+  if (nombreStaff) {
+    const responsables = act.getResponsables()
+      .filter((id) => nombreStaff.has(id))
+      .map((id) => ({ id, name: nombreStaff.get(id)! }));
+    if (responsables.length > 0) obj.responsables = responsables;
+  }
   const extras = act.getEnlacesExtra();
   if (extras && extras.length > 0) obj.enlacesExtra = extras;
   // Solo metadatos del adjunto: el binario se pide al endpoint con sesión.

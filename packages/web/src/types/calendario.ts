@@ -22,6 +22,11 @@ export interface Actividad {
   archivoNombre?: string;
   archivoMime?: string;
   archivoBytes?: number;
+  /** Hora propia (`HH:MM`). Sin ella va en el bloque de la clase del grupo. */
+  horaInicio?: string;
+  horaFin?: string;
+  /** Quién la da. Solo llega a quien pertenece al grupo; sin dato, todos. */
+  responsables?: PersonaStaff[];
 }
 
 export interface Dia {
@@ -44,8 +49,6 @@ export interface SemanaNormal {
   tipo: 'normal';
   /** Días con clase de esta semana. Ausente en semanas anteriores al campo. */
   diasActivos?: string[];
-  /** Quién imparte cada día. Un día sin entrada lo imparten todos. */
-  imparten?: Partial<Record<string, PersonaStaff[]>>;
   dias: {
     lunes?: Dia;
     martes?: Dia;

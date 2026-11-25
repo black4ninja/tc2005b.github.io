@@ -1,6 +1,6 @@
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import type { Dia, ActividadTipo, PersonaStaff } from '@/types/calendario';
+import type { Dia, ActividadTipo } from '@/types/calendario';
 import { DIA_NOMBRES, diaDelMes, type DiaKey } from '@/utils/diasSemana';
 import ActivityItem from './ActivityItem';
 import SortableActivityItem from './SortableActivityItem';
@@ -15,8 +15,6 @@ interface DayColumnProps {
   onEditActivity?: (actividadId: string) => void;
   onDeleteActivity?: (actividadId: string) => void;
   fechaInicio?: string;
-  /** Quién imparte este día; sin dato, todos. */
-  imparten?: PersonaStaff[];
 }
 
 function DroppableZone({ id, children, isEmpty }: { id: string; children?: React.ReactNode; isEmpty?: boolean }) {
@@ -31,15 +29,20 @@ function DroppableZone({ id, children, isEmpty }: { id: string; children?: React
   );
 }
 
-export default function DayColumn({ dayKey, day, activeFilters, editable, onAddActivity, onEditActivity, onDeleteActivity, fechaInicio, imparten }: DayColumnProps) {
+export default function DayColumn({ dayKey, day, activeFilters, editable, onAddActivity, onEditActivity, onDeleteActivity, fechaInicio }: DayColumnProps) {
   const dayHeader = (
     <h3 className={styles.dayName}>
       {DIA_NOMBRES[dayKey]}
       {fechaInicio && <span className={styles.dayDate}> {diaDelMes(fechaInicio, dayKey)}</span>}
     </h3>
   );
-  // Quién imparte la sesión, debajo del día. Sin asignar no se pinta nada.
-  const quien = imparten && imparten.length > 0 && (
+  // Resumen de quién da las actividades del día, debajo del día. Se calcula
+  // de las actividades: cada una se asigna en su formulario. Sin asignar no
+  // se pinta nada.
+  const imparten = [...new Map(
+    (day?.actividades ?? []).flatMap((a) => a.responsables ?? []).map((p) => [p.id, p] as const),
+  ).values()];
+  const quien = imparten.length > 0 && (
     <div className={styles.imparte} title={imparten.map((p) => p.name).join(', ')}>
       <i className="material-icons">person</i>
       {imparten.map((p) => p.name.trim().split(/\s+/)[0]).join(', ')}

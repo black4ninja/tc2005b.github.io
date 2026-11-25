@@ -89,10 +89,12 @@ async function servirFeed(res: Response, token: string, grupoId: string | null):
     if (grupoId && !grupo) { NO_ENCONTRADO(res); return; }
 
     const eventos = agenda.eventos.filter((ev) => {
-      // Las sesiones que imparte otro profesor no van, salvo que haya elegido
-      // verlas: vale también para el feed de un grupo.
-      if (!sesionParaMi(ev, user.id!, agenda.preferencias[ev.grupoId])) return false;
+      // El feed de un grupo es el calendario COMPLETO del grupo: cada
+      // actividad con su responsable, también las de los demás.
       if (grupoId) return ev.grupoId === grupoId;
+      // El general es la agenda de la persona: las actividades que da otro
+      // profesor no van, salvo que haya elegido verlas.
+      if (!sesionParaMi(ev, user.id!, agenda.preferencias[ev.grupoId])) return false;
       const g = porId.get(ev.grupoId);
       return !!g && visibleEnAgenda(g.esMio, agenda.preferencias[ev.grupoId], ev.tipo);
     });

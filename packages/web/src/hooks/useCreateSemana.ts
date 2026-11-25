@@ -9,7 +9,6 @@ export interface CreateSemanaPayload {
   fechaInicio: string;
   fechaFin: string;
   diasActivos?: string[];
-  imparten?: Record<string, string[]>;
   titulo?: string;
   mensaje?: string;
   mensajeImportante?: string;

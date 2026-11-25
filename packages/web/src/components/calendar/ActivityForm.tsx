@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import type { ActividadTipo } from '@/types/calendario';
+import type { ActividadTipo, PersonaStaff } from '@/types/calendario';
 import type { PaginaResumen } from '@/types/pagina';
 import { TIPOS_FORMULARIO_CALENDARIO, formularioTipo } from '@/data/tiposActividad';
 import DashButton from '@/components/dashboard/atoms/DashButton/DashButton';
@@ -36,6 +36,11 @@ export interface ActivityFormData {
   archivo?: File | null;
   /** Presentación: quitar el adjunto que ya tenía. */
   quitarArchivo?: boolean;
+  /** Hora propia de la actividad; vacías = la de la clase del grupo. */
+  horaInicio?: string;
+  horaFin?: string;
+  /** Ids del staff que la da; vacío = todos. */
+  responsables?: string[];
 }
 
 interface ActivityFormProps {
@@ -52,6 +57,15 @@ interface ActivityFormProps {
   grupoId?: string;
   /** Nombre del adjunto que ya tiene la actividad (solo en edición). */
   archivoActual?: string;
+  /** Staff del grupo, para elegir quién da la actividad. */
+  staff?: PersonaStaff[];
+  /** Actividad previa a la sesión: no tiene hora ni responsables. */
+  esPrevio?: boolean;
+}
+
+/** «Eduardo Pérez» → «Eduardo». */
+function nombreCorto(nombre: string): string {
+  return nombre.trim().split(/\s+/)[0] || nombre;
 }
 
 /** Quita las cadenas vacías: al crear solo se mandan los campos con contenido. */
@@ -79,7 +93,7 @@ function formatearBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function ActivityForm({ onSave, onCancel, loading, initialData, mode = 'create', grupoId, archivoActual }: ActivityFormProps) {
+export default function ActivityForm({ onSave, onCancel, loading, initialData, mode = 'create', grupoId, archivoActual, staff = [], esPrevio = false }: ActivityFormProps) {
   const [tipo, setTipo] = useState<ActividadTipo>(initialData?.tipo ?? 'lab');
   const [titulo, setTitulo] = useState(initialData?.titulo ?? '');
   const [descripcion, setDescripcion] = useState(initialData?.descripcion ?? '');
@@ -87,6 +101,36 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
   const [externo, setExterno] = useState(initialData?.externo ?? false);
   const [duracion, setDuracion] = useState(initialData?.duracion ?? '');
   const [fechaEntrega, setFechaEntrega] = useState(initialData?.fechaEntrega ?? '');
+  const [horaInicio, setHoraInicio] = useState(initialData?.horaInicio ?? '');
+  const [horaFin, setHoraFin] = useState(initialData?.horaFin ?? '');
+  const [responsables, setResponsables] = useState<string[]>(initialData?.responsables ?? []);
+  const [horaError, setHoraError] = useState<string | null>(null);
+
+  // Con un solo profesor no hay nada que repartir. Un responsable que ya no
+  // está en el staff se conserva tal cual: el API lo rechazaría si se mandara.
+  const ofreceResponsables = !esPrevio && staff.length > 1;
+
+  function toggleResponsable(id: string | null) {
+    if (id === null) { setResponsables([]); return; }
+    setResponsables((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  /**
+   * Hora y responsables, o null si la hora no es válida. En edición van
+   * siempre (para poder borrarlos); al crear, solo si hay algo.
+   */
+  function camposDeSesion(): Partial<ActivityFormData> | null {
+    if (esPrevio) return {};
+    const i = horaInicio.trim();
+    const f = horaFin.trim();
+    if ((i && !f) || (!i && f)) { setHoraError('Pon la hora de inicio y la de fin, o deja las dos vacías.'); return null; }
+    if (i && f && i >= f) { setHoraError('La hora de fin tiene que ser después de la de inicio.'); return null; }
+    setHoraError(null);
+    const campos: Partial<ActivityFormData> = {};
+    if (mode === 'edit' || i) { campos.horaInicio = i; campos.horaFin = f; }
+    if (ofreceResponsables && (mode === 'edit' || responsables.length > 0)) campos.responsables = responsables;
+    return campos;
+  }
 
   // Presentación: enlace o archivo, nunca los dos.
   const [fuente, setFuente] = useState<'enlace' | 'archivo'>(
@@ -326,6 +370,8 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const sesion = camposDeSesion();
+    if (!sesion) return;
     const data: ActivityFormData = { tipo };
 
     if (usaArchivo) {
@@ -338,7 +384,7 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
       data.fechaEntrega = fechaEntrega.trim();
       if (archivo) data.archivo = archivo;
       if (archivoQuitado && !archivo) data.quitarArchivo = true;
-      onSave(mode === 'edit' ? data : limpiarVacios(data));
+      onSave({ ...(mode === 'edit' ? data : limpiarVacios(data)), ...sesion });
       return;
     }
 
@@ -365,7 +411,7 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
       if (fechaEntrega.trim()) data.fechaEntrega = fechaEntrega.trim();
     }
 
-    onSave(data);
+    onSave({ ...data, ...sesion });
   };
 
   return (
@@ -690,6 +736,64 @@ export default function ActivityForm({ onSave, onCancel, loading, initialData, m
             onChange={(e) => setExterno(e.target.checked)}
           />
           <label htmlFor="externo-check">Enlace externo (abre en nueva pestaña)</label>
+        </div>
+      )}
+
+      {!esPrevio && (
+        <div className={styles.field}>
+          <label>Hora en la sesión</label>
+          <div className={styles.horas}>
+            <input
+              type="time"
+              aria-label="Hora de inicio"
+              value={horaInicio}
+              onChange={(e) => setHoraInicio(e.target.value)}
+            />
+            <span aria-hidden="true">a</span>
+            <input
+              type="time"
+              aria-label="Hora de fin"
+              value={horaFin}
+              onChange={(e) => setHoraFin(e.target.value)}
+            />
+            {(horaInicio || horaFin) && (
+              <button type="button" className={styles.limpiarHora} onClick={() => { setHoraInicio(''); setHoraFin(''); setHoraError(null); }}>
+                Quitar hora
+              </button>
+            )}
+          </div>
+          {horaError
+            ? <span className={styles.error} role="alert">{horaError}</span>
+            : <span className={styles.ayuda}>Opcional. Con hora, la actividad es su propio bloque en «Mi agenda»; sin ella, va en el horario de la clase.</span>}
+        </div>
+      )}
+
+      {ofreceResponsables && (
+        <div className={styles.field}>
+          <label>Quién la da</label>
+          <div className={styles.personas} role="group" aria-label="Quién da la actividad">
+            <button
+              type="button"
+              className={`${styles.personaChip} ${responsables.length === 0 ? styles.personaChipActiva : ''}`}
+              aria-pressed={responsables.length === 0}
+              onClick={() => toggleResponsable(null)}
+            >
+              Todos
+            </button>
+            {staff.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className={`${styles.personaChip} ${responsables.includes(p.id) ? styles.personaChipActiva : ''}`}
+                aria-pressed={responsables.includes(p.id)}
+                title={p.name}
+                onClick={() => toggleResponsable(p.id)}
+              >
+                {nombreCorto(p.name)}
+              </button>
+            ))}
+          </div>
+          <span className={styles.ayuda}>«Todos» si la dan entre todos o no se ha decidido; si no, elige una o varias personas.</span>
         </div>
       )}
 

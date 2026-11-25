@@ -124,6 +124,36 @@ export class Actividad extends BaseModel {
     this.unset('archivoBytes');
   }
 
+  /**
+   * Hora propia de la actividad (`HH:MM`, en la zona del curso). Sin ella usa
+   * la de la clase del grupo. Van las dos o ninguna (`services/imparten.ts`).
+   */
+  getHoraInicio(): string | undefined {
+    return this.get('horaInicio');
+  }
+  getHoraFin(): string | undefined {
+    return this.get('horaFin');
+  }
+  setFranja(franja: { inicio: string; fin: string } | null): void {
+    if (franja) {
+      this.set('horaInicio', franja.inicio);
+      this.set('horaFin', franja.fin);
+    } else {
+      this.unset('horaInicio');
+      this.unset('horaFin');
+    }
+  }
+
+  /** Ids del staff que la da. Vacío = todos (o no se ha dicho). */
+  getResponsables(): string[] {
+    const v = this.get('responsables');
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+  }
+  setResponsables(ids: string[]): void {
+    if (ids.length > 0) this.set('responsables', ids);
+    else this.unset('responsables');
+  }
+
   getEnlacesExtra(): Array<{ texto: string; url: string }> | undefined {
     return this.get('enlacesExtra');
   }
@@ -146,6 +176,9 @@ export class Actividad extends BaseModel {
       duracion: this.getDuracion(),
       fechaEntrega: this.getFechaEntrega(),
       enlacesExtra: this.getEnlacesExtra(),
+      horaInicio: this.getHoraInicio(),
+      horaFin: this.getHoraFin(),
+      responsables: this.getResponsables(),
       // Metadatos del adjunto, nunca la URL del binario.
       archivoNombre: this.getArchivoNombre(),
       archivoMime: this.getArchivoMime(),
