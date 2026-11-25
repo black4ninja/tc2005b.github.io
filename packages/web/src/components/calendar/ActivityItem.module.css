@@ -100,3 +100,27 @@
   vertical-align: -2px;
   opacity: 0.7;
 }
+
+/* Hora y quién la da: renglón propio debajo del título. */
+.sesionLinea {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.sesionHora,
+.sesionQuien {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.activity .sesionLinea :global(.material-icons) {
+  font-size: 13px;
+  margin-top: 0;
+  color: var(--text-muted);
+}

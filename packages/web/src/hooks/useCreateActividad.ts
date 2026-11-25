@@ -15,6 +15,11 @@ export interface CreateActividadPayload {
   externo?: boolean;
   duracion?: string;
   fechaEntrega?: string;
+  /** Las dos o ninguna; vacías borran la hora propia. */
+  horaInicio?: string;
+  horaFin?: string;
+  /** Ids del staff; vacío = todos. */
+  responsables?: string[];
 }
 
 interface UseCreateActividadResult {

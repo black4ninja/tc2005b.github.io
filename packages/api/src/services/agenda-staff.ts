@@ -7,7 +7,8 @@ import { ZONA_CURSO } from '../constants/preguntas.js';
  *
  * Las entrevistas ya guardan instantes absolutos (`DiaEntrevistas.inicio/fin`).
  * Las sesiones no: el calendario sabe qué DÍAS hay clase, pero no a qué hora.
- * La hora sale de `Grupo.horarioClase`, un horario por día de la semana.
+ * La hora sale de la actividad si tiene una propia (`Actividad.horaInicio/
+ * horaFin`) y si no de `Grupo.horarioClase`, un horario por día de la semana.
  *
  * Todo se devuelve como hora de reloj EN LA ZONA DEL CURSO (`fecha` + `HH:MM`),
  * no como instante: así el navegador no reinterpreta nada y dos eventos que
@@ -96,7 +97,9 @@ export interface EventoAgenda {
   semana?: string;
   /** Solo sesiones, y solo en rangos cortos: las actividades del día, como las serializa el calendario. */
   actividades?: Record<string, unknown>[];
-  /** Solo sesiones: quién la imparte. Ausente o vacío = todos (sin asignar). */
+  /** Solo sesiones: la actividad con hora propia que es este evento. Ausente = bloque de la clase. */
+  actividadId?: string;
+  /** Solo sesiones: quién la da. Ausente o vacío = todos (sin asignar). */
   imparten?: { id: string; name: string }[];
 }
 
@@ -125,24 +128,37 @@ export interface SemanaParaAgenda {
   id: string;
   /** Se guarda como texto (`Semana.setNumero`). */
   numero?: string | number;
-  /** Ids de quién imparte cada día (`Semana.imparten`). */
-  imparten?: Record<string, string[]>;
   fechaInicio: string;
   diasActivos?: unknown;
 }
 
 export interface ActividadParaAgenda {
+  id: string;
   semanaId: string;
   dia: string;
   tipo: string;
   titulo: string;
+  /** Hora propia (`HH:MM`); sin las dos, la actividad va en el bloque de la clase. */
+  horaInicio?: string;
+  horaFin?: string;
+  /** Ids del staff que la da; vacío = todos. */
+  responsables?: string[];
   /** La actividad completa para el detalle; sin ella, la sesión va sin actividades. */
   detalle?: Record<string, unknown>;
 }
 
+const conNombres = (ids: string[] | undefined) => (ids ?? []).map((id) => ({ id, name: '' }));
+
 /**
- * Las sesiones de un grupo entre `desde` y `hasta` (incluidos), una por día
- * activo de cada semana que tenga hora en el horario.
+ * Las sesiones de un grupo entre `desde` y `hasta` (incluidos), día activo por
+ * día activo de cada semana:
+ *
+ * - Cada actividad con hora propia es su propio evento (`a-<id>`), con sus
+ *   responsables. Así cada quien exporta SUS bloques, no la clase entera.
+ * - Las que no tienen hora comparten el bloque de la clase (`s-<semana>-<día>`,
+ *   con la hora de `horario`); un día sin actividades también lo tiene. El
+ *   bloque es de quien dé alguna de ellas, o de todos si alguna no tiene
+ *   responsables. Sin hora de clase ese día, no hay bloque.
  *
  * No hay sesión los días cuyo contenido es SOLO un asueto: el calendario los
  * marca activos para poder mostrar el aviso, pero no hay clase.
@@ -158,17 +174,38 @@ export function sesionesDelGrupo(
   const eventos: EventoAgenda[] = [];
   for (const semana of semanas) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(semana.fechaInicio ?? '')) continue;
-    const dias = normalizarDias(semana.diasActivos);
-    for (const dia of dias) {
-      const franja = horario[dia];
-      if (!franja) continue;
+    const numero = semana.numero !== undefined && semana.numero !== '' ? { semana: String(semana.numero) } : {};
+    for (const dia of normalizarDias(semana.diasActivos)) {
       const fecha = sumarDiasFecha(semana.fechaInicio, DIAS_SEMANA.indexOf(dia));
       if (fecha < desde || fecha > hasta) continue;
       const delDia = actividades.filter((a) => a.semanaId === semana.id && a.dia === dia);
       if (delDia.length > 0 && delDia.every((a) => a.tipo === 'asueto')) continue;
       const conClase = delDia.filter((a) => a.tipo !== 'asueto');
-      const temas = conClase.map((a) => a.titulo).filter(Boolean);
-      const detalles = conClase.map((a) => a.detalle).filter((d): d is Record<string, unknown> => !!d);
+      const conHora = conClase.filter((a) => a.horaInicio && a.horaFin);
+      const sinHora = conClase.filter((a) => !(a.horaInicio && a.horaFin));
+
+      for (const a of conHora) {
+        eventos.push({
+          id: `a-${a.id}`,
+          actividadId: a.id,
+          tipo: 'sesion',
+          grupoId,
+          fecha,
+          inicio: a.horaInicio!,
+          fin: a.horaFin!,
+          titulo: a.titulo,
+          ...numero,
+          ...(a.detalle ? { actividades: [a.detalle] } : {}),
+          ...(a.responsables?.length ? { imparten: conNombres(a.responsables) } : {}),
+        });
+      }
+
+      const franja = horario[dia];
+      if (!franja || (conClase.length > 0 && sinHora.length === 0)) continue;
+      const temas = sinHora.map((a) => a.titulo).filter(Boolean);
+      const detalles = sinHora.map((a) => a.detalle).filter((d): d is Record<string, unknown> => !!d);
+      const todasAsignadas = sinHora.length > 0 && sinHora.every((a) => (a.responsables?.length ?? 0) > 0);
+      const quienes = todasAsignadas ? [...new Set(sinHora.flatMap((a) => a.responsables!))] : [];
       eventos.push({
         id: `s-${semana.id}-${dia}`,
         tipo: 'sesion',
@@ -177,9 +214,9 @@ export function sesionesDelGrupo(
         inicio: franja.inicio,
         fin: franja.fin,
         titulo: temas.join(' · '),
-        ...(semana.numero !== undefined && semana.numero !== '' ? { semana: String(semana.numero) } : {}),
+        ...numero,
         ...(detalles.length > 0 ? { actividades: detalles } : {}),
-        ...(semana.imparten?.[dia]?.length ? { imparten: semana.imparten[dia].map((id) => ({ id, name: '' })) } : {}),
+        ...(quienes.length > 0 ? { imparten: conNombres(quienes) } : {}),
       });
     }
   }
@@ -266,8 +303,8 @@ export interface PreferenciaGrupoAgenda {
   verSesiones?: boolean;
   verEntrevistas?: boolean;
   /**
-   * De las sesiones con quién imparte asignado, solo las de la persona. Sin
-   * elegir, sí: la sesión de otro profesor no es parte de su agenda.
+   * De las sesiones con responsables asignados, solo las de la persona. Sin
+   * elegir, sí: la actividad de otro profesor no es parte de su agenda.
    */
   soloMias?: boolean;
   oculto?: boolean;

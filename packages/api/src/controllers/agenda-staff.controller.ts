@@ -75,7 +75,7 @@ export async function construirAgenda(user: AppUser, desde: string, hasta: strin
     qSem.notEqualTo('tipo', 'especial');
     qSem.greaterThanOrEqualTo('fechaInicio', sumarDiasFecha(desde, -6));
     qSem.lessThanOrEqualTo('fechaInicio', hasta);
-    qSem.select('grupo', 'numero', 'fechaInicio', 'diasActivos', 'imparten');
+    qSem.select('grupo', 'numero', 'fechaInicio', 'diasActivos');
     qSem.limit(2000);
     const semanas = await qSem.find({ useMasterKey: true });
 
@@ -85,22 +85,30 @@ export async function construirAgenda(user: AppUser, desde: string, hasta: strin
       qAct.containedIn('semana', semanas);
       qAct.equalTo('active', true);
       qAct.notEqualTo('isPrevio', true);
-      if (!conDetalle) qAct.select('semana', 'dia', 'tipo', 'titulo');
+      if (!conDetalle) qAct.select('semana', 'dia', 'tipo', 'titulo', 'horaInicio', 'horaFin', 'responsables');
       qAct.ascending('orden');
       qAct.limit(10000);
-      actividades = (await qAct.find({ useMasterKey: true })).map((a) => ({
-        semanaId: a.get('semana')?.id ?? '',
-        dia: a.get('dia') ?? '',
-        tipo: a.get('tipo') ?? '',
-        titulo: a.get('titulo') ?? '',
-        ...(conDetalle ? { detalle: actividadToJSON(a as Actividad) } : {}),
-      }));
+      actividades = (await qAct.find({ useMasterKey: true })).map((a) => {
+        const act = a as Actividad;
+        return {
+          id: act.id!,
+          semanaId: act.get('semana')?.id ?? '',
+          dia: act.get('dia') ?? '',
+          tipo: act.get('tipo') ?? '',
+          titulo: act.get('titulo') ?? '',
+          horaInicio: act.getHoraInicio(),
+          horaFin: act.getHoraFin(),
+          responsables: act.getResponsables(),
+          // Sin nombres: los de la sesión ya van en `imparten`.
+          ...(conDetalle ? { detalle: actividadToJSON(act) } : {}),
+        };
+      });
     }
 
     for (const g of grupos) {
       const deEste = semanas
         .filter((s) => s.get('grupo')?.id === g.id)
-        .map((s) => ({ id: s.id!, numero: s.get('numero'), fechaInicio: s.get('fechaInicio') ?? '', diasActivos: s.get('diasActivos'), imparten: s.get('imparten') }));
+        .map((s) => ({ id: s.id!, numero: s.get('numero'), fechaInicio: s.get('fechaInicio') ?? '', diasActivos: s.get('diasActivos') }));
       const horario = g.getHorarioClase();
       eventos.push(...sesionesDelGrupo(g.id!, horario, deEste, actividades, desde, hasta));
       if (Object.keys(horario).length === 0 && sesionesDelGrupo(g.id!, TODO_EL_DIA, deEste, actividades, desde, hasta).length > 0) {
@@ -162,7 +170,7 @@ export async function construirAgenda(user: AppUser, desde: string, hasta: strin
   eventos.sort((a, b) => (a.fecha + a.inicio).localeCompare(b.fecha + b.inicio));
 
   // Qué tiene cada grupo EN GENERAL, no solo en el rango: el panel de
-  // Nombre de quién imparte cada sesión, en una sola consulta.
+  // Nombre de quién da cada sesión, en una sola consulta.
   const idsImparten = [...new Set(eventos.flatMap((e) => e.imparten?.map((p) => p.id) ?? []))];
   if (idsImparten.length > 0) {
     const q = new Parse.Query('AppUser');
@@ -179,17 +187,21 @@ export async function construirAgenda(user: AppUser, desde: string, hasta: strin
   // y no tiene que cambiar al pasar de una semana vacía a otra.
   const conSesiones = new Set<string>();
   const conEntrevistas = new Set<string>();
-  // Grupos con alguna sesión asignada a alguien: los que ofrecen «solo las mías».
+  // Grupos con alguna actividad asignada a alguien: los que ofrecen «solo las mías».
   const conImparten = new Set<string>();
   if (grupos.length > 0) {
-    const [todasSemanas, todosDias] = await Promise.all([
+    const semanasDeLosGrupos = () => {
+      const q = new Parse.Query('Semana');
+      q.containedIn('grupo', grupos);
+      q.equalTo('exists', true);
+      q.equalTo('active', true);
+      q.notEqualTo('tipo', 'especial');
+      return q;
+    };
+    const [todasSemanas, todosDias, asignadas] = await Promise.all([
       (() => {
-        const q = new Parse.Query('Semana');
-        q.containedIn('grupo', grupos);
-        q.equalTo('exists', true);
-        q.equalTo('active', true);
-        q.notEqualTo('tipo', 'especial');
-        q.select('grupo', 'imparten');
+        const q = semanasDeLosGrupos();
+        q.select('grupo');
         q.limit(5000);
         return q.find({ useMasterKey: true });
       })(),
@@ -201,12 +213,19 @@ export async function construirAgenda(user: AppUser, desde: string, hasta: strin
         q.limit(5000);
         return q.find({ useMasterKey: true });
       })(),
+      (() => {
+        const q = new Parse.Query('Actividad');
+        q.matchesQuery('semana', semanasDeLosGrupos());
+        q.equalTo('active', true);
+        q.exists('responsables');
+        q.include('semana');
+        q.select('semana.grupo');
+        q.limit(10000);
+        return q.find({ useMasterKey: true });
+      })(),
     ]);
-    for (const s of todasSemanas) {
-      conSesiones.add(s.get('grupo')?.id ?? '');
-      const imp = s.get('imparten');
-      if (imp && Object.values(imp).some((ids) => Array.isArray(ids) && ids.length > 0)) conImparten.add(s.get('grupo')?.id ?? '');
-    }
+    for (const s of todasSemanas) conSesiones.add(s.get('grupo')?.id ?? '');
+    for (const a of asignadas) conImparten.add(a.get('semana')?.get('grupo')?.id ?? '');
     for (const d of todosDias) conEntrevistas.add(d.get('grupo')?.id ?? '');
   }
 

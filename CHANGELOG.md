@@ -8,13 +8,18 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- **Quién imparte cada sesión.** Al editar una semana del calendario se elige,
-  por día, quién la da: «Todos» (o sin decidir), una persona o varias del staff
-  del grupo. Se ve debajo de cada día del calendario. En «Mi agenda» y en sus
-  enlaces de Google/Outlook, cada quien ve por defecto solo las sesiones que
-  imparte (más las que no tienen a nadie asignado); en el panel de calendarios,
-  «Solo las que imparto» se puede apagar por grupo. El detalle de la sesión y
-  el `.ics` dicen quién la imparte.
+- **Hora y responsables de cada actividad.** En el formulario de cada
+  actividad del calendario se elige, opcionalmente, a qué hora va dentro de la
+  sesión y quién la da: «Todos» (o sin decidir), una persona o varias del staff
+  del grupo. Se ve en la propia actividad, y debajo de cada día un resumen de
+  quién da las de ese día. En «Mi agenda» y en su enlace general de
+  Google/Outlook cada actividad con hora es su propio bloque, y cada quien ve
+  por defecto solo las suyas (más las que no tienen a nadie asignado); las que
+  no tienen hora comparten el bloque del horario de la clase. «Solo las que
+  imparto» se puede apagar por grupo. El enlace de un grupo trae el calendario
+  completo del grupo, cada bloque con quién lo da. Sustituye al selector por
+  día de «Editar semana»: lo que ya estaba asignado por día pasó a cada
+  actividad de ese día.
 - **«Mi agenda» en Google Calendar u Outlook, sin conectar cuentas.** Desde
   «Mi agenda» → «Google / Outlook», cada profesor o admin crea un enlace
   privado (`.ics`) y se suscribe con él; su calendario lo vuelve a leer solo

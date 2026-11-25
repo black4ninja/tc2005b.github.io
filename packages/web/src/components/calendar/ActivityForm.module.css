@@ -350,6 +350,65 @@
   color: var(--color-evaluacion);
 }
 
+/* Hora y responsables de la actividad dentro de la sesión. */
+.horas {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+
+.horas input {
+  width: 8.5rem;
+}
+
+.limpiarHora {
+  border: none;
+  background: none;
+  padding: 4px;
+  color: var(--color-lab);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.ayuda {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.error {
+  font-size: 0.75rem;
+  color: var(--color-evaluacion);
+}
+
+.personas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.personaChip {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.personaChipActiva {
+  border-color: var(--dash-primary);
+  background: color-mix(in srgb, var(--dash-primary) 14%, var(--bg-card));
+  color: var(--text-primary);
+}
+
 /* Celular: el modal ya trae su margen (sin doble relleno), el enlace ocupa su
    renglón y los selectores bajan debajo, con el tamaño de un dedo. */
 @media (max-width: 640px) {
@@ -375,5 +434,15 @@
   .actions > * {
     flex: 1;
     min-height: 44px;
+  }
+
+  .horas input {
+    flex: 1;
+    width: auto;
+    min-height: 44px;
+  }
+
+  .personaChip {
+    min-height: 40px;
   }
 }

@@ -72,7 +72,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
     setLoading(true);
     setError(null);
 
-    // Con sesión, si la hay: quién imparte cada día solo se manda a quien
+    // Con sesión, si la hay: quién da cada actividad solo se manda a quien
     // pertenece al grupo.
     fetch(`${API_BASE}/calendario/${grupoKey}`, { headers: sessionToken ? { 'x-session-token': sessionToken } : {} })
       .then((res) => {
@@ -96,8 +96,8 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
     return () => { cancelled = true; };
   }, [grupoKey, sessionToken]);
 
-  // Staff del grupo, para elegir quién imparte cada día en el formulario de
-  // semana. Solo hace falta al editar el calendario.
+  // Staff del grupo, para elegir quién da cada actividad en su formulario.
+  // Solo hace falta al editar el calendario.
   const [staff, setStaff] = useState<PersonaStaff[]>([]);
   useEffect(() => {
     if (!editable || !apiCalendario?.grupoId || !sessionToken) return;
@@ -200,7 +200,18 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
     actividadId: string;
     initialData: ActivityFormData;
     archivoActual?: string;
+    esPrevio: boolean;
   } | null>(null);
+
+  // El API devuelve los responsables como ids; el calendario los pinta con
+  // nombre. Se les pone con el staff que ya se cargó.
+  const conResponsables = useCallback((act: Actividad): Actividad => {
+    const ids = (act.responsables ?? []) as unknown[];
+    const responsables = ids
+      .map((r) => (typeof r === 'string' ? staff.find((p) => p.id === r) ?? { id: r, name: '' } : r as PersonaStaff))
+      .filter((p) => p.id);
+    return { ...act, responsables: responsables.length > 0 ? responsables : undefined };
+  }, [staff]);
 
   // Adjunto de las presentaciones: va en su propia petición multipart, después
   // de que la actividad exista (el archivo se cuelga de un id).
@@ -271,6 +282,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
             semanaId,
             actividadId,
             archivoActual: act.archivoNombre,
+            esPrevio: section === 'previo',
             initialData: {
               tipo: act.tipo,
               titulo: act.titulo,
@@ -279,6 +291,9 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
               externo: act.externo,
               duracion: act.duracion,
               fechaEntrega: act.fechaEntrega,
+              horaInicio: act.horaInicio,
+              horaFin: act.horaFin,
+              responsables: act.responsables?.map((p) => p.id),
             },
           });
           return;
@@ -327,6 +342,10 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
               archivoNombre: updated.archivoNombre,
               archivoMime: updated.archivoMime,
               archivoBytes: updated.archivoBytes,
+              // Igual con la hora y los responsables: borrarlos los omite.
+              horaInicio: updated.horaInicio,
+              horaFin: updated.horaFin,
+              responsables: conResponsables(updated).responsables,
             };
             dias[dayKey] = { ...day, [section]: newArr };
             sem.dias = dias;
@@ -338,7 +357,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       return prev;
     });
     setEditModalState(null);
-  }, [editModalState, updateActividad, subirArchivo, quitarArchivo]);
+  }, [editModalState, updateActividad, subirArchivo, quitarArchivo, conResponsables]);
 
   const handleDeleteActivity = useCallback(async (semanaId: string, actividadId: string) => {
     const confirmado = await confirmar({
@@ -400,14 +419,14 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       const dayKey = addModalState.dayKey as keyof typeof dias;
       const day = { ...(dias[dayKey] ?? {}) };
       const key = addModalState.isPrevio ? 'previo' : 'actividades';
-      day[key] = [...(day[key] ?? []), newAct as Actividad];
+      day[key] = [...(day[key] ?? []), conResponsables(newAct as Actividad)];
       dias[dayKey] = day;
       sem.dias = dias;
       next.semanas[semIdx] = sem;
       return next;
     });
     setAddModalState(null);
-  }, [addModalState, createActividad, subirArchivo]);
+  }, [addModalState, createActividad, subirArchivo, conResponsables]);
 
   const handleReorder = useCallback(
     (weekIndex: number, updates: ReorderUpdate[], newSemana: SemanaNormal) => {
@@ -457,8 +476,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       return { ...prev, semanas: [...prev.semanas, newSemana] };
     });
     setShowWeekModal(false);
-    if (formData.imparten && Object.keys(formData.imparten).length > 0) void refetchCalendario();
-  }, [calendario?.grupoId, createSemana, refetchCalendario]);
+  }, [calendario?.grupoId, createSemana]);
 
   const handleEditWeek = useCallback((semanaId: string) => {
     const sem = semanas.find((s) => s.id === semanaId);
@@ -493,9 +511,6 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
         fechaInicio: sem.fechaInicio,
         fechaFin: sem.fechaFin,
         diasActivos: diasDeSemana(sem),
-        imparten: Object.fromEntries(
-          Object.entries(sem.imparten ?? {}).map(([d, ps]) => [d, (ps ?? []).map((p) => p.id)]),
-        ),
       },
       diasBloqueados: conActividades,
     });
@@ -507,7 +522,6 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       fechaInicio: formData.fechaInicio,
       fechaFin: formData.fechaFin,
       diasActivos: formData.diasActivos,
-      ...(formData.imparten ? { imparten: formData.imparten } : {}),
       titulo: formData.titulo,
       mensaje: formData.mensaje,
       mensajeImportante: formData.mensajeImportante,
@@ -538,9 +552,7 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
       return { ...prev, semanas: semanasNext };
     });
     setEditWeekState(null);
-    // Quién imparte llega con nombre solo desde el calendario completo.
-    if (formData.imparten) void refetchCalendario();
-  }, [editWeekState, updateSemana, refetchCalendario]);
+  }, [editWeekState, updateSemana]);
 
   const handleWeekDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
@@ -819,6 +831,8 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
             onCancel={() => setAddModalState(null)}
             loading={isCreating || isSubiendoArchivo}
             grupoId={calendario?.grupoId}
+            staff={staff}
+            esPrevio={addModalState.isPrevio}
           />
         </Modal>
       )}
@@ -833,6 +847,8 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
             archivoActual={editModalState.archivoActual}
             mode="edit"
             grupoId={calendario?.grupoId}
+            staff={staff}
+            esPrevio={editModalState.esPrevio}
           />
         </Modal>
       )}
@@ -841,7 +857,6 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
         <Modal isOpen onClose={() => setShowWeekModal(false)} title="Agregar semana">
           <WeekForm
             onSave={handleSaveWeek}
-            staff={staff}
             onCancel={() => setShowWeekModal(false)}
             loading={isCreatingSemana}
           />
@@ -854,7 +869,6 @@ export default function CalendarContent({ grupoId, stickyTop = 'var(--navbar-hei
             mode="edit"
             initialData={editWeekState.initialData}
             diasBloqueados={editWeekState.diasBloqueados}
-            staff={staff}
             onSave={handleUpdateWeek}
             onCancel={() => setEditWeekState(null)}
             loading={isUpdatingSemana}

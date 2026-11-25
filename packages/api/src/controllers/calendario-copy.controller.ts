@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { Semana } from '../models/Semana.js';
 import { Actividad } from '../models/Actividad.js';
+import { staffDelGrupo } from '../services/imparten.js';
 
 export async function copyCalendario(req: Request, res: Response): Promise<void> {
   const { sourceGrupoId, targetGrupoId } = req.body;
@@ -108,6 +109,7 @@ export async function copyCalendario(req: Request, res: Response): Promise<void>
     // Step 4: Fetch source actividades and copy
     let actividadesCopied = 0;
     if (sourceSemanas.length > 0) {
+      const staffDestino = staffDelGrupo(targetGrupo);
       const sourceActQuery = new Parse.Query<Actividad>('Actividad');
       sourceActQuery.containedIn('semana', sourceSemanas);
       sourceActQuery.equalTo('active' as any, true as any);
@@ -143,6 +145,11 @@ export async function copyCalendario(req: Request, res: Response): Promise<void>
         if (fechaEntrega) act.setFechaEntrega(fechaEntrega);
         const enlacesExtra = srcAct.getEnlacesExtra();
         if (enlacesExtra && enlacesExtra.length > 0) act.setEnlacesExtra(enlacesExtra);
+        // La hora viaja; los responsables, solo si también dan el grupo destino.
+        const hi = srcAct.getHoraInicio();
+        const hf = srcAct.getHoraFin();
+        if (hi && hf) act.setFranja({ inicio: hi, fin: hf });
+        act.setResponsables(srcAct.getResponsables().filter((id) => staffDestino.has(id)));
         // El adjunto se comparte por referencia: el binario no se duplica y
         // nada lo borra (quitar el archivo de una actividad solo desapunta).
         const adjunto = srcAct.getArchivo();

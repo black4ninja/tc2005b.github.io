@@ -88,6 +88,26 @@ export default function ActivityItem({ actividad, isFilteredOut }: ActivityItemP
           </span>
         )}
 
+        {(actividad.horaInicio || (actividad.responsables?.length ?? 0) > 0) && (
+          <span
+            className={styles.sesionLinea}
+            title={actividad.responsables?.map((p) => p.name).join(', ') || undefined}
+          >
+            {actividad.horaInicio && actividad.horaFin && (
+              <span className={styles.sesionHora}>
+                <i className="material-icons" aria-hidden="true">schedule</i>
+                {actividad.horaInicio}–{actividad.horaFin}
+              </span>
+            )}
+            {actividad.responsables && actividad.responsables.length > 0 && (
+              <span className={styles.sesionQuien}>
+                <i className="material-icons" aria-hidden="true">person</i>
+                {actividad.responsables.map((p) => p.name.trim().split(/\s+/)[0]).join(', ')}
+              </span>
+            )}
+          </span>
+        )}
+
         {actividad.fechaEntrega && (
           <span className={styles.entregaBadge}>
             <i className="material-icons" style={{ fontSize: 12 }}>event</i>

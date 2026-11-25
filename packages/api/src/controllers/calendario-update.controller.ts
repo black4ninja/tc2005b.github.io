@@ -2,12 +2,15 @@ import type { Request, Response } from 'express';
 import Parse from 'parse/node';
 import { Actividad } from '../models/Actividad.js';
 import { esTipoActividad } from '../constants/actividades.js';
+import { normalizarFranjaActividad, normalizarResponsables, staffDelGrupo } from '../services/imparten.js';
+import { MENSAJE_FRANJA, MENSAJE_RESPONSABLES } from './calendario-create.controller.js';
 
 export async function updateActividad(req: Request, res: Response): Promise<void> {
   const { actividadId } = req.params;
   const {
     tipo, titulo, descripcion, enlace, externo,
     duracion, fechaEntrega, enlacesExtra,
+    horaInicio, horaFin, responsables,
   } = req.body;
 
   try {
@@ -51,6 +54,25 @@ export async function updateActividad(req: Request, res: Response): Promise<void
     }
     if (enlacesExtra !== undefined && Array.isArray(enlacesExtra)) {
       act.setEnlacesExtra(enlacesExtra);
+    }
+
+    if (!act.getIsPrevio() && (horaInicio !== undefined || horaFin !== undefined)) {
+      const franja = normalizarFranjaActividad(horaInicio ?? null, horaFin ?? null);
+      if (franja === 'invalido') {
+        res.status(400).json({ status: 'error', message: MENSAJE_FRANJA });
+        return;
+      }
+      act.setFranja(franja);
+    }
+    if (!act.getIsPrevio() && responsables !== undefined) {
+      const semana = await new Parse.Query('Semana').get(act.getSemana()!.id!, { useMasterKey: true });
+      const grupo = await new Parse.Query('Grupo').get(semana.get('grupo')?.id, { useMasterKey: true });
+      const limpio = normalizarResponsables(responsables, staffDelGrupo(grupo));
+      if (limpio === 'invalido') {
+        res.status(400).json({ status: 'error', message: MENSAJE_RESPONSABLES });
+        return;
+      }
+      act.setResponsables(limpio);
     }
 
     await act.save(null, { useMasterKey: true });

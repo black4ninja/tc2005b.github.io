@@ -135,8 +135,19 @@ function descripcion(ev: EventoAgenda): string {
   return partes.join('\n');
 }
 
+/** Nombre de pila de cada responsable: «Eduardo, Alejandro». */
+function nombresDePila(ev: EventoAgenda): string {
+  return (ev.imparten ?? []).map((p) => p.name.trim().split(/\s+/)[0]).filter(Boolean).join(', ');
+}
+
 function resumen(ev: EventoAgenda, grupo: string): string {
-  if (ev.tipo === 'sesion') return `${grupo} · Sesión`;
+  if (ev.tipo === 'sesion') {
+    // Una actividad con hora propia se nombra por sí misma, y con quién la da:
+    // en el calendario del grupo cada bloque dice de quién es.
+    if (!ev.actividadId) return `${grupo} · Sesión`;
+    const quien = nombresDePila(ev);
+    return `${grupo} · ${ev.titulo || 'Actividad'}${quien ? ` (${quien})` : ''}`;
+  }
   const h = ev.huecos;
   const cuenta = h ? ` (${h.citas.length}/${h.total - h.cerrados.length})` : '';
   return `${grupo} · Entrevistas${cuenta}`;
