@@ -97,6 +97,8 @@ export interface EventoAgenda {
   semana?: string;
   /** Solo sesiones, y solo en rangos cortos: las actividades del día, como las serializa el calendario. */
   actividades?: Record<string, unknown>[];
+  /** Solo sesiones: la actividad con hora propia que es este evento. Ausente = bloque de la clase. */
+  actividadId?: string;
   /** Solo sesiones: quién la da. Ausente o vacío = todos (sin asignar). */
   imparten?: { id: string; name: string }[];
 }
@@ -185,6 +187,7 @@ export function sesionesDelGrupo(
       for (const a of conHora) {
         eventos.push({
           id: `a-${a.id}`,
+          actividadId: a.id,
           tipo: 'sesion',
           grupoId,
           fecha,

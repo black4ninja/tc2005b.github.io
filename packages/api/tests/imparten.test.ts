@@ -100,7 +100,7 @@ describe('la clase partida en actividades', () => {
 
   it('en el .ics la actividad se nombra sola y dice quién la da', () => {
     const ev: EventoAgenda = {
-      id: 'a-k', tipo: 'sesion', grupoId: 'g', fecha: '2026-11-23', inicio: '09:00', fin: '09:30',
+      id: 'a-k', actividadId: 'k', tipo: 'sesion', grupoId: 'g', fecha: '2026-11-23', inicio: '09:00', fin: '09:30',
       titulo: 'Kickoff', imparten: [{ id: 'lalo', name: 'Eduardo Pérez' }],
     };
     const ics = generarIcs({ eventos: [ev], nombreGrupo: new Map([['g', 'G']]), base: 'https://x' }).replace(/\r\n /g, '');

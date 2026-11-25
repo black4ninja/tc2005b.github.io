@@ -144,7 +144,7 @@ function resumen(ev: EventoAgenda, grupo: string): string {
   if (ev.tipo === 'sesion') {
     // Una actividad con hora propia se nombra por sí misma, y con quién la da:
     // en el calendario del grupo cada bloque dice de quién es.
-    if (!ev.id.startsWith('a-')) return `${grupo} · Sesión`;
+    if (!ev.actividadId) return `${grupo} · Sesión`;
     const quien = nombresDePila(ev);
     return `${grupo} · ${ev.titulo || 'Actividad'}${quien ? ` (${quien})` : ''}`;
   }
