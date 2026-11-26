@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
+import { rutaEjerciciosAlumno } from '../../../../config/rutasEjercicios';
+import { rutaDiagramasAlumno } from '../../../../config/rutasDiagramas';
 import styles from './AlumnoDashboard.module.css';
 
 const API_BASE = '/api';
@@ -13,9 +16,10 @@ interface Wiki {
 /**
  * El panel del alumno que entra SIN grupo activo.
  *
- * Existe para el alumno al que solo se le abrió una wiki por permiso individual
- * (`AccesoWikiAlumno`): no tiene calendario, malla ni perfil —todo eso es de un
- * grupo—, así que aquí solo hay dos cosas: sus wikis y su contraseña. La
+ * Existe para el alumno al que solo se le abrió contenido por permiso
+ * individual (`AccesoWikiAlumno`): no tiene calendario, malla ni perfil —todo
+ * eso es de un grupo—, así que aquí solo hay lo que se le abrió (wikis,
+ * ejercicios, diagramas) y su contraseña. La
  * contraseña va aparte porque es de la cuenta; si no, se quedaría para siempre
  * con la que le asignamos.
  */
@@ -24,6 +28,8 @@ export default function AlumnoSinGrupo() {
   const passwordAsignada = user?.passwordAsignada === true;
 
   const [wikis, setWikis] = useState<Wiki[] | null>(null);
+  const [ejercicios, setEjercicios] = useState<Wiki[]>([]);
+  const [diagramas, setDiagramas] = useState<Wiki[]>([]);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -36,7 +42,10 @@ export default function AlumnoSinGrupo() {
     fetch(`${API_BASE}/alumno/wikis`, { headers: { 'x-session-token': sessionToken } })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
-        if (!cancelado) setWikis(json?.wikis ?? []);
+        if (cancelado) return;
+        setWikis(json?.wikis ?? []);
+        setEjercicios(json?.ejercicios ?? []);
+        setDiagramas(json?.diagramas ?? []);
       })
       .catch(() => {
         if (!cancelado) setWikis([]);
@@ -88,9 +97,9 @@ export default function AlumnoSinGrupo() {
         <span className="material-icons">info</span>
         {/* Sin wikis es el alumno dado de baja de todos sus grupos: a ese hay
             que decirle a quién acudir, no que tiene algo que no tiene. */}
-        {wikis !== null && wikis.length === 0
+        {wikis !== null && wikis.length + ejercicios.length + diagramas.length === 0
           ? 'No estás inscrito en ningún grupo activo. Si crees que es un error, contacta a tu profesor.'
-          : 'No estás inscrito en ningún grupo activo. Tienes acceso a las wikis que te abrieron.'}
+          : 'No estás inscrito en ningún grupo activo. Tienes acceso a lo que te abrieron.'}
       </div>
 
       <div className={styles.profileCard}>
@@ -115,6 +124,32 @@ export default function AlumnoSinGrupo() {
           ))
         )}
       </div>
+
+      {ejercicios.length > 0 && (
+        <div className={styles.profileCard}>
+          <h3 className={styles.chartTitle}>Mis ejercicios</h3>
+          {ejercicios.map((c) => (
+            <div key={c.slug} className={styles.profileField}>
+              <Link to={rutaEjerciciosAlumno(c.slug)} className={styles.profileLink}>
+                {c.clave ? `${c.clave} — ${c.nombre}` : c.nombre}
+              </Link>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {diagramas.length > 0 && (
+        <div className={styles.profileCard}>
+          <h3 className={styles.chartTitle}>Mis diagramas</h3>
+          {diagramas.map((c) => (
+            <div key={c.slug} className={styles.profileField}>
+              <Link to={rutaDiagramasAlumno(c.slug)} className={styles.profileLink}>
+                {c.clave ? `${c.clave} — ${c.nombre}` : c.nombre}
+              </Link>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className={styles.profileCard}>
         <div className={styles.passwordSection}>

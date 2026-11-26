@@ -5,9 +5,23 @@ import type { AlumnoPadron } from '../../pages/AlumnosPage/AlumnosPage';
 import type { ColeccionRef } from '../../../../types/contenidos';
 import styles from './AccesoWikiModal.module.css';
 
+/**
+ * Los módulos que se pueden abrir a un alumno sin grupo: los que cuelgan de la
+ * colección. Espejo de `MODULOS_INDIVIDUALES` del API.
+ */
+type ModuloIndividual = 'documentacion' | 'ejercicios' | 'diagramas';
+
+const MODULOS: { key: ModuloIndividual; label: string; icono: string }[] = [
+  { key: 'documentacion', label: 'Wiki', icono: 'menu_book' },
+  { key: 'ejercicios', label: 'Ejercicios', icono: 'terminal' },
+  { key: 'diagramas', label: 'Diagramas', icono: 'account_tree' },
+];
+
 interface PermisoIndividual {
   id: string;
   coleccionId: string | null;
+  /** Ausente en respuestas de antes del campo: solo el wiki. */
+  modulos?: ModuloIndividual[];
   coleccion: { id: string; nombre: string; slug: string | null; clave: string | null; publicada: boolean } | null;
   otorgadoPor: { id: string; name: string; email: string | null } | null;
   createdAt: string;
@@ -22,26 +36,30 @@ interface AccesoWikiModalProps {
   onGuardado: () => void;
 }
 
+/** coleccionId → módulos abiertos por permiso individual. */
+type Seleccion = Map<string, Set<ModuloIndividual>>;
+
 /**
- * Qué wikis tiene abiertas un alumno además de las de sus grupos.
+ * Qué tiene abierto un alumno además de lo que le dan sus grupos: por colección,
+ * el wiki, los ejercicios y los diagramas. Los demás módulos (competencias,
+ * actividades, preguntas, Scrum, Happiness Door) viven en un grupo y no se
+ * ofrecen aquí.
  *
- * Se marca con casillas y se guarda el CONJUNTO entero, no altas y bajas
- * sueltas: así la pantalla y el servidor no pueden discrepar sobre qué quedó.
+ * Se guarda el CONJUNTO entero, no altas y bajas sueltas: así la pantalla y el
+ * servidor no pueden discrepar sobre qué quedó.
  *
- * Las colecciones que el alumno ya tiene por su grupo se muestran, pero
- * desactivadas: darle un permiso individual para algo que ya ve no cambia nada
- * y solo ensucia la lista de accesos que hay que revisar al cierre del semestre.
+ * Lo que el alumno ya tiene por su grupo se muestra marcado pero desactivado:
+ * darle un permiso individual para algo que ya ve no cambia nada y solo ensucia
+ * la lista de accesos que hay que revisar al cierre del semestre.
  */
 export default function AccesoWikiModal({ alumno, sessionToken, onClose, onGuardado }: AccesoWikiModalProps) {
   const [colecciones, setColecciones] = useState<ColeccionRef[]>([]);
   const [permisos, setPermisos] = useState<PermisoIndividual[]>([]);
-  const [porGrupo, setPorGrupo] = useState<Set<string>>(new Set());
-  const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
+  const [porGrupo, setPorGrupo] = useState<Map<string, Set<ModuloIndividual>>>(new Map());
+  const [seleccion, setSeleccion] = useState<Seleccion>(new Map());
   const [cargando, setCargando] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
-
-  const headers = { 'Content-Type': 'application/json', 'x-session-token': sessionToken };
 
   const cargar = useCallback(async () => {
     if (!alumno) return;
@@ -57,15 +75,18 @@ export default function AccesoWikiModal({ alumno, sessionToken, onClose, onGuard
       if (!accesoRes.ok) throw new Error(acceso.message || 'Error al cargar los accesos');
       const cols = coleccionesRes.ok ? await coleccionesRes.json() : { colecciones: [] };
 
-      setPermisos(acceso.permisos ?? []);
-      setPorGrupo(new Set<string>(acceso.coleccionIdsPorGrupo ?? []));
-      setSeleccion(
-        new Set<string>(
-          (acceso.permisos ?? [])
-            .map((p: PermisoIndividual) => p.coleccionId)
-            .filter((id: string | null): id is string => !!id),
-        ),
-      );
+      const lista: PermisoIndividual[] = acceso.permisos ?? [];
+      setPermisos(lista);
+      const grupo = new Map<string, Set<ModuloIndividual>>();
+      for (const [id, modulos] of Object.entries((acceso.modulosPorGrupo ?? {}) as Record<string, ModuloIndividual[]>)) {
+        grupo.set(id, new Set(modulos));
+      }
+      setPorGrupo(grupo);
+      const inicial: Seleccion = new Map();
+      for (const p of lista) {
+        if (p.coleccionId) inicial.set(p.coleccionId, new Set(p.modulos ?? ['documentacion']));
+      }
+      setSeleccion(inicial);
       setColecciones(cols.colecciones ?? []);
     } catch (err: any) {
       setError(err.message);
@@ -78,11 +99,28 @@ export default function AccesoWikiModal({ alumno, sessionToken, onClose, onGuard
     if (alumno) cargar();
   }, [alumno, cargar]);
 
-  function alternar(coleccionId: string) {
+  const delGrupo = (coleccionId: string, modulo: ModuloIndividual) => porGrupo.get(coleccionId)?.has(modulo) ?? false;
+  const libres = (coleccionId: string) => MODULOS.filter((m) => !delGrupo(coleccionId, m.key));
+
+  /** Encender una colección abre lo primero que el grupo no le da (normalmente el wiki). */
+  function alternarColeccion(coleccionId: string) {
     setSeleccion((prev) => {
-      const siguiente = new Set(prev);
+      const siguiente = new Map(prev);
       if (siguiente.has(coleccionId)) siguiente.delete(coleccionId);
-      else siguiente.add(coleccionId);
+      else siguiente.set(coleccionId, new Set([libres(coleccionId)[0].key]));
+      return siguiente;
+    });
+  }
+
+  /** Apagar el último módulo apaga la colección: un permiso sin módulos no abre nada. */
+  function alternarModulo(coleccionId: string, modulo: ModuloIndividual) {
+    setSeleccion((prev) => {
+      const siguiente = new Map(prev);
+      const modulos = new Set(siguiente.get(coleccionId) ?? []);
+      if (modulos.has(modulo)) modulos.delete(modulo);
+      else modulos.add(modulo);
+      if (modulos.size === 0) siguiente.delete(coleccionId);
+      else siguiente.set(coleccionId, modulos);
       return siguiente;
     });
   }
@@ -92,10 +130,11 @@ export default function AccesoWikiModal({ alumno, sessionToken, onClose, onGuard
     setGuardando(true);
     setError('');
     try {
+      const accesos = [...seleccion].map(([coleccionId, modulos]) => ({ coleccionId, modulos: [...modulos] }));
       const res = await fetch(`/api/admin/alumnos/${alumno.id}/acceso-wiki`, {
         method: 'PUT',
-        headers,
-        body: JSON.stringify({ coleccionIds: [...seleccion] }),
+        headers: { 'Content-Type': 'application/json', 'x-session-token': sessionToken },
+        body: JSON.stringify({ accesos }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || 'Error al guardar los accesos');
@@ -121,11 +160,12 @@ export default function AccesoWikiModal({ alumno, sessionToken, onClose, onGuard
   }
 
   return (
-    <Modal isOpen={!!alumno} onClose={onClose} title={`Accesos al wiki · ${alumno?.name ?? ''}`}>
+    <Modal isOpen={!!alumno} onClose={onClose} title={`Accesos individuales · ${alumno?.name ?? ''}`}>
       <div className={styles.contenido}>
         <p className={styles.ayuda}>
-          Estas colecciones se SUMAN a las que ya le dan sus grupos. Solo abren el wiki: las
-          competencias, las actividades y los ejercicios siguen dependiendo del grupo.
+          Se SUMAN a lo que ya le dan sus grupos. Por colección se le puede abrir el wiki, los ejercicios y
+          los diagramas. Las competencias, las actividades, las preguntas, Scrum y el Happiness Door
+          necesitan un grupo.
         </p>
 
         {error && <div className={styles.error}>{error}</div>}
@@ -138,16 +178,18 @@ export default function AccesoWikiModal({ alumno, sessionToken, onClose, onGuard
         {!cargando && colecciones.length > 0 && (
           <ul className={styles.lista}>
             {colecciones.map((coleccion) => {
-              const yaPorGrupo = porGrupo.has(coleccion.id);
+              const todoPorGrupo = libres(coleccion.id).length === 0;
+              const elegidos = seleccion.get(coleccion.id);
+              const grupoAlgo = MODULOS.some((m) => delGrupo(coleccion.id, m.key));
               const detalle = rastro(coleccion.id);
               return (
                 <li key={coleccion.id} className={styles.fila}>
-                  <label className={`${styles.opcion} ${yaPorGrupo ? styles.opcionBloqueada : ''}`}>
+                  <label className={`${styles.opcion} ${todoPorGrupo ? styles.opcionBloqueada : ''}`}>
                     <input
                       type="checkbox"
-                      checked={yaPorGrupo || seleccion.has(coleccion.id)}
-                      disabled={yaPorGrupo || guardando}
-                      onChange={() => alternar(coleccion.id)}
+                      checked={todoPorGrupo || !!elegidos}
+                      disabled={todoPorGrupo || guardando}
+                      onChange={() => alternarColeccion(coleccion.id)}
                     />
                     <span className={styles.datos}>
                       <span className={styles.nombre}>
@@ -155,12 +197,35 @@ export default function AccesoWikiModal({ alumno, sessionToken, onClose, onGuard
                         {coleccion.nombre}
                       </span>
                       <span className={styles.meta}>
-                        {yaPorGrupo
-                          ? 'Ya la tiene por su grupo'
-                          : detalle ?? 'Sin acceso individual'}
+                        {todoPorGrupo
+                          ? 'Ya lo tiene todo por su grupo'
+                          : detalle ?? (grupoAlgo ? 'Parte la tiene por su grupo' : 'Sin acceso individual')}
                       </span>
                     </span>
                   </label>
+                  {elegidos && !todoPorGrupo && (
+                    <div className={styles.modulos} role="group" aria-label={`Módulos de ${coleccion.nombre}`}>
+                      {MODULOS.map((m) => {
+                        const yaPorGrupo = delGrupo(coleccion.id, m.key);
+                        return (
+                          <label
+                            key={m.key}
+                            className={`${styles.modulo} ${yaPorGrupo ? styles.opcionBloqueada : ''}`}
+                            title={yaPorGrupo ? 'Ya lo tiene por su grupo' : undefined}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={yaPorGrupo || elegidos.has(m.key)}
+                              disabled={yaPorGrupo || guardando}
+                              onChange={() => alternarModulo(coleccion.id, m.key)}
+                            />
+                            <span className="material-icons" aria-hidden="true">{m.icono}</span>
+                            {m.label}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
                 </li>
               );
             })}

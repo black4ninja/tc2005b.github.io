@@ -8,6 +8,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Ejercicios y diagramas por alumno, sin grupo.** En Alumnos, «Accesos
+  individuales» ya no abre solo el wiki: de cada colección se elige qué abrirle
+  al alumno —wiki, ejercicios y/o diagramas—. Lo que ya le dan sus grupos sale
+  marcado y bloqueado. El alumno sin grupo los ve en su menú y en su panel; el
+  que tiene grupo, en el menú de cualquiera de sus grupos. Los permisos que ya
+  existían siguen abriendo solo el wiki. Competencias, actividades, preguntas,
+  Scrum y Happiness Door siguen necesitando un grupo.
 - **Hora y responsables de cada actividad.** En el formulario de cada
   actividad del calendario se elige, opcionalmente, a qué hora va dentro de la
   sesión y quién la da: «Todos» (o sin decidir), una persona o varias del staff

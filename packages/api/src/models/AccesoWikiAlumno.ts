@@ -2,6 +2,7 @@ import Parse from 'parse/node';
 import { BaseModel } from './BaseModel.js';
 import type { AppUser } from './AppUser.js';
 import type { Coleccion } from './Coleccion.js';
+import { modulosDelPermiso, type ModuloIndividual } from './modulos-contenido.js';
 
 /**
  * Permiso INDIVIDUAL de un alumno sobre una colección del wiki.
@@ -10,10 +11,11 @@ import type { Coleccion } from './Coleccion.js';
  * sus grupos activos. Esto es la excepción — «a esta alumna, además, ábrele
  * TC2005B» — y se suma a lo que ya tuviera, sin quitarle nada.
  *
- * Es EXCLUSIVO del wiki (`documentacion`). No abre competencias, ni actividades,
- * ni ejercicios, ni diagramas: esos módulos siguen colgando del grupo y solo del
- * grupo. Es deliberado, no un olvido — un permiso que abriera de todo sería un
- * segundo sistema de permisos en paralelo al de grupos.
+ * Abre los módulos de `modulos`, y solo de entre los que cuelgan de la
+ * colección: wiki, ejercicios y diagramas (`MODULOS_INDIVIDUALES`). Los
+ * permisos anteriores a ese campo solo abrían el wiki y así siguen. Las
+ * competencias, actividades, preguntas, Scrum y Happiness Door siguen colgando
+ * del grupo y solo del grupo: sin grupo no tienen dónde guardarse.
  *
  * Se suma, nunca resta: si el alumno pierde el grupo que le daba la colección,
  * este permiso se la sigue dando; y si luego entra a un grupo que la tiene, la
@@ -42,6 +44,13 @@ export class AccesoWikiAlumno extends BaseModel {
     this.set('coleccion', coleccion);
   }
 
+  getModulos(): ModuloIndividual[] {
+    return modulosDelPermiso(this.get('modulos'));
+  }
+  setModulos(modulos: ModuloIndividual[]): void {
+    this.set('modulos', modulos);
+  }
+
   /**
    * Quién lo otorgó. Es un permiso de acceso a contenido: conviene poder
    * responder «¿y esto quién se lo abrió?» sin adivinar por fechas.
@@ -59,6 +68,7 @@ export class AccesoWikiAlumno extends BaseModel {
     return {
       id: this.id,
       coleccionId: coleccion?.id ?? null,
+      modulos: this.getModulos(),
       // Requieren `include`; sin él llegan como pointers sin datos.
       coleccion: coleccion?.get('nombre')
         ? {

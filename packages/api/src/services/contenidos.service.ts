@@ -2,7 +2,9 @@ import Parse from 'parse/node';
 import { AppUser } from '../models/AppUser.js';
 import { Coleccion } from '../models/Coleccion.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
-import { moduloHabilitado, type ModuloContenido } from '../models/modulos-contenido.js';
+import {
+  moduloHabilitado, modulosDelPermiso, type ModuloContenido, type ModuloIndividual,
+} from '../models/modulos-contenido.js';
 import { TtlValue, TtlMap } from '../utils/ttl-cache.js';
 import { getGruposDeStaff } from './grupo-admin.service.js';
 
@@ -162,10 +164,12 @@ export async function getColeccionesPermitidas(user: AppUser): Promise<Coleccion
  * está listo para leerse». Un borrador no se ve ni con permiso.
  *
  * NO mira `modulosDeshabilitados`: ese mapa apaga módulos POR GRUPO, y aquí no
- * hay grupo. Este permiso es exclusivo del wiki, así que no hay nada más que
- * consultar.
+ * hay grupo. Lo que abre cada permiso está en el propio permiso (`modulos`).
  */
-async function coleccionesPorPermisoIndividual(alumnoId: string): Promise<Parse.Object[]> {
+export async function coleccionesPorPermisoIndividual(
+  alumnoId: string,
+  modulo: ModuloIndividual = 'documentacion',
+): Promise<Parse.Object[]> {
   const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId);
   const q = new Parse.Query('AccesoWikiAlumno');
   q.equalTo('exists' as any, true as any);
@@ -176,6 +180,7 @@ async function coleccionesPorPermisoIndividual(alumnoId: string): Promise<Parse.
   const permisos = await q.find({ useMasterKey: true });
 
   return permisos
+    .filter((p) => modulosDelPermiso(p.get('modulos')).includes(modulo))
     .map((p) => p.get('coleccion') as Parse.Object | undefined)
     .filter((c): c is Parse.Object => !!c && c.get('exists') !== false && c.get('publicada') === true);
 }

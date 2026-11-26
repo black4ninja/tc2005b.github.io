@@ -84,3 +84,26 @@
   padding-top: 12px;
   border-top: 1px solid var(--border-color);
 }
+
+/* Los módulos de una colección abierta, debajo de su nombre y alineados con él. */
+.modulos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 0 8px 8px 34px;
+}
+
+.modulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.modulo .material-icons,
+.modulo :global(.material-icons) {
+  font-size: 18px;
+  opacity: 0.8;
+}

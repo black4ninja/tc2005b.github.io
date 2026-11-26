@@ -87,3 +87,28 @@ export function coleccionesConCompetencias(
 ): string[] {
   return coleccionIds.filter((id) => moduloHabilitado(modulosDeshabilitados, id, 'competencias'));
 }
+
+/**
+ * Módulos que se pueden abrir a un alumno POR PERMISO INDIVIDUAL
+ * (`AccesoWikiAlumno.modulos`), sin grupo de por medio.
+ *
+ * Solo los que cuelgan de la COLECCIÓN: el wiki, los ejercicios y los
+ * diagramas. Competencias, actividades, preguntas, Scrum y Happiness Door viven
+ * en un grupo —su malla, su agenda, su equipo, su tablero— y sin grupo no
+ * tienen dónde guardarse.
+ */
+export const MODULOS_INDIVIDUALES = ['documentacion', 'ejercicios', 'diagramas'] as const;
+export type ModuloIndividual = (typeof MODULOS_INDIVIDUALES)[number];
+
+export function esModuloIndividual(v: unknown): v is ModuloIndividual {
+  return typeof v === 'string' && (MODULOS_INDIVIDUALES as readonly string[]).includes(v);
+}
+
+/**
+ * Los módulos que abre un permiso individual. Los permisos anteriores a este
+ * campo no lo tienen y solo abrían el wiki: siguen igual.
+ */
+export function modulosDelPermiso(guardados: unknown): ModuloIndividual[] {
+  if (!Array.isArray(guardados)) return ['documentacion'];
+  return MODULOS_INDIVIDUALES.filter((m) => guardados.includes(m));
+}

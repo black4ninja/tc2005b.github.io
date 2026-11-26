@@ -162,8 +162,8 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
     };
   }, [role, selectedGrupoId, sessionToken, updateUser]);
 
-  // Alumno SIN grupo activo: entra solo por las wikis que se le abrieron por
-  // permiso individual. No hay menú de grupo que pedir —el efecto de arriba ni
+  // Alumno SIN grupo activo: entra solo por lo que se le abrió por permiso
+  // individual (wikis y, si se le dieron, ejercicios y diagramas). No hay menú de grupo que pedir —el efecto de arriba ni
   // arranca—, así que sin esto se quedaba en el esqueleto para siempre.
   const sinGrupo = role === 'alumno' && (user?.grupos?.length ?? 0) === 0;
   useEffect(() => {
@@ -181,6 +181,12 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
           href: `/contenidos/${w.slug}/`,
           externo: true,
         })));
+        // Los ejercicios y diagramas que se le abrieron por permiso individual.
+        const ejercicios = (json?.ejercicios ?? []) as { slug: string }[];
+        const diagramas = (json?.diagramas ?? []) as { slug: string }[];
+        setEjerciciosHref(ejercicios[0] ? rutaEjerciciosAlumno(ejercicios[0].slug) : null);
+        setDiagramasHref(diagramas[0] ? rutaDiagramasAlumno(diagramas[0].slug) : null);
+        setTallerHref(diagramas[0] ? rutaTallerAlumno() : null);
         setMenuCargado(true);
       })
       .catch(() => {

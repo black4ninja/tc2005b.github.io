@@ -11,7 +11,8 @@
  * primera vez y cuándo.
  */
 import { describe, it, expect } from 'vitest';
-import { planificarPermisos } from '../src/controllers/acceso-wiki.controller.js';
+import { planificarPermisos, leerAccesosPedidos } from '../src/controllers/acceso-wiki.controller.js';
+import { modulosDelPermiso } from '../src/models/modulos-contenido.js';
 
 describe('planificarPermisos', () => {
   it('crea el permiso que no existía de ninguna forma', () => {
@@ -83,5 +84,34 @@ describe('planificarPermisos', () => {
   it('vaciar la lista revoca todo lo vigente y no resucita lo revocado', () => {
     const plan = planificarPermisos([], ['a', 'b'], ['c']);
     expect(plan).toEqual({ crear: [], reactivar: [], revocar: ['a', 'b'] });
+  });
+});
+
+describe('módulos de un permiso individual', () => {
+  it('un permiso de antes del campo solo abre el wiki', () => {
+    expect(modulosDelPermiso(undefined)).toEqual(['documentacion']);
+  });
+
+  it('se queda con los módulos conocidos, en el orden del catálogo', () => {
+    expect(modulosDelPermiso(['diagramas', 'ejercicios', 'scrum'])).toEqual(['ejercicios', 'diagramas']);
+  });
+});
+
+describe('leerAccesosPedidos', () => {
+  it('forma nueva: módulos por colección, sin repetidos', () => {
+    const r = leerAccesosPedidos({ accesos: [{ coleccionId: 'c1', modulos: ['ejercicios', 'documentacion', 'ejercicios'] }] });
+    expect(r).toEqual(new Map([['c1', ['documentacion', 'ejercicios']]]));
+  });
+
+  it('forma antigua: solo el wiki', () => {
+    expect(leerAccesosPedidos({ coleccionIds: ['c1'] })).toEqual(new Map([['c1', ['documentacion']]]));
+  });
+
+  it('rechaza módulos que necesitan grupo, colecciones sin módulos y formas raras', () => {
+    expect(typeof leerAccesosPedidos({ accesos: [{ coleccionId: 'c1', modulos: ['competencias'] }] })).toBe('string');
+    expect(typeof leerAccesosPedidos({ accesos: [{ coleccionId: 'c1', modulos: [] }] })).toBe('string');
+    expect(typeof leerAccesosPedidos({ accesos: [{ modulos: ['documentacion'] }] })).toBe('string');
+    expect(typeof leerAccesosPedidos({ accesos: 'c1' })).toBe('string');
+    expect(typeof leerAccesosPedidos({})).toBe('string');
   });
 });

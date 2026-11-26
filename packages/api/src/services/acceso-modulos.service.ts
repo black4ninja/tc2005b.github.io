@@ -2,10 +2,12 @@ import Parse from 'parse/node';
 import { AppUser } from '../models/AppUser.js';
 import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { Coleccion } from '../models/Coleccion.js';
-import type { ModuloContenido } from '../models/modulos-contenido.js';
+import { esModuloIndividual, type ModuloContenido } from '../models/modulos-contenido.js';
 import { getGruposDeStaff } from './grupo-admin.service.js';
 import { grupoDaAccesoAlumno } from './grupo-alumno.service.js';
-import { getColeccionesPorSlug, coleccionVisiblePorModulo, type ColeccionInfo } from './contenidos.service.js';
+import {
+  getColeccionesPorSlug, coleccionVisiblePorModulo, coleccionesPorPermisoIndividual, type ColeccionInfo,
+} from './contenidos.service.js';
 import { TtlMap } from '../utils/ttl-cache.js';
 
 /**
@@ -17,7 +19,9 @@ import { TtlMap } from '../utils/ttl-cache.js';
  *  - **admin**: todas las colecciones (preview).
  *  - **profesor**: los grupos donde es staff (`Grupo.admins`) — así prueba el
  *    contenido tal como lo ve su alumno, sin ser alumno.
- *  - **alumno**: sus grupos activos (`GrupoAlumno`).
+ *  - **alumno**: sus grupos activos (`GrupoAlumno`), más las colecciones que
+ *    se le abrieron por permiso individual con ese módulo (`AccesoWikiAlumno`).
+ *    Por ahí no hay grupo (`grupoId: null`).
  * Denegado ⇒ el handler responde 404.
  *
  * Está parametrizado por módulo y no copiado por módulo A PROPÓSITO: es una
@@ -114,6 +118,19 @@ export async function resolverAccesoModulo(
           acceso.set(slug, {
             coleccion: { id: c.id, slug, nombre: c.get('nombre') ?? slug, clave: c.get('clave') ?? null },
             grupoId: grupo.id ?? null,
+          });
+        }
+      }
+    }
+    // Permisos individuales: se suman, y si la colección ya venía por un grupo
+    // se queda la del grupo, que es la que registra el envío.
+    if (user.get('userType') === 'alumno' && esModuloIndividual(modulo)) {
+      for (const c of await coleccionesPorPermisoIndividual(user.id, modulo)) {
+        const slug = c.get('slug');
+        if (slug && !acceso.has(slug)) {
+          acceso.set(slug, {
+            coleccion: { id: c.id!, slug, nombre: c.get('nombre') ?? slug, clave: c.get('clave') ?? null },
+            grupoId: null,
           });
         }
       }
