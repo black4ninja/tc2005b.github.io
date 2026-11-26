@@ -92,12 +92,13 @@ export function coleccionesConCompetencias(
  * Módulos que se pueden abrir a un alumno POR PERMISO INDIVIDUAL
  * (`AccesoWikiAlumno.modulos`), sin grupo de por medio.
  *
- * Solo los que cuelgan de la COLECCIÓN: el wiki, los ejercicios y los
- * diagramas. Competencias, actividades, preguntas, Scrum y Happiness Door viven
- * en un grupo —su malla, su agenda, su equipo, su tablero— y sin grupo no
- * tienen dónde guardarse.
+ * El wiki, los ejercicios y los diagramas cuelgan de la COLECCIÓN y se abren
+ * tal cual. Scrum se abre como PRÁCTICA PERSONAL: partidas de una sola persona,
+ * sin grupo (`GRUPO_PERSONAL`); no da acceso a la dinámica de ninguna clase.
+ * Competencias, actividades, preguntas y Happiness Door viven en un grupo —su
+ * malla, su agenda, su tablero— y sin grupo no tienen dónde guardarse.
  */
-export const MODULOS_INDIVIDUALES = ['documentacion', 'ejercicios', 'diagramas'] as const;
+export const MODULOS_INDIVIDUALES = ['documentacion', 'ejercicios', 'diagramas', 'scrum'] as const;
 export type ModuloIndividual = (typeof MODULOS_INDIVIDUALES)[number];
 
 export function esModuloIndividual(v: unknown): v is ModuloIndividual {

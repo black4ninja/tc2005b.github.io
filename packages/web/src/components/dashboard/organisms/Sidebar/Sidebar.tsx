@@ -20,6 +20,7 @@ import { useAgendaSidebar } from '../../../../context/AgendaSidebarContext';
 import { APP_NAME } from '../../../../config/app';
 import { moduloHabilitado } from '../../../../config/modulosContenido';
 import { rutaEjerciciosAdmin, rutaEjerciciosAlumno } from '../../../../config/rutasEjercicios';
+import { rutaScrumPersonal } from '../../../../utils/scrum';
 import { rutaDiagramasAdmin, rutaDiagramasAlumno, rutaTallerAdmin, rutaTallerAlumno } from '../../../../config/rutasDiagramas';
 
 /** Colección asignada al grupo, como la devuelve /api/admin/grupos. */
@@ -103,6 +104,8 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
   const [wikisAlumno, setWikisAlumno] = useState<EnlaceColeccion[]>([]);
   const [ejerciciosHref, setEjerciciosHref] = useState<string | null>(null);
   const [diagramasHref, setDiagramasHref] = useState<string | null>(null);
+  // Solo el alumno sin grupo: su práctica personal de Scrum.
+  const [scrumPersonalHref, setScrumPersonalHref] = useState<string | null>(null);
   const [tallerHref, setTallerHref] = useState<string | null>(null);
   const [colecciones, setColecciones] = useState<ColeccionGrupo[]>([]);
   // Módulos apagados por colección del grupo: filtran qué secciones aparecen.
@@ -187,6 +190,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         setEjerciciosHref(ejercicios[0] ? rutaEjerciciosAlumno(ejercicios[0].slug) : null);
         setDiagramasHref(diagramas[0] ? rutaDiagramasAlumno(diagramas[0].slug) : null);
         setTallerHref(diagramas[0] ? rutaTallerAlumno() : null);
+        setScrumPersonalHref(json?.scrumPersonal === true ? rutaScrumPersonal() : null);
         setMenuCargado(true);
       })
       .catch(() => {
@@ -372,6 +376,7 @@ export default function Sidebar({ role, collapsed, mobileOpen, onCloseMobile }: 
         agendaAlumnoHref,
         ejerciciosHref,
         modulosGrupo,
+        sinGrupo ? scrumPersonalHref : null,
       );
 
   return (

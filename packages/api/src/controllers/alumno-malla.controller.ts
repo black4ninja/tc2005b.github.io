@@ -14,6 +14,7 @@ import { coleccionesDeGrupo, moduloActivoEnGrupo, coleccionesDeGrupoPorModulo } 
 import { getColeccionesPermitidas, coleccionesPorPermisoIndividual } from '../services/contenidos.service.js';
 import { coleccionesConEjerciciosPublicados } from '../services/ejercicios-alumno.service.js';
 import { coleccionesConDiagramasPublicados } from '../services/diagramas-alumno.service.js';
+import { tieneScrumPersonal } from '../services/scrum-acceso.service.js';
 import { evidenciasDeAlumno } from '../services/evidencias.service.js';
 import { competenciasDelBanco } from './agenda-entrevistas.controller.js';
 import { citaParaEvidencia } from '../services/agenda-entrevistas.service.js';
@@ -703,10 +704,11 @@ export async function changeMyPasswordSinGrupo(req: Request, res: Response): Pro
 export async function getMisWikis(req: Request, res: Response): Promise<void> {
   try {
     const user = (req as any).appUser as AppUser;
-    const [wikis, ejercicios, diagramas] = await Promise.all([
+    const [wikis, ejercicios, diagramas, scrumPersonal] = await Promise.all([
       getColeccionesPermitidas(user),
       coleccionesConEjerciciosPublicados(user),
       coleccionesConDiagramasPublicados(user),
+      tieneScrumPersonal(user.id),
     ]);
     const breve = ({ slug, clave, nombre }: { slug: string; clave: string | null; nombre: string }) => ({ slug, clave, nombre });
     res.json({
@@ -714,6 +716,8 @@ export async function getMisWikis(req: Request, res: Response): Promise<void> {
       wikis: wikis.map(breve),
       ejercicios: ejercicios.map(breve),
       diagramas: diagramas.map(breve),
+      // Su práctica personal de Scrum, sin grupo (`GRUPO_PERSONAL`).
+      scrumPersonal,
     });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al obtener tus wikis' });

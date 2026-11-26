@@ -93,7 +93,7 @@ describe('módulos de un permiso individual', () => {
   });
 
   it('se queda con los módulos conocidos, en el orden del catálogo', () => {
-    expect(modulosDelPermiso(['diagramas', 'ejercicios', 'scrum'])).toEqual(['ejercicios', 'diagramas']);
+    expect(modulosDelPermiso(['scrum', 'diagramas', 'ejercicios', 'competencias'])).toEqual(['ejercicios', 'diagramas', 'scrum']);
   });
 });
 
@@ -101,6 +101,10 @@ describe('leerAccesosPedidos', () => {
   it('forma nueva: módulos por colección, sin repetidos', () => {
     const r = leerAccesosPedidos({ accesos: [{ coleccionId: 'c1', modulos: ['ejercicios', 'documentacion', 'ejercicios'] }] });
     expect(r).toEqual(new Map([['c1', ['documentacion', 'ejercicios']]]));
+  });
+
+  it('acepta la práctica de Scrum', () => {
+    expect(leerAccesosPedidos({ accesos: [{ coleccionId: 'c1', modulos: ['scrum'] }] })).toEqual(new Map([['c1', ['scrum']]]));
   });
 
   it('forma antigua: solo el wiki', () => {

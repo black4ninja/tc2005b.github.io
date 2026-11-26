@@ -391,3 +391,18 @@ export function permiteMover(
       return false;
   }
 }
+
+/**
+ * El «grupo» de las partidas de práctica PERSONALES: las de un alumno al que se
+ * le abrió Scrum por permiso individual (`AccesoWikiAlumno.modulos`), sin grupo.
+ *
+ * Va en el lugar del `:grupoId` de las rutas del alumno, así que el tablero, los
+ * mandos del ciclo y las pantallas son los mismos. En la base, una partida
+ * personal y su catálogo de etapas no tienen `grupo`. No choca con un id real:
+ * los de Parse son de 10 caracteres.
+ */
+export const GRUPO_PERSONAL = 'personal';
+
+export function esScrumPersonal(grupoId: string | undefined): boolean {
+  return grupoId === GRUPO_PERSONAL;
+}

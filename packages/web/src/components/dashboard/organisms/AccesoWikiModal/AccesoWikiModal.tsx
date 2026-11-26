@@ -6,15 +6,17 @@ import type { ColeccionRef } from '../../../../types/contenidos';
 import styles from './AccesoWikiModal.module.css';
 
 /**
- * Los módulos que se pueden abrir a un alumno sin grupo: los que cuelgan de la
- * colección. Espejo de `MODULOS_INDIVIDUALES` del API.
+ * Los módulos que se pueden abrir a un alumno sin grupo. Espejo de
+ * `MODULOS_INDIVIDUALES` del API.
  */
-type ModuloIndividual = 'documentacion' | 'ejercicios' | 'diagramas';
+type ModuloIndividual = 'documentacion' | 'ejercicios' | 'diagramas' | 'scrum';
 
 const MODULOS: { key: ModuloIndividual; label: string; icono: string }[] = [
   { key: 'documentacion', label: 'Wiki', icono: 'menu_book' },
   { key: 'ejercicios', label: 'Ejercicios', icono: 'terminal' },
   { key: 'diagramas', label: 'Diagramas', icono: 'account_tree' },
+  // No abre la dinámica de ninguna clase: partidas de práctica de una sola persona.
+  { key: 'scrum', label: 'Práctica de Scrum', icono: 'view_kanban' },
 ];
 
 interface PermisoIndividual {
@@ -41,9 +43,9 @@ type Seleccion = Map<string, Set<ModuloIndividual>>;
 
 /**
  * Qué tiene abierto un alumno además de lo que le dan sus grupos: por colección,
- * el wiki, los ejercicios y los diagramas. Los demás módulos (competencias,
- * actividades, preguntas, Scrum, Happiness Door) viven en un grupo y no se
- * ofrecen aquí.
+ * el wiki, los ejercicios, los diagramas y la práctica personal de Scrum. Los
+ * demás módulos (competencias, actividades, preguntas, Happiness Door) viven en
+ * un grupo y no se ofrecen aquí.
  *
  * Se guarda el CONJUNTO entero, no altas y bajas sueltas: así la pantalla y el
  * servidor no pueden discrepar sobre qué quedó.
@@ -163,9 +165,9 @@ export default function AccesoWikiModal({ alumno, sessionToken, onClose, onGuard
     <Modal isOpen={!!alumno} onClose={onClose} title={`Accesos individuales · ${alumno?.name ?? ''}`}>
       <div className={styles.contenido}>
         <p className={styles.ayuda}>
-          Se SUMAN a lo que ya le dan sus grupos. Por colección se le puede abrir el wiki, los ejercicios y
-          los diagramas. Las competencias, las actividades, las preguntas, Scrum y el Happiness Door
-          necesitan un grupo.
+          Se SUMAN a lo que ya le dan sus grupos. Por colección se le puede abrir el wiki, los ejercicios,
+          los diagramas y la práctica de Scrum (partidas suyas, sin compañeros). Las competencias, las
+          actividades, las preguntas y el Happiness Door necesitan un grupo.
         </p>
 
         {error && <div className={styles.error}>{error}</div>}

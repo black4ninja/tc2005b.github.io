@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import { rutaEjerciciosAlumno } from '../../../../config/rutasEjercicios';
 import { rutaDiagramasAlumno } from '../../../../config/rutasDiagramas';
+import { rutaScrumPersonal } from '../../../../utils/scrum';
 import styles from './AlumnoDashboard.module.css';
 
 const API_BASE = '/api';
@@ -19,7 +20,7 @@ interface Wiki {
  * Existe para el alumno al que solo se le abrió contenido por permiso
  * individual (`AccesoWikiAlumno`): no tiene calendario, malla ni perfil —todo
  * eso es de un grupo—, así que aquí solo hay lo que se le abrió (wikis,
- * ejercicios, diagramas) y su contraseña. La
+ * ejercicios, diagramas, práctica de Scrum) y su contraseña. La
  * contraseña va aparte porque es de la cuenta; si no, se quedaría para siempre
  * con la que le asignamos.
  */
@@ -30,6 +31,7 @@ export default function AlumnoSinGrupo() {
   const [wikis, setWikis] = useState<Wiki[] | null>(null);
   const [ejercicios, setEjercicios] = useState<Wiki[]>([]);
   const [diagramas, setDiagramas] = useState<Wiki[]>([]);
+  const [scrumPersonal, setScrumPersonal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -46,6 +48,7 @@ export default function AlumnoSinGrupo() {
         setWikis(json?.wikis ?? []);
         setEjercicios(json?.ejercicios ?? []);
         setDiagramas(json?.diagramas ?? []);
+        setScrumPersonal(json?.scrumPersonal === true);
       })
       .catch(() => {
         if (!cancelado) setWikis([]);
@@ -97,7 +100,7 @@ export default function AlumnoSinGrupo() {
         <span className="material-icons">info</span>
         {/* Sin wikis es el alumno dado de baja de todos sus grupos: a ese hay
             que decirle a quién acudir, no que tiene algo que no tiene. */}
-        {wikis !== null && wikis.length + ejercicios.length + diagramas.length === 0
+        {wikis !== null && wikis.length + ejercicios.length + diagramas.length === 0 && !scrumPersonal
           ? 'No estás inscrito en ningún grupo activo. Si crees que es un error, contacta a tu profesor.'
           : 'No estás inscrito en ningún grupo activo. Tienes acceso a lo que te abrieron.'}
       </div>
@@ -148,6 +151,17 @@ export default function AlumnoSinGrupo() {
               </Link>
             </div>
           ))}
+        </div>
+      )}
+
+      {scrumPersonal && (
+        <div className={styles.profileCard}>
+          <h3 className={styles.chartTitle}>Práctica de Scrum</h3>
+          <div className={styles.profileField}>
+            <Link to={rutaScrumPersonal()} className={styles.profileLink}>
+              Mis partidas de práctica
+            </Link>
+          </div>
         </div>
       )}
 

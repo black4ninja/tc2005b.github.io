@@ -3,8 +3,7 @@ import Parse from 'parse/node';
 import { AppUser } from '../models/AppUser.js';
 import { EquipoScrum } from '../models/EquipoScrum.js';
 import { HistoriaUsuario } from '../models/HistoriaUsuario.js';
-import { alumnoTieneAccesoAGrupo } from '../services/grupo-alumno.service.js';
-import { moduloActivoEnGrupo } from '../services/grupo-colecciones.service.js';
+import { denegacionScrumAlumno } from '../services/scrum-acceso.service.js';
 import {
   asegurarSprint,
   cargarDinamica,
@@ -134,18 +133,13 @@ async function contextoAlumno(
   // dinámica es esa; sin él, la del grupo. Es lo único que cambia entre los dos
   // caminos: de aquí abajo todo —la política de la etapa, el equipo, las reglas
   // de responsable— sale del contexto y no sabe ni le importa de cuál viene.
-  const [enElGrupo, moduloActivo, dinamica, etapas] = await Promise.all([
-    alumnoTieneAccesoAGrupo(alumno.id, grupoId),
-    moduloActivoEnGrupo(grupoId, 'scrum'),
+  const [denegado, dinamica, etapas] = await Promise.all([
+    denegacionScrumAlumno(alumno.id, grupoId),
     dinamicaId ? cargarDinamicaConSprint(dinamicaId, grupoId) : dinamicaVigente(grupoId),
     dinamicaId ? etapasDeGrupo(grupoId) : Promise.resolve(null),
   ]);
-  if (!enElGrupo) {
-    error(res, 403, 'No perteneces a este grupo');
-    return null;
-  }
-  if (!moduloActivo) {
-    error(res, 404, 'Esta sección no está disponible en tu grupo');
+  if (denegado) {
+    error(res, denegado.codigo, denegado.mensaje);
     return null;
   }
 

@@ -14,7 +14,8 @@ interface Props {
   onNuevoSprint: () => void;
   onCerrarSprint: () => void;
   onObjetivo: () => void;
-  onInvitar: () => void;
+  /** Sin él no hay botón: la práctica personal no admite invitados. */
+  onInvitar?: () => void;
   onFinalizar: () => void;
 }
 
@@ -57,6 +58,7 @@ export default function MandoPartida({
             <span className="material-icons">flag</span>
             Objetivo
           </button>
+          {onInvitar && (
           <button
             type="button"
             className={styles.boton}
@@ -66,6 +68,7 @@ export default function MandoPartida({
             <span className="material-icons">group_add</span>
             Invitar
           </button>
+          )}
           {cerrado ? (
             <button
               type="button"

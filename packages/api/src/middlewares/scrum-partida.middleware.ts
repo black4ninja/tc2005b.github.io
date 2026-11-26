@@ -1,6 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { AppUser } from '../models/AppUser.js';
 import { alumnoTieneAccesoAGrupo } from '../services/grupo-alumno.service.js';
+import { tieneScrumPersonal } from '../services/scrum-acceso.service.js';
+import { esScrumPersonal } from '../constants/scrum.js';
 import {
   cargarDinamica, equiposDeDinamica, esDeLaPartida,
 } from '../services/scrum.service.js';
@@ -65,11 +67,12 @@ async function resolver(
     return false;
   }
 
-  const [enElGrupo, dinamica] = await Promise.all([
-    alumnoTieneAccesoAGrupo(alumno.id, grupoId),
+  // En un grupo, que sea suyo; en la práctica personal, que tenga el permiso.
+  const [enElAmbito, dinamica] = await Promise.all([
+    esScrumPersonal(grupoId) ? tieneScrumPersonal(alumno.id) : alumnoTieneAccesoAGrupo(alumno.id, grupoId),
     cargarDinamica(dinamicaId, grupoId),
   ]);
-  if (!enElGrupo) {
+  if (!enElAmbito) {
     denegar(res, 403, 'No perteneces a este grupo');
     return false;
   }

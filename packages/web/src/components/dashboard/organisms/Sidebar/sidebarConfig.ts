@@ -21,6 +21,8 @@ export function getSidebarItems(
    * Por defecto en true: quien no pase el dato (el admin) no pierde ítems.
    */
   modulosGrupo: { malla?: boolean; competencias?: boolean; preguntas?: boolean; scrum?: boolean; happiness?: boolean } = {},
+  /** La práctica personal de Scrum del alumno sin grupo, si se le abrió. */
+  scrumPersonalHref: string | null = null,
 ): SidebarItem[] {
   if (role === 'admin') {
     return [
@@ -116,6 +118,9 @@ export function getSidebarItems(
       path: `/alumno/grupos/${selectedGrupoId}/scrum`,
       disabled: !perfilCompleto,
     });
+  }
+  if (scrumPersonalHref) {
+    items.push({ label: 'Práctica de Scrum', icon: 'view_kanban', path: scrumPersonalHref });
   }
   if (modulosGrupo.happiness && selectedGrupoId) {
     items.push({

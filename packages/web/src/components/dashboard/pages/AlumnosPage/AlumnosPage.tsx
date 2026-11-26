@@ -124,8 +124,8 @@ export default function AlumnosPage() {
 
       <p className={styles.intro}>
         Todos los alumnos del sistema, de cualquier grupo. Desde aquí se le puede abrir a uno en
-        concreto lo que su grupo no le da de una colección: el wiki, los ejercicios o los diagramas. El
-        resto de módulos siguen colgando del grupo.
+        concreto lo que su grupo no le da de una colección: el wiki, los ejercicios, los diagramas o la
+        práctica de Scrum. El resto de módulos siguen colgando del grupo.
       </p>
 
       {error && <div className={styles.error}>{error}</div>}
