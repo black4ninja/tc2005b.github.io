@@ -7,8 +7,9 @@ import type { EstadoHappiness } from '../services/happiness-door.js';
  * grupo ese día —positivo, neutral o negativo— y por qué, en texto libre.
  *
  * La escribe cualquier miembro: alumno, profesor o admin. Puede haber varias por
- * persona y día, y su autor las edita o las borra cuando quiera. El `dia` se
- * fija al crearla y no se mueve al editarla: la entrada habla de ESE día.
+ * persona y día, y su autor las edita o las borra cuando quiera. El `dia`
+ * es el de la SESIÓN que evalúa (no el de cuando se escribe) y su autor puede
+ * corregirlo al editarla si eligió la sesión equivocada.
  */
 export class HappinessEntrada extends BaseModel {
   constructor(attributes?: Parse.Attributes) {

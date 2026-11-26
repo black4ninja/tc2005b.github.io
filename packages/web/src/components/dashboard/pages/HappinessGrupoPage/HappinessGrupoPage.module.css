@@ -278,3 +278,10 @@
   line-height: 1.6;
   color: var(--text-primary);
 }
+
+/* Qué se vio en la sesión del día que se está viendo. */
+.sesionTemas {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}

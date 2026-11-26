@@ -3,8 +3,10 @@ import { useAuth } from '../../../../context/AuthContext';
 import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
 import { confirmar } from '../../../../utils/dialogos';
-import { ESTADOS_HAPPINESS, TEXTO_HAPPINESS_MAX, fechaLargaDia } from '../../../../utils/happiness';
-import type { EntradaHappiness, EstadoHappiness } from '../../../../types/happiness';
+import {
+  ESTADOS_HAPPINESS, TEXTO_HAPPINESS_MAX, fechaLargaDia, fechaSesion, temasSesion,
+} from '../../../../utils/happiness';
+import type { EntradaHappiness, EstadoHappiness, SesionHappiness } from '../../../../types/happiness';
 import styles from './HappinessMisEntradas.module.css';
 
 interface Props {
@@ -17,9 +19,11 @@ interface Borrador {
   id: string | null;
   estado: EstadoHappiness | null;
   texto: string;
+  /** Día de la sesión que se evalúa; null = el que proponga el servidor. */
+  dia: string | null;
 }
 
-const VACIO: Borrador = { id: null, estado: null, texto: '' };
+const VACIO: Borrador = { id: null, estado: null, texto: '', dia: null };
 
 async function leerError(res: Response, porDefecto: string): Promise<string> {
   try {
@@ -35,13 +39,17 @@ async function leerError(res: Response, porDefecto: string): Promise<string> {
  * fue hoy y releer lo que ya escribió. Lo comparten la pantalla del alumno y la
  * del staff; solo cambia la URL del API.
  *
- * Una entrada es del día en que se escribe (lo decide el servidor). Se puede
- * escribir más de una al día, y editar o borrar cualquiera de las propias.
+ * Una entrada es de una SESIÓN del calendario del grupo, no del día en que se
+ * escribe: muchos la escriben al día siguiente. Se propone la última sesión que
+ * ya empezó y se puede elegir otra; antes de publicar se ve cuál es. Un grupo
+ * sin calendario no tiene sesiones y la entrada es de hoy.
  */
 export default function HappinessMisEntradas({ apiBase }: Props) {
   const { sessionToken } = useAuth();
   const [entradas, setEntradas] = useState<EntradaHappiness[]>([]);
   const [hoy, setHoy] = useState<string | null>(null);
+  const [sesiones, setSesiones] = useState<SesionHappiness[]>([]);
+  const [sugerida, setSugerida] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [borrador, setBorrador] = useState<Borrador>(VACIO);
@@ -59,6 +67,8 @@ export default function HappinessMisEntradas({ apiBase }: Props) {
       const body = await res.json();
       setEntradas(body.entradas ?? []);
       setHoy(body.hoy ?? null);
+      setSesiones(body.sesiones ?? []);
+      setSugerida(body.sugerida ?? body.sesiones?.[body.sesiones.length - 1]?.dia ?? null);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudieron cargar tus entradas');
@@ -70,7 +80,17 @@ export default function HappinessMisEntradas({ apiBase }: Props) {
   useEffect(() => { void cargar(); }, [cargar]);
 
   const editando = borrador.id !== null;
-  const listo = borrador.estado !== null && borrador.texto.trim() !== '' && !guardando;
+  const conSesiones = sesiones.length > 0;
+  const diaElegido = borrador.dia ?? sugerida;
+  const sesionElegida = sesiones.find((x) => x.dia === diaElegido) ?? null;
+  // Al editar una entrada de un día que ya no es sesión (de antes del
+  // calendario), su día sigue en la lista para no moverla sin querer.
+  const opciones = diaElegido && !sesionElegida && editando
+    ? [{ dia: diaElegido, inicio: '', temas: [] } as SesionHappiness, ...sesiones]
+    : sesiones;
+  const temasDe = new Map(sesiones.map((x) => [x.dia, temasSesion(x.temas)]));
+  const listo = borrador.estado !== null && borrador.texto.trim() !== '' && !guardando
+    && (!conSesiones || diaElegido !== null);
 
   async function guardar() {
     if (!listo) return;
@@ -79,7 +99,11 @@ export default function HappinessMisEntradas({ apiBase }: Props) {
       const res = await fetch(editando ? `${apiBase}/entradas/${borrador.id}` : `${apiBase}/entradas`, {
         method: editando ? 'PUT' : 'POST',
         headers: headers(),
-        body: JSON.stringify({ estado: borrador.estado, texto: borrador.texto }),
+        body: JSON.stringify({
+          estado: borrador.estado,
+          texto: borrador.texto,
+          ...(conSesiones && diaElegido ? { dia: diaElegido } : {}),
+        }),
       });
       if (!res.ok) throw new Error(await leerError(res, 'No se pudo guardar la entrada'));
       setBorrador(VACIO);
@@ -125,8 +149,37 @@ export default function HappinessMisEntradas({ apiBase }: Props) {
 
       <section className={styles.formulario} aria-label={editando ? 'Editar entrada' : 'Nueva entrada'}>
         <h2 className={styles.formTitulo}>
-          {editando ? 'Editar entrada' : '¿Cómo te fue hoy?'}
+          {editando ? 'Editar entrada' : conSesiones ? '¿Cómo te fue en la sesión?' : '¿Cómo te fue hoy?'}
         </h2>
+        {conSesiones && (
+          <div className={styles.sesion}>
+            <label className={styles.sesionEtiqueta} htmlFor="happiness-sesion">Sesión que evalúas</label>
+            <select
+              id="happiness-sesion"
+              className={styles.sesionSelect}
+              value={diaElegido ?? ''}
+              onChange={(ev) => setBorrador((b) => ({ ...b, dia: ev.target.value }))}
+            >
+              {diaElegido === null && <option value="" disabled>Elige la sesión</option>}
+              {opciones.map((x) => (
+                <option key={x.dia} value={x.dia}>
+                  {fechaSesion(x.dia)}{x.temas.length > 0 ? ` — ${temasSesion(x.temas)}` : ''}
+                </option>
+              ))}
+            </select>
+            {diaElegido && (
+              <p className={styles.sesionAviso} aria-live="polite">
+                <Icon name="event" size="sm" />
+                <span>
+                  Tu entrada se guardará en la sesión del <strong>{fechaSesion(diaElegido).toLowerCase()}</strong>
+                  {sesionElegida?.semana ? ` (semana ${sesionElegida.semana})` : ''}
+                  {sesionElegida && sesionElegida.temas.length > 0 && <>: {temasSesion(sesionElegida.temas)}</>}.
+                  {' '}Si hablas de otra sesión, cámbiala arriba.
+                </span>
+              </p>
+            )}
+          </div>
+        )}
         <div className={styles.estados} role="radiogroup" aria-label="Estado">
           {ESTADOS_HAPPINESS.map((s) => (
             <button
@@ -157,7 +210,13 @@ export default function HappinessMisEntradas({ apiBase }: Props) {
             <DashButton variant="text" onClick={() => setBorrador(VACIO)} disabled={guardando}>Cancelar</DashButton>
           )}
           <DashButton onClick={() => void guardar()} disabled={!listo}>
-            {guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Publicar'}
+            {guardando
+              ? 'Guardando…'
+              : editando
+                ? 'Guardar cambios'
+                : conSesiones && diaElegido
+                  ? `Publicar en la sesión del ${fechaSesion(diaElegido).toLowerCase()}`
+                  : 'Publicar'}
           </DashButton>
         </div>
       </section>
@@ -175,6 +234,7 @@ export default function HappinessMisEntradas({ apiBase }: Props) {
                 {fechaLargaDia(dia)}
                 {dia === hoy && <span className={styles.hoy}>Hoy</span>}
               </h3>
+              {temasDe.get(dia) && <p className={styles.diaTemas}>{temasDe.get(dia)}</p>}
               <ul className={styles.lista}>
                 {lista.map((e) => {
                   const def = ESTADOS_HAPPINESS.find((s) => s.key === e.estado);
@@ -192,7 +252,7 @@ export default function HappinessMisEntradas({ apiBase }: Props) {
                             aria-label="Editar"
                             title="Editar"
                             onClick={() => {
-                              setBorrador({ id: e.id, estado: e.estado, texto: e.texto });
+                              setBorrador({ id: e.id, estado: e.estado, texto: e.texto, dia: e.dia });
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
                           >
