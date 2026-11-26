@@ -48,3 +48,17 @@ export function fechaLargaDia(dia: string): string {
   // «Martes, 24 De Noviembre De 2026».
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
+
+/** `2026-11-23` → «Lunes 23 de noviembre», sin el año: para elegir una sesión. */
+export function fechaSesion(dia: string): string {
+  const d = new Date(`${dia}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return dia;
+  // es-MX pone coma tras el día de la semana: «miércoles, 25 de noviembre».
+  const texto = d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).replace(',', '');
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+/** Los temas de una sesión en una línea; vacío si el calendario no dice nada. */
+export function temasSesion(temas: string[] | undefined): string {
+  return (temas ?? []).join(' · ');
+}

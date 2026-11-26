@@ -108,6 +108,14 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   correo.
 
 ### Fixed
+- **Happiness Door: cada entrada va en la sesión que evalúa.** Antes la
+  entrada se guardaba con el día en que se escribía, y quien la escribía a la
+  mañana siguiente terminaba en la sesión de después. Ahora el formulario
+  propone la última sesión del calendario que ya empezó (en la mañana, la de
+  ayer), deja elegir otra y, antes de publicar, dice en qué sesión se va a
+  guardar y qué se vio en ella; al editar también se puede corregir. El tablero
+  del profesor muestra los temas de la sesión del día. Un grupo sin calendario
+  sigue como antes: la entrada es de hoy.
 - **Los modales en el celular.** Se salían de la pantalla: el ancho mínimo
   (400 px, o 700 en los anchos) le ganaba al máximo. Ahora en pantallas chicas
   se abren como hoja desde abajo, a todo el ancho y sin scroll horizontal, con

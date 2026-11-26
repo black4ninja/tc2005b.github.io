@@ -13,7 +13,8 @@ export default function HappinessAlumnoPage() {
       <header>
         <h1 className={styles.pageTitle}>Happiness Door</h1>
         <p className={styles.subtitulo}>
-          Cuéntanos cómo te fue: elige si fue positivo, neutral o negativo y explica por qué. Puedes escribir
+          Cuéntanos cómo te fue en cada sesión: elige de qué sesión hablas, si fue positiva, neutral o negativa
+          y explica por qué. Puedes escribir
           las veces que quieras y editar tus entradas cuando quieras. Solo tu profesor las ve.
         </p>
       </header>

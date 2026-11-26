@@ -5,7 +5,7 @@ import Icon from '../../atoms/Icon/Icon';
 import DashButton from '../../atoms/DashButton/DashButton';
 import Modal from '../../atoms/Modal/Modal';
 import HappinessMisEntradas from '../../organisms/HappinessMisEntradas/HappinessMisEntradas';
-import { ESTADOS_HAPPINESS, fechaLargaDia, horaCurso, nombreRol } from '../../../../utils/happiness';
+import { ESTADOS_HAPPINESS, fechaLargaDia, horaCurso, nombreRol, temasSesion } from '../../../../utils/happiness';
 import { exportarHappinessGrupo } from '../../../../utils/happinessExport';
 import type { EntradaHappiness, TableroHappiness } from '../../../../types/happiness';
 import styles from './HappinessGrupoPage.module.css';
@@ -158,6 +158,12 @@ function Tablero({ base }: { base: string }) {
           <DashButton variant="outline" onClick={() => setDia(tablero.hoy)}>Hoy</DashButton>
         )}
       </div>
+
+      {tablero?.sesion && tablero.sesion.temas.length > 0 && (
+        <p className={styles.sesionTemas}>
+          {tablero.sesion.semana ? `Semana ${tablero.sesion.semana} · ` : ''}{temasSesion(tablero.sesion.temas)}
+        </p>
+      )}
 
       {error && <div className={styles.error} role="alert">{error}</div>}
 
