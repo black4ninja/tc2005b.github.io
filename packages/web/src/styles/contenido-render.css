@@ -8,6 +8,9 @@
   font-size: 14.5px;
   line-height: 1.7;
   color: var(--text-primary);
+  /* Una palabra o URL más ancha que la columna se parte en vez de ensanchar
+     la página: en el celular eso empujaba todo y el texto se cortaba. */
+  overflow-wrap: break-word;
 }
 .contenido-render h1 { font-size: 24px; margin: 0 0 12px; }
 .contenido-render h2 { font-size: 19px; margin: 22px 0 8px; }
@@ -19,6 +22,10 @@
   border-collapse: collapse;
   margin: 12px 0;
   font-size: 13.5px;
+  /* Una tabla ancha hace scroll dentro de sí misma, no de la página. */
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
 }
 .contenido-render th,
 .contenido-render td {
@@ -81,6 +88,13 @@
 }
 .contenido-copy-btn .material-icons {
   font-size: 17px;
+}
+/* Código en línea: los nombres de paquete (`androidx.compose.material3.…`)
+   no tienen espacios y `break-word` no los parte dentro del cálculo de ancho
+   mínimo; `anywhere` sí. Sin esto, en un celular la página entera crecía a lo
+   ancho de la línea más larga y el contenido quedaba cortado a la derecha. */
+.contenido-render :not(pre) > code {
+  overflow-wrap: anywhere;
 }
 .contenido-render pre code {
   background: none;

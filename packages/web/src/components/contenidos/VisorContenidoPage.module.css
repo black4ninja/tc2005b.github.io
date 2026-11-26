@@ -88,13 +88,24 @@
 .cuerpoSinArbol .arbol {
   display: none;
 }
+/* En pantallas medianas y chicas el índice no se muestra, así que da igual si
+   la página lo tiene o no: las variantes `cuerpoSinToc` se redefinen aquí con
+   la misma especificidad que arriba. Antes solo se cubría `.cuerpo` (una
+   clase) y `.cuerpo.cuerpoSinToc` (dos) ganaba: en el celular, una página sin
+   índice reservaba los 270px del menú oculto y el texto quedaba en una tira
+   de ~25px. */
 @media (max-width: 1100px) {
-  .cuerpo { grid-template-columns: 250px minmax(0, 1fr); }
-  .cuerpo.cuerpoSinArbol { grid-template-columns: minmax(0, 1fr); }
+  .cuerpo,
+  .cuerpo.cuerpoSinToc { grid-template-columns: 250px minmax(0, 1fr); }
+  .cuerpo.cuerpoSinArbol,
+  .cuerpo.cuerpoSinArbol.cuerpoSinToc { grid-template-columns: minmax(0, 1fr); }
   .toc { display: none; }
 }
 @media (max-width: 768px) {
-  .cuerpo { grid-template-columns: 1fr; }
+  .cuerpo,
+  .cuerpo.cuerpoSinToc,
+  .cuerpo.cuerpoSinArbol,
+  .cuerpo.cuerpoSinArbol.cuerpoSinToc { grid-template-columns: minmax(0, 1fr); }
   .arbol { display: none; }
 }
 
@@ -483,4 +494,12 @@
 }
 .arbolToggle:hover {
   border-color: transparent;
+}
+
+/* Celular: márgenes del contenido y de la barra. Va al final porque `.main`
+   se define después del bloque del layout y, con la misma especificidad,
+   ganaría. 40px por lado se comían una cuarta parte de la pantalla. */
+@media (max-width: 768px) {
+  .main { padding: 18px 16px 48px; }
+  .topbar { padding: 10px 12px; gap: 10px; }
 }

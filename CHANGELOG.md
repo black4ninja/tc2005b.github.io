@@ -118,6 +118,13 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   correo.
 
 ### Fixed
+- **El wiki ya no se corta en el celular.** Un nombre largo sin espacios en
+  código en línea (p. ej. un paquete `androidx.compose.…`) ensanchaba toda la
+  página más allá de la pantalla y el texto quedaba cortado a la derecha; ahora
+  se parte en varias líneas, y las tablas anchas hacen scroll dentro de sí
+  mismas. Además, en pantallas chicas una página sin índice reservaba el ancho
+  del menú oculto y dejaba el texto en una tira angosta. El contenido también
+  gana margen útil en el celular.
 - **Happiness Door: cada entrada va en la sesión que evalúa.** Antes la
   entrada se guardaba con el día en que se escribía, y quien la escribía a la
   mañana siguiente terminaba en la sesión de después. Ahora el formulario
