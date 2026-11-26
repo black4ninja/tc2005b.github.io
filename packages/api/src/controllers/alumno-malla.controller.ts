@@ -11,9 +11,10 @@ import { GrupoAlumno } from '../models/GrupoAlumno.js';
 import { validarPerfil } from '../models/campos-perfil.js';
 import { getVinculoConGrupoActivo, olvidarGruposDeAlumno } from '../services/grupo-alumno.service.js';
 import { coleccionesDeGrupo, moduloActivoEnGrupo, coleccionesDeGrupoPorModulo } from '../services/grupo-colecciones.service.js';
-import { getColeccionesPermitidas } from '../services/contenidos.service.js';
+import { getColeccionesPermitidas, coleccionesPorPermisoIndividual } from '../services/contenidos.service.js';
 import { coleccionesConEjerciciosPublicados } from '../services/ejercicios-alumno.service.js';
 import { coleccionesConDiagramasPublicados } from '../services/diagramas-alumno.service.js';
+import { tieneScrumPersonal } from '../services/scrum-acceso.service.js';
 import { evidenciasDeAlumno } from '../services/evidencias.service.js';
 import { competenciasDelBanco } from './agenda-entrevistas.controller.js';
 import { citaParaEvidencia } from '../services/agenda-entrevistas.service.js';
@@ -442,7 +443,9 @@ export async function getMyMenu(req: Request, res: Response): Promise<void> {
 
     // Los dos módulos salen de UNA lectura del grupo: preguntarlos por separado
     // traía el mismo grupo con sus colecciones dos veces.
-    const [porModulo, permitidas, wikisDelGrupo, ejerciciosDelAlumno, diagramasDelAlumno] = await Promise.all([
+    const [
+      porModulo, permitidas, wikisDelGrupo, ejerciciosDelAlumno, diagramasDelAlumno, ejerciciosPropios, diagramasPropios,
+    ] = await Promise.all([
       coleccionesDeGrupoPorModulo(grupoPointer.id, [
         'competencias', 'actividades', 'preguntas', 'scrum', 'happiness', 'ejercicios', 'diagramas',
       ]),
@@ -450,16 +453,20 @@ export async function getMyMenu(req: Request, res: Response): Promise<void> {
       coleccionesDeGrupo(grupoPointer.id, 'documentacion'),
       coleccionesConEjerciciosPublicados(user),
       coleccionesConDiagramasPublicados(user),
+      coleccionesPorPermisoIndividual(user.id, 'ejercicios'),
+      coleccionesPorPermisoIndividual(user.id, 'diagramas'),
     ]);
     const modulos = Object.fromEntries(Object.entries(porModulo).map(([m, ids]) => [m, ids.length > 0]));
     // Ejercicios y Diagramas se resuelven contra TODOS los grupos del alumno: el
     // menú de este grupo se queda con las colecciones que lo tienen encendido
     // AQUÍ. Sin el filtro, un alumno con otro grupo que sí los usa los veía
     // también en un grupo que los tiene apagados.
-    const delGrupo = <T extends { id: string }>(lista: T[], modulo: string) =>
-      lista.filter((c) => porModulo[modulo].includes(c.id));
-    const ejercicios = delGrupo(ejerciciosDelAlumno, 'ejercicios');
-    const diagramas = delGrupo(diagramasDelAlumno, 'diagramas');
+    // Las que se le abrieron a ÉL por permiso individual no son de ningún grupo
+    // y se le ofrecen en todos.
+    const delGrupo = <T extends { id: string }>(lista: T[], modulo: string, propias: Parse.Object[]) =>
+      lista.filter((c) => porModulo[modulo].includes(c.id) || propias.some((p) => p.id === c.id));
+    const ejercicios = delGrupo(ejerciciosDelAlumno, 'ejercicios', ejerciciosPropios);
+    const diagramas = delGrupo(diagramasDelAlumno, 'diagramas', diagramasPropios);
     const competencias = modulos.competencias === true;
     const actividades = modulos.actividades === true;
     // El alumno no ve nada del módulo "Preguntas" salvo UNA cosa: la agenda,
@@ -689,16 +696,28 @@ export async function changeMyPasswordSinGrupo(req: Request, res: Response): Pro
  * GET /alumno/wikis — las wikis que el alumno puede leer, sin pasar por un grupo.
  *
  * Es el menú del alumno SIN grupo activo: el que entra solo porque se le abrió
- * una wiki por permiso individual. Sale del mismo `getColeccionesPermitidas`
- * que el visor, así que el menú no puede ofrecer una wiki que luego no abra.
+ * algo por permiso individual. Sale de las mismas funciones que el visor y que
+ * los ejercicios y diagramas, así que el menú no puede ofrecer algo que luego
+ * no abra. Ejercicios y diagramas salen solo si la colección tiene alguno
+ * publicado.
  */
 export async function getMisWikis(req: Request, res: Response): Promise<void> {
   try {
     const user = (req as any).appUser as AppUser;
-    const wikis = await getColeccionesPermitidas(user);
+    const [wikis, ejercicios, diagramas, scrumPersonal] = await Promise.all([
+      getColeccionesPermitidas(user),
+      coleccionesConEjerciciosPublicados(user),
+      coleccionesConDiagramasPublicados(user),
+      tieneScrumPersonal(user.id),
+    ]);
+    const breve = ({ slug, clave, nombre }: { slug: string; clave: string | null; nombre: string }) => ({ slug, clave, nombre });
     res.json({
       status: 'ok',
-      wikis: wikis.map(({ slug, clave, nombre }) => ({ slug, clave, nombre })),
+      wikis: wikis.map(breve),
+      ejercicios: ejercicios.map(breve),
+      diagramas: diagramas.map(breve),
+      // Su práctica personal de Scrum, sin grupo (`GRUPO_PERSONAL`).
+      scrumPersonal,
     });
   } catch {
     res.status(500).json({ status: 'error', message: 'Error al obtener tus wikis' });

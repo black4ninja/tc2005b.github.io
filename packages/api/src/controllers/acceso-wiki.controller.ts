@@ -4,15 +4,51 @@ import { AppUser } from '../models/AppUser.js';
 import { AccesoWikiAlumno } from '../models/AccesoWikiAlumno.js';
 import { BaseModel } from '../models/BaseModel.js';
 import { invalidateColeccionesPermitidas } from '../services/contenidos.service.js';
+import { invalidateAccesoModulos } from '../services/acceso-modulos.service.js';
+import {
+  MODULOS_INDIVIDUALES, esModuloIndividual, moduloHabilitado, type ModuloIndividual,
+} from '../models/modulos-contenido.js';
 import { escaparRegex } from '../utils/regex.js';
 
 /**
- * Padrón global de alumnos y sus permisos individuales sobre el wiki.
+ * Padrón global de alumnos y sus permisos individuales: el wiki y, si se piden,
+ * los ejercicios y los diagramas de una colección.
  *
  * El acceso normal al wiki cuelga del grupo. Esto es la excepción, para el
  * alumno que necesita un contenido que su grupo no le da (una repetidora, una
  * asesoría, alguien que se cambió de sección a medio semestre).
  */
+
+/**
+ * El body del PUT → `coleccionId → módulos`, o un mensaje de error.
+ *
+ * Forma nueva: `accesos: [{ coleccionId, modulos }]`. La antigua,
+ * `coleccionIds: string[]`, sigue valiendo y abre solo el wiki. Una colección
+ * sin ningún módulo no es un permiso: se rechaza en vez de guardarla vacía.
+ */
+export function leerAccesosPedidos(body: unknown): Map<string, ModuloIndividual[]> | string {
+  const { accesos, coleccionIds } = (body ?? {}) as Record<string, unknown>;
+  const pedidos = new Map<string, ModuloIndividual[]>();
+  if (accesos !== undefined) {
+    if (!Array.isArray(accesos)) return 'Se requiere la lista de accesos';
+    for (const a of accesos) {
+      const { coleccionId, modulos } = (a ?? {}) as Record<string, unknown>;
+      if (typeof coleccionId !== 'string' || coleccionId === '') return 'Cada acceso necesita su colección';
+      if (!Array.isArray(modulos) || modulos.length === 0) return 'Cada colección necesita al menos un módulo';
+      if (!modulos.every(esModuloIndividual)) {
+        return `Solo se pueden abrir por alumno: ${MODULOS_INDIVIDUALES.join(', ')}`;
+      }
+      // En el orden del catálogo y sin repetidos: así comparar con lo guardado es directo.
+      pedidos.set(coleccionId, MODULOS_INDIVIDUALES.filter((m) => modulos.includes(m)));
+    }
+    return pedidos;
+  }
+  if (!Array.isArray(coleccionIds) || coleccionIds.some((id) => typeof id !== 'string')) {
+    return 'Se requiere la lista de colecciones';
+  }
+  for (const id of coleccionIds as string[]) pedidos.set(id, ['documentacion']);
+  return pedidos;
+}
 
 /** Caracteres mínimos de búsqueda, igual que el buscador de alumnos del grupo. */
 const BUSCAR_MIN = 2;
@@ -141,13 +177,15 @@ export async function getAccesoWikiAlumno(req: Request, res: Response): Promise<
 
     // Las colecciones que ya le dan sus grupos: en la pantalla se marcan como
     // «ya la tiene por su grupo» para no otorgar un permiso que no hace falta.
-    const porGrupo = await coleccionIdsDeSusGrupos(alumnoId);
+    const porGrupo = await modulosDeSusGrupos(alumnoId);
 
     res.json({
       status: 'ok',
       alumno: { id: alumno.id, name: alumno.getName(), email: alumno.getEmail(), matricula: alumno.get('matricula') ?? '' },
       permisos: permisos.map((p) => p.toSafeJSON()),
-      coleccionIdsPorGrupo: [...porGrupo],
+      coleccionIdsPorGrupo: [...porGrupo.keys()],
+      // Qué módulos de cada colección ya le dan sus grupos, para no otorgarlos dos veces.
+      modulosPorGrupo: Object.fromEntries([...porGrupo].map(([id, m]) => [id, [...m]])),
     });
   } catch (error: any) {
     if (error?.code === Parse.Error.OBJECT_NOT_FOUND) {
@@ -168,10 +206,9 @@ export async function getAccesoWikiAlumno(req: Request, res: Response): Promise<
  */
 export async function setAccesoWikiAlumno(req: Request, res: Response): Promise<void> {
   const { alumnoId } = req.params;
-  const { coleccionIds } = req.body;
-
-  if (!Array.isArray(coleccionIds) || coleccionIds.some((id) => typeof id !== 'string')) {
-    res.status(400).json({ status: 'error', message: 'Se requiere la lista de colecciones' });
+  const pedidos = leerAccesosPedidos(req.body);
+  if (typeof pedidos === 'string') {
+    res.status(400).json({ status: 'error', message: pedidos });
     return;
   }
 
@@ -183,7 +220,7 @@ export async function setAccesoWikiAlumno(req: Request, res: Response): Promise<
       return;
     }
 
-    const deseados = [...new Set(coleccionIds as string[])];
+    const deseados = [...pedidos.keys()];
 
     // Las colecciones tienen que existir. Un id inventado es error del cliente,
     // no un permiso que se crea apuntando a la nada.
@@ -216,6 +253,7 @@ export async function setAccesoWikiAlumno(req: Request, res: Response): Promise<
       const permiso = new AccesoWikiAlumno().initDefaults();
       permiso.setAlumno(Parse.Object.extend('AppUser').createWithoutData(alumnoId));
       permiso.setColeccion(Parse.Object.extend('Coleccion').createWithoutData(coleccionId));
+      permiso.setModulos(pedidos.get(coleccionId)!);
       const quien = (req as any).appUser as AppUser | undefined;
       if (quien) permiso.setOtorgadoPor(Parse.Object.extend('AppUser').createWithoutData(quien.id));
       porGuardar.push(permiso);
@@ -228,7 +266,18 @@ export async function setAccesoWikiAlumno(req: Request, res: Response): Promise<
       if (!permiso) continue;
       permiso.set('active', true);
       permiso.set('exists', true);
+      permiso.setModulos(pedidos.get(coleccionId)!);
       porGuardar.push(permiso);
+    }
+
+    // Los que siguen vivos pueden cambiar de módulos (abrirle además los ejercicios).
+    let modulosCambiados = 0;
+    for (const permiso of vigentes) {
+      const queridos = pedidos.get(idColeccion(permiso));
+      if (!queridos || queridos.join() === permiso.getModulos().join()) continue;
+      permiso.setModulos(queridos);
+      porGuardar.push(permiso);
+      modulosCambiados++;
     }
 
     for (const coleccionId of plan.revocar) {
@@ -244,6 +293,8 @@ export async function setAccesoWikiAlumno(req: Request, res: Response): Promise<
       // alumna se queda hasta un minuto sin ver lo que se le acaba de abrir —o
       // viendo lo que se le acaba de quitar—.
       invalidateColeccionesPermitidas(alumnoId);
+      // Lo mismo con los ejercicios y los diagramas, que tienen su propia caché.
+      invalidateAccesoModulos(alumnoId);
     }
 
     const actualizados = await permisosDelAlumno(alumnoId, { incluirRevocados: false });
@@ -252,6 +303,7 @@ export async function setAccesoWikiAlumno(req: Request, res: Response): Promise<
       permisos: actualizados.map((p) => p.toSafeJSON()),
       otorgados: plan.crear.length + plan.reactivar.length,
       revocados: plan.revocar.length,
+      modulosCambiados,
     });
   } catch (error: any) {
     if (error?.code === Parse.Error.OBJECT_NOT_FOUND) {
@@ -280,8 +332,11 @@ async function permisosDelAlumno(
   return q.find({ useMasterKey: true });
 }
 
-/** ids de colecciones que el alumno ya tiene por sus grupos activos. */
-async function coleccionIdsDeSusGrupos(alumnoId: string): Promise<Set<string>> {
+/**
+ * Colecciones que el alumno ya tiene por sus grupos activos y, de cada una, cuáles
+ * de los módulos abribles por alumno le encienden esos grupos.
+ */
+async function modulosDeSusGrupos(alumnoId: string): Promise<Map<string, Set<ModuloIndividual>>> {
   const alumnoPointer = Parse.Object.extend('AppUser').createWithoutData(alumnoId);
   const q = new Parse.Query('GrupoAlumno');
   q.equalTo('exists' as any, true as any);
@@ -291,13 +346,17 @@ async function coleccionIdsDeSusGrupos(alumnoId: string): Promise<Set<string>> {
   q.limit(1000);
   const links = await q.find({ useMasterKey: true });
 
-  const ids = new Set<string>();
+  const porColeccion = new Map<string, Set<ModuloIndividual>>();
   for (const link of links) {
     const grupo = link.get('grupo') as Parse.Object | undefined;
     if (!grupo || grupo.get('exists') === false || grupo.get('active') === false) continue;
+    const apagados = grupo.get('modulosDeshabilitados') as Record<string, string[]> | undefined;
     for (const c of (grupo.get('colecciones') ?? []) as Parse.Object[]) {
-      if (c && c.get('exists') !== false) ids.add(c.id!);
+      if (!c || c.get('exists') === false) continue;
+      const modulos = porColeccion.get(c.id!) ?? new Set<ModuloIndividual>();
+      for (const m of MODULOS_INDIVIDUALES) if (moduloHabilitado(apagados, c.id!, m)) modulos.add(m);
+      porColeccion.set(c.id!, modulos);
     }
   }
-  return ids;
+  return porColeccion;
 }

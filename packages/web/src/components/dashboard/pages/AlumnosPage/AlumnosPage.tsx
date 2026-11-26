@@ -26,7 +26,8 @@ const BUSCAR_MIN = 2;
  *
  * Es el único listado que NO cuelga de un grupo —los demás muestran los de una
  * clase—, y existe para lo que no cabe en el modelo de grupos: abrirle a un
- * alumno concreto una wiki que su grupo no le da.
+ * alumno concreto el wiki, los ejercicios o los diagramas de una colección que
+ * su grupo no le da.
  *
  * La búsqueda y la paginación se resuelven en el SERVIDOR: el padrón crece cada
  * semestre y traerlo entero para filtrar en el navegador dejaría de funcionar
@@ -98,7 +99,7 @@ export default function AlumnosPage() {
     }),
     columnHelper.accessor('email', { header: 'Correo' }),
     columnHelper.accessor('accesosWiki', {
-      header: 'Wikis individuales',
+      header: 'Accesos individuales',
       cell: (info) => {
         const n = info.getValue();
         if (!n) return <span className={styles.sinAcceso}>—</span>;
@@ -112,7 +113,7 @@ export default function AlumnosPage() {
   ];
 
   const getActions = (alumno: AlumnoPadron): ActionItem[] => [
-    { label: 'Accesos al wiki', icon: 'menu_book', onClick: () => setAlumnoAbierto(alumno) },
+    { label: 'Accesos individuales', icon: 'menu_book', onClick: () => setAlumnoAbierto(alumno) },
   ];
 
   const paginas = Math.max(1, Math.ceil(total / porPagina));
@@ -123,7 +124,8 @@ export default function AlumnosPage() {
 
       <p className={styles.intro}>
         Todos los alumnos del sistema, de cualquier grupo. Desde aquí se le puede abrir a uno en
-        concreto una wiki que su grupo no le da; el resto de módulos siguen colgando del grupo.
+        concreto lo que su grupo no le da de una colección: el wiki, los ejercicios, los diagramas o la
+        práctica de Scrum. El resto de módulos siguen colgando del grupo.
       </p>
 
       {error && <div className={styles.error}>{error}</div>}

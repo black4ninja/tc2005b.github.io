@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useAuth } from '../../../../context/AuthContext';
 import { avisar, confirmar, pedirTexto } from '../../../../utils/dialogos';
-import { LARGO_NOMBRE, rangoFechas, type FilaScrum } from '../../../../utils/scrum';
+import { GRUPO_PERSONAL, LARGO_NOMBRE, rangoFechas, type FilaScrum } from '../../../../utils/scrum';
 import styles from './MisScrumPage.module.css';
 
 const API = '/api';
@@ -178,6 +178,10 @@ export default function MisScrumPage() {
     }
   }
 
+  // La práctica personal: el alumno sin grupo al que se le abrió Scrum. No hay
+  // clase ni compañeros, solo sus partidas.
+  const personal = grupoId === GRUPO_PERSONAL;
+
   function irA(destino: string) {
     navegar(`/alumno/grupos/${grupoId}/scrum/${destino}`);
   }
@@ -190,8 +194,9 @@ export default function MisScrumPage() {
         <div>
           <h1 className={styles.pageTitle}>Actividad de Scrum</h1>
           <p className={styles.subtitulo}>
-            Aquí está lo que has jugado con tu clase y las partidas que abras por tu cuenta
-            para practicar el ciclo a tu paso.
+            {personal
+              ? 'Tu práctica personal: abre partidas para practicar el ciclo a tu paso.'
+              : 'Aquí está lo que has jugado con tu clase y las partidas que abras por tu cuenta para practicar el ciclo a tu paso.'}
           </p>
         </div>
       </header>
@@ -202,6 +207,7 @@ export default function MisScrumPage() {
         </div>
       )}
 
+      {!personal && (
       <section className={styles.bloque}>
         <h2 className={styles.tituloBloque}>Con tu clase</h2>
 
@@ -269,6 +275,7 @@ export default function MisScrumPage() {
           </ul>
         )}
       </section>
+      )}
 
       <section className={styles.bloque}>
         <div className={styles.cabeceraBloque}>
@@ -285,7 +292,8 @@ export default function MisScrumPage() {
         </div>
         <p className={styles.ayuda}>
           Una partida es el mismo Scrum, pero lo conduces tú: abres las etapas, mueves el
-          tablero y cierras los sprints. Puedes jugarla solo o invitar a compañeros de tu grupo.
+          tablero y cierras los sprints.
+          {personal ? ' La juegas tú solo.' : ' Puedes jugarla solo o invitar a compañeros de tu grupo.'}
           {' '}Tienes {vivas} de {maxPartidas} abiertas.
         </p>
 

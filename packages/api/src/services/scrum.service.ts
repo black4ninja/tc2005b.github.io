@@ -11,7 +11,7 @@ import { SprintEquipo } from '../models/SprintEquipo.js';
 import { TarjetaRetro } from '../models/TarjetaRetro.js';
 import {
   COLUMNAS, COLUMNAS_DEL_SPRINT, COLORES_EQUIPO, ETAPAS_SEMILLA,
-  OBJETIVOS_SPRINT_SEMILLA, POLITICA_POR_DEFECTO, type Columna, type PoliticaEtapa,
+  OBJETIVOS_SPRINT_SEMILLA, POLITICA_POR_DEFECTO, esScrumPersonal, type Columna, type PoliticaEtapa,
 } from '../constants/scrum.js';
 import { cuantosEscuchanTablero, publicarTablero } from './scrum-bus.js';
 import { bloqueosVigentes } from './scrum-bloqueos.js';
@@ -28,6 +28,25 @@ import { bloqueosVigentes } from './scrum-bloqueos.js';
 /** Índice de una columna, para ordenar el tablero de izquierda a derecha. */
 const ORDEN_COLUMNA = new Map<Columna, number>(COLUMNAS.map((c, i) => [c, i]));
 
+/*
+ * El ámbito de una consulta: un grupo, o el de las partidas personales
+ * (`GRUPO_PERSONAL`), que en la base son las que no tienen grupo. Así las
+ * partidas personales comparten un catálogo de etapas —el de la semilla— y no
+ * se mezclan nunca con las de un grupo.
+ */
+function filtrarPorAmbito(q: Parse.Query<any>, grupoId: string): void {
+  if (esScrumPersonal(grupoId)) q.doesNotExist('grupo' as any);
+  else q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+}
+
+function ponerAmbito(obj: { setGrupo(g: Grupo): void }, grupoId: string): void {
+  if (!esScrumPersonal(grupoId)) obj.setGrupo(Grupo.createWithoutData(grupoId) as Grupo);
+}
+
+function esDelAmbito(dinamica: DinamicaScrum, grupoId: string): boolean {
+  return esScrumPersonal(grupoId) ? dinamica.getGrupoId() === '' : dinamica.getGrupoId() === grupoId;
+}
+
 /**
  * El catálogo de etapas del grupo, sembrando las cinco por defecto la primera
  * vez.
@@ -40,7 +59,7 @@ const ORDEN_COLUMNA = new Map<Columna, number>(COLUMNAS.map((c, i) => [c, i]));
  */
 export async function etapasDeGrupo(grupoId: string): Promise<EtapaScrum[]> {
   const q = new Parse.Query<EtapaScrum>('EtapaScrum');
-  q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  filtrarPorAmbito(q, grupoId);
   q.equalTo('exists' as any, true as any);
   q.ascending('orden');
   q.addAscending('createdAt' as any);
@@ -50,7 +69,7 @@ export async function etapasDeGrupo(grupoId: string): Promise<EtapaScrum[]> {
 
   const nuevas = ETAPAS_SEMILLA.map((semilla, i) => {
     const etapa = new EtapaScrum().initDefaults();
-    etapa.setGrupo(Grupo.createWithoutData(grupoId) as Grupo);
+    ponerAmbito(etapa, grupoId);
     etapa.setNombre(semilla.nombre);
     etapa.setColor(semilla.color);
     etapa.setPista(semilla.pista);
@@ -116,7 +135,7 @@ async function sembrarPoliticasQueFaltan(
 
   const nuevas = faltantes.map((semilla) => {
     const etapa = new EtapaScrum().initDefaults();
-    etapa.setGrupo(Grupo.createWithoutData(grupoId) as Grupo);
+    ponerAmbito(etapa, grupoId);
     etapa.setNombre(semilla.nombre);
     etapa.setColor(semilla.color);
     etapa.setPista(semilla.pista);
@@ -132,7 +151,7 @@ async function sembrarPoliticasQueFaltan(
 /** Las dinámicas del grupo, la más reciente primero. */
 export async function dinamicasDeGrupo(grupoId: string): Promise<DinamicaScrum[]> {
   const q = new Parse.Query<DinamicaScrum>('DinamicaScrum');
-  q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  filtrarPorAmbito(q, grupoId);
   q.equalTo('exists' as any, true as any);
   q.include('etapaActual' as any);
   q.descending('createdAt');
@@ -163,7 +182,7 @@ export async function cargarDinamicaLigera(
   q.equalTo('exists' as any, true as any);
   try {
     const dinamica = await q.get(dinamicaId, { useMasterKey: true });
-    return dinamica.getGrupoId() === grupoId ? dinamica : null;
+    return esDelAmbito(dinamica, grupoId) ? dinamica : null;
   } catch {
     return null;
   }
@@ -178,7 +197,7 @@ export async function cargarDinamica(
   q.include('etapaActual' as any);
   try {
     const dinamica = await q.get(dinamicaId, { useMasterKey: true });
-    return dinamica.getGrupoId() === grupoId ? dinamica : null;
+    return esDelAmbito(dinamica, grupoId) ? dinamica : null;
   } catch {
     return null;
   }
@@ -207,7 +226,7 @@ export async function cargarDinamicaConSprint(
   q.include('sprintActual' as any);
   try {
     const dinamica = await q.get(dinamicaId, { useMasterKey: true });
-    return dinamica.getGrupoId() === grupoId ? dinamica : null;
+    return esDelAmbito(dinamica, grupoId) ? dinamica : null;
   } catch {
     return null;
   }
@@ -222,8 +241,10 @@ export async function cargarDinamicaConSprint(
  * del cierre de la sesión.
  */
 export async function dinamicaVigente(grupoId: string): Promise<DinamicaScrum | null> {
+  // Sin grupo no hay clase: solo partidas de práctica.
+  if (esScrumPersonal(grupoId)) return null;
   const abierta = new Parse.Query<DinamicaScrum>('DinamicaScrum');
-  abierta.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  filtrarPorAmbito(abierta, grupoId);
   abierta.equalTo('exists' as any, true as any);
   abierta.notEqualTo('cerrada' as any, true as any);
   soloDeClase(abierta);
@@ -234,7 +255,7 @@ export async function dinamicaVigente(grupoId: string): Promise<DinamicaScrum | 
   if (viva) return viva;
 
   const terminada = new Parse.Query<DinamicaScrum>('DinamicaScrum');
-  terminada.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  filtrarPorAmbito(terminada, grupoId);
   terminada.equalTo('exists' as any, true as any);
   terminada.equalTo('finalizada' as any, true as any);
   soloDeClase(terminada);
@@ -352,7 +373,7 @@ export async function scrumDelAlumno(
   if (ids.length === 0) return { clase: [], practica: [] };
 
   const q = new Parse.Query<DinamicaScrum>('DinamicaScrum');
-  q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  filtrarPorAmbito(q, grupoId);
   q.equalTo('exists' as any, true as any);
   q.containedIn('objectId', ids);
   // El dueño se despliega o el nombre llega vacío: el listado dice «la abrió
@@ -376,7 +397,7 @@ export async function partidasPropias(
   alumnoId: string,
 ): Promise<DinamicaScrum[]> {
   const q = new Parse.Query<DinamicaScrum>('DinamicaScrum');
-  q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  filtrarPorAmbito(q, grupoId);
   q.equalTo('exists' as any, true as any);
   q.equalTo('propietario' as any, AppUser.createWithoutData(alumnoId) as any);
   q.limit(200);
@@ -386,7 +407,7 @@ export async function partidasPropias(
 /** Todas las partidas de práctica del grupo, para el listado del profesor. */
 export async function partidasDeGrupo(grupoId: string): Promise<DinamicaScrum[]> {
   const q = new Parse.Query<DinamicaScrum>('DinamicaScrum');
-  q.equalTo('grupo' as any, Grupo.createWithoutData(grupoId) as any);
+  filtrarPorAmbito(q, grupoId);
   q.equalTo('exists' as any, true as any);
   q.exists('propietario' as any);
   q.include('propietario' as any);

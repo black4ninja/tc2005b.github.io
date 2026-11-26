@@ -20,6 +20,7 @@ import {
   sumaPuntos,
   type Bloqueo, type Columna, type ColumnaRetro, type Dinamica, type Epica, type EquipoTablero,
   type Etapa, type Historia, type Sprint, type TarjetaRetro,
+  GRUPO_PERSONAL,
 } from '../../../../utils/scrum';
 import styles from './ScrumTableroPage.module.css';
 
@@ -725,7 +726,7 @@ export default function ScrumTableroPage() {
               onNuevoSprint={() => void nuevoSprint()}
               onCerrarSprint={() => void cerrarSprint()}
               onObjetivo={() => void editarObjetivoPartida()}
-              onInvitar={() => setInvitadosAbierto(true)}
+              onInvitar={grupoId === GRUPO_PERSONAL ? undefined : () => setInvitadosAbierto(true)}
               onFinalizar={() => void finalizarPartida()}
             />
           )}

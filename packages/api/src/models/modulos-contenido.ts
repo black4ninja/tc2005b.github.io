@@ -87,3 +87,29 @@ export function coleccionesConCompetencias(
 ): string[] {
   return coleccionIds.filter((id) => moduloHabilitado(modulosDeshabilitados, id, 'competencias'));
 }
+
+/**
+ * Módulos que se pueden abrir a un alumno POR PERMISO INDIVIDUAL
+ * (`AccesoWikiAlumno.modulos`), sin grupo de por medio.
+ *
+ * El wiki, los ejercicios y los diagramas cuelgan de la COLECCIÓN y se abren
+ * tal cual. Scrum se abre como PRÁCTICA PERSONAL: partidas de una sola persona,
+ * sin grupo (`GRUPO_PERSONAL`); no da acceso a la dinámica de ninguna clase.
+ * Competencias, actividades, preguntas y Happiness Door viven en un grupo —su
+ * malla, su agenda, su tablero— y sin grupo no tienen dónde guardarse.
+ */
+export const MODULOS_INDIVIDUALES = ['documentacion', 'ejercicios', 'diagramas', 'scrum'] as const;
+export type ModuloIndividual = (typeof MODULOS_INDIVIDUALES)[number];
+
+export function esModuloIndividual(v: unknown): v is ModuloIndividual {
+  return typeof v === 'string' && (MODULOS_INDIVIDUALES as readonly string[]).includes(v);
+}
+
+/**
+ * Los módulos que abre un permiso individual. Los permisos anteriores a este
+ * campo no lo tienen y solo abrían el wiki: siguen igual.
+ */
+export function modulosDelPermiso(guardados: unknown): ModuloIndividual[] {
+  if (!Array.isArray(guardados)) return ['documentacion'];
+  return MODULOS_INDIVIDUALES.filter((m) => guardados.includes(m));
+}

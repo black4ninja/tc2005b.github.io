@@ -452,3 +452,14 @@ export function rangoFechas(inicio: string | null, fin: string | null): string {
   if (fin) return `hasta el ${fmt(fin)}`;
   return '';
 }
+
+/**
+ * El `:grupoId` de la práctica personal de Scrum: la del alumno al que se le
+ * abrió por permiso individual, sin grupo. Espejo de `GRUPO_PERSONAL` del API.
+ */
+export const GRUPO_PERSONAL = 'personal';
+
+/** Donde entra el alumno a su práctica personal. */
+export function rutaScrumPersonal(): string {
+  return `/alumno/grupos/${GRUPO_PERSONAL}/scrum`;
+}

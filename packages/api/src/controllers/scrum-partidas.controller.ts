@@ -4,8 +4,8 @@ import { AppUser } from '../models/AppUser.js';
 import { Grupo } from '../models/Grupo.js';
 import { DinamicaScrum } from '../models/DinamicaScrum.js';
 import { EquipoScrum } from '../models/EquipoScrum.js';
-import { alumnoTieneAccesoAGrupo, getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
-import { moduloActivoEnGrupo } from '../services/grupo-colecciones.service.js';
+import { getAlumnosDeGrupo } from '../services/grupo-alumno.service.js';
+import { denegacionScrumAlumno } from '../services/scrum-acceso.service.js';
 import {
   asegurarSprint,
   cargarDinamica,
@@ -21,6 +21,7 @@ import {
 } from '../services/scrum.service.js';
 import {
   LARGO_NOMBRE, MAX_INVITADOS, MAX_PARTIDAS_VIVAS,
+  esScrumPersonal,
 } from '../constants/scrum.js';
 
 /**
@@ -61,16 +62,9 @@ async function puedeEntrar(req: Request, res: Response): Promise<AppUser | null>
     error(res, 400, 'Datos incompletos');
     return null;
   }
-  const [enElGrupo, moduloActivo] = await Promise.all([
-    alumnoTieneAccesoAGrupo(alumno.id, grupoId),
-    moduloActivoEnGrupo(grupoId, 'scrum'),
-  ]);
-  if (!enElGrupo) {
-    error(res, 403, 'No perteneces a este grupo');
-    return null;
-  }
-  if (!moduloActivo) {
-    error(res, 404, 'Esta sección no está disponible en tu grupo');
+  const denegado = await denegacionScrumAlumno(alumno.id, grupoId);
+  if (denegado) {
+    error(res, denegado.codigo, denegado.mensaje);
     return null;
   }
   return alumno;
@@ -172,7 +166,8 @@ export async function companerosDeGrupo(req: Request, res: Response): Promise<vo
     const alumno = await puedeEntrar(req, res);
     if (!alumno) return;
 
-    const alumnos = await getAlumnosDeGrupo(grupoId);
+    // La práctica personal es de una sola persona: no hay a quién invitar.
+    const alumnos = esScrumPersonal(grupoId) ? [] : await getAlumnosDeGrupo(grupoId);
     res.json({
       status: 'ok',
       companeros: alumnos
@@ -220,7 +215,8 @@ export async function crearPartida(req: Request, res: Response): Promise<void> {
     const nombre = limpiarNombre(req.body?.nombre) ?? `Mi práctica ${mias.length + 1}`;
 
     const dinamica = new DinamicaScrum().initDefaults();
-    dinamica.setGrupo(Grupo.createWithoutData(grupoId) as Grupo);
+    // La personal no tiene grupo: es lo que la separa de las de cualquier grupo.
+    if (!esScrumPersonal(grupoId)) dinamica.setGrupo(Grupo.createWithoutData(grupoId) as Grupo);
     dinamica.setPropietario(alumno);
     dinamica.setNombre(nombre);
     dinamica.setCerrada(false);
@@ -262,6 +258,11 @@ export async function invitar(req: Request, res: Response): Promise<void> {
 
   if (!Array.isArray(alumnoIds) || alumnoIds.some((id) => typeof id !== 'string')) {
     error(res, 400, 'Se espera una lista de compañeros');
+    return;
+  }
+
+  if (esScrumPersonal(grupoId)) {
+    error(res, 400, 'La práctica personal es solo tuya: no admite invitados');
     return;
   }
 
