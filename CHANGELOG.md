@@ -118,14 +118,17 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   correo.
 
 ### Fixed
+- **El wiki ya no se corta en el celular.** Un nombre largo sin espacios en
+  código en línea (p. ej. un paquete `androidx.compose.…`) ensanchaba toda la
+  página más allá de la pantalla y el texto quedaba cortado a la derecha; ahora
+  se parte en varias líneas, y las tablas anchas hacen scroll dentro de sí
+  mismas. Además, en pantallas chicas una página sin índice reservaba el ancho
+  del menú oculto y dejaba el texto en una tira angosta. El contenido también
+  gana margen útil en el celular.
 - **Quién da la actividad y su hora ya se ven al guardar.** Al editar o crear
   una actividad, la pantalla descartaba la hora, los responsables y el adjunto
   que devolvía el API: una actividad asignada a una persona se seguía viendo
   como «Todos» hasta recargar, aunque sí se había guardado.
-
-### Removed
-- **Resumen de quién da el día.** Debajo de cada día ya no sale el nombre de
-  quien da las actividades: se asigna y se ve en cada actividad.
 - **Happiness Door: cada entrada va en la sesión que evalúa.** Antes la
   entrada se guardaba con el día en que se escribía, y quien la escribía a la
   mañana siguiente terminaba en la sesión de después. Ahora el formulario
@@ -162,6 +165,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   reordena y borra semanas y actividades, sube archivos y copia calendarios,
   pero solo en los grupos donde figura como administrador; una petición que toque
   además un grupo ajeno se rechaza entera.
+
+### Removed
+- **Resumen de quién da el día.** Debajo de cada día ya no sale el nombre de
+  quien da las actividades: se asigna y se ve en cada actividad.
 
 ### Added
 - **Alumnos sin grupo activo pueden entrar.** El login (contraseña y enlace
