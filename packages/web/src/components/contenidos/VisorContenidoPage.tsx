@@ -10,6 +10,8 @@ import styles from './VisorContenidoPage.module.css';
 
 const API_BASE = '/api';
 const ARBOL_KEY = 'contenidos-arbol-oculto';
+/** Mismo corte que el CSS del visor: por debajo, el árbol va como panel. */
+const MEDIA_MOVIL = '(max-width: 768px)';
 
 interface NodoVisor {
   id: string;
@@ -114,6 +116,37 @@ export default function VisorContenidoPage() {
   const rutaPanel = user?.userType === 'admin' ? '/admin' : '/alumno';
   // Índice de la derecha plegable, para quien quiera toda la pantalla.
   const [tocOculto, setTocOculto] = useState(false);
+
+  // En el celular el árbol no cabe como columna: se abre como panel encima del
+  // contenido. Antes simplemente se escondía y no había forma de navegar más
+  // que con el buscador o con «anterior / siguiente». Es un estado aparte del
+  // `arbolOculto` de escritorio (que se guarda): el panel siempre empieza
+  // cerrado.
+  const [esMovil, setEsMovil] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(MEDIA_MOVIL).matches,
+  );
+  const [menuMovil, setMenuMovil] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(MEDIA_MOVIL);
+    const alCambiar = () => {
+      setEsMovil(mq.matches);
+      if (!mq.matches) setMenuMovil(false);
+    };
+    mq.addEventListener('change', alCambiar);
+    return () => mq.removeEventListener('change', alCambiar);
+  }, []);
+  // Al elegir una página el panel se cierra solo: lo que se quiere es leerla.
+  useEffect(() => {
+    setMenuMovil(false);
+  }, [slug, path]);
+  useEffect(() => {
+    if (!menuMovil) return;
+    const alTeclear = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuMovil(false);
+    };
+    window.addEventListener('keydown', alTeclear);
+    return () => window.removeEventListener('keydown', alTeclear);
+  }, [menuMovil]);
 
   /**
    * Atajo del visor: alterna claro/oscuro sin abrir el menú de usuario, que es
@@ -402,6 +435,8 @@ export default function VisorContenidoPage() {
   const arbolVacio = !cargando && !noEncontrado && !errorCarga && arbol.length === 0;
   /** ¿La colección abierta está entre las del selector? Ver el comentario del topbar. */
   const enLista = misColecciones.some((c) => c.slug === slug);
+  /** ¿El menú está cerrado? En el celular manda el panel; en escritorio, la columna. */
+  const menuCerrado = esMovil ? !menuMovil : arbolOculto;
 
   return (
     <div className={styles.visor}>
@@ -409,12 +444,13 @@ export default function VisorContenidoPage() {
         <button
           type="button"
           className={styles.arbolToggle}
-          onClick={toggleArbol}
-          title={arbolOculto ? 'Mostrar menú de contenido' : 'Ocultar menú de contenido'}
-          aria-label={arbolOculto ? 'Mostrar menú de contenido' : 'Ocultar menú de contenido'}
-          aria-pressed={!arbolOculto}
+          onClick={esMovil ? () => setMenuMovil((v) => !v) : toggleArbol}
+          title={menuCerrado ? 'Mostrar menú de contenido' : 'Ocultar menú de contenido'}
+          aria-label={menuCerrado ? 'Mostrar menú de contenido' : 'Ocultar menú de contenido'}
+          aria-expanded={!menuCerrado}
+          aria-controls="visor-arbol"
         >
-          <span className="material-icons">{arbolOculto ? 'menu' : 'menu_open'}</span>
+          <span className="material-icons">{menuCerrado ? 'menu' : 'menu_open'}</span>
         </button>
         {/* Con VARIAS wikis, pestañas a la vista y no un `select`: el
             desplegable pasaba desapercibido y los alumnos no sabían que podían
@@ -507,7 +543,14 @@ export default function VisorContenidoPage() {
           tocOculto || !pagina || pagina.toc.length === 0 ? styles.cuerpoSinToc : ''
         }`}
       >
-        <nav className={styles.arbol}>
+        {esMovil && menuMovil && (
+          <div className={styles.arbolFondo} onClick={() => setMenuMovil(false)} aria-hidden="true" />
+        )}
+        <nav
+          id="visor-arbol"
+          className={`${styles.arbol} ${esMovil && menuMovil ? styles.arbolAbierto : ''}`}
+          aria-label="Contenido de la wiki"
+        >
           <div className={styles.arbolTitulo}>Contenido</div>
           <div className={styles.arbolNodos}>
             {cargando ? <p className={styles.hint}>Cargando…</p> : arbol.map((n) => renderNodo(n, '', 0))}

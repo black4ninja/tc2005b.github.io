@@ -118,6 +118,10 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/).
   correo.
 
 ### Fixed
+- **Menú del wiki en el celular.** El índice de páginas salía siempre abierto,
+  a todo el ancho y pegado arriba, tapando el texto. Ahora está cerrado y se
+  abre con ☰ como panel lateral; se cierra al elegir una página, al tocar fuera
+  o con Esc.
 - **El wiki ya no se corta en el celular.** Un nombre largo sin espacios en
   código en línea (p. ej. un paquete `androidx.compose.…`) ensanchaba toda la
   página más allá de la pantalla y el texto quedaba cortado a la derecha; ahora
