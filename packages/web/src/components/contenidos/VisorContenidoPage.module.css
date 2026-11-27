@@ -106,7 +106,6 @@
   .cuerpo.cuerpoSinToc,
   .cuerpo.cuerpoSinArbol,
   .cuerpo.cuerpoSinArbol.cuerpoSinToc { grid-template-columns: minmax(0, 1fr); }
-  .arbol { display: none; }
 }
 
 /* ── Árbol lateral ── */
@@ -502,4 +501,40 @@
 @media (max-width: 768px) {
   .main { padding: 18px 16px 48px; }
   .topbar { padding: 10px 12px; gap: 10px; }
+}
+
+/* Celular: el árbol se abre como panel lateral encima del contenido (☰ del
+   topbar). Cerrado no ocupa nada, igual que antes. La especificidad le gana a
+   `.cuerpoSinArbol .arbol`, que lo esconde cuando en escritorio se plegó. */
+@media (max-width: 768px) {
+  /* Cerrado, el árbol no ocupa nada. Va aquí y no en el bloque del layout de
+     arriba porque la regla base de `.arbol` (display: flex) está después y,
+     con la misma especificidad, ganaba: en el celular el menú salía siempre,
+     a todo el ancho y pegado arriba, encima del texto. */
+  .cuerpo .arbol {
+    display: none;
+  }
+  .cuerpo .arbol.arbolAbierto {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 40;
+    width: min(300px, 85vw);
+    height: auto;
+    border-right: 1px solid var(--border-color);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+  }
+  .arbolFondo {
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: rgba(0, 0, 0, 0.4);
+  }
+  /* En el panel hay espacio de sobra a lo alto: el título del enlace se lee
+     completo en vez de cortarse con «…». */
+  .arbolAbierto .item {
+    white-space: normal;
+  }
 }
