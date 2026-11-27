@@ -36,19 +36,6 @@ export default function DayColumn({ dayKey, day, activeFilters, editable, onAddA
       {fechaInicio && <span className={styles.dayDate}> {diaDelMes(fechaInicio, dayKey)}</span>}
     </h3>
   );
-  // Resumen de quién da las actividades del día, debajo del día. Se calcula
-  // de las actividades: cada una se asigna en su formulario. Sin asignar no
-  // se pinta nada.
-  const imparten = [...new Map(
-    (day?.actividades ?? []).flatMap((a) => a.responsables ?? []).map((p) => [p.id, p] as const),
-  ).values()];
-  const quien = imparten.length > 0 && (
-    <div className={styles.imparte} title={imparten.map((p) => p.name).join(', ')}>
-      <i className="material-icons">person</i>
-      {imparten.map((p) => p.name.trim().split(/\s+/)[0]).join(', ')}
-    </div>
-  );
-
   const isFiltered = (tipo: ActividadTipo): boolean => {
     if (activeFilters.size === 0) return false;
     return !activeFilters.has(tipo);
@@ -65,7 +52,6 @@ export default function DayColumn({ dayKey, day, activeFilters, editable, onAddA
     return (
       <div className={styles.dayColumn}>
         {dayHeader}
-        {quien}
         <DroppableZone id={`${dayKey}-previo`} isEmpty>
           <div className={styles.preSession}>
             <div className={styles.preSessionLabel}>Previo a la sesión</div>
@@ -85,7 +71,6 @@ export default function DayColumn({ dayKey, day, activeFilters, editable, onAddA
   return (
     <div className={styles.dayColumn}>
       {dayHeader}
-      {quien}
 
       {day?.nota && <div className={styles.dayNote}>{day.nota}</div>}
 
