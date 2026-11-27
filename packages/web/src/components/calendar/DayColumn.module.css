@@ -93,23 +93,3 @@
   font-size: 1rem;
 }
 
-.imparte {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  max-width: 100%;
-  margin-bottom: var(--space-sm);
-  padding: 2px 8px;
-  border-radius: 12px;
-  background: var(--dash-bg-subtle);
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.imparte :global(.material-icons) {
-  font-size: 14px;
-}

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import type { ActividadTipo, Actividad } from '@/types/calendario';
+import { actividadDesdeApi } from '@/utils/actividadDesdeApi';
 
 const API_BASE = '/api';
 
@@ -51,18 +52,7 @@ export function useUpdateActividad(): UseUpdateActividadResult {
           throw new Error(data.message ?? `HTTP ${res.status}`);
         }
 
-        const act = data.actividad;
-        return {
-          id: act.id,
-          tipo: act.tipo,
-          titulo: act.titulo,
-          descripcion: act.descripcion,
-          enlace: act.enlace,
-          externo: act.externo,
-          duracion: act.duracion,
-          fechaEntrega: act.fechaEntrega,
-          enlacesExtra: act.enlacesExtra,
-        } as Actividad;
+        return actividadDesdeApi(data.actividad);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Error al actualizar actividad';
         setUpdateError(message);
